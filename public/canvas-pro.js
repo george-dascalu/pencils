@@ -1,3 +1,34 @@
+import { nextStatuses, statusLabel, canTransition } from "./workflow-model.js";
+import { viewportCache, viewportRect } from "./viewport-cache.js";
+import { boardSession } from "./board-session.js";
+import { paintObjectGeometry } from "./object-geometry.js";
+import { timelineHTML } from "./task-timeline.js";
+import { frameThumbnail } from "./frame-export.js";
+import { lineJumps } from "./connector-path.js";
+import { paintTextStyle, textStyleControls } from "./object-text.js";
+import { penActive } from "./pen-tools.js";
+import { gridHTML, gridCell } from "./board-grid.js";
+import { syncGrid, gridTracks, cellBounds } from "./grid-model.js";
+import {
+  reflowGridContents,
+  frameDepth,
+  updateFrameMembership,
+  frameContents,
+  frameSlides,
+  orderedFrames,
+  reorderFrame,
+} from "./frame-model.js";
+import { textAlignment } from "./text-alignment.js";
+import { connectorStyle } from "./connector-style.js";
+import { connectorTarget, connectorPreview } from "./connector-drag.js";
+import {
+  placeholder,
+  defaultText,
+  markNodeOverflow,
+  isTaskNote,
+  nodeMinimum,
+  nodeFill,
+} from "./node-layout.js";
 import { canvasRichText, richToolbar } from "./canvas-rich-text.js";
 import { encodeCanvas, markdownSlice, palette } from "./canvas-format.js";
 import {
@@ -18,6 +49,7 @@ export function canvasPro(ctx, basic) {
     $,
     $$,
     esc,
+    icon,
     api,
     route,
     toast,
@@ -32,15 +64,23 @@ export function canvasPro(ctx, basic) {
     patchTask,
   } = ctx;
   const { selected, pick, point, focusNode, uid } = basic;
+  const sessionTools = boardSession(ctx, basic);
+  document.addEventListener("click", (e) => {
+    if (e.target.closest("[data-session-dismiss],[data-follow]"))
+      $("#session-invitation")?.remove();
+  });
   let parents = new Map(),
     hidden = new Set(),
     index = new Map(),
     editor = null,
     connecting = null,
-    cameraFrame = null;
+    converting = false,
+    cameraFrame = null,
+    undoBusy = false;
   let identity = "",
     frameSignature = "",
     outlineOpen = false,
+    searchOpen = false,
     search = "",
     owner = "",
     status = "",
@@ -71,30 +111,39 @@ export function canvasPro(ctx, basic) {
     if (!b) return;
     index = new Map(b.nodes.map((n) => [n.id, n]));
     parents = frameParents(b.nodes);
-    hidden = hiddenByFrame(b.nodes, parents);
+    hidden = presenting >= 0 ? new Set() : hiddenByFrame(b.nodes, parents);
   }
+  const viewport = viewportCache();
+  let viewportCleanup = null;
   function rect() {
-    const canvas = $("#canvas"),
-      c = state.camera,
-      margin = 240;
-    return {
-      x: (-c.x - margin) / c.z,
-      y: (-c.y - margin) / c.z,
-      w: ((canvas?.clientWidth || 1200) + 2 * margin) / c.z,
-      h: ((canvas?.clientHeight || 700) + 2 * margin) / c.z,
-    };
-  }
-  function visible(b = board()) {
-    rebuild(b);
-    const r = rect();
-    const candidates = b.nodes.filter(
-      (n) => !hidden.has(n.id) && (selected.has(n.id) || intersects(n, r)),
+    const canvas = $("#canvas");
+    return viewportRect(
+      state.camera,
+      canvas?.clientWidth || 1200,
+      canvas?.clientHeight || 700,
+      700,
     );
-    // At overview scale the bitmap retains every object; detailed DOM is reserved for selected objects.
-    return candidates.length > 700
-      ? candidates.filter((n) => selected.has(n.id)).slice(0, 100)
-      : candidates;
   }
+  function visible(b = board(), { limit = true } = {}) {
+    rebuild(b);
+    if (!limit) {
+      const r = rect();
+      return b.nodes.filter(
+        (n) => !hidden.has(n.id) && (selected.has(n.id) || intersects(n, r)),
+      );
+    }
+    const canvas = $("#canvas");
+    return viewport.choose(b.nodes, {
+      key: `${state.project?.id}:${b.id}`,
+      camera: state.camera,
+      width: canvas?.clientWidth || 1200,
+      height: canvas?.clientHeight || 700,
+      selected,
+      hidden,
+      now: performance.now(),
+    });
+  }
+
   function effectiveNode(id) {
     let n = index.get(id);
     const seen = new Set();
@@ -102,7 +151,7 @@ export function canvasPro(ctx, basic) {
       seen.add(n.id);
       n = index.get(parents.get(n.id));
     }
-    return n?.collapsed ? { ...n, h: 48 } : n;
+    return n?.collapsed && presenting < 0 ? { ...n, h: 48 } : n;
   }
   function edges(b = board(), exporting = false) {
     if (!b) return "";
@@ -116,7 +165,43 @@ export function canvasPro(ctx, basic) {
       if (!exporting && !intersects(bounds([a, c]), r)) continue;
       const p = routeEdge(e, a, c),
         color = palette[e.color] || e.color || "#78906f";
-      content += `<path class="canvas-edge ${e.id === state.selectedEdge ? "selected" : ""}" data-edge="${esc(e.id)}" d="${p.d}" fill="none" stroke="${esc(color)}" ${e.fromEnd === "arrow" ? 'marker-start="url(#arrowstart)"' : ""} ${e.toEnd !== "none" ? 'marker-end="url(#arrowhead)"' : ""}/>${e.label || (e.relationship && e.relationship !== "relates") ? `<text class="edge-label" data-edge="${esc(e.id)}" x="${p.x}" y="${p.y - 9}">${esc(e.label || e.relationship)}</text>` : ""}`;
+      if (e.lineJumps && ["straight", "elbow"].includes(e.routing)) {
+        const routes = b.edges
+          .filter(
+            (other) =>
+              other.id !== e.id &&
+              ["straight", "elbow"].includes(other.routing),
+          )
+          .map((other) => {
+            const start = index.get(other.from),
+              end = index.get(other.to);
+            return start && end ? routeEdge(other, start, end).points : [];
+          });
+        p.d = lineJumps(p.points, routes);
+      }
+      const style = connectorStyle(e, color, esc);
+      content += `<g data-edge="${esc(e.id)}"><defs>${style.defs}</defs>${exporting ? "" : `<path class="connector-hit" d="${p.d}" fill="none" stroke="transparent" stroke-width="${Math.max(12 / state.camera.z, e.width || 2)}"/>`}<path class="canvas-edge ${basic.selectedEdges.has(e.id) || e.id === state.selectedEdge ? "selected" : ""}" data-edge="${esc(e.id)}" d="${p.d}" fill="none" stroke="${esc(color)}" ${style.attrs}/>${e.label || (e.relationship && e.relationship !== "relates") ? `<text class="edge-label" data-edge="${esc(e.id)}" data-edge-label="main" x="${p.x + (e.labelOffset?.x || 0)}" y="${p.y - 9 + (e.labelOffset?.y || 0)}">${esc(e.label || e.relationship)}</text>` : ""}${(e.labels || []).map((label, i) => `<text class="edge-label" data-edge="${esc(e.id)}" data-edge-label="${i}" x="${p.x + label.x}" y="${p.y + label.y}">${esc(label.text)}</text>`).join("")}</g>`;
+    }
+    return content + (exporting ? "" : endpointHandles(b));
+  }
+  function endpointHandles(b = board()) {
+    let content = "";
+    if (!connecting && state.selectedEdge) {
+      const e = b.edges.find((edge) => edge.id === state.selectedEdge),
+        a = e && effectiveNode(e.from),
+        c = e && effectiveNode(e.to);
+      if (a && c) {
+        const path = routeEdge(e, a, c);
+        for (const [i, p] of (e.bends || []).entries())
+          content += `<circle class="connector-endpoint connector-bend" data-edge="${esc(e.id)}" data-bend="${i}" cx="${p.x}" cy="${p.y}" r="${6 / state.camera.z}" aria-label="Drag bend; double-click to remove"/>`;
+        if ((e.bends?.length || 0) < 20)
+          content += `<circle class="connector-endpoint connector-bend new-bend" data-edge="${esc(e.id)}" data-bend="new" cx="${path.x}" cy="${path.y}" r="${5 / state.camera.z}" aria-label="Drag to add bend"/>`;
+        for (const [end, p] of [
+          ["from", path.p],
+          ["to", path.q],
+        ])
+          content += `<circle class="connector-endpoint" data-edge="${esc(e.id)}" data-edge-end="${end}" cx="${p.x}" cy="${p.y}" r="${7 / state.camera.z}" aria-label="Drag connection ${end === "from" ? "start" : "end"}"/>`;
+      }
     }
     return content;
   }
@@ -161,7 +246,7 @@ export function canvasPro(ctx, basic) {
               t.due <= soon &&
               !state.config.done.includes(t.status))) &&
       (!query.search ||
-        `${t.title} ${t.body} ${t.tags?.join(" ")}`
+        `${t.key || ""} ${(t.aliases || []).join(" ")} ${t.title} ${t.body} ${t.tags?.join(" ")}`
           .toLowerCase()
           .includes(query.search.toLowerCase()))
     );
@@ -177,7 +262,59 @@ export function canvasPro(ctx, basic) {
             String(b[q.sort || "due"] || ""),
           ) * (q.sortDir || 1),
       );
-    return `<div class="query-title">${esc(n.text || "Live tasks")} <span>${tasks.length}</span></div><div class="query-rows">${
+    if (n.viewType === "timeline")
+      return (
+        `<div class="query-title">${esc(n.text || "Live tasks")}</div>` +
+        timelineHTML(tasks, ctx, n.timelineScale || "week", n.id)
+      );
+    if (n.viewType === "kanban")
+      return `<div class="query-title">${esc(n.text || "Live tasks")}</div><div class="embedded-kanban">${state.config.statuses
+        .map(
+          (status) =>
+            `<section data-live-status="${esc(status)}"><strong>${esc(statusLabel(state.config, status))}</strong>${tasks
+              .filter((t) => t.status === status)
+              .map(
+                (t) =>
+                  `<button draggable="true" data-live-task="${esc(t.id)}" data-pro="open-task" data-task="${esc(t.id)}">${esc(t.key || "")} ${esc(t.title)}</button>`,
+              )
+              .join("")}</section>`,
+        )
+        .join("")}</div>`;
+    if (n.viewType === "table") {
+      const fields = n.visibleFields || [
+        "key",
+        "title",
+        "status",
+        "assignee",
+        "due",
+      ];
+      return `<div class="query-title">${esc(n.text || "Live tasks")}</div><div class="embedded-table"><table><thead><tr>${fields.map((f) => `<th>${esc(f)}</th>`).join("")}</tr></thead><tbody>${tasks
+        .map(
+          (t) =>
+            `<tr>${fields
+              .map(
+                (f) =>
+                  `<td>${
+                    f === "status"
+                      ? `<select data-canvas-status="${esc(t.id)}" aria-label="Task status">${nextStatuses(
+                          state.config,
+                          t.status,
+                        )
+                          .map(
+                            (s) =>
+                              `<option value="${esc(s)}" ${s === t.status ? "selected" : ""}>${esc(statusLabel(state.config, s))}</option>`,
+                          )
+                          .join("")}</select>`
+                      : f === "title"
+                        ? `<button data-pro="open-task" data-task="${esc(t.id)}">${esc(t.title)}</button>`
+                        : esc(t[f] || "")
+                  }</td>`,
+              )
+              .join("")}</tr>`,
+        )
+        .join("")}</tbody></table></div>`;
+    }
+    return `<div class="query-title"><span class="query-label ${defaultText(n) ? "is-placeholder" : ""}">${esc(n.text || "Live tasks")}</span> <span>${tasks.length}</span></div><div class="query-rows">${
       tasks
         .slice(0, 100)
         .map(
@@ -210,28 +347,68 @@ export function canvasPro(ctx, basic) {
       if (state.project?.id === project && state.view === "board") enhance();
     }
   }
-  function enhance() {
+  function enhance(only = null) {
     if (!board()) return;
     const byTask = new Map(state.tasks.map((t) => [t.id, t]));
     for (const el of $$(".board-node")) {
       const n = index.get(el.dataset.node);
-      if (!n || editor?.id === n.id) continue;
-      el.style.height = `${n.collapsed ? 48 : n.h}px`;
-      el.classList.toggle("collapsed-frame", !!n.collapsed);
+      if (
+        !n ||
+        editor?.id === n.id ||
+        (only && !(only instanceof Set ? only.has(n.id) : n.id === only))
+      )
+        continue;
+      el.style.height = `${n.collapsed && presenting < 0 ? 48 : n.h}px`;
+      el.classList.toggle("collapsed-frame", !!n.collapsed && presenting < 0);
+      if (["frame", "grid"].includes(n.type)) {
+        el.style.zIndex = String(frameDepth(n.id, parents) - 501);
+        if (/^#[0-9a-f]{6}$/i.test(n.color || "")) {
+          const rgb = n.color
+            .slice(1)
+            .match(/../g)
+            .map((v) => parseInt(v, 16) / 255)
+            .map((v) =>
+              v <= 0.04045 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4,
+            );
+          el.style.color =
+            rgb[0] * 0.2126 + rgb[1] * 0.7152 + rgb[2] * 0.0722 > 0.179
+              ? "#172a20"
+              : "#ffffff";
+        } else el.style.removeProperty("color");
+      }
       if (n.type === "task") {
         const t = byTask.get(n.task);
         if (!t) continue;
-        const flags = taskFlags(t),
+        const asNote = isTaskNote(n),
+          flags = taskFlags(t),
           section = markdownSlice(t.body || "", n.subpath || "");
-        el.classList.toggle("overdue", flags.overdue);
-        el.classList.toggle("blocked-task", flags.blocked);
+        el.classList.toggle("overdue", !asNote && flags.overdue);
+        el.classList.toggle("blocked-task", !asNote && flags.blocked);
         el.classList.toggle(
           "dimmed",
-          (!!owner &&
-            !t.assignee?.toLowerCase().includes(owner.toLowerCase())) ||
-            (!!status && t.status !== status),
+          !asNote &&
+            ((!!owner &&
+              !t.assignee?.toLowerCase().includes(owner.toLowerCase())) ||
+              (!!status && t.status !== status)),
         );
-        el.innerHTML = `<div class="live-card-heading"><span>${esc(t.type)}</span>${btn("task-details", "↗", `data-task="${esc(t.id)}" aria-label="Open task details"`)}</div><strong class="task-title">${esc(t.title)}</strong><div class="live-card-state"><select data-canvas-status="${esc(t.id)}" aria-label="Task status">${state.config.statuses.map((s) => `<option ${s === t.status ? "selected" : ""}>${esc(s)}</option>`).join("")}</select><span>${esc(t.assignee || "Unassigned")}</span>${flags.overdue ? "<b>Overdue</b>" : ""}${flags.blocked ? "<b>Blocked</b>" : ""}</div>${n.h > 175 ? `<div class="canvas-markdown">${section ? markdown(section.text) : "<p>Heading or block not found.</p>"}</div>` : ""}${n.subpath ? `<small class="embed-label">${esc(n.subpath)}</small>` : ""}`;
+        el.classList.toggle("task-as-note", asNote);
+        el.classList.toggle("sticky", asNote);
+        el.classList.toggle("task", !asNote);
+        if (asNote) {
+          el.innerHTML = `<div class="note-content ${section?.text ? "has-body" : ""}"><div class="note-title canvas-markdown" data-inline-title>${esc(t.title)}</div><div class="note-body node-text canvas-markdown">${section ? (section.text ? markdown(section.text) : "") : "<p>Heading or block not found.</p>"}</div></div>`;
+        } else {
+          el.innerHTML = `<div class="live-card-heading"><span>${esc(t.type)} · ${esc(t.key || "")}</span>${btn("task-details", "↗", `data-task="${esc(t.id)}" aria-label="Open task details"`)}</div><strong class="task-title" data-inline-title>${esc(t.title)}</strong><div class="live-card-state"><select data-canvas-status="${esc(t.id)}" aria-label="Task status">${nextStatuses(
+            state.config,
+            t.status,
+          )
+            .map(
+              (s) =>
+                `<option value="${esc(s)}" ${s === t.status ? "selected" : ""}>${esc(statusLabel(state.config, s))}</option>`,
+            )
+            .join(
+              "",
+            )}</select><span>${esc(t.assignee || "Unassigned")}</span>${flags.overdue ? "<b>Overdue</b>" : ""}${flags.blocked ? "<b>Blocked</b>" : ""}</div>${n.h > 175 ? `<div class="canvas-markdown">${section ? (section.text ? markdown(section.text) : '<span class="is-placeholder">Add task notes…</span>') : "<p>Heading or block not found.</p>"}</div>` : ""}${n.subpath ? `<small class="embed-label">${esc(n.subpath)}</small>` : ""}`;
+        }
       } else if (n.type === "file") {
         loadNote(n);
         const note = notes.get(n.file),
@@ -239,12 +416,34 @@ export function canvasPro(ctx, basic) {
             note && !note.error
               ? markdownSlice(note.body, n.subpath || "")
               : null;
-        el.innerHTML = `<strong>${esc(n.file?.split("/").pop() || "Note")}${n.subpath ? ` · ${esc(n.subpath)}` : ""}</strong><div class="canvas-markdown">${note?.error ? esc(note.error) : section ? markdown(section.text) : note ? "Heading or block not found." : "Loading note…"}</div>`;
-      } else if (n.type === "query") el.innerHTML = queryRows(n);
+        el.innerHTML = `<strong>${esc(n.file?.split("/").pop() || "Note")}${n.subpath ? ` · ${esc(n.subpath)}` : ""}</strong><div class="canvas-markdown">${note?.error ? esc(note.error) : section ? (section.text ? markdown(section.text) : '<span class="is-placeholder">Add notes…</span>') : note ? "Heading or block not found." : "Loading note…"}</div>`;
+      } else if (n.type === "grid") el.innerHTML = gridHTML(n, ctx);
+      else if (n.type === "query") el.innerHTML = queryRows(n);
       else if (n.type === "link")
         el.innerHTML = `<span>Link</span><a href="${esc(n.url)}" target="_blank" rel="noopener noreferrer">${esc(n.url)}</a><small>Opens in a new tab</small>`;
       else if (["text", "sticky", "shape"].includes(n.type))
-        el.innerHTML = `<div class="node-text canvas-markdown">${markdown(n.text || "")}</div>`;
+        el.innerHTML = `<div class="node-text canvas-markdown ${defaultText(n) ? "is-placeholder" : ""}">${n.text ? markdown(n.text) : esc(placeholder(n))}</div>`;
+      else if (n.type === "frame")
+        el.innerHTML = `<div class="node-text frame-title ${defaultText(n) ? "is-placeholder" : ""}">${esc(n.text || "")}</div>`;
+      else if (["image", "draw"].includes(n.type)) {
+        const existing = el.querySelector(":scope > .board-node-content");
+        if (existing) el.replaceChildren(...existing.childNodes);
+        el.querySelector(".object-caption")?.remove();
+        if (n.type !== "draw" || n.text)
+          el.insertAdjacentHTML(
+            "beforeend",
+            `<div class="object-caption ${defaultText(n) ? "is-placeholder" : ""}">${esc(n.text || placeholder(n))}</div>`,
+          );
+      }
+      // Clip contents, while connection ports and resize handles remain outside.
+      if (!el.querySelector(":scope > .board-node-content")) {
+        const content = document.createElement("div");
+        content.className = "board-node-content";
+        content.append(...el.childNodes);
+        el.append(content);
+      }
+      paintTextStyle(el, n);
+      paintObjectGeometry(el, n, esc);
       if (n.comments?.some((c) => !c.resolved))
         el.insertAdjacentHTML(
           "beforeend",
@@ -265,8 +464,18 @@ export function canvasPro(ctx, basic) {
         );
     }
     basic.selection();
+    requestAnimationFrame(() => markNodeOverflow());
   }
   function selection() {
+    $$(".canvas-edge").forEach((el) =>
+      el.classList.toggle(
+        "selected",
+        basic.selectedEdges.has(el.dataset.edge) ||
+          el.dataset.edge === state.selectedEdge,
+      ),
+    );
+    if (!state.selectedEdge)
+      $$(".connector-endpoint, .connector-bend").forEach((el) => el.remove());
     $$(".connection-port").forEach((el) => el.remove());
     for (const n of pick()) {
       const el = $(`[data-node="${CSS.escape(n.id)}"]`);
@@ -281,6 +490,10 @@ export function canvasPro(ctx, basic) {
 
   function availableUndo(operations, redo = false) {
     const inactive = new Set();
+    const lastEdit = operations.findLastIndex(
+      (op) => op.client === sync.client && !op.undoOf,
+    );
+    const oldRedos = new Set(textHistory().flatMap((entry) => entry.boundary));
     for (const op of operations.slice().reverse())
       if (op.undoOf && !inactive.has(op.id)) inactive.add(op.undoOf);
     return operations
@@ -291,18 +504,99 @@ export function canvasPro(ctx, basic) {
           o.client === sync.client &&
           !inactive.has(o.id) &&
           (redo
-            ? o.undoOf && !operations.find((p) => p.id === o.undoOf)?.undoOf
+            ? o.undoOf &&
+              operations.indexOf(o) > lastEdit &&
+              !oldRedos.has(o.id) &&
+              !operations.find((p) => p.id === o.undoOf)?.undoOf
             : !o.undoOf),
       );
   }
+  function textHistoryKey() {
+    return `pencils:text-history:${sync.namespace}:${state.project?.id}:${board()?.id}`;
+  }
+  function textHistory() {
+    try {
+      return JSON.parse(
+        sessionStorage.getItem(textHistoryKey()) || "[]",
+      ).filter(
+        (entry) =>
+          !entry.undone ||
+          !(board()?.operations || []).some(
+            (op) =>
+              op.client === sync.client &&
+              !op.undoOf &&
+              !entry.undoneAt?.includes(op.id),
+          ),
+      );
+    } catch {
+      return [];
+    }
+  }
+  function storeTextHistory(history) {
+    sessionStorage.setItem(
+      textHistoryKey(),
+      JSON.stringify(history.slice(-100)),
+    );
+  }
+  function rememberText(url, base, after) {
+    const pending = sync.entries.get(route("boards", board().id));
+    const boundary = (board().operations || []).map((op) => op.id);
+    if (pending?.delivery) boundary.push(pending.delivery.operationId);
+    const history = textHistory().filter((entry) => !entry.undone);
+    history.push({
+      url,
+      before: Object.fromEntries(
+        Object.keys(after).map((key) => [key, base[key]]),
+      ),
+      after,
+      boundary,
+    });
+    storeTextHistory(history);
+  }
+  function textUndo(history, operation, redo) {
+    const entry = redo
+      ? history.find((e) => e.undone)
+      : history.findLast((e) => !e.undone);
+    if (!entry || !operation) return entry;
+    return (
+      redo
+        ? !entry.boundary.includes(operation.undoOf)
+        : entry.boundary.includes(operation.id)
+    )
+      ? entry
+      : null;
+  }
   async function keyboardUndo(redo = false) {
+    if (!finishInline()) return;
     await basic.flush();
+    await Promise.all([...sync.entries.values()].map((entry) => entry.promise));
     if (sync.entries.size)
       throw new Error("Finish saving or resolve pending edits before undo.");
     const { operations } = await api(
       route("boards", board().id) + "/operations",
     );
     const operation = availableUndo(operations, redo);
+    const history = textHistory(),
+      entry = textUndo(history, operation, redo);
+    if (entry) {
+      const current = await api(entry.url),
+        expected = redo ? entry.before : entry.after,
+        changes = redo ? entry.after : entry.before;
+      if (Object.keys(expected).some((key) => current[key] !== expected[key]))
+        throw new Error(
+          "This text has changed since your edit. Undo stopped to preserve the newer text.",
+        );
+      await api(entry.url, {
+        method: "PATCH",
+        body: { ...changes, file: current.file, revision: current.revision },
+      });
+      entry.undone = !redo;
+      entry.undoneAt = operations.map((op) => op.id);
+      storeTextHistory(history);
+      notes.clear();
+      await ctx.refresh();
+      return;
+    }
     if (!operation) return;
     await api(route("boards", board().id) + "/undo", {
       method: "POST",
@@ -323,9 +617,15 @@ export function canvasPro(ctx, basic) {
       if (!button || state.view !== "board") return;
       event.preventDefault();
       event.stopImmediatePropagation();
-      keyboardUndo(button.dataset.action === "board-redo").catch((e) =>
-        toast(e.message, true),
-      );
+      if (undoBusy) return;
+      undoBusy = true;
+      updateUndo();
+      keyboardUndo(button.dataset.action === "board-redo")
+        .catch((e) => toast(e.message, true))
+        .finally(() => {
+          undoBusy = false;
+          updateUndo();
+        });
     },
     true,
   );
@@ -333,10 +633,16 @@ export function canvasPro(ctx, basic) {
     for (const action of ["undo", "redo"]) {
       const button = $(`[data-action="board-${action}"]`);
       if (button)
-        button.disabled = !availableUndo(
-          board()?.operations || [],
-          action === "redo",
-        );
+        button.disabled =
+          undoBusy ||
+          (!(
+            action === "undo" &&
+            (editor || sync.entries.has(route("boards", board()?.id)))
+          ) &&
+            !availableUndo(board()?.operations || [], action === "redo") &&
+            !textHistory().some(
+              (entry) => !!entry.undone === (action === "redo"),
+            ));
     }
   }
   function render() {
@@ -345,6 +651,9 @@ export function canvasPro(ctx, basic) {
     if (identity !== b.id) {
       identity = b.id;
       search = "";
+      searchOpen = false;
+      owner = "";
+      status = "";
       presenting = -1;
       members = [];
       notes.clear();
@@ -353,12 +662,13 @@ export function canvasPro(ctx, basic) {
     updateUndo();
     $("#canvas-extras")?.insertAdjacentHTML(
       "afterbegin",
-      `${btn("note-add", "Live note")}${btn("query-add", "Live task view")}${btn("templates", "Templates")}${btn("outline", "Outline")}${btn("present", "Present")}${btn("activity", "Activity")}${btn("shortcuts", "?", 'aria-label="Board shortcuts"')}`,
+      `<button type="button" class="button small" data-session="open">Board session</button>${btn("note-add", "Live note")}${btn("query-add", "Live task view")}${btn("templates", "Templates")}${btn("outline", "Outline")}${btn("present", "Present")}${btn("activity", "Activity")}${btn("shortcuts", "?", 'aria-label="Board shortcuts"')}`,
     );
     $("#canvas").insertAdjacentHTML(
       "beforeend",
-      `<canvas id="canvas-overview" aria-hidden="true"></canvas><aside id="canvas-outline" class="canvas-panel ${outlineOpen ? "" : "hidden"}"></aside><div id="canvas-presence" class="canvas-presence"></div><div id="canvas-cursors" aria-hidden="true"></div><div class="canvas-find"><input id="canvas-find" type="search" aria-label="Find board objects" placeholder="Find on board…" value="${esc(search)}"><div id="canvas-find-results"></div></div><div class="canvas-filters"><input id="canvas-owner" aria-label="Filter canvas by owner" placeholder="Owner" value="${esc(owner)}"><select id="canvas-status" aria-label="Filter canvas by status"><option value="">Every status</option>${state.config.statuses.map((s) => `<option ${s === status ? "selected" : ""}>${esc(s)}</option>`).join("")}</select></div><button id="canvas-minimap" aria-label="Minimap: click to navigate"><canvas width="200" height="125"></canvas></button><div id="canvas-performance" aria-live="off"></div>`,
+      `<canvas id="canvas-overview" aria-hidden="true"></canvas><aside id="canvas-outline" class="canvas-panel ${outlineOpen ? "" : "hidden"}"></aside><div id="canvas-presence" class="canvas-presence"></div><div id="canvas-cursors" aria-hidden="true"></div><div id="canvas-search-panel" class="canvas-panel canvas-search-panel ${searchOpen ? "" : "hidden"}" role="region" aria-label="Board search and filters"><div class="canvas-find"><input id="canvas-find" type="search" aria-label="Find board objects" placeholder="Find on board…" value="${esc(search)}"><div id="canvas-find-results"></div></div><div class="canvas-filters"><input id="canvas-owner" aria-label="Filter canvas by owner" placeholder="Owner" value="${esc(owner)}"><select id="canvas-status" aria-label="Filter canvas by status"><option value="">Every status</option>${state.config.statuses.map((s) => `<option value="${esc(s)}" ${s === status ? "selected" : ""}>${esc(statusLabel(state.config, s))}</option>`).join("")}</select></div></div><button id="canvas-minimap" aria-label="Minimap: click to navigate"><canvas width="200" height="125"></canvas></button>`,
     );
+    updateSearchButton();
     enhance();
     outline();
     searchResults();
@@ -374,7 +684,8 @@ export function canvasPro(ctx, basic) {
       !$("#canvas-world") ||
       !board() ||
       editor ||
-      basic.busy()
+      connecting ||
+      basic.busy({ allowNavigation: true })
     )
       return;
     const started = performance.now(),
@@ -383,22 +694,29 @@ export function canvasPro(ctx, basic) {
     const existing = new Map(
       $$(".board-node").map((el) => [el.dataset.node, el]),
     );
-    let added = false;
+    const added = new Set(
+      nodes.filter((n) => !existing.has(n.id)).map((n) => n.id),
+    );
     for (const [id, el] of existing) if (!ids.has(id)) el.remove();
-    for (const n of nodes)
-      if (!existing.has(n.id)) {
-        $("#canvas-world").insertAdjacentHTML("beforeend", ctx.nodeHTML(n));
-        added = true;
-      }
-    if (added) {
-      basic.enhanceBase();
-      enhance();
-      basic.selection();
+    if (added.size) {
+      $("#canvas-world").insertAdjacentHTML(
+        "beforeend",
+        nodes
+          .filter((n) => added.has(n.id))
+          .map(ctx.nodeHTML)
+          .join(""),
+      );
+      basic.enhanceBase(added);
+      enhance(added);
     }
     const svg = $("#canvas-lines");
     if (svg) {
-      svg.querySelectorAll("[data-edge]").forEach((el) => el.remove());
-      svg.insertAdjacentHTML("beforeend", edges());
+      const markup = edges();
+      if (svg._cameraMarkup !== markup) {
+        svg.querySelectorAll("[data-edge]").forEach((el) => el.remove());
+        svg.insertAdjacentHTML("beforeend", markup);
+        svg._cameraMarkup = markup;
+      }
     }
     paintMap();
     paintPresence();
@@ -408,8 +726,14 @@ export function canvasPro(ctx, basic) {
       label.textContent = `${board().nodes.length.toLocaleString()} objects · ${nodes.length} detailed · ${(performance.now() - started).toFixed(0)} ms`;
   }
   function camera() {
+    positionInline();
     basic.positionToolbar();
     if (!cameraFrame) cameraFrame = requestAnimationFrame(reconcile);
+    clearTimeout(viewportCleanup);
+    viewportCleanup = setTimeout(() => {
+      viewportCleanup = null;
+      if (!cameraFrame) cameraFrame = requestAnimationFrame(reconcile);
+    }, 1300);
   }
   function paintOverview(rendered) {
     const c = $("#canvas-overview"),
@@ -422,7 +746,7 @@ export function canvasPro(ctx, basic) {
       cam = state.camera;
     for (const n of board().nodes)
       if (!rendered.has(n.id) && !hidden.has(n.id) && intersects(n, r)) {
-        g.fillStyle = n.color || "#dce5d8";
+        g.fillStyle = nodeFill(n, "#dce5d8");
         g.fillRect(
           n.x * cam.z + cam.x,
           n.y * cam.z + cam.y,
@@ -450,7 +774,7 @@ export function canvasPro(ctx, basic) {
     g.fillRect(0, 0, 200, 125);
     for (const n of board().nodes)
       if (!hidden.has(n.id)) {
-        g.fillStyle = n.color || "#a4b69a";
+        g.fillStyle = nodeFill(n, "#a4b69a");
         g.fillRect(
           5 + (n.x - box.x) * scale,
           5 + (n.y - box.y) * scale,
@@ -475,13 +799,41 @@ export function canvasPro(ctx, basic) {
     focusNode(b);
     camera();
   }
+  function updateSearchButton() {
+    const button = $('[data-pro="search-toggle"]');
+    if (!button) return;
+    button.setAttribute("aria-expanded", String(searchOpen));
+    button.classList.toggle("active", searchOpen);
+    button.classList.toggle("has-filters", !!(owner || status));
+    button.setAttribute(
+      "aria-label",
+      owner || status ? "Search board (filters active)" : "Search board",
+    );
+  }
+  function showSearch(open, focus = false) {
+    searchOpen = open;
+    $("#canvas-search-panel")?.classList.toggle("hidden", !open);
+    updateSearchButton();
+    if (focus) $(open ? "#canvas-find" : '[data-pro="search-toggle"]')?.focus();
+  }
+  document.addEventListener(
+    "pointerdown",
+    (event) => {
+      if (
+        searchOpen &&
+        !event.target.closest('#canvas-search-panel,[data-pro="search-toggle"]')
+      )
+        showSearch(false);
+    },
+    true,
+  );
   function searchResults() {
     const el = $("#canvas-find-results");
     if (!el) return;
     const results = search
       ? board()
           .nodes.filter((n) =>
-            `${n.text || ""} ${task(n.task)?.title || ""} ${n.file || ""}`
+            `${n.text || ""} ${task(n.task)?.key || ""} ${(task(n.task)?.aliases || []).join(" ")} ${task(n.task)?.title || ""} ${n.file || ""} ${n.src || ""}`
               .toLowerCase()
               .includes(search.toLowerCase()),
           )
@@ -516,19 +868,43 @@ export function canvasPro(ctx, basic) {
     selected.clear();
     selected.add(n.id);
     state.selectedNode = n.id;
+    {
+      state.selectedEdge = null;
+      state.selectedEdges?.clear();
+    }
     focus([n]);
     basic.selection();
   }
-  async function inline(n = pick()[0]) {
+  function positionInline() {
+    const tools = $(".inline-floating-tools"),
+      el = editor && $(`[data-node="${CSS.escape(editor.id)}"]`),
+      canvas = $("#canvas");
+    if (!tools || !el || !canvas) return;
+    const r = el.getBoundingClientRect(),
+      c = canvas.getBoundingClientRect();
+    tools.style.maxWidth = `${Math.max(180, c.width - 24)}px`;
+    const w = tools.offsetWidth,
+      h = tools.offsetHeight;
+    const titleTop =
+      el.querySelector(".grid-grip")?.getBoundingClientRect().top ?? r.top;
+    let y = Math.min(r.top, titleTop) - c.top - h - 12;
+    if (y < 100) y = r.bottom - c.top + 12;
+    tools.style.left = `${Math.max(12, Math.min(c.width - w - 12, r.left - c.left + (r.width - w) / 2))}px`;
+    tools.style.top = `${Math.max(100, Math.min(c.height - h - 60, y))}px`;
+    editor?.rich?.positionMenus();
+  }
+  async function inline(n = pick()[0], focusTitle = false) {
     rebuild();
     n = index.get(n?.id);
     if (!n || n.locked || editor) return;
-    if (["image", "draw", "query", "link"].includes(n.type)) {
-      if (n.type === "query") return queryDialog(n);
-      return ctx.nodeDialog();
-    }
+
+    const gridTitle = n.type === "grid" && focusTitle;
     let note = null,
-      text = n.text || "";
+      text = gridTitle
+        ? n.grid.title || ""
+        : n.type === "grid"
+          ? n.grid.cells[gridCell(state, n).row][gridCell(state, n).column].text
+          : n.text || "";
     if (["task", "file"].includes(n.type)) {
       note =
         n.type === "task"
@@ -545,70 +921,225 @@ export function canvasPro(ctx, basic) {
         );
       text = section.text;
     }
-    const key = `pencils:inline:${state.project.id}:${board().id}:${n.id}`,
+    const cell = n.type === "grid" && !gridTitle ? gridCell(state, n) : null;
+    const key = `pencils:inline:${state.project.id}:${board().id}:${n.id}${cell ? `:${cell.row}:${cell.column}` : gridTitle ? ":title" : ""}`,
       stored = localStorage.getItem(key);
     const el = $(`[data-node="${CSS.escape(n.id)}"]`);
     if (!el) return;
     editor = {
       id: n.id,
+      cell,
+      gridTitle,
       note: note ? structuredClone(note) : null,
       key,
       original: text,
     };
     state.canvasEditing = true;
     el.classList.add("inline-editing");
-    el.style.minWidth = "380px";
-    el.style.minHeight = "320px";
-    // Keep the expanded editor clear of board controls, even near viewport edges.
-    const canvas = $("#canvas"),
-      w = Math.max(n.w, 380),
-      h = Math.max(n.h, 320);
-    const old = { ...state.camera };
-    const z = Math.min(
-      old.z,
-      (canvas.clientWidth - 120) / w,
-      (canvas.clientHeight - 180) / h,
+    el.querySelectorAll(".connection-port,.resize-handle").forEach((port) =>
+      port.remove(),
     );
-    state.camera = {
-      z,
-      x:
-        Math.max(
-          80,
-          Math.min(canvas.clientWidth - w * z - 20, n.x * old.z + old.x),
-        ) -
-        n.x * z,
-      y:
-        Math.max(
-          120,
-          Math.min(canvas.clientHeight - h * z - 60, n.y * old.z + old.y),
-        ) -
-        n.y * z,
+    $("#selection-tools")?.remove();
+    const content = el.querySelector(".board-node-content") || el;
+    const form = document.createElement("form");
+    form.id = "canvas-inline-form";
+    form.append(...content.childNodes);
+    content.append(form);
+    const plain =
+      gridTitle || ["frame", "query", "link", "image", "draw"].includes(n.type);
+    let rich = form.querySelector(
+      gridTitle
+        ? ".grid-title"
+        : cell
+          ? `[data-grid-row="${cell.row}"][data-grid-column="${cell.column}"] .grid-cell-text`
+          : isTaskNote(n)
+            ? ".note-body"
+            : n.type === "query"
+              ? ".query-label"
+              : n.type === "link"
+                ? "a"
+                : ["image", "draw"].includes(n.type)
+                  ? ".object-caption"
+                  : ".canvas-markdown,.node-text",
+    );
+    if (!rich) {
+      rich = document.createElement("div");
+      rich.className = "canvas-markdown";
+      form.append(rich);
+    }
+    if (rich.tagName === "A") {
+      const replacement = document.createElement("span");
+      replacement.className = rich.className;
+      const linkStyle = getComputedStyle(rich);
+      replacement.style.color = linkStyle.color;
+      replacement.style.textDecoration = linkStyle.textDecoration;
+      rich.replaceWith(replacement);
+      rich = replacement;
+      text = n.url || "";
+    }
+    rich.classList.remove("is-placeholder");
+    const typography = getComputedStyle(rich);
+    const textStyle = {
+      font: typography.font,
+      lineHeight: Number.isFinite(parseFloat(typography.lineHeight))
+        ? String(
+            parseFloat(typography.lineHeight) / parseFloat(typography.fontSize),
+          )
+        : typography.lineHeight,
+      letterSpacing: typography.letterSpacing,
+      textAlign: typography.textAlign,
+      whiteSpace: typography.whiteSpace,
+      padding: typography.padding,
     };
-    updateCamera();
-
-    el.innerHTML = `<form id="canvas-inline-form">${n.type === "task" ? `<input name="title" aria-label="Task title" value="${esc(note.title)}" maxlength="300">` : ""}${richToolbar}<div class="inline-rich markdown-preview hidden" contenteditable="true" role="textbox" aria-multiline="true" aria-label="Rich text editor" spellcheck="true"></div><textarea name="text" aria-label="Edit canvas Markdown" spellcheck="true">${esc(stored ?? text)}</textarea><div class="inline-actions">${btn("inline-preview", "Preview")}<span>${stored !== null ? "Draft restored · " : ""}Ctrl / ⌘ Enter to save</span><button class="button small primary" type="submit">Save</button>${btn("inline-cancel", "Cancel")}</div><div class="inline-preview markdown-preview hidden"></div><p class="inline-error" role="alert"></p></form>`;
-    editor.rich = canvasRichText(el.querySelector("form"), markdown);
-    el.querySelector("textarea").focus();
-    el.querySelector("textarea").select();
+    Object.assign(rich.style, textStyle);
+    rich.classList.add("inline-rich");
+    rich.contentEditable = "true";
+    rich.setAttribute("role", "textbox");
+    rich.setAttribute("aria-multiline", String(!gridTitle));
+    rich.setAttribute(
+      "aria-label",
+      gridTitle ? "Grid title" : "Rich text editor",
+    );
+    rich.dataset.placeholder = gridTitle
+      ? "Add a title…"
+      : cell
+        ? "Add cell text…"
+        : placeholder(n);
+    rich.spellcheck = true;
+    const source = document.createElement("textarea");
+    source.name = "text";
+    source.className = "inline-source hidden";
+    source.setAttribute("aria-label", "Edit canvas Markdown");
+    source.value = stored ?? text;
+    const preview = document.createElement("div");
+    preview.className = `${rich.className} inline-preview hidden`;
+    preview.classList.remove("inline-rich");
+    Object.assign(preview.style, textStyle);
+    rich.after(source, preview);
+    const title = form.querySelector("[data-inline-title]");
+    if (title) {
+      const input = document.createElement("input");
+      input.type = "hidden";
+      input.name = "title";
+      input.value = note.title;
+      form.append(input);
+      title.contentEditable = "plaintext-only";
+      title.setAttribute("role", "textbox");
+      title.setAttribute(
+        "aria-label",
+        isTaskNote(n) ? "Note title" : "Task title",
+      );
+      title.addEventListener("input", () => {
+        input.value = title.textContent.slice(0, 300);
+      });
+      title.addEventListener("keydown", (event) => {
+        if (event.key === "Enter" && !event.ctrlKey && !event.metaKey) {
+          event.preventDefault();
+          rich.focus();
+        }
+      });
+    }
+    $("#canvas").insertAdjacentHTML(
+      "beforeend",
+      `<div class="inline-floating-tools" role="toolbar" aria-label="Edit text">${richToolbar(icon, { restored: stored !== null, alignment: gridTitle ? null : cell ? n.grid.cells[cell.row][cell.column].align || textAlignment(n) : textAlignment(n) })}${gridTitle ? "" : textStyleControls(n, ctx)}</div>`,
+    );
+    editor.rich = canvasRichText(form, markdown, {
+      controls: $(".inline-floating-tools"),
+      plain,
+      reposition: positionInline,
+      onAlignment(value) {
+        if (
+          (cell
+            ? n.grid.cells[cell.row][cell.column].align
+            : textAlignment(n)) === value
+        )
+          return;
+        ctx.remember();
+        if (cell) n.grid.cells[cell.row][cell.column].align = value;
+        else n.textAlign = value;
+        ctx.saveBoard();
+        el.style.setProperty("--node-text-align", value);
+        rich.style.textAlign = value;
+        preview.style.textAlign = value;
+      },
+    });
+    if (focusTitle && title) title.focus({ preventScroll: true });
+    positionInline();
+    updateUndo();
   }
-  async function finishInline(cancel = false) {
-    if (!editor) return;
+  // Commit to the durable save queue synchronously, before the outside action
+  // can navigate or start a drag. Only redraw this card so that action keeps its target.
+  function finishInline() {
+    if (!editor) return true;
     rebuild();
     const e = editor,
       n = index.get(e.id),
       form = $("#canvas-inline-form");
-    if (!form) return;
-    if (cancel) {
-      localStorage.removeItem(e.key);
-      editor = null;
-      state.canvasEditing = false;
-      renderView(true);
-      return;
-    }
+    if (!form || !n) return false;
     e.rich.flush();
-    const text = form.elements.text.value;
+    const text =
+      n.type === "link" ||
+      (n.type === "frame" && !form.elements.text.value.trim())
+        ? form.elements.text.value.trim()
+        : form.elements.text.value;
     try {
-      if (e.note) {
+      if (
+        n.type === "link" &&
+        (!/^https?:\/\//i.test(text) || text.length > 2000)
+      )
+        throw new Error("Use an http or https link (up to 2,000 characters).");
+      const removeEmptyText = n.type === "text" && !text.trim();
+      if (removeEmptyText) {
+        ctx.remember();
+        const b = board();
+        b.nodes = b.nodes.filter((node) => node.id !== n.id);
+        b.edges = b.edges.filter(
+          (edge) => edge.from !== n.id && edge.to !== n.id,
+        );
+        selected.delete(n.id);
+        if (state.selectedNode === n.id)
+          state.selectedNode = [...selected][0] || null;
+        if (!b.edges.some((edge) => edge.id === state.selectedEdge)) {
+          state.selectedEdge = null;
+          state.selectedEdges?.clear();
+        }
+        ctx.saveBoard();
+      } else if (e.gridTitle) {
+        const title = text.replace(/[\r\n]+/g, " ").trim();
+        if (title.length > 300)
+          throw new Error("Keep the grid title under 300 characters.");
+        if (title !== (n.grid.title || "")) {
+          const updated = structuredClone(n);
+          updated.grid.title = title;
+          syncGrid(updated);
+          ctx.remember();
+          Object.assign(n, updated);
+          ctx.saveBoard();
+        }
+      } else if (e.cell) {
+        if (text.length > 6000)
+          throw new Error("Keep cell text under 6,000 characters.");
+        const cell = n.grid.cells[e.cell.row][e.cell.column];
+        if (cell.text !== text) {
+          const updated = structuredClone(n);
+          updated.grid.cells[e.cell.row][e.cell.column].text = text;
+          syncGrid(updated);
+          ctx.remember();
+          const before = structuredClone(board().nodes);
+          if (updated.grid.resizeMode !== "manual") {
+            const tracks = gridTracks(updated),
+              box = cellBounds(updated, e.cell.row, e.cell.column),
+              height = form.querySelector(".inline-rich")?.scrollHeight || 0;
+            tracks.rows[e.cell.row] += Math.max(0, height + 32 - box.h);
+            updated.grid.rows = tracks.rows;
+            updated.grid.columns = tracks.columns;
+            updated.h = 24 + tracks.rows.reduce((a, b) => a + b, 0);
+          }
+          Object.assign(n, updated);
+          reflowGridContents(board().nodes, n, before);
+          ctx.saveBoard();
+        }
+      } else if (e.note) {
         const section = markdownSlice(e.note.body || "", n.subpath || "");
         const body =
           e.note.body.slice(0, section.start) +
@@ -617,35 +1148,108 @@ export function canvasPro(ctx, basic) {
             ? "\n"
             : "") +
           e.note.body.slice(section.end);
-        if (n.type === "task") {
-          const changes = { body, title: form.elements.title.value };
-          Object.assign(task(n.task), changes);
-          await sync.enqueue(route("tasks", n.task), e.note, changes);
-        } else
-          await sync.enqueue(
-            route("notes") + `?file=${encodeURIComponent(n.file)}`,
-            e.note,
-            { body },
-          );
-        notes.delete(noteFile(n));
-      } else {
+        const values =
+          n.type === "task"
+            ? { body, title: form.elements.title.value.trim() }
+            : { body };
+        if (n.type === "task" && !values.title)
+          throw new Error("Give this task a title.");
+        const changes = Object.fromEntries(
+          Object.entries(values).filter(
+            ([key, value]) => value !== e.note[key],
+          ),
+        );
+        if (Object.keys(changes).length) {
+          const url =
+            n.type === "task"
+              ? route("tasks", n.task)
+              : route("notes") + `?file=${encodeURIComponent(n.file)}`;
+          rememberText(url, e.note, changes);
+          if (n.type === "task") Object.assign(task(n.task), changes);
+          void sync.enqueue(url, e.note, changes);
+          notes.set(noteFile(n), { ...e.note, ...changes });
+        }
+      } else if (text !== (n.type === "link" ? n.url || "" : n.text || "")) {
         ctx.remember();
         n.text = text;
+        if (n.type === "link") n.url = text;
         ctx.saveBoard();
       }
       localStorage.removeItem(e.key);
+      e.rich.destroy();
+      $(".inline-floating-tools")?.remove();
       editor = null;
       state.canvasEditing = false;
-      renderView(true);
+      const el = $(`[data-node="${CSS.escape(n.id)}"]`);
+      // Restore the normal markup, including image/drawing contents.
+      if (removeEmptyText) {
+        el?.remove();
+        rebuild();
+        ctx.updateEdges();
+        basic.selection();
+        paintMap();
+      } else {
+        if (el) el.outerHTML = ctx.nodeHTML(n);
+        basic.enhanceBase(n.id);
+        enhance(n.id);
+        if (e.cell) basic.moveDOM();
+      }
+      updateUndo();
+      return true;
     } catch (error) {
-      form.querySelector(".inline-error").textContent = error.message;
+      $(".inline-floating-tools .inline-error").textContent = error.message;
+      return false;
     }
   }
+  function outsideEditor(event) {
+    const targetCell = event.target.closest(".grid-cell");
+    if (
+      (editor?.cell || editor?.gridTitle) &&
+      targetCell &&
+      (editor.gridTitle ||
+        +targetCell.dataset.gridRow !== editor.cell.row ||
+        +targetCell.dataset.gridColumn !== editor.cell.column ||
+        targetCell.closest("[data-node]")?.dataset.node !== editor.id)
+    ) {
+      const id = targetCell.closest("[data-node]").dataset.node;
+      const row = +targetCell.dataset.gridRow,
+        column = +targetCell.dataset.gridColumn;
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      if (finishInline()) {
+        state.gridCell = { id, row, column };
+        inline(index.get(id)).catch((e) => toast(e.message, true));
+      }
+      return;
+    }
+    if (
+      !editor ||
+      event.target.closest(".inline-editing,.inline-floating-tools")
+    )
+      return;
+    if (!finishInline()) {
+      event.preventDefault();
+      event.stopImmediatePropagation();
+    }
+  }
+  // Window capture runs before canvas tools and navigation handlers. Click also
+  // covers keyboard/assistive activation that has no preceding pointer event.
+  window.addEventListener("pointerdown", outsideEditor, true);
+  window.addEventListener(
+    "click",
+    (event) => {
+      // Pointer clicks were handled on pointerdown. In Firefox, placing a new
+      // object replaces that target; its trailing click must not finish the new editor.
+      if (event.detail === 0) outsideEditor(event);
+    },
+    true,
+  );
   function outline() {
     const el = $("#canvas-outline");
-    if (!el) return;
+    if (!el || !outlineOpen) return;
+    const slides = slideIds();
     const frames = board().nodes.filter((n) => n.type === "frame"),
-      order = board().presentation || frames.map((f) => f.id);
+      order = [...slides, ...frames.map((f) => f.id)];
     const rows = [];
     const visit = (parent, depth = 0, seen = new Set()) => {
       for (const f of frames
@@ -654,19 +1258,56 @@ export function canvasPro(ctx, basic) {
         if (seen.has(f.id)) continue;
         seen.add(f.id);
         rows.push(
-          `<div class="outline-row" style="padding-left:${depth * 14}px">${btn("collapse", f.collapsed ? "＋" : "−", `data-id="${esc(f.id)}"`)}${btn("find-result", esc(f.text || "Frame"), `data-id="${esc(f.id)}"`)}${btn("frame-up", "↑", `data-id="${esc(f.id)}" aria-label="Move frame earlier"`)}${btn("frame-down", "↓", `data-id="${esc(f.id)}" aria-label="Move frame later"`)}</div>`,
+          `<div class="outline-row ${depth ? "nested-frame-row" : ""}" data-frame-row="${esc(f.id)}" draggable="${!depth}" style="padding-left:${depth * 14}px">${btn("collapse", f.collapsed ? "＋" : "−", `data-id="${esc(f.id)}" aria-label="${f.collapsed ? "Expand" : "Collapse"} frame" ${f.locked ? "disabled" : ""}`)}${btn("find-result", `${frameThumbnail(f, board().nodes, esc)}<span class="frame-row-title">${esc(f.text || "Untitled frame")}</span><small>${depth ? "Nested · " : `${slides.indexOf(f.id) + 1} · `}${frameContents(board().nodes, f, parents).length} objects · ${Math.round(f.w)} × ${Math.round(f.h)}</small>`, `data-id="${esc(f.id)}"`)}${!depth ? btn("frame-up", "↑", `data-id="${esc(f.id)}" aria-label="Move frame earlier" ${slides.indexOf(f.id) === 0 ? "disabled" : ""}`) + btn("frame-down", "↓", `data-id="${esc(f.id)}" aria-label="Move frame later" ${slides.indexOf(f.id) === slides.length - 1 ? "disabled" : ""}`) : ""}</div>`,
         );
         visit(f.id, depth + 1, seen);
       }
     };
     visit(null);
-    el.innerHTML = `<strong>Frames & presentation</strong>${btn("outline", "×", 'aria-label="Close outline"')}<p>Reorder slides with ↑ / ↓. Drag a frame to move its contents.</p>${rows.join("") || "<p>Add a frame or frame a selection.</p>"}`;
+    el.innerHTML = `<strong>Frames & presentation</strong>${btn("outline", "×", 'aria-label="Close outline"')}<p>Drag rows or use ↑ / ↓ to reorder slides. Nested frames move with their parent and are not separate slides.</p><div class="frame-panel-actions">${btn("frames-organize", "Order by position")}${btn("present", "Present")}</div>${rows.join("") || "<p>Press F and drag to draw a frame.</p>"}`;
   }
+  let draggedFrame = null;
+  document.addEventListener("dragstart", (event) => {
+    const row = event.target.closest(
+      '#canvas-outline [data-frame-row][draggable="true"]',
+    );
+    if (!row) return;
+    draggedFrame = row.dataset.frameRow;
+    event.dataTransfer.setData("text/plain", draggedFrame);
+    event.dataTransfer.effectAllowed = "move";
+    row.classList.add("frame-row-dragging");
+  });
+  document.addEventListener("dragover", (event) => {
+    const row = event.target.closest(
+      '#canvas-outline [data-frame-row][draggable="true"]',
+    );
+    if (!draggedFrame || !row) return;
+    event.preventDefault();
+    event.dataTransfer.dropEffect = "move";
+    $$(".frame-row-target").forEach((el) =>
+      el.classList.remove("frame-row-target"),
+    );
+    row.classList.add("frame-row-target");
+  });
+  document.addEventListener("drop", (event) => {
+    const row = event.target.closest(
+      '#canvas-outline [data-frame-row][draggable="true"]',
+    );
+    if (!draggedFrame || !row) return;
+    event.preventDefault();
+    const id = draggedFrame;
+    draggedFrame = null;
+    if (id !== row.dataset.frameRow)
+      changeBoard((b) => reorderFrame(b, id, row.dataset.frameRow));
+  });
+  document.addEventListener("dragend", () => {
+    draggedFrame = null;
+    $$(".frame-row-target,.frame-row-dragging").forEach((el) =>
+      el.classList.remove("frame-row-target", "frame-row-dragging"),
+    );
+  });
   function slideIds() {
-    const frames = board().nodes.filter((n) => n.type === "frame");
-    return [
-      ...new Set([...(board().presentation || []), ...frames.map((f) => f.id)]),
-    ].filter((id) => index.get(id)?.type === "frame");
+    return frameSlides(board());
   }
   function presentFrame() {
     const ids = slideIds();
@@ -688,10 +1329,57 @@ export function canvasPro(ctx, basic) {
   function queryDialog(n = null) {
     const q = n?.query || {};
     showDialog(
-      `<dialog class="dialog"><form id="canvas-query-form" data-id="${esc(n?.id || "")}">${dialogHead("Live task view")}<div class="dialog-body">${input("title", "Card title", n?.text || "Live tasks")}<label class="field">Saved project view<select name="view"><option value="">Custom filter</option>${(state.project.views || []).map((v) => `<option value="${esc(v.id)}" ${n?.view === v.id ? "selected" : ""}>${esc(v.name)}</option>`).join("")}</select></label>${select("status", "Status", ["all", ...state.config.statuses], q.status || "all")}${input("assignee", "Owner contains", q.assignee || "")}${input("search", "Text contains", q.search || "")}<p>The card always reads the current tasks. Editing a task anywhere updates every card.</p></div><div class="dialog-foot"><button type="submit" class="button primary">Save view card</button></div></form></dialog>`,
+      `<dialog class="dialog"><form id="canvas-query-form" data-id="${esc(n?.id || "")}">${dialogHead("Live task view")}<div class="dialog-body">${input("title", "Card title", n?.text || "Live tasks")}${select("viewType", "Layout", ["list", "table", "kanban", "timeline"], n?.viewType || "list")}<fieldset><legend>Visible table fields</legend>${["key", "title", "status", "assignee", "due", "priority", "type"].map((f) => `<label><input type="checkbox" name="field-${f}" ${(n?.visibleFields || ["key", "title", "status", "assignee", "due"]).includes(f) ? "checked" : ""}>${f}</label>`).join(" ")}</fieldset><label class="field">Saved project view<select name="view"><option value="">Custom filter</option>${(state.project.views || []).map((v) => `<option value="${esc(v.id)}" ${n?.view === v.id ? "selected" : ""}>${esc(v.name)}</option>`).join("")}</select></label>${select("status", "Status", ["all", ...state.config.statuses], q.status || "all")}${input("assignee", "Owner contains", q.assignee || "")}${input("search", "Text contains", q.search || "")}<p>The card always reads the current tasks. Editing a task anywhere updates every card.</p></div><div class="dialog-foot"><button type="submit" class="button primary">Save view card</button></div></form></dialog>`,
       "canvas-query",
     );
   }
+  let liveDrag = null;
+  document.addEventListener(
+    "dragstart",
+    (e) => {
+      const el = e.target.closest("[data-live-task]");
+      if (el) {
+        liveDrag = el.dataset.liveTask;
+        e.dataTransfer.setData("text/x-pencils-task", liveDrag);
+        e.stopImmediatePropagation();
+      }
+    },
+    true,
+  );
+  document.addEventListener(
+    "dragover",
+    (e) => {
+      if (
+        liveDrag &&
+        e.target.closest("[data-live-status]") &&
+        canTransition(
+          state.config,
+          task(liveDrag)?.status,
+          e.target.closest("[data-live-status]").dataset.liveStatus,
+        )
+      ) {
+        e.preventDefault();
+        e.stopImmediatePropagation();
+      }
+    },
+    true,
+  );
+  document.addEventListener(
+    "drop",
+    (e) => {
+      const column = e.target.closest("[data-live-status]");
+      if (liveDrag && column) {
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        patchTask(liveDrag, { status: column.dataset.liveStatus }).catch(
+          (err) => toast(err.message, true),
+        );
+        liveDrag = null;
+      }
+    },
+    true,
+  );
+  document.addEventListener("dragend", () => (liveDrag = null));
   function addPosition() {
     const c = $("#canvas");
     return {
@@ -699,11 +1387,11 @@ export function canvasPro(ctx, basic) {
       y: (c.clientHeight / 2 - state.camera.y) / state.camera.z,
     };
   }
-  function connectorDialog(edge) {
-    showDialog(
-      `<dialog class="dialog"><form id="canvas-edge-form" data-id="${esc(edge.id)}">${dialogHead("Connection")}<div class="dialog-body">${input("label", "Label", edge.label || "")}${select("relationship", "Relationship", ["relates", "blocks", "contains", "sequence"], edge.relationship || "relates")}<div class="field-row">${select("routing", "Route", ["curve", "elbow", "straight"], edge.routing || "curve")}${input("color", "Color", palette[edge.color] || edge.color || "#78906f", 'type="color"')}</div><div class="field-row">${select("fromSide", "From side", ["auto", ...sides], edge.fromSide || "auto")}${select("toSide", "To side", ["auto", ...sides], edge.toSide || "auto")}</div><div class="field-row">${select("fromEnd", "Start", ["none", "arrow"], edge.fromEnd || "none")}${select("toEnd", "End", ["arrow", "none"], edge.toEnd || "arrow")}</div><label><input type="checkbox" name="dependency"> Create a real task dependency when this relationship is “blocks”</label><p>The destination task will depend on the source task. Removing the visual connector leaves the task dependency intact.</p></div><div class="dialog-foot"><button type="submit" class="button primary">Save connection</button></div></form></dialog>`,
-      "canvas-edge",
-    );
+  function editConnector(edge) {
+    if (!edge) return;
+    basic.selectEdge(edge.id);
+    basic.editConnectorLabel();
+    basic.positionToolbar();
   }
   function comments(n) {
     if (!n) return;
@@ -780,7 +1468,7 @@ export function canvasPro(ctx, basic) {
           id: `note-${i}`,
           type: "sticky",
           frame,
-          text: "Double-click to add your thoughts",
+          text: "",
           x: i * 480 + 40,
           y: 70,
           w: 230,
@@ -803,37 +1491,103 @@ export function canvasPro(ctx, basic) {
         },
       ];
     }
-    const box = bounds(nodes),
-      p = addPosition(),
-      ids = new Map(nodes.map((n) => [n.id, uid("n")]));
+    const box = nodes.length ? bounds(nodes) : { x: 0, y: 0 },
+      destination =
+        id === "clipboard" && pick().length === 1 && pick()[0].type === "frame"
+          ? pick()[0]
+          : null,
+      p = destination
+        ? { x: destination.x + 32, y: destination.y + 56 }
+        : addPosition(),
+      ids = new Map(nodes.map((n) => [n.id, uid("n")])),
+      groups = new Map(
+        nodes.filter((n) => n.group).map((n) => [n.group, uid("g")]),
+      );
     nodes = nodes.map((n) => ({
       ...n,
       id: ids.get(n.id),
+      ...(n.group ? { group: groups.get(n.group) } : {}),
       x: n.x - box.x + p.x,
       y: n.y - box.y + p.y,
       ...(ids.has(n.frame)
         ? { frame: ids.get(n.frame) }
-        : { frame: undefined }),
+        : { frame: destination?.id, gridCell: undefined }),
       comments: [],
     }));
-    edges = edges.map((e) => ({
-      ...e,
-      id: uid("e"),
-      from: ids.get(e.from),
-      to: ids.get(e.to),
-    }));
+    const sameBoard = supplied?.source === `${state.project.id}/${board().id}`;
+    edges = edges
+      .filter(
+        (e) =>
+          (ids.has(e.from) || (sameBoard && index.has(e.from))) &&
+          (ids.has(e.to) || (sameBoard && index.has(e.to))),
+      )
+      .map((e) => ({
+        ...e,
+        id: uid("e"),
+        from: ids.get(e.from) || e.from,
+        to: ids.get(e.to) || e.to,
+        ...(e.bends && ids.has(e.from) && ids.has(e.to)
+          ? {
+              bends: e.bends.map((point) => ({
+                x: point.x - box.x + p.x,
+                y: point.y - box.y + p.y,
+              })),
+            }
+          : {}),
+      }));
+    if (!nodes.length && !edges.length) {
+      toast(
+        "Copy the connected objects too when pasting arrows onto another board.",
+      );
+      return;
+    }
+    selected.clear();
+    nodes.forEach((n) => selected.add(n.id));
+    state.selectedNode = nodes[0]?.id || null;
+    state.selectedEdge = null;
+    basic.selectedEdges.clear();
+    edges.forEach((e) => basic.selectedEdges.add(e.id));
     changeBoard((b) => {
       b.nodes.push(...nodes);
       b.edges.push(...edges);
     });
-    closeDialog(true);
-    focus(nodes);
+    if (id !== "clipboard") {
+      closeDialog(true);
+      focus(nodes);
+    }
+    basic.focusSelection();
   }
   async function click(action, el) {
     rebuild();
     const n = index.get(el?.dataset.id) || pick()[0];
-    if (action === "inline") await inline();
-    else if (action === "inline-cancel") await finishInline(true);
+    if (action === "frame-link" && n) {
+      const url = new URL(location.href);
+      url.hash = `project/${state.project.id}/board/${board().id}/frame/${n.id}`;
+      try {
+        await navigator.clipboard.writeText(url.href);
+        toast("Frame link copied.");
+      } catch {
+        showDialog(
+          `<dialog class="dialog">${dialogHead("Frame link")}<div class="dialog-body"><input aria-label="Frame link" value="${esc(url.href)}" readonly></div></dialog>`,
+        );
+      }
+    } else if (action === "search-toggle") showSearch(!searchOpen, true);
+    else if (action === "search-open") showSearch(true, true);
+    else if (action === "grid-title") {
+      const grid = board().nodes.find(
+        (node) => node.id === el.closest("[data-node]")?.dataset.node,
+      );
+      if (grid && !grid.locked) {
+        if (editor && !finishInline()) return;
+        selected.clear();
+        selected.add(grid.id);
+        state.selectedNode = grid.id;
+        state.selectedEdge = null;
+        state.selectedEdges?.clear();
+        basic.selection();
+        await inline(grid, true);
+      }
+    } else if (action === "inline") await inline();
     else if (action === "inline-preview") {
       editor?.rich.preview();
     } else if (action === "zoom-selection") focus(pick());
@@ -842,12 +1596,27 @@ export function canvasPro(ctx, basic) {
       search = "";
       $("#canvas-find").value = "";
       searchResults();
+      showSearch(false);
+      $("#canvas")?.focus();
     } else if (action === "outline") {
       outlineOpen = !outlineOpen;
       $("#canvas-outline")?.classList.toggle("hidden", !outlineOpen);
       outline();
     } else if (action === "collapse") {
-      changeBoard(() => (n.collapsed = !n.collapsed));
+      if (n && !n.locked) changeBoard(() => (n.collapsed = !n.collapsed));
+    } else if (action === "frame-present") {
+      const i = slideIds().indexOf(n?.id);
+      if (i >= 0) {
+        presenting = i;
+        renderView(true);
+      }
+    } else if (action === "frames-organize") {
+      changeBoard(
+        (b) =>
+          (b.presentation = orderedFrames(b)
+            .sort((a, b) => a.y - b.y || a.x - b.x)
+            .map((f) => f.id)),
+      );
     } else if (action === "frame-up" || action === "frame-down") {
       const ids = slideIds(),
         i = ids.indexOf(n.id),
@@ -855,11 +1624,12 @@ export function canvasPro(ctx, basic) {
           0,
           Math.min(ids.length - 1, i + (action === "frame-up" ? -1 : 1)),
         );
+      if (i < 0) return;
       [ids[i], ids[j]] = [ids[j], ids[i]];
       changeBoard((b) => (b.presentation = ids));
     } else if (action === "present") {
       presenting = 0;
-      presentFrame();
+      renderView(true);
     } else if (action === "slide-prev" || action === "slide-next") {
       presenting += action === "slide-next" ? 1 : -1;
       presentFrame();
@@ -867,9 +1637,27 @@ export function canvasPro(ctx, basic) {
       presenting = -1;
       $("#canvas").classList.remove("presenting");
       $("#presentation-controls")?.remove();
+      renderView(true);
     } else if (action === "comments") comments(n);
-    else if (action === "edge-edit")
-      connectorDialog(board().edges.find((e) => e.id === state.selectedEdge));
+    else if (action === "edge-dependency") {
+      const edgeId = state.selectedEdge,
+        projectId = state.project.id,
+        boardId = board().id;
+      await basic.flush();
+      if (state.project?.id !== projectId || board()?.id !== boardId)
+        return true;
+      if (sync.entries.size)
+        throw new Error(
+          "Save the connector before creating its task dependency.",
+        );
+      await api(route("boards", boardId) + "/dependency", {
+        method: "POST",
+        body: { edge: edgeId },
+      });
+      await ctx.refresh();
+      toast("Task dependency created.");
+    } else if (action === "edge-edit")
+      editConnector(board().edges.find((e) => e.id === state.selectedEdge));
     else if (action === "comment-resolve") {
       const node = index.get(el.dataset.nodeId);
       changeBoard(() => {
@@ -900,35 +1688,83 @@ export function canvasPro(ctx, basic) {
       queryDialog(action === "query-edit" ? n : null);
     else if (action === "templates") templateDialog();
     else if (action === "template-insert") insertTemplate(el.dataset.id);
-    else if (action === "convert") {
-      if (n?.type !== "sticky") return;
-      if (sync.entries.size) {
-        toast("Wait for pending changes to save before converting.");
+    else if (action === "convert-note" || action === "convert") {
+      if (!n || n.locked || converting || !["task", "sticky"].includes(n.type))
+        return;
+      if (action === "convert-note") {
+        if (n.type !== "task") return;
+        changeBoard(() => {
+          n.displayAs = "note";
+        });
         return;
       }
-      // A source marker makes retries safe if task creation succeeds but the board save is interrupted.
-      const marker = `canvas:${board().id}:${n.id}`;
-      let created = state.tasks.find((t) => t.canvas_source === marker);
-      if (!created)
-        created = await api(route("tasks"), {
-          method: "POST",
-          body: {
-            title: (n.text || "New task")
-              .split("\n")[0]
-              .replace(/^#+\s*/, "")
-              .slice(0, 300),
-            body: n.text || "",
-            canvas_source: marker,
-          },
+      if (n.type === "task") {
+        changeBoard(() => {
+          delete n.displayAs;
+          const min = nodeMinimum(n);
+          n.w = Math.max(n.w, min.w);
+          n.h = Math.max(n.h, min.h);
         });
-      if (!task(created.id)) state.tasks.push(created);
-      changeBoard(() => {
-        n.type = "task";
-        n.task = created.id;
-        n.h = Math.max(200, n.h);
-        delete n.text;
-      });
-      toast("Sticky converted to a task. Its connectors stay attached.");
+        return;
+      }
+      converting = true;
+      const projectId = state.project.id,
+        boardId = board().id,
+        nodeId = n.id;
+      try {
+        await basic.flush();
+        if (state.project?.id !== projectId || board()?.id !== boardId) return;
+        const source = board().nodes.find((node) => node.id === nodeId);
+        if (!source || source.locked || source.type !== "sticky") return;
+        const text = source.text || "";
+        if (sync.entries.size)
+          throw new Error(
+            "Wait for pending changes to save before converting.",
+          );
+        // The original task survives a board undo. Never replace a newer task
+        // body with an older note when that note is converted again.
+        const marker = `canvas:${boardId}:${nodeId}`;
+        let created = state.tasks.find((t) => t.canvas_source === marker);
+        if (created && created.body !== text)
+          throw new Error(
+            "A task from this note already exists with different text. Duplicate the note to create a separate task; both versions are preserved.",
+          );
+        if (!created)
+          created = await api(route("tasks"), {
+            method: "POST",
+            body: {
+              title:
+                (text || "New task")
+                  .split("\n")
+                  .find((line) => line.trim())
+                  ?.replace(/^#+\s*/, "")
+                  .slice(0, 300) || "New task",
+              body: text,
+              canvas_source: marker,
+            },
+          });
+        if (state.project?.id !== projectId) return;
+        if (!task(created.id)) state.tasks.push(created);
+        if (board()?.id !== boardId) return;
+        const current = board().nodes.find((node) => node.id === nodeId);
+        if (!current || current.locked || current.type !== "sticky") return;
+        if ((current.text || "") !== text)
+          throw new Error(
+            "The note changed during conversion. Its latest text is preserved; the task contains the earlier version.",
+          );
+        changeBoard(() => {
+          current.type = "task";
+          current.task = created.id;
+          current.w = Math.max(220, current.w);
+          current.h = Math.max(200, current.h);
+          delete current.text;
+        });
+        toast(
+          "Note converted to a task. Text, comments and connectors are preserved.",
+        );
+      } finally {
+        converting = false;
+      }
     } else if (action === "embed")
       showDialog(
         `<dialog class="dialog"><form id="canvas-embed-form" data-id="${esc(n.id)}">${dialogHead("Choose note content")}<div class="dialog-body">${input("subpath", "Heading or block", n.subpath || "", 'placeholder="#Heading or #^block-id"')}<p>Leave blank for the entire note. Editing this card updates the source Markdown file.</p></div><div class="dialog-foot"><button class="button primary">Apply embed</button></div></form></dialog>`,
@@ -990,7 +1826,7 @@ export function canvasPro(ctx, basic) {
       );
     else if (action === "shortcuts")
       showDialog(
-        `<dialog class="dialog">${dialogHead("Board shortcuts")}<div class="dialog-body"><p>V: select · H: hand · N: sticky · T: text · S / R: shape<br>L: connector · P: pen · F: add frame · D: task card · C: comment on selection<br>Click to place a sticky, text or shape; Escape cancels<br>Double-click or Enter: edit inline · Ctrl / ⌘ Enter: save<br>Ctrl / ⌘ click or Shift-click: select multiple objects<br>Drag empty canvas with select tool: selection box<br>Right-drag, middle-drag or Space + drag: pan<br>Scroll: zoom at pointer · Shift + scroll: move up / down<br>Pinch or Ctrl / ⌘ wheel: zoom<br>Expand board: fill window · Full screen: hide browser chrome<br>Ctrl / ⌘ + / −: zoom · Ctrl / ⌘ 0: 100%<br>Alt / Option 1: fit board · Alt / Option 2: focus selection<br>M: minimap · G: grid · Ctrl / ⌘ F: find on board<br>Ctrl / ⌘ A: select all · Ctrl / ⌘ D or Alt / Option drag: duplicate<br>Ctrl / ⌘ C, V: copy and paste objects<br>Ctrl / ⌘ G: group · Ctrl / ⌘ Shift G: ungroup<br>Ctrl / ⌘ Shift L: lock / unlock<br>Arrow keys: move selection or pan (Shift for larger steps)<br>Ctrl / ⌘ Z: undo · Ctrl / ⌘ Shift Z: redo<br>Drag a connection handle to another card<br>Pen: draw with pressure; two fingers: pan and zoom<br>Escape: clear selection or exit current tool / editor / presentation</p></div></dialog>`,
+        `<dialog class="dialog">${dialogHead("Board shortcuts")}<div class="dialog-body"><p>V: select · H: hand · N: sticky · T: text · S / R: shape<br>L: connector · P: pen · F: draw frame · D: task card · C: comment on selection<br>Click to place a sticky, text, shape or grid; Escape cancels<br>Grid: double-click its title to rename; click outside to save<br>Grid: double-click a cell to edit; Tab moves to the next cell<br>Grid: drag its top strip to move; internal borders resize one row/column<br>Grid: outer edges resize all tracks; label ends resize the final row/column<br>F: drag a frame around content, or click for 16:9<br>Click empty frame space to select it; drag selected frame space to move it<br>Drag inside an unselected frame to select objects<br>Drag a frame border/title to move contents; resizing keeps content sizes<br>Double-click or Enter: edit inline · Click outside to save<br>Escape or Ctrl / ⌘ Enter: finish editing · Undo: revert saved text<br>Ctrl / ⌘ click or Shift-click: select multiple objects<br>Drag empty canvas with select tool: selection box<br>Right-drag, middle-drag or Space + drag: pan<br>Scroll: zoom at pointer · Shift + scroll: move up / down<br>Pinch or Ctrl / ⌘ wheel: zoom<br>Expand board: fill window · Full screen: hide browser chrome<br>Ctrl / ⌘ + / −: zoom · Ctrl / ⌘ 0: 100%<br>Alt / Option 1: fit board · Alt / Option 2: focus selection<br>M: minimap · G: grid · Ctrl / ⌘ F: find on board<br>Ctrl / ⌘ A: select all · Ctrl / ⌘ D or Alt / Option drag: duplicate<br>Ctrl / ⌘ C, V: copy and paste objects<br>Ctrl / ⌘ G: group · Ctrl / ⌘ Shift G: ungroup<br>Ctrl / ⌘ Shift L: lock / unlock<br>Arrow keys: move selection or pan (Shift for larger steps)<br>Ctrl / ⌘ Z: undo · Ctrl / ⌘ Shift Z: redo<br>Shift + corner drag: resize horizontally or vertically<br>Drag near objects: align edges, centres and equal gaps<br>Resize near objects: match widths and heights<br>Hold Alt during drag: bypass snapping · Board settings: Align with nearby objects / Snap to grid<br>Drag a connection handle: curved preview and nearby port snapping<br>Drag a selected line endpoint to reconnect · Ctrl / ⌘: bypass snapping · Escape: cancel<br>P: pen · E: eraser (drawings only) · Shift: straight stroke<br>Pen presets remember colour, thickness and pressure; highlighter is translucent<br>Pen: draw with pressure; two fingers: pan and zoom<br>Escape: clear selection or exit current tool / editor / presentation</p></div></dialog>`,
         "canvas-shortcuts",
       );
     else return false;
@@ -1004,35 +1840,7 @@ export function canvasPro(ctx, basic) {
       await finishInline();
       return;
     }
-    if (form.id === "canvas-edge-form") {
-      changeBoard((b) => {
-        const edge = b.edges.find((e) => e.id === form.dataset.id);
-        for (const k of [
-          "label",
-          "relationship",
-          "routing",
-          "color",
-          "fromEnd",
-          "toEnd",
-        ])
-          edge[k] = values[k];
-        for (const k of ["fromSide", "toSide"])
-          if (values[k] === "auto") delete edge[k];
-          else edge[k] = values[k];
-      });
-      if (values.dependency) {
-        await basic.flush();
-        if (sync.entries.size)
-          throw new Error(
-            "Save the connector before creating its task dependency.",
-          );
-        await api(route("boards", board().id) + "/dependency", {
-          method: "POST",
-          body: { edge: form.dataset.id },
-        });
-        await ctx.refresh();
-      }
-    } else if (form.id === "canvas-comment-form") {
+    if (form.id === "canvas-comment-form") {
       changeBoard(() => {
         n.comments ||= [];
         n.comments.push({
@@ -1064,6 +1872,7 @@ export function canvasPro(ctx, basic) {
       }
       changeBoard((b) => {
         n.color = values.color;
+        delete n.gridCell;
         if (values.frame) n.frame = values.frame;
         else delete n.frame;
         if (values.layer !== "keep") {
@@ -1097,6 +1906,16 @@ export function canvasPro(ctx, basic) {
         };
         Object.assign(card, {
           text: values.title,
+          viewType: values.viewType,
+          visibleFields: [
+            "key",
+            "title",
+            "status",
+            "assignee",
+            "due",
+            "priority",
+            "type",
+          ].filter((f) => values[`field-${f}`]),
           view: values.view,
           query: {
             status: values.status,
@@ -1107,13 +1926,17 @@ export function canvasPro(ctx, basic) {
         if (!n) b.nodes.push(card);
       });
     } else if (form.id === "canvas-template-form") {
-      const nodes = structuredClone(pick()),
+      const nodes = structuredClone(basic.selectionContents()),
         ids = new Set(nodes.map((n) => n.id)),
         edges = structuredClone(
           board().edges.filter((e) => ids.has(e.from) && ids.has(e.to)),
         );
       if (!nodes.length) return;
-      for (const n of nodes) if (n.frame && !ids.has(n.frame)) delete n.frame;
+      for (const n of nodes)
+        if (n.frame && !ids.has(n.frame)) {
+          delete n.frame;
+          delete n.gridCell;
+        }
       changeBoard((b) => {
         b.templates ||= [];
         b.templates.push({
@@ -1173,12 +1996,14 @@ export function canvasPro(ctx, basic) {
     }
     if (event.target.id === "canvas-owner") {
       owner = event.target.value;
+      updateSearchButton();
       enhance();
     }
   });
   document.addEventListener("change", (event) => {
     if (event.target.id === "canvas-status") {
       status = event.target.value;
+      updateSearchButton();
       enhance();
     }
     if (event.target.dataset.canvasStatus)
@@ -1188,7 +2013,10 @@ export function canvasPro(ctx, basic) {
         false,
       )
         .then(() => enhance())
-        .catch((e) => toast(e.message, true));
+        .catch((e) => {
+          toast(e.message, true);
+          enhance();
+        });
   });
   document.addEventListener(
     "dblclick",
@@ -1202,13 +2030,28 @@ export function canvasPro(ctx, basic) {
         node = event.target.closest("[data-node]");
       if (edge) {
         event.stopImmediatePropagation();
-        state.selectedEdge = edge.dataset.edge;
-        connectorDialog(board().edges.find((e) => e.id === edge.dataset.edge));
+        basic.selectEdge(edge.dataset.edge);
+        editConnector(board().edges.find((e) => e.id === edge.dataset.edge));
       } else if (node) {
+        if (
+          node.classList.contains("frame") &&
+          !event.target.closest(".frame-title")
+        )
+          return;
         event.stopImmediatePropagation();
-        inline(index.get(node.dataset.node)).catch((e) =>
-          toast(e.message, true),
-        );
+        const cell = event.target.closest(".grid-cell");
+        if (editor && event.target.closest(".grid-grip") && !finishInline())
+          return;
+        if (cell)
+          state.gridCell = {
+            id: node.dataset.node,
+            row: +cell.dataset.gridRow,
+            column: +cell.dataset.gridColumn,
+          };
+        inline(
+          index.get(node.dataset.node),
+          !!event.target.closest("[data-inline-title],.grid-grip"),
+        ).catch((e) => toast(e.message, true));
       }
     },
     true,
@@ -1217,14 +2060,53 @@ export function canvasPro(ctx, basic) {
     "keydown",
     (event) => {
       if (state.view !== "board" || state.dialog) return;
+      if (searchOpen && event.key === "Escape" && !editor) {
+        event.preventDefault();
+        event.stopImmediatePropagation();
+        showSearch(false, true);
+        return;
+      }
       if (editor) {
         if (
+          editor.cell &&
+          event.key === "Tab" &&
+          !event.target.closest(".inline-floating-tools")
+        ) {
+          event.preventDefault();
+          event.stopImmediatePropagation();
+          const n = index.get(editor.id),
+            cell = editor.cell;
+          let position =
+            cell.row * n.grid.columns.length +
+            cell.column +
+            (event.shiftKey ? -1 : 1);
+          position = Math.max(
+            0,
+            Math.min(n.grid.cells.length * n.grid.columns.length - 1, position),
+          );
+          if (finishInline()) {
+            state.gridCell = {
+              id: n.id,
+              row: Math.floor(position / n.grid.columns.length),
+              column: position % n.grid.columns.length,
+            };
+            inline(n).catch((e) => toast(e.message, true));
+          }
+          return;
+        }
+        if (event.key === "Escape" && editor.rich.escape()) {
+          event.preventDefault();
+          event.stopImmediatePropagation();
+          return;
+        }
+        if (
           event.key === "Escape" ||
+          (editor.gridTitle && event.key === "Enter" && !event.isComposing) ||
           ((event.ctrlKey || event.metaKey) && event.key === "Enter")
         ) {
           event.preventDefault();
           event.stopImmediatePropagation();
-          finishInline(event.key === "Escape");
+          finishInline();
         }
         return;
       }
@@ -1256,17 +2138,26 @@ export function canvasPro(ctx, basic) {
         event.stopImmediatePropagation();
         focus(pick());
       }
-      if (command && event.key.toLowerCase() === "c" && pick().length) {
+      if (
+        command &&
+        event.key.toLowerCase() === "c" &&
+        (pick().length || basic.pickEdges().length)
+      ) {
         event.preventDefault();
-        const nodes = structuredClone(pick()),
+        const nodes = structuredClone(basic.selectionContents()),
           ids = new Set(nodes.map((n) => n.id));
         clipboard = {
+          source: `${state.project.id}/${board().id}`,
           nodes,
           edges: structuredClone(
-            board().edges.filter((e) => ids.has(e.from) && ids.has(e.to)),
+            board().edges.filter(
+              (e) =>
+                (ids.has(e.from) && ids.has(e.to)) ||
+                basic.selectedEdges.has(e.id),
+            ),
           ),
         };
-        toast(`${nodes.length} objects copied.`);
+        toast(`${nodes.length + clipboard.edges.length} objects copied.`);
       }
       if (command && event.key.toLowerCase() === "v" && clipboard) {
         event.preventDefault();
@@ -1281,33 +2172,228 @@ export function canvasPro(ctx, basic) {
         event.preventDefault();
         event.stopImmediatePropagation();
         const step = event.shiftKey ? 30 : 5;
-        changeBoard(() =>
-          pick()
-            .filter((n) => !n.locked)
-            .forEach((n) => {
-              n.x +=
-                event.key === "ArrowLeft"
-                  ? -step
-                  : event.key === "ArrowRight"
-                    ? step
-                    : 0;
-              n.y +=
-                event.key === "ArrowUp"
-                  ? -step
-                  : event.key === "ArrowDown"
-                    ? step
-                    : 0;
-            }),
+        const moving = basic.selectionContents(pick().filter((n) => !n.locked));
+        const before = structuredClone(board().nodes);
+        changeBoard(() => {
+          moving.forEach((n) => {
+            n.x +=
+              event.key === "ArrowLeft"
+                ? -step
+                : event.key === "ArrowRight"
+                  ? step
+                  : 0;
+            n.y +=
+              event.key === "ArrowUp"
+                ? -step
+                : event.key === "ArrowDown"
+                  ? step
+                  : 0;
+          });
+          const ids = new Set(moving.map((n) => n.id));
+          const dx =
+            event.key === "ArrowLeft"
+              ? -step
+              : event.key === "ArrowRight"
+                ? step
+                : 0;
+          const dy =
+            event.key === "ArrowUp"
+              ? -step
+              : event.key === "ArrowDown"
+                ? step
+                : 0;
+          for (const e of board().edges)
+            if (e.bends && ids.has(e.from) && ids.has(e.to))
+              e.bends = e.bends.map((p) => ({ x: p.x + dx, y: p.y + dy }));
+          updateFrameMembership(board().nodes, ids, before, {
+            adopt: !basic.filterActive(),
+          });
+        });
+      }
+    },
+    true,
+  );
+  function stopConnection() {
+    const active = connecting;
+    connecting = null;
+    $("#connection-draft")?.remove();
+    $("#connection-draft-defs")?.remove();
+    $$(".connection-nearby-port").forEach((el) => el.remove());
+    $$(
+      ".connection-target,.connection-snapped,.connector-reconnecting",
+    ).forEach((el) =>
+      el.classList.remove(
+        "connection-target",
+        "connection-snapped",
+        "connector-reconnecting",
+      ),
+    );
+    $("#canvas")?.classList.remove("connecting");
+    if (active?.canvas.hasPointerCapture(active.pointerId))
+      active.canvas.releasePointerCapture(active.pointerId);
+    if (board() && $("#canvas")) ctx.updateEdges();
+  }
+  function drawConnection(event) {
+    if (!connecting || event.pointerId !== connecting.pointerId) return;
+    connecting.last = {
+      clientX: event.clientX,
+      clientY: event.clientY,
+      pointerId: event.pointerId,
+    };
+    const canvas = $("#canvas"),
+      r = canvas.getBoundingClientRect(),
+      inside =
+        event.clientX >= r.left &&
+        event.clientX <= r.right &&
+        event.clientY >= r.top &&
+        event.clientY <= r.bottom;
+    canvas.style.setProperty(
+      "--connector-port-scale",
+      String(1 / state.camera.z),
+    );
+    const p = point(event),
+      source = effectiveNode(connecting.from),
+      hit = connectorTarget(p, board().nodes, {
+        from: connecting.from,
+        hidden,
+        zoom: state.camera.z,
+        bypass: !inside || event.ctrlKey || event.metaKey,
+      });
+    connecting.target = hit.target;
+    $$(".connection-nearby-port").forEach((el) => el.remove());
+    $$(".connection-target,.connection-snapped").forEach((el) =>
+      el.classList.remove("connection-target", "connection-snapped"),
+    );
+    for (const candidate of hit.nearby) {
+      const el = $(`[data-node="${CSS.escape(candidate.node.id)}"]`);
+      if (!el) continue;
+      el.classList.toggle("connection-target", candidate === hit.target);
+      for (const side of sides) {
+        let handle = el.querySelector(`[data-port="${side}"]`);
+        if (!handle) {
+          el.insertAdjacentHTML(
+            "beforeend",
+            `<span class="connection-port connection-nearby-port port-${side}" data-port="${side}" data-source="${esc(candidate.node.id)}" aria-hidden="true"></span>`,
+          );
+          handle = el.lastElementChild;
+        }
+        handle.classList.toggle(
+          "connection-snapped",
+          candidate === hit.target && side === candidate.side,
         );
       }
+    }
+    if (!source) {
+      stopConnection();
+      return;
+    }
+    const edge = connecting.edgeId
+      ? board().edges.find((e) => e.id === connecting.edgeId)
+      : {};
+    const path = connectorPreview(
+      source,
+      connecting.fromSide,
+      p,
+      hit.target,
+      edge,
+      connecting.movingEnd,
+    );
+    let draft = $("#connection-draft");
+    if (!draft) {
+      $("#canvas-lines").insertAdjacentHTML(
+        "beforeend",
+        '<path id="connection-draft" fill="none"/>',
+      );
+      draft = $("#connection-draft");
+    }
+    draft.setAttribute("d", path.d);
+    const color = palette[edge.color] || edge.color || "#78906f";
+    const style = connectorStyle(edge, color, esc, "draft");
+    $("#connection-draft-defs")?.remove();
+    $("#canvas-lines").insertAdjacentHTML(
+      "beforeend",
+      `<defs id="connection-draft-defs">${style.defs}</defs>`,
+    );
+    for (const key of ["marker-start", "marker-end"]) {
+      if (style.markers[key]) draft.setAttribute(key, style.markers[key]);
+      else draft.removeAttribute(key);
+    }
+    draft.style.strokeWidth = style.width;
+    draft.style.strokeDasharray = style.dash;
+    draft.style.stroke = color;
+    draft.classList.toggle("snapped", !!hit.target);
+  }
+  function startConnection(event, options) {
+    if (event.button !== 0 || connecting) return;
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    rebuild();
+    const canvas = $("#canvas");
+    connecting = {
+      ...options,
+      canvas,
+      pointerId: event.pointerId,
+      start: { x: event.clientX, y: event.clientY },
+    };
+    canvas.classList.add("connecting");
+    if (options.edgeId)
+      $$("#canvas-lines > [data-edge]")
+        .filter((el) => el.dataset.edge === options.edgeId)
+        .forEach((el) => el.classList.add("connector-reconnecting"));
+    canvas.setPointerCapture(event.pointerId);
+    drawConnection(event);
+  }
+  window.addEventListener(
+    "keydown",
+    (event) => {
+      if (!connecting) return;
+      if (event.key === "Escape") {
+        event.preventDefault();
+        event.stopImmediatePropagation();
+        stopConnection();
+      } else if (["Control", "Meta"].includes(event.key))
+        drawConnection({
+          ...connecting.last,
+          ctrlKey: event.ctrlKey,
+          metaKey: event.metaKey,
+        });
+    },
+    true,
+  );
+  window.addEventListener(
+    "keyup",
+    (event) => {
+      if (connecting && ["Control", "Meta"].includes(event.key))
+        drawConnection({
+          ...connecting.last,
+          ctrlKey: event.ctrlKey,
+          metaKey: event.metaKey,
+        });
+    },
+    true,
+  );
+  document.addEventListener(
+    "lostpointercapture",
+    (event) => {
+      if (connecting && event.pointerId === connecting.pointerId)
+        stopConnection();
     },
     true,
   );
   document.addEventListener(
     "pointerdown",
     (event) => {
-      const canvas = event.target.closest("#canvas");
-      if (!canvas) return;
+      let canvas = event.target.closest("#canvas");
+      if (!canvas || state.tool === "frame") return;
+      if (
+        event.pointerType === "pen" &&
+        event.button === 0 &&
+        !event.target.closest(
+          "button,input,select,#pen-tools,.inline-editing,.canvas-panel",
+        ) &&
+        state.tool !== "erase"
+      )
+        state.tool = "draw";
       if (event.target.closest("#canvas-minimap")) {
         event.preventDefault();
         event.stopImmediatePropagation();
@@ -1323,56 +2409,21 @@ export function canvasPro(ctx, basic) {
       }
       if (
         event.target.closest(
-          ".canvas-panel,.canvas-find,.canvas-filters,#canvas-presence,#presentation-controls,.inline-editing",
+          "#pen-tools,.inline-floating-tools,.canvas-panel,.canvas-find,.canvas-filters,#canvas-presence,#presentation-controls,.inline-editing",
         )
       ) {
         event.stopImmediatePropagation();
         return;
       }
-      const edge = event.target.closest("[data-edge]");
-      if (edge && state.tool !== "hand") {
-        event.stopImmediatePropagation();
-        state.selectedEdge = edge.dataset.edge;
-        state.selectedNode = null;
-        selected.clear();
-        basic.selection();
-        $$(".canvas-edge").forEach((el) =>
-          el.classList.toggle(
-            "selected",
-            el.dataset.edge === state.selectedEdge,
-          ),
-        );
-        $(".board-selection")?.remove();
-        canvas.insertAdjacentHTML(
-          "beforeend",
-          `<div class="board-selection">${btn("edge-edit", "Edit connection")}<button class="button small" data-action="edge-delete">Remove connector</button></div>`,
-        );
-        return;
-      }
-      const handle = event.target.closest("[data-port]");
-      if (handle) {
-        event.preventDefault();
-        event.stopImmediatePropagation();
-        connecting = {
-          from: handle.dataset.source,
-          fromSide: handle.dataset.port,
-        };
-        canvas.setPointerCapture(event.pointerId);
-        return;
-      }
-      if (
-        event.pointerType === "pen" &&
-        event.button === 0 &&
-        !event.target.closest("button,input,select")
-      )
-        state.tool = "draw";
       if (
         event.pointerType === "touch" &&
         !event.target.closest("button,input,select")
       ) {
         touches.set(event.pointerId, { x: event.clientX, y: event.clientY });
         if (touches.size === 2) {
+          stopConnection();
           basic.cancel();
+          canvas = $("#canvas");
           touchPan = null;
           const [a, b] = [...touches.values()];
           gesture = {
@@ -1387,8 +2438,8 @@ export function canvasPro(ctx, basic) {
         }
         if (
           (!event.target.closest("[data-node],[data-edge]") ||
-            ["sticky", "text", "shape"].includes(state.tool)) &&
-          state.tool !== "draw"
+            ["sticky", "text", "shape", "grid"].includes(state.tool)) &&
+          !penActive(state.tool)
         ) {
           touchPan = {
             start: { x: event.clientX, y: event.clientY },
@@ -1399,6 +2450,53 @@ export function canvasPro(ctx, basic) {
           event.preventDefault();
           return;
         }
+      }
+      const endpoint = event.target.closest("[data-edge-end]");
+      if (endpoint && !penActive(state.tool)) {
+        const edge = board().edges.find((e) => e.id === endpoint.dataset.edge);
+        if (!edge) return;
+        const movingEnd = endpoint.dataset.edgeEnd,
+          fixedEnd = movingEnd === "from" ? "to" : "from";
+        const fixed = effectiveNode(edge[fixedEnd]);
+        if (!fixed || fixed.locked) return;
+        const path = routeEdge(
+          edge,
+          effectiveNode(edge.from),
+          effectiveNode(edge.to),
+        );
+        const p = fixedEnd === "from" ? path.p : path.q;
+        const fixedSide = sides.find((side) => {
+          const q = port(fixed, side);
+          return q.x === p.x && q.y === p.y;
+        });
+        startConnection(event, {
+          from: fixed.id,
+          fromSide: fixedSide,
+          edgeId: edge.id,
+          movingEnd,
+        });
+        return;
+      }
+      const edge = event.target.closest("[data-edge]");
+      if (edge && state.tool !== "hand" && !penActive(state.tool)) {
+        event.stopImmediatePropagation();
+        event.preventDefault();
+        basic.selectEdge(
+          edge.dataset.edge,
+          event.shiftKey || event.ctrlKey || event.metaKey,
+        );
+        $("#canvas")?.focus({ preventScroll: true });
+        return;
+      }
+      const handle = event.target.closest("[data-port]");
+      if (handle && !penActive(state.tool)) {
+        if (index.get(handle.dataset.source)?.locked) return;
+        startConnection(event, {
+          from: handle.dataset.source,
+          fromSide: handle.dataset.port,
+          movingEnd: "to",
+        });
+        return;
       }
       if (
         !event.target.closest("[data-node],button,input,select,[data-edge]") &&
@@ -1435,14 +2533,7 @@ export function canvasPro(ctx, basic) {
       if (connecting) {
         event.preventDefault();
         event.stopImmediatePropagation();
-        const n = index.get(connecting.from),
-          p = port(n, connecting.fromSide),
-          q = point(event);
-        $("#connection-draft")?.remove();
-        $("#canvas-lines")?.insertAdjacentHTML(
-          "beforeend",
-          `<path id="connection-draft" d="M${p.x},${p.y} L${q.x},${q.y}" stroke="#526d42" stroke-dasharray="6 4" fill="none"/>`,
-        );
+        drawConnection(event);
         return;
       }
       if (touches.has(event.pointerId))
@@ -1494,24 +2585,94 @@ export function canvasPro(ctx, basic) {
   );
   function endPointer(event, cancel = false) {
     if (connecting) {
+      if (event.pointerId !== connecting.pointerId) return;
       event.stopImmediatePropagation();
-      const target = document.elementFromPoint(event.clientX, event.clientY),
-        el = target?.closest("[data-node]"),
-        to = el?.dataset.node,
-        handle = target?.closest("[data-port]");
-      if (!cancel && to && to !== connecting.from) {
-        const connection = {
-          ...connecting,
-          to,
-          id: uid("e"),
-          toSide: handle?.dataset.port || undefined,
-          routing: "curve",
-          relationship: "relates",
-        };
-        changeBoard((b) => b.edges.push(connection));
+      drawConnection(event);
+      const active = connecting,
+        target = active?.target;
+      stopConnection();
+      if (!cancel && target) {
+        if (active.edgeId)
+          changeBoard((b) => {
+            const edge = b.edges.find((e) => e.id === active.edgeId);
+            edge[active.movingEnd] = target.node.id;
+            if (target.distance <= 20)
+              edge[`${active.movingEnd}Side`] = target.side;
+            else delete edge[`${active.movingEnd}Side`];
+          });
+        else {
+          const id = uid("e");
+          basic.selectedEdges.clear();
+          state.selectedEdge = id;
+          selected.clear();
+          state.selectedNode = null;
+          changeBoard((b) =>
+            b.edges.push({
+              id,
+              from: active.from,
+              fromSide: active.fromSide,
+              to: target.node.id,
+              toSide: target.distance <= 20 ? target.side : undefined,
+              routing: "curve",
+              relationship: "relates",
+            }),
+          );
+        }
       }
-      connecting = null;
-      $("#connection-draft")?.remove();
+      if (
+        !cancel &&
+        !target &&
+        !active.edgeId &&
+        Math.hypot(
+          event.clientX - active.start.x,
+          event.clientY - active.start.y,
+        ) < 5
+      ) {
+        const source = index.get(active.from),
+          side = active.fromSide;
+        if (source) {
+          const w = source.w,
+            h = source.h,
+            id = uid("n"),
+            node = {
+              id,
+              type: "sticky",
+              text: "",
+              color: source.color || "#f5e7a2",
+              w,
+              h,
+              x:
+                source.x +
+                (side === "right" ? w + 80 : side === "left" ? -w - 80 : 0),
+              y:
+                source.y +
+                (side === "bottom" ? h + 80 : side === "top" ? -h - 80 : 0),
+            };
+          changeBoard((b) => {
+            b.nodes.push(node);
+            b.edges.push({
+              id: uid("e"),
+              from: source.id,
+              to: id,
+              fromSide: side,
+              routing: "curve",
+            });
+            updateFrameMembership(
+              b.nodes,
+              new Set([id]),
+              b.nodes.filter((n) => n.id !== id),
+            );
+          });
+          selected.clear();
+          selected.add(id);
+          state.selectedNode = id;
+          {
+            state.selectedEdge = null;
+            state.selectedEdges?.clear();
+          }
+          basic.focusSelection();
+        }
+      }
       return;
     }
     if (touches.has(event.pointerId)) {
@@ -1527,7 +2688,11 @@ export function canvasPro(ctx, basic) {
         if (touches.size < 2) gesture = null;
         if (!touches.size) touchPan = null;
         camera();
-        if (place) basic.place(event);
+        if (place) {
+          if (["sticky", "text", "shape", "grid"].includes(state.tool))
+            basic.place(event);
+          else basic.clearSelection();
+        }
       }
     }
   }
@@ -1537,7 +2702,7 @@ export function canvasPro(ctx, basic) {
     touches.clear();
     gesture = null;
     touchPan = null;
-    connecting = null;
+    stopConnection();
   });
   const memberColor = (m) => {
     let h = 0;
@@ -1595,19 +2760,25 @@ export function canvasPro(ctx, basic) {
           name: name(),
           ...cursor,
           selection: [...selected],
+          ...sessionTools.payload(),
         },
       });
       if (current !== route("boards", board()?.id)) return;
       members = result.members;
+      sessionTools.update(members);
       paintPresence();
       if (presenceVersion !== result.version) {
         presenceVersion = result.version;
         notes.clear();
         if (
           !editor &&
+          !connecting &&
+          !converting &&
           !basic.busy() &&
           !sync.entries.size &&
           !state.dialog &&
+          !state.selectionToolbarOpen &&
+          !state.toolDragging &&
           !document.activeElement?.matches("input,textarea,select")
         ) {
           await ctx.refresh();
@@ -1628,12 +2799,18 @@ export function canvasPro(ctx, basic) {
   });
   window.addEventListener("resize", camera);
   function beforeRender() {
+    clearTimeout(viewportCleanup);
+    if (cameraFrame) cancelAnimationFrame(cameraFrame);
+    cameraFrame = null;
+    if (connecting) stopConnection();
     if (!editor) return;
     const form = $("#canvas-inline-form");
     if (form)
       try {
         localStorage.setItem(editor.key, form.elements.text.value);
       } catch {}
+    editor.rich.destroy();
+    $(".inline-floating-tools")?.remove();
     editor = null;
     state.canvasEditing = false;
   }
@@ -1646,9 +2823,10 @@ export function canvasPro(ctx, basic) {
     edges,
     camera,
     enhance,
+    edit: (id) => inline(index.get(id)).catch((e) => toast(e.message, true)),
     click,
-    connectorDialog,
-    busy: () => !!editor || !!connecting || !!gesture,
+    editConnector,
+    busy: () => !!editor || !!connecting || !!gesture || !!draggedFrame,
     exportCanvas: () => encodeCanvas(board()),
   };
 }

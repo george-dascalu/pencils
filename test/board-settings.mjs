@@ -29,7 +29,8 @@ async function enter(p) {
   await p.locator("#canvas").waitFor();
 }
 async function snap(p, expected) {
-  const control = await reveal(p.locator("#canvas-snap"));
+  await p.getByRole("button", { name: "Board settings", exact: true }).click();
+  const control = p.locator("#canvas-snap");
   assert.equal(await control.isChecked(), expected);
   await p.keyboard.press("Escape");
 }
@@ -37,8 +38,17 @@ try {
   await enter(page);
   await page.locator("#board-select").selectOption(board.id);
   await snap(page, true);
-  await (await reveal(page.locator("#canvas-snap"))).uncheck();
-  await page.keyboard.press("Escape");
+  await page
+    .getByRole("button", { name: "Board settings", exact: true })
+    .click();
+  await page
+    .locator('#board-settings-form [name="title"]')
+    .fill("Renamed from settings");
+  await page.locator("#canvas-snap").uncheck();
+  await page.locator("#canvas-align").uncheck();
+  await page
+    .getByRole("button", { name: "Apply settings", exact: true })
+    .click();
   await page.waitForFunction(
     () =>
       document.querySelector("#board-save").textContent === "All changes saved",
@@ -48,10 +58,54 @@ try {
       .settings.snap,
     false,
   );
+  assert.equal(
+    (await store.snapshot(project.id)).boards.find((b) => b.id === board.id)
+      .title,
+    "Renamed from settings",
+  );
+  assert.equal(
+    await page.locator("#board-select option:checked").textContent(),
+    "Renamed from settings",
+  );
+  await page
+    .getByRole("button", { name: "Board settings", exact: true })
+    .click();
+  await page.locator('#board-settings-form [name="title"]').fill("   ");
+  await page
+    .getByRole("button", { name: "Apply settings", exact: true })
+    .click();
+  assert.ok(
+    await page
+      .locator('#board-settings-form [name="title"]')
+      .evaluate((el) => !el.validity.valid),
+  );
+  await page
+    .locator('#board-settings-form [name="title"]')
+    .fill("Renamed from settings");
+  await page
+    .getByRole("button", { name: "Apply settings", exact: true })
+    .click();
   await page.locator("#canvas").click({ position: { x: 700, y: 400 } });
   await page.keyboard.press("g");
   await page.keyboard.press("m");
   await page.locator("#board-expand").click();
+  await page
+    .getByRole("button", { name: "Board settings", exact: true })
+    .click();
+  assert.ok(await page.locator("#board-settings-form").isVisible());
+  assert.equal(await page.locator('[name="show-minimap"]').isChecked(), false);
+  await page.locator('[name="show-minimap"]').check();
+  await page
+    .getByRole("button", { name: "Apply settings", exact: true })
+    .click();
+  assert.ok(await page.locator("#canvas-minimap").isVisible());
+  await page
+    .getByRole("button", { name: "Board settings", exact: true })
+    .click();
+  await page.locator('[name="show-minimap"]').uncheck();
+  await page
+    .getByRole("button", { name: "Apply settings", exact: true })
+    .click();
   await page.reload();
   await page.locator("#canvas.board-expanded.grid-hidden").waitFor();
   assert.ok(await page.locator("#canvas-minimap").isHidden());
@@ -74,14 +128,25 @@ try {
       .locator("#canvas")
       .evaluate((el) => el.classList.contains("grid-hidden")),
   );
-  const fresh = await browser.newPage({ viewport: { width: 1400, height: 1000 } });
+  const fresh = await browser.newPage({
+    viewport: { width: 1400, height: 1000 },
+  });
   await enter(fresh);
   await fresh.locator("#board-select").selectOption(board.id);
   await snap(fresh, false);
+  assert.equal(
+    await fresh.locator("#board-select option:checked").textContent(),
+    "Renamed from settings",
+  );
   assert.ok(await fresh.locator("#canvas-minimap").isVisible());
   await fresh.close();
-  await (await reveal(page.locator("#canvas-snap"))).check();
-  await page.keyboard.press("Escape");
+  await page
+    .getByRole("button", { name: "Board settings", exact: true })
+    .click();
+  await page.locator("#canvas-snap").check();
+  await page
+    .getByRole("button", { name: "Apply settings", exact: true })
+    .click();
   await page.waitForFunction(
     () =>
       document.querySelector("#board-save").textContent === "All changes saved",
@@ -93,7 +158,10 @@ try {
     "PASS: Snap persists per board across reloads and fresh browsers; display preferences persist and stay isolated per board.",
   );
 } catch (error) {
-  await page.screenshot({path:"/tmp/pencils-settings-failure.png", fullPage:true});
+  await page.screenshot({
+    path: "/tmp/pencils-settings-failure.png",
+    fullPage: true,
+  });
   console.error(errors);
   throw error;
 } finally {

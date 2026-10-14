@@ -1,3 +1,5 @@
+import { newGrid, syncGrid, cellAt } from "./grid-model.js";
+import { routeEdge } from "./canvas-geometry.js";
 import { canvasToolDrag } from "./canvas-tool-drag.js";
 // Navigation preferences belong to the browser, never to the shared board.
 export function canvasControls(ctx, basic) {
@@ -13,6 +15,7 @@ export function canvasControls(ctx, basic) {
     renderView,
     changeBoard,
     toast,
+    icon,
   } = ctx;
   let space = false,
     pan = null,
@@ -23,16 +26,30 @@ export function canvasControls(ctx, basic) {
     displayKey = null;
   const preferenceKey = () => `board-display:${state.project.id}:${board().id}`;
   function saveDisplay() {
-    storage.set(preferenceKey(), { minimap, grid, expanded });
+    if (board()) storage.set(preferenceKey(), { minimap, grid, expanded });
   }
-  const placement = ["sticky", "text", "shape"];
+  const placement = ["sticky", "text", "shape", "grid"];
   const editable = "input,textarea,select,[contenteditable],.inline-editing";
-  const chrome = `${editable},#selection-tools,button,a,.canvas-panel,.canvas-find,.canvas-filters,#canvas-presence,#presentation-controls`;
+  const chrome = `${editable},#pen-tools,.inline-floating-tools,#selection-tools,button,a,.canvas-panel,.canvas-find,.canvas-filters,#canvas-presence,#presentation-controls`;
   const stop = (e) => {
     e.preventDefault();
     e.stopImmediatePropagation();
   };
   const active = () => state.view === "board" && board() && $("#canvas");
+  // Programmatic focus during a drag can retain the browser's keyboard ring.
+  // Show the canvas indicator only after actual Tab navigation.
+  window.addEventListener(
+    "pointerdown",
+    () => $("#canvas")?.classList.remove("keyboard-focus"),
+    true,
+  );
+  window.addEventListener(
+    "keydown",
+    (e) => {
+      if (e.key === "Tab") $("#canvas")?.classList.add("keyboard-focus");
+    },
+    true,
+  );
   const call = (action) =>
     Promise.resolve(basic.action(action)).catch((e) => toast(e.message, true));
   const toolDrag = canvasToolDrag(ctx, place);
@@ -47,7 +64,10 @@ export function canvasControls(ctx, basic) {
       expanded = saved.expanded === true;
       displayKey = key;
     }
-    canvas.classList.toggle("placing", placement.includes(state.tool));
+    canvas.classList.toggle(
+      "placing",
+      placement.includes(state.tool) || state.tool === "frame",
+    );
     canvas.classList.toggle(
       "pan-mode",
       space || state.tool === "hand" || !!pan,
@@ -60,6 +80,11 @@ export function canvasControls(ctx, basic) {
         "beforeend",
         '<button id="board-expand" class="button small" data-board-display="expand">Expand board</button><button class="button small" data-board-display="fullscreen" aria-label="Full screen">⛶</button>',
       );
+    if (!$("#expanded-board-settings"))
+      $(".board-controls")?.insertAdjacentHTML(
+        "beforeend",
+        `<button id="expanded-board-settings" type="button" class="button small" data-feature="board-settings" aria-label="Board settings" title="Board settings">${icon("settings")}</button>`,
+      );
     $("#board-expand").textContent = expanded
       ? "Exit expanded view"
       : "Expand board";
@@ -71,6 +96,7 @@ export function canvasControls(ctx, basic) {
       text: "T",
       shape: "S / R",
       connect: "L",
+      draw: "P",
     };
     for (const el of $$(".board-tools [data-tool]")) {
       el.classList.toggle("active", el.dataset.tool === state.tool);
@@ -78,9 +104,12 @@ export function canvasControls(ctx, basic) {
     }
     const help = $(".board-help");
     if (help)
-      help.textContent = placement.includes(state.tool)
-        ? "Click to place · Esc to cancel"
-        : "V select · H hand · Scroll zoom · Shift-scroll pan · F1 shortcuts";
+      help.textContent =
+        state.tool === "frame"
+          ? "Drag to draw a frame · Click for 16:9 · Esc to cancel"
+          : placement.includes(state.tool)
+            ? "Click to place · Esc to cancel"
+            : "V select · H hand · Scroll zoom · Shift-scroll pan · F1 shortcuts";
   }
   function tool(value) {
     state.tool = value;
@@ -89,9 +118,42 @@ export function canvasControls(ctx, basic) {
     $("#canvas")?.focus({ preventScroll: true });
   }
   function position() {
+    $("#canvas")?.style.setProperty(
+      "--grid-hit-size",
+      `${8 / state.camera.z}px`,
+    );
     const toolbar = $("#selection-tools"),
       canvas = $("#canvas"),
       nodes = basic.pick();
+    for (const edge of basic.pickEdges()) {
+      const a = board().nodes.find((n) => n.id === edge.from),
+        b = board().nodes.find((n) => n.id === edge.to);
+      if (a && b) {
+        const p = routeEdge(
+          edge,
+          a.collapsed ? { ...a, h: 48 } : a,
+          b.collapsed ? { ...b, h: 48 } : b,
+        );
+        const box = $(
+          `path.canvas-edge[data-edge="${CSS.escape(edge.id)}"]`,
+        )?.getBBox();
+        const points = [p.p, p.q, ...(edge.bends || [])];
+        nodes.push(
+          box
+            ? { x: box.x, y: box.y, w: box.width, h: box.height }
+            : {
+                x: Math.min(...points.map((p) => p.x)),
+                y: Math.min(...points.map((p) => p.y)),
+                w:
+                  Math.max(...points.map((p) => p.x)) -
+                  Math.min(...points.map((p) => p.x)),
+                h:
+                  Math.max(...points.map((p) => p.y)) -
+                  Math.min(...points.map((p) => p.y)),
+              },
+        );
+      }
+    }
     if (!toolbar || !canvas || !nodes.length) return;
     const left =
       Math.min(...nodes.map((n) => n.x)) * state.camera.z + state.camera.x;
@@ -99,13 +161,19 @@ export function canvasControls(ctx, basic) {
       Math.max(...nodes.map((n) => n.x + n.w)) * state.camera.z +
       state.camera.x;
     const top =
-      Math.min(...nodes.map((n) => n.y)) * state.camera.z + state.camera.y;
+      Math.min(
+        ...nodes.map(
+          (n) =>
+            n.y * state.camera.z +
+            (n.type === "grid" ? Math.min(0, 24 * state.camera.z - 24) : 0),
+        ),
+      ) + state.camera.y;
     const bottom =
       Math.max(...nodes.map((n) => n.y + n.h)) * state.camera.z +
       state.camera.y;
     const width = toolbar.offsetWidth,
       height = toolbar.offsetHeight;
-    let y = top - height - 12;
+    let y = top - height - 12 - (nodes.some((n) => n.type === "grid") ? 26 : 0);
     const safeTop = canvas.clientWidth < 600 ? 160 : 110;
     if (y < safeTop) y = bottom + 12;
     toolbar.style.left = `${Math.max(12, Math.min(canvas.clientWidth - width - 12, (left + right - width) / 2))}px`;
@@ -139,12 +207,7 @@ export function canvasControls(ctx, basic) {
   });
   document.addEventListener("fullscreenchange", () => {
     if (nativeFull && !document.fullscreenElement) {
-      ((nativeFull = false), (displayKey = null));
-      const preferenceKey = () =>
-        `board-display:${state.project.id}:${board().id}`;
-      function saveDisplay() {
-        storage.set(preferenceKey(), { minimap, grid, expanded });
-      }
+      nativeFull = false;
       expanded = false;
       saveDisplay();
     }
@@ -180,14 +243,23 @@ export function canvasControls(ctx, basic) {
             : 1;
       const dx = e.deltaX * line,
         dy = e.deltaY * line;
-      if (e.shiftKey && !e.ctrlKey && !e.metaKey) {
+      if (
+        window.PencilsAppearance.read().navigation === "trackpad" &&
+        !e.ctrlKey &&
+        !e.metaKey &&
+        !e.shiftKey
+      ) {
+        state.camera.x -= dx;
+        state.camera.y -= dy;
+        updateCamera();
+      } else if (e.shiftKey && !e.ctrlKey && !e.metaKey) {
         // Some platforms translate Shift-wheel into deltaX.
         state.camera.y -= dy || dx;
         updateCamera();
       } else {
         const r = $("#canvas").getBoundingClientRect();
         zoom(
-          Math.exp(-Math.max(-300, Math.min(300, dy)) * 0.007),
+          Math.exp(-Math.max(-300, Math.min(300, dy)) * 0.002),
           e.clientX - r.left,
           e.clientY - r.top,
         );
@@ -208,16 +280,32 @@ export function canvasControls(ctx, basic) {
         type,
         x: Math.round(p.x),
         y: Math.round(p.y),
-        w: type === "text" ? 360 : 220,
-        h: type === "text" ? 90 : 180,
+        w: type === "grid" ? 540 : type === "text" ? 360 : 220,
+        h: type === "grid" ? 312 : type === "text" ? 90 : 180,
+        ...(type === "grid" ? { grid: newGrid() } : {}),
         text: "",
         ...(type === "sticky" ? { color: "#f5e7a2" } : {}),
       });
+      if (type === "grid") syncGrid(b.nodes.at(-1));
+      else {
+        const target = b.nodes
+          .filter((n) => n.type === "grid" && !n.locked)
+          .sort((a, b) => a.w * a.h - b.w * b.h)
+          .map((grid) => ({ grid, cell: cellAt(grid, p.x, p.y) }))
+          .find((t) => t.cell);
+        if (target) {
+          b.nodes.at(-1).frame = target.grid.id;
+          b.nodes.at(-1).gridCell = target.cell;
+        }
+      }
       state.selectedNode = id;
-      state.selectedEdge = null;
+      {
+        state.selectedEdge = null;
+        state.selectedEdges?.clear();
+      }
       state.tool = "cursor";
     });
-    call("inline");
+    if (type !== "grid") call("inline");
   }
   document.addEventListener(
     "pointerdown",
@@ -242,6 +330,11 @@ export function canvasControls(ctx, basic) {
           x: e.clientX,
           y: e.clientY,
           camera: { ...state.camera },
+          clearOnClick:
+            e.button === 0 &&
+            !space &&
+            !e.target.closest("[data-node],[data-edge]"),
+          moved: false,
         };
         canvas.setPointerCapture(e.pointerId);
         canvas.focus({ preventScroll: true });
@@ -262,6 +355,8 @@ export function canvasControls(ctx, basic) {
     (e) => {
       if (!pan || pan.id !== e.pointerId) return;
       stop(e);
+      if (Math.hypot(e.clientX - pan.x, e.clientY - pan.y) > 4)
+        pan.moved = true;
       state.camera.x = pan.camera.x + e.clientX - pan.x;
       state.camera.y = pan.camera.y + e.clientY - pan.y;
       updateCamera();
@@ -275,6 +370,12 @@ export function canvasControls(ctx, basic) {
       state.camera.x = pan.camera.x + e.clientX - pan.x;
       state.camera.y = pan.camera.y + e.clientY - pan.y;
       updateCamera();
+      if (
+        pan.clearOnClick &&
+        !pan.moved &&
+        Math.hypot(e.clientX - pan.x, e.clientY - pan.y) <= 4
+      )
+        basic.clearSelection();
     }
     pan = null;
     if (active()) render();
@@ -309,7 +410,7 @@ export function canvasControls(ctx, basic) {
         action = () => basic.click(e.shiftKey ? "ungroup" : "group");
       else if (cmd && e.shiftKey && k === "l")
         action = () => basic.click("lock");
-      else if (cmd && k === "f") action = () => $("#canvas-find")?.focus();
+      else if (cmd && k === "f") action = () => call("search-open");
       else if (cmd && e.code === "Digit0")
         action = () => zoom(1 / state.camera.z);
       else if (cmd && ["+", "=", "-"].includes(k))
@@ -328,6 +429,7 @@ export function canvasControls(ctx, basic) {
           r: "shape",
           l: "connect",
           p: "draw",
+          e: "erase",
         };
         if (tools[k]) action = () => tool(tools[k]);
         else if (k === "f") action = () => basic.click("frame-add");
@@ -352,7 +454,10 @@ export function canvasControls(ctx, basic) {
             basic.cancel();
             basic.selected.clear();
             state.selectedNode = null;
-            state.selectedEdge = null;
+            {
+              state.selectedEdge = null;
+              state.selectedEdges?.clear();
+            }
             tool("cursor");
           };
         else if (e.key.startsWith("Arrow") && !basic.pick().length)
@@ -394,5 +499,18 @@ export function canvasControls(ctx, basic) {
     end();
     if (active()) render();
   });
-  return { render, place, position, busy: () => !!pan || toolDrag.busy() };
+  return {
+    render,
+    place,
+    position,
+    display: () => ({ grid, minimap }),
+    setDisplay: (settings) => {
+      grid = settings.grid;
+      minimap = settings.minimap;
+      saveDisplay();
+      render();
+    },
+    busy: ({ allowNavigation = false } = {}) =>
+      (!allowNavigation && !!pan) || toolDrag.busy(),
+  };
 }

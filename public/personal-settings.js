@@ -18,7 +18,7 @@ export function personalSettings(ctx) {
   function open() {
     const value = prefs.read();
     showDialog(
-      `<dialog class="dialog personal-dialog">${dialogHead("Personal settings")}<div class="dialog-body"><p class="field-hint">Your appearance preferences are saved in this browser, across projects. Other devices keep their own preferences.</p><fieldset class="appearance-group"><legend>Appearance</legend><div class="theme-options">${["light", "dark", "system"].map((theme) => `<label><input type="radio" name="personal-theme" value="${theme}" ${value.theme === theme ? "checked" : ""}><span>${theme[0].toUpperCase() + theme.slice(1)}</span></label>`).join("")}</div></fieldset><fieldset class="appearance-group"><legend>Workspace font</legend><p class="field-hint">All eight fonts are included locally and work without internet.</p><div class="font-options">${prefs.fonts.map(([id, name, description]) => `<label class="font-option" style="font-family:'${name}',sans-serif"><input type="radio" name="personal-font" value="${id}" ${value.font === id ? "checked" : ""}><span><strong>${name}</strong><small>${description}</small><span class="font-sample">A little space for good work. 012345</span></span></label>`).join("")}</div></fieldset><p class="field-hint" role="status" id="appearance-saved">Changes apply immediately.</p></div><div class="dialog-foot"><button type="button" class="button primary" data-action="dialog-close">Done</button></div></dialog>`,
+      `<dialog class="dialog personal-dialog">${dialogHead("Personal settings")}<div class="dialog-body"><p class="field-hint">Your appearance preferences are saved in this browser, across projects. Other devices keep their own preferences.</p><fieldset class="appearance-group"><legend>Appearance</legend><div class="theme-options">${["light", "dark", "system"].map((theme) => `<label><input type="radio" name="personal-theme" value="${theme}" ${value.theme === theme ? "checked" : ""}><span>${theme[0].toUpperCase() + theme.slice(1)}</span></label>`).join("")}</div></fieldset><fieldset class="appearance-group"><legend>Board controls</legend><label class="field">Navigation<select name="personal-navigation"><option value="mouse" ${value.navigation === "mouse" ? "selected" : ""}>Mouse: wheel to zoom</option><option value="trackpad" ${value.navigation === "trackpad" ? "selected" : ""}>Trackpad: scroll to pan, pinch to zoom</option></select></label><label><input type="checkbox" name="personal-singleKeys" ${value.singleKeys ? "checked" : ""}> Enable single-letter shortcuts</label><p class="field-hint">Tab moves between objects. Alt + Up/Down moves to a parent/child. Alt + Shift + arrows resizes by 10 pixels.</p></fieldset><fieldset class="appearance-group"><legend>Workspace font</legend><p class="field-hint">All eight fonts are included locally and work without internet.</p><div class="font-options">${prefs.fonts.map(([id, name, description]) => `<label class="font-option" style="font-family:'${name}',sans-serif"><input type="radio" name="personal-font" value="${id}" ${value.font === id ? "checked" : ""}><span><strong>${name}</strong><small>${description}</small><span class="font-sample">A little space for good work. 012345</span></span></label>`).join("")}</div></fieldset><p class="field-hint" role="status" id="appearance-saved">Changes apply immediately.</p></div><div class="dialog-foot"><button type="button" class="button primary" data-action="dialog-close">Done</button></div></dialog>`,
       "personal",
     );
   }
@@ -39,10 +39,21 @@ export function personalSettings(ctx) {
   });
   document.addEventListener("change", (event) => {
     const name = event.target.name;
-    if (!["personal-theme", "personal-font"].includes(name)) return;
+    if (
+      ![
+        "personal-theme",
+        "personal-font",
+        "personal-navigation",
+        "personal-singleKeys",
+      ].includes(name)
+    )
+      return;
     try {
       prefs.write({
-        [name === "personal-font" ? "font" : "theme"]: event.target.value,
+        [name.slice(9)]:
+          event.target.type === "checkbox"
+            ? event.target.checked
+            : event.target.value,
       });
       $("#appearance-saved").textContent = "Saved in this browser.";
     } catch {

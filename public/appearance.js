@@ -25,6 +25,8 @@
         ? raw.theme
         : "system",
       collapsed: raw.collapsed === true,
+      navigation: raw.navigation === "trackpad" ? "trackpad" : "mouse",
+      singleKeys: raw.singleKeys !== false,
     };
   }
   function apply() {

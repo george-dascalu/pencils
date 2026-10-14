@@ -1,8 +1,19 @@
+import { throughPoints } from "./connector-path.js";
 export const sides = ["top", "right", "bottom", "left"];
 export function port(n, side) {
-  return {
+  const p = {
     x: n.x + (side === "left" ? 0 : side === "right" ? n.w : n.w / 2),
     y: n.y + (side === "top" ? 0 : side === "bottom" ? n.h : n.h / 2),
+  };
+  if (!n.rotation) return p;
+  const a = (n.rotation * Math.PI) / 180,
+    cx = n.x + n.w / 2,
+    cy = n.y + n.h / 2,
+    dx = p.x - cx,
+    dy = p.y - cy;
+  return {
+    x: cx + dx * Math.cos(a) - dy * Math.sin(a),
+    y: cy + dx * Math.sin(a) + dy * Math.cos(a),
   };
 }
 export function routeEdge(edge, a, b) {
@@ -19,7 +30,15 @@ export function routeEdge(edge, a, b) {
         : "top");
   const toSide =
     edge.toSide ||
-    { top: "bottom", bottom: "top", right: "left", left: "right" }[fromSide];
+    { top: "bottom", bottom: "top", right: "left", left: "right" }[
+      Math.abs(dx) > Math.abs(dy)
+        ? dx > 0
+          ? "right"
+          : "left"
+        : dy > 0
+          ? "bottom"
+          : "top"
+    ];
   const p = port(a, fromSide),
     q = port(b, toSide),
     length = Math.max(40, Math.min(240, Math.hypot(q.x - p.x, q.y - p.y) / 2));
@@ -44,7 +63,32 @@ export function routeEdge(edge, a, b) {
     else if (horizontal) d += ` H${q.x} V${q.y}`;
     else d += ` V${q.y} H${q.x}`;
   } else d += ` C${u.x},${u.y} ${v.x},${v.y} ${q.x},${q.y}`;
-  return { d, x: (p.x + q.x) / 2, y: (p.y + q.y) / 2, p, q };
+  let points = [p, q];
+  if (edge.bends?.length) {
+    points = [p, ...edge.bends, q];
+    if (edge.routing === "elbow")
+      points = points.flatMap((v, i) =>
+        i ? [{ x: v.x, y: points[i - 1].y }, v] : [v],
+      );
+    d = throughPoints(points, !["straight", "elbow"].includes(edge.routing));
+  } else if (edge.routing === "elbow") {
+    const horizontal = ["left", "right"].includes(fromSide),
+      endHorizontal = ["left", "right"].includes(toSide);
+    points =
+      horizontal && endHorizontal
+        ? [p, { x: (p.x + q.x) / 2, y: p.y }, { x: (p.x + q.x) / 2, y: q.y }, q]
+        : !horizontal && !endHorizontal
+          ? [
+              p,
+              { x: p.x, y: (p.y + q.y) / 2 },
+              { x: q.x, y: (p.y + q.y) / 2 },
+              q,
+            ]
+          : horizontal
+            ? [p, { x: q.x, y: p.y }, q]
+            : [p, { x: p.x, y: q.y }, q];
+  }
+  return { d, points, x: (p.x + q.x) / 2, y: (p.y + q.y) / 2, p, q };
 }
 export function frameParents(nodes) {
   const frames = nodes.filter((n) => n.type === "frame"),
@@ -52,7 +96,7 @@ export function frameParents(nodes) {
     parents = new Map();
   // Explicit nesting wins. Spatial containment supports groups created by Obsidian.
   for (const n of nodes) {
-    if (n.frame && byId.get(n.frame)?.type === "frame") {
+    if (n.frame && ["frame", "grid"].includes(byId.get(n.frame)?.type)) {
       parents.set(n.id, n.frame);
       continue;
     }
@@ -76,11 +120,12 @@ export function hiddenByFrame(nodes, parents) {
   const byId = new Map(nodes.map((n) => [n.id, n])),
     hidden = new Set();
   for (const n of nodes) {
+    if (n.layerHidden) hidden.add(n.id);
     let p = parents.get(n.id);
     const seen = new Set([n.id]);
     while (p && !seen.has(p)) {
       seen.add(p);
-      if (byId.get(p)?.collapsed) {
+      if (byId.get(p)?.collapsed || byId.get(p)?.layerHidden) {
         hidden.add(n.id);
         break;
       }

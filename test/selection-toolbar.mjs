@@ -1,3 +1,4 @@
+import { openBoardSearch } from "./menu-controls.mjs";
 import { clickControl } from "./menu-controls.mjs";
 import assert from "node:assert/strict";
 import fs from "node:fs/promises";
@@ -97,6 +98,7 @@ async function saved() {
   );
 }
 async function find(id, text) {
+  await openBoardSearch(page);
   await page.locator("#canvas-find").fill(text);
   await page.locator(`[data-pro=find-result][data-id="${id}"]`).click();
   await page.waitForTimeout(100);
@@ -106,8 +108,17 @@ try {
   await find("note", "First idea");
   const toolbar = page.locator("#selection-tools");
   let box = await toolbar.boundingBox();
-  assert.ok(box.width < 540 && box.height < 55, JSON.stringify(box));
+  assert.ok(box.width < 720 && box.height < 55, JSON.stringify(box));
   assert.equal(await toolbar.getAttribute("role"), "toolbar");
+  assert.equal(
+    await toolbar.locator('[data-selection-menu="more"]').count(),
+    0,
+  );
+  for (const action of ["bring-front", "send-back", "selection-delete"]) {
+    const button = toolbar.locator(`[data-feature="${action}"]`);
+    assert.ok(await button.isVisible());
+    assert.equal(await button.evaluate((el) => !!el.closest("details")), false);
+  }
   const menu = (key) =>
     toolbar.locator(`[data-selection-menu=${key}] > summary`);
   await menu("arrange").focus();
@@ -142,9 +153,9 @@ try {
   await saved();
   // Bulk selection adapts the toolbar; actions must apply to all selected objects.
   await page.keyboard.press("Control+a");
-  assert.match(
-    await toolbar.locator(".selection-kind").textContent(),
-    /4 objects/,
+  assert.equal(
+    await toolbar.locator(".selection-filter-total").textContent(),
+    "4",
   );
   assert.equal(await toolbar.locator("[data-pro=inline]").count(), 0);
   await menu("color").click();
@@ -166,6 +177,15 @@ try {
   await clickControl(toolbar.locator("[data-feature=bring-front]"));
   await until(async () => (await current()).nodes.at(-1).id === "note");
   await saved();
+  await toolbar.locator('[data-feature="send-back"]').click();
+  await until(async () => (await current()).nodes[0].id === "note");
+  await toolbar.locator('[data-feature="selection-delete"]').click();
+  await until(
+    async () => !(await current()).nodes.some((n) => n.id === "note"),
+  );
+  await page.keyboard.press("Control+z");
+  await until(async () => (await current()).nodes.some((n) => n.id === "note"));
+  await saved();
   await page.reload();
   await page.locator("#canvas").waitFor();
   await find("note", "First idea");
@@ -186,8 +206,16 @@ try {
     await page.locator("[data-node=note]").click();
     box = await toolbar.boundingBox();
     assert.ok(box.x >= 0 && box.x + box.width <= size.width);
-    assert.ok(box.height < 100);
-    for (const key of ["color", "arrange", "more"]) {
+    assert.ok(box.height < 140, JSON.stringify(box));
+    for (const action of ["bring-front", "send-back", "selection-delete"]) {
+      const button = await toolbar
+        .locator(`[data-feature="${action}"]`)
+        .boundingBox();
+      assert.ok(
+        button && button.x >= 0 && button.x + button.width <= size.width,
+      );
+    }
+    for (const key of ["color", "arrange", "text-align"]) {
       await menu(key).click();
       await page.waitForTimeout(50);
       const panel = await toolbar

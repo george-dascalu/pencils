@@ -1,0 +1,35 @@
+.alignment-guides {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 5;
+  color: #b64087;
+  overflow: hidden;
+}
+.alignment-guides path {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1;
+}
+.alignment-guides .guide-align path:first-child {
+  stroke-dasharray: 4 3;
+}
+.alignment-guides text {
+  fill: currentColor;
+  font: 11px var(--app-font, sans-serif);
+  paint-order: stroke;
+  stroke: var(--board-paper, #fff);
+  stroke-width: 4px;
+  stroke-linejoin: round;
+}
+[data-theme="dark"] .alignment-guides {
+  color: #f19dce;
+}
+
+/* Keep alignment feedback visible while the selection is moving. */
+.canvas.object-dragging #selection-tools {
+  visibility: hidden;
+  pointer-events: none;
+}

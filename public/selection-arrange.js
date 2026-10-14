@@ -11,7 +11,12 @@ export const arrangementActions = [
   "bring-front",
   "send-back",
 ];
-export function arrangeSelection(board, nodes, action) {
+export function arrangeSelection(
+  board,
+  nodes,
+  action,
+  { carryContents = true } = {},
+) {
   const movable = nodes.filter((n) => !n.locked);
   if (!movable.length) return;
   if (["bring-front", "send-back"].includes(action)) {
@@ -53,11 +58,12 @@ export function arrangeSelection(board, nodes, action) {
       at += n[size] + gap;
     }
   }
+  if (!carryContents) return;
   // Moving a frame carries its contents, including nested frames, exactly once.
   const selected = new Set(nodes.map((n) => n.id)),
     byId = new Map(board.nodes.map((n) => [n.id, n]));
   for (const n of board.nodes) {
-    if (n.locked || selected.has(n.id)) continue;
+    if (selected.has(n.id)) continue;
     let parent = parents.get(n.id);
     const seen = new Set();
     while (parent && !seen.has(parent)) {

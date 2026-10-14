@@ -501,8 +501,8 @@ textarea:focus-visible,
   font-size: 12px;
 }
 .board-node.frame {
-  background: #f2f5eb77 !important;
-  border: 2px dashed #93a27c;
+  background: var(--surface);
+  border: 2px solid var(--line);
   box-shadow: none;
 }
 .board-node.frame .node-text {
@@ -546,17 +546,34 @@ textarea:focus-visible,
   color: #60744e;
 }
 .resize-handle {
+  --resize-offset: -6px;
   position: absolute;
-  right: -6px;
-  bottom: -6px;
+  right: var(--resize-offset);
+  bottom: var(--resize-offset);
   width: 14px;
   height: 14px;
-  border: 2px solid #fff;
+  border: 2px solid var(--surface, #fff);
   background: #587843;
   border-radius: 2px;
   cursor: nwse-resize;
   z-index: 6;
+  touch-action: none;
 }
+.board-node.collapsed-frame > .resize-handle {
+  display: none;
+}
+.resize-handle[data-resize-corner^="n"] {
+  top: var(--resize-offset);
+  bottom: auto;
+}
+.resize-handle[data-resize-corner$="w"] {
+  left: var(--resize-offset);
+  right: auto;
+}
+.resize-handle:is([data-resize-corner="ne"], [data-resize-corner="sw"]) {
+  cursor: nesw-resize;
+}
+
 .selection-tools {
   position: absolute;
   bottom: 46px;
@@ -661,7 +678,7 @@ textarea:focus-visible,
     padding: 5px;
     font-size: 11px;
   }
-  .board-help {
+  .board-footer {
     display: none;
   }
   .canvas-extra-tools {

@@ -1,3 +1,5 @@
+import { gridMarkdown, validGrid } from "./grid-model.js";
+import { arrowHeads } from "./connector-style.js";
 // JSON Canvas 1.0 is the on-disk interchange format. Standard fields always win
 // over extensions, so edits made by Obsidian are never replaced by stale metadata.
 export const palette = {
@@ -77,6 +79,7 @@ export function decodeCanvas(source, defaults = {}) {
         Object.assign(node, {
           type: "image",
           src: n.file.split("/").slice(2).join("/"),
+          text: typeof ext.caption === "string" ? ext.caption : n.file.split("/").pop(),
         });
       else Object.assign(node, { type: "file", file: n.file });
       if (n.subpath) node.subpath = n.subpath;
@@ -84,12 +87,18 @@ export function decodeCanvas(source, defaults = {}) {
       Object.assign(node, { type: "link", url: n.url, text: n.url });
     else if (n.type === "text")
       Object.assign(node, {
-        type: ["sticky", "shape", "draw", "query"].includes(ext.type)
+        type: ["sticky", "shape", "draw", "query", "grid"].includes(ext.type)
           ? ext.type
           : "text",
         text: n.text || "",
       });
     else throw new Error(`Unsupported JSON Canvas node type: ${n.type}`);
+    if (node.type === "grid" && !validGrid(node.grid))
+      throw new Error("Invalid Canvas grid data.");
+    if (node.type === "grid" && n.text !== gridMarkdown(node.grid)) {
+      node.type = "text"; // An external editor changed the Markdown fallback.
+      delete node.grid;
+    }
     return node;
   });
   const edges = (source.edges || []).map((e) => ({
@@ -111,7 +120,31 @@ export function decodeCanvas(source, defaults = {}) {
       "label",
     ]),
   }));
-  for (const e of edges) if (!Object.keys(e.native).length) delete e.native;
+  for (const [i, e] of edges.entries()) {
+    if (!Object.keys(e.native).length) delete e.native;
+    // JSON Canvas supports none/arrow. Restore richer shapes only while the
+    // native endpoint still matches the arrow fallback written by Pencils.
+    for (const key of ["fromEnd", "toEnd"]) {
+      const custom = source.edges[i].pencils?.[key];
+      if (
+        e[key] === "arrow" &&
+        !["none", "arrow"].includes(custom) &&
+        arrowHeads.some(([value]) => value === custom)
+      )
+        e[key] = custom;
+    }
+  }
+  // External Markdown edits can turn a grid back into a normal text object.
+  // Keep its children at their world positions, without stale cell membership.
+  const containers = new Map(nodes.map((n) => [n.id, n]));
+  for (const n of nodes)
+    if (
+      n.gridCell &&
+      !containers.get(n.frame)?.grid?.cells[n.gridCell.row]?.[n.gridCell.column]
+    ) {
+      delete n.frame;
+      delete n.gridCell;
+    }
   return {
     ...meta,
     ...defaults,
@@ -160,9 +193,11 @@ export function encodeCanvas(board) {
         Object.assign(result, {
           type: "text",
           text:
-            n.type === "query"
-              ? n.text || "Live task view (open in Pencils)"
-              : n.text || "",
+            n.type === "grid"
+              ? gridMarkdown(n.grid)
+              : n.type === "query"
+                ? n.text || "Live task view (open in Pencils)"
+                : n.text || "",
         });
       result.pencils = omit(n, [
         "native",
@@ -179,6 +214,7 @@ export function encodeCanvas(board) {
         "subpath",
         "url",
       ]);
+      if(n.type==="image")result.pencils.caption=n.text||"";
       return result;
     }),
     edges: board.edges.map((e) => ({
@@ -190,9 +226,15 @@ export function encodeCanvas(board) {
         "routing",
         "relationship",
         "dependency",
+        "width",
+        "lineStyle",
       ]),
       fromNode: e.from,
       toNode: e.to,
+      ...(e.fromEnd
+        ? { fromEnd: e.fromEnd === "none" ? "none" : "arrow" }
+        : {}),
+      ...(e.toEnd ? { toEnd: e.toEnd === "none" ? "none" : "arrow" } : {}),
       pencils: omit(e, [
         "native",
         "id",
@@ -202,8 +244,6 @@ export function encodeCanvas(board) {
         "toNode",
         "fromSide",
         "toSide",
-        "fromEnd",
-        "toEnd",
         "color",
         "label",
       ]),

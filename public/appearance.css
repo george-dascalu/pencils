@@ -331,7 +331,6 @@ body {
 [data-theme="dark"] .canvas {
   background-color: #17221c;
   background-image: radial-gradient(#415448 0.8px, transparent 0.8px);
-  border-color: var(--line);
 }
 [data-theme="dark"] .board-node:is(.task, .file, .query, .link) {
   background: var(--surface);
@@ -345,12 +344,8 @@ body {
   color: var(--ink);
 }
 [data-theme="dark"] .board-node.frame {
-  background: #24342b55;
-  border-color: #789483;
-  color: var(--ink);
-}
-[data-theme="dark"] .board-node.inline-editing {
   background: var(--surface);
+  border-color: #789483;
   color: var(--ink);
 }
 [data-theme="dark"] .markdown-preview a,
@@ -392,7 +387,7 @@ body {
     .live-card-state select,
     .canvas-presence .button,
     .participant-cursor label,
-    .board-node.frame > button,
+    .board-node.frame > [data-pro="collapse"],
     .board-node.frame.collapsed-frame
   ) {
   background-color: var(--surface);

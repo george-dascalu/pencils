@@ -1,6 +1,6 @@
+import { canTransition } from "./workflow-model.js";
 export function kanbanDrag(ctx) {
-  const { state, task, patchTask, renderView, storage, toast, statusNames } =
-    ctx;
+  const { state, task, patchTask, renderView, storage, toast } = ctx;
   let drag = null,
     frame = null;
   const reduce = matchMedia("(prefers-reduced-motion: reduce)");
@@ -13,6 +13,10 @@ export function kanbanDrag(ctx) {
     document
       .querySelectorAll(".kanban-column.over")
       .forEach((el) => el.classList.remove("over"));
+    document.querySelectorAll(".workflow-blocked").forEach((el) => {
+      el.classList.remove("workflow-blocked");
+      el.removeAttribute("title");
+    });
     document.body.classList.remove("kanban-dragging");
     state.kanbanDragging = false;
     drag = null;
@@ -24,10 +28,17 @@ export function kanbanDrag(ctx) {
     const column = document
       .elementFromPoint(x, y)
       ?.closest("[data-drop-status]");
+    const permitted =
+      column &&
+      canTransition(
+        state.config,
+        task(drag.id)?.status,
+        column.dataset.dropStatus,
+      );
     document.querySelectorAll(".kanban-column.over").forEach((el) => {
       if (el !== column) el.classList.remove("over");
     });
-    if (!column) {
+    if (!permitted) {
       drag.placeholder.remove();
       drag.column = null;
       return;
@@ -106,6 +117,18 @@ export function kanbanDrag(ctx) {
       Math.max(12, Math.min(r.width - 12, e.clientX - r.left)),
       Math.max(12, Math.min(r.height - 12, e.clientY - r.top)),
     );
+    for (const col of document.querySelectorAll("[data-drop-status]")) {
+      if (
+        !canTransition(
+          state.config,
+          task(card.dataset.dragTask)?.status,
+          col.dataset.dropStatus,
+        )
+      ) {
+        col.classList.add("workflow-blocked");
+        col.title = "This move is not allowed by the project workflow.";
+      }
+    }
     drag = {
       card,
       id: card.dataset.dragTask,
@@ -130,10 +153,8 @@ export function kanbanDrag(ctx) {
   document.addEventListener("dragover", (e) => {
     if (!drag) return;
     e.preventDefault();
-    e.dataTransfer.dropEffect = e.target.closest("[data-drop-status]")
-      ? "move"
-      : "none";
     update(e.clientX, e.clientY);
+    e.dataTransfer.dropEffect = drag.column ? "move" : "none";
   });
   document.addEventListener("drop", async (e) => {
     if (!drag) return;
@@ -178,7 +199,6 @@ export function kanbanDrag(ctx) {
       );
       renderView();
       await saving;
-      toast(`Moved to ${statusNames[status] || status}.`);
     } catch (error) {
       toast(error.message, true);
       renderView();

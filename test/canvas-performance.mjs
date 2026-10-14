@@ -1,3 +1,4 @@
+import { openBoardSearch } from "./menu-controls.mjs";
 import assert from "node:assert/strict";
 import fs from "node:fs/promises";
 import os from "node:os";
@@ -77,6 +78,25 @@ try {
     count = await page.locator(".board-node").count();
   assert.ok(count < 700, `Expected culling, got ${count} DOM cards`);
   assert.ok(load < 6000, `Initial load ${load} ms exceeds 6 seconds`);
+  // Keep the pointer held down: preloading must not wait until a pan ends.
+  const startingIds = await page
+    .locator(".board-node")
+    .evaluateAll((els) => els.map((el) => el.dataset.node));
+  await page.keyboard.press("h");
+  const panBox = await page.locator("#canvas").boundingBox();
+  await page.mouse.move(panBox.x + panBox.width - 80, panBox.y + 300);
+  await page.mouse.down();
+  await page.mouse.move(panBox.x + 80, panBox.y + 300, { steps: 12 });
+  await page.waitForFunction(
+    (ids) =>
+      [...document.querySelectorAll(".board-node")].some(
+        (el) => !ids.includes(el.dataset.node),
+      ),
+    startingIds,
+  );
+  await page.mouse.up();
+  await page.keyboard.press("v");
+  console.log("PASS: new cards preload during a held pan");
   const timings = await page.evaluate(async () => {
     const canvas = document.querySelector("#canvas");
     canvas.scrollIntoView({ block: "center" });
@@ -111,9 +131,58 @@ try {
       panP95Ms: Math.round(p95),
     }),
   );
+  const duringZoom = await page.evaluate(async () => {
+    const canvas = document.querySelector("#canvas"),
+      world = document.querySelector("#canvas-world");
+    const ids = new Set(
+      [...world.querySelectorAll(".board-node")].map((el) => el.dataset.node),
+    );
+    const retained = world.querySelector(
+      ".board-node.sticky .board-node-content",
+    );
+    let added = false;
+    const observer = new MutationObserver((records) => {
+      if (canvas.classList.contains("zooming"))
+        added ||= records.some((record) =>
+          [...record.addedNodes].some(
+            (el) =>
+              el.classList?.contains("board-node") && !ids.has(el.dataset.node),
+          ),
+        );
+    });
+    observer.observe(world, { childList: true });
+    const rect = canvas.getBoundingClientRect();
+    canvas.dispatchEvent(
+      new WheelEvent("wheel", {
+        bubbles: true,
+        cancelable: true,
+        deltaY: 350,
+        clientX: rect.x + rect.width / 2,
+        clientY: rect.y + rect.height / 2,
+      }),
+    );
+    const start = performance.now();
+    while (
+      canvas.classList.contains("zooming") &&
+      performance.now() - start < 1500
+    )
+      await new Promise(requestAnimationFrame);
+    observer.disconnect();
+    return { added, retained: !retained || retained.isConnected };
+  });
+  assert.ok(duringZoom.added, "Cards preload before animated zoom finishes");
+  assert.ok(
+    duringZoom.retained,
+    "Existing card content is not rebuilt when neighbours load",
+  );
+  console.log("PASS: continuous zoom preloading and stable existing card DOM");
   await page.locator("[data-action=board-fit]").click();
   await page.waitForTimeout(150);
-  assert.ok((await page.locator(".board-node").count()) < 700);
+  const overviewCount = await page.locator(".board-node").count();
+  assert.ok(
+    overviewCount > 100 && overviewCount < 700,
+    "Overview retains detail instead of dropping every card",
+  );
   console.log(
     "PASS: overview renders all objects as a bitmap with bounded detailed DOM",
   );
@@ -148,6 +217,7 @@ try {
   assert.notEqual(await page.locator("#zoom-label").textContent(), before);
   console.log("PASS: two-finger pan and pinch zoom");
   // Move to blank board space and draw using actual pen pointer events with pressure.
+  await openBoardSearch(page);
   await page.locator("#canvas-find").fill("Planning idea 4999");
   await page.locator("[data-pro=find-result][data-id=node-4999]").click();
   await page.evaluate(() =>

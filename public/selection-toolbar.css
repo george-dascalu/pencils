@@ -1,5 +1,5 @@
 /* One floating control surface, using the workspace's icons and colour tokens. */
-#selection-tools {
+:is(#selection-tools, .inline-floating-tools, .task-rich-tools) {
   padding: 5px;
   gap: 0;
   border-radius: 12px;
@@ -32,7 +32,8 @@
   color: var(--muted);
   white-space: nowrap;
 }
-#selection-tools :is(.selection-action, summary) {
+:is(#selection-tools, .inline-floating-tools, .task-rich-tools)
+  :is(.selection-action, summary) {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -48,24 +49,32 @@
   flex-shrink: 0;
   font-size: 12px;
 }
-#selection-tools .icon {
+:is(#selection-tools, .inline-floating-tools, .task-rich-tools) .icon {
   width: 18px;
   height: 18px;
   flex-shrink: 0;
 }
-#selection-tools summary > .icon:last-child {
+:is(#selection-tools, .inline-floating-tools, .task-rich-tools)
+  summary
+  > .icon:last-child {
   width: 11px;
 }
-#selection-tools :is(.selection-action, summary):hover,
-#selection-tools details[open] > summary,
-#selection-tools [aria-pressed="true"] {
+:is(#selection-tools, .inline-floating-tools, .task-rich-tools)
+  :is(.selection-action, summary):hover,
+:is(#selection-tools, .inline-floating-tools, .task-rich-tools)
+  details[open]
+  > summary,
+:is(#selection-tools, .inline-floating-tools, .task-rich-tools)
+  [aria-pressed="true"] {
   background: var(--surface-soft);
 }
-#selection-tools :is(button, summary, input):focus-visible {
+:is(#selection-tools, .inline-floating-tools, .task-rich-tools)
+  :is(button, summary, input):focus-visible {
   outline: 2px solid #4276a5;
   outline-offset: 2px;
 }
-#selection-tools :is(button:disabled, [aria-disabled="true"]) {
+:is(#selection-tools, .inline-floating-tools, .task-rich-tools)
+  :is(button:disabled, [aria-disabled="true"]) {
   opacity: 0.35;
   cursor: not-allowed;
 }
@@ -102,7 +111,9 @@
 .selection-menu:not([open]) > .selection-popover {
   display: none;
 }
-#selection-tools .selection-popover > .selection-action {
+:is(#selection-tools, .inline-floating-tools, .task-rich-tools)
+  .selection-popover
+  > .selection-action {
   justify-content: flex-start;
   height: auto;
   min-height: 36px;
@@ -128,11 +139,12 @@
   grid-template-columns: repeat(3, 1fr);
   gap: 4px;
 }
-#selection-tools [data-feature="selection-delete"] {
+:is(#selection-tools, .inline-floating-tools, .task-rich-tools)
+  [data-feature="selection-delete"] {
   color: var(--danger, #bd4940);
 }
 @media (max-width: 600px) {
-  #selection-tools {
+  :is(#selection-tools, .inline-floating-tools, .task-rich-tools) {
     padding: 4px;
     row-gap: 5px;
   }
@@ -145,9 +157,151 @@
   .selection-group:first-of-type {
     border-left: 0;
   }
-  #selection-tools :is(.selection-action, summary) {
+  :is(#selection-tools, .inline-floating-tools, .task-rich-tools)
+    :is(.selection-action, summary) {
     min-width: 32px;
     height: 36px;
     padding: 6px;
   }
+}
+
+[data-selection-menu="convert"] > summary {
+  gap: 8px;
+  padding: 0 10px;
+  font-size: 13px;
+  white-space: nowrap;
+}
+.selection-popover .conversion-hint {
+  max-width: 210px;
+  margin: 8px 6px 4px;
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+.connector-sample {
+  width: 40px;
+  height: 20px;
+  flex-shrink: 0;
+}
+.connector-tools .selection-group:first-child {
+  border-left: 0;
+}
+.connector-tools .field {
+  margin: 4px 0;
+}
+.connector-tools .field :is(input, select) {
+  width: 100%;
+  min-width: 0;
+}
+.connector-tools [data-action="edge-delete"] {
+  color: var(--danger, #bd4940);
+}
+
+[data-selection-menu="filter"] > summary {
+  gap: 6px;
+  padding: 0 8px;
+}
+.selection-filter-total,
+.selection-filter-count {
+  font-variant-numeric: tabular-nums;
+  color: var(--muted);
+}
+.selection-filter-total {
+  border-radius: 4px;
+  padding: 2px 5px;
+  background: var(--surface-soft);
+}
+[data-selection-menu="filter"] .selection-popover {
+  width: 280px;
+}
+.selection-filter-hint {
+  margin: 0 7px 7px;
+  font-size: 11px;
+  color: var(--muted);
+  line-height: 1.5;
+}
+.selection-filter-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 38px;
+  border-radius: 6px;
+}
+.selection-filter-row:hover {
+  background: var(--surface-soft);
+}
+.selection-filter-row label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  cursor: pointer;
+  font-size: 12px;
+  padding: 6px;
+}
+.selection-filter-row input {
+  width: 15px;
+  height: 15px;
+  margin: 0;
+  accent-color: var(--green);
+}
+.selection-filter-count {
+  margin-left: auto;
+}
+.selection-filter-row > button {
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--muted);
+  font-size: 11px;
+  padding: 7px;
+  cursor: pointer;
+}
+.selection-filter-row > button:hover {
+  color: var(--ink);
+  background: var(--line);
+}
+.selection-filter-footer {
+  display: flex;
+  justify-content: space-between;
+  gap: 6px;
+  padding-top: 8px;
+  border-top: 1px solid var(--line);
+  margin-top: 6px;
+}
+@media (max-width: 600px) {
+  .selection-filter-caption {
+    display: none;
+  }
+}
+
+.selection-filter-total.filtered {
+  background: var(--green);
+  color: white;
+}
+
+.connector-tools .connector-inline-field {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  margin: 0;
+  font-size: 9px;
+  line-height: 1.2;
+  color: var(--muted);
+}
+.connector-tools .connector-inline-field select {
+  width: auto;
+  min-width: 65px;
+  height: 28px;
+  padding: 3px 5px;
+  font: inherit;
+  font-size: 12px;
+  color: var(--ink);
+  background: var(--surface);
+  border-color: var(--line);
+  border-radius: 5px;
+}
+.connector-tools .connector-inline-field:has([data-edge-field="width"]) select {
+  min-width: 48px;
 }

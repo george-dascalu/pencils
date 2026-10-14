@@ -1,3 +1,4 @@
+import { openBoardSearch } from "./menu-controls.mjs";
 import assert from "node:assert/strict";
 import fs from "node:fs/promises";
 import os from "node:os";
@@ -97,6 +98,7 @@ async function saved() {
   );
 }
 async function find(id, text) {
+  await openBoardSearch(page);
   await page.locator("#canvas-find").fill(text);
   await page.locator(`[data-pro=find-result][data-id="${id}"]`).click();
   await page.waitForTimeout(100);
@@ -133,8 +135,8 @@ try {
     fullPage: true,
   });
   await page.mouse.up();
-  await page.locator("#canvas-inline-form textarea").fill("Dragged sticky");
-  await page.locator("#canvas-inline-form [type=submit]").click();
+  await page.locator("#canvas-inline-form .inline-rich").fill("Dragged sticky");
+  await page.locator('[data-pro="search-toggle"]').click();
   await until(async () =>
     (await current()).nodes.some((n) => n.text === "Dragged sticky"),
   );

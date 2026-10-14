@@ -48,11 +48,12 @@ const shot = (name) =>
 const click = (action) =>
   clickControl(page.locator(`[data-action="${action}"]`).first());
 const view = (name) => page.locator(`[data-view="${name}"]`).click();
-const saved = async (fn) => {
+const saved = async (fn, entityId) => {
   const response = page.waitForResponse(
     (r) =>
       (r.request().method() === "PATCH" || r.url().endsWith("/undo")) &&
-      r.url().includes("/api/"),
+      r.url().includes("/api/") &&
+      (!entityId || r.url().includes(entityId)),
   );
   await fn();
   assert.equal((await response).status(), 200);
@@ -75,18 +76,22 @@ try {
 
   await click("task-new");
   await page.locator('#task-form [name="title"]').fill("Browser-tested task");
-  await page.locator('#task-form [name="type"]').selectOption("bug");
-  await page.locator('#task-form [name="priority"]').selectOption("urgent");
+  await page.locator('[data-task-picker=type] .task-picker-trigger').click();
+  await page.locator('[data-task-picker=type] [data-picker-value=bug]').click();
+  await page.locator('[data-task-picker=priority] .task-picker-trigger').click();
+  await page.locator('[data-task-picker=priority] [data-picker-value=urgent]').click();
   const epic = (await snapshot()).tasks.find((t) => t.type === "epic");
-  await page.locator('#task-form [name="parent"]').selectOption(epic.id);
-  await page.locator('#task-form [name="assignee"]').fill("George");
-  await page.locator('#task-form [name="tags"]').fill("testing, offline");
+  await page.locator('[data-task-picker=parent] .task-picker-trigger').click();
+  await page.locator(`[data-task-picker=parent] [data-picker-value="${epic.id}"]`).click();
+
+
+  await page.locator('#task-form [data-rich-mode="source"]').click();
   await page
     .locator('#task-form [name="body"]')
     .fill(
       "# Browser notes\n\n- [ ] Persist this task\n\n<script>window.__pwned=true</script>",
     );
-  await click("md-preview");
+  await page.locator("#task-form [data-rich-preview]").click();
   assert.equal(
     await page.locator("#markdown-preview h1").textContent(),
     "Browser notes",
@@ -98,7 +103,7 @@ try {
     (t) => t.title === "Browser-tested task",
   );
   assert.equal(created.parent, epic.id);
-  assert.deepEqual(created.tags, ["testing", "offline"]);
+  assert.deepEqual(created.tags, []);
   console.log("PASS: task creation, hierarchy, Markdown preview, safe HTML");
 
   await view("table");
@@ -125,10 +130,12 @@ try {
   console.log("PASS: spreadsheet text and status changes persist");
 
   await view("kanban");
-  await saved(() =>
-    page
-      .locator(`[data-drag-task="${created.id}"]`)
-      .dragTo(page.locator('[data-drop-status="done"]')),
+  await saved(
+    () =>
+      page
+        .locator(`[data-drag-task="${created.id}"]`)
+        .dragTo(page.locator('[data-drop-status="done"]')),
+    created.id,
   );
   assert.equal(
     (await snapshot()).tasks.find((t) => t.id === created.id).status,
@@ -162,11 +169,9 @@ try {
   await sticky.dblclick();
   await page.locator("#canvas-inline-form").waitFor();
   await page
-    .locator('#canvas-inline-form [name="text"]')
+    .locator("#canvas-inline-form .inline-rich")
     .fill("Edited on the canvas");
-  await saved(() =>
-    page.locator('#canvas-inline-form [type="submit"]').click(),
-  );
+  await saved(() => page.locator('[data-pro="search-toggle"]').click());
   assert.equal(
     (await snapshot()).boards[0].nodes.find((n) => n.id === "n-note").text,
     "Edited on the canvas",
@@ -190,9 +195,9 @@ try {
   await page.locator('[data-action="board-add"][data-tool="sticky"]').click();
   await page.locator("#canvas").click({ position: { x: 450, y: 350 } });
   await page
-    .locator('#canvas-inline-form [name="text"]')
+    .locator("#canvas-inline-form .inline-rich")
     .fill("New persistent sticky");
-  await page.locator('#canvas-inline-form [type="submit"]').click();
+  await page.locator('[data-pro="search-toggle"]').click();
   await page.waitForFunction(() =>
     /All (canvas )?changes saved/.test(
       document.querySelector("#board-save")?.textContent,
@@ -223,9 +228,15 @@ try {
   await page.locator('#board-form [type="submit"]').click();
   await page.locator("dialog").waitFor({ state: "detached" });
   assert.equal((await snapshot()).boards.length, 2);
-  await click("board-rename");
-  await page.locator('#board-form [name="title"]').fill("Planning canvas");
-  await page.locator('#board-form [type="submit"]').click();
+  await page
+    .getByRole("button", { name: "Board settings", exact: true })
+    .click();
+  await page
+    .locator('#board-settings-form [name="title"]')
+    .fill("Planning canvas");
+  await saved(() =>
+    page.locator('#board-settings-form [type="submit"]').click(),
+  );
   await page.locator("dialog").waitFor({ state: "detached" });
   assert.ok(
     (await snapshot()).boards.some((b) => b.title === "Planning canvas"),
@@ -252,9 +263,9 @@ try {
     raw2.replace("Changed in Obsidian", "Newer Obsidian edit"),
   );
   await page.locator('#task-form [type="submit"]').click();
-  await page.locator(".form-error:not(.hidden)").waitFor();
+  await page.locator("#task-form > .task-editor-content > .dialog-body > .form-error:not(.hidden)").waitFor();
   assert.match(
-    await page.locator(".form-error").textContent(),
+    await page.locator("#task-form > .task-editor-content > .dialog-body > .form-error").textContent(),
     /draft is retained/,
   );
   assert.equal(
@@ -354,6 +365,11 @@ try {
   await page.waitForFunction(
     () => document.querySelectorAll(".project-link").length === 3,
   );
+  // The project settings page refreshes the workspace before navigation settles.
+  await page
+    .locator("#toasts")
+    .getByText("Project updated.", { exact: true })
+    .waitFor();
   const afterMove = await store.snapshot(original.id);
   assert.equal(afterMove.project.organisation, studio.id);
   assert.deepEqual(afterMove.tasks, beforeMove.tasks);

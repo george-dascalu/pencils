@@ -1,0 +1,434 @@
+.board-node.grid {
+  padding: 0;
+  display: block;
+  border-radius: 6px;
+  background: var(--surface);
+  color: var(--ink);
+  min-width: 0;
+}
+.board-node.grid .board-node-content {
+  display: block;
+  overflow: hidden;
+}
+.grid-grip {
+  position: absolute;
+  top: calc(24px - var(--grid-axis-size, 24px));
+  left: 0;
+  right: 0;
+  min-width: calc(var(--grid-hit-size, 8px) * 10);
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  gap: calc(var(--grid-hit-size, 8px) * 0.75);
+  height: var(--grid-axis-size, 24px);
+  padding: calc(var(--grid-hit-size, 8px) * 0.25)
+    calc(var(--grid-hit-size, 8px) * 1.25);
+  font-size: calc(var(--grid-hit-size, 8px) * 1.75);
+  line-height: calc(var(--grid-hit-size, 8px) * 2.5);
+  color: var(--ink);
+  background: var(--surface-soft);
+  cursor: grab;
+  user-select: none;
+}
+.grid-title {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 600;
+}
+.grid-title.is-placeholder {
+  color: var(--muted);
+  font-style: italic;
+  font-weight: 400;
+}
+.grid-title-edit {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 calc(var(--grid-hit-size, 8px) * 2.5);
+  width: calc(var(--grid-hit-size, 8px) * 2.5);
+  height: calc(var(--grid-hit-size, 8px) * 2.5);
+  padding: calc(var(--grid-hit-size, 8px) * 0.25);
+  border: 0;
+  border-radius: 3px;
+  color: var(--muted);
+  background: transparent;
+}
+.grid-title-edit:hover,
+.grid-title-edit:focus-visible {
+  color: var(--ink);
+  background: var(--surface);
+}
+.grid-title-edit svg {
+  width: calc(var(--grid-hit-size, 8px) * 1.75);
+  height: calc(var(--grid-hit-size, 8px) * 1.75);
+}
+.inline-editing .grid-title-edit {
+  display: none;
+}
+#canvas-inline-form
+  .grid-grip
+  :is(.inline-rich, .inline-preview, .inline-source) {
+  flex: 1;
+  min-width: 0;
+  min-height: calc(var(--grid-hit-size, 8px) * 2.5);
+  height: calc(var(--grid-hit-size, 8px) * 2.5);
+  max-height: calc(var(--grid-hit-size, 8px) * 2.5);
+  font-size: calc(var(--grid-hit-size, 8px) * 1.75) !important;
+  line-height: calc(var(--grid-hit-size, 8px) * 2.5) !important;
+  white-space: nowrap;
+  overflow: auto;
+}
+.grid-cells {
+  position: absolute;
+  top: 24px;
+  left: 0;
+  display: grid;
+  height: calc(100% - 24px);
+  width: 100%;
+}
+.grid-cell {
+  position: relative;
+  min-height: 0;
+  min-width: 0;
+  overflow: hidden;
+  border-right: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+  outline: none;
+  cursor: default;
+}
+.grid-header {
+  background: color-mix(in srgb, var(--accent, #839b70) 12%, var(--surface));
+  font-weight: 600;
+}
+.grid-cell-text {
+  padding: var(--board-text-padding, 16px);
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  font-size: 14px;
+  line-height: 1.5;
+  text-align: inherit;
+}
+.grid-cell-text > :first-child {
+  margin-top: 0;
+}
+.grid-cell-text > :last-child {
+  margin-bottom: 0;
+}
+.board-node.grid.selected .grid-cell.active-cell {
+  box-shadow: inset 0 0 0 2px var(--accent, #819e68);
+}
+.grid-track-handle {
+  position: absolute;
+  display: none;
+  z-index: 4;
+}
+.selected:not(.locked):not(.inline-editing) .grid-track-handle {
+  display: block;
+}
+.grid-track-handle.column {
+  top: 24px;
+  bottom: 0;
+  width: 8px;
+  margin-left: -4px;
+  cursor: col-resize;
+}
+.grid-track-handle.row {
+  left: 0;
+  right: 0;
+  height: 8px;
+  margin-top: -4px;
+  cursor: row-resize;
+}
+.grid-track-handle:hover {
+  background: color-mix(in srgb, var(--accent, #819e68) 30%, transparent);
+}
+.grid-cell-address {
+  font-size: 12px;
+  color: var(--muted);
+  padding: 0 6px;
+}
+.board-node.grid #canvas-inline-form {
+  display: block;
+  width: 100%;
+  height: 100%;
+  padding: 0;
+}
+.board-node.grid .grid-cell .inline-rich {
+  min-height: 100%;
+  height: 100%;
+  overflow: auto;
+  outline: none;
+  border: 0;
+  background: transparent;
+  border-radius: 0;
+}
+.board-node.grid .grid-cell .inline-source,
+.board-node.grid .grid-cell .inline-preview {
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  padding: 16px;
+  overflow: auto;
+}
+
+.board-node.grid .board-node-content {
+  overflow: visible;
+}
+.grid-axis-label {
+  position: absolute;
+  display: none;
+  padding: 0;
+  border: 1px solid var(--line);
+  border-radius: 3px;
+  background: var(--surface-soft);
+  color: var(--muted);
+  font-size: 11px;
+  cursor: grab;
+  touch-action: none;
+  z-index: 5;
+}
+.grid-axis-label.column {
+  top: -22px;
+  height: 20px;
+}
+.grid-axis-label.row {
+  left: -24px;
+  width: 22px;
+}
+.board-node.grid.selected:not(.locked):not(.inline-editing) .grid-axis-label {
+  display: block;
+}
+.grid-axis-label:hover {
+  background: var(--surface);
+  color: var(--ink);
+}
+.grid-cell.active-cell {
+  background-image: linear-gradient(#839b7024, #839b7024);
+}
+.grid-reorder-marker {
+  position: absolute;
+  z-index: 9;
+  background: var(--green);
+  pointer-events: none;
+}
+.grid-reorder-marker.rows {
+  height: 3px;
+  left: 0;
+  width: 100%;
+}
+.grid-reorder-marker.columns {
+  width: 3px;
+  top: 24px;
+  bottom: 0;
+}
+.container-drop-preview {
+  position: absolute;
+  z-index: 9;
+  pointer-events: none;
+  border: 2px solid var(--green);
+  background: #839b7024;
+  border-radius: 4px;
+}
+.container-drop-preview span {
+  position: absolute;
+  top: 4px;
+  left: 4px;
+  background: var(--surface);
+  color: var(--ink);
+  font-size: 11px;
+  padding: 3px 6px;
+  border-radius: 4px;
+}
+
+/* Keep border targets usable at any zoom; corners and connector ports stay free. */
+.grid-track-handle,
+.grid-edge-handle {
+  touch-action: none;
+}
+.grid-track-handle.column {
+  width: var(--grid-hit-size, 8px);
+  margin-left: calc(var(--grid-hit-size, 8px) / -2);
+}
+.grid-track-handle.row {
+  height: var(--grid-hit-size, 8px);
+  margin-top: calc(var(--grid-hit-size, 8px) / -2);
+}
+.grid-track-handle.last-track {
+  z-index: 6;
+}
+.grid-track-handle.column.last-track {
+  top: calc(24px - 2 * var(--grid-axis-size, 24px) - 2px);
+  bottom: auto;
+  height: var(--grid-axis-size, 24px);
+}
+.grid-track-handle.row.last-track {
+  left: -24px;
+  right: auto;
+  width: 22px;
+}
+.grid-edge-handle {
+  position: absolute;
+  display: none;
+  z-index: 4;
+}
+.selected:not(.locked):not(.inline-editing) .grid-edge-handle {
+  display: block;
+}
+.grid-edge-handle.left,
+.grid-edge-handle.right {
+  top: 12px;
+  bottom: 12px;
+  width: var(--grid-hit-size, 8px);
+  cursor: ew-resize;
+}
+.grid-edge-handle.left {
+  left: calc(var(--grid-hit-size, 8px) / -2);
+}
+.grid-edge-handle.right {
+  right: calc(var(--grid-hit-size, 8px) / -2);
+}
+.grid-edge-handle.top,
+.grid-edge-handle.bottom {
+  left: 12px;
+  right: 12px;
+  height: var(--grid-hit-size, 8px);
+  cursor: ns-resize;
+}
+.grid-edge-handle.top {
+  top: calc(var(--grid-hit-size, 8px) / -2);
+}
+.grid-edge-handle.bottom {
+  bottom: calc(var(--grid-hit-size, 8px) / -2);
+}
+.grid-edge-handle:hover,
+.grid-edge-handle.resizing,
+.grid-track-handle.resizing {
+  background: color-mix(in srgb, var(--accent, #819e68) 45%, transparent);
+}
+.grid-resizing .grid-axis-label {
+  cursor: default;
+}
+
+/* Track grips stay legible and easy to grab at different board zoom levels. */
+.board-node.grid {
+  --grid-axis-size: calc(var(--grid-hit-size, 8px) * 3);
+}
+.grid-axis-label {
+  align-items: center;
+  justify-content: center;
+  gap: calc(var(--grid-hit-size, 8px) / 2);
+  font-size: calc(var(--grid-hit-size, 8px) * 1.5);
+  line-height: 1;
+  user-select: none;
+  transition:
+    background 120ms,
+    color 120ms;
+}
+.board-node.grid.selected:not(.locked):not(.inline-editing) .grid-axis-label {
+  display: flex;
+}
+.grid-axis-label.column {
+  top: calc(24px - 2 * var(--grid-axis-size) - 2px);
+  height: var(--grid-axis-size);
+}
+.grid-axis-label.row {
+  left: calc(-1 * var(--grid-axis-size) - 2px);
+  width: var(--grid-axis-size);
+  flex-direction: column;
+}
+.grid-axis-grip {
+  opacity: 0.5;
+}
+.grid-axis-label:hover .grid-axis-grip,
+.grid-axis-label:focus-visible .grid-axis-grip {
+  opacity: 1;
+}
+.grid-axis-label[aria-pressed="true"],
+.grid-axis-label:hover {
+  color: var(--ink);
+  background: color-mix(in srgb, var(--accent) 22%, var(--surface));
+}
+.grid-axis-label:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+.grid-track-handle.column.last-track {
+  top: calc(24px - 2 * var(--grid-axis-size) - 2px);
+  height: var(--grid-axis-size);
+}
+.grid-track-handle.row.last-track {
+  left: calc(-1 * var(--grid-axis-size) - 2px);
+  width: var(--grid-axis-size);
+}
+.grid-reordering,
+.grid-reordering * {
+  cursor: grabbing !important;
+}
+.grid-reordering #selection-tools,
+.grid-reorder-source
+  :is(
+    .grid-track-handle,
+    .grid-edge-handle,
+    .grid-insert,
+    .resize-handle,
+    .connection-port
+  ) {
+  visibility: hidden;
+}
+.grid-reorder-item {
+  transition: translate 140ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.grid-drag-preview {
+  position: absolute;
+  z-index: 2147483600;
+  overflow: hidden;
+  pointer-events: none;
+  background: var(--surface);
+  color: var(--ink);
+  border-radius: 4px;
+  outline: 2px solid var(--accent);
+  box-shadow:
+    0 10px 28px #0003,
+    0 2px 5px #0002;
+  opacity: 0.94;
+  will-change: translate;
+}
+.grid-drag-preview.invalid {
+  opacity: 0.45;
+}
+.grid-reorder-gap {
+  box-sizing: border-box;
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+  border: 2px dashed var(--accent);
+  border-radius: 3px;
+  transition:
+    left 140ms cubic-bezier(0.2, 0.8, 0.2, 1),
+    top 140ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.grid-reorder-gap[hidden] {
+  display: none;
+}
+.grid-drag-status {
+  position: absolute;
+  z-index: 80;
+  pointer-events: none;
+  padding: 7px 10px;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: var(--surface);
+  color: var(--ink);
+  box-shadow: 0 3px 12px #0002;
+  font-size: 12px;
+  max-width: calc(100% - 16px);
+}
+@media (prefers-reduced-motion: reduce) {
+  .grid-reorder-item,
+  .grid-reorder-gap,
+  .grid-axis-label {
+    transition: none;
+  }
+}

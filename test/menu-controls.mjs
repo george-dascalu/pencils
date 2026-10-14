@@ -11,3 +11,8 @@ export async function reveal(locator) {
 export async function clickControl(locator) {
   await (await reveal(locator)).click();
 }
+
+export async function openBoardSearch(page) {
+  if (!(await page.locator("#canvas-find").isVisible()))
+    await page.locator('[data-pro="search-toggle"]').click();
+}

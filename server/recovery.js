@@ -1,3 +1,5 @@
+import { schema } from "./model.js";
+import { canTransition, transitionError } from "../public/workflow-model.js";
 import fs from "node:fs/promises";
 import path from "node:path";
 import { createHash, randomUUID } from "node:crypto";
@@ -128,6 +130,11 @@ export function installRecovery(Store) {
         old.data.kind !== current.data.kind
       )
         throw new Problem(400, "Version belongs to another record.");
+      if (current.data.kind === "task") {
+        const config = schema((await this.read(this.file(current.data.project, "project"))).data.schema);
+        this.validateTask(old.data, config);
+        if (!canTransition(config, current.data.status, old.data.status)) throw new Problem(400, transitionError(config, current.data.status, old.data.status));
+      }
       // Use the old document as the template so removed properties are restored exactly.
       return this.write(
         file,

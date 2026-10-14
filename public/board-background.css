@@ -1,0 +1,165 @@
+.canvas,
+.background-preview,
+.pattern-sample {
+  --board-paper: #f5f6ee;
+  --board-line: #ced6c1;
+}
+[data-theme="dark"] :is(.canvas, .background-preview, .pattern-sample) {
+  --board-paper: #17221c;
+  --board-line: #415448;
+}
+.background-patterns {
+  border: 0;
+  padding: 0;
+  margin: 0 0 20px;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+}
+.background-patterns legend {
+  font-size: 12px;
+  margin-bottom: 10px;
+}
+.background-patterns label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  position: relative;
+  align-items: center;
+  font-size: 12px;
+  cursor: pointer;
+}
+.background-patterns input {
+  position: absolute;
+  top: 6px;
+  left: 6px;
+  accent-color: var(--green);
+}
+.pattern-sample {
+  display: block;
+  width: 100%;
+  height: 58px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background-color: var(--board-paper);
+  background-size: 12px 12px;
+}
+.background-patterns input:checked + .pattern-sample {
+  outline: 2px solid var(--green);
+  outline-offset: 1px;
+}
+.background-patterns input:focus-visible + .pattern-sample {
+  outline: 2px solid #4276a5;
+  outline-offset: 3px;
+}
+.pattern-dots {
+  background-image: radial-gradient(var(--board-line) 1px, transparent 1px);
+}
+.pattern-grid {
+  background-image:
+    linear-gradient(to right, var(--board-line) 1px, transparent 1px),
+    linear-gradient(to bottom, var(--board-line) 1px, transparent 1px);
+}
+.pattern-lines {
+  background-image: linear-gradient(
+    to bottom,
+    var(--board-line) 1px,
+    transparent 1px
+  );
+}
+.background-auto {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  color: var(--muted);
+}
+.background-auto input {
+  accent-color: var(--green);
+  width: auto;
+}
+.background-preview {
+  height: 150px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  margin: 16px 0 10px;
+  display: grid;
+  place-items: center;
+}
+.background-preview span {
+  padding: 6px 12px;
+  background: var(--surface);
+  color: var(--ink);
+  border: 1px solid var(--line);
+  border-radius: 5px;
+}
+#board-settings-form .dialog-foot {
+  flex-wrap: wrap;
+}
+#board-settings-form input[type="range"] {
+  width: 100%;
+  padding: 0;
+  accent-color: var(--green);
+}
+
+.board-settings-dialog {
+  width: min(580px, calc(100vw - 32px));
+}
+#board-settings-form {
+  display: flex;
+  flex-direction: column;
+  max-height: 90dvh;
+}
+#board-settings-form > .dialog-body {
+  overflow-y: auto;
+  min-height: 0;
+}
+#board-settings-form > :is(.dialog-head, .dialog-foot) {
+  flex-shrink: 0;
+}
+.board-settings-section + .board-settings-section {
+  border-top: 1px solid var(--line);
+  margin-top: 20px;
+  padding-top: 20px;
+}
+.board-settings-section h3 {
+  font-size: 14px;
+  margin: 0 0 14px;
+}
+.board-setting-toggle {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin: 12px 0;
+  cursor: pointer;
+  font-size: 13px;
+}
+.board-setting-toggle input {
+  width: auto;
+  margin: 3px 0 0;
+  accent-color: var(--green);
+}
+.board-setting-toggle small {
+  display: block;
+  margin-top: 4px;
+  font-size: 11px;
+  line-height: 1.5;
+  color: var(--muted);
+}
+#expanded-board-settings {
+  display: none;
+}
+.board-expanded #expanded-board-settings {
+  display: inline-flex;
+}
+body:has(.board-expanded) .board-toolbar .board-settings-button {
+  visibility: hidden;
+}
+@media (max-width: 600px) {
+  #board-settings-form .field-row {
+    grid-template-columns: 1fr;
+  }
+  #board-settings-form .dialog-body {
+    padding: 18px;
+  }
+}

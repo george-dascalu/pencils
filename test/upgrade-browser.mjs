@@ -104,9 +104,11 @@ try {
   await page.locator(".field-type").selectOption("number");
   await page.locator("#workflow-form [type=submit]").click();
   await page.locator("dialog").waitFor({ state: "detached" });
-  await page.locator("[data-action=task-new]").first().click();
+  await page.locator("[data-action=task-new]:visible").first().click();
   await page.locator("#task-form [name=title]").fill("Planned work");
-  await page.locator("#task-form [name=type]").selectOption("research");
+  await page.locator("[data-task-picker=type] .task-picker-trigger").click();
+  await page.locator("[data-task-picker=type] [data-picker-value=research]").click();
+  await page.getByText("Planning & relationships", { exact: true }).click();
   await page.locator("#task-form [name=start]").fill("2026-10-14");
   await page.locator("#task-form [name=due]").fill("2026-10-16");
   await page.locator('#task-form [name^="custom:"]').fill("42");
@@ -160,7 +162,7 @@ try {
       "../attachments/",
     ),
   );
-  await page.locator("[data-action=md-preview]").click();
+  await page.locator("#task-form [data-rich-preview]").click();
   assert.match(
     await page.locator("#markdown-preview a").getAttribute("href"),
     /\/api\/projects\/.*\/attachments\//,
@@ -190,9 +192,9 @@ try {
   );
   await page.locator("[data-node=n-note]").dblclick();
   await page
-    .locator("#canvas-inline-form [name=text]")
+    .locator("#canvas-inline-form .inline-rich")
     .fill("Survives a lost connection");
-  await page.locator("#canvas-inline-form [type=submit]").click();
+  await page.locator('[data-pro="search-toggle"]').click();
   await page.locator("#canvas-inline-form").waitFor({ state: "detached" });
   await until(() =>
     page.evaluate(() =>
@@ -235,7 +237,12 @@ try {
   await page.locator("[data-action=board-fit]").click();
   const selectedNode = page.locator("[data-node=n-note]");
   await selectedNode.click();
-  const handle = selectedNode.locator(".resize-handle"),
+  await clickControl(feature("ungroup"));
+  await page.locator("#canvas").click({position:{x:600,y:100}});
+  await selectedNode.click();
+  const handle = selectedNode.locator(
+      '.resize-handle[data-resize-corner="se"]',
+    ),
     box = await handle.boundingBox(),
     old = (await snap()).boards[0].nodes.find((n) => n.id === "n-note").w;
   await page.mouse.move(box.x + 5, box.y + 5);

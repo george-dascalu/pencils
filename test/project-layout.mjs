@@ -39,7 +39,7 @@ try {
       ["overview"],
       ["list", "tree", "table"],
       ["kanban", "board"],
-      ["calendar", "timeline"],
+      ["calendar", "timeline", "capacity"],
     ],
   );
   const views = [
@@ -51,6 +51,7 @@ try {
     "board",
     "calendar",
     "timeline",
+    "capacity",
   ];
   for (const size of [
     { width: 1440, height: 900 },
@@ -133,7 +134,7 @@ try {
   await page.locator("[data-action=dialog-close]").first().click();
   assert.deepEqual(errors, []);
   console.log(
-    "PASS: identical project header across all eight views, desktop/mobile menus, filters, project actions and scrolling",
+    "PASS: identical project header across all nine views, desktop/mobile menus, filters, project actions and scrolling",
   );
 } catch (e) {
   await page.screenshot({

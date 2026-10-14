@@ -47,7 +47,7 @@ test("distribution uses equal gaps and preserves outer bounds on both axes", () 
     );
   }
 });
-test("arranged frames carry nested contents while locked objects and layer ordering remain intact", () => {
+test("arranged frames carry nested and locked contents while layer ordering remains intact", () => {
   const b = {
     nodes: [
       { id: "f", type: "frame", x: 0, y: 0, w: 100, h: 100 },
@@ -60,7 +60,7 @@ test("arranged frames carry nested contents while locked objects and layer order
   arrangeSelection(b, [b.nodes[0], b.nodes[4]], "align-right");
   assert.equal(b.nodes[1].x, 510);
   assert.equal(b.nodes[2].x, 520);
-  assert.equal(b.nodes[3].x, 40);
+  assert.equal(b.nodes[3].x, 540);
   arrangeSelection(b, [b.nodes[0], b.nodes[1]], "bring-front");
   assert.deepEqual(
     b.nodes.map((n) => n.id),
@@ -71,4 +71,20 @@ test("arranged frames carry nested contents while locked objects and layer order
     b.nodes.map((n) => n.id),
     ["f", "nested", "child", "locked", "other"],
   );
+});
+
+test("filtered frame alignment leaves excluded contents untouched", () => {
+  const board = {
+    nodes: [
+      { id: "f", type: "frame", x: 0, y: 0, w: 200, h: 200 },
+      { id: "child", type: "text", frame: "f", x: 20, y: 20, w: 50, h: 50 },
+      { id: "other", type: "frame", x: 500, y: 200, w: 200, h: 200 },
+    ],
+  };
+  const child = structuredClone(board.nodes[1]);
+  arrangeSelection(board, [board.nodes[0], board.nodes[2]], "align-right", {
+    carryContents: false,
+  });
+  assert.equal(board.nodes[0].x, 500);
+  assert.deepEqual(board.nodes[1], child);
 });

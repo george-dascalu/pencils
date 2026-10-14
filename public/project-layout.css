@@ -352,3 +352,72 @@
     margin-right: 2px;
   }
 }
+.project-settings-page {
+  max-width: 1050px;
+  margin: auto;
+  padding: 28px;
+}
+.settings-page-heading h1 {
+  font-size: 24px;
+  margin: 0 0 8px;
+}
+.settings-page-heading p {
+  color: var(--muted);
+}
+.project-settings-page form {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+}
+.project-settings-page .dialog-body {
+  max-height: none;
+  padding: 24px;
+}
+.project-settings-page .dialog-foot {
+  position: sticky;
+  bottom: 0;
+  background: var(--surface);
+}
+.task-key {
+  display: block;
+  margin-bottom: 10px;
+}
+.task-picker-list {
+  max-height: 50vh;
+  overflow: auto;
+}
+.task-picker-list .board-pick {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  text-align: left;
+}
+.task-picker-list .board-pick[hidden] {
+  display: none;
+}
+.task-picker-list small {
+  margin-left: auto;
+  color: var(--muted);
+}
+.tree-label > .task-id {
+  flex-shrink: 0;
+  margin-right: 8px;
+}
+@media (max-width: 780px) {
+  .project-settings-page {
+    padding: 12px;
+  }
+  .project-settings-page .dialog-body {
+    padding: 16px;
+  }
+}
+.project-settings-page {
+  width: 100%;
+  min-width: 0;
+}
+.project-settings-page .dialog-foot {
+  flex-wrap: wrap;
+}
+.project-settings-page .field-row {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}

@@ -35,6 +35,16 @@ const until = async (fn) => {
   }
   throw Error("Timed out waiting for change");
 };
+async function setStatuses(names, done) {
+  const existing = await page.locator('[data-workflow-status]').evaluateAll(els=>els.map(el=>el.dataset.workflowStatus));
+  for (const name of names) {
+    await page.getByLabel('New status name',{exact:true}).fill(name);
+    await page.locator('[data-status-add]').click();
+  }
+  for (const id of existing) await page.locator(`[data-workflow-status="${id}"] [data-status-remove]`).click();
+  await page.locator(`[data-workflow-status="${done}"] [data-status-completed]`).check();
+  await page.locator(`[data-workflow-status="${names[0]}"] [data-status-initial]`).check();
+}
 try {
   await page.goto(base);
   await page
@@ -116,8 +126,7 @@ try {
   await page
     .getByRole("button", { name: "Project settings", exact: true })
     .click();
-  await page.locator("[name=project-statuses]").fill("ideas, active, shipped");
-  await page.locator("[name=project-done]").fill("shipped");
+  await setStatuses(["ideas", "active", "shipped"], "shipped");
   await page.locator("#project-form [type=submit]").click();
   await until(
     async () =>
@@ -130,7 +139,8 @@ try {
     "review",
     "done",
   ]);
-  await page.locator("[data-action=task-new]").first().click();
+  if (await page.locator("[data-action=settings-close]").count()) await page.locator("[data-action=settings-close]").click();
+  await page.locator("[data-action=task-new]:visible").first().click();
   assert.equal(
     await page.locator("#task-form [name=status]").inputValue(),
     "ideas",
@@ -156,34 +166,22 @@ try {
   await page
     .getByRole("button", { name: "Project settings", exact: true })
     .click();
-  await page.locator("[name=project-statuses]").fill("active, shipped");
-  await page.locator("#project-form [type=submit]").click();
-  await until(
-    async () =>
-      !(
-        await page.locator("#project-form .form-error").getAttribute("class")
-      ).includes("hidden"),
-  );
-  assert.deepEqual((await store.snapshot(project.id)).project.schema.statuses, [
-    "ideas",
-    "active",
-    "shipped",
-  ]);
-  page.once("dialog", (d) => d.accept());
-  await page.locator("#project-form [data-action=dialog-close]").last().click();
+  assert.ok(await page.locator('[data-workflow-status=ideas] [data-status-remove]').isDisabled());
+  assert.deepEqual((await store.snapshot(project.id)).project.schema.statuses, ["ideas","active","shipped"]);
+  await page.locator('#project-form [data-action=settings-close]').click();
   await page
     .getByRole("button", { name: "Expand sidebar", exact: true })
     .click();
   await page.locator(".side-new").click();
   await page.locator("#project-form [name=title]").fill("Independent workflow");
-  await page.locator("[name=project-statuses]").fill("queued, complete");
-  await page.locator("[name=project-done]").fill("complete");
+  await setStatuses(["queued", "complete"], "complete");
   await page.locator("#project-form [type=submit]").click();
   await page
     .locator(".breadcrumb strong")
     .filter({ hasText: "Independent workflow" })
     .waitFor();
-  await page.locator("[data-action=task-new]").first().click();
+  if (await page.locator("[data-action=settings-close]").count()) await page.locator("[data-action=settings-close]").click();
+  await page.locator("[data-action=task-new]:visible").first().click();
   assert.deepEqual(
     await page
       .locator("#task-form [name=status] option")

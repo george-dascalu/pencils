@@ -1,3 +1,4 @@
+import { openBoardSearch } from "./menu-controls.mjs";
 import { clickControl } from "./menu-controls.mjs";
 import assert from "node:assert/strict";
 import fs from "node:fs/promises";
@@ -97,6 +98,7 @@ async function saved() {
   );
 }
 async function find(id, text) {
+  await openBoardSearch(page);
   await page.locator("#canvas-find").fill(text);
   await page.locator(`[data-pro=find-result][data-id="${id}"]`).click();
   await page.waitForTimeout(100);
@@ -128,7 +130,12 @@ try {
   assert.ok(await page.locator("[data-feature=canvas-json]").isVisible());
   await summary("add").click();
   assert.ok(await page.locator("[data-feature=canvas-json]").isHidden());
-  await summary("navigate").click();
+  assert.equal(await summary("navigate").count(), 0);
+  assert.equal(await page.locator('[data-action="board-rename"]').count(), 0);
+  await summary("more").click();
+  assert.ok(await page.locator(".board-toolbar [data-pro=outline]").isVisible());
+  assert.ok(await page.locator(".board-toolbar [data-pro=present]").isVisible());
+  assert.ok(await page.locator("#frame-nav").isVisible());
   await page.locator(".breadcrumb strong").click();
   assert.equal(await page.locator(".board-menu[open]").count(), 0);
   await page
@@ -144,7 +151,7 @@ try {
   await page.locator("[data-view=board]").click();
   for (const sel of [
     "#saved-view",
-    "#canvas-snap",
+    ".board-settings-button",
     "[data-action=board-new]",
     ".board-menu [data-pro=outline]",
   ])
@@ -174,7 +181,7 @@ try {
     await page.locator("[data-action=dialog-close]").first().click();
     await page.getByRole("button", { name: "New task", exact: true }).click();
     await page.locator("[data-action=dialog-close]").first().click();
-    for (const key of ["project", "board", "add", "navigate", "more"]) {
+    for (const key of ["project", "board", "add", "more"]) {
       await summary(key).click();
       const box = await page
         .locator(`[data-board-menu=${key}] .board-menu-panel`)

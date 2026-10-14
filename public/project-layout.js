@@ -58,19 +58,15 @@ export function projectLayout(ctx) {
     const toolbar = $(".board-toolbar");
     if (!$("#canvas") || !toolbar) return;
     const boards = menu(toolbar, "board", "Board");
-    move(boards, '[data-action="board-rename"]');
-    const rename = boards.querySelector('[data-action="board-rename"]');
-    if (rename) rename.innerHTML = "Rename canvas";
     move(boards, '[data-action="board-new"]');
     const add = menu(toolbar, "add", "+ Add");
     move(add, '[data-action="board-task"]');
-    const navigate = menu(toolbar, "navigate", "Navigate");
     const more = menu(toolbar, "more", "More");
     // Dynamic tools are recreated on each board render; remove their old copies.
-    for (const panel of [boards, add, navigate, more])
+    for (const panel of [boards, add, more])
       for (const el of [...panel.children]) if (!el.dataset.action) el.remove();
     const extras = $("#canvas-extras");
-    const addFeatures = ["frame-add", "draw-tool", "image-add"];
+    const addFeatures = ["grid-add", "frame-add", "draw-tool", "image-add"];
     const addPro = ["note-add", "query-add"];
     if (extras)
       for (const el of [...extras.children]) {
@@ -79,16 +75,16 @@ export function projectLayout(ctx) {
         const panel =
           addFeatures.includes(feature) || addPro.includes(pro)
             ? add
-            : ["outline", "present"].includes(pro) || el.id === "frame-nav"
-              ? navigate
-              : feature === "canvas-delete"
-                ? boards
-                : more;
+            : feature === "canvas-delete"
+              ? boards
+              : more;
         if (pro === "shortcuts") el.textContent = "Keyboard shortcuts";
         panel.append(el);
       }
     extras?.remove();
     toolbar.querySelector(".spacer")?.remove();
+    const settings = toolbar.querySelector(".board-settings-button");
+    if (settings) toolbar.append(settings);
     if ($("#board-save")) toolbar.append($("#board-save"));
     const recovery = toolbar.querySelector('[data-feature="recovery"]');
     if (recovery) toolbar.append(recovery);

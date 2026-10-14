@@ -1,3 +1,4 @@
+import { initialStatus } from "../public/workflow-model.js";
 import fs from "node:fs/promises";
 import path from "node:path";
 import { randomUUID } from "node:crypto";
@@ -124,9 +125,7 @@ export function installWorkspace(Store) {
               : config.types[0],
           status: config.statuses.includes(properties.status)
             ? properties.status
-            : config.statuses.includes("todo")
-              ? "todo"
-              : config.statuses[0],
+            : initialStatus(config),
           priority: ["none", "low", "medium", "high", "urgent"].includes(
             properties.priority,
           )

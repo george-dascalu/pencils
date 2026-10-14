@@ -17,9 +17,10 @@ export function installColorPickers({ esc, icon }) {
     mixed = false,
     disabled = false,
     selection = false,
+    menuKey = selection ? "color" : null,
   }) {
     const fill = valid(value) ? value.toLowerCase() : "#ffffff";
-    return `<details class="color-picker ${selection ? "selection-menu" : ""}" ${selection ? 'data-selection-menu="color"' : ""}><summary aria-label="${esc(label)}" title="${esc(label)}" ${disabled ? 'aria-disabled="true"' : ""}><span class="selection-swatch ${mixed ? "mixed" : ""}" style="--swatch:${fill}"></span>${icon("chevron")}</summary><input type="hidden" data-color-value ${selection ? "data-selection-custom-color" : `name="${esc(name)}"`} value="${fill}"><div class="color-picker-panel ${selection ? "selection-popover" : ""}" role="group" aria-label="${esc(label)}"><strong>${esc(label)}</strong><div class="selection-colors">${colors.map(([color, title]) => `<button type="button" class="selection-swatch" style="--swatch:${color}" data-color-choice="${color}" aria-label="${title}" title="${title}" aria-pressed="${!mixed && fill === color}"></button>`).join("")}</div><label class="color-hex-label">Custom colour<input type="text" data-color-hex aria-label="Custom colour hex" value="${fill}" placeholder="#123abc" maxlength="7" spellcheck="false" autocomplete="off"></label><button type="button" class="button small" data-color-apply>Apply colour</button><span class="color-error" role="status"></span></div></details>`;
+    return `<details class="color-picker ${menuKey ? "selection-menu" : ""}" ${menuKey ? `data-selection-menu="${esc(menuKey)}"` : ""}><summary aria-label="${esc(label)}" title="${esc(label)}" ${disabled ? 'aria-disabled="true"' : ""}><span class="selection-swatch ${mixed ? "mixed" : ""}" style="--swatch:${fill}"></span>${icon("chevron")}</summary><input type="hidden" data-color-value ${selection ? "data-selection-custom-color" : `name="${esc(name)}"`} value="${fill}"><div class="color-picker-panel ${menuKey ? "selection-popover" : ""}" role="group" aria-label="${esc(label)}"><strong>${esc(label)}</strong><div class="selection-colors">${colors.map(([color, title]) => `<button type="button" class="selection-swatch" style="--swatch:${color}" data-color-choice="${color}" aria-label="${title}" title="${title}" aria-pressed="${!mixed && fill === color}"></button>`).join("")}</div><label class="color-hex-label">Custom colour<input type="text" data-color-hex aria-label="Custom colour hex" value="${fill}" placeholder="#123abc" maxlength="7" spellcheck="false" autocomplete="off"></label><button type="button" class="button small" data-color-apply>Apply colour</button><span class="color-error" role="status"></span></div></details>`;
   }
   function position(root) {
     if (root.closest("#selection-tools")) return; // Canvas controls clamp this menu to the board.
@@ -88,7 +89,11 @@ export function installColorPickers({ esc, icon }) {
         document.querySelectorAll(".color-picker[open]").forEach((other) => {
           if (other !== root) close(other);
         });
-        requestAnimationFrame(() => position(root));
+        if (!root.closest("#selection-tools")) {
+          e.preventDefault();
+          root.open = !root.open;
+          if (root.open) position(root);
+        }
       }
       const choice = e.target.closest(
         "[data-color-choice], [data-color-apply]",

@@ -460,6 +460,26 @@ export function createServer(store, options = {}) {
                           .filter((v) => typeof v === "string")
                           .slice(0, 100)
                       : [],
+                    camera:
+                      data.camera &&
+                      ["x", "y", "z"].every((k) =>
+                        Number.isFinite(data.camera[k]),
+                      ) &&
+                      data.camera.z >= 0.08 &&
+                      data.camera.z <= 3
+                        ? {
+                            x: data.camera.x,
+                            y: data.camera.y,
+                            z: data.camera.z,
+                          }
+                        : null,
+                    presenting: data.presenting === true,
+                    invite:
+                      Number.isFinite(data.invite) &&
+                      data.invite <= now &&
+                      now - data.invite < 15000
+                        ? data.invite
+                        : 0,
                     seen: now,
                   });
               }

@@ -1,5 +1,8 @@
+import { capacityView } from "./capacity.js";
+import { timelineHTML, timelineInteractions } from "./task-timeline.js";
 export function planning(ctx) {
   const { state, esc, api, $, taskDialog, renderView } = ctx;
+  const capacity = capacityView(ctx);
   const today = () => new Date().toLocaleDateString("en-CA");
   let month = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
   const dateKey = (d) =>
@@ -17,7 +20,7 @@ export function planning(ctx) {
           .filter((t) => t.due === key)
           .map(
             (t) =>
-              `<button class="calendar-task" data-action="task-open" data-id="${esc(t.id)}">${esc(t.title)}</button>`,
+              `<button class="calendar-task" data-action="task-open" data-id="${esc(t.id)}">${esc(t.key || "")} ${esc(t.title)}</button>`,
           )
           .join("")}</div>`;
       },
@@ -25,24 +28,20 @@ export function planning(ctx) {
       "",
     )}</div><p class="field-hint">${tasks.filter((t) => !t.due).length} tasks have no due date. Select a date to add a task.</p>`;
   }
+  let timelineScale = ctx.storage.get("timeline-scale", "week");
+  timelineInteractions(ctx, (scope, value) => {
+    if (scope === "project") {
+      timelineScale = value;
+      ctx.storage.set("timeline-scale", value);
+      renderView(true);
+    } else
+      ctx.changeBoard((b) => {
+        const n = b.nodes.find((n) => n.id === scope);
+        if (n) n.timelineScale = value;
+      });
+  });
   function timeline(tasks) {
-    const dated = tasks.filter((t) => t.start || t.due).slice(0, 200);
-    if (!dated.length)
-      return '<div class="empty"><h2>Plan a time window</h2><p>Add start or due dates to tasks to see the timeline.</p></div>';
-    const stamps = dated.flatMap((t) =>
-        [t.start, t.due].filter(Boolean).map((d) => Date.parse(d)),
-      ),
-      min = Math.min(...stamps),
-      max = Math.max(...stamps),
-      day = 86400000,
-      span = Math.max(7, Math.ceil((max - min) / day) + 1);
-    return `<p class="field-hint">${new Date(min).toLocaleDateString()} – ${new Date(min + span * day).toLocaleDateString()} · ${tasks.length - dated.length} undated or additional tasks · Open a task to adjust dates.</p><div class="timeline">${dated
-      .map((t) => {
-        const start = Date.parse(t.start || t.due),
-          end = Date.parse(t.due || t.start);
-        return `<div class="timeline-row"><button data-action="task-open" data-id="${esc(t.id)}">${esc(t.title)}</button><div class="timeline-track"><button class="timeline-bar ${state.config.done.includes(t.status) ? "complete" : ""}" style="left:${((start - min) / day / span) * 100}%;width:${Math.max(1, ((end - start + day) / day / span) * 100)}%" data-action="task-open" data-id="${esc(t.id)}" title="${esc(t.title)}: ${esc(t.start || t.due)} to ${esc(t.due || t.start)}">${esc(t.status)}</button></div></div>`;
-      })
-      .join("")}</div>`;
+    return timelineHTML(tasks, ctx, timelineScale);
   }
   function overview(metric) {
     const tasks = state.tasks.filter((t) => !t.archived),
@@ -91,6 +90,7 @@ export function planning(ctx) {
     }
   }
   function click(action, el) {
+    if (capacity.click(action)) return true;
     if (action === "month-prev" || action === "month-next") {
       month = new Date(
         month.getFullYear(),
@@ -106,5 +106,12 @@ export function planning(ctx) {
     }
     return false;
   }
-  return { calendar, timeline, overview, dashboard, click };
+  return {
+    calendar,
+    timeline,
+    capacity: capacity.render,
+    overview,
+    dashboard,
+    click,
+  };
 }

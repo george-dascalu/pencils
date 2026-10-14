@@ -2,10 +2,24 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { createHash, randomUUID } from "node:crypto";
 import { Problem } from "./problem.js";
-import { decodeCanvas, markdownSlice } from "../public/canvas-format.js";
+import {
+  decodeCanvas,
+  encodeCanvas,
+  markdownSlice,
+} from "../public/canvas-format.js";
 import { merge } from "../public/sync.js";
 const hash = (text) => createHash("sha256").update(text).digest("hex");
-const equal = (a, b) => JSON.stringify(a) === JSON.stringify(b);
+// Canvas metadata can change key order when encoded and read back. Compare
+// JSON values rather than insertion order, while preserving array ordering.
+const canonical = (value) =>
+  JSON.stringify(value, (_, v) =>
+    v && typeof v === "object" && !Array.isArray(v)
+      ? Object.fromEntries(
+          Object.entries(v).sort(([a], [b]) => a.localeCompare(b)),
+        )
+      : v,
+  );
+const equal = (a, b) => canonical(a) === canonical(b);
 const editable = (b) =>
   Object.fromEntries(
     [
@@ -16,6 +30,7 @@ const editable = (b) =>
       "templates",
       "presentation",
       "settings",
+      "layers",
     ]
       .filter((k) => b[k] !== undefined)
       .map((k) => [k, b[k]]),
@@ -61,6 +76,7 @@ export function difference(before, after) {
     "templates",
     "presentation",
     "settings",
+    "layers",
   ])
     if (!equal(before[key], after[key]))
       changes.push({
@@ -272,6 +288,9 @@ export function installCanvas(Store) {
           ))
       )
         throw new Problem(400, "Presentation must contain frame IDs.");
+      // Log the exact persisted node representation, including integer geometry
+      // and generated Markdown fallbacks, so a read/write round trip is undoable.
+      data.nodes = decodeCanvas(encodeCanvas(data)).nodes;
       const changes = difference(current.data, data);
       if (!changes.length) return this.public(current, file);
       const operation = {

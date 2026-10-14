@@ -13,6 +13,8 @@ const short = (value) =>
   typeof value === "string" && value.trim().length > 0 && value.length <= 100;
 export function schema(value = DEFAULT_SCHEMA) {
   const result = { ...DEFAULT_SCHEMA, ...value };
+  if (Array.isArray(result.done) && !result.done.length)
+    fail("Choose at least one completed status.");
   for (const key of ["statuses", "types", "done"]) {
     if (
       !Array.isArray(result[key]) ||
@@ -25,6 +27,45 @@ export function schema(value = DEFAULT_SCHEMA) {
   }
   if (result.done.some((v) => !result.statuses.includes(v)))
     fail("Completed statuses must be in the workflow.");
+  if (
+    result.initial_status != null &&
+    !result.statuses.includes(result.initial_status)
+  )
+    fail("Default status must be in the workflow.");
+  if (result.status_labels != null) {
+    if (
+      typeof result.status_labels !== "object" ||
+      Array.isArray(result.status_labels) ||
+      Object.entries(result.status_labels).some(
+        ([id, name]) => !result.statuses.includes(id) || !short(name),
+      )
+    )
+      fail(
+        "Status names must belong to the workflow and contain 1–100 characters.",
+      );
+  }
+  if (result.transitions != null) {
+    if (
+      typeof result.transitions !== "object" ||
+      Array.isArray(result.transitions) ||
+      Object.keys(result.transitions).some(
+        (id) => !result.statuses.includes(id),
+      )
+    )
+      fail("Workflow rules must reference existing statuses.");
+    for (const id of result.statuses) {
+      const targets = result.transitions[id];
+      if (
+        !Array.isArray(targets) ||
+        targets.length > 40 ||
+        new Set(targets).size !== targets.length ||
+        targets.some((to) => !result.statuses.includes(to) || to === id)
+      )
+        fail(
+          "Each status needs a list of unique allowed destinations; use an empty list for no outgoing moves.",
+        );
+    }
+  }
   if (!Array.isArray(result.fields) || result.fields.length > 40)
     fail("A project supports up to 40 custom fields.");
   const ids = new Set();
@@ -146,6 +187,7 @@ export function validateViews(views) {
         "board",
         "calendar",
         "timeline",
+        "capacity",
       ].includes(view.view) ||
       JSON.stringify(view).length > 50000
     )

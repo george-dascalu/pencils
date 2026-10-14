@@ -1,3 +1,10 @@
+import { canTransition, initialStatus, transitionError } from "../public/workflow-model.js";
+import { directory, projectTeams, membersForProject } from "./teams.js";
+import { validObjectGeometry } from "../public/object-geometry.js";
+import { validConnectorGeometry } from "../public/connector-path.js";
+import { validTextStyle } from "../public/object-text.js";
+import { installIdentity } from "./identity.js";
+import { validGrid } from "../public/grid-model.js";
 import fs from "node:fs/promises";
 import path from "node:path";
 import { createHash, randomUUID } from "node:crypto";
@@ -202,6 +209,7 @@ export class Store {
           record,
         );
       }
+      await this.ensureTaskIdentities(entry.name);
       await this.migrateBoards(entry.name);
     }
   }
@@ -409,7 +417,8 @@ export class Store {
       throw new Problem(422, "Organisation ID and kind must match its file.");
     title(record.data.title);
     color(record.data.color);
-    return this.public(record, file);
+    const members = directory(record.data.people, record.data.teams);
+    return { ...this.public(record, file), ...members };
   }
   async listOrganisations() {
     await this.init();
@@ -437,6 +446,7 @@ export class Store {
       {
         id,
         kind: "organisation",
+        ...directory(input.people, input.teams),
         title: title(input.title),
         color: color(input.color || "#66856f"),
         created: now(),
@@ -453,6 +463,14 @@ export class Store {
     const data = { ...current.data, updated: now() };
     if ("title" in input) data.title = title(input.title);
     if ("color" in input) data.color = color(input.color);
+    if ("people" in input || "teams" in input)
+      Object.assign(data, directory(input.people ?? data.people, input.teams ?? data.teams));
+    if ("teams" in input) {
+      const removed = new Set((current.data.teams || []).filter(t => !data.teams.some(next => next.id === t.id)).map(t => t.id));
+      const {projects} = await this.list(id);
+      if (projects.some(p => (p.teams || []).some(team => removed.has(team))))
+        throw new Problem(409, "Remove a team from its projects before deleting it.");
+    }
     return this.write(
       file,
       data,
@@ -534,14 +552,19 @@ export class Store {
   }
   async snapshot(id) {
     await this.init();
+    await this.ensureTaskIdentities(id);
     const file = this.file(id, "project");
     const project = this.public(await this.read(file), file);
-    await this.getOrganisation(project.organisation);
+    const organisation = await this.getOrganisation(project.organisation);
     const [tasks, boards] = await Promise.all([
       this.children(id, "tasks"),
       this.children(id, "boards"),
     ]);
     const warnings = [...tasks.warnings, ...boards.warnings];
+    for (const task of tasks.items) {
+      const person = (organisation.people || []).find(p => p.id === task.assignee_id);
+      if (person) task.assignee = person.name;
+    }
     const byId = new Map(tasks.items.map((t) => [t.id, t]));
     for (const task of tasks.items) {
       const seen = new Set([task.id]);
@@ -581,7 +604,9 @@ export class Store {
       {
         id,
         kind: "project",
+        key: await this.projectKey(input.key, input.title),
         organisation: organisation.id,
+        teams: projectTeams(input.teams, organisation),
         title: title(input.title),
         color: color(input.color || "#587563"),
         created: now(),
@@ -602,6 +627,15 @@ export class Store {
     this.checkRevision(current, input.revision);
     const data = { ...current.data, updated: now() };
     if ("title" in input) data.title = title(input.title);
+    if ("key" in input) {
+      data.key = await this.projectKey(input.key, data.title, id);
+      if (data.key !== current.data.key)
+        data.previous_keys = [
+          ...new Set(
+            [...(data.previous_keys || []), current.data.key].filter(Boolean),
+          ),
+        ];
+    }
     if ("color" in input) data.color = color(input.color);
     if ("default_view" in input)
       data.default_view = choice(
@@ -615,11 +649,16 @@ export class Store {
           "board",
           "calendar",
           "timeline",
+          "capacity",
         ],
         "view",
       );
     if ("organisation" in input)
       data.organisation = (await this.getOrganisation(input.organisation)).id;
+    if ("teams" in input || data.organisation !== current.data.organisation) {
+      const organisation = await this.getOrganisation(data.organisation);
+      data.teams = projectTeams(input.teams ?? (data.organisation === current.data.organisation ? data.teams : []), organisation);
+    }
     if ("archived" in input) {
       if (typeof input.archived !== "boolean")
         throw new Problem(400, "Archived must be true or false.");
@@ -652,12 +691,14 @@ export class Store {
         throw new Problem(400, "Invalid task templates.");
       data.templates = input.templates;
     }
-    return this.write(
+    const saved = await this.write(
       file,
       data,
       "body" in input ? body(input.body) : current.body,
       current,
     );
+    if (data.key !== current.data.key) await this.ensureTaskIdentities(id);
+    return saved;
   }
   validateTask(data, config = schema()) {
     validId(data.id);
@@ -669,6 +710,8 @@ export class Store {
     date(data.due ?? null);
     tags(data.tags ?? []);
     if (data.parent) validId(data.parent);
+    if (data.milestone != null && typeof data.milestone !== "boolean")
+      throw new Problem(400, "Invalid milestone.");
     if (
       data.assignee != null &&
       (typeof data.assignee !== "string" || data.assignee.length > 100)
@@ -693,6 +736,24 @@ export class Store {
       seen.add(current);
       current = map.get(current).parent;
     }
+  }
+  async assignPerson(projectId, data, input, current = null) {
+    const project = (await this.read(this.file(projectId, "project"))).data;
+    const organisation = await this.getOrganisation(project.organisation);
+    const people = membersForProject(project, organisation);
+    const requestedId = input.assignee_id || null;
+    if (current && !current.assignee_id && !requestedId && input.assignee === current.assignee) { data.assignee_id = null; return; }
+    if (current && !Object.hasOwn(input, "assignee_id") && (!Object.hasOwn(input, "assignee") || input.assignee === current.assignee)) return;
+    if (!data.assignee && (!requestedId || requestedId === current?.assignee_id)) { data.assignee_id = null; return; }
+    const changedName = current && Object.hasOwn(input, "assignee") && input.assignee !== current.assignee && requestedId === current.assignee_id;
+    const person = people.find(p => requestedId && !changedName ? p.id === requestedId : p.name === data.assignee);
+    if (person) { data.assignee_id = person.id; data.assignee = person.name; return; }
+    // Preserve an unchanged former member while editing unrelated task fields.
+    const priorName = (organisation.people || []).find(p => p.id === current?.assignee_id)?.name || current?.assignee;
+    if (current?.assignee_id && requestedId === current.assignee_id && (!Object.hasOwn(input, "assignee") || [current.assignee, priorName].includes(input.assignee))) { data.assignee = priorName; return; }
+    if (requestedId || (organisation.teams || []).length)
+      throw new Problem(400, "Choose an assignee from a team assigned to this project.");
+    data.assignee_id = null;
   }
   async createTask(project, input, internal = {}) {
     if (input.canvas_source) {
@@ -722,7 +783,7 @@ export class Store {
         (config.types.includes("task") ? "task" : config.types[0]),
       status:
         input.status ??
-        (config.statuses.includes("todo") ? "todo" : config.statuses[0]),
+        initialStatus(config),
       priority: input.priority ?? "none",
       parent: input.parent || null,
       assignee: input.assignee ?? "",
@@ -733,6 +794,7 @@ export class Store {
     };
     for (const key of [
       "start",
+      "milestone",
       "estimate",
       "dependencies",
       "recurrence",
@@ -745,14 +807,14 @@ export class Store {
     data.aliases = [data.title];
     if (internal.recurrenceSource)
       data.recurrence_source = internal.recurrenceSource;
+    await this.assignPerson(project, data, input);
     this.validateTask(data, config);
     await this.validateParent(project, id, data.parent);
     await this.validateDependencies(project, id, data.dependencies);
-    return this.write(
-      this.file(project, "tasks", id),
-      data,
-      body(input.body ?? ""),
-    );
+    const taskBody = body(input.body ?? "");
+    Object.assign(data, await this.ensureTaskIdentities(project, id));
+    data.aliases.unshift(data.key);
+    return this.write(this.file(project, "tasks", id), data, taskBody);
   }
   async updateTask(project, id, input) {
     const file = this.file(project, "tasks", id),
@@ -769,6 +831,7 @@ export class Store {
       "due",
       "tags",
       "start",
+      "milestone",
       "estimate",
       "dependencies",
       "recurrence",
@@ -784,6 +847,8 @@ export class Store {
     const config = schema(
       (await this.read(this.file(project, "project"))).data.schema,
     );
+    if (!canTransition(config, current.data.status, data.status)) throw new Problem(400, transitionError(config, current.data.status, data.status));
+    await this.assignPerson(project, data, input, current.data);
     this.validateTask(data, config);
     await this.validateParent(project, id, data.parent);
     await this.validateDependencies(project, id, data.dependencies);
@@ -807,8 +872,7 @@ export class Store {
         const next = {
           ...data,
           status:
-            config.statuses.find((s) => !config.done.includes(s)) ||
-            config.statuses[0],
+            config.initial_status || config.statuses.find((s) => !config.done.includes(s)) || config.statuses[0],
           due: nextDate(data.due, data.recurrence),
           start: data.start ? nextDate(data.start, data.recurrence) : null,
           comments: [],
@@ -855,13 +919,74 @@ export class Store {
       (!data.settings ||
         typeof data.settings !== "object" ||
         Array.isArray(data.settings) ||
-        (data.settings.snap !== undefined &&
-          typeof data.settings.snap !== "boolean"))
+        ["snap", "alignObjects"].some(
+          (key) =>
+            data.settings[key] !== undefined &&
+            typeof data.settings[key] !== "boolean",
+        ))
     )
       throw new Problem(
         400,
-        "Board settings must be an object with a boolean snap value.",
+        "Board settings must be an object with boolean snapping options.",
       );
+    if (
+      data.layers != null &&
+      (!Array.isArray(data.layers) ||
+        data.layers.length > 100 ||
+        data.layers.some(
+          (l) =>
+            !l ||
+            typeof l.id !== "string" ||
+            !/^[\w-]{1,100}$/.test(l.id) ||
+            typeof l.name !== "string" ||
+            l.name.length > 80 ||
+            (l.hidden != null && typeof l.hidden !== "boolean") ||
+            (l.locked != null && typeof l.locked !== "boolean"),
+        ))
+    )
+      throw new Problem(400, "Invalid layers.");
+    const session = data.settings?.session;
+    if (
+      session != null &&
+      (!session ||
+        typeof session !== "object" ||
+        Array.isArray(session) ||
+        (session.timerEnd != null &&
+          (!Number.isFinite(session.timerEnd) || session.timerEnd < 0)) ||
+        (session.voteLimit != null &&
+          (!Number.isInteger(session.voteLimit) ||
+            session.voteLimit < 1 ||
+            session.voteLimit > 20)) ||
+        (session.voting != null && typeof session.voting !== "boolean") ||
+        (session.votes != null &&
+          (!Array.isArray(session.votes) ||
+            session.votes.length > 100 ||
+            session.votes.some(
+              (v) =>
+                !v ||
+                typeof v.id !== "string" ||
+                v.id.length > 100 ||
+                !Array.isArray(v.nodes) ||
+                v.nodes.length > 20 ||
+                v.nodes.some((id) => typeof id !== "string"),
+            ))))
+    )
+      throw new Problem(400, "Invalid board session.");
+    const background = data.settings?.background;
+    if (
+      background !== undefined &&
+      (!background ||
+        typeof background !== "object" ||
+        Array.isArray(background) ||
+        !["plain", "dots", "grid", "lines"].includes(background.pattern) ||
+        ![background.color, background.lineColor].every(
+          (value) => value === "auto" || /^#[\da-f]{6}$/i.test(value || ""),
+        ) ||
+        !Number.isInteger(background.spacing) ||
+        background.spacing < 8 ||
+        background.spacing > 160)
+    )
+      throw new Problem(400, "Invalid board background settings.");
     if (
       !Array.isArray(data.nodes) ||
       data.nodes.length > 10000 ||
@@ -875,6 +1000,11 @@ export class Store {
     const ids = new Set();
     for (const node of data.nodes) {
       validId(node.id);
+      if(node.viewType!=null&&!['list','table','kanban','timeline'].includes(node.viewType))throw new Problem(400,'Invalid embedded task layout.');
+      if(node.visibleFields!=null&&(!Array.isArray(node.visibleFields)||node.visibleFields.length>7||node.visibleFields.some(f=>!['key','title','status','assignee','due','priority','type'].includes(f))))throw new Problem(400,'Invalid embedded task fields.');
+      if(node.timelineScale!=null&&!['day','week','month'].includes(node.timelineScale))throw new Problem(400,'Invalid timeline scale.');
+      if (!validObjectGeometry(node))
+        throw new Problem(400, "Invalid object geometry.");
       if (ids.has(node.id))
         throw new Problem(400, "Duplicate board object ID.");
       ids.add(node.id);
@@ -885,6 +1015,7 @@ export class Store {
           "sticky",
           "text",
           "shape",
+          "grid",
           "frame",
           "image",
           "draw",
@@ -904,7 +1035,20 @@ export class Store {
         (typeof node.text !== "string" || node.text.length > 200000)
       )
         throw new Problem(400, "Board text is too long.");
+      if (node.type === "grid" && !validGrid(node.grid))
+        throw new Problem(
+          400,
+          "Invalid grid: use 1–30 rows and columns, and at most 6,000 characters per cell.",
+        );
+      if (!validTextStyle(node))
+        throw new Problem(400, "Invalid object text style.");
       if (node.color) color(node.color);
+      if (node.textAlign != null)
+        choice(
+          node.textAlign,
+          ["left", "center", "right", "justify"],
+          "text alignment",
+        );
       if (node.type === "task") validId(node.task);
       if (node.group) validId(node.group);
       if (node.frame) validId(node.frame);
@@ -967,16 +1111,59 @@ export class Store {
           ))
       )
         throw new Problem(400, "Invalid drawing.");
+      if (node.type === "draw") {
+        if (
+          node.strokeWidth != null &&
+          (!Number.isFinite(node.strokeWidth) ||
+            node.strokeWidth < 1 ||
+            node.strokeWidth > 32)
+        )
+          throw new Problem(400, "Invalid pen thickness.");
+        if (
+          node.opacity != null &&
+          (!Number.isFinite(node.opacity) ||
+            node.opacity < 0.1 ||
+            node.opacity > 1)
+        )
+          throw new Problem(400, "Invalid pen opacity.");
+        if (node.brush != null)
+          choice(node.brush, ["pen", "highlighter"], "pen brush");
+        if (node.pressure != null && typeof node.pressure !== "boolean")
+          throw new Problem(400, "Invalid pen pressure setting.");
+        if (
+          node.pressures != null &&
+          (!Array.isArray(node.pressures) ||
+            node.pressures.length !== node.points.length ||
+            node.pressures.some((p) => !Number.isFinite(p) || p < 0 || p > 1))
+        )
+          throw new Problem(400, "Invalid pen pressure samples.");
+      }
     }
     if (data.nodes.filter((n) => n.type === "frame").length > 500)
       throw new Problem(400, "A board supports up to 500 frames.");
     const byId = new Map(data.nodes.map((n) => [n.id, n]));
     for (const n of data.nodes) {
+      const parentNode = byId.get(n.frame);
+      if (parentNode?.type === "grid" || n.gridCell != null) {
+        const c = n.gridCell;
+        if (
+          parentNode?.type !== "grid" ||
+          !c ||
+          !Number.isInteger(c.row) ||
+          !Number.isInteger(c.column) ||
+          !parentNode.grid.cells[c.row]?.[c.column]
+        )
+          throw new Problem(400, "Invalid grid cell membership.");
+      }
       const seen = new Set([n.id]);
       let parent = n.frame;
       while (parent) {
         const frame = byId.get(parent);
-        if (!frame || frame.type !== "frame" || seen.has(parent))
+        if (
+          !frame ||
+          !["frame", "grid"].includes(frame.type) ||
+          seen.has(parent)
+        )
           throw new Problem(400, "Invalid frame hierarchy.");
         seen.add(parent);
         parent = frame.frame;
@@ -985,6 +1172,8 @@ export class Store {
     const edges = new Set();
     for (const edge of data.edges) {
       validId(edge.id);
+      if (!validConnectorGeometry(edge))
+        throw new Problem(400, "Invalid connector geometry.");
       if (
         edges.has(edge.id) ||
         !ids.has(edge.from) ||
@@ -1006,7 +1195,24 @@ export class Store {
           );
       for (const key of ["fromEnd", "toEnd"])
         if (edge[key] != null)
-          choice(edge[key], ["none", "arrow"], "arrow style");
+          choice(
+            edge[key],
+            [
+              "none",
+              "arrow",
+              "triangle",
+              "circle",
+              "circle-outline",
+              "diamond",
+              "diamond-outline",
+              "bar",
+            ],
+            "arrow style",
+          );
+      if (edge.width != null)
+        choice(edge.width, [1, 2, 3, 5], "line thickness");
+      if (edge.lineStyle != null)
+        choice(edge.lineStyle, ["solid", "dashed", "dotted"], "line style");
       if (edge.routing)
         choice(edge.routing, ["curve", "elbow", "straight"], "connector route");
       if (edge.relationship)
@@ -1118,8 +1324,9 @@ export class Store {
       },
     ];
     const tasks = [];
+    const teamDirectory = await this.getOrganisation(project.organisation);
     for (const input of entries)
-      tasks.push(await this.createTask(project.id, input));
+      tasks.push(await this.createTask(project.id, {...input, ...((teamDirectory.teams || []).length ? {assignee: ""} : {})}));
     const board = (await this.children(project.id, "boards")).items[0];
     await this.updateBoard(project.id, board.id, {
       revision: board.revision,
@@ -1175,3 +1382,5 @@ export class Store {
 installRecovery(Store);
 installWorkspace(Store);
 installCanvas(Store);
+
+installIdentity(Store);

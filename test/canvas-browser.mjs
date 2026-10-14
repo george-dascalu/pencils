@@ -1,3 +1,4 @@
+import { openBoardSearch } from "./menu-controls.mjs";
 import { clickControl } from "./menu-controls.mjs";
 import assert from "node:assert/strict";
 import fs from "node:fs/promises";
@@ -97,6 +98,7 @@ async function saved() {
   );
 }
 async function find(id, text) {
+  await openBoardSearch(page);
   await page.locator("#canvas-find").fill(text);
   await page.locator(`[data-pro=find-result][data-id="${id}"]`).click();
   await page.waitForTimeout(100);
@@ -105,6 +107,7 @@ try {
   await enter();
   assert.equal(await page.locator("[data-node=far]").count(), 0);
   await page.locator("[data-node=note]").dblclick();
+  await page.locator("[data-rich-mode=source]").click();
   await page.locator("#canvas-inline-form textarea").fill("An **inline** idea");
   await page.locator("#canvas-inline-form textarea").press("Control+Enter");
   await until(
@@ -123,6 +126,7 @@ try {
   await page.locator("#canvas-embed-form button").last().click();
   await saved();
   await page.locator("[data-node=task-a] .task-title").dblclick();
+  await page.locator("[data-rich-mode=source]").click();
   await page
     .locator("#canvas-inline-form textarea")
     .fill("## Scope\nEdited from canvas.\n\n");
@@ -156,12 +160,12 @@ try {
       return { x: r.x, y: r.y };
     });
   await page.mouse.dblclick(edgePoint.x, edgePoint.y);
-  await page
-    .locator("#canvas-edge-form [name=relationship]")
-    .selectOption("blocks");
-  await page.locator("#canvas-edge-form [name=routing]").selectOption("elbow");
-  await page.locator("#canvas-edge-form [name=dependency]").check();
-  await page.locator("#canvas-edge-form button[type=submit]").click();
+  await page.locator('[data-selection-menu="connection"] summary').click();
+  await page.locator('[data-edge-field="relationship"]').selectOption("blocks");
+  await page.locator('[data-selection-menu="line"] summary').click();
+  await page.locator('[data-edge-field="routing"]').selectOption("elbow");
+  await page.locator('[data-selection-menu="connection"] summary').click();
+  await page.locator('[data-pro="edge-dependency"]').click();
   await until(
     async () =>
       (await snap()).tasks
@@ -262,6 +266,7 @@ try {
         .then((n) => n > 0),
     "selection presence",
   );
+  await openBoardSearch(second);
   await second.locator("#canvas-find").fill("Build prototype");
   await second.locator("[data-pro=find-result][data-id=task-b]").click();
   await second.locator("[data-node=task-b]").click();

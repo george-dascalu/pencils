@@ -1,0 +1,99 @@
+#pen-tools {
+  position: absolute;
+  top: 16px;
+  left: 76px;
+  z-index: 35;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px;
+  max-width: calc(100% - 92px);
+  padding: 6px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--surface);
+  color: var(--ink);
+  box-shadow: 0 5px 20px #00000014;
+}
+#pen-tools .selection-group {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  padding: 0 5px;
+  border-right: 1px solid var(--line);
+}
+#pen-tools :is(.selection-action, .pen-preset) {
+  width: 34px;
+  height: 34px;
+  border-radius: 6px;
+  display: grid;
+  place-items: center;
+}
+#pen-tools :is(button:hover, .active) {
+  background: var(--surface-soft);
+  box-shadow: inset 0 0 0 1px var(--green);
+}
+.pen-preset span {
+  width: 22px;
+  border-radius: 10px;
+}
+.pen-width {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+}
+.pen-width select {
+  padding: 5px;
+  width: 68px;
+  font-size: 12px;
+}
+.pen-pressure {
+  display: flex;
+  align-items: center;
+  font-size: 12px;
+  padding: 0 5px;
+  gap: 4px;
+}
+.pen-hint {
+  font-size: 12px;
+  padding: 0 7px;
+}
+.canvas.pen-mode,
+.canvas.pen-mode .board-node {
+  cursor: crosshair;
+}
+.canvas.pen-eraser,
+.canvas.pen-eraser .board-node {
+  cursor: cell;
+}
+.canvas.pen-mode
+  :is(#selection-tools, .connection-port, .resize-handle, .connector-endpoint) {
+  visibility: hidden;
+  pointer-events: none;
+}
+.canvas.pen-mode .board-node :is(button, select, a) {
+  pointer-events: none;
+}
+.board-node.pen-erased {
+  opacity: 0.15;
+}
+.board-node.draw:not(.inline-editing) .board-node-content > svg {
+  flex: 1 1 100%;
+}
+.board-node.draw:has(.board-node-content > svg:only-child) .board-node-content {
+  gap: 0;
+}
+@media (max-width: 600px) {
+  #pen-tools {
+    top: 8px;
+    left: 66px;
+    max-width: calc(100% - 74px);
+    gap: 3px;
+  }
+  #pen-tools .selection-group {
+    padding: 0 3px;
+  }
+  .pen-pressure {
+    font-size: 11px;
+  }
+}

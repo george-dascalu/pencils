@@ -1,3 +1,7 @@
+import { workflowEditor } from "./workflow-editor.js";
+import { organisationTeams, projectTeamControls } from "./teams.js";
+import { taskModalControls } from "./task-modal.js";
+import { taskDescription } from "./task-description.js";
 import { projectLayout } from "./project-layout.js";
 import { personalSettings } from "./personal-settings.js";
 import { planning } from "./planning.js";
@@ -39,10 +43,15 @@ export function installFeatures(ctx) {
     canvas = canvasFeatures({ ...ctx, layout }),
     personal = personalSettings(ctx);
   const formBases = new WeakMap();
-  let activeDraft = null,
+  let reloadWorkflow = null,
+    reloadTeams = null,
+    taskModal = null,
+    taskEditor = null,
+    activeDraft = null,
     boot,
     events,
     refreshTimer,
+    refreshInteraction = 0,
     lastVersion = -1,
     refreshing = false;
   const button = (key, title, extra = "") =>
@@ -125,7 +134,11 @@ export function installFeatures(ctx) {
   }
   function pagination(total) {
     $("#pagination")?.remove();
-    if (total <= 100 || ["calendar", "timeline"].includes(state.view)) return;
+    if (
+      total <= 100 ||
+      ["calendar", "timeline", "capacity"].includes(state.view)
+    )
+      return;
     $("#view-content")?.insertAdjacentHTML(
       "beforeend",
       `<div id="pagination" class="pagination">${button("page-prev", "← Previous", state.page ? "" : "disabled")}<span>Page ${(state.page || 0) + 1} of ${Math.ceil(total / 100)} · ${total} tasks</span>${button("page-next", "Next →", (state.page || 0) + 1 >= Math.ceil(total / 100) ? "disabled" : "")}</div>`,
@@ -184,7 +197,7 @@ export function installFeatures(ctx) {
           other.body?.includes(`[[${ref}`),
         ),
     );
-    return `<details class="task-extra" open><summary>Planning & relationships</summary><div class="field-row">${field("start", "Start date", t.start, "date")}${field("estimate", "Estimate / weight", t.estimate, "number", 'min="0" step="any"')}</div><label class="field">Dependencies <select name="dependencies" multiple size="3">${state.tasks
+    return `<details class="task-extra"><summary>Planning & relationships</summary><div class="field-row">${field("start", "Start date", t.start, "date")}${field("estimate", "Estimate (hours)", t.estimate, "number", 'min="0" step="any"')}</div><label class="field">Dependencies <select name="dependencies" multiple size="3">${state.tasks
       .filter((x) => x.id !== t.id)
       .map(
         (x) =>
@@ -192,7 +205,7 @@ export function installFeatures(ctx) {
       )
       .join(
         "",
-      )}</select><span class="field-hint">Select prerequisite tasks. Hold Ctrl or Cmd to select more than one.</span></label><div class="field-row"><label class="field">Repeat after completion<select name="recurrence-unit">${options(["", "day", "week", "month"], t.recurrence?.unit || "", { "": "Does not repeat", day: "Days", week: "Weeks", month: "Months" })}</select></label>${field("recurrence-interval", "Every", t.recurrence?.interval || 1, "number", 'min="1" max="365"')}</div>${fields ? `<h3>Custom fields</h3><div class="custom-fields">${fields}</div>` : ""}</details>${t.id ? `<div class="task-actions">${button("task-duplicate", "Duplicate")}${button("task-template", "Save as template")}${button("task-history", "Version history")}${button("task-archive", t.archived ? "Unarchive" : "Archive")}${button("attach", "Attach file")}</div><details class="task-extra"><summary>Comments (${(t.comments || []).length}) & backlinks (${references.length})</summary>${(t.comments || []).map((c) => `<article class="comment"><strong>${esc(c.author || "Workspace")}</strong><small>${esc(new Date(c.created).toLocaleString())}</small><p>${esc(c.text)}</p></article>`).join("")}<label class="field">New comment<textarea name="new-comment" rows="2" maxlength="20000"></textarea></label>${references.map((other) => `<button type="button" class="text-link" data-feature="note-open" data-id="${other.id}" data-project="${other.project}">${esc(other.title)}</button>`).join("")}</details>` : ""}`;
+      )}</select><span class="field-hint">Select prerequisite tasks. Hold Ctrl or Cmd to select more than one.</span></label><div class="field-row"><label class="field">Repeat after completion<select name="recurrence-unit">${options(["", "day", "week", "month"], t.recurrence?.unit || "", { "": "Does not repeat", day: "Days", week: "Weeks", month: "Months" })}</select></label>${field("recurrence-interval", "Every", t.recurrence?.interval || 1, "number", 'min="1" max="365"')}</div>${fields ? `<h3>Custom fields</h3><div class="custom-fields">${fields}</div>` : ""}</details>${t.id ? `<div class="task-actions">${button("task-template", "Save as template")}${button("attach", "Attach file")}</div><details class="task-extra"><summary>Comments (${(t.comments || []).length}) & backlinks (${references.length})</summary>${(t.comments || []).map((c) => `<article class="comment"><strong>${esc(c.author || "Workspace")}</strong><small>${esc(new Date(c.created).toLocaleString())}</small><p>${esc(c.text)}</p></article>`).join("")}<label class="field">New comment<textarea name="new-comment" rows="2" maxlength="20000"></textarea></label>${references.map((other) => `<button type="button" class="text-link" data-feature="note-open" data-id="${other.id}" data-project="${other.project}">${esc(other.title)}</button>`).join("")}</details>` : ""}`;
   }
   function taskData(form) {
     const data = new FormData(form),
@@ -241,13 +254,45 @@ export function installFeatures(ctx) {
   function draftKey(form) {
     return `draft:${state.session?.user?.username || "shared"}:${state.project?.id || state.organisation?.id || "workspace"}:${form.id}:${form.dataset.id || form.dataset.edit || "new"}`;
   }
-  function dialogOpened(kind) {
-    const form = $("dialog form");
+  function dialogOpened(kind, pageForm) {
+    taskModal?.destroy();
+    taskModal = null;
+    taskEditor?.destroy();
+    taskEditor = null;
+    const form = pageForm || $("dialog form");
     activeDraft = null;
+    reloadWorkflow = null;
+    reloadTeams =
+      kind === "organisation" && form
+        ? organisationTeams(
+            form,
+            form.dataset.id ? state.organisation : null,
+            esc,
+          )
+        : kind === "project" && form
+          ? projectTeamControls(form, state, esc)
+          : null;
     if (kind === "task" && form) {
       const t = task(form.dataset.id) || state.dialogTask || {};
       formBases.set(form, structuredClone(t));
       $(".dialog-body", form).insertAdjacentHTML("beforeend", taskExtras(t));
+      taskEditor = taskDescription(form, ctx.markdown, ctx.icon);
+      taskModal = taskModalControls(ctx, form, async (version) => {
+        if (
+          !confirm(
+            "Restore this version? Current saved content stays in history; unsaved editor changes will be replaced.",
+          )
+        )
+          return;
+        await api("/history", {
+          method: "POST",
+          body: { file: t.file, version, revision: form.dataset.revision },
+        });
+        clearDraft();
+        await refresh(false);
+        taskDialog(t.id, {}, true);
+        await taskModal.history();
+      });
     }
     if (kind === "project" && form) {
       const c =
@@ -260,9 +305,11 @@ export function installFeatures(ctx) {
               fields: [],
             };
       form.dataset.schema = JSON.stringify(c);
-      $(".dialog-body", form).insertAdjacentHTML(
-        "beforeend",
-        `<fieldset class="project-status-settings"><legend>Project statuses</legend><p class="field-hint">These statuses apply only to this project, including its task lists, table, Kanban and board cards. Order them with commas; use letters, numbers, hyphens or underscores.</p>${field("project-statuses", "Statuses, in order", c.statuses.join(", "), "text", "required")}${field("project-done", "Completed statuses", c.done.join(", "), "text", "required")}<p class="field-hint">Keep statuses that existing tasks use. Move those tasks to another status before removing an option. Completed statuses must also appear in the list above.</p></fieldset>`,
+      reloadWorkflow = workflowEditor(
+        form,
+        c,
+        form.dataset.edit === "true" ? state.tasks : [],
+        ctx,
       );
     }
     if (kind === "project" && form?.dataset.edit === "true")
@@ -309,6 +356,8 @@ export function installFeatures(ctx) {
   }
   function start(fn) {
     boot = fn;
+    for (const event of ["pointerdown", "keydown"])
+      document.addEventListener(event, () => refreshInteraction++, true);
     document.addEventListener("keydown", (e) => {
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") {
         e.preventDefault();
@@ -325,29 +374,44 @@ export function installFeatures(ctx) {
     };
     events.onerror = () => {};
   }
+  function refreshBlocked() {
+    return (
+      state.loading ||
+      state.settingsDirty ||
+      state.dialog ||
+      state.canvasEditing ||
+      canvas.busy() ||
+      state.headerMenu ||
+      state.selectionToolbarOpen ||
+      state.kanbanDragging ||
+      state.toolDragging ||
+      sync.entries.size ||
+      document.activeElement?.matches(
+        "input,textarea,select,[contenteditable=true]",
+      ) ||
+      document.querySelector(
+        "button:active,summary:active,.board-node:active,[data-edge]:active",
+      ) ||
+      (state.view === "board" && !["cursor", "hand"].includes(state.tool))
+    );
+  }
   function scheduleRefresh() {
     clearTimeout(refreshTimer);
     refreshTimer = setTimeout(async () => {
-      if (
-        refreshing ||
-        state.loading ||
-        state.dialog ||
-        state.canvasEditing ||
-        canvas.busy() ||
-        state.headerMenu ||
-        state.selectionToolbarOpen ||
-        state.kanbanDragging ||
-        state.toolDragging ||
-        sync.entries.size ||
-        document.activeElement?.matches("input,textarea,select") ||
-        (state.view === "board" && document.querySelector(".board-node:active"))
-      ) {
+      if (refreshing || refreshBlocked()) {
         scheduleRefresh();
         return;
       }
       refreshing = true;
+      const interaction = refreshInteraction;
       try {
-        await refresh();
+        await refresh(true, () => {
+          if (refreshBlocked() || interaction !== refreshInteraction) {
+            scheduleRefresh();
+            return false;
+          }
+          return true;
+        });
       } catch {
       } finally {
         refreshing = false;
@@ -367,7 +431,7 @@ export function installFeatures(ctx) {
       results = (state.overview?.tasks || [])
         .filter((t) =>
           words.every((w) =>
-            `${t.title} ${t.body} ${t.assignee} ${(t.tags || []).join(" ")}`
+            `${t.key || ""} ${(t.aliases || []).join(" ")} ${t.title} ${t.body} ${t.assignee} ${(t.tags || []).join(" ")}`
               .toLowerCase()
               .includes(w),
           ),
@@ -377,16 +441,17 @@ export function installFeatures(ctx) {
       results
         .map(
           (t) =>
-            `<button class="search-result" data-feature="global-open" data-id="${t.id}" data-project="${t.project}"><strong>${esc(t.title)}</strong><span>${esc(state.organisations.find((o) => o.id === t.organisation)?.title)} / ${esc(t.project_title)} · ${esc(t.status)}${t.archived ? " · Archived" : ""}</span></button>`,
+            `<button class="search-result" data-feature="global-open" data-id="${t.id}" data-project="${t.project}"><strong>${esc(t.key || "")} ${esc(t.title)}</strong><span>${esc(state.organisations.find((o) => o.id === t.organisation)?.title)} / ${esc(t.project_title)} · ${esc(t.status)}${t.archived ? " · Archived" : ""}</span></button>`,
         )
         .join("") || "<p>No matching tasks.</p>";
   }
   function workflow() {
     const c = config();
     showDialog(
-      `<dialog class="dialog wide-dialog"><form id="workflow-form">${dialogHead("Workflow & custom fields")}<div class="dialog-body"><p>This workflow belongs only to ${esc(state.project.title)}. Use short names separated by commas. Existing task values must remain valid; migrate tasks before removing an option.</p>${field("statuses", "Statuses", c.statuses.join(", "), "text", "required")}${field("done", "Completed statuses", c.done.join(", "), "text", "required")}${field("types", "Task types", c.types.join(", "), "text", "required")}<h3>Custom fields</h3><div id="custom-field-list">${c.fields.map(customFieldRow).join("")}</div>${button("field-add", "Add field")}<div class="form-error" role="alert"></div></div><div class="dialog-foot"><button type="submit" class="button primary">Save workflow</button></div></form></dialog>`,
+      `<dialog class="dialog wide-dialog"><form id="workflow-form">${dialogHead("Workflow & custom fields")}<div class="dialog-body"><p>These settings belong only to ${esc(state.project.title)}. Task types use short names separated by commas.</p>${field("types", "Task types", c.types.join(", "), "text", "required")}<h3>Custom fields</h3><div id="custom-field-list">${c.fields.map(customFieldRow).join("")}</div>${button("field-add", "Add field")}<div class="form-error" role="alert"></div></div><div class="dialog-foot"><button type="submit" class="button primary">Save workflow</button></div></form></dialog>`,
       "workflow",
     );
+    workflowEditor($("#workflow-form"), c, state.tasks, ctx);
   }
   function customFieldRow(
     f = { id: `field_${Date.now()}`, name: "", type: "text", options: [] },
@@ -455,7 +520,7 @@ export function installFeatures(ctx) {
       renderView(true);
     }
     if (action === "form-restore") {
-      const form = $("dialog form"),
+      const form = $("dialog form") || $("#project-form"),
         draft = storage.get(activeDraft, null);
       if (draft) {
         for (const input of form.elements) {
@@ -466,6 +531,12 @@ export function installFeatures(ctx) {
           } else input.value = draft.data[input.name];
         }
         if (draft.base) formBases.set(form, draft.base);
+        taskEditor?.reload();
+        taskModal?.reload();
+        reloadTeams?.();
+        reloadWorkflow?.();
+        if (form.id === "project-form" && state.view === "settings")
+          state.settingsDirty = true;
         state.dirty = true;
         $(".draft-notice")?.remove();
         toast("Browser draft restored. Save to update the vault.");
@@ -516,8 +587,7 @@ export function installFeatures(ctx) {
       }
     }
     if (action === "task-history" && currentTask) {
-      closeDialog();
-      if (!state.dialog) await recovery.history(currentTask);
+      await taskModal?.history();
     }
     if (action === "project-history") {
       closeDialog();
@@ -628,6 +698,10 @@ export function installFeatures(ctx) {
           if (body) {
             body.value += `\n${file.type.startsWith("image/") ? "!" : ""}[${file.name.replace(/[\[\]]/g, "")}](../${attachment.path})\n`;
             body.dispatchEvent(new Event("input", { bubbles: true }));
+            taskEditor?.reload();
+            taskModal?.reload();
+            reloadTeams?.();
+            reloadWorkflow?.();
             toast("Attachment added. Save the task to retain the link.");
           }
         } catch (e) {
@@ -757,9 +831,9 @@ export function installFeatures(ctx) {
         }));
         await saveProject({
           schema: {
-            statuses: list("statuses"),
+            ...JSON.parse(data.get("workflowSchema")),
             types: list("types"),
-            done: list("done"),
+
             fields,
           },
         });
@@ -828,6 +902,12 @@ export function installFeatures(ctx) {
     filter,
     progress,
     dialogOpened,
+    dialogClosed: () => {
+      taskModal?.destroy();
+      taskModal = null;
+      taskEditor?.destroy();
+      taskEditor = null;
+    },
     clearDraft,
     taskData,
     formBase: (form) => formBases.get(form),
@@ -839,7 +919,9 @@ export function installFeatures(ctx) {
     overview: () => plan.overview(progress()),
     calendar: plan.calendar,
     timeline: plan.timeline,
+    capacity: plan.capacity,
     canvasRender: canvas.render,
+    canvasEdit: canvas.edit,
     canvasSaved: canvas.saved,
     canvasBeforeRender: canvas.beforeRender,
     canvasSelection: canvas.selection,

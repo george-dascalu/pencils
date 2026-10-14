@@ -624,15 +624,18 @@ test("board settings persist in native canvas, stay isolated, validate and undo"
     store,
     project,
     board,
-    { settings: { snap: false } },
+    { settings: { snap: false, alignObjects: false } },
     { operationId: "disable-snap" },
   );
   assert.equal(saved.settings.snap, false);
+  assert.equal(saved.settings.alignObjects, false);
   const native = JSON.parse(
     await fs.readFile(path.join(root, saved.file), "utf8"),
   );
   assert.equal(native.pencils.settings.snap, false);
+  assert.equal(native.pencils.settings.alignObjects, false);
   assert.equal(decodeCanvas(encodeCanvas(saved)).settings.snap, false);
+  assert.equal(decodeCanvas(encodeCanvas(saved)).settings.alignObjects, false);
   const fresh = new Store(root);
   await fresh.init();
   const boards = (await fresh.snapshot(project.id)).boards;
@@ -641,7 +644,17 @@ test("board settings persist in native canvas, stay isolated, validate and undo"
     boards.find((b) => b.id === second.id).settings?.snap,
     undefined,
   );
-  for (const settings of [null, [], "false", { snap: "false" }]) {
+  assert.equal(
+    boards.find((b) => b.id === board.id).settings.alignObjects,
+    false,
+  );
+  for (const settings of [
+    null,
+    [],
+    "false",
+    { snap: "false" },
+    { alignObjects: "false" },
+  ]) {
     await assert.rejects(
       write(fresh, project, saved, { settings }),
       /Board settings/,
@@ -651,4 +664,144 @@ test("board settings persist in native canvas, stay isolated, validate and undo"
     operation: "disable-snap",
   });
   assert.notEqual(undone.settings?.snap, false);
+  assert.notEqual(undone.settings?.alignObjects, false);
+});
+
+test("board backgrounds survive native round trips and reject malformed appearance settings", async (t) => {
+  const { store, project, board, root } = await setup(t);
+  const background = {
+    pattern: "grid",
+    color: "#123456",
+    lineColor: "auto",
+    spacing: 40,
+  };
+  const saved = await write(store, project, board, {
+    settings: { snap: false, background },
+  });
+  assert.deepEqual(
+    decodeCanvas(encodeCanvas(saved)).settings.background,
+    background,
+  );
+  const fresh = new Store(root);
+  await fresh.init();
+  assert.deepEqual(
+    (await fresh.snapshot(project.id)).boards[0].settings.background,
+    background,
+  );
+  for (const invalid of [
+    null,
+    [],
+    { ...background, pattern: "invalid" },
+    { ...background, color: "url(https://example.com)" },
+    { ...background, spacing: 0 },
+    { ...background, spacing: 20.5 },
+    { ...background, lineColor: "red" },
+  ])
+    await assert.rejects(
+      write(fresh, project, saved, { settings: { background: invalid } }),
+      /background/,
+    );
+  const reverted = await fresh.undoBoard(project.id, board.id, {
+    operation: saved.operations.at(-1).id,
+  });
+  assert.equal(reverted.settings?.background, undefined);
+});
+
+test("rich connector endpoints round trip with valid JSON Canvas fallbacks and respect external edits", async (t) => {
+  const { store, project, board } = await setup(t);
+  const heads = [
+    "none",
+    "arrow",
+    "triangle",
+    "circle",
+    "circle-outline",
+    "diamond",
+    "diamond-outline",
+    "bar",
+  ];
+  const updated = await write(store, project, board, {
+    nodes: [sticky("one"), sticky("two", 400)],
+    edges: heads.map((head, i) => ({
+      id: `edge-${i}`,
+      from: "one",
+      to: "two",
+      fromEnd: head,
+      toEnd: head,
+      width: 3,
+      lineStyle: "dotted",
+      color: "#123abc",
+    })),
+  });
+  const encoded = encodeCanvas(updated);
+  assert.ok(
+    encoded.edges.every(
+      (e) =>
+        ["none", "arrow"].includes(e.fromEnd) &&
+        ["none", "arrow"].includes(e.toEnd),
+    ),
+  );
+  assert.ok(
+    encoded.edges.every(
+      (e) => e.width === undefined && e.lineStyle === undefined,
+    ),
+  );
+  const restored = decodeCanvas(encoded, project.id);
+  assert.deepEqual(
+    restored.edges.map((e) => e.toEnd),
+    heads,
+  );
+  assert.ok(
+    restored.edges.every((e) => e.width === 3 && e.lineStyle === "dotted"),
+  );
+  encoded.edges[2].toEnd = "none";
+  assert.equal(decodeCanvas(encoded, project.id).edges[2].toEnd, "none");
+  encoded.edges[0].toEnd = "arrow";
+  assert.equal(decodeCanvas(encoded, project.id).edges[0].toEnd, "arrow");
+  for (const changes of [
+    { toEnd: "bogus" },
+    { width: 100 },
+    { lineStyle: "bogus" },
+  ])
+    await assert.rejects(
+      write(store, project, updated, {
+        nodes: updated.nodes,
+        edges: [{ ...updated.edges[0], ...changes }],
+      }),
+      /Invalid/,
+    );
+});
+
+test("text alignment persists in native Canvas without changing Markdown and rejects invalid values", async (t) => {
+  const { store, project, board, root } = await setup(t);
+  const nodes = ["left", "center", "right", "justify"].map((textAlign, i) => ({
+    ...sticky(`aligned-${i}`, i * 250),
+    textAlign,
+    text: "**Original**\n\n- Markdown",
+  }));
+  const saved = await write(store, project, board, { nodes });
+  const source = JSON.parse(
+    await fs.readFile(path.join(root, saved.file), "utf8"),
+  );
+  assert.deepEqual(
+    source.nodes.map((n) => n.pencils.textAlign),
+    nodes.map((n) => n.textAlign),
+  );
+  assert.ok(source.nodes.every((n) => n.text === "**Original**\n\n- Markdown"));
+  assert.deepEqual(
+    decodeCanvas(source, { project: project.id }).nodes.map((n) => n.textAlign),
+    nodes.map((n) => n.textAlign),
+  );
+  const reread = (await store.snapshot(project.id)).boards.find(
+    (b) => b.id === saved.id,
+  );
+  assert.deepEqual(
+    reread.nodes.map((n) => n.textAlign),
+    nodes.map((n) => n.textAlign),
+  );
+  await assert.rejects(
+    write(store, project, reread, {
+      nodes: [{ ...nodes[0], textAlign: "invalid" }],
+    }),
+    /text alignment/i,
+  );
 });

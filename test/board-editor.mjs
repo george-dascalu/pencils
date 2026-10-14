@@ -1,3 +1,4 @@
+import { openBoardSearch } from "./menu-controls.mjs";
 import assert from "node:assert/strict";
 import fs from "node:fs/promises";
 import os from "node:os";
@@ -96,6 +97,7 @@ async function saved() {
   );
 }
 async function find(id, text) {
+  await openBoardSearch(page);
   await page.locator("#canvas-find").fill(text);
   await page.locator(`[data-pro=find-result][data-id="${id}"]`).click();
   await page.waitForTimeout(100);
@@ -120,7 +122,7 @@ try {
     toolbar.y >= presence.y + presence.height,
     "Card actions do not overlap presence",
   );
-  // Place the card at the edge before editing; expanded controls must stay visible.
+  // Editing preserves the object bounds; controls stay separate from its content.
   await page.locator("#canvas").evaluate((el) => {
     el.dispatchEvent(
       new WheelEvent("wheel", {
@@ -133,18 +135,16 @@ try {
   });
   await pro("inline").click();
   const editorBounds = await page.locator(".inline-editing").boundingBox();
-  const canvasBounds = await page.locator("#canvas").boundingBox();
+  assert.equal(editorBounds.width, card.width);
+  assert.equal(editorBounds.height, card.height);
+  assert.ok(await page.locator(".inline-rich").isVisible());
+  const compactBar = await page.locator(".inline-floating-tools").boundingBox();
   assert.ok(
-    editorBounds.x >= canvasBounds.x && editorBounds.y >= canvasBounds.y,
+    compactBar.height <= 50,
+    "Rich text controls fit in one compact row",
   );
-  assert.ok(
-    editorBounds.x + editorBounds.width <=
-      canvasBounds.x + canvasBounds.width + 1,
-  );
-  assert.ok(
-    editorBounds.y + editorBounds.height <=
-      canvasBounds.y + canvasBounds.height + 1,
-  );
+  await page.screenshot({ path: "/tmp/pencils-rich-toolbar.png" });
+  await page.locator("[data-rich-mode=source]").click();
 
   const source = page.locator("#canvas-inline-form textarea[name=text]");
   await source.fill(
@@ -181,6 +181,37 @@ try {
   });
   await page.getByRole("button", { name: "Italic", exact: true }).click();
   assert.ok(await rich.locator("h2 i, h2 em").count());
+  assert.equal(
+    await page
+      .getByRole("button", { name: "Italic", exact: true })
+      .getAttribute("aria-pressed"),
+    "true",
+  );
+  const styleMenu = page.locator(".rich-format-menu summary");
+  await styleMenu.focus();
+  await page.keyboard.press("ArrowDown");
+  assert.equal(
+    await page.evaluate(() =>
+      document.activeElement.getAttribute("aria-label"),
+    ),
+    "Paragraph",
+  );
+  await page.keyboard.press("ArrowDown");
+  await page.keyboard.press("Enter");
+  assert.ok(
+    await rich.locator("h2 i, h2 em").count(),
+    "Text style menu preserves the selected text",
+  );
+  await styleMenu.click();
+  await page.keyboard.press("Escape");
+  assert.ok(
+    await rich.isVisible(),
+    "Escape closes a menu without cancelling editing",
+  );
+  assert.equal(
+    await page.locator(".rich-format-menu").getAttribute("open"),
+    null,
+  );
   await rich.locator("a").evaluate((el) => {
     const r = document.createRange();
     r.selectNodeContents(el);
@@ -195,10 +226,24 @@ try {
     .fill("https://example.com/updated");
   await page.locator("[data-rich-link-save]").click();
 
+  await page.setViewportSize({ width: 480, height: 800 });
+  await styleMenu.click();
+  const menuBounds = await page
+    .locator(".rich-format-menu .selection-popover")
+    .boundingBox();
+  assert.ok(menuBounds.x >= 0 && menuBounds.x + menuBounds.width <= 480);
+  await page.keyboard.press("Escape");
+  await page.locator("[data-rich-link]").click();
+  const linkBounds = await page.locator(".rich-link-field").boundingBox();
+  assert.ok(linkBounds.x >= 0 && linkBounds.x + linkBounds.width <= 480);
+  await page.keyboard.press("Escape");
+  await page.evaluate(() => (document.documentElement.dataset.theme = "dark"));
+  await page.screenshot({ path: "/tmp/pencils-rich-toolbar-mobile-dark.png" });
+  await page.setViewportSize({ width: 1600, height: 1100 });
   await pro("inline-preview").click();
   assert.ok(await rich.isHidden());
   assert.ok(await page.locator(".inline-preview h2 em").count());
-  await page.locator("#canvas-inline-form [type=submit]").click();
+  await page.locator('[data-pro="search-toggle"]').click();
   await saved();
   await until(
     async () =>
@@ -229,7 +274,7 @@ try {
   assert.equal(canvas.width, 1600);
   assert.equal(canvas.height, 1100);
   await page.locator("[data-node=note]").dblclick();
-  await pro("inline-cancel").click();
+  await page.keyboard.press("Escape");
   assert.ok(
     await page
       .locator("#canvas")
@@ -256,6 +301,65 @@ try {
       "exit full screen",
     );
   }
+  // Bullet lists are a direct toolbar action and behave like native rich text.
+  for (const [id, title] of [
+    ["note", "Rich notes"],
+    ["far", "A distant idea"],
+  ]) {
+    await find(id, title);
+    await page.locator(`[data-node="${id}"]`).dblclick();
+    await page.locator("[data-rich-mode=source]").click();
+    await source.fill("");
+    await page.locator("[data-rich-mode=rich]").click();
+    const bullets = page.getByRole("button", {
+      name: "Bullet list",
+      exact: true,
+    });
+    assert.equal(
+      await page.locator(".rich-format-menu").getAttribute("open"),
+      null,
+    );
+    assert.ok(
+      await bullets.isVisible(),
+      "Bullets are visible without opening a menu",
+    );
+    await bullets.click();
+    await page.keyboard.type("First point");
+    await page.keyboard.press("Enter");
+    await page.keyboard.type("Second point");
+    assert.deepEqual(await rich.locator("ul > li").allTextContents(), [
+      "First point",
+      "Second point",
+    ]);
+    assert.equal(await bullets.getAttribute("aria-pressed"), "true");
+    await page.keyboard.press("Enter");
+    await page.keyboard.press("Enter");
+    await page.keyboard.type("After the list");
+    assert.equal(
+      await rich.locator("ul > li").count(),
+      2,
+      "Enter on an empty bullet ends the list",
+    );
+    await page.keyboard.press("Control+Enter");
+    await until(async () =>
+      (await current()).nodes
+        .find((n) => n.id === id)
+        .text.includes("After the list"),
+    );
+    const stored = (await current()).nodes.find((n) => n.id === id).text;
+    assert.match(stored, /- +First point/);
+    assert.match(stored, /- +Second point/);
+    await page.reload();
+    await page.locator("#canvas").waitFor();
+    await find(id, "First point");
+    assert.deepEqual(
+      await page.locator(`[data-node="${id}"] ul > li`).allTextContents(),
+      ["First point", "Second point"],
+    );
+  }
+  console.log(
+    "PASS: direct bullet toolbar, Enter continuation/exit, Markdown persistence and reload in notes and text objects",
+  );
   await page.screenshot({
     path: "/tmp/pencils-board-editor.png",
     fullPage: true,

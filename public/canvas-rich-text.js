@@ -1,9 +1,61 @@
+import { alignmentButtons, textAlignments } from "./text-alignment.js";
+import { positionToolbarPopover } from "./selection-toolbar.js";
 import TurndownService from "/vendor/turndown.js";
 import { gfm } from "/vendor/turndown-gfm.js";
 
 // The source textarea remains authoritative for saving, drafts and Obsidian.
-export function canvasRichText(form, markdown) {
-  const source = form.elements.text;
+export function canvasRichText(
+  form,
+  markdown,
+  {
+    controls = form,
+    plain = false,
+    reposition = () => {},
+    onAlignment = () => {},
+    sourceName = "text",
+  } = {},
+) {
+  const lifecycle = new AbortController();
+  const source = form.elements[sourceName];
+  const formats = controls.querySelector(".rich-format-menu");
+  const alignment = controls.querySelector(".rich-align-menu");
+  const menus = [formats, alignment];
+  const linkField = controls.querySelector(".rich-link-field");
+  const linkButton = controls.querySelector("[data-rich-link]");
+  function closeMenus(focus = false) {
+    const openMenu = menus.find((menu) => menu.open);
+    const open = !!openMenu || !linkField.classList.contains("hidden");
+    const trigger = openMenu ? openMenu.querySelector("summary") : linkButton;
+    menus.forEach((menu) => (menu.open = false));
+    linkField.classList.add("hidden");
+    linkButton.setAttribute("aria-expanded", "false");
+    if (focus && open) trigger.focus({ preventScroll: true });
+    return open;
+  }
+  function positionMenus() {
+    const canvas = controls.closest("#canvas, .dialog-body");
+    if (!canvas) return;
+    for (const menu of menus)
+      if (menu.open)
+        positionToolbarPopover(
+          menu.querySelector(".selection-popover"),
+          menu,
+          canvas,
+        );
+    if (!linkField.classList.contains("hidden"))
+      positionToolbarPopover(linkField, controls, canvas);
+  }
+  function activeFormats() {
+    const selection = window.getSelection();
+    if (mode !== "rich" || !rich.contains(selection?.anchorNode)) return;
+    for (const button of controls.querySelectorAll(
+      "[data-rich-command][aria-pressed]",
+    ))
+      button.setAttribute(
+        "aria-pressed",
+        String(document.queryCommandState(button.dataset.richCommand)),
+      );
+  }
   const rich = form.querySelector(".inline-rich");
   const preview = form.querySelector(".inline-preview");
   const converter = new TurndownService({
@@ -34,7 +86,10 @@ export function canvasRichText(form, markdown) {
     previous = "source";
   function flush() {
     if (mode !== "rich" || rich.innerHTML === lastHTML) return;
-    source.value = converter.turndown(rich);
+    source.value = plain ? rich.innerText : converter.turndown(rich);
+    rich.dataset.empty = String(
+      !rich.textContent.trim() && !rich.querySelector("img"),
+    );
     lastHTML = rich.innerHTML;
     source.dispatchEvent(new Event("input", { bubbles: true }));
   }
@@ -42,27 +97,45 @@ export function canvasRichText(form, markdown) {
     flush();
     mode = next;
     if (next === "rich") {
-      rich.innerHTML = source.value ? markdown(source.value) : "<p><br></p>";
+      if (plain) rich.textContent = source.value;
+      else rich.innerHTML = source.value ? markdown(source.value) : "";
+      rich.dataset.empty = String(
+        !rich.textContent.trim() && !rich.querySelector("img"),
+      );
       for (const el of rich.querySelectorAll("[data-md-source]"))
         el.contentEditable = "false";
       lastHTML = rich.innerHTML;
     }
-    if (next === "preview") preview.innerHTML = markdown(source.value);
+    if (next === "preview") {
+      if (plain) preview.textContent = source.value;
+      else preview.innerHTML = markdown(source.value);
+    }
     source.classList.toggle("hidden", next !== "source");
     rich.classList.toggle("hidden", next !== "rich");
     preview.classList.toggle("hidden", next !== "preview");
-    form
+    controls
       .querySelector(".rich-toolbar")
-      .classList.toggle("hidden", next !== "rich");
-    for (const button of form.querySelectorAll("[data-rich-mode]"))
-      button.setAttribute(
-        "aria-pressed",
-        String(button.dataset.richMode === next),
-      );
-    const toggle = form.querySelector('[data-pro="inline-preview"]');
-    toggle.textContent = next === "preview" ? "Back to edit" : "Preview";
-    toggle.setAttribute("aria-pressed", String(next === "preview"));
+      .classList.toggle("hidden", next !== "rich" || plain);
+    closeMenus();
+    const modeButton = controls.querySelector("[data-rich-mode]");
+    modeButton.dataset.richMode = next === "source" ? "rich" : "source";
+    const modeLabel = next === "source" ? "Rich text" : "Markdown";
+    modeButton.setAttribute("aria-label", modeLabel);
+    modeButton.title = modeLabel;
+    modeButton.querySelector(".selection-action-label").textContent = modeLabel;
+    modeButton.setAttribute("aria-pressed", String(next === "source"));
+    const toggle = controls.querySelector(
+      '[data-pro="inline-preview"],[data-rich-preview]',
+    );
+    if (toggle) {
+      const label = next === "preview" ? "Back to edit" : "Preview";
+      toggle.setAttribute("aria-label", label);
+      toggle.title = label;
+      toggle.querySelector(".selection-action-label").textContent = label;
+      toggle.setAttribute("aria-pressed", String(next === "preview"));
+    }
     form.dataset.editorMode = next;
+    reposition();
     if (next !== "preview")
       (next === "rich" ? rich : source).focus({ preventScroll: true });
   }
@@ -91,7 +164,58 @@ export function canvasRichText(form, markdown) {
         if (link.getAttribute("href") === value) link.dataset.mdHref = value;
     remember();
     flush();
+    activeFormats();
+    closeMenus();
   }
+  rich.addEventListener("beforeinput", (event) => {
+    // Use beforeinput so physical and virtual keyboards share the shortcut.
+    // Pasting, composing, code, existing lists and plain labels remain literal.
+    if (
+      plain ||
+      mode !== "rich" ||
+      event.isComposing ||
+      !event.cancelable ||
+      event.inputType !== "insertText" ||
+      event.data !== " "
+    )
+      return;
+    const caret = window.getSelection();
+    if (
+      !caret?.isCollapsed ||
+      !caret.rangeCount ||
+      !rich.contains(caret.anchorNode)
+    )
+      return;
+    const range = caret.getRangeAt(0),
+      element =
+        range.startContainer.nodeType === Node.ELEMENT_NODE
+          ? range.startContainer
+          : range.startContainer.parentElement;
+    if (element.closest("li,pre,code,[contenteditable=false]")) return;
+    let block = element;
+    while (
+      block !== rich &&
+      !block.matches("p,div,h1,h2,h3,h4,h5,h6,blockquote")
+    )
+      block = block.parentElement;
+    const prefix = range.cloneRange();
+    prefix.setStart(block, 0);
+    // Only a marker at the beginning of this block, never a dash in prose.
+    if (
+      !/^[-*+]$/.test(prefix.toString()) ||
+      prefix.cloneContents().querySelector("br,img,[data-md-source]")
+    )
+      return;
+    event.preventDefault();
+    caret.removeAllRanges();
+    caret.addRange(prefix);
+    // Native editing commands preserve the browser's text undo history.
+    document.execCommand("delete");
+    document.execCommand("insertUnorderedList");
+    remember();
+    flush();
+    activeFormats();
+  });
   rich.addEventListener("input", flush);
   rich.addEventListener("keyup", remember);
   rich.addEventListener("mouseup", remember);
@@ -112,28 +236,47 @@ export function canvasRichText(form, markdown) {
       e.stopPropagation();
     }
   });
-  form.addEventListener("mousedown", (e) => {
-    if (e.target.closest("[data-rich-command],[data-rich-link]")) {
+  controls.addEventListener("mousedown", (e) => {
+    if (
+      e.target.closest("[data-rich-command],[data-rich-link],[data-text-align]")
+    ) {
       remember();
       e.preventDefault();
     }
   });
-  form.addEventListener("click", (e) => {
+  controls.addEventListener("click", (e) => {
     const el = e.target.closest(
-      "[data-rich-mode],[data-rich-command],[data-rich-link],[data-rich-link-save]",
+      "[data-rich-mode],[data-rich-command],[data-rich-link],[data-rich-link-save],[data-text-align],[data-rich-preview]",
     );
     if (!el) return;
     e.preventDefault();
     e.stopPropagation();
+    if (textAlignments.includes(el.dataset.textAlign)) {
+      if (mode === "rich") restore();
+      else if (mode === "source") source.focus({ preventScroll: true });
+      onAlignment(el.dataset.textAlign);
+      for (const button of alignment.querySelectorAll("[data-text-align]"))
+        button.setAttribute("aria-pressed", String(button === el));
+      alignment.querySelector("summary .icon").innerHTML =
+        el.querySelector(".icon").innerHTML;
+      closeMenus();
+      return;
+    }
+    if (el.hasAttribute("data-rich-preview")) togglePreview();
     if (el.dataset.richMode) show(el.dataset.richMode);
     if (el.dataset.richCommand)
       command(el.dataset.richCommand, el.dataset.value || null);
     if (el.hasAttribute("data-rich-link")) {
-      form.querySelector(".rich-link-field").classList.remove("hidden");
-      form.querySelector("[name=rich-url]").focus();
+      const opening = linkField.classList.contains("hidden");
+      closeMenus();
+      if (!opening) return;
+      linkField.classList.remove("hidden");
+      linkButton.setAttribute("aria-expanded", "true");
+      positionMenus();
+      controls.querySelector("[name=rich-url]").focus({ preventScroll: true });
     }
     if (el.hasAttribute("data-rich-link-save")) {
-      const input = form.querySelector("[name=rich-url]"),
+      const input = controls.querySelector("[name=rich-url]"),
         url = input.value.trim();
       if (!/^(https?:\/\/|mailto:|#)/i.test(url)) {
         input.setCustomValidity(
@@ -144,46 +287,132 @@ export function canvasRichText(form, markdown) {
       }
       input.setCustomValidity("");
       command("createLink", url);
-      form.querySelector(".rich-link-field").classList.add("hidden");
+      controls.querySelector(".rich-link-field").classList.add("hidden");
     }
   });
-  form
+  controls
     .querySelector("[name=rich-url]")
     .addEventListener("input", (e) => e.target.setCustomValidity(""));
-  form.querySelector("[name=rich-url]").addEventListener("keydown", (e) => {
+  controls.querySelector("[name=rich-url]").addEventListener("keydown", (e) => {
     if (e.key === "Enter") {
       e.preventDefault();
       e.stopPropagation();
-      form.querySelector("[data-rich-link-save]").click();
+      controls.querySelector("[data-rich-link-save]").click();
     }
   });
-  show("source");
+  for (const menu of menus)
+    menu.addEventListener("toggle", () => {
+      if (menu.open) {
+        menus
+          .filter((other) => other !== menu)
+          .forEach((other) => (other.open = false));
+        linkField.classList.add("hidden");
+        linkButton.setAttribute("aria-expanded", "false");
+        positionMenus();
+      }
+    });
+  document.addEventListener(
+    "selectionchange",
+    () => {
+      remember();
+      activeFormats();
+    },
+    { signal: lifecycle.signal },
+  );
+  window.addEventListener(
+    "pointerdown",
+    (e) => {
+      if (!controls.contains(e.target)) closeMenus();
+      else if (e.target.closest("summary")) remember();
+    },
+    { signal: lifecycle.signal, capture: true },
+  );
+  controls.addEventListener("keydown", (e) => {
+    if (
+      e.target.matches("input,select,textarea,[contenteditable]") ||
+      e.ctrlKey ||
+      e.metaKey
+    )
+      return;
+    if (
+      ![
+        "ArrowLeft",
+        "ArrowRight",
+        "ArrowUp",
+        "ArrowDown",
+        "Home",
+        "End",
+      ].includes(e.key)
+    )
+      return;
+    e.preventDefault();
+    e.stopPropagation();
+    if (e.key === "ArrowDown" && e.target.matches("summary"))
+      e.target.closest("details").open = true;
+    const scope =
+      menus.find((menu) => menu.open)?.querySelector(".selection-popover") ||
+      controls;
+    const buttons = [...scope.querySelectorAll("button,summary")].filter(
+      (el) => !el.disabled && el.getClientRects().length,
+    );
+    const current = buttons.indexOf(document.activeElement);
+    const index =
+      e.key === "Home"
+        ? 0
+        : e.key === "End"
+          ? buttons.length - 1
+          : (current +
+              (["ArrowLeft", "ArrowUp"].includes(e.key) ? -1 : 1) +
+              buttons.length) %
+            buttons.length;
+    buttons[index]?.focus({ preventScroll: true });
+  });
+  controls.querySelector(".rich-modes").classList.toggle("hidden", plain);
+  show("rich");
+  function togglePreview() {
+    if (mode === "preview") show(previous);
+    else {
+      previous = mode;
+      show("preview");
+    }
+  }
   return {
     flush,
-    preview() {
-      if (mode === "preview") show(previous);
-      else {
-        previous = mode;
-        show("preview");
-      }
-    },
+    positionMenus,
+    escape: () => closeMenus(true),
+    destroy: () => lifecycle.abort(),
+    preview: togglePreview,
+    reload: () => show(mode),
   };
 }
 
-export const richToolbar = `<div class="rich-modes" role="group" aria-label="Text editing mode"><button type="button" class="button small" data-rich-mode="rich" aria-pressed="false">Rich text</button><button type="button" class="button small" data-rich-mode="source" aria-pressed="true">Markdown</button></div><div class="rich-toolbar hidden" role="toolbar" aria-label="Format text">${[
-  ["bold", "Bold", "B"],
-  ["italic", "Italic", "I"],
-  ["strikeThrough", "Strikethrough", "S̶"],
-  ["formatBlock", "Heading", "H2", "h2"],
-  ["formatBlock", "Paragraph", "¶", "p"],
-  ["insertUnorderedList", "Bullet list", "• List"],
-  ["insertOrderedList", "Numbered list", "1. List"],
-  ["formatBlock", "Quote", "❝", "blockquote"],
-]
-  .map(
-    ([command, title, label, value]) =>
-      `<button type="button" class="button small" data-rich-command="${command}" ${value ? `data-value="${value}"` : ""} aria-label="${title}" title="${title}">${label}</button>`,
-  )
-  .join(
-    "",
-  )}<button type="button" class="button small" data-rich-link>Link</button></div><div class="rich-link-field hidden"><input name="rich-url" aria-label="Link URL" placeholder="https://…"><button type="button" class="button small" data-rich-link-save>Apply link</button></div>`;
+export function richToolbar(
+  icon,
+  {
+    restored = false,
+    alignment = "left",
+    previewAction = 'data-pro="inline-preview"',
+  } = {},
+) {
+  const action = (label, glyph, attributes = "") =>
+    `<button type="button" class="selection-action" aria-label="${label}" title="${label}" ${attributes}>${icon(glyph)}<span class="selection-action-label">${label}</span></button>`;
+  const format = (command, label, glyph, value = "") =>
+    action(
+      label,
+      glyph,
+      `data-rich-command="${command}" ${value ? `data-value="${value}"` : 'aria-pressed="false"'}`,
+    );
+  return `<div class="rich-toolbar" role="group" aria-label="Format text">
+    <div class="selection-group"><details class="selection-menu rich-format-menu"><summary aria-label="Text style" title="Text style">${icon("text")}${icon("chevron")}</summary><div class="selection-popover" role="group" aria-label="Text style">
+      ${format("formatBlock", "Paragraph", "paragraph", "p")}${format("formatBlock", "Heading", "heading", "h2")}${format("formatBlock", "Quote", "quote", "blockquote")}<hr>${format("insertOrderedList", "Numbered list", "numbered")}
+    </div></details></div>
+    <div class="selection-group" role="group" aria-label="Text emphasis">${format("bold", "Bold", "bold")}${format("italic", "Italic", "italic")}${format("strikeThrough", "Strikethrough", "strike")}</div>
+    <div class="selection-group" role="group" aria-label="Lists">${format("insertUnorderedList", "Bullet list", "list")}</div>
+    <div class="selection-group" role="group" aria-label="Links">${action("Link", "link", 'data-rich-link aria-expanded="false"')}</div>
+  </div>
+  <div class="selection-group ${alignment === null ? "hidden" : ""}" role="group" aria-label="Text alignment"><details class="selection-menu rich-align-menu"><summary aria-label="Text alignment" title="Text alignment">${icon(`text-${alignment || "left"}`)}${icon("chevron")}</summary><div class="selection-popover" role="group" aria-label="Text alignment">${alignmentButtons(icon, alignment)}</div></details></div>
+  <div class="selection-group rich-modes" role="group" aria-label="Text editing mode">${action("Markdown", "code", 'data-rich-mode="source" aria-pressed="false"')}</div>
+  <div class="selection-group" role="group" aria-label="Text preview">${action("Preview", "preview", `${previewAction} aria-pressed="false"`)}</div>
+  <div class="selection-popover rich-link-field hidden" role="group" aria-label="Insert link"><label for="canvas-rich-url">Link address</label><div class="rich-link-input"><input id="canvas-rich-url" name="rich-url" aria-label="Link URL" placeholder="https://…"><button type="button" class="selection-action rich-save" data-rich-link-save aria-label="Apply link" title="Apply link">${icon("check")}</button></div></div>
+  ${restored ? '<span class="rich-draft" role="status">Draft restored</span>' : ""}<p class="inline-error" role="alert"></p>`;
+}

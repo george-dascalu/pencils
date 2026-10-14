@@ -1,3 +1,4 @@
+import { openBoardSearch } from "./menu-controls.mjs";
 import assert from "node:assert/strict";
 import fs from "node:fs/promises";
 import os from "node:os";
@@ -96,6 +97,7 @@ async function saved() {
   );
 }
 async function find(id, text) {
+  await openBoardSearch(page);
   await page.locator("#canvas-find").fill(text);
   await page.locator(`[data-pro=find-result][data-id="${id}"]`).click();
   await page.waitForTimeout(100);
@@ -124,8 +126,12 @@ async function wheel(dx, dy, extra = {}) {
     },
     { dx, dy, extra },
   );
+  await page.waitForFunction(
+    () => !document.querySelector("#canvas").classList.contains("zooming"),
+  );
 }
 async function dragFrom(locator, button, modifier) {
+  await locator.waitFor({ state: "visible" });
   const r = await locator.boundingBox();
   if (modifier) await page.keyboard.down(modifier);
   await page.mouse.move(r.x + 70, r.y + 70);
@@ -227,6 +233,7 @@ try {
   );
   await page.keyboard.type("nht");
   assert.equal(await page.locator("#canvas-find").inputValue(), "nht");
+  await openBoardSearch(page);
   await page.locator("#canvas-find").fill("");
   await page.locator("#canvas").focus();
   await page.keyboard.press("F1");
@@ -251,6 +258,7 @@ try {
   await page.locator("[data-node=task-a]").click({ modifiers: ["Control"] });
   assert.equal(await page.locator(".board-node.selected").count(), 1);
   await page.keyboard.press("Alt+2");
+  const duplicateCamera = await camera();
   const beforeDuplicate = await current();
   const count = beforeDuplicate.nodes.length;
   await dragFrom(page.locator("[data-node=note]"), "left", "Alt");
@@ -268,6 +276,16 @@ try {
     beforeDuplicate.nodes.find((n) => n.id === "note"),
   );
   assert.notEqual(duplicated[0].x, duplicated[1].x);
+  const clone = duplicated.find((n) => n.id !== "note");
+  assert.equal(
+    await page.evaluate(() => document.activeElement?.dataset.node),
+    clone.id,
+  );
+  assert.deepEqual(
+    await camera(),
+    duplicateCamera,
+    "Alt-drag duplication keeps the camera unchanged",
+  );
   await page.keyboard.press("Control+z");
   await until(
     async () => (await current()).nodes.length === count,
@@ -285,11 +303,11 @@ try {
     "N must not open a task dialog on the board",
   );
   await page.locator("#canvas").click({ position: { x: 480, y: 300 } });
-  await page.locator('#canvas-inline-form [name="text"]').fill("Placed with N");
+  await page.locator("#canvas-inline-form .inline-rich").fill("Placed with N");
   // Wheel scrolling in an editor must not pan or zoom the board.
   before = await camera();
   await page
-    .locator("#canvas-inline-form textarea")
+    .locator("#canvas-inline-form .inline-rich")
     .dispatchEvent("wheel", { deltaY: 80, bubbles: true });
   assert.deepEqual(await camera(), before);
   await page.keyboard.press("Control+Enter");
@@ -314,8 +332,8 @@ try {
   await page.keyboard.press("p");
   assert.ok(
     await page
-      .locator('[data-feature="draw-tool"]')
-      .evaluate((el) => el.classList.contains("primary")),
+      .locator('.board-tools [data-feature="draw-tool"]')
+      .evaluate((el) => el.classList.contains("active")),
   );
   await page.keyboard.press("v");
   if (process.env.BROWSER !== "firefox") {
@@ -351,8 +369,10 @@ try {
       type: "touchEnd",
       touchPoints: [],
     });
-    await page.locator("#canvas-inline-form textarea").fill("Placed by touch");
-    await page.locator('#canvas-inline-form [type="submit"]').click();
+    await page
+      .locator("#canvas-inline-form .inline-rich")
+      .fill("Placed by touch");
+    await page.locator('[data-pro="search-toggle"]').click();
     await until(
       async () =>
         (await current()).nodes.some((n) => n.text === "Placed by touch"),

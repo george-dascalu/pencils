@@ -50,7 +50,6 @@
 .board-node.task {
   justify-content: flex-start;
   gap: 8px;
-  padding: 14px;
 }
 .live-card-heading,
 .live-card-state {
@@ -181,7 +180,7 @@
   background: #bbd09d;
   outline: 3px solid #d4e3c0;
 }
-.board-node.frame > button {
+.board-node.frame > [data-pro="collapse"] {
   position: absolute;
   right: 10px;
   top: 7px;
@@ -191,7 +190,7 @@
 }
 .board-node.frame.collapsed-frame {
   border-style: solid;
-  background: #e7eddf !important;
+  background: var(--surface-soft);
   z-index: 3 !important;
 }
 #selection-tools {
@@ -340,12 +339,9 @@
   height: 125px;
 }
 #canvas-performance {
-  position: absolute;
-  right: 16px;
-  bottom: 198px;
-  font: 10px system-ui;
-  color: #7b8970;
-  z-index: 7;
+  font-size: 10px;
+  line-height: 1.8;
+  color: var(--muted);
 }
 #canvas-overview {
   position: absolute;
@@ -419,14 +415,7 @@
 .presenting #canvas-performance {
   display: none !important;
 }
-.board-node.inline-editing {
-  z-index: 15 !important;
-  background: #fff !important;
-  outline: 2px solid #6f8c56;
-  box-shadow: 0 10px 40px #263c3433;
-  padding: 10px;
-  cursor: text;
-}
+
 #canvas-inline-form {
   display: flex;
   flex-direction: column;
@@ -570,9 +559,7 @@
     white-space: normal;
     gap: 4px;
   }
-  .board-node.inline-editing {
-    min-width: 260px !important;
-  }
+
   .canvas-extra-tools {
     max-height: 95px;
     overflow: auto;
@@ -596,6 +583,7 @@
     right: -14px;
   }
   .resize-handle {
+    --resize-offset: -11px;
     width: 24px !important;
     height: 24px !important;
   }
@@ -620,7 +608,7 @@
   color: inherit;
   cursor: pointer;
 }
-/* Keep object actions from covering the inline editor's Save/Cancel controls. */
+/* Keep object actions from covering the inline editor's formatting controls. */
 .canvas:has(.inline-editing) #selection-tools {
   display: none;
 }
@@ -658,13 +646,7 @@
   border-radius: 0;
   z-index: 100;
 }
-.board-node.inline-editing {
-  height: max(320px, var(--editor-height, 320px));
-  min-width: 380px;
-  max-width: none;
-  overflow: hidden;
-  background: var(--surface, #fff) !important;
-}
+
 #canvas-inline-form {
   min-height: 0;
   overflow: hidden;
@@ -762,4 +744,122 @@ body:has(.canvas.board-expanded) {
 .shell:has(.canvas.board-expanded) {
   height: 100dvh;
   overflow: hidden;
+}
+
+#connection-draft {
+  stroke: var(--green);
+  stroke-width: 2;
+  vector-effect: non-scaling-stroke;
+  pointer-events: none;
+  opacity: 0.8;
+}
+#connection-draft.snapped {
+  opacity: 1;
+  stroke-width: 3;
+}
+.connection-target {
+  outline: 2px solid var(--green);
+  outline-offset: 3px;
+}
+.connection-nearby-port {
+  pointer-events: none;
+}
+.connection-snapped {
+  background: var(--green);
+  box-shadow: 0 0 0 4px #8daf6e55;
+}
+.connector-endpoint {
+  fill: var(--surface);
+  stroke: var(--green);
+  stroke-width: 2;
+  vector-effect: non-scaling-stroke;
+  pointer-events: all;
+  cursor: grab;
+}
+.connector-endpoint:hover {
+  fill: var(--green);
+}
+.connector-reconnecting {
+  opacity: 0.15;
+  pointer-events: none !important;
+}
+.canvas.connecting {
+  cursor: crosshair;
+}
+.canvas.connecting #selection-tools {
+  visibility: hidden;
+}
+
+.canvas.connecting .connection-port {
+  transform: scale(var(--connector-port-scale, 1));
+  transform-origin: center;
+}
+
+.connector-hit {
+  pointer-events: stroke;
+  cursor: pointer;
+}
+
+/* Search is a toolbar disclosure, keeping the canvas clear until needed. */
+.canvas-search-panel {
+  top: 18px;
+  bottom: auto;
+  left: 76px;
+  right: auto;
+  width: min(300px, calc(100% - 90px));
+  max-height: calc(100% - 36px);
+  overflow: auto;
+  padding: 10px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  box-shadow: 0 4px 16px #263c3420;
+  z-index: 12;
+}
+.canvas-search-panel .canvas-find,
+.canvas-search-panel .canvas-filters {
+  position: static;
+  width: 100%;
+}
+.canvas-search-panel .canvas-filters {
+  margin-top: 8px;
+}
+.canvas-search-panel .canvas-filters input,
+.canvas-search-panel .canvas-filters select {
+  flex: 1;
+  min-width: 0;
+  width: 50%;
+}
+.canvas-search-panel input,
+.canvas-search-panel select {
+  font: inherit;
+  font-size: 13px;
+  color: var(--ink);
+  background: var(--surface);
+  border-color: var(--line);
+}
+.canvas-search-panel #canvas-find-results {
+  box-shadow: none;
+}
+.canvas-search-panel #canvas-find-results button {
+  white-space: normal;
+  text-align: left;
+  overflow-wrap: anywhere;
+}
+.board-tools [data-pro="search-toggle"] {
+  position: relative;
+}
+.board-tools [data-pro="search-toggle"].has-filters::after {
+  content: "";
+  position: absolute;
+  right: 3px;
+  top: 3px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--accent);
+}
+
+.canvas-lines .canvas-edge.selected {
+  filter: drop-shadow(0 0 2px var(--accent));
 }

@@ -1,0 +1,369 @@
+/* Board navigation is controlled by its camera, never by native scroll offsets. */
+.canvas {
+  overflow: clip;
+}
+/* Keep the object surface and typography identical during editing. */
+.board-node .canvas-markdown {
+  white-space: normal;
+}
+.canvas-markdown :is(ul, ol) {
+  padding-inline-start: 1.5em;
+}
+.board-node-content {
+  display: flex;
+  flex-direction: column;
+  justify-content: inherit;
+  align-items: inherit;
+  gap: inherit;
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+  position: relative;
+}
+.board-node .board-node-content > * {
+  min-width: 0;
+  max-width: 100%;
+}
+.board-node-content :is(.canvas-markdown, .node-text) {
+  flex-shrink: 1;
+  min-height: 0;
+  overflow-wrap: anywhere;
+}
+.board-node.task .task-title {
+  margin: 0;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+  flex-shrink: 1;
+}
+.live-card-state {
+  min-height: 24px;
+  flex-wrap: nowrap;
+  overflow: hidden;
+}
+.live-card-state > span {
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  overflow: hidden;
+}
+.live-card-state select {
+  min-width: 0;
+  flex-shrink: 1;
+}
+.live-card-heading {
+  flex-wrap: nowrap;
+  overflow: hidden;
+  min-height: 22px;
+}
+.live-card-heading > span {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.board-node.frame .board-node-content .node-text {
+  position: static;
+  max-width: calc(100% - 24px);
+  max-height: 52px;
+  margin: 0;
+  white-space: pre-wrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.board-node.frame.collapsed-frame {
+  padding: 10px var(--board-text-padding);
+}
+.board-node-content > img,
+.board-node-content > svg {
+  max-width: 100%;
+  min-height: 0;
+  flex: 1;
+  object-fit: contain;
+}
+.object-caption {
+  font-size: 12px;
+  line-height: 1.5;
+  padding: 4px var(--board-text-padding);
+  max-height: 44px;
+  overflow: hidden;
+  background: var(--surface);
+  color: var(--ink);
+}
+.is-placeholder {
+  color: inherit;
+  opacity: 0.55;
+  font-style: italic;
+  font-weight: 400;
+}
+.board-node.content-truncated::after {
+  content: "…";
+  position: absolute;
+  bottom: 2px;
+  right: 12px;
+  font-size: 16px;
+  line-height: 16px;
+  padding: 0 4px;
+  background: var(--surface);
+  color: var(--muted);
+  border-radius: 4px;
+  pointer-events: none;
+}
+.board-node.inline-editing {
+  min-width: 0;
+  min-height: 0;
+  height: auto;
+  overflow: visible;
+  cursor: text;
+}
+.board-node.inline-editing.image {
+  padding: 0;
+}
+#canvas-inline-form {
+  display: flex;
+  flex-direction: column;
+  justify-content: inherit;
+  align-items: inherit;
+  gap: inherit;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+}
+#canvas-inline-form :is(.inline-rich, .inline-preview, .inline-source) {
+  border: 0;
+  border-radius: 0;
+  padding: 0;
+  margin: 0;
+  width: 100%;
+  min-height: 1.5em;
+  max-height: 100%;
+  overflow: auto;
+  background: transparent;
+  color: inherit;
+  box-shadow: none;
+  font: inherit;
+  letter-spacing: inherit;
+  line-height: inherit;
+  outline: none;
+  user-select: text;
+  pointer-events: auto;
+  cursor: text;
+}
+#canvas-inline-form .inline-source {
+  font:
+    13px/1.5 ui-monospace,
+    monospace;
+  resize: none;
+}
+#canvas-inline-form :is(.inline-rich, .inline-preview) {
+  flex: 0 1 auto;
+}
+#canvas-inline-form .inline-rich:focus {
+  outline: none;
+}
+#canvas-inline-form .inline-rich[data-empty="true"]::before {
+  content: attr(data-placeholder);
+  opacity: 0.55;
+  font-style: italic;
+  pointer-events: none;
+}
+#canvas-inline-form [data-inline-title] {
+  cursor: text;
+  user-select: text;
+  outline: none;
+  pointer-events: auto;
+  display: block;
+  max-height: 4.5em;
+  overflow: auto;
+}
+#canvas-inline-form .frame-title {
+  align-self: flex-start;
+}
+#canvas-inline-form input[type="hidden"] {
+  display: none;
+}
+.inline-floating-tools {
+  position: absolute;
+  z-index: 45;
+  width: max-content;
+  border: 1px solid var(--line);
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.inline-floating-tools .rich-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 0;
+}
+.inline-floating-tools > :first-child > .selection-group:first-child,
+.inline-floating-tools > .rich-modes:first-child {
+  border-left: 0;
+}
+:is(#selection-tools, .inline-floating-tools) .selection-action.rich-save {
+  color: var(--surface);
+  background: var(--green);
+}
+:is(#selection-tools, .inline-floating-tools)
+  .selection-action.rich-save:hover {
+  filter: brightness(1.1);
+}
+.inline-floating-tools .inline-error,
+.inline-floating-tools .rich-draft {
+  flex-basis: 100%;
+  margin: 0;
+  padding: 4px 8px;
+  max-width: 340px;
+  font-size: 11px;
+  color: var(--danger);
+}
+.inline-floating-tools .rich-draft {
+  color: var(--muted);
+}
+.inline-floating-tools .inline-error:empty {
+  display: none;
+}
+.inline-floating-tools .rich-link-field {
+  align-items: stretch;
+}
+.inline-floating-tools .rich-link-field label {
+  font-size: 11px;
+  color: var(--muted);
+}
+.rich-link-input {
+  display: flex;
+  gap: 6px;
+}
+.inline-floating-tools .rich-link-field input {
+  width: 160px;
+}
+
+/* Converted tasks use the sticky surface; task metadata remains in the model. */
+.task-as-note .note-content {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  max-height: 100%;
+  min-height: 0;
+  width: 100%;
+}
+.task-as-note .note-title {
+  flex-shrink: 0;
+  font-weight: 400;
+}
+.task-as-note .note-content.has-body .note-title {
+  margin-bottom: 0.65em;
+}
+.task-as-note .note-body:empty:not(.inline-rich) {
+  display: none;
+}
+.task-as-note.inline-editing .note-content {
+  overflow: auto;
+}
+
+/* Alignment belongs to each board object; metadata and controls keep their layout. */
+.board-node
+  :is(
+    .node-text,
+    .canvas-markdown,
+    .task-title,
+    .query-label,
+    .object-caption,
+    .inline-rich,
+    .inline-preview
+  ) {
+  text-align: var(--node-text-align, left);
+  width: 100%;
+}
+.board-node .canvas-markdown :is(p, h1, h2, h3, h4, h5, h6, li, blockquote) {
+  text-align: inherit;
+}
+
+.board-node.file .board-node-content > strong,
+.board-node.link .board-node-content > a {
+  display: block;
+  width: 100%;
+  text-align: var(--node-text-align, left);
+}
+
+/* Selected frames also move from their empty surface. */
+.board-node.frame.selected:not(.locked):not(.inline-editing) {
+  cursor: grab;
+}
+.board-node.frame .frame-title {
+  pointer-events: auto;
+  cursor: grab;
+}
+.board-node.frame.inline-editing .frame-title {
+  cursor: text;
+}
+.canvas.placing .frame-preview {
+  border: 2px solid var(--green);
+  background: #82937d18;
+  color: var(--ink);
+  padding: 8px;
+  font-size: 12px;
+}
+.frame-panel-actions {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+#canvas-outline .outline-row {
+  border-bottom: 1px solid var(--line);
+  min-height: 52px;
+  border-radius: 5px;
+}
+#canvas-outline .outline-row[draggable="true"] {
+  cursor: grab;
+}
+#canvas-outline .outline-row > button:nth-child(2) {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+}
+.frame-row-title {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+#canvas-outline .outline-row small {
+  color: var(--muted);
+  font-size: 10px;
+}
+#canvas-outline .frame-row-target {
+  box-shadow: inset 0 3px var(--green);
+  background: var(--surface-soft);
+}
+#canvas-outline .frame-row-dragging {
+  opacity: 0.45;
+}
+#canvas-outline .nested-frame-row {
+  opacity: 0.8;
+}
+.presenting .board-node.frame .frame-title,
+.presenting .board-node.frame > [data-pro="collapse"] {
+  visibility: hidden;
+}
+
+/* Screen-space feedback for every board object's resize gesture. */
+.resize-dimensions {
+  position: absolute;
+  z-index: 20;
+  pointer-events: none;
+  user-select: none;
+  padding: 5px 9px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--surface);
+  color: var(--ink);
+  box-shadow: 0 2px 8px #00000014;
+  font: 500 12px/1.4 var(--app-font, sans-serif);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}

@@ -1,3 +1,9 @@
+import {
+  nextStatuses,
+  canTransition,
+  transitionError,
+} from "./workflow-model.js";
+import { assigneeOptions } from "./teams.js";
 export function grid(ctx) {
   const {
     state,
@@ -73,13 +79,16 @@ export function grid(ctx) {
         key === "type"
           ? state.config.types
           : key === "status"
-            ? state.config.statuses
+            ? nextStatuses(state.config, t.status)
             : key === "priority"
               ? ["none", "low", "medium", "high", "urgent"]
               : field?.type === "select"
                 ? field.options
                 : null;
-      if (values) return `<select ${attrs}>${options(values, value)}</select>`;
+      if (key === "assignee")
+        return `<select ${attrs}>${assigneeOptions(state, value, esc)}</select>`;
+      if (values)
+        return `<select ${attrs}>${options(values, value, key === "status" ? ctx.statusNames : undefined)}</select>`;
       if (key === "parent")
         return `<select ${attrs}><option value="">No parent</option>${state.tasks
           .filter((x) => x.id !== t.id)
@@ -90,7 +99,7 @@ export function grid(ctx) {
           .join("")}</select>`;
       if (field?.type === "checkbox")
         return `<select ${attrs}>${options(["false", "true"], String(value || false))}</select>`;
-      return `<input ${attrs} type="${["start", "due"].includes(key) || field?.type === "date" ? "date" : key === "estimate" || field?.type === "number" ? "number" : "text"}" value="${esc(Array.isArray(value) ? value.join(", ") : (value ?? ""))}" ${key === "title" ? 'maxlength="300" required' : ""}>`;
+      return `${key === "title" ? `<span class="task-id">${esc(t.key || "")}</span>` : ""}<input ${attrs} type="${["start", "due"].includes(key) || field?.type === "date" ? "date" : key === "estimate" || field?.type === "number" ? "number" : "text"}" value="${esc(Array.isArray(value) ? value.join(", ") : (value ?? ""))}" ${key === "title" ? 'maxlength="300" required' : ""}>`;
     };
     return `<div class="grid-tools"><button class="button small" data-feature="columns">Columns</button><label>Bulk status <select id="bulk-status"><option value="">Choose…</option>${options(state.config.statuses, "")}</select></label><button class="button small" data-feature="bulk-archive">Archive selected rows</button><span>Shift-click cells for a range · Ctrl/Cmd+C/V · Alt+arrows to navigate</span></div><div class="table-scroll"><table class="task-table spreadsheet" role="grid" aria-label="Tasks spreadsheet"><colgroup><col style="width:60px">${columns.map((c) => `<col style="width:${c.width || 160}px">`).join("")}</colgroup><thead><tr><th><input type="checkbox" id="grid-all" aria-label="Select all visible rows"></th>${columns.map((c) => `<th><button data-action="sort-column" data-field="${esc(c.key)}">${esc(fieldName(c.key))}</button><span class="column-resizer" data-resize-column="${esc(c.key)}" role="separator" aria-label="Resize ${esc(fieldName(c.key))}" tabindex="0"></span></th>`).join("")}</tr></thead><tbody>${tasks.map((t, r) => `<tr><td><input type="checkbox" data-row-select="${t.id}" ${selected.has(t.id) ? "checked" : ""} aria-label="Select ${esc(t.title)}"><button class="table-open" data-action="task-open" data-id="${t.id}" aria-label="Open ${esc(t.title)}">↗</button></td>${columns.map((c, k) => `<td data-cell="${r},${k}">${cell(t, c.key)}</td>`).join("")}</tr>`).join("")}</tbody></table></div><button class="add-row" data-action="task-new">+ New row</button>`;
   }
@@ -218,6 +227,14 @@ export function grid(ctx) {
           });
         }
       }
+      for (const [id, changes] of patches)
+        if (
+          changes.status &&
+          !canTransition(state.config, task(id).status, changes.status)
+        )
+          throw new Error(
+            transitionError(state.config, task(id).status, changes.status),
+          );
       for (const [id, changes] of patches) await patchTask(id, changes, false);
       renderView(true);
       toast(
@@ -305,6 +322,14 @@ export function grid(ctx) {
       renderView(true);
     }
     if (el.id === "bulk-status" && el.value) {
+      const blocked = [...selected]
+        .map(task)
+        .find((t) => t && !canTransition(state.config, t.status, el.value));
+      if (blocked) {
+        toast(transitionError(state.config, blocked.status, el.value), true);
+        el.value = "";
+        return;
+      }
       for (const id of [...selected].filter((id) => task(id)))
         await patchTask(id, { status: el.value }, false);
       renderView(true);
