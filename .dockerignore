@@ -1,0 +1,11 @@
+.git
+.agents
+.codex
+.aws
+node_modules
+vault
+.env
+test
+artifacts
+README.md
+*.log

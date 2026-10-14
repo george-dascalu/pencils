@@ -1,0 +1,153 @@
+/* One floating control surface, using the workspace's icons and colour tokens. */
+#selection-tools {
+  padding: 5px;
+  gap: 0;
+  border-radius: 12px;
+  border-color: var(--line);
+  background: var(--surface);
+  color: var(--ink);
+  max-width: calc(100% - 24px);
+  max-height: none;
+  overflow: visible;
+  box-shadow:
+    0 4px 18px #0002,
+    0 1px 3px #0001;
+}
+.selection-group {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 0 5px;
+  border-left: 1px solid var(--line);
+}
+.selection-group:empty {
+  display: none;
+}
+.selection-kind {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 9px;
+  font-size: 11px;
+  color: var(--muted);
+  white-space: nowrap;
+}
+#selection-tools :is(.selection-action, summary) {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  min-width: 34px;
+  height: 34px;
+  padding: 7px;
+  border: 0;
+  border-radius: 6px;
+  color: var(--ink);
+  background: transparent;
+  cursor: pointer;
+  flex-shrink: 0;
+  font-size: 12px;
+}
+#selection-tools .icon {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+}
+#selection-tools summary > .icon:last-child {
+  width: 11px;
+}
+#selection-tools :is(.selection-action, summary):hover,
+#selection-tools details[open] > summary,
+#selection-tools [aria-pressed="true"] {
+  background: var(--surface-soft);
+}
+#selection-tools :is(button, summary, input):focus-visible {
+  outline: 2px solid #4276a5;
+  outline-offset: 2px;
+}
+#selection-tools :is(button:disabled, [aria-disabled="true"]) {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+.selection-action-label {
+  display: none;
+}
+.selection-menu {
+  position: relative;
+}
+.selection-menu summary {
+  list-style: none;
+}
+.selection-menu summary::-webkit-details-marker {
+  display: none;
+}
+.selection-popover {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  width: 244px;
+  max-width: calc(100vw - 40px);
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--surface);
+  color: var(--ink);
+  box-shadow: 0 8px 30px #0003;
+  overflow-y: auto;
+  z-index: 2;
+}
+.selection-menu:not([open]) > .selection-popover {
+  display: none;
+}
+#selection-tools .selection-popover > .selection-action {
+  justify-content: flex-start;
+  height: auto;
+  min-height: 36px;
+  text-align: left;
+  gap: 9px;
+}
+.selection-popover > .selection-action .selection-action-label {
+  display: inline;
+}
+.selection-popover strong {
+  padding: 4px 7px;
+  color: var(--muted);
+  font-size: 11px;
+}
+.selection-popover hr {
+  border: 0;
+  border-top: 1px solid var(--line);
+  width: 100%;
+  margin: 5px 0;
+}
+.selection-align-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 4px;
+}
+#selection-tools [data-feature="selection-delete"] {
+  color: var(--danger, #bd4940);
+}
+@media (max-width: 600px) {
+  #selection-tools {
+    padding: 4px;
+    row-gap: 5px;
+  }
+  .selection-kind {
+    display: none;
+  }
+  .selection-group {
+    padding: 0 3px;
+  }
+  .selection-group:first-of-type {
+    border-left: 0;
+  }
+  #selection-tools :is(.selection-action, summary) {
+    min-width: 32px;
+    height: 36px;
+    padding: 6px;
+  }
+}

@@ -1,0 +1,120 @@
+.color-picker {
+  position: relative;
+  width: fit-content;
+  font-size: 12px;
+  font-weight: 400;
+}
+.color-picker > summary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-width: 48px;
+  height: 36px;
+  padding: 6px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--surface);
+  color: var(--ink);
+  cursor: pointer;
+  list-style: none;
+}
+.color-picker > summary::-webkit-details-marker {
+  display: none;
+}
+.color-picker > summary > .icon {
+  width: 11px;
+  height: 11px;
+}
+.color-picker > summary:hover,
+.color-picker[open] > summary {
+  background: var(--surface-soft);
+}
+.color-picker [aria-disabled="true"] {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+.color-picker :is(button, summary, input):focus-visible {
+  outline: 2px solid #4276a5;
+  outline-offset: 2px;
+}
+.color-picker-panel {
+  position: fixed;
+  width: 244px;
+  max-width: calc(100vw - 24px);
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  background: var(--surface);
+  color: var(--ink);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  box-shadow: 0 8px 30px #0003;
+  overflow-y: auto;
+  z-index: 20;
+}
+.color-picker:not([open]) > .color-picker-panel {
+  display: none;
+}
+.color-picker-panel strong {
+  padding: 4px 7px;
+  font-size: 11px;
+  color: var(--muted);
+}
+.color-picker .selection-swatch {
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border-radius: 50%;
+  background: var(--swatch);
+  border: 1px solid #0003;
+  display: block;
+  flex-shrink: 0;
+}
+.color-picker .selection-swatch.mixed {
+  background: conic-gradient(
+    #f5e7a2 0 25%,
+    #aed7dc 25% 50%,
+    #d4bee5 50% 75%,
+    #d6e4d3 75%
+  );
+}
+.color-picker .selection-colors {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 6px;
+  padding: 8px 0;
+}
+.color-picker .selection-colors [aria-pressed="true"],
+#selection-tools .selection-colors [aria-pressed="true"] {
+  background: var(--swatch);
+  outline: 2px solid var(--ink);
+  outline-offset: 2px;
+}
+.color-hex-label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 12px;
+}
+.color-hex-label input {
+  width: 100%;
+  min-width: 0;
+  font: inherit;
+  padding: 8px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--surface);
+  color: var(--ink);
+}
+.color-error {
+  font-size: 11px;
+  color: var(--danger, #bd4940);
+}
+.color-error:empty {
+  display: none;
+}
+#selection-tools .color-picker-panel {
+  position: absolute;
+}

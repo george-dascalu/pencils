@@ -1,0 +1,20 @@
+# Usage: docker compose -f compose.yaml -f compose.https.yaml up -d
+# Supply a certificate trusted by your devices. No certificate service is required at runtime.
+services:
+  pencils:
+    environment:
+      AUTH_MODE: required
+      COOKIE_SECURE: "true"
+      TLS_CERT_FILE: /certificates/cert.pem
+      TLS_KEY_FILE: /certificates/key.pem
+    volumes:
+      - "${TLS_CERT_FILE:?Set TLS_CERT_FILE to a certificate file}:/certificates/cert.pem:ro"
+      - "${TLS_KEY_FILE:?Set TLS_KEY_FILE to its private key}:/certificates/key.pem:ro"
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "require('https').get('https://127.0.0.1:3000/api/health',{rejectUnauthorized:false},r=>process.exit(r.statusCode===200?0:1)).on('error',()=>process.exit(1))",
+        ]

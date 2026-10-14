@@ -218,3 +218,12 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# Pencils application and private workspace data
+node_modules/
+vault/*
+vault/.*
+!vault/.gitkeep
+artifacts/
+playwright-report/
+test-results/

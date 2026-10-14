@@ -1,0 +1,354 @@
+/* Shared compact project navigation; secondary actions live in disclosures. */
+.main:has(.tabs) {
+  min-height: 100dvh;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-rows: 48px 42px auto 1fr;
+}
+.main:has(.tabs) > .topbar {
+  grid-column: 1 / -1;
+  height: 48px;
+  padding: 0 20px;
+}
+.main:has(.tabs) > :is(.hero, .stats-strip) {
+  display: none;
+}
+.main:has(.tabs) > .tabs {
+  grid-column: 1;
+  grid-row: 2;
+  padding: 0 16px;
+  min-height: 0;
+  margin: 0;
+  gap: 4px;
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+.main:has(.tabs) > .tabs .tab {
+  padding: 10px 9px;
+  flex-shrink: 0;
+}
+.board-project-tools {
+  grid-column: 2;
+  grid-row: 2;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 0 16px 0 6px;
+  border-bottom: 1px solid var(--line);
+}
+.board-project-tools .button {
+  padding: 6px 10px;
+  font-size: 12px;
+}
+.main:has(.tabs) > #view-toolbar {
+  grid-column: 1 / -1;
+  grid-row: 3;
+  min-width: 0;
+}
+.main:has(.tabs) > #view-content {
+  grid-column: 1 / -1;
+  grid-row: 4;
+  min-height: 0;
+  padding: 0 12px 12px;
+}
+.main:has(#canvas) .canvas:not(.board-expanded) {
+  height: 100%;
+  min-height: 0;
+}
+.main:has(.tabs) .breadcrumb strong {
+  font-size: 14px;
+  font-weight: 600;
+  max-width: 40vw;
+}
+.main:has(.tabs) .board-toolbar {
+  padding: 7px 16px;
+  gap: 7px;
+  min-height: 46px;
+  flex-wrap: wrap;
+}
+.main:has(.tabs) .board-toolbar > select {
+  margin-right: 2px;
+  max-width: 220px;
+  font-size: 12px;
+  padding: 7px 9px;
+}
+.main:has(.tabs) .board-save {
+  margin-left: auto;
+  font-size: 11px;
+  max-width: 230px;
+}
+.board-menu {
+  position: relative;
+  flex-shrink: 0;
+}
+.board-menu > summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 7px 10px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  font-size: 12px;
+  cursor: pointer;
+  color: var(--ink);
+  list-style: none;
+  background: var(--surface, #fff);
+}
+.board-menu > summary::-webkit-details-marker {
+  display: none;
+}
+.board-menu > summary:hover,
+.board-menu[open] > summary {
+  background: var(--surface-soft, #edf1e7);
+  border-color: var(--green);
+}
+.board-menu > summary:focus-visible {
+  outline: 3px solid #4276a5;
+  outline-offset: 2px;
+}
+.board-menu-panel {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  z-index: 120;
+  width: 260px;
+  max-width: calc(100vw - 32px);
+  max-height: min(540px, calc(100dvh - 160px));
+  overflow: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 10px;
+  background: var(--surface, #fff);
+  color: var(--ink);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  box-shadow: 0 12px 36px #0003;
+}
+.board-menu:not([open]) > .board-menu-panel {
+  display: none;
+}
+.board-project-tools .board-menu-panel {
+  left: auto;
+  right: 0;
+  width: 320px;
+}
+.board-menu-panel > :is(button, select) {
+  width: 100%;
+  max-width: none;
+  justify-content: flex-start;
+  text-align: left;
+  padding: 8px 10px;
+  font-size: 12px;
+  min-height: 34px;
+}
+.board-menu-panel > label {
+  padding: 8px 10px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+}
+.board-menu-panel #quick-capture {
+  flex-wrap: wrap;
+}
+.board-menu-panel #quick-capture input {
+  width: 100%;
+  min-width: 0;
+  flex: 1;
+}
+.compact-project-info {
+  padding: 6px 4px 10px;
+  border-bottom: 1px solid var(--line);
+  margin-bottom: 4px;
+}
+.compact-project-info strong {
+  display: block;
+  font-size: 15px;
+}
+.compact-project-info p {
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--muted);
+  margin: 6px 0 0;
+}
+/* Warnings remain visible and scrollable instead of being hidden by the compact header. */
+.main:has(.tabs):has(> .connection-banner, > .warning) {
+  display: flex;
+  flex-direction: column;
+  height: auto;
+  min-height: 100dvh;
+}
+.main:has(.tabs) > :is(.connection-banner, .warning) {
+  grid-column: 1 / -1;
+  grid-row: auto;
+}
+.main:has(.tabs):has(> .connection-banner, > .warning)
+  .canvas:not(.board-expanded) {
+  height: 65dvh;
+  min-height: 350px;
+}
+@media (max-width: 950px) {
+  .main:has(.tabs) > .tabs {
+    padding: 0 8px;
+  }
+  .main:has(.tabs) .board-save {
+    max-width: 150px;
+  }
+}
+@media (max-width: 600px) {
+  .main:has(.tabs) > .topbar {
+    padding: 0 10px;
+  }
+  .board-project-tools {
+    padding: 0 8px 0 4px;
+    gap: 3px;
+  }
+  .board-project-tools > .button[data-action="task-new"] {
+    font-size: 0;
+    padding: 7px;
+    gap: 0;
+  }
+  .main:has(.tabs) .board-toolbar {
+    padding: 6px 10px;
+    gap: 5px;
+  }
+  .main:has(.tabs) .board-toolbar > select {
+    max-width: 150px;
+  }
+  .main:has(.tabs) .board-save {
+    max-width: none;
+    font-size: 10px;
+  }
+  .main:has(.tabs) > #view-content {
+    padding: 0 6px 6px;
+  }
+  .board-menu-panel {
+    position: fixed;
+    top: 140px;
+    left: 12px;
+    right: 12px;
+    width: auto;
+    max-width: none;
+    max-height: calc(100dvh - 160px);
+  }
+  .board-project-tools .board-menu-panel {
+    top: 94px;
+    left: 12px;
+    right: 12px;
+    width: auto;
+    max-height: calc(100dvh - 110px);
+  }
+}
+
+/* The same navigation and action positions apply to every project view. */
+.main:has(#canvas) {
+  height: 100dvh;
+  grid-template-rows: 48px 42px auto minmax(0, 1fr);
+}
+.main:has(.tabs) .toolbar {
+  padding: 7px 16px;
+  min-height: 49px;
+  gap: 7px;
+  flex-wrap: wrap;
+}
+.main:has(.tabs) :is(.toolbar-left, .toolbar-right) {
+  gap: 7px;
+  flex-wrap: wrap;
+  min-width: 0;
+}
+.main:has(.tabs) .toolbar-right {
+  margin-left: auto;
+}
+.main:has(.tabs) .toolbar-right .caption {
+  display: none;
+}
+.main:has(.tabs) .toolbar :is(input, select) {
+  font-size: 12px;
+}
+.board-menu-panel > input {
+  width: 100%;
+  min-width: 0;
+  padding: 8px 10px;
+}
+@media (max-width: 600px) {
+  .main:has(.tabs) .toolbar {
+    padding: 6px 10px;
+  }
+  .main:has(.tabs) .toolbar-left .search {
+    flex: 1 1 100%;
+  }
+  .main:has(.tabs) .toolbar-left .search input {
+    width: 100%;
+  }
+  .main:has(.tabs) > #view-content {
+    padding: 0 6px 6px;
+  }
+}
+.view-tab-group {
+  display: flex;
+  align-items: stretch;
+  gap: 4px;
+  flex-shrink: 0;
+  position: relative;
+  padding-right: 12px;
+  margin-right: 8px;
+}
+.view-tab-group:not(:last-child)::after {
+  content: "";
+  position: absolute;
+  right: 0;
+  top: 12px;
+  bottom: 12px;
+  width: 1px;
+  background: var(--line);
+}
+.view-tab-group:last-child {
+  padding-right: 0;
+  margin-right: 0;
+}
+.overview-toolbar {
+  padding: 16px;
+  font-size: 12px;
+  color: var(--muted);
+}
+.project-overview {
+  padding: 8px 4px;
+}
+.project-overview-columns {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+.overview-summary {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 20px;
+}
+.project-overview h2 {
+  font-size: 15px;
+  margin: 0 0 14px;
+}
+.overview-summary h2:not(:first-child) {
+  margin-top: 24px;
+}
+.overview-status {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 9px 0;
+  border-bottom: 1px solid var(--line);
+  font-size: 12px;
+}
+@media (max-width: 600px) {
+  .project-overview-columns {
+    grid-template-columns: 1fr;
+  }
+  .view-tab-group {
+    gap: 2px;
+    padding-right: 8px;
+    margin-right: 2px;
+  }
+}

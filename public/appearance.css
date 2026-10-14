@@ -1,0 +1,482 @@
+:root {
+  --surface: #fff;
+  --surface-soft: #f1f4ec;
+  --app-font: "Manrope", sans-serif;
+  font-family: var(--app-font);
+  font-synthesis: style;
+}
+body {
+  font-family: var(--app-font);
+}
+.hero h1,
+.welcome h1,
+.welcome h2,
+.section-title,
+.dialog h2,
+.markdown-preview h1,
+.markdown-preview h2,
+.markdown-preview h3,
+.dashboard-metrics strong,
+.dashboard-deadlines h2,
+.planning-head h2,
+.login h1,
+.wordmark,
+.board-node .canvas-markdown {
+  font-family: var(--app-font);
+}
+.field .title-input {
+  font-family: var(--app-font) !important;
+}
+.desktop-sidebar-toggle {
+  flex-shrink: 0;
+}
+@media (min-width: 781px) {
+  :root[data-sidebar="collapsed"] .sidebar {
+    transform: translateX(-100%);
+    visibility: hidden;
+  }
+  :root[data-sidebar="collapsed"] .main {
+    margin-left: 0;
+    width: 100%;
+  }
+}
+@media (max-width: 780px) {
+  .desktop-sidebar-toggle {
+    display: none;
+  }
+}
+.personal-dialog {
+  width: min(740px, calc(100vw - 32px));
+}
+.appearance-group,
+.project-status-settings {
+  border: 0;
+  padding: 0;
+  margin: 20px 0;
+  min-width: 0;
+}
+.appearance-group legend,
+.project-status-settings legend {
+  font-size: 16px;
+  font-weight: 650;
+  padding: 0;
+  margin-bottom: 12px;
+  color: var(--ink);
+}
+.theme-options {
+  display: flex;
+  gap: 10px;
+}
+.theme-options label,
+.font-option {
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 14px;
+  background: var(--surface);
+  cursor: pointer;
+}
+.theme-options label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+}
+.theme-options label:has(:checked),
+.font-option:has(:checked) {
+  border-color: var(--green);
+  box-shadow: inset 0 0 0 1px var(--green);
+  background: var(--surface-soft);
+}
+.font-options {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+.font-option {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+}
+.font-option input {
+  margin-top: 6px;
+  accent-color: var(--green);
+}
+.font-option strong,
+.font-option small,
+.font-sample {
+  display: block;
+}
+.font-option strong {
+  font-size: 18px;
+  font-weight: 600;
+}
+.font-option small {
+  color: var(--muted);
+  font-size: 12px;
+  margin: 4px 0 12px;
+}
+.font-sample {
+  font-size: 13px;
+  line-height: 1.6;
+}
+@media (max-width: 520px) {
+  .font-options {
+    grid-template-columns: 1fr;
+  }
+  .theme-options {
+    gap: 6px;
+  }
+  .theme-options label {
+    padding: 10px 6px;
+  }
+}
+:root[data-theme="dark"] {
+  --ink: #e2e9e3;
+  --muted: #abb9ae;
+  --line: #3b4b42;
+  --green: #a7cf9b;
+  --accent: #bdd990;
+  --paper: #151e1a;
+  --side: #101a15;
+  --surface: #202c25;
+  --surface-soft: #29382e;
+  color: var(--ink);
+  background: var(--paper);
+}
+[data-theme="dark"]
+  :is(
+    .main,
+    .shell,
+    .topbar,
+    .hero,
+    .content,
+    .tabs,
+    .toolbar,
+    .stats-strip,
+    .board-toolbar,
+    .feature-toolbar,
+    .advanced-filters,
+    .canvas-extra-tools,
+    .grid-tools,
+    .pagination,
+    .dialog,
+    .dialog-head,
+    .dialog-body,
+    .dialog-foot,
+    .login,
+    .boot
+  ) {
+  background: var(--paper);
+  color: var(--ink);
+  border-color: var(--line);
+}
+[data-theme="dark"]
+  :is(
+    .task-row,
+    .task-table,
+    .task-table th,
+    .task-table td,
+    .kanban-card,
+    .project-card,
+    .dashboard-metrics > div,
+    .dashboard-deadlines > button,
+    .calendar-day,
+    .calendar > strong,
+    .calendar-task,
+    .search-result,
+    .recovery-item,
+    .comment,
+    .task-extra,
+    .markdown-preview pre,
+    .markdown-preview code,
+    .recovery-item pre,
+    .timeline-track,
+    .column-setting
+  ) {
+  background: var(--surface);
+  color: var(--ink);
+  border-color: var(--line);
+}
+[data-theme="dark"]
+  :is(
+    input,
+    select,
+    textarea,
+    .field input,
+    .field textarea,
+    .field select,
+    .search,
+    .filter,
+    .button,
+    .icon-button,
+    .avatar,
+    .md-tabs,
+    .md-tabs button,
+    .board-tools,
+    .board-tools button,
+    .board-controls,
+    .board-controls button,
+    .selection-tools,
+    .canvas-panel,
+    .canvas-find-results,
+    .canvas-filters,
+    .board-selection,
+    .canvas-inline-form
+  ) {
+  background-color: var(--surface);
+  color: var(--ink);
+  border-color: var(--line);
+}
+[data-theme="dark"] :is(input, textarea)::placeholder {
+  color: #a0afa4;
+  opacity: 1;
+}
+[data-theme="dark"] :is(.button.primary, .calendar-task, .timeline-bar) {
+  background: #436a50;
+  color: #f2f8ed;
+  border-color: #6a9674;
+}
+[data-theme="dark"]
+  :is(
+    .button:hover,
+    .icon-button:hover,
+    .task-row:hover,
+    .kanban-card:hover,
+    .project-card:hover,
+    .tab.active,
+    .tab:hover,
+    .board-tools button.active,
+    .board-tools button:hover,
+    .md-tabs button.active,
+    .spreadsheet .range-selected,
+    .calendar-day.today,
+    .search-result:hover
+  ) {
+  background: var(--surface-soft);
+  color: var(--accent);
+}
+[data-theme="dark"]
+  :is(
+    .hero h1,
+    .welcome h1,
+    .welcome h2,
+    .dialog h2,
+    .section-title,
+    .task-title,
+    .task-name,
+    .breadcrumb strong,
+    .project-card strong,
+    .dashboard-metrics strong,
+    .planning-head h2,
+    .markdown-preview h1,
+    .markdown-preview h2,
+    .markdown-preview h3,
+    .field,
+    .settings-copy h3,
+    .task-extra summary
+  ) {
+  color: var(--ink);
+}
+[data-theme="dark"]
+  :is(
+    .hero p,
+    .caption,
+    .field-hint,
+    .view-footnote,
+    .task-id,
+    .tree-parent,
+    .save-state,
+    .eyebrow,
+    .stats-strip,
+    .stats-strip span,
+    .tab,
+    .breadcrumb,
+    .organisation-crumb,
+    .empty-state,
+    .form-status,
+    .board-save,
+    .settings-copy,
+    .project-card > span,
+    .calendar-day.muted,
+    .welcome-feature p,
+    .due,
+    .assignee,
+    .task-count,
+    .count,
+    .project-health small
+  ) {
+  color: var(--muted);
+}
+[data-theme="dark"]
+  :is(
+    .tag,
+    .priority,
+    .status,
+    .status-badge,
+    .type-badge,
+    .count,
+    .task-id,
+    .calendar-day.muted
+  ) {
+  background: var(--surface-soft);
+}
+[data-theme="dark"] :is(.danger, .overdue, .form-error, .inline-error) {
+  color: #ffb5a5;
+}
+[data-theme="dark"] :is(.warning, .connection-banner, .draft-notice) {
+  background: #3e3421;
+  color: #f2d9a5;
+  border-color: #78653b;
+}
+[data-theme="dark"] .canvas {
+  background-color: #17221c;
+  background-image: radial-gradient(#415448 0.8px, transparent 0.8px);
+  border-color: var(--line);
+}
+[data-theme="dark"] .board-node:is(.task, .file, .query, .link) {
+  background: var(--surface);
+  color: var(--ink);
+  border-color: var(--line);
+}
+[data-theme="dark"] .board-node:is(.sticky, .shape) {
+  color: #303b35;
+}
+[data-theme="dark"] .board-node.text {
+  color: var(--ink);
+}
+[data-theme="dark"] .board-node.frame {
+  background: #24342b55;
+  border-color: #789483;
+  color: var(--ink);
+}
+[data-theme="dark"] .board-node.inline-editing {
+  background: var(--surface);
+  color: var(--ink);
+}
+[data-theme="dark"] .markdown-preview a,
+[data-theme="dark"] .text-link {
+  color: #b6d99c;
+}
+[data-theme="dark"] .workspace-tools .button {
+  background: transparent;
+  color: #e2e9e3;
+}
+[data-theme="dark"] .sidebar select {
+  background: var(--side);
+}
+[data-theme="dark"] .toast {
+  background: var(--surface-soft);
+  color: var(--ink);
+  border-color: var(--line);
+}
+
+.board-node.sticky,
+.board-node.text,
+.board-empty h3,
+.project-card strong {
+  font-family: var(--app-font);
+}
+[data-theme="dark"]
+  :is(
+    .kanban-column,
+    .kanban-column.over,
+    .table-scroll,
+    .markdown-preview,
+    .markdown-source,
+    .board-pick,
+    .board-pick:hover,
+    .settings-copy pre,
+    .settings-copy kbd,
+    .file-path,
+    .form-error:not(:empty),
+    .live-card-state select,
+    .canvas-presence .button,
+    .participant-cursor label,
+    .board-node.frame > button,
+    .board-node.frame.collapsed-frame
+  ) {
+  background-color: var(--surface);
+  color: var(--ink);
+  border-color: var(--line);
+}
+[data-theme="dark"]
+  :is(
+    .check-button,
+    .task-assignee,
+    .tab-count,
+    .section-title .count,
+    .tag.design,
+    .tag.quality,
+    .tag.discovery,
+    .progress
+  ) {
+  background: var(--surface-soft);
+  color: var(--muted);
+  border-color: var(--line);
+}
+[data-theme="dark"]
+  :is(
+    .column-header,
+    .card-parent,
+    .type-label,
+    .row-title,
+    .add-row,
+    .board-help,
+    .board-empty,
+    .board-empty h3
+  ) {
+  color: var(--muted);
+}
+[data-theme="dark"] #canvas-find-results,
+[data-theme="dark"] #canvas-minimap,
+[data-theme="dark"] #presentation-controls,
+[data-theme="dark"] #canvas-inline-form textarea {
+  background: var(--surface);
+  color: var(--ink);
+  border-color: var(--line);
+}
+[data-theme="dark"] .kanban-column .count {
+  color: var(--muted);
+}
+.empty h2 {
+  font-family: var(--app-font);
+}
+[data-theme="dark"] .empty {
+  background: var(--surface);
+  color: var(--ink);
+  border-color: var(--line);
+}
+[data-theme="dark"] .empty p {
+  color: var(--muted);
+}
+.top-actions .avatar {
+  display: grid;
+  flex-shrink: 0;
+  width: 34px;
+  height: 34px;
+}
+.breadcrumb {
+  min-width: 0;
+}
+.breadcrumb strong {
+  min-width: 0;
+}
+.top-actions {
+  flex-shrink: 0;
+}
+@media (max-width: 780px) {
+  .breadcrumb {
+    gap: 7px;
+    overflow: hidden;
+    margin-right: 8px;
+  }
+  .breadcrumb > button {
+    flex-shrink: 0;
+  }
+  .breadcrumb .organisation-crumb {
+    max-width: 85px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}

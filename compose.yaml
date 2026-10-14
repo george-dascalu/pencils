@@ -1,0 +1,24 @@
+services:
+  pencils:
+    image: pencils:local
+    build: .
+    ports:
+      - "${BIND_ADDRESS:-0.0.0.0}:${PORT:-3000}:3000"
+    environment:
+      VAULT_PATH: /data
+      HOST: 0.0.0.0
+      PORT: 3000
+      AUTH_MODE: ${AUTH_MODE:-shared}
+      COOKIE_SECURE: ${COOKIE_SECURE:-false}
+    user: "${LOCAL_UID:-1000}:${LOCAL_GID:-1000}"
+    volumes:
+      - "${VAULT_PATH:-./vault}:/data"
+    restart: unless-stopped
+    init: true
+    read_only: true
+    tmpfs:
+      - /tmp
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL

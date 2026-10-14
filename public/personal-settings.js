@@ -1,0 +1,59 @@
+export function personalSettings(ctx) {
+  const { state, $, $$, showDialog, dialogHead, toast } = ctx;
+  const prefs = window.PencilsAppearance;
+  const mobile = matchMedia("(max-width: 780px)");
+  function render() {
+    const hidden = prefs.read().collapsed && !mobile.matches;
+    const sidebar = $(".sidebar");
+    if (sidebar) sidebar.inert = hidden;
+    for (const button of $$('[data-personal="sidebar"]')) {
+      button.setAttribute("aria-expanded", String(!hidden));
+      button.setAttribute(
+        "aria-label",
+        hidden ? "Expand sidebar" : "Collapse sidebar",
+      );
+      button.title = hidden ? "Expand sidebar" : "Collapse sidebar";
+    }
+  }
+  function open() {
+    const value = prefs.read();
+    showDialog(
+      `<dialog class="dialog personal-dialog">${dialogHead("Personal settings")}<div class="dialog-body"><p class="field-hint">Your appearance preferences are saved in this browser, across projects. Other devices keep their own preferences.</p><fieldset class="appearance-group"><legend>Appearance</legend><div class="theme-options">${["light", "dark", "system"].map((theme) => `<label><input type="radio" name="personal-theme" value="${theme}" ${value.theme === theme ? "checked" : ""}><span>${theme[0].toUpperCase() + theme.slice(1)}</span></label>`).join("")}</div></fieldset><fieldset class="appearance-group"><legend>Workspace font</legend><p class="field-hint">All eight fonts are included locally and work without internet.</p><div class="font-options">${prefs.fonts.map(([id, name, description]) => `<label class="font-option" style="font-family:'${name}',sans-serif"><input type="radio" name="personal-font" value="${id}" ${value.font === id ? "checked" : ""}><span><strong>${name}</strong><small>${description}</small><span class="font-sample">A little space for good work. 012345</span></span></label>`).join("")}</div></fieldset><p class="field-hint" role="status" id="appearance-saved">Changes apply immediately.</p></div><div class="dialog-foot"><button type="button" class="button primary" data-action="dialog-close">Done</button></div></dialog>`,
+      "personal",
+    );
+  }
+  document.addEventListener("click", (event) => {
+    const button = event.target.closest("[data-personal]");
+    if (!button) return;
+    if (button.dataset.personal === "settings") open();
+    else if (button.dataset.personal === "sidebar") {
+      try {
+        prefs.write({ collapsed: !prefs.read().collapsed });
+      } catch {
+        toast(
+          "Browser storage is unavailable. Your preference could not be saved.",
+          true,
+        );
+      }
+    }
+  });
+  document.addEventListener("change", (event) => {
+    const name = event.target.name;
+    if (!["personal-theme", "personal-font"].includes(name)) return;
+    try {
+      prefs.write({
+        [name === "personal-font" ? "font" : "theme"]: event.target.value,
+      });
+      $("#appearance-saved").textContent = "Saved in this browser.";
+    } catch {
+      toast(
+        "Browser storage is unavailable. Your preference could not be saved.",
+        true,
+      );
+    }
+    state.dirty = false;
+  });
+  window.addEventListener("pencils-appearance", render);
+  mobile.addEventListener("change", render);
+  return { render };
+}
