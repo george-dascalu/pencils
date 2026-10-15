@@ -107,7 +107,21 @@ try {
   await page.locator("[data-action=task-new]:visible").first().click();
   await page.locator("#task-form [name=title]").fill("Planned work");
   await page.locator("[data-task-picker=type] .task-picker-trigger").click();
-  await page.locator("[data-task-picker=type] [data-picker-value=research]").click();
+  await page
+    .locator("[data-task-picker=type] [data-picker-value=research]")
+    .click();
+  await page.locator("#task-form [type=submit]").click();
+  await page.locator("dialog").waitFor({ state: "detached" });
+  const createdPlanned = (await snap()).tasks.find(
+    (t) => t.title === "Planned work",
+  );
+  await (await reveal(page.locator("#filter-assignee"))).fill("");
+  await page.locator("#filter-assignee").press("Tab");
+  await view("list");
+  await page
+    .locator(`[data-action="task-open"][data-id="${createdPlanned.id}"]`)
+    .first()
+    .click();
   await page.getByText("Planning & relationships", { exact: true }).click();
   await page.locator("#task-form [name=start]").fill("2026-10-14");
   await page.locator("#task-form [name=due]").fill("2026-10-16");
@@ -238,7 +252,7 @@ try {
   const selectedNode = page.locator("[data-node=n-note]");
   await selectedNode.click();
   await clickControl(feature("ungroup"));
-  await page.locator("#canvas").click({position:{x:600,y:100}});
+  await page.locator("#canvas").click({ position: { x: 600, y: 100 } });
   await selectedNode.click();
   const handle = selectedNode.locator(
       '.resize-handle[data-resize-corner="se"]',

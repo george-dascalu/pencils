@@ -33,6 +33,25 @@ export function selectedCells(state, n) {
     .filter(([r, c]) => n.grid.cells[r]?.[c]);
   return valid.length ? valid : [[s.row, s.column]];
 }
+export function gridSelectionLabel(state, n) {
+  const cells = selectedCells(state, n),
+    s = gridCell(state, n);
+  if (cells.length === n.grid.rows.length * n.grid.columns.length)
+    return "All cells";
+  if (
+    cells.length === n.grid.columns.length &&
+    cells.every(([r]) => r === s.row)
+  )
+    return `Row ${s.row + 1}`;
+  if (
+    cells.length === n.grid.rows.length &&
+    cells.every(([, c]) => c === s.column)
+  )
+    return `Column ${columnName(s.column)}`;
+  return cells.length > 1
+    ? `${cells.length} cells`
+    : `${columnName(s.column)}${s.row + 1}`;
+}
 export function gridHTML(n, { esc, markdown, state, icon }) {
   const g = n.grid,
     selected = new Set(selectedCells(state, n).map(([r, c]) => `${r}:${c}`));
@@ -65,14 +84,14 @@ export function gridHTML(n, { esc, markdown, state, icon }) {
       .map((w, i) => {
         const left = hx;
         hx += w;
-        return `<button class="grid-axis-label column" data-grid-axis="columns" data-track="${i}" style="left:${left}px;width:${w}px" aria-label="Select column ${columnName(i)}" aria-pressed="${tracks.rows.every((_, r) => selected.has(`${r}:${i}`))}" title="Drag to move column ${columnName(i)} · Alt + Left/Right to reorder"><span class="grid-axis-grip" aria-hidden="true">⠿</span><span>${columnName(i)}</span></button>`;
+        return `<button class="grid-axis-label column" data-grid-axis="columns" data-track="${i}" style="left:${left}px;width:${w}px" aria-label="Select column ${columnName(i)}" aria-pressed="${tracks.rows.every((_, r) => selected.has(`${r}:${i}`))}" title="Click to select and format column · Drag to move column ${columnName(i)} · Alt + Left/Right to reorder"><span class="grid-axis-grip" aria-hidden="true">⠿</span><span>${columnName(i)}</span></button>`;
       })
       .join("") +
     tracks.rows
       .map((h, i) => {
         const top = hy;
         hy += h;
-        return `<button class="grid-axis-label row" data-grid-axis="rows" data-track="${i}" style="top:${top}px;height:${h}px" aria-label="Select row ${i + 1}" aria-pressed="${tracks.columns.every((_, c) => selected.has(`${i}:${c}`))}" title="Drag to move row ${i + 1} · Alt + Up/Down to reorder"><span class="grid-axis-grip" aria-hidden="true">⠿</span><span>${i + 1}</span></button>`;
+        return `<button class="grid-axis-label row" data-grid-axis="rows" data-track="${i}" style="top:${top}px;height:${h}px" aria-label="Select row ${i + 1}" aria-pressed="${tracks.columns.every((_, c) => selected.has(`${i}:${c}`))}" title="Click to select and format row · Drag to move row ${i + 1} · Alt + Up/Down to reorder"><span class="grid-axis-grip" aria-hidden="true">⠿</span><span>${i + 1}</span></button>`;
       })
       .join("");
   return `<div class="grid-grip" title="Drag to move grid · Double-click the title to edit"><span aria-hidden="true">⠿</span><span class="grid-title ${g.title ? "" : "is-placeholder"}" title="${esc(g.title || "Double-click to add a title")}">${esc(g.title || "Add a title…")}</span><button type="button" class="grid-title-edit" data-pro="grid-title" aria-label="Edit grid title" title="Edit grid title" ${n.locked ? "disabled" : ""}>${icon("pencil")}</button></div><div class="grid-cells" role="grid" aria-label="Board grid" aria-multiselectable="true" style="grid-template-columns:${g.columns.map((v) => `${v}fr`).join(" ")};grid-template-rows:${g.rows.map((v) => `${v}fr`).join(" ")}">${g.cells
@@ -135,7 +154,7 @@ export function gridToolbar(n, state, { button, menu, group, icon }) {
     );
   return group(
     "Grid controls",
-    `<span class="grid-cell-address" title="Selected cell">${selectedCells(state, n).length > 1 ? `${selectedCells(state, n).length} cells` : `${columnName(s.column)}${s.row + 1}`}</span>` +
+    `<span class="grid-cell-address" title="Selected cell">${gridSelectionLabel(state, n)}</span>` +
       [
         ["rows", "row", "down"],
         ["columns", "column", "right"],
@@ -597,6 +616,11 @@ export function boardGrid(ctx, basic) {
         n = current();
       if (!cell || !n || state.canvasEditing || n.locked) return;
       const axisLabel = e.target.closest("[data-grid-axis]");
+      if (axisLabel && ["Enter", " "].includes(e.key)) {
+        consume(e);
+        selectAxis(n, axisLabel.dataset.gridAxis, +axisLabel.dataset.track);
+        return;
+      }
       if (
         axisLabel &&
         e.altKey &&

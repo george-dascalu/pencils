@@ -1,6 +1,6 @@
 {
   "name": "pencils",
-  "version": "0.14.0",
+  "version": "0.14.25",
   "private": true,
   "type": "module",
   "description": "An offline, Markdown-backed project workspace",
@@ -20,6 +20,7 @@
     "test:board-layout": "node test/board-layout.mjs",
     "test:drag-feedback": "node test/drag-feedback.mjs",
     "test:selection-toolbar": "node test/selection-toolbar.mjs",
+    "test:connect-tool": "node test/connect-tool.mjs",
     "test:board-editor": "node test/board-editor.mjs",
     "test:task-editor": "node test/task-editor.mjs",
     "test:text-alignment": "node test/text-alignment.mjs",
@@ -44,7 +45,14 @@
     "test:arrow-selection": "node test/arrow-selection.mjs",
     "test:advanced-board": "node test/advanced-board-tools.mjs",
     "test:teams-capacity": "node test/teams-capacity.mjs",
-    "test:workflow": "node test/workflow.mjs"
+    "test:workflow": "node test/workflow.mjs",
+    "test:directory": "node test/directory-pages.mjs",
+    "test:grid-text": "node test/grid-text-formatting.mjs",
+    "test:task-creation": "node test/task-creation-tools.mjs",
+    "test:board-task-drag": "node test/board-task-drag.mjs",
+    "test:board-task-panel": "node test/board-task-panel.mjs",
+    "test:create-another": "node test/create-another.mjs",
+    "test:board-popovers": "node test/board-popovers.mjs"
   },
   "engines": {
     "node": ">=22"

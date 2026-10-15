@@ -81,6 +81,13 @@ const edges = () =>
   page
     .locator("path.canvas-edge.selected")
     .evaluateAll((els) => els.map((e) => e.dataset.edge).sort());
+const highlightedEdges = () =>
+  page.locator(".connector-selection").evaluateAll((els) =>
+    els
+      .filter((el) => getComputedStyle(el).opacity === "1")
+      .map((el) => el.parentElement.dataset.edge)
+      .sort(),
+  );
 const nodes = () =>
   page
     .locator(".board-node.selected")
@@ -102,8 +109,13 @@ try {
   assert.deepEqual(await edges(), ["edge"]);
   await selectArrow("other", "Shift");
   assert.deepEqual(await edges(), ["edge", "other"]);
+  assert.deepEqual(await highlightedEdges(), ["edge", "other"]);
   assert.equal(await page.locator(".connector-endpoint").count(), 0);
-  await page.locator('[data-edge-field="width"]').selectOption("5");
+  await page.screenshot({ path: "/tmp/pencils-arrow-highlights-desktop.png" });
+  await page.locator('[data-selection-menu="width"] > summary').click();
+  await page
+    .getByRole("button", { name: "Thickness: 5 px", exact: true })
+    .click();
   await until(async () => (await current()).edges.every((e) => e.width === 5));
   await page.locator('[data-selection-menu="toEnd"] > summary').click();
   await page.locator('[data-edge-head="toEnd"][data-value="diamond"]').click();
@@ -112,6 +124,7 @@ try {
   );
   await selectArrow("edge", "Control");
   assert.deepEqual(await edges(), ["other"]);
+  assert.deepEqual(await highlightedEdges(), ["other"]);
   await page
     .locator('[data-node="one"]')
     .click({ modifiers: ["Shift"], position: { x: 60, y: 20 } });
@@ -133,6 +146,7 @@ try {
   const canvas = await page.locator("#canvas").boundingBox();
   await page.mouse.click(canvas.x + canvas.width - 250, canvas.y + 100);
   assert.deepEqual(await edges(), []);
+  assert.deepEqual(await highlightedEdges(), []);
   assert.deepEqual(await nodes(), []);
   // A selection box includes the contained arrow along with its cards.
   const first = await page.locator('[data-node="one"]').boundingBox(),
@@ -144,6 +158,7 @@ try {
   });
   await page.mouse.up();
   assert.deepEqual(await edges(), ["edge"]);
+  assert.deepEqual(await highlightedEdges(), ["edge"]);
   assert.deepEqual(await nodes(), ["one", "two"]);
   // Select all includes both arrows. Filtering and deleting arrows keeps cards.
   await page.locator("#canvas").focus();
@@ -209,6 +224,7 @@ try {
     tools.x >= mobileCanvas.x &&
       tools.x + tools.width <= mobileCanvas.x + mobileCanvas.width + 1,
   );
+  assert.deepEqual(await highlightedEdges(), ["edge", "other"]);
   await page.screenshot({ path: "/tmp/pencils-arrow-selection-mobile.png" });
   assert.deepEqual(errors, []);
   console.log(

@@ -178,11 +178,16 @@ try {
           Math.max(...layout.identity) - Math.min(...layout.identity) < 2,
           "ID, type and title share a row",
         );
-        assert.ok(
-          Math.max(...layout.fields) - Math.min(...layout.fields) < 2,
-          "Metadata shares a single desktop row",
-        );
       }
+
+      assert.ok(
+        Math.max(...layout.fields.slice(0, 3)) - Math.min(...layout.fields.slice(0, 3)) < 2,
+        "Priority, status and assignee share the first metadata row",
+      );
+      assert.ok(
+        Math.abs(layout.fields[3] - layout.fields[4]) < 2 && layout.fields[3] > layout.fields[0],
+        "Parent task and due date share the next row on desktop and mobile",
+      );
 
       assert.ok(layout.iconOnly, "Task type remains icon-only in both themes");
       assert.equal(layout.overflow, false, "Dialog fields do not overflow");

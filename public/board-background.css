@@ -13,7 +13,7 @@
   padding: 0;
   margin: 0 0 20px;
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(5, minmax(0, 1fr));
   gap: 10px;
 }
 .background-patterns legend {
@@ -28,6 +28,7 @@
   align-items: center;
   font-size: 12px;
   cursor: pointer;
+  text-align: center;
 }
 .background-patterns input {
   position: absolute;
@@ -49,8 +50,8 @@
   outline-offset: 1px;
 }
 .background-patterns input:focus-visible + .pattern-sample {
-  outline: 2px solid #4276a5;
-  outline-offset: 3px;
+  outline: var(--focus-ring);
+  outline-offset: -1px;
 }
 .pattern-dots {
   background-image: radial-gradient(var(--board-line) 1px, transparent 1px);
@@ -102,13 +103,59 @@
   accent-color: var(--green);
 }
 
-.board-settings-dialog {
-  width: min(580px, calc(100vw - 32px));
+.board-settings-popover {
+  position: fixed;
+  inset: auto;
+  margin: 0;
+  padding: 0;
+  width: min(420px, calc(100vw - 24px));
+  max-height: var(--settings-height, calc(100dvh - 24px));
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--surface);
+  color: var(--ink);
+  box-shadow: 0 8px 30px #0003;
+  overflow: visible;
 }
+.board-settings-popover::backdrop {
+  background: transparent;
+  pointer-events: none;
+}
+.board-settings-popover .dialog-head {
+  padding: 12px 16px;
+}
+.board-settings-popover .dialog-head h2 {
+  font-family: var(--app-font, sans-serif);
+  font-size: 16px;
+}
+.board-settings-popover .dialog-body {
+  padding: 16px;
+}
+.board-settings-popover .dialog-foot {
+  padding: 12px 16px;
+  gap: 8px;
+}
+.board-settings-popover .background-preview {
+  height: 80px;
+}
+.board-settings-popover .pattern-sample {
+  height: 42px;
+}
+.board-settings-popover .field-row {
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+}
+.board-settings-popover .field {
+  min-width: 0;
+}
+.board-settings-popover .field input[name="title"] {
+  font-size: 14px;
+  padding: 8px 10px;
+}
+
 #board-settings-form {
   display: flex;
   flex-direction: column;
-  max-height: 90dvh;
+  max-height: var(--settings-height, calc(100dvh - 24px));
 }
 #board-settings-form > .dialog-body {
   overflow-y: auto;
@@ -162,4 +209,26 @@ body:has(.board-expanded) .board-toolbar .board-settings-button {
   #board-settings-form .dialog-body {
     padding: 18px;
   }
+}
+
+.pattern-fine-grid {
+  --minor-line: color-mix(in srgb, var(--board-line) 35%, transparent);
+  background-image:
+    linear-gradient(to right, var(--board-line) 1px, transparent 1px),
+    linear-gradient(to bottom, var(--board-line) 1px, transparent 1px),
+    linear-gradient(to right, var(--minor-line) 1px, transparent 1px),
+    linear-gradient(to bottom, var(--minor-line) 1px, transparent 1px);
+  background-size:
+    30px 30px,
+    30px 30px,
+    6px 6px,
+    6px 6px;
+}
+
+.board-settings-popover .dialog-head {
+  gap: 8px;
+}
+.board-settings-popover .dialog-head h2 {
+  flex: 1;
+  margin-right: auto;
 }

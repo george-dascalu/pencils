@@ -9,14 +9,16 @@ select,
 textarea {
   font: inherit;
 }
-button:focus-visible,
-a:focus-visible,
-input:focus-visible,
-select:focus-visible,
-textarea:focus-visible,
+button:focus,
+a:focus,
+input:focus,
+select:focus,
+textarea:focus,
+summary:focus,
+[contenteditable="true"]:focus-visible,
 [tabindex]:focus-visible {
-  outline: 3px solid #4276a5;
-  outline-offset: 2px;
+  outline: var(--focus-ring);
+  outline-offset: -1px;
 }
 .caption,
 .field-hint,
@@ -546,7 +548,7 @@ textarea:focus-visible,
   color: #60744e;
 }
 .resize-handle {
-  --resize-offset: -6px;
+  --resize-offset: -12px;
   position: absolute;
   right: var(--resize-offset);
   bottom: var(--resize-offset);

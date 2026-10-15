@@ -202,16 +202,17 @@ export function canvasRichText(
     prefix.setStart(block, 0);
     // Only a marker at the beginning of this block, never a dash in prose.
     if (
-      !/^[-*+]$/.test(prefix.toString()) ||
+      !/^(?:[-*+]|1[.)])$/.test(prefix.toString()) ||
       prefix.cloneContents().querySelector("br,img,[data-md-source]")
     )
       return;
+    const ordered = /^1[.)]$/.test(prefix.toString());
     event.preventDefault();
     caret.removeAllRanges();
     caret.addRange(prefix);
     // Native editing commands preserve the browser's text undo history.
     document.execCommand("delete");
-    document.execCommand("insertUnorderedList");
+    document.execCommand(ordered ? "insertOrderedList" : "insertUnorderedList");
     remember();
     flush();
     activeFormats();
@@ -404,10 +405,10 @@ export function richToolbar(
     );
   return `<div class="rich-toolbar" role="group" aria-label="Format text">
     <div class="selection-group"><details class="selection-menu rich-format-menu"><summary aria-label="Text style" title="Text style">${icon("text")}${icon("chevron")}</summary><div class="selection-popover" role="group" aria-label="Text style">
-      ${format("formatBlock", "Paragraph", "paragraph", "p")}${format("formatBlock", "Heading", "heading", "h2")}${format("formatBlock", "Quote", "quote", "blockquote")}<hr>${format("insertOrderedList", "Numbered list", "numbered")}
+      ${format("formatBlock", "Paragraph", "paragraph", "p")}${format("formatBlock", "Heading", "heading", "h2")}${format("formatBlock", "Quote", "quote", "blockquote")}
     </div></details></div>
     <div class="selection-group" role="group" aria-label="Text emphasis">${format("bold", "Bold", "bold")}${format("italic", "Italic", "italic")}${format("strikeThrough", "Strikethrough", "strike")}</div>
-    <div class="selection-group" role="group" aria-label="Lists">${format("insertUnorderedList", "Bullet list", "list")}</div>
+    <div class="selection-group" role="group" aria-label="Lists">${format("insertUnorderedList", "Bullet list", "list")}${format("insertOrderedList", "Numbered list", "numbered")}</div>
     <div class="selection-group" role="group" aria-label="Links">${action("Link", "link", 'data-rich-link aria-expanded="false"')}</div>
   </div>
   <div class="selection-group ${alignment === null ? "hidden" : ""}" role="group" aria-label="Text alignment"><details class="selection-menu rich-align-menu"><summary aria-label="Text alignment" title="Text alignment">${icon(`text-${alignment || "left"}`)}${icon("chevron")}</summary><div class="selection-popover" role="group" aria-label="Text alignment">${alignmentButtons(icon, alignment)}</div></details></div>

@@ -36,7 +36,6 @@ try {
   await until(async () => (await store.snapshot(p.id)).project.key === "APP");
   assert.equal((await store.snapshot(p.id)).tasks[0].key, "APP-1");
   await page.locator("[data-view=board]").click();
-  await page.locator("[data-board-menu=add] > summary").click();
   await page.locator("[data-action=board-task]").click();
   await page.locator("#board-task-search").fill("APP-1");
   await page.locator("[data-action=board-pick]").click();
@@ -46,8 +45,6 @@ try {
     ),
   );
   assert.match(await page.locator(".board-node.task").innerText(), /APP-1/);
-  await page.locator("[data-board-menu=add] > summary").click();
-  await page.locator("[data-action=board-task]").click();
   await page.locator("[data-action=board-create-task]").click();
   await page.locator("#task-form [name=title]").fill("Created on board");
   await page.locator("#task-form [type=submit]").click();

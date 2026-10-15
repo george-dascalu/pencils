@@ -104,8 +104,8 @@
   border-color: var(--green);
 }
 .board-menu > summary:focus-visible {
-  outline: 3px solid #4276a5;
-  outline-offset: 2px;
+  outline: var(--focus-ring);
+  outline-offset: -1px;
 }
 .board-menu-panel {
   position: absolute;

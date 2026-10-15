@@ -70,8 +70,8 @@
 }
 :is(#selection-tools, .inline-floating-tools, .task-rich-tools)
   :is(button, summary, input):focus-visible {
-  outline: 2px solid #4276a5;
-  outline-offset: 2px;
+  outline: var(--focus-ring);
+  outline-offset: -1px;
 }
 :is(#selection-tools, .inline-floating-tools, .task-rich-tools)
   :is(button:disabled, [aria-disabled="true"]) {
@@ -180,8 +180,8 @@
 }
 
 .connector-sample {
-  width: 40px;
-  height: 20px;
+  width: 28px;
+  height: 18px;
   flex-shrink: 0;
 }
 .connector-tools .selection-group:first-child {
@@ -281,27 +281,87 @@
   color: white;
 }
 
-.connector-tools .connector-inline-field {
+/* Compact previews with space between independent connector controls. */
+.connector-tools .selection-group {
+  gap: 6px;
+  padding: 0 8px;
+}
+#selection-tools.connector-tools summary {
+  gap: 6px;
+  padding-inline: 8px;
+}
+.connector-tools
+  :is(
+    [data-selection-menu="routing"],
+    [data-selection-menu="lineStyle"],
+    [data-selection-menu="width"]
+  )
+  .selection-popover {
+  width: 180px;
+}
+
+/* Compact appearance controls retain native inputs and the shared colour picker. */
+#selection-tools .geometry-popover {
+  width: 216px;
+  padding: 8px;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 6px;
+}
+#selection-tools details[open] > .geometry-popover { display: grid; }
+#selection-tools .geometry-wide { grid-column: 1 / -1; }
+#selection-tools .geometry-field {
   display: flex;
-  flex-direction: column;
-  gap: 1px;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
   margin: 0;
-  font-size: 9px;
-  line-height: 1.2;
+  padding: 0 6px;
+  height: 32px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
   color: var(--muted);
-}
-.connector-tools .connector-inline-field select {
-  width: auto;
-  min-width: 65px;
-  height: 28px;
-  padding: 3px 5px;
-  font: inherit;
   font-size: 12px;
+}
+#selection-tools .geometry-field .icon,
+#selection-tools .geometry-footer > button .icon { width: 16px; height: 16px; }
+#selection-tools .geometry-field :is(input, select) {
+  width: 100%;
+  min-width: 0;
+  height: 28px;
+  margin: 0;
+  padding: 3px 0;
+  border: 0;
+  border-radius: 3px;
+  background: transparent;
   color: var(--ink);
-  background: var(--surface);
-  border-color: var(--line);
-  border-radius: 5px;
+  font-size: 12px;
 }
-.connector-tools .connector-inline-field:has([data-edge-field="width"]) select {
-  min-width: 48px;
+#selection-tools .geometry-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
 }
+#selection-tools .geometry-footer > button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 32px;
+  padding: 5px 7px;
+  font-size: 12px;
+}
+#selection-tools .geometry-crop {
+  display: grid;
+  gap: 6px;
+  border-top: 1px solid var(--line);
+  padding-top: 6px;
+}
+#selection-tools .geometry-crop > label {
+  display: grid;
+  grid-template-columns: 40px minmax(0, 1fr);
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+}
+#selection-tools .geometry-crop input { min-width: 0; width: 100%; margin: 0; }

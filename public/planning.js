@@ -10,13 +10,13 @@ export function planning(ctx) {
   function calendar(tasks) {
     const start = new Date(month);
     start.setDate(1 - ((start.getDay() + 6) % 7));
-    return `<div class="planning-head"><button class="button small" data-feature="month-prev">← Previous</button><h2>${month.toLocaleDateString(undefined, { month: "long", year: "numeric" })}</h2><button class="button small" data-feature="month-next">Next →</button></div><div class="calendar">${["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map((d) => `<strong>${d}</strong>`).join("")}${Array.from(
+    return `<div class="planning-head"><button class="button small" data-feature="month-prev">← Previous</button><h2>${month.toLocaleDateString(undefined, { month: "long", year: "numeric" })}</h2><button class="button small" data-feature="month-next">Next →</button></div><div class="calendar">${["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map((d, i) => `<strong class="${i > 4 ? "weekend" : ""}">${d}</strong>`).join("")}${Array.from(
       { length: 42 },
       (_, i) => {
         const d = new Date(start);
         d.setDate(d.getDate() + i);
         const key = dateKey(d);
-        return `<div class="calendar-day ${key === today() ? "today" : ""} ${d.getMonth() !== month.getMonth() ? "muted" : ""}"><button data-feature="date-task" data-date="${key}" aria-label="Add task due ${key}">${d.getDate()}</button>${tasks
+        return `<div class="calendar-day ${i % 7 > 4 ? "weekend" : ""} ${key === today() ? "today" : ""} ${d.getMonth() !== month.getMonth() ? "muted" : ""}"><button data-feature="date-task" data-date="${key}" aria-label="Add task due ${key}">${d.getDate()}</button>${tasks
           .filter((t) => t.due === key)
           .map(
             (t) =>

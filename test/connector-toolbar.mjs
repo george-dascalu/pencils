@@ -104,12 +104,43 @@ try {
   await head("fromEnd", "diamond");
   await head("toEnd", "triangle");
   assert.equal(await page.locator('[data-selection-menu="line"]').count(), 0);
-  for (const key of ["routing", "lineStyle", "width"])
-    assert.ok(await page.locator(`[data-edge-field="${key}"]`).isVisible());
-  await page.locator('[data-edge-field="routing"]').selectOption("elbow");
-  await page.locator('[data-edge-field="width"]').selectOption("3");
-  await page.locator('[data-edge-field="lineStyle"]').selectOption("dashed");
-  await until(async () => (await current()).edges[0].lineStyle === "dashed");
+  assert.ok(
+    await page
+      .locator('[data-selection-menu="width"] > summary svg')
+      .first()
+      .isVisible(),
+  );
+  for (const [key, values] of [
+    ["routing", ["straight", "curve", "elbow"]],
+    ["lineStyle", ["dotted", "solid", "dashed"]],
+  ]) {
+    for (const value of values) {
+      const control = await menu(key);
+      await page
+        .locator(`[data-edge-choice="${key}"][data-value="${value}"]`)
+        .click();
+      await until(async () => (await current()).edges[0][key] === value);
+      assert.ok(
+        (await control.locator("summary").getAttribute("title"))
+          .toLowerCase()
+          .endsWith(value),
+      );
+      assert.equal(await control.getAttribute("open"), null);
+    }
+  }
+  await menu("width");
+  assert.deepEqual(
+    await page
+      .locator('[data-edge-choice="width"] path')
+      .evaluateAll((paths) =>
+        paths.map((p) => getComputedStyle(p).strokeWidth),
+      ),
+    ["1px", "2px", "3px", "5px"],
+  );
+  await page
+    .getByRole("button", { name: "Thickness: 3 px", exact: true })
+    .click();
+  await until(async () => (await current()).edges[0].width === 3);
   await menu("label");
   await page.locator('[data-edge-field="label"]').fill("A clear connection");
   await page.locator('[data-edge-field="label"]').press("Enter");
@@ -172,6 +203,7 @@ try {
   await page.locator('[data-feature="canvas-svg"]').click();
   const downloaded = await downloadPromise;
   const svg = await fs.readFile(await downloaded.path(), "utf8");
+  assert.doesNotMatch(svg, /connector-selection/);
   assert.match(svg, /stroke-dasharray:8 5/);
   assert.match(svg, /fill="#f1a9a0"/);
   assert.match(svg, /M1 5L5 1L9 5L5 9Z/);

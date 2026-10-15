@@ -176,7 +176,10 @@ export function canvasFeatures(ctx) {
     action: (action) => pro.click(action),
   });
   const pen = penTools(ctx);
-  const settings = boardSettings(ctx, controls);
+  const settings = boardSettings(ctx, {
+    ...controls,
+    rememberDisplay: (...args) => pro.rememberDisplay(...args),
+  });
   const pro = canvasPro(ctx, {
     pickEdges,
     selectedEdges,
@@ -195,7 +198,11 @@ export function canvasFeatures(ctx) {
     click,
     enhanceBase,
     moveDOM,
-    flush: ctx.flushBoard,
+    flush: async () => {
+      settings.flush();
+      await ctx.flushBoard();
+    },
+    setDisplay: controls.setDisplay,
     busy: ({ allowNavigation = false } = {}) =>
       !!drag ||
       controls.busy({ allowNavigation }) ||
@@ -305,6 +312,7 @@ export function canvasFeatures(ctx) {
     controls.render();
     pen.render();
     layout.render();
+    settings.sync();
   }
   // Keep measurement feedback outside the zoomed world so it remains readable.
   function resizeDimensions(node) {
@@ -979,7 +987,9 @@ export function canvasFeatures(ctx) {
       if (
         state.view !== "board" ||
         state.dialog ||
-        event.target.matches("input,textarea,select,[contenteditable]")
+        event.target.closest(
+          "input,textarea,select,[contenteditable],.board-task-editor",
+        )
       )
         return;
       if (event.code === "Space") space = true;
@@ -1155,7 +1165,7 @@ export function canvasFeatures(ctx) {
   }
   async function click(action, el) {
     if (action === "board-settings") {
-      settings.open();
+      settings.open(el);
       return true;
     }
     const selectionActions = [

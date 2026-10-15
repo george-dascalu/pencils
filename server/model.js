@@ -66,6 +66,26 @@ export function schema(value = DEFAULT_SCHEMA) {
         );
     }
   }
+  if (result.hierarchy != null) {
+    const h = result.hierarchy;
+    const types = (a) =>
+      Array.isArray(a) &&
+      new Set(a).size === a.length &&
+      a.every((t) => result.types.includes(t));
+    if (
+      !h ||
+      !["free", "enforced"].includes(h.mode) ||
+      !types(h.roots) ||
+      !h.children ||
+      Array.isArray(h.children) ||
+      typeof h.children !== "object" ||
+      Object.keys(h.children).some((t) => !result.types.includes(t)) ||
+      result.types.some((t) => !types(h.children[t]))
+    )
+      fail(
+        "Card hierarchy rules must list existing parent and child types, and types allowed without a parent.",
+      );
+  }
   if (!Array.isArray(result.fields) || result.fields.length > 40)
     fail("A project supports up to 40 custom fields.");
   const ids = new Set();

@@ -129,7 +129,7 @@ try {
     .click();
   await page.locator("#canvas-align").uncheck();
   await page
-    .getByRole("button", { name: "Apply settings", exact: true })
+    .getByRole("button", { name: "Close board settings", exact: true })
     .click();
   await until(async () => (await current()).settings.alignObjects === false);
   await page.reload();
@@ -162,7 +162,7 @@ try {
     .click();
   await page.locator("#canvas-align").check();
   await page
-    .getByRole("button", { name: "Apply settings", exact: true })
+    .getByRole("button", { name: "Close board settings", exact: true })
     .click();
   await until(async () => (await current()).settings.alignObjects === true);
 
@@ -320,7 +320,7 @@ try {
     .click();
   await page.locator("#canvas-align").uncheck();
   await page
-    .getByRole("button", { name: "Apply settings", exact: true })
+    .getByRole("button", { name: "Close board settings", exact: true })
     .click();
   await until(async () => (await current()).settings.alignObjects === false);
   await resize(64, 40);

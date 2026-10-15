@@ -35,7 +35,16 @@ board = await store.updateBoard(project.id, board.id, {
       h: 200,
       color: "#f5e7a2",
     },
-    { id: "task-a", type: "task", task: a.id, x: 420, y: 150, w: 310, h: 300 },
+    {
+      id: "task-a",
+      subpath: "#Scope",
+      type: "task",
+      task: a.id,
+      x: 420,
+      y: 150,
+      w: 310,
+      h: 300,
+    },
     { id: "task-b", type: "task", task: b.id, x: 830, y: 150, w: 300, h: 240 },
     {
       id: "far",
@@ -121,10 +130,10 @@ try {
   );
   console.log("PASS: inline Markdown and offscreen object culling");
   await page.locator("[data-node=task-a]").click();
-  await clickControl(pro("embed"));
-  await page.locator("#canvas-embed-form input").fill("#Scope");
-  await page.locator("#canvas-embed-form button").last().click();
-  await saved();
+  assert.equal(
+    await page.locator('[data-pro="embed"],[data-pro="backlinks"]').count(),
+    0,
+  );
   await page.locator("[data-node=task-a] .task-title").dblclick();
   await page.locator("[data-rich-mode=source]").click();
   await page
@@ -162,8 +171,10 @@ try {
   await page.mouse.dblclick(edgePoint.x, edgePoint.y);
   await page.locator('[data-selection-menu="connection"] summary').click();
   await page.locator('[data-edge-field="relationship"]').selectOption("blocks");
-  await page.locator('[data-selection-menu="line"] summary').click();
-  await page.locator('[data-edge-field="routing"]').selectOption("elbow");
+  await page.locator('[data-selection-menu="routing"] summary').click();
+  await page
+    .locator('[data-edge-choice="routing"][data-value="elbow"]')
+    .click();
   await page.locator('[data-selection-menu="connection"] summary').click();
   await page.locator('[data-pro="edge-dependency"]').click();
   await until(
@@ -177,17 +188,17 @@ try {
   assert.equal((await current()).edges[0].routing, "elbow");
   console.log("PASS: connection handles, routes and real task dependencies");
   await page.locator("[data-node=note]").click();
-  await clickControl(pro("comments"));
+  await clickControl(page.locator("#selection-tools [data-pro=comments]"));
   await page
-    .locator("#canvas-comment-form textarea")
+    .locator("#board-comment-form textarea")
     .fill("Discuss this idea in the next planning session.");
-  await page.locator("#canvas-comment-form button[type=submit]").click();
+  await page.locator("#board-comment-form button[type=submit]").click();
   await until(
     async () =>
       (await current()).nodes.find((n) => n.id === "note").comments?.length ===
       1,
   );
-  await page.locator("[data-action=dialog-close]").first().click();
+  await page.locator("[data-comments-close]").click();
   await page.locator("[data-node=note]").click();
   await clickControl(pro("convert"));
   await until(

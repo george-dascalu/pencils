@@ -59,11 +59,10 @@ export function projectLayout(ctx) {
     if (!$("#canvas") || !toolbar) return;
     const boards = menu(toolbar, "board", "Board");
     move(boards, '[data-action="board-new"]');
-    const add = menu(toolbar, "add", "+ Add");
-    move(add, '[data-action="board-task"]');
+
     const more = menu(toolbar, "more", "More");
     // Dynamic tools are recreated on each board render; remove their old copies.
-    for (const panel of [boards, add, more])
+    for (const panel of [boards, more])
       for (const el of [...panel.children]) if (!el.dataset.action) el.remove();
     const extras = $("#canvas-extras");
     const addFeatures = ["grid-add", "frame-add", "draw-tool", "image-add"];
@@ -74,7 +73,7 @@ export function projectLayout(ctx) {
           pro = el.dataset.pro;
         const panel =
           addFeatures.includes(feature) || addPro.includes(pro)
-            ? add
+            ? more
             : feature === "canvas-delete"
               ? boards
               : more;

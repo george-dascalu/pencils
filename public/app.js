@@ -1,3 +1,5 @@
+import { boardTaskEditor } from "./board-task-editor.js";
+import { installDatePickers } from "./date-picker.js";
 import {
   canTransition,
   nextStatuses,
@@ -5,7 +7,7 @@ import {
   statusLabel,
   transitionError,
 } from "./workflow-model.js";
-import { assigneeOptions } from "./teams.js";
+import { assigneeOptions, assigneeHint } from "./teams.js";
 import { taskPickerHTML } from "./task-modal.js";
 import { updateFrameMembership } from "./frame-model.js";
 import { taskDescriptionHTML } from "./task-description.js";
@@ -52,7 +54,10 @@ const paths = {
   comment: "M4 4h16v12H9l-5 4V4ZM8 8h8M8 12h5",
   duplicate: "M8 8h13v13H8zM16 8V3H3v13h5",
   unlock: "M8 10V7a4 4 0 0 1 8 0M5 10h14v11H5zM12 14v3",
+  rotate: "M3 10a9 9 0 1 1 2 8M3 4v6h6",
   frame: "M7 2v20M17 2v20M2 7h20M2 17h20",
+  people:
+    "M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M13 7a4 4 0 1 1-8 0 4 4 0 0 1 8 0M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75",
   group: "M3 3h7v7H3zM14 14h7v7h-7zM14 3h7v7M3 14v7h7",
   ungroup: "M3 3h7v7H3zM14 14h7v7h-7zM17 2v7m-3-3 3 3 3-3M2 17h7m-3-3 3 3-3 3",
   arrange: "M4 3v18M8 5h12v5H8zM8 14h8v5H8z",
@@ -71,6 +76,7 @@ const paths = {
   search: "m21 21-5-5M18 10a8 8 0 1 1-16 0 8 8 0 0 1 16 0",
   list: "M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01",
   tree: "M4 3v14h5M4 7h5M13 5h8v4h-8zM13 15h8v4h-8z",
+  calendar: "M4 5h16v16H4zM8 3v4M16 3v4M4 10h16M8 14h2M14 14h2M8 18h2",
   table: "M3 4h18v16H3zM3 9h18M3 14h18M9 4v16M15 4v16",
   kanban: "M3 4h5v10H3zM10 4h5v16h-5zM17 4h5v7h-5z",
   board: "M3 3h7v7H3zM14 3h7v11h-7zM3 14h7v7H3zM14 18h7",
@@ -121,6 +127,21 @@ const paths = {
 const icon = (name) =>
   `<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="${paths[name] || paths.task}"/></svg>`;
 const colorPicker = installColorPickers({ esc, icon });
+installDatePickers({ esc, icon });
+document.addEventListener(
+  "keydown",
+  (event) => {
+    if (!event.target.closest("#board-task-panel") || state.toolDragging)
+      return;
+    event.stopImmediatePropagation();
+    if (event.key !== "Escape") return;
+    event.preventDefault();
+    state.boardTaskPanel = false;
+    renderView();
+    $('[data-action="board-task"]')?.focus();
+  },
+  true,
+);
 let statuses = ["backlog", "todo", "in-progress", "review", "done"];
 const statusNames = {
   backlog: "Backlog",
@@ -162,6 +183,7 @@ const storage = {
 const state = {
   organisations: [],
   organisation: null,
+  directoryPage: null,
   workspaceSignature: "",
   navigation: 0,
   projects: [],
@@ -337,6 +359,12 @@ function applyWorkspace(data) {
   state.workspaceSignature = JSON.stringify(data);
 }
 function clearProject() {
+  if (state.directoryPage) {
+    state.dirty = false;
+    if (location.hash.startsWith("#organisation/"))
+      history.replaceState(null, "", location.pathname + location.search);
+  }
+  state.directoryPage = null;
   state.settingsDirty = false;
   state.project = null;
   state.tasks = [];
@@ -359,6 +387,8 @@ function clearProject() {
   state.signature = "";
 }
 function canNavigate() {
+  if (state.boardTaskEditor && !closeDialog(false, { confirmDirty: false }))
+    return false;
   if (state.loading) {
     toast("Wait for the current changes to finish saving.");
     return false;
@@ -382,6 +412,10 @@ async function refresh(render = true, shouldApply = () => true) {
 }
 
 function applySnapshot(snapshot) {
+  if (state.project?.id !== snapshot.project.id) {
+    state.boardTaskPanel = false;
+    state.boardTaskFilters = {};
+  }
   state.project = snapshot.project;
   state.config = snapshot.project.schema || {
     statuses: ["backlog", "todo", "in-progress", "review", "done"],
@@ -457,6 +491,7 @@ async function openProject(id) {
   }
 }
 async function openOrganisation(id) {
+  if (state.directoryPage) return openDirectory(state.directoryPage, id);
   if (!canNavigate()) return false;
   const organisation = state.organisations.find((o) => o.id === id);
   if (!organisation)
@@ -482,9 +517,44 @@ async function openOrganisation(id) {
     state.loading = false;
   }
 }
+async function openDirectory(page, organisationId = state.organisation?.id) {
+  if (!["teams", "people"].includes(page) || !canNavigate()) return false;
+  const organisation = state.organisations.find((o) => o.id === organisationId);
+  if (!organisation) return false;
+  state.loading = true;
+  state.navigation++;
+  try {
+    await boardQueue;
+    if (state.boardConflict)
+      throw new Error(
+        "Resolve the unsaved canvas changes before opening the directory.",
+      );
+    clearProject();
+    state.organisation = organisation;
+    state.directoryPage = page;
+    storage.set("organisation", organisation.id);
+    history.replaceState(null, "", `#organisation/${organisation.id}/${page}`);
+    renderApp();
+    return true;
+  } finally {
+    state.loading = false;
+  }
+}
+function directoryPageHTML() {
+  const o = state.organisation,
+    page = state.directoryPage,
+    title = label(page);
+  return `<section class="content project-settings-page directory-page"><header class="settings-page-heading"><h1>${title}</h1><p>${page === "teams" ? "Build teams and choose their members." : "Manage people and their weekly task limits."} ${esc(o.title)}.</p></header><nav class="directory-tabs" aria-label="Organisation directory"><button class="button ${page === "teams" ? "soft" : ""}" data-action="directory-open" data-page="teams" ${page === "teams" ? 'aria-current="page"' : ""}>${icon("group")}Teams <span class="count">${o.teams?.length || 0}</span></button><button class="button ${page === "people" ? "soft" : ""}" data-action="directory-open" data-page="people" ${page === "people" ? 'aria-current="page"' : ""}>${icon("people")}People <span class="count">${o.people?.length || 0}</span></button></nav><form id="organisation-form" data-directory-page="${page}" data-id="${esc(o.id)}" data-revision="${esc(o.revision)}"><div class="dialog-body"><div class="form-error hidden" role="alert"></div></div><div class="dialog-foot"><span class="field-hint">Changes apply to this organisation.</span><button class="button primary" type="submit">Save ${page}</button></div></form></section>`;
+}
 function renderApp() {
+  if (
+    state.boardTaskEditor &&
+    (state.view !== "board" ||
+      state.project?.id !== state.boardTaskEditor.project)
+  )
+    closeDialog(false, { confirmDirty: false });
   const p = state.project;
-  document.title = `${p?.title || state.organisation?.title || "Workspace"} · Pencils`;
+  document.title = `${state.directoryPage ? label(state.directoryPage) + " · " + state.organisation?.title : p?.title || state.organisation?.title || "Workspace"} · Pencils`;
   app.innerHTML = `<div class="shell">
     <button class="sidebar-overlay ${state.menu ? "visible" : ""}" data-action="menu" aria-label="Close sidebar"></button>
     <aside id="workspace-sidebar" class="sidebar ${state.menu ? "open" : ""}">
@@ -498,15 +568,26 @@ function renderApp() {
         )
         .join("")}</nav>
       <button class="side-new" data-action="project-new">${icon("plus")}New project</button>
+      ${state.organisation ? `<section class="sidebar-directory"><div class="side-label">TEAMS</div><nav class="directory-links" aria-label="Teams and people">${["teams", "people"].map((page) => `<button class="directory-link ${state.directoryPage === page ? "active" : ""}" data-action="directory-open" data-page="${page}" ${state.directoryPage === page ? 'aria-current="page"' : ""}>${icon(page === "teams" ? "group" : "people")}<span>${label(page)}</span><span class="directory-count">${state.organisation[page]?.length || 0}</span></button>`).join("")}</nav></section>` : ""}
       <div class="side-bottom"><div class="vault-card"><div class="eyebrow">${icon("leaf")}Your files. Your space.</div><p>Plain Markdown. Open in Obsidian.<br>Always yours, even offline.</p><button class="text-link" data-action="help">About your vault ${icon("arrow")}</button></div>
-      <div class="side-footer"><span class="dot"></span>Local workspace<span class="version">v0.14.0</span></div></div>
+      <div class="side-footer"><span class="dot"></span>Local workspace<span class="version">v0.14.25</span></div></div>
     </aside>
     <main class="main">
-      <header class="topbar"><div class="breadcrumb"><button class="icon-button desktop-sidebar-toggle" data-personal="sidebar" aria-controls="workspace-sidebar" aria-expanded="true" aria-label="Collapse sidebar">${icon("menu")}</button><button class="icon-button mobile-menu" data-action="menu" aria-label="Toggle sidebar">${icon("menu")}</button><button class="organisation-crumb" data-action="home" title="${esc(state.organisation?.title)}">${esc(state.organisation?.title || "Organisations")}</button><span>/</span><strong ${p ? 'role="heading" aria-level="1"' : ""}>${esc(p?.title || "Projects")}</strong></div><div class="top-actions"><span class="save-state ${!state.online || state.boardConflict ? "sync-problem" : ""}" id="save-state">${icon(state.online ? "check" : "clock")}${state.online ? "Connected to local server" : "Server unavailable"}</span><button class="icon-button" data-action="help" aria-label="Help & keyboard shortcuts">${icon("help")}</button><button class="avatar" data-personal="settings" aria-label="Personal settings" title="Personal settings">WE</button></div></header>
+      <header class="topbar"><div class="breadcrumb"><button class="icon-button desktop-sidebar-toggle" data-personal="sidebar" aria-controls="workspace-sidebar" aria-expanded="true" aria-label="Collapse sidebar">${icon("menu")}</button><button class="icon-button mobile-menu" data-action="menu" aria-label="Toggle sidebar">${icon("menu")}</button><button class="organisation-crumb" data-action="home" title="${esc(state.organisation?.title)}">${esc(state.organisation?.title || "Organisations")}</button><span>/</span><strong ${p ? 'role="heading" aria-level="1"' : ""}>${esc(state.directoryPage ? label(state.directoryPage) : p?.title || "Projects")}</strong></div><div class="top-actions"><span class="save-state ${!state.online || state.boardConflict ? "sync-problem" : ""}" id="save-state">${icon(state.online ? "check" : "clock")}${state.online ? "Connected to local server" : "Server unavailable"}</span><button class="icon-button" data-action="help" aria-label="Help & keyboard shortcuts">${icon("help")}</button><button class="avatar" data-personal="settings" aria-label="Personal settings" title="Personal settings">WE</button></div></header>
       ${!state.online ? '<div class="connection-banner">Local server unavailable. Reconnect to its network to save changes.</div>' : ""}
-      ${p ? projectPage() : welcomePage()}
+      ${state.directoryPage ? directoryPageHTML() : p ? projectPage() : welcomePage()}
     </main></div>`;
   if (p) renderView();
+  if (state.directoryPage) {
+    const form = $("#organisation-form");
+    features.dialogOpened("organisation", form);
+    const dirty = () => {
+      state.settingsDirty = true;
+      state.dirty = true;
+    };
+    form.addEventListener("input", dirty);
+    form.addEventListener("change", dirty);
+  }
   features.afterRender();
 }
 function safeColor(value) {
@@ -600,6 +681,11 @@ function filteredTasks() {
   });
 }
 function renderView(onlyContent = false) {
+  if (
+    state.boardTaskEditor &&
+    state.selectedBoard !== state.boardTaskEditor.board
+  )
+    closeDialog(false, { confirmDirty: false });
   features.canvasBeforeRender();
   if (!state.project) return;
   if (state.view === "settings") {
@@ -638,6 +724,7 @@ function renderView(onlyContent = false) {
     content.innerHTML = boardView();
     updateCamera();
     features.canvasRender();
+    taskPanelController?.position();
     return;
   }
   const renderers = {
@@ -784,13 +871,31 @@ function kanbanView(tasks) {
     .join("")}</div>`;
 }
 
-function showDialog(html, kind) {
-  state.dialog = kind;
+let taskPanelController = null;
+function showDialog(html, kind, { boardPanel = false } = {}) {
+  if (state.boardTaskEditor && !closeDialog(false, { confirmDirty: false }))
+    return;
+  state.boardTaskEditor = boardPanel
+    ? { project: state.project.id, board: state.selectedBoard }
+    : null;
+  if (boardPanel) {
+    state.boardTaskPanel = false;
+    renderView();
+  }
+  state.dialog = boardPanel ? null : kind;
   state.dirty = false;
   $("#dialogs").innerHTML = html;
   const dialog = $("dialog");
-  dialog.showModal();
-  if (kind === "task") {
+  if (boardPanel)
+    taskPanelController = boardTaskEditor(dialog, {
+      $,
+      state,
+      closeDialog,
+      renderView,
+      icon,
+    });
+  else dialog.showModal();
+  if (kind === "task" && !boardPanel) {
     let outsideDown = false;
     const outside = (event) => {
       const r = dialog.getBoundingClientRect();
@@ -824,6 +929,10 @@ function showDialog(html, kind) {
   $("[autofocus]", dialog)?.focus();
 }
 function closeDialog(force = false, { confirmDirty = true } = {}) {
+  if (state.boardTaskEditor && !force) {
+    if ($("#task-form [type=submit]")?.disabled) return false;
+    confirmDirty = false;
+  }
   if (
     !force &&
     confirmDirty &&
@@ -834,11 +943,15 @@ function closeDialog(force = false, { confirmDirty = true } = {}) {
   )
     return;
   if (force) features.clearDraft();
+  taskPanelController?.destroy();
+  taskPanelController = null;
+  state.boardTaskEditor = null;
   features.dialogClosed();
   $("dialog")?.close();
   $("#dialogs").innerHTML = "";
   state.dialog = null;
   state.dirty = false;
+  return true;
 }
 const dialogHead = (title) =>
   `<div class="dialog-head"><h2>${esc(title)}</h2><button type="button" class="icon-button" data-action="dialog-close" aria-label="Close dialog">${icon("close")}</button></div>`;
@@ -870,6 +983,7 @@ const features = installFeatures({
   dialogHead,
   patchTask,
   changeBoard,
+  addNode,
   saveBoard,
   boardSnapshot,
   remember,
@@ -909,6 +1023,7 @@ function projectFormHTML(edit = false) {
   return `<form id="project-form" data-edit="${edit}" data-revision="${esc(p.revision || "")}">${edit ? "" : dialogHead("A fresh page for a new project")}<div class="dialog-body"><div class="form-error hidden"></div><label class="field">Project name<input name="title" value="${esc(p.title)}" placeholder="What are we working on?" maxlength="300" required autofocus></label><label class="field">Project key<input name="key" value="${esc(p.key || "")}" placeholder="e.g. WEB" pattern="[A-Za-z][A-Za-z0-9]{1,11}" maxlength="12" ${edit ? "required" : ""}><span class="field-hint">Tasks use IDs such as WEB-1. Leave blank when creating a project to generate a key.</span></label><label class="field">Organisation<select name="organisation" required>${state.organisations.map((o) => `<option value="${esc(o.id)}" ${o.id === p.organisation ? "selected" : ""}>${esc(o.title)}</option>`).join("")}</select>${edit ? '<span class="field-hint">Changing this moves the project, including its tasks and canvases, to the selected organisation.</span>' : ""}</label><label class="field">A few words about it<textarea name="body" rows="3" placeholder="The idea, the intention, the possibilities…">${esc(p.body)}</textarea></label><div class="field-row"><div class="field">Project colour${colorPicker({ label: "Project colour", value: p.color })}</div>${edit ? `<label class="field">Default view<select name="default_view">${options(views, p.default_view)}</select></label>` : ""}</div><p>Projects live in your vault as folders. Every task is a Markdown file you can open in Obsidian.</p></div><div class="dialog-foot"><button type="button" class="button" data-action="${edit ? "settings-close" : "dialog-close"}">${edit ? "Back to project" : "Cancel"}</button><button class="button primary" type="submit">${edit ? "Save project" : "Create project"} ${icon("arrow")}</button></div></form>`;
 }
 function projectDialog(edit = false) {
+  if (!canNavigate()) return;
   if (!state.organisation) return organisationDialog();
   if (edit) {
     if (state.view !== "settings") state.settingsReturn = state.view;
@@ -924,6 +1039,10 @@ function projectDialog(edit = false) {
 }
 
 function taskDialog(id = null, defaults = {}, replace = false) {
+  if (!id && state.boardTaskEditor && !$("#task-form")?.dataset.id) {
+    $("#task-form [name=title]")?.focus();
+    return;
+  }
   const t = id
     ? task(id)
     : {
@@ -946,9 +1065,26 @@ function taskDialog(id = null, defaults = {}, replace = false) {
   for (let i = 0; i < state.tasks.length; i++)
     for (const child of state.tasks)
       if (descendants.has(child.parent)) descendants.add(child.id);
-  const html = `<dialog class="dialog task-dialog" aria-label="Task editor"><form id="task-form" data-board="${esc(!id && state.view === "board" ? state.selectedBoard : "")}" data-id="${esc(id || "")}" data-revision="${esc(t.revision || "")}">
+  const metadata = {
+    priority: `<div class="field"><span>Priority</span>${picker(
+      "priority",
+      "Priority",
+      t.priority,
+      priorities.map((value) => ({
+        value,
+        label: label(value),
+        icon: `priority-${value}`,
+      })),
+      true,
+    )}</div>`,
+    status: `<label class="field">Status<select name="status" aria-label="Status">${options(id ? nextStatuses(state.config, t.status) : statuses, t.status, statusNames)}</select></label>`,
+    assignee: `<label class="field">Assignee<select name="assignee" aria-label="Assignee" ${assigneeHint(state) ? 'aria-describedby="task-assignee-help"' : ""}>${assigneeOptions(state, t.assignee, esc)}</select></label>`,
+    parent: `<div class="field"><span>Parent task</span>${picker("parent", "Parent task", t.parent || "", [{ value: "", label: "No parent", icon: "minus" }, ...state.tasks.filter((x) => !descendants.has(x.id)).map((x) => ({ value: x.id, label: `${x.key || x.id} · ${x.title}`, icon: x.type }))])}</div>`,
+    due: `<label class="field">Due date<input type="date" name="due" aria-label="Due date" value="${esc(t.due)}"></label>`,
+  };
+  const html = `<dialog class="dialog task-dialog" aria-label="Task editor"><form id="task-form" class="${id ? "task-edit-form" : "task-create-form"}" data-board="${esc(!id && state.view === "board" ? state.selectedBoard : "")}" data-id="${esc(id || "")}" data-revision="${esc(t.revision || "")}">
     <div class="dialog-head task-editor-head"><div class="task-identity-row">
-      <span class="task-id task-key" title="${esc(t.key || "Task ID assigned when saved")}">${esc(t.key || "New")}</span>
+      ${id ? `<span class="task-id task-key" title="${esc(t.key)}">${esc(t.key || id)}</span>` : ""}
       ${picker(
         "type",
         "Task type",
@@ -959,38 +1095,33 @@ function taskDialog(id = null, defaults = {}, replace = false) {
       <input class="title-input" name="title" aria-label="Task title" value="${esc(t.title)}" placeholder="Task title" required maxlength="300" autofocus>
     </div><button type="button" class="icon-button" data-action="dialog-close" aria-label="Close dialog">${icon("close")}</button></div>
     <div class="task-editor-content"><div class="dialog-body"><div class="form-error hidden"></div>
-      <div class="task-metadata">
-        <label class="field">Status<select name="status" aria-label="Status">${options(id ? nextStatuses(state.config, t.status) : statuses, t.status, statusNames)}</select></label>
-        <div class="field"><span>Priority</span>${picker(
-          "priority",
-          "Priority",
-          t.priority,
-          priorities.map((value) => ({
-            value,
-            label: label(value),
-            icon: `priority-${value}`,
-          })),
-          true,
-        )}</div>
-        <div class="field"><span>Parent task</span>${picker("parent", "Parent task", t.parent || "", [{ value: "", label: "No parent", icon: "minus" }, ...state.tasks.filter((x) => !descendants.has(x.id)).map((x) => ({ value: x.id, label: `${x.key || x.id} · ${x.title}`, icon: x.type }))])}</div>
-        <label class="field">Assignee<select name="assignee" aria-label="Assignee">${assigneeOptions(state, t.assignee, esc)}</select></label>
-        <label class="field">Due date<input type="date" name="due" aria-label="Due date" value="${esc(t.due)}"></label>
-      </div>
+      <div class="task-metadata"><div class="task-metadata-main">${metadata.priority}${metadata.status}${metadata.assignee}</div><div class="task-metadata-secondary">${metadata.parent}${metadata.due}</div></div>
+      ${assigneeHint(state) ? `<p id="task-assignee-help" class="field-hint" role="status">${esc(assigneeHint(state))}</p>` : ""}
       ${taskDescriptionHTML(t.body, { esc, icon })}
       <input type="hidden" name="tags" value="${esc((t.tags || []).join(", "))}">
-      <section class="task-subtasks" aria-label="Subtasks"><h3>Subtasks <span data-subtask-count></span></h3><div data-subtask-list></div>${id ? '<div class="subtask-capture"><input name="subtaskTitle" aria-label="New subtask title" placeholder="Add a subtask…" maxlength="300"><button type="button" class="button small" data-task-modal="subtask-add">Add</button></div><p class="form-error" data-subtask-error role="alert" hidden></p>' : '<p class="field-hint">Save this task to add subtasks.</p>'}</section>
+      <section class="task-subtasks" aria-label="Subtasks"><h3>Subtasks <span data-subtask-count></span></h3><div data-subtask-list></div><input type="hidden" name="pendingSubtasks" value="[]"><input type="hidden" name="creation_request" value="${id ? "" : crypto.randomUUID?.() || `draft-${Date.now()}-${Math.random().toString(36).slice(2)}`}"><div class="subtask-capture"><select name="subtaskType" aria-label="New subtask type"></select><input name="subtaskTitle" aria-label="New subtask title" placeholder="Add a subtask…" maxlength="300"><button type="button" class="button small" data-task-modal="subtask-add">Add</button></div><p class="field-hint" data-subtask-hint></p><p class="form-error" data-subtask-error role="alert" hidden></p></section>
       ${t.file ? `<code class="file-path">${esc(t.file)}</code>` : ""}</div>
       <aside class="task-history-panel" aria-label="Task version history" hidden></aside></div>
-    <div class="dialog-foot task-editor-foot">${id ? `<div class="task-footer-actions"><button type="button" class="button small" data-feature="task-duplicate">${icon("duplicate")}Duplicate</button><button type="button" class="button small" data-feature="task-history" aria-expanded="false">${icon("clock")}Version history</button><button type="button" class="button small" data-feature="task-archive">${icon("folder")}${t.archived ? "Unarchive" : "Archive"}</button><button type="button" class="button small danger" data-action="task-delete" data-id="${esc(id)}">${icon("trash")}Delete</button></div>` : '<span class="form-status">Saved as a real .md file</span>'}<button class="button primary" type="submit">${id ? "Save changes" : "Create task"}</button></div></form></dialog>`;
+    <div class="dialog-foot task-editor-foot">${id ? `<div class="task-footer-actions"><button type="button" class="button small" data-feature="task-duplicate">${icon("duplicate")}Duplicate</button><button type="button" class="button small" data-feature="task-history" aria-expanded="false">${icon("clock")}Version history</button><button type="button" class="button small" data-feature="task-archive">${icon("folder")}${t.archived ? "Unarchive" : "Archive"}</button><button type="button" class="button small danger" data-action="task-delete" data-id="${esc(id)}">${icon("trash")}Delete</button></div>` : '<span class="form-status">Saved as a real .md file</span>'}${id ? '<button class="button primary" type="submit">Save changes</button>' : `<div class="task-create-actions"><label class="create-another"><input type="checkbox" name="createAnother" ${t.createAnother ? "checked" : ""}>Create another</label><button class="button primary" type="submit">Create task</button></div>`}</div></form></dialog>`;
   if (replace && $(".task-dialog")) {
     const template = document.createElement("template");
     template.innerHTML = html;
     $(".task-dialog").replaceChildren(
       ...template.content.firstElementChild.childNodes,
     );
+    if (state.boardTaskEditor) {
+      taskPanelController?.destroy();
+      taskPanelController = boardTaskEditor($(".task-dialog"), {
+        $,
+        state,
+        closeDialog,
+        renderView,
+        icon,
+      });
+    }
     state.dirty = false;
     features.dialogOpened("task");
-  } else showDialog(html, "task");
+  } else showDialog(html, "task", { boardPanel: state.view === "board" });
 }
 
 function helpDialog() {
@@ -1012,7 +1143,7 @@ async function patchTask(id, changes, rerender = true) {
 }
 
 function boardToolbar() {
-  return `<div class="board-toolbar"><select id="board-select" aria-label="Select canvas">${state.boards.map((b) => `<option value="${esc(b.id)}" ${b.id === state.selectedBoard ? "selected" : ""}>${esc(b.title)}</option>`).join("")}</select><button class="button small" data-action="board-new">${icon("plus")}New canvas</button><span class="spacer"></span><button type="button" class="button small board-settings-button" data-feature="board-settings">${icon("settings")}Board settings</button><span class="board-save" id="board-save">${state.boardConflict ? "Conflicting edits — open Recovery" : state.boardSaves ? "Saving or waiting for connection…" : "All canvas changes saved"}</span>${state.boardConflict ? '<button class="button small" data-feature="recovery">Resolve</button>' : ""}<button class="button small" data-action="board-task">${icon("plus")}Add task card</button></div>`;
+  return `<div class="board-toolbar"><select id="board-select" aria-label="Select canvas">${state.boards.map((b) => `<option value="${esc(b.id)}" ${b.id === state.selectedBoard ? "selected" : ""}>${esc(b.title)}</option>`).join("")}</select><button class="button small" data-action="board-new">${icon("plus")}New canvas</button><span class="spacer"></span><button type="button" class="button small board-settings-button" data-feature="board-settings">${icon("settings")}Board settings</button><span class="board-save" id="board-save">${state.boardConflict ? "Conflicting edits — open Recovery" : state.boardSaves ? "Saving or waiting for connection…" : "All canvas changes saved"}</span>${state.boardConflict ? '<button class="button small" data-feature="recovery">Resolve</button>' : ""}</div>`;
 }
 function boardView() {
   const b = board();
@@ -1030,7 +1161,7 @@ function boardView() {
       )
       .join(
         "",
-      )}<button type="button" data-pro="search-toggle" aria-label="Search board" title="Search board (Ctrl / ⌘ F)" aria-expanded="false" aria-controls="canvas-search-panel">${icon("search")}</button><div class="tool-separator"></div><button type="button" data-feature="frame-add" data-tool="frame" title="Frame (F)" aria-label="Draw frame">${icon("frame")}</button>${[
+      )}<button type="button" data-pro="search-toggle" aria-label="Search board" title="Search board (Ctrl / ⌘ F)" aria-expanded="false" aria-controls="canvas-search-panel">${icon("search")}</button><div class="tool-separator"></div><button type="button" data-action="board-task" aria-label="Project tasks" title="Project tasks" aria-expanded="${!!state.boardTaskPanel}" aria-controls="board-task-panel">${icon("task")}</button><button type="button" data-feature="frame-add" data-tool="frame" title="Frame (F)" aria-label="Draw frame">${icon("frame")}</button>${[
       ["sticky", "Add sticky note"],
       ["text", "Add text"],
       ["shape", "Add shape"],
@@ -1044,7 +1175,7 @@ function boardView() {
       .join(
         "",
       )}<button type="button" data-feature="draw-tool" data-tool="draw" aria-label="Pen" title="Pen (P)">${icon("pencil")}</button><div class="tool-separator"></div><button data-action="board-undo" title="Undo" aria-label="Undo canvas change" ${state.history.length ? "" : "disabled"}>${icon("undo")}</button><button data-action="board-redo" title="Redo" aria-label="Redo canvas change" ${state.future.length ? "" : "disabled"}>${icon("redo")}</button></div>
-    ${selectionHTML()}<div class="board-controls"><button class="icon-button" data-action="zoom-out" aria-label="Zoom out">${icon("minus")}</button><span id="zoom-label">${Math.round(state.camera.z * 100)}%</span><button class="icon-button" data-action="zoom-in" aria-label="Zoom in">${icon("plus")}</button><button class="icon-button" data-action="board-fit" aria-label="Fit canvas to screen">${icon("fit")}</button></div>
+    ${boardTaskPanelHTML()}${selectionHTML()}<div class="board-controls"><button class="icon-button" data-action="zoom-out" aria-label="Zoom out">${icon("minus")}</button><span id="zoom-label">${Math.round(state.camera.z * 100)}%</span><button class="icon-button" data-action="zoom-in" aria-label="Zoom in">${icon("plus")}</button><button class="icon-button" data-action="board-fit" aria-label="Fit canvas to screen">${icon("fit")}</button></div>
     <div class="board-footer"><div class="board-help">${state.tool === "connect" ? (state.connectFrom ? "Now choose the second object." : "Choose two objects to connect.") : "Drag to arrange · Double-click to edit · Space + drag to pan"}</div><div id="canvas-performance" aria-live="off"></div></div>
     ${!b.nodes.length ? '<div class="board-empty"><h3>Give your ideas a little room.</h3><p>Add a note, a task, or a shape.<br>See how things connect.</p></div>' : ""}</div>`;
 }
@@ -1178,7 +1309,7 @@ function updateSaveState() {
     $("#save-state").innerHTML =
       `${icon(state.boardSaves ? "clock" : "check")}${state.boardSaves || state.boardConflict ? text : state.online ? "Connected to local server" : "Server unavailable"}`;
 }
-function changeBoard(fn) {
+function changeBoard(fn, { render = true } = {}) {
   if (!board()) return;
   const before = structuredClone(board().nodes);
   remember();
@@ -1194,9 +1325,13 @@ function changeBoard(fn) {
   );
   if (moved.size) updateFrameMembership(board().nodes, moved, before);
   saveBoard();
-  renderView();
+  if (render) renderView();
+  else {
+    updateCamera();
+    features.canvasSaved();
+  }
 }
-function addNode(type, taskId = null) {
+function addNode(type, taskId = null, position = null) {
   const canvas = $("#canvas");
   if (!canvas || !board()) return;
   const { x, y, z } = state.camera,
@@ -1204,11 +1339,25 @@ function addNode(type, taskId = null) {
   const node = {
     id,
     type,
-    x: Math.round((canvas.clientWidth / 2 - x) / z - 110),
+    x: Math.round(
+      ((state.boardTaskPanel
+        ? Math.min(
+            canvas.clientWidth - 100,
+            Math.max(canvas.clientWidth / 2, 560),
+          )
+        : canvas.clientWidth / 2) -
+        x) /
+        z -
+        110,
+    ),
     y: Math.round((canvas.clientHeight / 2 - y) / z - 80),
     w: type === "task" ? 280 : type === "text" ? 360 : 220,
     h: type === "task" ? 180 : type === "text" ? 90 : 180,
   };
+  if (position) {
+    node.x = Math.round(position.x);
+    node.y = Math.round(position.y);
+  }
   if (type === "task") node.task = taskId;
   else {
     node.text = "";
@@ -1224,6 +1373,7 @@ function addNode(type, taskId = null) {
     state.tool = "cursor";
   });
   if (type !== "task") features.canvasEdit(id);
+  return node;
 }
 function nodeDialog(id = state.selectedNode) {
   const node = board()?.nodes.find((n) => n.id === id);
@@ -1245,35 +1395,69 @@ function boardNameDialog(rename = false) {
     "board",
   );
 }
-function boardTaskDialog() {
-  if (!board()) return;
-  const current = new Set(
-    board()
-      .nodes.filter((n) => n.type === "task")
-      .map((n) => n.task),
-  );
-  showDialog(
-    `<dialog class="dialog task-picker">${dialogHead("Add project tasks to board")}<div class="dialog-body"><label class="field">Find tasks<input id="board-task-search" placeholder="Search by ID or title" autofocus></label><p class="field-hint">Cards show the same tasks as the project list. Removing a card keeps its task.</p><div class="task-picker-list">${
-      state.tasks
-        .filter((t) => !t.archived)
-        .map(
-          (t) =>
-            `<button class="board-pick" data-action="board-pick" data-id="${esc(t.id)}" data-search="${esc(`${t.key || ""} ${t.title}`.toLowerCase())}"><span class="task-id">${esc(t.key || t.id)}</span><span>${esc(t.title)}</span><small>${current.has(t.id) ? "Already on board" : esc(statusNames[t.status] || t.status)}</small></button>`,
-        )
-        .join("") || "<p>No tasks yet.</p>"
-    }</div><p id="task-picker-empty" hidden>No matching tasks.</p></div><div class="dialog-foot"><button class="button" data-action="dialog-close">Close</button><button class="button primary" data-action="board-create-task">${icon("plus")}New project task</button></div></dialog>`,
-    "pick",
-  );
-  $("#board-task-search").addEventListener("input", (e) => {
-    const q = e.target.value.trim().toLowerCase();
-    let count = 0;
-    $$(".task-picker-list .board-pick").forEach((el) => {
-      el.hidden = !el.dataset.search.includes(q);
-      if (!el.hidden) count++;
-    });
-    $("#task-picker-empty").hidden = !!count;
-  });
+function boardTaskPanelHTML() {
+  if (!state.boardTaskPanel) return "";
+  const f = state.boardTaskFilters || {};
+  const filter = (name, label, values) =>
+    `<label class="field">${label}<select data-board-task-filter="${name}" aria-label="${label}"><option value="">All</option>${values.map(([v, text]) => `<option value="${esc(v)}" ${f[name] === v ? "selected" : ""}>${esc(text)}</option>`).join("")}</select></label>`;
+  return `<aside id="board-task-panel" class="canvas-panel board-task-panel" aria-label="Project tasks"><header><h3>Project tasks</h3><button type="button" class="icon-button" data-action="board-task-close" aria-label="Close project tasks">${icon("close")}</button></header><input type="search" id="board-task-search" aria-label="Search project tasks" placeholder="Search by ID or title…" value="${esc(f.search || "")}"><div class="board-task-filters">${filter(
+    "status",
+    "Task status",
+    state.config.statuses.map((s) => [s, statusNames[s] || label(s)]),
+  )}${filter(
+    "type",
+    "Card type",
+    state.config.types.map((t) => [t, label(t)]),
+  )}${filter("assignee", "Task assignee", [["__unassigned", "Unassigned"], ...[...new Set(state.tasks.map((t) => t.assignee).filter(Boolean))].map((a) => [a, a])])}${filter(
+    "placement",
+    "Board placement",
+    [
+      ["off", "Not on this board"],
+      ["on", "On this board"],
+    ],
+  )}</div><div class="board-task-results" aria-live="polite">${boardTaskResultsHTML()}</div><footer><button type="button" class="button primary" data-action="board-create-task">${icon("plus")}New project task</button><small>Drag a task onto the board, or click to place it. Cards share the project task.</small></footer></aside>`;
 }
+function boardTaskResultsHTML() {
+  const f = state.boardTaskFilters || {},
+    current = new Set(
+      board()
+        .nodes.filter((n) => n.task)
+        .map((n) => n.task),
+    );
+  const tasks = state.tasks.filter(
+    (t) =>
+      !t.archived &&
+      `${t.key || ""} ${t.title}`
+        .toLowerCase()
+        .includes((f.search || "").toLowerCase().trim()) &&
+      (!f.status || t.status === f.status) &&
+      (!f.type || t.type === f.type) &&
+      (!f.assignee ||
+        (f.assignee === "__unassigned"
+          ? !t.assignee
+          : t.assignee === f.assignee)) &&
+      (!f.placement || current.has(t.id) === (f.placement === "on")),
+  );
+  return `<p class="field-hint">${tasks.length} ${tasks.length === 1 ? "task" : "tasks"}</p><div class="task-picker-list">${tasks.map((t) => `<button type="button" class="board-pick" data-action="board-pick" data-id="${esc(t.id)}" aria-label="Add ${esc(t.key || "")} ${esc(t.title)} to board">${icon(t.type)}<span><small>${esc(t.key || t.id)} · ${esc(statusNames[t.status] || t.status)}</small><strong>${esc(t.title)}</strong><small>${current.has(t.id) ? "On board · Add another card" : esc(t.assignee || "Unassigned")}</small></span>${icon("plus")}</button>`).join("") || '<p id="task-picker-empty">No matching tasks.</p>'}</div>`;
+}
+function toggleBoardTasks() {
+  if (!board()) return;
+  if (state.boardTaskEditor) {
+    if (!closeDialog(false, { confirmDirty: false })) return;
+    state.boardTaskPanel = false;
+  }
+  state.boardTaskPanel = !state.boardTaskPanel;
+  renderView();
+  if (state.boardTaskPanel) $("#board-task-search")?.focus();
+}
+document.addEventListener("input", (event) => {
+  const el = event.target;
+  if (el.id !== "board-task-search" && !el.matches("[data-board-task-filter]"))
+    return;
+  state.boardTaskFilters ||= {};
+  state.boardTaskFilters[el.dataset.boardTaskFilter || "search"] = el.value;
+  $(".board-task-results").innerHTML = boardTaskResultsHTML();
+});
 
 document.addEventListener("click", async (event) => {
   const el = event.target.closest("[data-action]");
@@ -1281,6 +1465,10 @@ document.addEventListener("click", async (event) => {
   const { action, id } = el.dataset;
   try {
     switch (action) {
+      case "directory-open":
+        if (state.directoryPage !== el.dataset.page)
+          await openDirectory(el.dataset.page);
+        break;
       case "home":
         if (!canNavigate()) return;
         state.navigation++;
@@ -1382,6 +1570,7 @@ document.addEventListener("click", async (event) => {
         }
         break;
       case "view":
+        if (!canNavigate()) return;
         state.settingsDirty = false;
         state.dirty = false;
         history.replaceState(null, "", location.pathname);
@@ -1449,14 +1638,17 @@ document.addEventListener("click", async (event) => {
         addNode(el.dataset.tool);
         break;
       case "board-create-task":
-        closeDialog(true);
         taskDialog();
         break;
+      case "board-task-close":
+        state.boardTaskPanel = false;
+        renderView();
+        $('[data-action="board-task"]')?.focus();
+        break;
       case "board-task":
-        boardTaskDialog();
+        toggleBoardTasks();
         break;
       case "board-pick":
-        closeDialog(true);
         addNode("task", id);
         break;
       case "node-edit":
@@ -1543,6 +1735,7 @@ document.addEventListener("submit", async (event) => {
     return;
   event.preventDefault();
   const submit = $('[type="submit"]', form);
+  if (submit.disabled) return;
   submit.disabled = true;
   const data = Object.fromEntries(new FormData(form));
   try {
@@ -1560,13 +1753,16 @@ document.addEventListener("submit", async (event) => {
         body: { ...data, ...(id ? { revision: form.dataset.revision } : {}) },
       });
       closeDialog(true);
+      state.settingsDirty = false;
       applyWorkspace(await fetchWorkspace());
       if (id) renderApp();
       else await openOrganisation(organisation.id);
       toast(
-        id
-          ? "Organisation saved."
-          : "Organisation created. Add its first project.",
+        form.dataset.directoryPage
+          ? `${label(form.dataset.directoryPage)} saved.`
+          : id
+            ? "Organisation saved."
+            : "Organisation created. Add its first project.",
       );
     } else if (form.id === "project-form") {
       data.teams = JSON.parse(data.teams || "[]");
@@ -1585,8 +1781,21 @@ document.addEventListener("submit", async (event) => {
       await openProject(p.id);
       toast(edit ? "Project updated." : "A fresh page. Make it yours.");
     } else if (form.id === "task-form") {
+      const createAnother =
+        !form.dataset.id && form.elements.createAnother?.checked;
+      delete data.createAnother;
       Object.assign(data, features.taskData(form));
+      if (!form.dataset.id) {
+        data.subtasks = JSON.parse(data.pendingSubtasks || "[]");
+        if (data.subtaskTitle.trim())
+          data.subtasks.push({
+            title: data.subtaskTitle.trim(),
+            type: data.subtaskType,
+          });
+      }
+      delete data.pendingSubtasks;
       delete data.subtaskTitle;
+      delete data.subtaskType;
       const originalTask = task(form.dataset.id);
       if (originalTask?.assignee_id && data.assignee === originalTask.assignee)
         data.assignee_id = originalTask.assignee_id;
@@ -1613,14 +1822,36 @@ document.addEventListener("submit", async (event) => {
           body: data,
         });
         if (form.dataset.board) {
-          state.tasks.push(created);
+          if (!task(created.id)) state.tasks.push(created);
           const target = state.boards.find((b) => b.id === form.dataset.board);
-          if (target && target.id === state.selectedBoard)
+          if (
+            target &&
+            target.id === state.selectedBoard &&
+            !target.nodes.some(
+              (n) => n.type === "task" && n.task === created.id,
+            )
+          )
             addNode("task", created.id);
         }
       }
-      closeDialog(true);
-      await refresh();
+      const wasPanel = !!state.boardTaskEditor;
+      if (createAnother) {
+        await refresh();
+        closeDialog(true);
+        taskDialog(null, {
+          type: data.type,
+          parent: data.parent,
+          status: data.status,
+          priority: data.priority,
+          assignee: data.assignee,
+          due: data.due || "",
+          createAnother: true,
+        });
+      } else {
+        closeDialog(true);
+        if (wasPanel) state.boardTaskPanel = true;
+        await refresh();
+      }
       toast(id ? "Task saved." : "One good idea, written down.");
     } else if (form.id === "node-form") {
       for (const key of ["x", "y", "w", "h"]) data[key] = Number(data[key]);
@@ -1699,6 +1930,13 @@ document.addEventListener("change", async (event) => {
       renderView(true);
     }
     if (el.id === "board-select") {
+      if (
+        state.boardTaskEditor &&
+        !closeDialog(false, { confirmDirty: false })
+      ) {
+        el.value = state.selectedBoard;
+        return;
+      }
       if (state.boardSaves || state.boardConflict) {
         el.value = state.selectedBoard;
         toast("Finish saving the current canvas first.", true);
@@ -1989,6 +2227,7 @@ setInterval(async () => {
     sync.entries.size ||
     state.loading ||
     state.dialog ||
+    state.boardTaskEditor ||
     state.canvasEditing ||
     state.headerMenu ||
     state.selectionToolbarOpen ||
@@ -2011,6 +2250,7 @@ setInterval(async () => {
       navigation !== state.navigation ||
       state.loading ||
       state.dialog ||
+      state.boardTaskEditor ||
       state.canvasEditing ||
       state.headerMenu ||
       state.selectionToolbarOpen ||
@@ -2097,7 +2337,15 @@ async function boot() {
       /^#project\/([\w-]+)\/(settings|board)(?:\/([\w-]+)\/frame\/([\w-]+))?$/.exec(
         location.hash,
       );
-    if (link && state.projects.some((p) => p.id === link[1])) {
+    const directoryLink = /^#organisation\/([\w-]+)\/(teams|people)$/.exec(
+      location.hash,
+    );
+    if (
+      directoryLink &&
+      state.organisations.some((o) => o.id === directoryLink[1])
+    ) {
+      await openDirectory(directoryLink[2], directoryLink[1]);
+    } else if (link && state.projects.some((p) => p.id === link[1])) {
       await openProject(link[1]);
       state.view = link[2];
       if (link[3] && state.boards.some((b) => b.id === link[3]))

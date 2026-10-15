@@ -12,7 +12,7 @@
 }
 .grid-grip {
   position: absolute;
-  top: calc(24px - var(--grid-axis-size, 24px));
+  top: var(--grid-title-top, 0px);
   left: 0;
   right: 0;
   min-width: calc(var(--grid-hit-size, 8px) * 10);
@@ -261,7 +261,7 @@
   z-index: 6;
 }
 .grid-track-handle.column.last-track {
-  top: calc(24px - 2 * var(--grid-axis-size, 24px) - 2px);
+  top: calc(var(--grid-title-top, 0px) - var(--grid-axis-size, 24px) - 2px);
   bottom: auto;
   height: var(--grid-axis-size, 24px);
 }
@@ -316,6 +316,8 @@
 /* Track grips stay legible and easy to grab at different board zoom levels. */
 .board-node.grid {
   --grid-axis-size: calc(var(--grid-hit-size, 8px) * 3);
+  /* Anchor to the top when zoomed in; grow outward at low zoom to clear cells. */
+  --grid-title-top: min(0px, calc(24px - var(--grid-axis-size)));
 }
 .grid-axis-label {
   align-items: center;
@@ -332,7 +334,7 @@
   display: flex;
 }
 .grid-axis-label.column {
-  top: calc(24px - 2 * var(--grid-axis-size) - 2px);
+  top: calc(var(--grid-title-top) - var(--grid-axis-size) - 2px);
   height: var(--grid-axis-size);
 }
 .grid-axis-label.row {
@@ -353,11 +355,11 @@
   background: color-mix(in srgb, var(--accent) 22%, var(--surface));
 }
 .grid-axis-label:focus-visible {
-  outline: 2px solid var(--accent);
-  outline-offset: 2px;
+  outline: var(--focus-ring);
+  outline-offset: -1px;
 }
 .grid-track-handle.column.last-track {
-  top: calc(24px - 2 * var(--grid-axis-size) - 2px);
+  top: calc(var(--grid-title-top) - var(--grid-axis-size) - 2px);
   height: var(--grid-axis-size);
 }
 .grid-track-handle.row.last-track {
@@ -431,4 +433,12 @@
   .grid-axis-label {
     transition: none;
   }
+}
+
+/* Keep editor focus visible within clipped grid cells. */
+.grid-cell:focus-visible,
+.board-node.grid .grid-cell .inline-rich:focus,
+.board-node.grid .grid-cell .inline-source:focus {
+  outline: var(--focus-ring);
+  outline-offset: -1px;
 }

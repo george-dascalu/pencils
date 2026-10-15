@@ -1,7 +1,12 @@
 import { objectGeometryControls } from "./object-geometry.js";
 import { textStyleControls } from "./object-text.js";
 import { setStrokeWidth } from "./pen-model.js";
-import { gridToolbar, gridCell, selectedCells } from "./board-grid.js";
+import {
+  gridToolbar,
+  gridCell,
+  selectedCells,
+  gridSelectionLabel,
+} from "./board-grid.js";
 import { framePresets, frameContents, frameSlides } from "./frame-model.js";
 import {
   textAlignment,
@@ -93,22 +98,26 @@ export function selectionToolbar(
     const alignment = cell?.align || textAlignment(n);
     const textMenu = menu(
       "text-align",
-      "Text alignment",
-      icon(`text-${alignment}`),
-      alignmentButtons(
-        icon,
-        (
-          cell
-            ? selectedCells(state, n).every(
-                ([r, c]) =>
-                  (n.grid.cells[r][c].align || textAlignment(n)) === alignment,
-              )
-            : nodes.every((node) => textAlignment(node) === alignment)
-        )
-          ? alignment
-          : null,
-        locked,
-      ) +
+      cell ? "Text formatting" : "Text alignment",
+      icon(cell ? "text" : `text-${alignment}`),
+      (cell
+        ? `<strong>${gridSelectionLabel(state, n)} · ${selectedCells(state, n).length} cells</strong>`
+        : "") +
+        alignmentButtons(
+          icon,
+          (
+            cell
+              ? selectedCells(state, n).every(
+                  ([r, c]) =>
+                    (n.grid.cells[r][c].align || textAlignment(n)) ===
+                    alignment,
+                )
+              : nodes.every((node) => textAlignment(node) === alignment)
+          )
+            ? alignment
+            : null,
+          locked,
+        ) +
         textStyleControls(n, ctx) +
         button("object-style", "copy", "Copy formatting", "duplicate") +
         button("object-style", "paste", "Paste formatting", "pencil", locked),
@@ -134,12 +143,9 @@ export function selectionToolbar(
         )}</div>${feature("distribute", "Space evenly horizontally", "distribute", editable.length < 3)}${feature("distribute-vertical", "Space evenly vertically", "distribute-vertical", editable.length < 3)}<hr>${feature("group", "Group", "group", nodes.length < 2 || locked)}${feature("ungroup", "Ungroup", "ungroup", !nodes.some((n) => n.group && !n.locked))}${feature("frame-selection", "Create frame around selection", "frame", locked)}${feature("frames-pdf", "Export selected frames as PDF", "file", !nodes.some((n) => n.type === "frame"))}`,
     );
     const extraActions =
-      single && ["task", "file"].includes(n.type) && !isTaskNote(n)
-        ? pro("embed", "Choose heading or block", "file", locked) +
-          pro("backlinks", "Backlinks", "connect")
-        : single && n.type === "query"
-          ? pro("query-edit", "Edit live task view", "table", locked)
-          : "";
+      single && n.type === "query"
+        ? pro("query-edit", "Edit live task view", "table", locked)
+        : "";
     const more = extraActions
       ? menu("more", "More object actions", icon("more"), extraActions)
       : "";
@@ -195,7 +201,7 @@ export function selectionToolbar(
             locked,
           )
         : `<span class="selection-kind" title="${nodes.length} selected">${icon(single ? { grid: "table", frame: "frame", query: "table", draw: "pencil", image: "image" }[n.type] || n.type : "group")}<span>${single ? esc(({ sticky: "Note", query: "Live view", draw: "Drawing" }[n.type] || n.type).replace(/^./, (c) => c.toUpperCase())) : `${nodes.length} objects`}</span></span>`;
-    return `<div id="selection-tools" class="selection-tools" role="toolbar" aria-label="Selected objects">${single ? kind + filterMenu : filterMenu || kind}${group("Edit and appearance", `${single ? pro("inline", n.type === "frame" ? "Rename frame" : "Edit", "pencil", locked) : ""}${color}${single ? objectGeometryControls(n, ctx) || pro("object-style", "Appearance and parent frame", "settings", locked) : ""}`)}${frameTools}${single && n.type === "draw" ? group("Stroke style", `<label class="pen-width" title="Stroke thickness">${icon("stroke-width")}<select data-stroke-width aria-label="Stroke thickness" ${locked ? "disabled" : ""}>${[1, 2, 3, 3.5, 5, 8, 12, 18, 24, 32].map((w) => `<option value="${w}" ${w === (n.strokeWidth || 3.5) ? "selected" : ""}>${w} px</option>`).join("")}</select></label>`) : ""}${single && n.type === "grid" ? gridToolbar(n, state, { button, menu, group, icon }) : ""}${group("Text alignment", textMenu)}${group("Collaboration", single ? pro("comments", "Comment", "comment") : "")}${group("Organise", arrange + pro("zoom-selection", "Focus selection", "fit"))}${group("Layer order", feature("bring-front", "Bring to front", "front", locked) + feature("send-back", "Send to back", "back", locked))}${group("Object actions", feature("duplicate", "Duplicate", "duplicate") + feature("lock", locked ? "Unlock selection" : "Lock selection", locked ? "unlock" : "local", false, `aria-pressed="${locked}"`) + more)}${group("Delete", feature("selection-delete", single && n.type === "frame" ? "Delete frame (keep contents)" : "Delete", "trash", locked))}</div>`;
+    return `<div id="selection-tools" class="selection-tools" role="toolbar" aria-label="Selected objects">${single ? kind + filterMenu : filterMenu || kind}${group("Edit and appearance", `${single ? pro("inline", n.type === "frame" ? "Rename frame" : "Edit", "pencil", locked) : ""}${color}${single ? objectGeometryControls(n, ctx) || pro("object-style", "Appearance and parent frame", "settings", locked) : ""}`)}${frameTools}${single && n.type === "draw" ? group("Stroke style", `<label class="pen-width" title="Stroke thickness">${icon("stroke-width")}<select data-stroke-width aria-label="Stroke thickness" ${locked ? "disabled" : ""}>${[1, 2, 3, 3.5, 5, 8, 12, 18, 24, 32].map((w) => `<option value="${w}" ${w === (n.strokeWidth || 3.5) ? "selected" : ""}>${w} px</option>`).join("")}</select></label>`) : ""}${single && n.type === "grid" ? gridToolbar(n, state, { button, menu, group, icon }) : ""}${group("Text alignment", textMenu)}${group("Collaboration", single && !(n.type === "task" && !isTaskNote(n)) ? pro("comments", "Comment", "comment") : "")}${group("Organise", arrange + pro("zoom-selection", "Focus selection", "fit"))}${group("Layer order", feature("bring-front", "Bring to front", "front", locked) + feature("send-back", "Send to back", "back", locked))}${group("Object actions", feature("duplicate", "Duplicate", "duplicate") + feature("lock", locked ? "Unlock selection" : "Lock selection", locked ? "unlock" : "local", false, `aria-pressed="${locked}"`) + more)}${group("Delete", feature("selection-delete", single && n.type === "frame" ? "Delete frame (keep contents)" : "Delete", "trash", locked))}</div>`;
   }
   function render() {
     filter.sync();
@@ -223,6 +229,7 @@ export function selectionToolbar(
     }
     state.selectionToolbarOpen = false;
   }
+  document.addEventListener("color-picker-resize", () => positionMenus());
   function positionMenus() {
     const canvas = $("#canvas"),
       menu = $("#selection-tools details[open]");
@@ -360,6 +367,7 @@ export function selectionToolbar(
       const root = $("#selection-tools");
       if (
         !root ||
+        e.target.closest(".board-task-editor") ||
         state.dialog ||
         state.canvasEditing ||
         $("#canvas")?.classList.contains("presenting")
@@ -453,8 +461,14 @@ export function selectionToolbar(
       );
   });
   document.addEventListener("click", (e) => {
-    const choice = e.target.closest("[data-edge-head]");
-    if (choice) updateEdge(choice.dataset.edgeHead, choice.dataset.value);
+    const choice = e.target.closest(
+      ".connector-tools [data-edge-head], .connector-tools [data-edge-choice]",
+    );
+    if (choice) {
+      const key = choice.dataset.edgeHead || choice.dataset.edgeChoice;
+      updateEdge(key, choice.dataset.value);
+      $(`#selection-tools [data-selection-menu="${key}"] > summary`)?.focus();
+    }
   });
   return {
     render,
@@ -468,9 +482,9 @@ export function selectionToolbar(
 export function positionToolbarPopover(panel, menu, canvas) {
   const c = canvas.getBoundingClientRect(),
     m = menu.getBoundingClientRect();
-  panel.style.left = `${Math.max(c.left + 8, Math.min(m.left, c.right - panel.offsetWidth - 8)) - m.left}px`;
-  const below = c.bottom - m.bottom - 12,
-    above = m.top - c.top - 12;
+  panel.style.left = `${Math.max(Math.max(0, c.left) + 8, Math.min(m.left, Math.min(window.innerWidth, c.right) - panel.offsetWidth - 8)) - m.left}px`;
+  const below = Math.min(window.innerHeight, c.bottom) - m.bottom - 12,
+    above = m.top - Math.max(0, c.top) - 12;
   const up = below < Math.min(panel.scrollHeight, 320) && above > below;
   panel.style.top = up ? "auto" : "calc(100% + 8px)";
   panel.style.bottom = up ? "calc(100% + 8px)" : "auto";

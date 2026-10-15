@@ -357,6 +357,61 @@ try {
     async () => (await current()).nodes[0].grid.title === "Zoomed title",
   );
   await page.screenshot({ path: "/tmp/pencils-grid-mobile.png" });
+  // The screen-sized title must not drift down through the header at high zoom.
+  const savedGrid = (await current()).nodes.find((n) => n.type === "grid");
+  await page.setViewportSize({ width: 1600, height: 1100 });
+  for (const z of [0.5, 1, 2, 3]) {
+    await page.evaluate(
+      ({ id, n, z }) =>
+        localStorage.setItem(
+          `pencils:camera:${id}`,
+          JSON.stringify({ x: 150 - n.x * z, y: 200 - n.y * z, z }),
+        ),
+      { id: initial.id, n: savedGrid, z },
+    );
+    await page.reload();
+    const grip = page.locator(".grid-grip");
+    await grip.click({ position: { x: 12, y: 12 } });
+    assert.equal(
+      await page.locator("#zoom-label").textContent(),
+      `${z * 100}%`,
+    );
+    const header = await grip.boundingBox();
+    const bounds = await page.locator(".board-node.grid").boundingBox();
+    const cells = await page.locator(".grid-cells").boundingBox();
+    const column = await page
+      .locator(".grid-axis-label.column")
+      .first()
+      .boundingBox();
+    const last = await page
+      .locator(".grid-track-handle.column.last-track")
+      .boundingBox();
+    assert.ok(Math.abs(header.height - 24) < 0.2);
+    if (z >= 1)
+      assert.ok(
+        Math.abs(header.y - bounds.y) < 2 * z,
+        "Grid title stays attached to the top edge when zoomed in",
+      );
+    assert.ok(
+      header.y + header.height <= cells.y + 0.2,
+      "Title does not cover cell content",
+    );
+    assert.ok(
+      column.y + column.height <= header.y,
+      "Column controls remain above the anchored title",
+    );
+    assert.ok(
+      Math.abs(last.y - column.y) < 0.2,
+      "Last column resize target follows the column controls",
+    );
+    await page.screenshot({ path: `/tmp/pencils-grid-title-${z}.png` });
+  }
+  const afterZoom = (await current()).nodes.find((n) => n.id === savedGrid.id);
+  assert.deepEqual(
+    afterZoom,
+    savedGrid,
+    "Zooming does not change saved grid geometry or contents",
+  );
   assert.deepEqual(errors, []);
   console.log(
     "Board grid: editable titles, autosave, title undo/redo, placement, inline save, structure, paste, colour, alignment, track resize, navigation, CSV, duplicate/undo and reload passed.",

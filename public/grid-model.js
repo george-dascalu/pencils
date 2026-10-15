@@ -38,6 +38,9 @@ export function validGrid(g) {
             c &&
             typeof c.text === "string" &&
             c.text.length <= 6000 &&
+            ["bold", "italic", "strike"].every(
+              (key) => c[key] == null || typeof c[key] === "boolean",
+            ) &&
             (c.fontSize == null ||
               (Number.isFinite(c.fontSize) &&
                 c.fontSize >= 8 &&
@@ -298,7 +301,7 @@ export function gridSVG(n, esc) {
           .slice(0, Math.ceil(h / lineHeight))
           .map(
             (t, i) =>
-              `<text x="${tx}" y="${y + offset + fontSize + i * lineHeight}" font-size="${fontSize}" font-family="${esc(cell.fontFamily || n.fontFamily || "sans-serif")}" text-anchor="${anchor}" fill="#263c34">${esc(t)}</text>`,
+              `<text x="${tx}" y="${y + offset + fontSize + i * lineHeight}" font-size="${fontSize}" font-family="${esc(cell.fontFamily || n.fontFamily || "sans-serif")}" font-weight="${cell.bold ? "700" : "normal"}" font-style="${cell.italic ? "italic" : "normal"}" text-decoration="${cell.strike ? "line-through" : "none"}" text-anchor="${anchor}" fill="#263c34">${esc(t)}</text>`,
           )
           .join("") + "</g>";
       x += tracks.columns[c];

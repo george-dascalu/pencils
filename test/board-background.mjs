@@ -62,7 +62,7 @@ try {
   );
   await page.screenshot({ path: "/tmp/pencils-background-desktop.png" });
   await page
-    .getByRole("button", { name: "Apply settings", exact: true })
+    .getByRole("button", { name: "Close board settings", exact: true })
     .click();
   await saved();
   await page.reload();
@@ -84,22 +84,80 @@ try {
     lineColor: "auto",
     spacing: 40,
   });
+  await open();
+  await page.getByRole("radio", { name: "Fine grid", exact: true }).check();
+  assert.equal(
+    await page
+      .locator(".background-preview")
+      .evaluate((el) => getComputedStyle(el).backgroundSize),
+    "200px 200px, 200px 200px, 40px 40px, 40px 40px",
+  );
+  await page.screenshot({ path: "/tmp/pencils-fine-grid-preview.png" });
+  await page
+    .getByRole("button", { name: "Close board settings", exact: true })
+    .click();
+  await saved();
+  await page.reload();
+  await page.locator("#canvas").waitFor();
+  assert.equal(
+    (await store.snapshot(project.id)).boards.find((b) => b.id === board.id)
+      .settings.background.pattern,
+    "fine-grid",
+  );
+  const assertGrid = async () => {
+    const values = await page.locator("#canvas").evaluate((el) => {
+      const m = new DOMMatrix(
+        getComputedStyle(document.querySelector("#canvas-world")).transform,
+      );
+      return {
+        size: el.style.backgroundSize,
+        position: el.style.backgroundPosition,
+        x: m.e,
+        y: m.f,
+        z: m.a,
+      };
+    });
+    const sizes = values.size.split(",").map((v) => parseFloat(v));
+    assert.equal(sizes.length, 4);
+    assert.ok(Math.abs(sizes[0] - 200 * values.z) < 0.02);
+    assert.ok(Math.abs(sizes[2] - 40 * values.z) < 0.02);
+    assert.ok(Math.abs(sizes[0] / sizes[2] - 5) < 0.001);
+    const position = values.position.split(" ").map(parseFloat);
+    assert.ok(
+      Math.abs(position[0] - values.x) < 0.02 &&
+        Math.abs(position[1] - values.y) < 0.02,
+    );
+  };
+  await assertGrid();
+  await page.locator('[data-action="zoom-in"]').click();
+  await page.waitForFunction(
+    () => !document.querySelector("#canvas").classList.contains("zooming"),
+  );
+  await assertGrid();
+  const bounds = await page.locator("#canvas").boundingBox();
+  await page.keyboard.down("Space");
+  await page.mouse.move(bounds.x + 500, bounds.y + 300);
+  await page.mouse.down();
+  await page.mouse.move(bounds.x + 570, bounds.y + 350, { steps: 4 });
+  await page.mouse.up();
+  await page.keyboard.up("Space");
+  await assertGrid();
+  await page.screenshot({ path: "/tmp/pencils-fine-grid-board.png" });
   await page.locator("#board-select").selectOption(other.id);
   assert.match((await appearance()).image, /radial-gradient/);
   await page.locator("#board-select").selectOption(board.id);
   await open();
   await page.locator('[name="pattern"][value="plain"]').check();
-  page.once("dialog", (d) => d.accept());
-  await page.getByRole("button", { name: "Cancel", exact: true }).click();
-  assert.match((await appearance()).image, /linear-gradient/);
+  await page.getByRole("button", { name: "Close board settings", exact: true }).click();
+  assert.equal((await appearance()).image, "none");
   await page.setViewportSize({ width: 390, height: 844 });
   await open();
   const box = await page.locator("#board-settings-form").boundingBox();
   assert.ok(box.x >= 0 && box.x + box.width <= 390);
-  await page.locator('[name="pattern"][value="lines"]').check();
+  await page.locator('[name="pattern"][value="fine-grid"]').check();
   await page.screenshot({ path: "/tmp/pencils-background-mobile.png" });
   await page
-    .getByRole("button", { name: "Apply settings", exact: true })
+    .getByRole("button", { name: "Close board settings", exact: true })
     .click();
   await saved();
   await page.setViewportSize({ width: 1400, height: 1000 });
@@ -109,7 +167,7 @@ try {
   await open();
   await page.locator('[name="pattern"][value="dots"]').check();
   await page
-    .getByRole("button", { name: "Apply settings", exact: true })
+    .getByRole("button", { name: "Close board settings", exact: true })
     .click();
   await saved();
   assert.match((await appearance()).image, /radial-gradient/);
@@ -128,7 +186,7 @@ try {
   await open();
   await page.locator("[data-board-settings-reset]").click();
   await page
-    .getByRole("button", { name: "Apply settings", exact: true })
+    .getByRole("button", { name: "Close board settings", exact: true })
     .click();
   await saved();
   await page
@@ -137,6 +195,14 @@ try {
   await page.locator('[name="personal-theme"][value="dark"]').check();
   await page.locator('[data-action="dialog-close"]').first().click();
   assert.equal((await appearance()).color, "rgb(23, 34, 28)");
+  await open();
+  await page.getByRole("radio", { name: "Fine grid", exact: true }).check();
+  await page.screenshot({ path: "/tmp/pencils-fine-grid-dark.png" });
+  await page
+    .getByRole("button", { name: "Close board settings", exact: true })
+    .click();
+  await saved();
+  assert.equal((await appearance()).image.match(/linear-gradient/g).length, 4);
   assert.deepEqual(errors, []);
   console.log(
     "PASS: patterns, shared colour picker, preview/cancel, per-board persistence, fresh browsers, mobile and theme-aware reset.",

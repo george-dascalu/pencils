@@ -1,3 +1,4 @@
+import { canParent } from "./hierarchy-model.js";
 import { nextStatuses, initialStatus } from "./workflow-model.js";
 export function taskPickerHTML(
   { name, title, value, choices, iconOnly },
@@ -38,6 +39,37 @@ export function taskModalControls(ctx, form, restoreVersion) {
     if (focus) trigger.focus();
   }
   function paintPickers() {
+    const parentPicker = form.querySelector('[data-task-picker="parent"]');
+    for (const button of parentPicker.querySelectorAll("[data-picker-value]")) {
+      const parent = state.tasks.find(
+        (t) => t.id === button.dataset.pickerValue,
+      );
+      button.disabled = !canParent(
+        state.config,
+        form.elements.type.value,
+        parent?.type ?? null,
+      );
+    }
+    const childSelect = form.elements.subtaskType,
+      current = childSelect.value;
+    const allowed = state.config.types.filter((t) =>
+      canParent(state.config, t, form.elements.type.value),
+    );
+    childSelect.innerHTML = allowed
+      .map((t) => `<option value="${esc(t)}">${esc(ctx.label(t))}</option>`)
+      .join("");
+    childSelect.value = allowed.includes(current)
+      ? current
+      : allowed.includes("task")
+        ? "task"
+        : allowed[0] || "";
+    form.querySelector('[data-task-modal="subtask-add"]').disabled =
+      !allowed.length;
+    form.querySelector("[data-subtask-hint]").textContent = !allowed.length
+      ? "This card type cannot have subtasks under the project hierarchy rules."
+      : !form.dataset.id
+        ? "Subtasks are created when you create this task."
+        : "";
     for (const picker of form.querySelectorAll("[data-task-picker]")) {
       const select = picker.querySelector("select"),
         option = select.selectedOptions[0];
@@ -143,6 +175,16 @@ export function taskModalControls(ctx, form, restoreVersion) {
       await history();
       return;
     }
+    if (action === "subtask-remove-draft") {
+      const drafts = JSON.parse(form.elements.pendingSubtasks.value);
+      drafts.splice(Number(button.dataset.index), 1);
+      form.elements.pendingSubtasks.value = JSON.stringify(drafts);
+      form.elements.pendingSubtasks.dispatchEvent(
+        new Event("input", { bubbles: true }),
+      );
+      subtasks();
+      return;
+    }
     if (action === "subtask-open") {
       closeDialog();
       if (!state.dialog) taskDialog(button.dataset.id);
@@ -202,7 +244,7 @@ export function taskModalControls(ctx, form, restoreVersion) {
     event.preventDefault();
     event.stopPropagation();
     const choices = [...picker.querySelectorAll("[data-picker-value]")].filter(
-      (el) => !el.hidden,
+      (el) => !el.hidden && !el.disabled,
     );
     if (!choices.length) return;
     const index = choices.indexOf(document.activeElement);
@@ -219,11 +261,12 @@ export function taskModalControls(ctx, form, restoreVersion) {
   dialog.addEventListener("scroll", positionPicker, true);
 
   function subtasks() {
+    const drafts = JSON.parse(form.elements.pendingSubtasks.value || "[]");
     const children = state.tasks.filter(
       (t) => t.parent === form.dataset.id && !t.archived,
     );
     form.querySelector("[data-subtask-count]").textContent =
-      `(${children.length})`;
+      `(${children.length + drafts.length})`;
     form.querySelector("[data-subtask-list]").innerHTML =
       children
         .map(
@@ -238,7 +281,13 @@ export function taskModalControls(ctx, form, restoreVersion) {
               )
               .join("")}</select></div>`,
         )
-        .join("") || '<p class="field-hint">No subtasks yet.</p>';
+        .join("") +
+        drafts
+          .map(
+            (t, index) =>
+              `<div class="task-subtask-row">${icon(t.type)}<span class="subtask-title"><small>${esc(t.type)} · Draft</small><span>${esc(t.title)}</span></span><button type="button" class="icon-button" aria-label="Remove draft ${esc(t.title)}" data-task-modal="subtask-remove-draft" data-index="${index}">${icon("trash")}</button></div>`,
+          )
+          .join("") || '<p class="field-hint">No subtasks yet.</p>';
   }
   async function addSubtask() {
     const input = form.elements.subtaskTitle,
@@ -246,6 +295,16 @@ export function taskModalControls(ctx, form, restoreVersion) {
     const title = input?.value.trim();
     if (!title || button.disabled) {
       input?.focus();
+      return;
+    }
+    if (!form.dataset.id) {
+      const drafts = JSON.parse(form.elements.pendingSubtasks.value || "[]");
+      drafts.push({ title, type: form.elements.subtaskType.value });
+      form.elements.pendingSubtasks.value = JSON.stringify(drafts);
+      input.value = "";
+      input.dispatchEvent(new Event("input", { bubbles: true }));
+      subtasks();
+      input.focus();
       return;
     }
     button.disabled = true;
@@ -257,9 +316,7 @@ export function taskModalControls(ctx, form, restoreVersion) {
         body: {
           title,
           parent: form.dataset.id,
-          type: state.config.types.includes("task")
-            ? "task"
-            : state.config.types[0],
+          type: form.elements.subtaskType.value,
           status: initialStatus(state.config),
         },
       });
@@ -339,7 +396,10 @@ export function taskModalControls(ctx, form, restoreVersion) {
   subtasks();
   return {
     history,
-    reload: paintPickers,
+    reload() {
+      paintPickers();
+      subtasks();
+    },
     destroy() {
       disposed = true;
       closePicker();

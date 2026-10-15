@@ -14,6 +14,7 @@
   --muted: #7b8178;
   --line: #e5e7df;
   --green: #4d6c55;
+  --focus-ring: 1px solid var(--green);
   --accent: #d2e3a4;
   --paper: #f9f9f5;
   --side: #263c34;
@@ -66,13 +67,13 @@ select {
 input:focus,
 textarea:focus,
 select:focus {
-  border-color: #6c8b60;
-  box-shadow: 0 0 0 3px #66856f18;
+  border-color: var(--green);
+  box-shadow: none;
 }
 button:focus-visible,
 a:focus-visible {
-  outline: 2px solid #93af65;
-  outline-offset: 3px;
+  outline: var(--focus-ring);
+  outline-offset: -1px;
 }
 textarea {
   resize: vertical;
@@ -184,7 +185,7 @@ button svg {
   gap: 5px;
   overflow: auto;
 }
-.project-link {
+:is(.project-link, .directory-link) {
   display: flex;
   gap: 10px;
   align-items: center;
@@ -200,10 +201,10 @@ button svg {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-.project-link:hover {
+:is(.project-link, .directory-link):hover {
   background: #ffffff08;
 }
-.project-link.active {
+:is(.project-link, .directory-link).active {
   background: #d2e3a41a;
   color: #e0edbd;
 }
@@ -921,7 +922,7 @@ button svg {
 }
 .task-table input:focus,
 .task-table select:focus {
-  box-shadow: inset 0 0 0 2px #95ac7f;
+  box-shadow: none;
 }
 .task-table td.title-cell {
   position: relative;
@@ -1386,8 +1387,8 @@ button svg {
   outline: none;
 }
 #canvas.keyboard-focus:focus-visible {
-  outline: 2px solid var(--green);
-  outline-offset: -2px;
+  outline: var(--focus-ring);
+  outline-offset: -1px;
 }
 .canvas.pan-mode {
   cursor: grab;
@@ -1914,7 +1915,9 @@ button svg {
   color: #edf2e7;
 }
 .organisation-choice select:focus {
-  box-shadow: 0 0 0 2px #b3c891;
+  box-shadow: none;
+  outline: 1px solid #b3c891;
+  outline-offset: -1px;
 }
 .organisation-actions {
   display: flex;
@@ -2191,7 +2194,7 @@ button svg {
   cursor: text;
 }
 .task-description .inline-rich:focus {
-  outline: 2px solid var(--green);
+  outline: var(--focus-ring);
   outline-offset: -1px;
 }
 .task-description .inline-rich[data-empty="true"]::before {
@@ -2763,4 +2766,59 @@ button svg {
 }
 .workflow-editor [data-workflow-error][hidden] {
   display: none;
+}
+
+.sidebar-directory {
+  margin-top: 22px;
+}
+.directory-links {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+.directory-link > .icon {
+  width: 17px;
+  height: 17px;
+  flex-shrink: 0;
+}
+.directory-link > span:first-of-type {
+  flex: 1;
+}
+.directory-count {
+  color: #a1b1a4;
+  font-size: 11px;
+}
+.directory-tabs {
+  display: flex;
+  gap: 8px;
+  margin: 16px 0;
+}
+.directory-tabs .button {
+  display: inline-flex;
+  gap: 8px;
+  align-items: center;
+}
+.directory-tabs [aria-current="page"] {
+  border-color: var(--green);
+}
+.directory-page .organisation-teams h3 {
+  margin-top: 0;
+}
+.directory-page .dialog-foot {
+  align-items: center;
+  justify-content: space-between;
+}
+.directory-empty {
+  padding: 12px;
+  border: 1px dashed var(--line);
+  border-radius: 8px;
+}
+[data-directory-section][hidden] {
+  display: none;
+}
+.directory-page .team-heading {
+  flex-wrap: wrap;
+}
+.directory-page .team-heading > input {
+  flex-basis: 180px;
 }

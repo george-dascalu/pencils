@@ -146,13 +146,14 @@ export function installFeatures(ctx) {
   }
   function afterRender() {
     personal.render();
-    const sidebar = $(".side-new");
+    const sidebar = $(".sidebar-directory") || $(".side-new");
     if (sidebar)
       sidebar.insertAdjacentHTML(
         "afterend",
         `<div class="workspace-tools">${button("dashboard", "Organisation overview")}${button("global-search", "Search all projects ⌘/Ctrl K")}${button("recovery", "Recovery & backups")}${state.session?.required && state.session.user?.admin ? button("accounts", "Accounts & access") : ""}${state.session?.required ? button("logout", "Sign out") : ""}<label><input type="checkbox" id="show-archived-projects" ${state.showArchived ? "checked" : ""}> Archived projects</label></div>`,
       );
-    if (!state.project) plan.dashboard().catch((e) => toast(e.message, true));
+    if (!state.project && !state.directoryPage)
+      plan.dashboard().catch((e) => toast(e.message, true));
     const metric = $(".stats-strip");
     if (metric)
       metric.title =
@@ -190,13 +191,6 @@ export function installFeatures(ctx) {
         );
       })
       .join("");
-    const references = state.tasks.filter(
-      (other) =>
-        other.id !== t.id &&
-        [t.id, t.title, ...(t.aliases || [])].some((ref) =>
-          other.body?.includes(`[[${ref}`),
-        ),
-    );
     return `<details class="task-extra"><summary>Planning & relationships</summary><div class="field-row">${field("start", "Start date", t.start, "date")}${field("estimate", "Estimate (hours)", t.estimate, "number", 'min="0" step="any"')}</div><label class="field">Dependencies <select name="dependencies" multiple size="3">${state.tasks
       .filter((x) => x.id !== t.id)
       .map(
@@ -205,7 +199,7 @@ export function installFeatures(ctx) {
       )
       .join(
         "",
-      )}</select><span class="field-hint">Select prerequisite tasks. Hold Ctrl or Cmd to select more than one.</span></label><div class="field-row"><label class="field">Repeat after completion<select name="recurrence-unit">${options(["", "day", "week", "month"], t.recurrence?.unit || "", { "": "Does not repeat", day: "Days", week: "Weeks", month: "Months" })}</select></label>${field("recurrence-interval", "Every", t.recurrence?.interval || 1, "number", 'min="1" max="365"')}</div>${fields ? `<h3>Custom fields</h3><div class="custom-fields">${fields}</div>` : ""}</details>${t.id ? `<div class="task-actions">${button("task-template", "Save as template")}${button("attach", "Attach file")}</div><details class="task-extra"><summary>Comments (${(t.comments || []).length}) & backlinks (${references.length})</summary>${(t.comments || []).map((c) => `<article class="comment"><strong>${esc(c.author || "Workspace")}</strong><small>${esc(new Date(c.created).toLocaleString())}</small><p>${esc(c.text)}</p></article>`).join("")}<label class="field">New comment<textarea name="new-comment" rows="2" maxlength="20000"></textarea></label>${references.map((other) => `<button type="button" class="text-link" data-feature="note-open" data-id="${other.id}" data-project="${other.project}">${esc(other.title)}</button>`).join("")}</details>` : ""}`;
+      )}</select><span class="field-hint">Select prerequisite tasks. Hold Ctrl or Cmd to select more than one.</span></label><div class="field-row"><label class="field">Repeat after completion<select name="recurrence-unit">${options(["", "day", "week", "month"], t.recurrence?.unit || "", { "": "Does not repeat", day: "Days", week: "Weeks", month: "Months" })}</select></label>${field("recurrence-interval", "Every", t.recurrence?.interval || 1, "number", 'min="1" max="365"')}</div>${fields ? `<h3>Custom fields</h3><div class="custom-fields">${fields}</div>` : ""}</details>${t.id ? `<div class="task-actions">${button("task-template", "Save as template")}${button("attach", "Attach file")}</div><details class="task-extra"><summary>Comments (${(t.comments || []).length})</summary>${(t.comments || []).map((c) => `<article class="comment"><strong>${esc(c.author || "Workspace")}</strong><small>${esc(new Date(c.created).toLocaleString())}</small><p>${esc(c.text)}</p></article>`).join("")}<label class="field">New comment<textarea name="new-comment" rows="2" maxlength="20000"></textarea></label></details>` : ""}`;
   }
   function taskData(form) {
     const data = new FormData(form),
@@ -213,6 +207,7 @@ export function installFeatures(ctx) {
       t = task(id) || {},
       fields = { ...(t.fields || {}) };
     for (const f of config().fields) {
+      if (!data.has(`custom:${f.id}`)) continue;
       const raw = data.get(`custom:${f.id}`);
       fields[f.id] =
         f.type === "number"
@@ -227,7 +222,9 @@ export function installFeatures(ctx) {
     return {
       start: data.get("start") || null,
       estimate:
-        data.get("estimate") === "" ? null : Number(data.get("estimate")),
+        !data.has("estimate") || data.get("estimate") === ""
+          ? null
+          : Number(data.get("estimate")),
       dependencies: data.getAll("dependencies"),
       recurrence: data.get("recurrence-unit")
         ? {
@@ -252,7 +249,7 @@ export function installFeatures(ctx) {
     };
   }
   function draftKey(form) {
-    return `draft:${state.session?.user?.username || "shared"}:${state.project?.id || state.organisation?.id || "workspace"}:${form.id}:${form.dataset.id || form.dataset.edit || "new"}`;
+    return `draft:${state.session?.user?.username || "shared"}:${state.project?.id || state.organisation?.id || "workspace"}:${form.id}:${form.dataset.id || form.dataset.edit || "new"}${form.dataset.directoryPage ? `:${form.dataset.directoryPage}` : ""}`;
   }
   function dialogOpened(kind, pageForm) {
     taskModal?.destroy();
@@ -268,14 +265,18 @@ export function installFeatures(ctx) {
             form,
             form.dataset.id ? state.organisation : null,
             esc,
+            form.dataset.directoryPage || "all",
           )
         : kind === "project" && form
           ? projectTeamControls(form, state, esc)
           : null;
+    if (kind === "organisation" && form?.dataset.id)
+      formBases.set(form, structuredClone(state.organisation));
     if (kind === "task" && form) {
       const t = task(form.dataset.id) || state.dialogTask || {};
       formBases.set(form, structuredClone(t));
-      $(".dialog-body", form).insertAdjacentHTML("beforeend", taskExtras(t));
+      if (t.id)
+        $(".dialog-body", form).insertAdjacentHTML("beforeend", taskExtras(t));
       taskEditor = taskDescription(form, ctx.markdown, ctx.icon);
       taskModal = taskModalControls(ctx, form, async (version) => {
         if (
@@ -331,9 +332,12 @@ export function installFeatures(ctx) {
       const data = {};
       for (const input of form.elements) {
         if (!input.name) continue;
-        data[input.name] = input.multiple
-          ? [...input.selectedOptions].map((o) => o.value)
-          : input.value;
+        data[input.name] =
+          input.type === "checkbox"
+            ? input.checked
+            : input.multiple
+              ? [...input.selectedOptions].map((o) => o.value)
+              : input.value;
       }
       storage.set(key, { time: Date.now(), data, base: formBases.get(form) });
     };
@@ -379,6 +383,7 @@ export function installFeatures(ctx) {
       state.loading ||
       state.settingsDirty ||
       state.dialog ||
+      state.boardTaskEditor ||
       state.canvasEditing ||
       canvas.busy() ||
       state.headerMenu ||
@@ -520,22 +525,32 @@ export function installFeatures(ctx) {
       renderView(true);
     }
     if (action === "form-restore") {
-      const form = $("dialog form") || $("#project-form"),
+      const form =
+          $("dialog form") || $("#project-form") || $("#organisation-form"),
         draft = storage.get(activeDraft, null);
       if (draft) {
         for (const input of form.elements) {
           if (!(input.name in draft.data)) continue;
-          if (input.multiple) {
+          if (input.type === "checkbox")
+            input.checked = draft.data[input.name] === true;
+          else if (input.multiple) {
             for (const o of input.options)
               o.selected = draft.data[input.name].includes(o.value);
           } else input.value = draft.data[input.name];
         }
-        if (draft.base) formBases.set(form, draft.base);
+        if (draft.base) {
+          formBases.set(form, draft.base);
+          if (form.id === "organisation-form" && draft.base.revision)
+            form.dataset.revision = draft.base.revision;
+        }
         taskEditor?.reload();
         taskModal?.reload();
         reloadTeams?.();
         reloadWorkflow?.();
-        if (form.id === "project-form" && state.view === "settings")
+        if (
+          (form.id === "project-form" && state.view === "settings") ||
+          form.dataset.directoryPage
+        )
           state.settingsDirty = true;
         state.dirty = true;
         $(".draft-notice")?.remove();

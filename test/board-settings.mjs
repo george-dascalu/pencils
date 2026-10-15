@@ -38,6 +38,34 @@ try {
   await enter(page);
   await page.locator("#board-select").selectOption(board.id);
   await snap(page, true);
+  // Anchored popover: no modal backdrop, light dismiss, keyboard and focus return.
+  const trigger = page.getByRole("button", {
+    name: "Board settings",
+    exact: true,
+  });
+  await trigger.click();
+  assert.equal(await page.locator("dialog:modal").count(), 0);
+  const popup = page.locator("#board-settings-popover");
+  const b = await trigger.boundingBox(),
+    p = await popup.boundingBox();
+  assert.ok(p.y >= b.y + b.height && p.y <= b.y + b.height + 10);
+  assert.ok(Math.abs(p.x - b.x) < 2);
+  await page.screenshot({ path: "/tmp/pencils-settings-popover-desktop.png" });
+  await page
+    .locator('#board-settings-form [name="title"]')
+    .fill("Discard this edit");
+  await page.locator("#canvas").click({ position: { x: 900, y: 300 } });
+  await popup.waitFor({ state: "detached" });
+  await trigger.click();
+  assert.equal(
+    await page.locator('#board-settings-form [name="title"]').inputValue(),
+    "Discard this edit",
+  );
+  await page.keyboard.press("Escape");
+  assert.ok(await trigger.evaluate((el) => el === document.activeElement));
+  await trigger.click();
+  await trigger.click();
+  await popup.waitFor({ state: "detached" });
   await page
     .getByRole("button", { name: "Board settings", exact: true })
     .click();
@@ -47,7 +75,7 @@ try {
   await page.locator("#canvas-snap").uncheck();
   await page.locator("#canvas-align").uncheck();
   await page
-    .getByRole("button", { name: "Apply settings", exact: true })
+    .getByRole("button", { name: "Close board settings", exact: true })
     .click();
   await page.waitForFunction(
     () =>
@@ -71,9 +99,6 @@ try {
     .getByRole("button", { name: "Board settings", exact: true })
     .click();
   await page.locator('#board-settings-form [name="title"]').fill("   ");
-  await page
-    .getByRole("button", { name: "Apply settings", exact: true })
-    .click();
   assert.ok(
     await page
       .locator('#board-settings-form [name="title"]')
@@ -83,7 +108,7 @@ try {
     .locator('#board-settings-form [name="title"]')
     .fill("Renamed from settings");
   await page
-    .getByRole("button", { name: "Apply settings", exact: true })
+    .getByRole("button", { name: "Close board settings", exact: true })
     .click();
   await page.locator("#canvas").click({ position: { x: 700, y: 400 } });
   await page.keyboard.press("g");
@@ -96,7 +121,7 @@ try {
   assert.equal(await page.locator('[name="show-minimap"]').isChecked(), false);
   await page.locator('[name="show-minimap"]').check();
   await page
-    .getByRole("button", { name: "Apply settings", exact: true })
+    .getByRole("button", { name: "Close board settings", exact: true })
     .click();
   assert.ok(await page.locator("#canvas-minimap").isVisible());
   await page
@@ -104,7 +129,7 @@ try {
     .click();
   await page.locator('[name="show-minimap"]').uncheck();
   await page
-    .getByRole("button", { name: "Apply settings", exact: true })
+    .getByRole("button", { name: "Close board settings", exact: true })
     .click();
   await page.reload();
   await page.locator("#canvas.board-expanded.grid-hidden").waitFor();
@@ -145,7 +170,7 @@ try {
     .click();
   await page.locator("#canvas-snap").check();
   await page
-    .getByRole("button", { name: "Apply settings", exact: true })
+    .getByRole("button", { name: "Close board settings", exact: true })
     .click();
   await page.waitForFunction(
     () =>
@@ -153,6 +178,27 @@ try {
   );
   await page.reload();
   await snap(page, true);
+  await page.locator('[data-board-display="fullscreen"]').click();
+  await page.waitForFunction(() => !!document.fullscreenElement);
+  await trigger.click();
+  assert.ok(await popup.isVisible());
+  await page
+    .getByRole("button", { name: "Close board settings", exact: true })
+    .click();
+  await page.evaluate(() => document.exitFullscreen());
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.evaluate(() => (document.documentElement.dataset.theme = "dark"));
+  await trigger.click();
+  const small = await popup.boundingBox();
+  assert.ok(
+    small.x >= 0 &&
+      small.x + small.width <= 390 &&
+      small.y + small.height <= 844,
+  );
+  await page.screenshot({
+    path: "/tmp/pencils-settings-popover-mobile-dark.png",
+  });
+  await page.keyboard.press("Escape");
   assert.deepEqual(errors, []);
   console.log(
     "PASS: Snap persists per board across reloads and fresh browsers; display preferences persist and stay isolated per board.",

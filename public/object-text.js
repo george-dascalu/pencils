@@ -13,6 +13,9 @@ export const objectFonts = [
 const defaultFontSize = (n) =>
   n.type === "grid" ? 14 : n.type === "frame" ? 18 : 16;
 export const styleKeys = [
+  "bold",
+  "italic",
+  "strike",
   "fontSize",
   "fontFamily",
   "verticalAlign",
@@ -26,6 +29,9 @@ export const styleKeys = [
 ];
 export function validTextStyle(n) {
   return (
+    ["bold", "italic", "strike"].every(
+      (key) => n[key] == null || typeof n[key] === "boolean",
+    ) &&
     (n.fontSize == null ||
       (Number.isFinite(n.fontSize) && n.fontSize >= 8 && n.fontSize <= 144)) &&
     (n.fontFamily == null || objectFonts.includes(n.fontFamily)) &&
@@ -42,9 +48,41 @@ export function textStyleControls(n, { esc, icon, state }) {
           ...n.grid.cells[gridCell(state, n).row][gridCell(state, n).column],
         }
       : n;
+  const cells =
+    n.type === "grid"
+      ? selectedCells(state, n).map(([r, c]) => ({
+          ...n,
+          ...n.grid.cells[r][c],
+        }))
+      : [n];
+  const emphasis =
+    n.type === "grid" && !state.canvasEditing
+      ? `<div class="grid-text-emphasis" role="group" aria-label="Text emphasis">${[
+          ["bold", "Bold", "bold"],
+          ["italic", "Italic", "italic"],
+          ["strike", "Strikethrough", "strike"],
+        ]
+          .map(([key, label, glyph]) => {
+            const count = cells.filter((cell) => cell[key]).length;
+            return `<button type="button" class="selection-action" data-cell-text-toggle="${key}" aria-label="${label}" title="${label}" aria-pressed="${count === cells.length ? "true" : count ? "mixed" : "false"}" ${n.locked ? "disabled" : ""}>${icon(glyph)}</button>`;
+          })
+          .join("")}</div>`
+      : "";
+  const mixed = (key) =>
+    new Set(
+      cells.map(
+        (cell) =>
+          cell[key] ??
+          {
+            fontFamily: "inherit",
+            fontSize: defaultFontSize(n),
+            verticalAlign: "auto",
+          }[key],
+      ),
+    ).size > 1;
   const select = (key, label, choices, current) =>
-    `<label class="object-text-control" title="${label}"><span class="sr-only">${label}</span><select data-text-style="${key}" aria-label="${label}" ${n.locked ? "disabled" : ""}>${choices.map(([v, t]) => `<option value="${esc(v)}" ${String(v) === String(current) ? "selected" : ""}>${esc(t)}</option>`).join("")}</select></label>`;
-  return `<div class="selection-group object-typography" role="group" aria-label="Text appearance">${select(
+    `<label class="object-text-control" title="${label}"><span class="sr-only">${label}</span><select data-text-style="${key}" aria-label="${label}" ${n.locked ? "disabled" : ""}>${mixed(key) ? '<option value="" selected disabled>Mixed</option>' : ""}${choices.map(([v, t]) => `<option value="${esc(v)}" ${!mixed(key) && String(v) === String(current) ? "selected" : ""}>${esc(t)}</option>`).join("")}</select></label>`;
+  return `${emphasis}<div class="selection-group object-typography" role="group" aria-label="Text appearance">${select(
     "fontFamily",
     "Object font",
     objectFonts.map((v) => [v, v === "inherit" ? "Workspace font" : v]),
@@ -103,6 +141,9 @@ export function paintTextStyle(el, n) {
       );
       cell.style.setProperty("--object-font-size", `${data.fontSize || 14}px`);
       for (const text of texts) {
+        text.style.fontWeight = data.bold ? "700" : "";
+        text.style.fontStyle = data.italic ? "italic" : "";
+        text.style.textDecoration = data.strike ? "line-through" : "";
         text.style.fontFamily = "var(--object-font)";
         text.style.fontSize = "var(--object-font-size)";
         text.style.justifyContent =
@@ -212,6 +253,18 @@ export function objectText(ctx, pick) {
     );
   }
   document.addEventListener("click", (e) => {
+    const toggle = e.target.closest("[data-cell-text-toggle]");
+    if (toggle && !toggle.disabled && state.view === "board") {
+      const cells = targets(),
+        key = toggle.dataset.cellTextToggle;
+      if (!cells.length || !["bold", "italic", "strike"].includes(key)) return;
+      const value = !cells.every((cell) => cell[key]);
+      change(() => cells.forEach((cell) => (cell[key] = value)));
+      document
+        .querySelector('[data-selection-menu="text-align"] > summary')
+        ?.focus({ preventScroll: true });
+      return;
+    }
     const a = e.target.closest("[data-object-style]");
     if (a) {
       a.dataset.objectStyle === "copy" ? copy() : paste();

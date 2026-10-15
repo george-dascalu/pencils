@@ -52,7 +52,12 @@ export function canvasControls(ctx, basic) {
   );
   const call = (action) =>
     Promise.resolve(basic.action(action)).catch((e) => toast(e.message, true));
-  const toolDrag = canvasToolDrag(ctx, place);
+  const toolDrag = canvasToolDrag(ctx, place, (taskId, event) => {
+    basic.selected.clear();
+    const node = ctx.addNode("task", taskId, basic.point(event));
+    if (node)
+      $(`[data-node="${CSS.escape(node.id)}"]`)?.focus({ preventScroll: true });
+  });
   function render() {
     const canvas = $("#canvas");
     if (!canvas) return;
@@ -107,9 +112,11 @@ export function canvasControls(ctx, basic) {
       help.textContent =
         state.tool === "frame"
           ? "Drag to draw a frame · Click for 16:9 · Esc to cancel"
-          : placement.includes(state.tool)
-            ? "Click to place · Esc to cancel"
-            : "V select · H hand · Scroll zoom · Shift-scroll pan · F1 shortcuts";
+          : state.tool === "connect"
+            ? "Hover to show connection points · Drag or click two points · Esc to cancel"
+            : placement.includes(state.tool)
+              ? "Click to place · Esc to cancel"
+              : "V select · H hand · Scroll zoom · Shift-scroll pan · F1 shortcuts";
   }
   function tool(value) {
     state.tool = value;
@@ -172,10 +179,19 @@ export function canvasControls(ctx, basic) {
       Math.max(...nodes.map((n) => n.y + n.h)) * state.camera.z +
       state.camera.y;
     const width = toolbar.offsetWidth,
-      height = toolbar.offsetHeight;
-    let y = top - height - 12 - (nodes.some((n) => n.type === "grid") ? 26 : 0);
+      height = toolbar.offsetHeight,
+      handleGap = Math.max(
+        12,
+        (matchMedia("(pointer: coarse)").matches ? 18 : 13) * state.camera.z +
+          4,
+      );
+    let y =
+      top -
+      height -
+      handleGap -
+      (nodes.some((n) => n.type === "grid") ? 26 : 0);
     const safeTop = canvas.clientWidth < 600 ? 160 : 110;
-    if (y < safeTop) y = bottom + 12;
+    if (y < safeTop) y = bottom + handleGap;
     toolbar.style.left = `${Math.max(12, Math.min(canvas.clientWidth - width - 12, (left + right - width) / 2))}px`;
     toolbar.style.top = `${Math.max(safeTop, Math.min(canvas.clientHeight - height - 70, y))}px`;
     basic.positionMenus?.();
@@ -393,7 +409,7 @@ export function canvasControls(ctx, basic) {
         !active() ||
         state.dialog ||
         state.canvasEditing ||
-        e.target.closest(editable)
+        e.target.closest(editable + ",.board-task-editor")
       )
         return;
       if ($("#canvas").classList.contains("presenting")) return;

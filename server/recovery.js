@@ -131,9 +131,22 @@ export function installRecovery(Store) {
       )
         throw new Problem(400, "Version belongs to another record.");
       if (current.data.kind === "task") {
-        const config = schema((await this.read(this.file(current.data.project, "project"))).data.schema);
+        const config = schema(
+          (await this.read(this.file(current.data.project, "project"))).data
+            .schema,
+        );
         this.validateTask(old.data, config);
-        if (!canTransition(config, current.data.status, old.data.status)) throw new Problem(400, transitionError(config, current.data.status, old.data.status));
+        await this.validateParent(
+          current.data.project,
+          old.data.id,
+          old.data.parent,
+        );
+        await this.validateHierarchy(current.data.project, old.data, config);
+        if (!canTransition(config, current.data.status, old.data.status))
+          throw new Problem(
+            400,
+            transitionError(config, current.data.status, old.data.status),
+          );
       }
       // Use the old document as the template so removed properties are restored exactly.
       return this.write(

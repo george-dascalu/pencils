@@ -143,8 +143,7 @@
   stroke-linejoin: round;
   stroke-linecap: round;
 }
-.canvas-lines .canvas-edge:hover,
-.canvas-lines .canvas-edge.selected {
+.canvas-lines .canvas-edge:hover {
   stroke-width: 4;
 }
 .connection-port {
@@ -160,25 +159,26 @@
   touch-action: none;
 }
 .port-top {
-  top: -9px;
+  top: -13px;
   left: calc(50% - 6px);
 }
 .port-bottom {
-  bottom: -9px;
+  bottom: -13px;
   left: calc(50% - 6px);
 }
 .port-left {
-  left: -9px;
+  left: -13px;
   top: calc(50% - 6px);
 }
 .port-right {
-  right: -9px;
+  right: -13px;
   top: calc(50% - 6px);
 }
 .connection-port:hover,
 .connection-port:focus {
   background: #bbd09d;
-  outline: 3px solid #d4e3c0;
+  outline: var(--focus-ring);
+  outline-offset: -1px;
 }
 .board-node.frame > [data-pro="collapse"] {
   position: absolute;
@@ -571,19 +571,23 @@
     height: 24px;
   }
   .port-top {
-    top: -14px;
+    top: -18px;
   }
   .port-bottom {
-    bottom: -14px;
+    bottom: -18px;
   }
   .port-left {
-    left: -14px;
+    left: -18px;
   }
   .port-right {
-    right: -14px;
+    right: -18px;
   }
+  .port-top,
+  .port-bottom { left: calc(50% - 12px); }
+  .port-left,
+  .port-right { top: calc(50% - 12px); }
   .resize-handle {
-    --resize-offset: -11px;
+    --resize-offset: -17px;
     width: 24px !important;
     height: 24px !important;
   }
@@ -860,6 +864,19 @@ body:has(.canvas.board-expanded) {
   background: var(--accent);
 }
 
-.canvas-lines .canvas-edge.selected {
-  filter: drop-shadow(0 0 2px var(--accent));
+/* A separate halo keeps selected lines visible without changing their style. */
+.canvas-lines .connector-selection {
+  stroke: #4276a5;
+  stroke-opacity: 0.3;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  pointer-events: none;
+  opacity: 0;
+}
+.canvas-lines g:has(> .canvas-edge.selected) > .connector-selection {
+  opacity: 1;
+}
+[data-theme="dark"] .canvas-lines .connector-selection {
+  stroke: #8fbbec;
+  stroke-opacity: 0.4;
 }

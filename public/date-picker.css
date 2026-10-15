@@ -1,0 +1,156 @@
+.date-field {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+  min-width: 0;
+}
+.date-field > input {
+  width: 100%;
+  min-width: 0;
+  padding-right: 34px !important;
+}
+.date-field > input::-webkit-calendar-picker-indicator {
+  display: none;
+}
+.date-picker-trigger {
+  position: absolute;
+  right: 3px;
+  top: 3px;
+  bottom: 3px;
+  width: 30px;
+  display: grid;
+  place-items: center;
+  border-radius: 4px;
+  color: var(--ink);
+}
+.date-field:has(input:disabled) .date-picker-trigger,
+.date-field:has(input[readonly]) .date-picker-trigger {
+  display: none;
+}
+.date-picker-trigger:hover {
+  background: var(--surface-soft);
+}
+.date-picker-popover {
+  margin: 0;
+  position: fixed;
+  width: 310px;
+  max-width: calc(100vw - 16px);
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--surface);
+  color: var(--ink);
+  box-shadow: 0 8px 30px #0003;
+  overflow: auto;
+  font: 13px var(--app-font, sans-serif);
+}
+.date-picker-head {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-bottom: 12px;
+}
+.date-picker-head button {
+  padding: 4px 8px;
+  font-size: 24px;
+}
+.date-picker-head select,
+.date-picker-head input {
+  min-width: 0;
+  background: var(--surface);
+  color: var(--ink);
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  padding: 5px;
+  font: inherit;
+}
+.date-picker-head select {
+  flex: 1;
+}
+.date-picker-head input {
+  width: 72px;
+}
+.date-picker-popover table {
+  width: 100%;
+  table-layout: fixed;
+  border-collapse: collapse;
+}
+.date-picker-popover th {
+  padding: 8px 0;
+  font-size: 11px;
+  font-weight: 700;
+}
+.date-picker-popover td {
+  padding: 2px;
+  text-align: center;
+}
+.date-picker-popover td button {
+  display: block;
+  width: 100%;
+  min-height: 32px;
+  border-radius: 5px;
+  font: inherit;
+  font-weight: 600;
+}
+.date-picker-popover .weekend {
+  background: var(--surface-soft);
+  color: var(--muted);
+}
+.date-picker-popover .weekend button {
+  font-weight: 400;
+}
+.date-picker-popover .outside-month button {
+  color: var(--muted);
+  font-weight: 400;
+}
+.date-picker-popover td button:hover {
+  background: var(--surface-soft);
+  box-shadow: inset 0 0 0 1px var(--line);
+}
+.date-picker-popover button[aria-current="date"] {
+  box-shadow: inset 0 0 0 1px var(--green);
+}
+.date-picker-popover td[aria-selected="true"] button {
+  background: var(--green);
+  color: var(--surface);
+  font-weight: 700;
+}
+.date-picker-popover button:disabled {
+  opacity: 0.3;
+  cursor: default;
+}
+.date-picker-popover :focus-visible,
+.date-picker-trigger:focus-visible {
+  outline: var(--focus-ring);
+  outline-offset: -1px;
+}
+.date-picker-foot {
+  display: flex;
+  justify-content: space-between;
+  border-top: 1px solid var(--line);
+  margin-top: 10px;
+  padding-top: 8px;
+}
+.date-picker-foot button {
+  padding: 5px 8px;
+  color: var(--green);
+}
+.calendar > strong:not(.weekend) {
+  color: var(--ink);
+  font-weight: 700;
+}
+.calendar > strong.weekend,
+.calendar .calendar-day.weekend {
+  background: var(--surface-soft);
+  color: var(--muted);
+}
+.calendar .calendar-day.weekend > button:first-child {
+  color: var(--muted);
+}
+.calendar .calendar-day:not(.weekend) > button:first-child {
+  font-weight: 700;
+}
+.calendar .calendar-day.today {
+  box-shadow: inset 0 0 0 2px var(--green);
+}

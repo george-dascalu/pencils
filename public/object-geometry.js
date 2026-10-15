@@ -43,8 +43,25 @@ export function validObjectGeometry(n) {
 }
 export function objectGeometryControls(n, ctx) {
   if (["frame", "grid", "query"].includes(n.type)) return "";
-  const { esc } = ctx;
-  return `<details class="selection-menu" data-selection-menu="geometry"><summary aria-label="Shape, border and rotation" title="Shape, border and rotation">${ctx.icon("shape")}${ctx.icon("chevron")}</summary><div class="selection-popover"><button type="button" data-pro="object-style">Parent frame and appearance</button>${n.type === "shape" ? `<label class="field">Shape<select data-object-geometry="shape">${shapeTypes.map((s) => `<option ${s === (n.shape || "rectangle") ? "selected" : ""}>${s}</option>`).join("")}</select></label>` : ""}<label class="field">Rotation<input data-object-geometry="rotation" aria-label="Object rotation" type="number" min="-360" max="360" value="${n.rotation || 0}"></label><label class="field">Border<select data-object-geometry="borderStyle">${["solid", "dashed", "dotted"].map((s) => `<option ${s === (n.borderStyle || "solid") ? "selected" : ""}>${s}</option>`).join("")}</select></label><label class="field">Border width<select data-object-geometry="borderWidth">${[0, 1, 2, 3, 5, 8].map((v) => `<option ${v === (n.borderWidth ?? 2) ? "selected" : ""}>${v}</option>`).join("")}</select></label>${ctx.colorPicker({ name: "object-border", label: "Border colour", value: n.borderColor || "#82937d" })}${n.type === "image" ? `<strong>Crop (percent)</strong>${["Left", "Top", "Right", "Bottom"].map((label, i) => `<label class="field">${label}<input data-crop-side="${i}" type="range" min="0" max="90" value="${(n.crop?.[i] || 0) * 100}"></label>`).join("")}<button type="button" data-image-command="reset">Reset crop</button><button type="button" data-image-command="replace">Replace image</button>` : ""}</div></details>`;
+  const { icon } = ctx;
+  const field = (label, glyph, control, extra = "") =>
+    `<label class="geometry-field ${extra}" title="${label}">${icon(glyph)}${control}</label>`;
+  const select = (key, label, options, value, suffix = "") =>
+    `<select data-object-geometry="${key}" aria-label="${label}">${options.map((v) => `<option value="${v}" ${v === value ? "selected" : ""}>${typeof v === "string" ? v[0].toUpperCase() + v.slice(1) : v}${suffix}</option>`).join("")}</select>`;
+  return `<details class="selection-menu" data-selection-menu="geometry">
+    <summary aria-label="Shape, border and rotation" title="Shape, border and rotation">${icon("shape")}${icon("chevron")}</summary>
+    <div class="selection-popover geometry-popover" role="group" aria-label="Object appearance">
+      ${n.type === "shape" ? field("Shape", "shape", select("shape", "Shape", shapeTypes, n.shape || "rectangle"), "geometry-wide") : ""}
+      ${field("Rotation (degrees)", "rotate", `<input data-object-geometry="rotation" aria-label="Object rotation" type="number" min="-360" max="360" value="${n.rotation || 0}"><span aria-hidden="true">°</span>`)}
+      ${field("Border width", "stroke-width", select("borderWidth", "Border width", [0, 1, 2, 3, 5, 8], n.borderWidth ?? 2, " px"))}
+      ${field("Border style", "shape", select("borderStyle", "Border style", ["solid", "dashed", "dotted"], n.borderStyle || "solid"), "geometry-wide")}
+      <div class="geometry-footer geometry-wide">
+        <button type="button" data-pro="object-style" aria-label="Parent frame and appearance" title="Parent frame and appearance">${icon("frame")}<span>Frame</span></button>
+        ${ctx.colorPicker({ name: "object-border", label: "Border colour", value: n.borderColor || "#82937d" })}
+      </div>
+      ${n.type === "image" ? `<div class="geometry-crop geometry-wide"><strong>Crop (%)</strong>${["Left", "Top", "Right", "Bottom"].map((label, i) => `<label title="Crop ${label.toLowerCase()}">${label}<input aria-label="Crop ${label.toLowerCase()}" data-crop-side="${i}" type="range" min="0" max="90" value="${(n.crop?.[i] || 0) * 100}"></label>`).join("")}<div class="geometry-footer"><button type="button" data-image-command="reset" title="Reset crop">${icon("rotate")} Reset</button><button type="button" data-image-command="replace" title="Replace image">${icon("image")} Replace</button></div></div>` : ""}
+    </div>
+  </details>`;
 }
 export function paintObjectGeometry(el, n, esc) {
   el.style.rotate = n.rotation ? `${n.rotation}deg` : "";

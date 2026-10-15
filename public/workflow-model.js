@@ -34,3 +34,20 @@ export function transitionError(config, from, to) {
       .join(", ") || "none"
   }.`;
 }
+
+// Consistent hues for built-in statuses and a stable palette for custom workflows.
+export function statusColor(config, status) {
+  if (config.done.includes(status)) return "#648b50";
+  const known = {
+    backlog: "#89928b",
+    todo: "#7a8d79",
+    "in-progress": "#bc9235",
+    review: "#9a79b7",
+  };
+  if (known[status]) return known[status];
+  const colors = ["#488caa", "#ac799d", "#b28a4e", "#6983af", "#629a92"];
+  let hash = 0;
+  for (const character of status)
+    hash = (hash * 31 + character.charCodeAt(0)) >>> 0;
+  return colors[hash % colors.length];
+}

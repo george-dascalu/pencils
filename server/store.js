@@ -1,3 +1,5 @@
+import { commentReactions } from "../public/comment-model.js";
+import { hierarchyError } from "../public/hierarchy-model.js";
 import { canTransition, initialStatus, transitionError } from "../public/workflow-model.js";
 import { directory, projectTeams, membersForProject } from "./teams.js";
 import { validObjectGeometry } from "../public/object-geometry.js";
@@ -672,7 +674,11 @@ export class Store {
           409,
           "Repair unreadable tasks before changing the workflow.",
         );
-      for (const task of items) this.validateTask(task, data.schema);
+      for (const task of items) {
+        this.validateTask(task, data.schema);
+        const error = hierarchyError(data.schema, task, items.find(t => t.id === task.parent));
+        if (error) throw new Problem(400, `${error} Move existing tasks before enforcing these rules.`);
+      }
     }
     if ("views" in input) data.views = validateViews(input.views);
     if ("templates" in input) {
@@ -755,7 +761,47 @@ export class Store {
       throw new Problem(400, "Choose an assignee from a team assigned to this project.");
     data.assignee_id = null;
   }
+  async validateHierarchy(project, data, config, parentTask) {
+    const { items } = await this.children(project, "tasks");
+    const error = hierarchyError(config, data, parentTask || items.find(t => t.id === data.parent));
+    if (error) throw new Problem(400, error);
+    for (const child of items.filter(t => t.parent === data.id)) {
+      const error = hierarchyError(config, child, data);
+      if (error) throw new Problem(400, error);
+    }
+  }
+  async createTaskBundle(project, input) {
+    if (!Array.isArray(input.subtasks) || input.subtasks.length > 100)
+      throw new Problem(400, "Add up to 100 subtasks at a time.");
+    const parent = await this.createTask(project, { ...input, subtasks: undefined }, { prepare: true });
+    const children = [];
+    for (const child of input.subtasks) {
+      if (!child || typeof child !== "object" || Array.isArray(child)) throw new Problem(400, "Invalid subtask.");
+      children.push(await this.createTask(project, { title: child.title, type: child.type, body: child.body, parent: parent.data.id }, { prepare: true, parentTask: parent.data }));
+    }
+    const written = [];
+    try {
+      for (const prepared of [parent, ...children]) {
+        const data = prepared.data;
+        Object.assign(data, await this.ensureTaskIdentities(project, data.id));
+        data.aliases.unshift(data.key);
+        written.push(await this.write(this.file(project, "tasks", data.id), data, prepared.body));
+      }
+      return written[0];
+    } catch (error) {
+      // Validation happens before writing. Undo this bundle if an I/O failure interrupts it.
+      for (const task of written) await fs.rm(this.file(project, "tasks", task.id), { force: true });
+      this.changed();
+      throw error;
+    }
+  }
   async createTask(project, input, internal = {}) {
+    if (!internal.prepare && input.creation_request) {
+      if (typeof input.creation_request !== "string" || !/^[\w-]{1,100}$/.test(input.creation_request)) throw new Problem(400, "Invalid creation request.");
+      const existing = (await this.children(project, "tasks")).items.find(t => t.creation_request === input.creation_request);
+      if (existing) return existing;
+    }
+    if (!internal.prepare && input.subtasks !== undefined) return this.createTaskBundle(project, input);
     if (input.canvas_source) {
       if (
         typeof input.canvas_source !== "string" ||
@@ -775,6 +821,7 @@ export class Store {
     const data = {
       id,
       kind: "task",
+      ...(input.creation_request ? { creation_request: input.creation_request } : {}),
       ...(input.canvas_source ? { canvas_source: input.canvas_source } : {}),
       project,
       title: title(input.title),
@@ -809,9 +856,11 @@ export class Store {
       data.recurrence_source = internal.recurrenceSource;
     await this.assignPerson(project, data, input);
     this.validateTask(data, config);
-    await this.validateParent(project, id, data.parent);
+    if (!internal.parentTask) await this.validateParent(project, id, data.parent);
+    await this.validateHierarchy(project, data, config, internal.parentTask);
     await this.validateDependencies(project, id, data.dependencies);
     const taskBody = body(input.body ?? "");
+    if (internal.prepare) return { data, body: taskBody };
     Object.assign(data, await this.ensureTaskIdentities(project, id));
     data.aliases.unshift(data.key);
     return this.write(this.file(project, "tasks", id), data, taskBody);
@@ -851,6 +900,7 @@ export class Store {
     await this.assignPerson(project, data, input, current.data);
     this.validateTask(data, config);
     await this.validateParent(project, id, data.parent);
+    await this.validateHierarchy(project, data, config);
     await this.validateDependencies(project, id, data.dependencies);
     if (data.title !== current.data.title)
       data.aliases = [
@@ -978,7 +1028,7 @@ export class Store {
       (!background ||
         typeof background !== "object" ||
         Array.isArray(background) ||
-        !["plain", "dots", "grid", "lines"].includes(background.pattern) ||
+        !["plain", "dots", "grid", "fine-grid", "lines"].includes(background.pattern) ||
         ![background.color, background.lineColor].every(
           (value) => value === "auto" || /^#[\da-f]{6}$/i.test(value || ""),
         ) ||
@@ -1087,7 +1137,15 @@ export class Store {
               typeof c.text !== "string" ||
               c.text.length > 10000 ||
               typeof c.author !== "string" ||
-              c.author.length > 100,
+              c.author.length > 100 ||
+              (c.replyTo != null && (typeof c.replyTo !== "string" || c.replyTo.length > 200)) ||
+              (c.deleted != null && typeof c.deleted !== "boolean") ||
+              (c.reactions != null && (!Array.isArray(c.reactions) || c.reactions.length > 5000 || c.reactions.some((r) =>
+                !r || typeof r.id !== "string" || r.id.length > 300 ||
+                typeof r.actor !== "string" || r.actor.length > 200 ||
+                typeof r.author !== "string" || r.author.length > 100 ||
+                !commentReactions.some(([emoji]) => emoji === r.emoji)
+              ))),
           ))
       )
         throw new Problem(400, "Invalid board comments.");

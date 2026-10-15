@@ -123,13 +123,14 @@ try {
   await enter();
   await find("note", "First idea");
   await page.locator("[data-node=note]").dblclick();
-  for (const marker of ["-", "*", "+"]) {
+  for (const marker of ["-", "*", "+", "1.", "1)"]) {
+    const ordered = marker.startsWith("1");
     await content();
     await page.keyboard.type(marker);
     assert.equal(await rich.locator("li").count(), 0);
     await page.keyboard.press("Space");
     assert.equal(
-      await rich.locator("ul > li").count(),
+      await rich.locator(ordered ? "ol > li" : "ul > li").count(),
       1,
       `${marker} and Space create a bullet immediately`,
     );
@@ -140,7 +141,10 @@ try {
     );
     assert.equal(
       await page
-        .getByRole("button", { name: "Bullet list", exact: true })
+        .getByRole("button", {
+          name: ordered ? "Numbered list" : "Bullet list",
+          exact: true,
+        })
         .getAttribute("aria-pressed"),
       "true",
     );
@@ -279,6 +283,35 @@ try {
   assert.equal((await rich.innerText()).replaceAll("\u00a0", " "), "- ");
   assert.equal(await rich.locator("li").count(), 0);
   await page.locator('[data-pro="search-toggle"]').click();
+  // The direct numbered-list button saves portable Markdown and survives reload.
+  await find("note", "-");
+  await page.locator("[data-node=note]").dblclick();
+  if (await page.locator('[data-rich-mode="rich"]').isVisible())
+    await page.locator('[data-rich-mode="rich"]').click();
+  await content();
+  await page
+    .getByRole("button", { name: "Numbered list", exact: true })
+    .click();
+  await page.keyboard.type("First numbered point");
+  await page.keyboard.press("Enter");
+  await page.keyboard.type("Second numbered point");
+  assert.deepEqual(await rich.locator("ol > li").allTextContents(), [
+    "First numbered point",
+    "Second numbered point",
+  ]);
+  await page.locator('[data-pro="search-toggle"]').click();
+  await until(async () =>
+    (await current()).nodes
+      .find((n) => n.id === "note")
+      .text.includes("Second numbered point"),
+  );
+  assert.match(
+    (await current()).nodes.find((n) => n.id === "note").text,
+    /^1\. +First numbered point\n2\. +Second numbered point/,
+  );
+  await page.reload();
+  await find("note", "First numbered point");
+  assert.equal(await page.locator('[data-node="note"] ol > li').count(), 2);
   assert.deepEqual(errors, []);
   assert.deepEqual(external, []);
   console.log(

@@ -15,28 +15,52 @@ export function connectorToolbar(
       headSample(edge[key] || fallback, key === "fromEnd"),
       `<strong>${label}</strong>${arrowHeads.map(([value, name]) => `<button type="button" class="selection-action" data-edge-head="${key}" data-value="${value}" aria-label="${label}: ${name}" aria-pressed="${(edge[key] || fallback) === value}">${headSample(value, key === "fromEnd")}<span class="selection-action-label">${name}</span></button>`).join("")}`,
     );
-  const route = [
-    [
+  const lineIcon = (key, value) => {
+    const path =
+      key === "routing"
+        ? {
+            curve: "M3 19C3 5 21 19 21 5",
+            elbow: "M3 19V12H21V5",
+            straight: "M3 19L21 5",
+          }[value]
+        : "M3 12H21";
+    const dash =
+      key === "lineStyle"
+        ? {
+            dashed: 'stroke-dasharray="5 4"',
+            dotted: 'stroke-dasharray="1 4"',
+          }[value] || ""
+        : "";
+    return `<svg class="icon connector-line-icon" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="${key === "width" ? value : 1.6}" stroke-linecap="round" stroke-linejoin="round"><path d="${path}" stroke-width="${key === "width" ? value : 1.6}" ${dash}/></svg>`;
+  };
+  const choiceLabel = (key, value) =>
+    key === "width" ? `${value} px` : value[0].toUpperCase() + value.slice(1);
+  const lineMenu = (key, label, options, value) =>
+    menu(
+      key,
+      `${label}: ${choiceLabel(key, value)}`,
+      key === "width" ? icon("stroke-width") : lineIcon(key, value),
+      `<strong>${label}</strong>${options.map((option) => `<button type="button" class="selection-action" data-edge-choice="${key}" data-value="${option}" aria-label="${label}: ${choiceLabel(key, option)}" aria-pressed="${option === value}">${lineIcon(key, option)}<span class="selection-action-label">${choiceLabel(key, option)}</span></button>`).join("")}`,
+    );
+  const route =
+    lineMenu(
       "routing",
       "Route",
       ["curve", "elbow", "straight"],
       edge.routing || "curve",
-    ],
-    [
+    ) +
+    lineMenu(
       "lineStyle",
       "Stroke",
       ["solid", "dashed", "dotted"],
       edge.lineStyle || "solid",
-    ],
-    ["width", "Thickness", ["1", "2", "3", "5"], String(edge.width || 2)],
-  ]
-    .map(([key, label, options, value]) =>
-      field(key, label, options, value).replace(
-        'class="field"',
-        'class="field connector-inline-field"',
-      ),
-    )
-    .join("");
+    ) +
+    lineMenu(
+      "width",
+      "Thickness",
+      ["1", "2", "3", "5"],
+      String(edge.width || 2),
+    );
   const label = menu(
     "label",
     "Connector label",

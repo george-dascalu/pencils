@@ -9,11 +9,17 @@ export function projectPeople(state) {
   );
   return (state.organisation?.people || []).filter((p) => ids.has(p.id));
 }
+export function assigneeHint(state) {
+  if (projectPeople(state).length) return "";
+  if (!state.project?.teams?.length)
+    return "No teams assigned. Select a team in Project settings to make its members available as assignees.";
+  return "The project's teams have no members. Open Teams in the sidebar, select the people in each team and save. Adding someone to People alone does not add them to a team.";
+}
 export function assigneeOptions(state, current, esc) {
   const people = projectPeople(state);
   return `<option value="">Unassigned</option>${current && !people.some((p) => p.name === current) ? `<option selected value="${esc(current)}">${esc(current)} (previous assignment)</option>` : ""}${people.map((p) => `<option value="${esc(p.name)}" ${p.name === current ? "selected" : ""}>${esc(p.name)}</option>`).join("")}`;
 }
-export function organisationTeams(form, organisation, esc) {
+export function organisationTeams(form, organisation, esc, mode = "all") {
   let people = structuredClone(organisation?.people || []),
     teams = structuredClone(organisation?.teams || []);
   const host = document.createElement("section");
@@ -24,7 +30,7 @@ export function organisationTeams(form, organisation, esc) {
     form.elements.teams.value = JSON.stringify(teams);
   }
   function paint() {
-    host.innerHTML = `<input type="hidden" name="people"><input type="hidden" name="teams"><h3>People</h3><p class="field-hint">People can belong to several teams. Weekly task limits are optional. Leave blank to track workload without a limit. No login account is required.</p><div class="people-list">${people.map((p) => `<div class="person-row" data-person="${esc(p.id)}"><input aria-label="Person name" data-person-field="name" value="${esc(p.name)}" placeholder="Name" maxlength="100" required><label>Tasks / week<input aria-label="Weekly task limit for ${esc(p.name)}" data-person-field="task_capacity" type="number" min="0" max="10000" step="1" value="${p.task_capacity ?? ""}"></label><button type="button" class="button small" data-remove-person="${esc(p.id)}" aria-label="Remove ${esc(p.name)}">×</button></div>`).join("")}</div><button type="button" class="button small" data-add-person>Add person</button><h3>Teams</h3><p class="field-hint">Choose which people belong to each team. Assign teams to projects in Project settings.</p>${teams.map((t) => `<fieldset data-team="${esc(t.id)}"><div class="team-heading"><input aria-label="Team name" data-team-name value="${esc(t.name)}" placeholder="Team name" maxlength="100" required><button type="button" class="button small" data-remove-team="${esc(t.id)}">Remove team</button></div><div class="team-members">${people.map((p) => `<label><input type="checkbox" data-member="${esc(p.id)}" ${t.members.includes(p.id) ? "checked" : ""}> <span data-person-name="${esc(p.id)}">${esc(p.name || "Unnamed person")}</span></label>`).join("") || "<p>Add people above to choose members.</p>"}</div></fieldset>`).join("")}<button type="button" class="button small" data-add-team>Add team</button>`;
+    host.innerHTML = `<input type="hidden" name="people"><input type="hidden" name="teams"><div data-directory-section="people" ${mode === "teams" ? "hidden" : ""}><h3>People</h3><p class="field-hint">People can belong to several teams. Weekly task limits are optional. Leave blank to track workload without a limit. No login account is required.</p><div class="people-list">${!people.length ? '<p class="directory-empty">No people yet. Add someone to start building your teams.</p>' : ""}${people.map((p) => `<div class="person-row" data-person="${esc(p.id)}"><input aria-label="Person name" data-person-field="name" value="${esc(p.name)}" placeholder="Name" maxlength="100" required><label>Tasks / week<input aria-label="Weekly task limit for ${esc(p.name)}" data-person-field="task_capacity" type="number" min="0" max="10000" step="1" value="${p.task_capacity ?? ""}"></label><button type="button" class="button small" data-remove-person="${esc(p.id)}" aria-label="Remove ${esc(p.name)}">×</button></div>`).join("")}</div><button type="button" class="button small" data-add-person>Add person</button></div><div data-directory-section="teams" ${mode === "people" ? "hidden" : ""}><h3>Teams</h3><p class="field-hint">Choose which people belong to each team. Assign teams to projects in Project settings.</p>${!teams.length ? '<p class="directory-empty">No teams yet. Add a team, then choose its members.</p>' : ""}${teams.map((t) => `<fieldset data-team="${esc(t.id)}"><div class="team-heading"><input aria-label="Team name" data-team-name value="${esc(t.name)}" placeholder="Team name" maxlength="100" required><button type="button" class="button small" data-remove-team="${esc(t.id)}">Remove team</button></div><div class="team-members">${people.map((p) => `<label><input type="checkbox" data-member="${esc(p.id)}" ${t.members.includes(p.id) ? "checked" : ""}> <span data-person-name="${esc(p.id)}">${esc(p.name || "Unnamed person")}</span></label>`).join("") || "<p>Add people to the organisation to choose members.</p>"}</div></fieldset>`).join("")}<button type="button" class="button small" data-add-team>Add team</button></div>`;
     sync();
   }
   host.addEventListener("input", (e) => {
@@ -100,7 +106,7 @@ export function projectTeamControls(form, state, esc) {
     const org = state.organisations.find(
       (o) => o.id === form.elements.organisation.value,
     );
-    host.innerHTML = `<legend>Project teams</legend><input type="hidden" name="teams" value="${esc(JSON.stringify(selected))}"><div class="team-members">${(org?.teams || []).map((t) => `<label><input type="checkbox" data-project-team="${esc(t.id)}" ${selected.includes(t.id) ? "checked" : ""}> ${esc(t.name)} <small>(${t.members.length})</small></label>`).join("") || '<p class="field-hint">Create teams and add people in Organisation settings first.</p>'}</div><p class="field-hint">Assignees come from the selected teams. A person in several teams appears once.</p>`;
+    host.innerHTML = `<legend>Project teams</legend><input type="hidden" name="teams" value="${esc(JSON.stringify(selected))}"><div class="team-members">${(org?.teams || []).map((t) => `<label><input type="checkbox" data-project-team="${esc(t.id)}" ${selected.includes(t.id) ? "checked" : ""}> ${esc(t.name)} <small>(${t.members.length ? `${t.members.length} members` : "No members"})</small></label>`).join("") || '<p class="field-hint">Add people and teams from the Teams section in the sidebar first.</p>'}</div><p class="field-hint">Assignees come from the selected teams. A person in several teams appears once.</p>`;
   }
   host.addEventListener("change", (e) => {
     if (!e.target.dataset.projectTeam) return;

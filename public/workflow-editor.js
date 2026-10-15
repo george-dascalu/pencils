@@ -1,3 +1,4 @@
+import { hierarchyRules } from "./hierarchy-model.js";
 import { initialStatus, statusLabel } from "./workflow-model.js";
 export function workflowEditor(form, config, tasks, { esc, icon }) {
   let model = structuredClone(config);
@@ -39,6 +40,11 @@ export function workflowEditor(form, config, tasks, { esc, icon }) {
       .join(
         "",
       )}</div><div class="workflow-add"><input data-new-status placeholder="New status name…" aria-label="New status name" maxlength="100"><button type="button" class="button small" data-status-add>${icon("plus")}Add status</button></div><p class="field-hint">Default is used for new tasks unless a status is chosen explicitly. Order alone does not restrict moves. Existing tasks and archived tasks keep their status.</p><p class="form-error" data-workflow-error hidden></p>`;
+    const h = hierarchyRules(model);
+    host.insertAdjacentHTML(
+      "beforeend",
+      `<section class="hierarchy-editor" aria-label="Cards Hierarchies"><h3>Cards Hierarchies</h3><label class="field">Hierarchy mode<select data-hierarchy-mode><option value="free" ${h.mode === "free" ? "selected" : ""}>Freeflow</option><option value="enforced" ${h.mode === "enforced" ? "selected" : ""}>Enforce rules</option></select></label><p class="field-hint">${h.mode === "free" ? "Any card type can parent any other type. Your rules below are kept for later." : "Only checked relationships are allowed. Existing tasks must match before these rules can be saved."} Cycles are never allowed.</p><div class="hierarchy-table-wrap"><table class="hierarchy-table"><caption>Rows are parents; columns are allowed child types.</caption><thead><tr><th>Parent / child</th>${model.types.map((t) => `<th>${icon(t)} ${esc(t)}</th>`).join("")}</tr></thead><tbody>${[null, ...model.types].map((parent) => `<tr><th>${parent === null ? "No parent (top level)" : esc(parent)}</th>${model.types.map((child) => `<td><input type="checkbox" data-hierarchy-parent="${parent ?? ""}" data-hierarchy-child="${esc(child)}" aria-label="${esc(parent ?? "No parent")} allows ${esc(child)}" ${(parent === null ? h.roots : h.children[parent] || []).includes(child) ? "checked" : ""}></td>`).join("")}</tr>`).join("")}</tbody></table></div><p class="field-hint">Uncheck a type in “No parent” to require a parent. Uncheck an entire parent row to prevent that type having children.</p></section>`,
+    );
     sync();
   }
   function changed() {
@@ -62,6 +68,26 @@ export function workflowEditor(form, config, tasks, { esc, icon }) {
   host.addEventListener("change", (e) => {
     const el = e.target,
       id = el.closest("[data-workflow-status]")?.dataset.workflowStatus;
+    if (
+      el.hasAttribute("data-hierarchy-mode") ||
+      el.hasAttribute("data-hierarchy-child")
+    ) {
+      model.hierarchy = structuredClone(hierarchyRules(model));
+      if (el.hasAttribute("data-hierarchy-mode"))
+        model.hierarchy.mode = el.value;
+      else {
+        const parent = el.dataset.hierarchyParent,
+          child = el.dataset.hierarchyChild;
+        const targets = parent
+          ? model.hierarchy.children[parent]
+          : model.hierarchy.roots;
+        if (el.checked) targets.push(child);
+        else targets.splice(targets.indexOf(child), 1);
+      }
+      changed();
+      if (el.hasAttribute("data-hierarchy-mode")) paint();
+      return;
+    }
     if (el.hasAttribute("data-status-name")) {
       changed();
       return;
@@ -155,6 +181,37 @@ export function workflowEditor(form, config, tasks, { esc, icon }) {
       e.preventDefault();
       host.querySelector("[data-status-add]").click();
     }
+  });
+  form.elements.types?.addEventListener("change", () => {
+    const types = [
+      ...new Set(
+        form.elements.types.value
+          .split(",")
+          .map((t) => t.trim())
+          .filter(Boolean),
+      ),
+    ];
+    if (!types.length) return;
+    const h = hierarchyRules(model),
+      oldTypes = model.types;
+    model.hierarchy = {
+      mode: h.mode,
+      roots: [
+        ...h.roots.filter((t) => types.includes(t)),
+        ...types.filter((t) => !oldTypes.includes(t)),
+      ],
+      children: Object.fromEntries(
+        types.map((t) => [
+          t,
+          oldTypes.includes(t)
+            ? (h.children[t] || []).filter((c) => types.includes(c))
+            : [...types],
+        ]),
+      ),
+    };
+    model.types = types;
+    paint();
+    changed();
   });
   paint();
   return () => {

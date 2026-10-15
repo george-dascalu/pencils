@@ -161,8 +161,10 @@
 #canvas-inline-form :is(.inline-rich, .inline-preview) {
   flex: 0 1 auto;
 }
-#canvas-inline-form .inline-rich:focus {
-  outline: none;
+#canvas-inline-form .inline-rich:focus,
+[data-inline-title][contenteditable="true"]:focus {
+  outline: var(--focus-ring);
+  outline-offset: -1px;
 }
 #canvas-inline-form .inline-rich[data-empty="true"]::before {
   content: attr(data-placeholder);
@@ -366,4 +368,37 @@
   font: 500 12px/1.4 var(--app-font, sans-serif);
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
+}
+
+/* Keep editable task metadata within even the smallest supported card. */
+.live-card-state > select {
+  flex: 1 1 80px;
+  text-overflow: ellipsis;
+}
+.live-card-state .canvas-task-assignee {
+  max-width: 160px;
+}
+.canvas-task-priority {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 28px;
+  width: 28px;
+  height: 26px;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: var(--surface-soft);
+}
+.canvas-task-priority:focus-within {
+  outline: var(--focus-ring);
+  outline-offset: -1px;
+}
+.live-card-state .canvas-task-priority select {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
 }

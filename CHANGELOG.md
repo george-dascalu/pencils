@@ -4,6 +4,183 @@ User-facing additions, changes and fixes, newest first. Dates use Europe/London 
 
 ## Unreleased
 
+## 0.14.25 — 2026-10-15
+
+### Changed
+
+- Existing task editors now use the same field order and spacing as New task: priority/status/assignee, then parent/due date, followed by description and subtasks, across desktop and mobile.
+
+## 0.14.24 — 2026-10-15
+
+### Changed
+
+- New task forms show type and title together, then priority/status/assignee, parent/due date, and description. Planning & Relationships is removed from creation forms.
+- Create another keeps the form open after a successful creation, retaining type, parent, status, priority, assignee and due date while clearing title, description and subtasks.
+
+## 0.14.23 — 2026-10-15
+
+### Changed
+
+- Board comments support threaded replies, deletion and five toggleable emoji reactions (👍 ❤️ 😂 🎉 👀). Resolve/Reopen has been removed; previously resolved comments remain visible. Deleting a parent preserves its replies, and comment counts reflect all remaining comments and replies.
+
+## 0.14.22 — 2026-10-15
+
+### Changed
+
+- Connect two objects reveals connection points on hovered objects. Drag between points or click a start and end point to attach a curved arrow to specific sides; Escape cancels.
+
+## 0.14.21 — 2026-10-15
+
+### Changed
+
+- Moved board resize handles and connection points slightly farther outside objects to reduce overlap with their borders and content, including touch controls.
+
+## 0.14.20 — 2026-10-15
+
+### Changed
+
+- Board task cards show Comments beside the title, immediately left of Expand, with the unresolved count on the icon. The duplicate task toolbar action has been removed; other object comment controls are unchanged.
+
+## 0.14.19 — 2026-10-15
+
+### Changed
+
+- Object appearance uses a smaller icon-led popup, with rotation and border width side by side, compact border controls, and quick access to frame settings and border colour.
+
+## 0.14.18 — 2026-10-15
+
+### Changed
+
+- Expanding a task card on the board opens the same compact, nonmodal side panel used for New task. Existing task details, subtasks, save and footer actions remain available, with version history beside the panel on wide screens and inside it on small screens.
+
+## 0.14.17 — 2026-10-15
+
+### Changed
+
+- Board settings apply automatically as you change them, with Ctrl/Cmd+Z undo and redo available inside the popup. Reset sits beside Close; Apply and Cancel buttons have been removed.
+- Object comments open in a compact chat-style panel to the right of the object, with a scrollable thread, composer, Resolve/Reopen controls and retained drafts.
+- Removed Choose heading or block and Backlinks actions, dialogs and task backlinks UI. Existing saved note references remain readable.
+
+## 0.14.16 — 2026-10-15
+
+### Fixed
+
+- Focus rings are now a thin 1px inset line, so all sides remain visible inside clipped cards, grid cells and toolbars. Board assignee, status and priority controls share the same treatment, as do form fields, menus and colour pickers.
+
+## 0.14.15 — 2026-10-15
+
+### Fixed
+
+- The task type selector no longer overlaps the title in the board’s New task panel, including on narrow screens.
+- Focus indicators use a slimmer, theme-aware green ring across fields, menus, toolbars and colour pickers, replacing the thick blue outline while preserving visible keyboard focus.
+
+## 0.14.14 — 2026-10-15
+
+### Changed
+
+- Creating a task on the board opens a compact, nonmodal side panel in place of the Project tasks list. The canvas remains usable; Back returns to the list, unsaved drafts can be restored, and creating a task returns to the list. The form retains rich descriptions, metadata, subtasks and planning fields.
+- Board task cards show the title and expand button first, then ID, priority, status and assignee in one row, with the description below. Priority and status have coloured backgrounds in light and dark themes, including custom workflow statuses.
+
+## 0.14.13 — 2026-10-15
+
+### Added
+
+- Drag tasks from the board’s Project tasks list onto the canvas. A scaled card preview follows the pointer, and dropping creates a linked card at that position without changing the camera. Escape or dropping outside the board cancels; click-to-place and undo/redo remain available. Touch users can drag sideways from a task while vertical gestures scroll the list.
+
+## 0.14.12 — 2026-10-15
+
+### Added
+
+- Draft subtasks while creating a task, with a type selector and removable drafts. Creating the parent also creates its subtasks with unique project IDs; validation runs before saving and retries do not duplicate the group.
+- Project settings includes Cards Hierarchies: choose Freeflow or enforce allowed parent/child types and which types may exist without a parent. Rules apply across views and task history restoration, and incompatible existing tasks must be resolved before enabling them.
+- A Project tasks icon in the board’s left toolbar opens a searchable list with status, type, assignee and board-placement filters. Place linked cards or create a new project task without changing the camera.
+
+### Changed
+
+- Removed the board’s + Add menu. Existing creation tools remain in the left toolbar or More menu, including live notes, live task views and images.
+- Date fields share a Monday-first calendar with stronger weekdays, quieter weekends, keyboard navigation, month/year selection, Today and Clear. The Calendar view also distinguishes weekdays from weekends.
+
+## 0.14.11 — 2026-10-15
+
+### Added
+
+- Board settings offers a Fine grid background with small squares and stronger lines every five squares. Colours and spacing are configurable, follow pan and zoom, and are saved per board.
+
+## 0.14.10 — 2026-10-15
+
+### Added
+
+- Change task priority and assignee directly on board cards. Assignees use project team members, and changes update the underlying project task.
+
+### Changed
+
+- Numbered lists have their own button beside bullets in all rich-text toolbars. Typing `1.` or `1)` followed by Space starts a numbered list.
+
+## 0.14.9 — 2026-10-15
+
+### Fixed
+
+- Grid titles stay anchored to the top edge when zooming in. Column controls follow the title, while titles and drag handles retain their readable screen size.
+
+## 0.14.8 — 2026-10-15
+
+### Fixed
+
+- Empty task assignee lists explain whether the project needs a team or its teams need members. Project settings clearly identify teams with no members.
+
+## 0.14.7 — 2026-10-14
+
+### Changed
+
+- Connector thickness uses an icon dropdown with visual line-weight choices, matching Route and Stroke for single and multiple arrows.
+- Colour menus use two compact rows: seven system colours, then a multicolour picker button and six recent colours. Spectrum, hue and hex controls expand on demand.
+
+## 0.14.6 — 2026-10-14
+
+### Added
+
+- Every shared colour menu now includes a visual saturation/brightness picker, a hue slider and a matching hex preview, with pointer and keyboard controls.
+- The 14 most recently used colours are shared across component and settings menus in this browser, deduplicated and remembered after refresh.
+
+### Fixed
+
+- Nested border colour menus stay within the viewport and close independently of their appearance menu.
+
+## 0.14.5 — 2026-10-14
+
+### Added
+
+- Grid row and column selections can apply bold, italic, strikethrough, font, size and alignment across all selected cells. Formatting controls identify the selected row or column and show mixed values; Enter or Space selects a focused row/column header.
+
+### Changed
+
+- Board settings opens as an anchored popover instead of a full modal. It preserves naming, snapping, background and display controls, closes on outside click or Escape, and fits smaller screens and expanded boards.
+
+## 0.14.4 — 2026-10-14
+
+### Fixed
+
+- Every selected board arrow now has a clear highlight, including multi-selection, selection boxes and mixed object selections. Highlights preserve line colours and styles and stay out of exports.
+
+## 0.14.3 — 2026-10-14
+
+### Changed
+
+- Connector toolbars use visual Route and Stroke menus with current-style previews, smaller arrowhead icons and more spacing between controls.
+
+## 0.14.2 — 2026-10-14
+
+### Changed
+
+- Moved the Teams and People sidebar section below Projects.
+
+## 0.14.1 — 2026-10-14
+
+### Added
+
+- A Teams section in the sidebar opens dedicated Teams and People pages for the current organisation, with membership editing and optional weekly task limits.
+- Directory pages support direct links, refresh, organisation switching and recoverable browser drafts. Restoring an older draft cannot overwrite newer saved organisation changes.
+
 ## 0.14.0 — 2026-10-14
 
 ### Added
