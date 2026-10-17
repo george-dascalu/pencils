@@ -4,6 +4,235 @@ User-facing additions, changes and fixes, newest first. Dates use Europe/London 
 
 ## Unreleased
 
+## 0.15.5 — 2026-10-17
+
+### Added
+
+- Boards have a dedicated Images / GIFs button and support dropping image files onto the canvas. Import multiple PNG, JPG, WebP or GIF files at once, with original GIF animation, proportional display, selection, resizing and undo.
+
+### Changed
+
+- Tasks now contains List, Tree, Table and Kanban. Calendar, Timeline and Capacity live under Planning, with the last layout remembered per project on desktop and mobile.
+- Draft task edits save automatically, including descriptions and subtasks. A Finalise task icon in the editor opens a compact review panel beside the card, without covering the board.
+
+## 0.15.4 — 2026-10-17
+
+### Fixed
+
+- Note text editors now fill the entire note in rich text, Markdown and preview modes, including after resizing. Text keeps its padding and vertical alignment, and overflowing content remains scrollable.
+
+## 0.15.3 — 2026-10-17
+
+### Changed
+
+- Removed automatic text shrinking from object and grid formatting. Font controls now give more width to the font name and use a narrower size selector in both formatting menus and inline editors.
+
+## 0.15.2 — 2026-10-17
+
+### Changed
+
+- Renamed the Board view to Boards across desktop navigation, mobile view selection, the command palette, the default-view setting and its canvas menu.
+
+## 0.15.1 — 2026-10-17
+
+### Changed
+
+- Board is the single canvas view, combining tasks, notes, images and drawing. Its Board menu includes the canvas gallery, task links, local checkpoints and offline drawing tools; existing drawings and drawing links continue to work.
+- Pencil drawing, finger selection/panning/pinch zoom and configurable gestures now work on every board. Pending offline edits are checked before opening any canvas, with guarded sync or restore-as-copy recovery.
+
+## 0.15.0 — 2026-10-17
+
+### Added
+
+- Table columns can be reordered by dragging their headers, with a drop marker and automatic horizontal scrolling. Mouse, touch and Alt + Left/Right keyboard controls share the existing column settings and saved views; clicking still sorts and header edges still resize.
+
+- Drawing gesture settings configure canvas double-tap, two-finger tap and supported pen side buttons, with pen/eraser, undo, redo and fit actions. Preferences are shared between Personal settings and Pen preferences in this browser; Apple Pencil barrel-tap limitations are explained.
+- Projects can combine Obsidian, Jira Cloud and SharePoint Excel sources, with mapping previews, stable IDs, private source ownership, source badges, conflict review and sync/publish logs. Reads are opt-in; explicit Jira and conservative Obsidian publication capabilities are separate from local edits. Excel remains read-only.
+- Drawing view provides a gallery, task links, shared pen/layer/reference/export tools, device checkpoints and an offline ink pad with guarded reconnect or restore-as-copy recovery.
+- Project automation offers manual, status-change and due-date triggers, disabled rules, previews, bounded actions and run logs.
+- Keyboard connection controls select objects and ports and can create real task dependencies. Unavailable cards can be detached as notes; draft finalisation has a review step.
+- Workspace diagnostics, a rebuildable SQLite search/query index, recoverable write journaling and scoped record updates improve recovery and refresh behaviour.
+
+- Task details use a shared compact side panel with resize controls; Ctrl/Cmd+K opens task actions, views and settings.
+- Tables support personal and shared saved views, nested AND/OR filters, column action menus, group summaries, parent/child outlines, pinned identity columns and keyboard cell navigation.
+- Table bulk actions state their scope. Clipboard imports offer column mapping and validation before applying; CSV exports include all matching rows and protect against spreadsheet formulas.
+- Schedule previews explain dependency/date conflicts before moving downstream tasks. Capacity supports estimated hours, individual working days, time off and allocation across accessible projects.
+- Project frame updates preview added, removed and moved cards, preserve placement by default and offer explicit rearrangement.
+- Board search lists object states and allows returning to the previous viewport.
+- Calendar has an agenda layout, quick date editing and an unscheduled task tray. Phones initially use the agenda.
+- Personal settings offer compact or comfortable spacing, and project navigation includes a mobile view switcher.
+- Project backups can be uploaded as ZIP files up to 220 MB and verified before restoring. Recovery explains the archive's scope and expanded size limits.
+
+### Changed
+
+- List, Tree and Table share one Tasks tab, with a compact layout selector inside it on desktop and mobile. Tasks remembers the last layout used for each project.
+- Table headers are shorter, with full-height sorting, filter and column-menu click targets. Touch screens retain larger controls; columns scroll together on small screens so pinned headers cannot cover these controls.
+- Table columns open in a compact popover beneath Columns. Visibility and order update immediately while the popover stays open; Escape or clicking outside dismisses it.
+- Saved views sit beside shared query controls. Board scope explains task cards, distinct tasks, drafts and unavailable cards; save messages distinguish pending, saved and conflicting edits.
+- Pen input uses adaptive stabilisation, adjustable pressure response, movable/left-handed tools and finger navigation in Drawing mode. Orthogonal connectors avoid nearby card obstacles while retaining stable label anchors.
+
+- Recurrence controls explain the next occurrence and link previous/next instances.
+- Active pen strokes render incrementally and retain sample timing and tilt with pressure.
+- Shared form menus clamp to the visible viewport, including the on-screen keyboard. Reduced-motion settings suppress decorative transitions.
+- Overview metrics open the corresponding task lists. Task views explain matching totals, archive counts and hierarchy context.
+
+### Fixed
+
+- Clicking anywhere on a Kanban card, including its padding and metadata, opens the full shared task editor. Title keyboard access and dragging cards between columns are preserved.
+- In Drawing, fingers select, move and resize objects or pan and pinch the canvas without drawing or erasing. Pencil contact rejects palm input, and adding a second finger cancels an object drag before navigating. Background updates wait for active gestures or open pen preferences.
+- Safari/WebKit keeps project links visible in the scrolling sidebar, and direct drawing links check for unsynced device changes before opening the canvas.
+- Shared toolbar dropdowns keep consistent sizes across browsers. The prepared offline drawing shell opens from its cache without waiting for the network.
+- Change notifications no longer rebuild the current view when its saved version is already displayed.
+- View navigation waits for a project to finish loading, preventing quick tab clicks from being lost during snapshot loading.
+- Pending offline drawing checkpoints survive reopening and offline preparation; related vault writes notify clients only after commit.
+- Shared secondary text meets the automated light/dark contrast checks; table resize handles expose accessible values, and wrapped mobile toolbars remain usable with an open menu.
+- Provider-owned task controls are read-only, and revoked project access clears the active project display.
+
+- Timeline provides explicit paging beyond 200 dated tasks. Kanban counts the full filtered columns and loads more cards within each column. Tree pagination keeps complete subtrees and includes ancestors of filtered matches.
+- Deadline filters consistently use the local calendar date.
+- Backup creation and the new upload path share restore limits, preventing creation of unsupported archives.
+
+## 0.14.45 — 2026-10-16
+
+### Added
+
+- Table view gains collapsible field groups (including nested groups), multi-column sorting, and column filters for values, text, empty fields and number/date ranges. Active filters and sorting are marked in column headers, with matching task counts and reset controls.
+- Table preferences are remembered per project in this browser and included in shared saved views. Grouping, sorting and filtering support custom fields and apply before pagination; bulk actions only affect visible selected rows.
+
+## 0.14.44 — 2026-10-16
+
+### Added
+
+- Notes now offer five visual styles in the appearance menu: Classic, Square, Rounded, Top fold and Bottom fold. Styles preserve note colours and formatting, support undo and copy/paste formatting, and are retained in saved boards and image exports.
+
+## 0.14.43 — 2026-10-16
+
+### Added
+
+- Drag the Grid icon from the board sidebar to place a grid, with a live cell preview that follows the pointer at the current zoom. Drop outside the canvas or press Escape to cancel; placement supports undo.
+
+### Changed
+
+- Grid formatting uses the shared compact icon palette for horizontal and top/middle/bottom alignment, including cell, row and column selections.
+
+## 0.14.42 — 2026-10-16
+
+### Changed
+
+- Text formatting now uses a compact icon palette for horizontal alignment, top/middle/bottom alignment, automatic vertical alignment and copy/paste formatting. The same controls support selected objects and grid cells, rows or columns, with tooltips and keyboard access.
+
+## 0.14.41 — 2026-10-16
+
+### Fixed
+
+- Arrow text now uses continuous glyph scaling during zoom, eliminating the small jumps caused by font metrics snapping between zoom levels.
+
+## 0.14.40 — 2026-10-16
+
+### Fixed
+
+- Arrow labels retain their SVG elements during zoom and pan, preventing repeated text replacement and flickering. Connector hit areas and handles still adjust to the zoom level.
+
+## 0.14.39 — 2026-10-16
+
+### Added
+
+- Press Enter with one arrow selected to open and focus its label editor. Type the label and press Enter again to save it.
+
+## 0.14.38 — 2026-10-16
+
+### Fixed
+
+- Update plan aligns dependency chains from left to right instead of scattering tasks across separate rows. Dependency arrows now take the short route between separated cards, while parent/child groups stay indented and avoid overlapping.
+
+## 0.14.37 — 2026-10-16
+
+### Added
+
+- Deleted board cards now offer Restore task, reconnecting all their board cards and retaining their original content and ID. Archived cards offer Unarchive directly. Task restoration respects project editing permissions and never overwrites an existing task.
+
+## 0.14.36 — 2026-10-16
+
+### Fixed
+
+- Board cards now identify archived tasks and show a Deleted task placeholder, with its title and ID, when the linked task is in the trash. Missing or unreadable task files show Task unavailable instead of stale editing controls.
+
+## 0.14.35 — 2026-10-16
+
+### Changed
+
+- Project frames can now be drawn or placed on the board like regular frames. Use Update plan to fill them with tasks. Creating or updating a Project frame keeps the current zoom and canvas position.
+
+## 0.14.34 — 2026-10-16
+
+### Added
+
+- Project frames create and refresh a project task plan on the board, with labelled dependency arrows and indented parent–child relationships. Updates reuse generated cards, preserve unrelated board content and support undo.
+- Interactive visual editors for project workflow transitions and card hierarchy rules, with selectable cards, connection arrows and keyboard-accessible controls.
+
+### Changed
+
+- Dependency arrow styles now live in Board settings and apply per board. Changes save immediately and support undo and reset. Existing project styles remain the starting appearance for boards that have not chosen their own style.
+
+## 0.14.33 — 2026-10-16
+
+### Added
+
+- Project settings now define dependency arrow colour, stroke, thickness and arrowhead with a live preview. Every dependency arrow in the project, including exports, uses this shared style; ordinary connectors retain their own appearance.
+- Dependency arrows have a distinct purple dashed style by default and a toolbar shortcut to their project style settings.
+
+## 0.14.32 — 2026-10-16
+
+### Changed
+
+- Start date sits beside Due date in task creation, editing and draft panels.
+- Dependencies show searchable prerequisites with task IDs, types and statuses, one-click removal, and a separate list of tasks blocked by this one. Choices that would form a cycle are disabled.
+- Board arrows have a Task dependency menu to create or remove real task prerequisites. Arrows between dependent task cards show the blocking direction and update when task dependencies change.
+
+## 0.14.31 — 2026-10-16
+
+### Added
+
+- Draft task cards now have editable priority and assignee dropdowns. Changes save automatically, support board undo and carry through when finalising the task.
+
+## 0.14.30 — 2026-10-16
+
+### Changed
+
+- New Note-to-Draft conversions start with a blank description instead of repeating the title. Existing draft descriptions survive a round trip through Note.
+- Task comments use the same attached sidebar layout as version history, including responsive sizing and an independently scrolling conversation.
+- Finalise task is now an icon button in the draft card header, immediately left of Comments.
+
+## 0.14.29 — 2026-10-16
+
+### Changed
+
+- Draft tasks can be converted back to Notes from the type menu, preserving title, description, draft details, comments and connections. Converting back to a draft restores its priority, assignee and proposed subtasks.
+- Board task cards show their type icon before the title; drafts use a pencil icon.
+
+## 0.14.28 — 2026-10-15
+
+### Changed
+
+- Converting a Note to a Task now creates a board-only draft first. Use Finalise task when ready to create the project task and its ID; note text, appearance, comments and connections stay with the card.
+
+## 0.14.27 — 2026-10-15
+
+### Changed
+
+- Object appearance dropdowns now show stroke samples for border style and thickness, and shape icons, including the selected value. Tooltips and keyboard-accessible names identify each option.
+
+## 0.14.26 — 2026-10-15
+
+### Added
+
+- Draft Tasks live only on their board until converted to project tasks. Prepare task details and subtasks in the shared editor; conversion preserves the card’s position, appearance, comments and connections.
+
+### Changed
+
+- Existing task editors save edits automatically without closing or losing focus. Duplicate, Archive, Version history, Comments and Delete are compact header icons; comments and history open beside the editor.
+- Dropdowns across project views, task editors, board cards, filters and settings now share the priority picker’s rounded menu, spacing, selected highlight and checkmark, with keyboard navigation and light/dark styling.
+
 ## 0.14.25 — 2026-10-15
 
 ### Changed

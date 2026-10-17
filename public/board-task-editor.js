@@ -1,14 +1,18 @@
-// Reuse the full task form in a nonmodal panel, anchored beside the canvas tools.
+// One task panel for every project view; the board anchors it beside its tools.
+let panelWidth = 560;
 export function boardTaskEditor(
   dialog,
   { $, state, closeDialog, renderView, icon },
 ) {
   dialog.classList.add("board-task-editor");
+  const onBoard = ["board", "drawing"].includes(state.view);
+  dialog.classList.toggle("project-task-editor", !onBoard);
   const existing = !!dialog.querySelector("#task-form")?.dataset.id;
+  const draft = dialog.querySelector("#task-form")?.dataset.draftNode;
   const taskKey = dialog.querySelector(".task-key")?.textContent;
   dialog.setAttribute(
     "aria-label",
-    existing ? "Edit project task" : "New project task",
+    draft ? "Draft task" : existing ? "Edit project task" : "New project task",
   );
   dialog.setAttribute("aria-modal", "false");
   const close = dialog.querySelector('[data-action="dialog-close"]');
@@ -16,9 +20,15 @@ export function boardTaskEditor(
   const heading = document.createElement("header");
   heading.className = "board-task-editor-heading";
   heading.innerHTML = `<button type="button" class="icon-button" data-task-list-back aria-label="Back to project tasks">${icon("arrow")}</button><strong>New task</strong>`;
-  if (existing) heading.querySelector("strong").textContent = taskKey || "Task";
+  if (draft)
+    heading.querySelector("strong").textContent =
+      draft === "new" ? "New draft task" : "Draft task";
+  else if (existing)
+    heading.querySelector("strong").textContent = taskKey || "Task";
+  const actions = dialog.querySelector(".task-editor-actions");
+  if (actions) heading.append(actions);
   heading.append(close);
-  dialog.prepend(heading);
+  dialog.querySelector("#task-form").prepend(heading);
   dialog.querySelector(".task-key")?.remove();
   dialog.querySelector(".form-status")?.remove();
   const back = () => {
@@ -27,12 +37,31 @@ export function boardTaskEditor(
     renderView();
     $("#board-task-search")?.focus({ preventScroll: true });
   };
-  heading
-    .querySelector("[data-task-list-back]")
-    .addEventListener("click", back);
+  const backButton = heading.querySelector("[data-task-list-back]");
+  if (onBoard) backButton.addEventListener("click", back);
+  else backButton.remove();
   function position() {
     const canvas = $("#canvas");
-    if (!canvas || !dialog.isConnected) return;
+    if (!dialog.isConnected) return;
+    if (!onBoard) {
+      const auxiliary =
+        innerWidth >= 1100 &&
+        dialog.matches(".with-task-history,.with-task-comments")
+          ? 312
+          : 0;
+      const width = Math.min(
+        panelWidth,
+        innerWidth - auxiliary - (innerWidth <= 600 ? 0 : 24),
+      );
+      Object.assign(dialog.style, {
+        left: `${innerWidth - width - auxiliary - (innerWidth <= 600 ? 0 : 12)}px`,
+        top: innerWidth <= 600 ? "0px" : "12px",
+        width: `${width}px`,
+        height: `${innerHeight - (innerWidth <= 600 ? 0 : 24)}px`,
+      });
+      return;
+    }
+    if (!canvas) return;
     const r = canvas.getBoundingClientRect();
     const width = Math.min(
       400,
@@ -53,8 +82,40 @@ export function boardTaskEditor(
   }
   dialog.show();
   position();
+  if (!onBoard) {
+    const grip = document.createElement("div");
+    grip.className = "task-panel-resizer";
+    grip.tabIndex = 0;
+    grip.setAttribute("role", "separator");
+    grip.setAttribute("aria-label", "Resize task panel");
+    grip.setAttribute("aria-orientation", "vertical");
+    const resize = (width) => {
+      panelWidth = Math.max(360, Math.min(900, width));
+      grip.setAttribute("aria-valuenow", String(panelWidth));
+      position();
+    };
+    grip.setAttribute("aria-valuemin", "360");
+    grip.setAttribute("aria-valuemax", "900");
+    grip.setAttribute("aria-valuenow", String(panelWidth));
+    grip.addEventListener("pointerdown", (event) => {
+      event.preventDefault();
+      grip.setPointerCapture(event.pointerId);
+    });
+    grip.addEventListener("pointermove", (event) => {
+      if (grip.hasPointerCapture(event.pointerId))
+        resize(innerWidth - event.clientX - 12);
+    });
+    grip.addEventListener("keydown", (event) => {
+      if (!["ArrowLeft", "ArrowRight"].includes(event.key)) return;
+      event.preventDefault();
+      resize(panelWidth + (event.key === "ArrowLeft" ? 20 : -20));
+    });
+    dialog.prepend(grip);
+  }
   const observer = new ResizeObserver(position);
   observer.observe(document.querySelector(".main"));
+  const classes = new MutationObserver(position);
+  classes.observe(dialog, { attributes: true, attributeFilter: ["class"] });
   window.addEventListener("resize", position);
   document.addEventListener("scroll", position, true);
   const keydown = (event) => {
@@ -74,6 +135,7 @@ export function boardTaskEditor(
     position,
     destroy() {
       observer.disconnect();
+      classes.disconnect();
       dialog.removeEventListener("keydown", keydown);
       window.removeEventListener("resize", position);
       document.removeEventListener("scroll", position, true);

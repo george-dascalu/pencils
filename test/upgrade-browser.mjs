@@ -1,4 +1,4 @@
-import { clickControl, reveal } from "./menu-controls.mjs";
+import { clickControl, reveal, selectProjectView } from "./menu-controls.mjs";
 import assert from "node:assert/strict";
 import fs from "node:fs/promises";
 import os from "node:os";
@@ -29,7 +29,7 @@ const errors = [];
 page.on("pageerror", (e) => errors.push(e.message));
 page.setDefaultTimeout(15000);
 const feature = (key) => page.locator(`[data-feature="${key}"]`).first();
-const view = (key) => page.locator(`[data-view="${key}"]`).click();
+const view = (key) => selectProjectView(page, key);
 const snap = () => store.snapshot(project.id);
 const until = async (fn) => {
   for (let i = 0; i < 80; i++) {
@@ -78,6 +78,7 @@ try {
     });
     el.dispatchEvent(event);
   });
+  await page.locator("#paste-apply").click();
   await until(async () => {
     const t = (await snap()).tasks.find((t) => t.id === first.id);
     return t.title === "Pasted title" && t.type === "bug";
@@ -86,13 +87,14 @@ try {
   await page.locator("#filter-assignee").press("Tab");
   await clickControl(feature("view-save"));
   await page.locator("#view-form [name=name]").fill("Alex table");
+  await page.locator("#view-form [name=scope]").selectOption("project");
   await page.locator("#view-form [type=submit]").click();
   await page.locator("dialog").waitFor({ state: "detached" });
   assert.equal((await snap()).project.views[0].filters.assignee, "Alex");
   await page.reload();
   await (
     await reveal(page.locator("#saved-view"))
-  ).selectOption({ label: "Alex table" });
+  ).selectOption((await snap()).project.views[0].id);
   assert.equal(await page.locator("#filter-assignee").inputValue(), "Alex");
   console.log("PASS: range paste and named views persist across reload");
   await clickControl(feature("workflow"));
@@ -122,11 +124,13 @@ try {
     .locator(`[data-action="task-open"][data-id="${createdPlanned.id}"]`)
     .first()
     .click();
-  await page.getByText("Planning & relationships", { exact: true }).click();
+  await page.getByText("Planning", { exact: true }).click();
   await page.locator("#task-form [name=start]").fill("2026-10-14");
   await page.locator("#task-form [name=due]").fill("2026-10-16");
   await page.locator('#task-form [name^="custom:"]').fill("42");
-  await page.locator("#task-form [type=submit]").click();
+  await page.locator("#task-form").evaluate(form=>form.requestSubmit());
+  await page.locator("[data-autosave-status]").filter({hasText:/^Saved automatically$/}).waitFor();
+  await page.locator("[data-action=dialog-close]").click();
   await page.locator("dialog").waitFor({ state: "detached" });
   const planned = (await snap()).tasks.find((t) => t.title === "Planned work");
   assert.equal(Object.values(planned.fields)[0], 42);
@@ -150,12 +154,14 @@ try {
     .locator(`[data-action=task-open][data-id="${planned.id}"]`)
     .first()
     .click();
-  await clickControl(feature("form-restore"));
+  if(await feature("form-restore").count()) await clickControl(feature("form-restore"));
   assert.equal(
     await page.locator("#task-form [name=title]").inputValue(),
     "Recover my draft",
   );
-  await page.locator("#task-form [type=submit]").click();
+  await page.locator("#task-form").evaluate(form=>form.requestSubmit());
+  await page.locator("[data-autosave-status]").filter({hasText:/^Saved automatically$/}).waitFor();
+  await page.locator("[data-action=dialog-close]").click();
   await page.locator("dialog").waitFor({ state: "detached" });
   console.log("PASS: form drafts recover without overwriting disk");
   await page
@@ -181,7 +187,9 @@ try {
     await page.locator("#markdown-preview a").getAttribute("href"),
     /\/api\/projects\/.*\/attachments\//,
   );
-  await page.locator("#task-form [type=submit]").click();
+  await page.locator("#task-form").evaluate(form=>form.requestSubmit());
+  await page.locator("[data-autosave-status]").filter({hasText:/^Saved automatically$/}).waitFor();
+  await page.locator("[data-action=dialog-close]").click();
   await page.locator("dialog").waitFor({ state: "detached" });
   const attached = (await snap()).tasks.find((t) => t.id === planned.id);
   const relative = attached.body.match(/\]\(([^)]+)\)/)[1];

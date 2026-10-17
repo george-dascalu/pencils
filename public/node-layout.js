@@ -1,7 +1,7 @@
 export const isTaskNote = (node) =>
   node.type === "task" && node.displayAs === "note";
 export const visualNodeType = (node) =>
-  isTaskNote(node) ? "sticky" : node.type;
+  isTaskNote(node) ? "sticky" : node.type === "draft" ? "task" : node.type;
 export const nodeFill = (node, fallback = "#ffffff") =>
   node.color || (visualNodeType(node) === "sticky" ? "#f5e7a2" : fallback);
 

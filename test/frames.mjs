@@ -184,7 +184,8 @@ try {
   assert.equal((await current()).nodes.length, 2);
   await fixture();
   await find("outer", "Workshop");
-  const emptyInside = await world(600, 300);
+  // Stay below the nested frame toolbar when adding its parent to selection.
+  const emptyInside = await world(600, 650);
   await page.mouse.click(emptyInside.x, emptyInside.y);
   const selectedIds = () =>
     page

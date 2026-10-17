@@ -1,3 +1,8 @@
+import { inkPreview } from "./ink-preview.js";
+import { boardImages } from "./board-images.js";
+import { drawingInput, canvasPointerTool } from "./drawing-input.js";
+import { isNote, noteStyleSVG } from "./note-style.js";
+import { updateProjectFrame } from "./project-frame.js";
 import { hiddenByFrame, frameParents } from "./canvas-geometry.js";
 import { partialErase, recogniseStroke, lassoTool } from "./pen-advanced.js";
 import {
@@ -87,6 +92,15 @@ export function canvasFeatures(ctx) {
   }
   let drag = null,
     space = false;
+  const drawing = drawingInput(ctx, {
+    clearSelection,
+    place: (event) => controls.place(event),
+    cancel: () => { gridControls.cancel(); lasso.cancel(); pro.cancelPointer(); end(null, true, true); },
+    action: (action) => {
+      if (action === "toggle-eraser") pen.toggleEraser();
+      else $(action === "fit" ? '[data-action="board-fit"]' : `[data-action="board-${action}"]`)?.click();
+    },
+  });
   const snapEnabled = () => board()?.settings?.snap !== false;
   const uid = (prefix) =>
     `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
@@ -115,7 +129,7 @@ export function canvasFeatures(ctx) {
     link.click();
     setTimeout(() => URL.revokeObjectURL(url), 1000);
   };
-  boardGrid(ctx, {
+  const gridControls = boardGrid(ctx, {
     moveDOM,
     select(n) {
       selected.clear();
@@ -134,7 +148,7 @@ export function canvasFeatures(ctx) {
   objectText(ctx, pick);
   objectGeometry(ctx, pick);
   connectorEdit(ctx, point, selectEdge);
-  lassoTool(ctx, { point, selected, focusSelection });
+  const lasso = lassoTool(ctx, { point, selected, focusSelection });
   const layoutTools = boardLayoutTools(ctx, {
     pick,
     point,
@@ -205,6 +219,8 @@ export function canvasFeatures(ctx) {
     setDisplay: controls.setDisplay,
     busy: ({ allowNavigation = false } = {}) =>
       !!drag ||
+      drawing.busy() ||
+      pen.busy() ||
       controls.busy({ allowNavigation }) ||
       (!allowNavigation && state.cameraAnimating) ||
       state.gridResizing ||
@@ -213,6 +229,19 @@ export function canvasFeatures(ctx) {
     place: controls.place,
     positionToolbar: controls.position,
     editConnectorLabel: toolbar.editLabel,
+  });
+  const images = boardImages(ctx, {
+    point,
+    uid,
+    finishEditing: pro.finishEditing,
+    select(nodes) {
+      selected.clear();
+      selectedEdges.clear();
+      nodes.forEach((n) => selected.add(n.id));
+      state.selectedNode = nodes[0].id;
+      state.selectedEdge = null;
+      focusSelection();
+    },
   });
   function enhanceBase(only = null) {
     const nodes = new Map((board()?.nodes || []).map((n) => [n.id, n]));
@@ -296,7 +325,7 @@ export function canvasFeatures(ctx) {
     $("#canvas-extras")?.remove();
     $(".board-toolbar")?.insertAdjacentHTML(
       "afterend",
-      `<div id="canvas-extras" class="canvas-extra-tools"><button class="button small" data-layout-tool="layers">Layers</button><button class="button small" data-layout-tool="bulk-notes">Bulk notes</button><button class="button small" data-feature="grid-add">Grid</button><button class="button small" data-feature="frame-add">Frame</button><button class="button small ${state.tool === "draw" ? "primary" : ""}" data-feature="draw-tool">Pen</button><button class="button small" data-feature="image-add">Image</button><select id="frame-nav" aria-label="Jump to frame"><option value="">Jump to frame…</option>${board()
+      `<div id="canvas-extras" class="canvas-extra-tools"><button class="button small" data-layout-tool="layers">Layers</button><button class="button small" data-layout-tool="bulk-notes">Bulk notes</button><button class="button small" data-feature="grid-add">Grid</button><button class="button small" data-feature="frame-add">Frame</button><button class="button small" data-feature="project-frame-add">Project frame</button><button class="button small ${state.tool === "draw" ? "primary" : ""}" data-feature="draw-tool">Pen</button><button class="button small" data-feature="image-add" title="PNG, JPG, WebP or GIF · Up to 10 MB each">Images / GIFs</button><select id="frame-nav" aria-label="Jump to frame"><option value="">Jump to frame…</option>${board()
         .nodes.filter((n) => n.type === "frame")
         .map(
           (n) =>
@@ -376,10 +405,8 @@ export function canvasFeatures(ctx) {
   function paintStroke() {
     if (drag?.type !== "draw") return;
     drag.paintFrame = null;
-    const c = state.camera,
-      preview = $(".drawing-preview");
-    if (preview)
-      preview.innerHTML = `<g transform="translate(${c.x} ${c.y}) scale(${c.z})">${strokeMarkup({ ...drag.style, points: drawingSamples().map((p) => [p.x, p.y]), pressures: drawingSamples().map((p) => p.pressure) })}</g>`;
+    drag.ink?.(drawingSamples(),drag.style,state.camera,drag.straight);
+
   }
   function eraseAt(point) {
     if (pen.partial()) {
@@ -420,7 +447,8 @@ export function canvasFeatures(ctx) {
   document.addEventListener(
     "pointerdown",
     (event) => {
-      const canvas = event.target.closest("#canvas");
+      const canvas = event.target.closest("#canvas") && $("#canvas");
+      const tool = canvasPointerTool(state.tool, event.pointerType);
       if (
         !canvas ||
         event.button !== 0 ||
@@ -428,8 +456,8 @@ export function canvasFeatures(ctx) {
           "button,input,select,textarea,a,[contenteditable],.inline-editing,.inline-floating-tools,.canvas-panel,.canvas-find,.canvas-filters,#pen-tools",
         ) ||
         space ||
-        state.tool === "hand" ||
-        (state.tool === "connect" && event.target.closest("[data-node]"))
+        tool === "hand" ||
+        (tool === "connect" && event.target.closest("[data-node]"))
       )
         return;
       let el = event.target.closest("[data-node]");
@@ -449,22 +477,27 @@ export function canvasFeatures(ctx) {
           frameInterior = true;
       }
       if (
-        state.tool !== "frame" &&
-        !penActive(state.tool) &&
+        !["frame", "project-frame"].includes(tool) &&
+        !penActive(tool) &&
         event.target.closest("[data-edge]")
       )
         return;
       event.stopImmediatePropagation();
       event.preventDefault();
       const p = point(event);
-      if (state.tool === "frame") {
+      if (["frame", "project-frame"].includes(tool)) {
         clearSelection();
-        drag = { type: "frame", start: p, before: boardSnapshot() };
+        drag = {
+          type: "frame",
+          projectFrame: state.tool === "project-frame",
+          start: p,
+          before: boardSnapshot(),
+        };
         canvas.insertAdjacentHTML(
           "beforeend",
           '<div class="marquee frame-preview"></div>',
         );
-      } else if (penActive(state.tool)) {
+      } else if (penActive(tool)) {
         clearSelection();
         pen.render();
         if (state.tool === "erase") {
@@ -489,6 +522,7 @@ export function canvasFeatures(ctx) {
               {
                 ...p,
                 pressure: event.pointerType === "pen" ? event.pressure : 0.5,
+                time: event.timeStamp, tiltX:event.tiltX || 0, tiltY:event.tiltY || 0,
               },
             ],
             style: {
@@ -499,8 +533,9 @@ export function canvasFeatures(ctx) {
           };
           canvas.insertAdjacentHTML(
             "beforeend",
-            '<svg class="drawing-preview" aria-hidden="true"></svg>',
+            '<div class="drawing-preview" aria-hidden="true"></div>',
           );
+          drag.ink=inkPreview($(".drawing-preview"));
           paintStroke();
         }
         el = null;
@@ -579,6 +614,7 @@ export function canvasFeatures(ctx) {
         canvas.insertAdjacentHTML("beforeend", '<div class="marquee"></div>');
       }
       drag.pointerId = event.pointerId;
+      drag.touch = event.pointerType === "touch";
       // Keep title double-clicks targeted at the grid header after capture.
       drag.capture =
         el?.querySelector(".grid-grip") && event.target.closest(".grid-grip")
@@ -611,7 +647,7 @@ export function canvasFeatures(ctx) {
         );
       }
       if (drag.type === "move" || drag.type === "resize") {
-        if (Math.hypot(dx, dy) * state.camera.z > 3) drag.moved = true;
+        if (Math.hypot(dx, dy) * state.camera.z > (drag.touch ? 8 : 3)) drag.moved = true;
         if (!drag.moved) return;
         $("#canvas").classList.add("object-dragging");
         if (drag.moved && drag.duplicate) {
@@ -628,6 +664,8 @@ export function canvasFeatures(ctx) {
               copy.group = groups.get(n.group);
             }
             if (ids.has(copy.frame)) copy.frame = ids.get(copy.frame);
+            if (copy.projectFrameOwner)
+              copy.projectFrameOwner = ids.get(copy.projectFrameOwner);
             return copy;
           });
           board().nodes.push(...copies);
@@ -637,6 +675,7 @@ export function canvasFeatures(ctx) {
               .map((e) => ({
                 ...structuredClone(e),
                 id: uid("e"),
+                projectFrameOwner: ids.get(e.projectFrameOwner),
                 from: ids.get(e.from),
                 to: ids.get(e.to),
               })),
@@ -834,6 +873,7 @@ export function canvasFeatures(ctx) {
             drag.samples.push({
               ...q,
               pressure: sample.pointerType === "pen" ? sample.pressure : 0.5,
+              time:sample.timeStamp,tiltX:sample.tiltX || 0,tiltY:sample.tiltY || 0,
             });
         }
         drag.straight = event.shiftKey;
@@ -845,7 +885,7 @@ export function canvasFeatures(ctx) {
     },
     true,
   );
-  function end(event, cancel = false) {
+  function end(event, cancel = false, preserveTouchTarget = false) {
     if (
       !drag ||
       (event?.pointerId != null && event.pointerId !== drag.pointerId)
@@ -886,7 +926,8 @@ export function canvasFeatures(ctx) {
       const frame = {
         id: uid("n"),
         type: "frame",
-        text: "",
+        text: drag.projectFrame ? state.project.title : "",
+        ...(drag.projectFrame ? { projectFrame: true } : {}),
         x: Math.round(box.x),
         y: Math.round(box.y),
         w: Math.max(160, Math.round(box.w)),
@@ -953,7 +994,12 @@ export function canvasFeatures(ctx) {
     $(".drawing-preview")?.remove();
     $(".alignment-guides")?.remove();
     $(".resize-dimensions")?.remove();
-    if (redraw) renderView(true);
+    // Replacing the touched DOM node interrupts the browser's remaining fingers.
+    // A pinch takeover restores geometry in place until all contacts lift.
+    if (cancel && preserveTouchTarget) {
+      moveDOM();
+      selection();
+    } else if (redraw) renderView(true);
     else {
       selection();
       updateEdges();
@@ -985,7 +1031,7 @@ export function canvasFeatures(ctx) {
     "keydown",
     (event) => {
       if (
-        state.view !== "board" ||
+        !["board", "drawing"].includes(state.view) ||
         state.dialog ||
         event.target.closest(
           "input,textarea,select,[contenteditable],.board-task-editor",
@@ -1059,32 +1105,6 @@ export function canvasFeatures(ctx) {
     };
     input.click();
   }
-  async function image(file) {
-    const bytes = new Uint8Array(await file.arrayBuffer());
-    if (bytes.length > 10000000) throw new Error("Use images under 10 MB.");
-    let raw = "";
-    for (let i = 0; i < bytes.length; i += 8192)
-      raw += String.fromCharCode(...bytes.subarray(i, i + 8192));
-    const attachment = await api(route("attachments"), {
-      method: "POST",
-      body: { name: file.name, data: btoa(raw) },
-    });
-    const canvas = $("#canvas"),
-      x = (canvas.clientWidth / 2 - state.camera.x) / state.camera.z,
-      y = (canvas.clientHeight / 2 - state.camera.y) / state.camera.z;
-    changeBoard((b) =>
-      b.nodes.push({
-        id: uid("n"),
-        type: "image",
-        src: attachment.path,
-        text: file.name,
-        x,
-        y,
-        w: 320,
-        h: 240,
-      }),
-    );
-  }
   async function svg(frame = null) {
     const b = board();
     if (!b.nodes.length) throw new Error("Add objects before exporting.");
@@ -1133,7 +1153,9 @@ export function canvasFeatures(ctx) {
                     .filter(Boolean)
                     .join("\n\n")
                 : task(n.task)?.title || "Removed task"
-              : n.text || "",
+              : n.type === "draft"
+                ? `${n.draft?.title || "Draft task"}\n\n${n.text || ""}`
+                : n.text || "",
           lines = text.split("\n").flatMap((paragraph) => {
             const wrapped = paragraph.match(/.{1,32}(?:\s|$)|.{1,32}/g) || [""];
             return wrapped.map((line, i) => ({
@@ -1146,7 +1168,7 @@ export function canvasFeatures(ctx) {
             align === "center" ? "middle" : align === "right" ? "end" : "start",
           textX =
             align === "center" ? n.w / 2 : align === "right" ? n.w - 16 : 16;
-        inside = `${n.type === "shape" ? shapeSVG(n, esc) : `<rect width="${n.w}" height="${n.h}" rx="6" fill="${n.type === "frame" ? nodeFill(n, "#ffffff") : nodeFill(n)}" stroke="#82937d"/>`}${lines
+        inside = `${n.type === "shape" ? shapeSVG(n, esc) : isNote(n) && n.noteStyle ? noteStyleSVG(n, esc) : `<rect width="${n.w}" height="${n.h}" rx="6" fill="${n.type === "frame" ? nodeFill(n, "#ffffff") : nodeFill(n)}" stroke="#82937d"/>`}${lines
           .slice(0, Math.max(1, Math.floor(n.h / 22) - 1))
           .map(
             (line, i) =>
@@ -1199,6 +1221,8 @@ export function canvasFeatures(ctx) {
             }
             if (copy.frame && map.has(copy.frame))
               copy.frame = map.get(copy.frame);
+            if (copy.projectFrameOwner)
+              copy.projectFrameOwner = map.get(copy.projectFrameOwner);
             b.nodes.push(copy);
           }
           const copies = b.edges
@@ -1210,6 +1234,7 @@ export function canvasFeatures(ctx) {
             .map((e) => ({
               ...structuredClone(e),
               id: uid("e"),
+              projectFrameOwner: map.get(e.projectFrameOwner),
               from: map.get(e.from) || e.from,
               to: map.get(e.to) || e.to,
               ...(e.bends && map.has(e.from) && map.has(e.to)
@@ -1295,6 +1320,117 @@ export function canvasFeatures(ctx) {
       renderView();
       return true;
     }
+    if (action === "project-frame-add") {
+      state.tool = state.tool === "project-frame" ? "cursor" : "project-frame";
+      clearSelection();
+      renderView(true);
+      return true;
+    }
+    if (action === "project-frame-update") {
+      const frame = board().nodes.find(
+        (n) =>
+          n.id === (el?.dataset.id || state.selectedNode) && n.projectFrame,
+      );
+      if (!frame || frame.locked) return true;
+      // Refresh task data without replacing pending local board edits.
+      const projectId = state.project.id,
+        boardId = board().id;
+      const snapshot = await api(route());
+      if (
+        state.project?.id !== projectId ||
+        board()?.id !== boardId ||
+        !["board", "drawing"].includes(state.view)
+      )
+        return true;
+      state.tasks = snapshot.tasks;
+      const signature = (b) => JSON.stringify([b.nodes, b.edges]);
+      const original = structuredClone(board()),
+        base = signature(original);
+      let next;
+      const preview = () => {
+        next = structuredClone(original);
+        updateProjectFrame(
+          next,
+          next.nodes.find((n) => n.id === frame.id),
+          snapshot.tasks,
+          snapshot.project.title,
+          {
+            preservePlacement:
+              !document.querySelector("#frame-relayout").checked,
+          },
+        );
+        const old = new Map(
+          original.nodes
+            .filter((n) => n.projectFrameOwner === frame.id)
+            .map((n) => [n.id, n]),
+        );
+        const generated = next.nodes.filter(
+            (n) => n.projectFrameOwner === frame.id,
+          ),
+          ids = new Set(generated.map((n) => n.id));
+        const added = generated.filter((n) => !old.has(n.id)),
+          removed = [...old.values()].filter((n) => !ids.has(n.id));
+        const moved = generated.filter(
+          (n) =>
+            old.has(n.id) &&
+            ["x", "y", "w", "h"].some((k) => n[k] !== old.get(n.id)[k]),
+        );
+        document.querySelector("#frame-preview").innerHTML =
+          `<p><strong>${added.length} added · ${removed.length} removed · ${moved.length} repositioned</strong></p><p>Only cards generated by this frame are updated. Removed cards leave their tasks intact. The camera stays in place. Undo restores the previous layout.</p>${[
+            ["Add", added],
+            ["Remove", removed],
+            ["Reposition", moved],
+          ]
+            .map(([label, nodes]) =>
+              nodes.length
+                ? `<details><summary>${label} ${nodes.length} cards</summary><ul>${nodes.map((n) => `<li>${esc(snapshot.tasks.find((t) => t.id === n.task)?.title || n.task)}</li>`).join("")}</ul></details>`
+                : "",
+            )
+            .join("")}`;
+      };
+      showDialog(
+        `<dialog class="dialog">${dialogHead("Update project frame")}<div class="dialog-body"><label><input type="checkbox" id="frame-relayout"> Rearrange generated cards</label><p>Leave unchecked to preserve existing card positions and sizes.</p><div id="frame-preview"></div><p data-frame-error role="alert"></p></div><div class="dialog-foot"><button class="button" data-action="dialog-close">Cancel</button><button class="button primary" id="frame-apply">Update frame</button></div></dialog>`,
+        "frame-update",
+      );
+      preview();
+      document.querySelector("#frame-relayout").onchange = preview;
+      document.querySelector("#frame-apply").onclick = async (event) => {
+        event.target.disabled = true;
+        try {
+          if (
+            state.project?.id !== projectId ||
+            board()?.id !== boardId ||
+            signature(board()) !== base
+          )
+            throw Error(
+              "The board changed. Close and preview the update again.",
+            );
+          const current = await api(route());
+          if (
+            JSON.stringify(current.tasks.map((t) => [t.id, t.revision])) !==
+            JSON.stringify(snapshot.tasks.map((t) => [t.id, t.revision]))
+          )
+            throw Error("Tasks changed. Close and preview the update again.");
+          if (signature(board()) !== base)
+            throw Error("The board changed. Preview again.");
+          changeBoard((b) => {
+            b.nodes = next.nodes;
+            b.edges = next.edges;
+            clearSelection();
+            selected.add(frame.id);
+            state.selectedNode = frame.id;
+            state.tool = "cursor";
+          });
+          closeDialog(true);
+        } catch (error) {
+          document.querySelector("[data-frame-error]").textContent =
+            error.message;
+          event.target.disabled = false;
+        }
+      };
+
+      return true;
+    }
     if (action === "frame-add") {
       state.tool = state.tool === "frame" ? "cursor" : "frame";
       clearSelection();
@@ -1334,7 +1470,7 @@ export function canvasFeatures(ctx) {
       return true;
     }
     if (action === "image-add") {
-      chooseFile("image/png,image/jpeg,image/gif,image/webp", image);
+      images.choose();
       return true;
     }
     if (action === "edge-label") {
@@ -1432,6 +1568,18 @@ export function canvasFeatures(ctx) {
     render,
     beforeRender: pro.beforeRender,
     saved: pro.updateUndo,
+    nodeSaved: (id) => { pro.enhance(new Set([id])); updateEdges(); },
+    taskSaved: (id) => {
+      pro.enhance(
+        new Set(
+          (board()?.nodes || [])
+            .filter((n) => n.task === id || n.type === "query")
+            .map((n) => n.id),
+        ),
+      );
+      updateEdges();
+    },
+    finaliseDraft: (id) => pro.click("convert", { dataset: { id } }),
     edit: pro.edit,
     selection,
     click,
@@ -1440,6 +1588,8 @@ export function canvasFeatures(ctx) {
     camera: pro.camera,
     busy: () =>
       !!drag ||
+      drawing.busy() ||
+      pen.busy() ||
       controls.busy() ||
       pro.busy() ||
       state.cameraAnimating ||

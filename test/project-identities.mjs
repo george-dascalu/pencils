@@ -1,3 +1,4 @@
+import { selectProjectView } from "./menu-controls.mjs";
 import assert from "node:assert/strict";
 import fs from "node:fs/promises";
 import os from "node:os";
@@ -53,7 +54,7 @@ try {
       (await store.snapshot(p.id)).tasks.length === 2 &&
       (await store.snapshot(p.id)).boards[0].nodes.length === 2,
   );
-  await page.locator("[data-view=list]").click();
+  await selectProjectView(page, "list");
   assert.match(
     await page.locator("#view-content").innerText(),
     /Created on board/,

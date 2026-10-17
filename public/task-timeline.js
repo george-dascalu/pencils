@@ -1,11 +1,15 @@
+import { pageOf } from "./task-visibility.js";
 const DAY = 86400000;
 export const shiftDate = (date, days) =>
   new Date(Date.parse(date) + days * DAY).toISOString().slice(0, 10);
 export function timelineHTML(tasks, ctx, scale = "week", scope = "project") {
   const { esc } = ctx,
-    dated = tasks.filter((t) => t.start || t.due).slice(0, 200),
+    allDated = tasks.filter((t) => t.start || t.due),
+    pageKey = `${ctx.state?.project?.id || ""}/${scope}`,
+    page = pageOf(allDated, ctx.state?.timelinePages?.[pageKey], 200),
+    dated = page.items,
     undated = tasks.filter((t) => !t.start && !t.due),
-    stamps = dated.flatMap((t) =>
+    stamps = allDated.flatMap((t) =>
       [t.start, t.due].filter(Boolean).map(Date.parse),
     );
   const min = stamps.length
@@ -17,11 +21,12 @@ export function timelineHTML(tasks, ctx, scale = "week", scope = "project") {
     width = Math.max(700, span * unit),
     step = scale === "day" ? 1 : scale === "month" ? 30 : 7;
   const x = (date) => ((Date.parse(date) - min) / DAY) * unit;
+  const positions = new Map(dated.map((t, i) => [t.id, i]));
   const lines = dated
     .flatMap((t, i) =>
       (t.dependencies || []).map((id) => {
-        const from = dated.findIndex((t) => t.id === id);
-        if (from < 0) return "";
+        const from = positions.get(id);
+        if (from == null) return "";
         const a = dated[from],
           sx = x(a.due || a.start) + unit,
           tx = x(t.start || t.due),
@@ -31,7 +36,8 @@ export function timelineHTML(tasks, ctx, scale = "week", scope = "project") {
       }),
     )
     .join("");
-  return `<section class="task-timeline" data-timeline="${esc(scope)}" data-min="${min}" data-unit="${unit}"><div class="planning-head"><label>Scale <select data-timeline-scale aria-label="Timeline scale">${["day", "week", "month"].map((s) => `<option ${scale === s ? "selected" : ""}>${s}</option>`).join("")}</select></label><span>Drag bars to move dates; drag either end to resize.</span></div><div class="timeline-scroll"><div class="timeline-sheet" style="width:${width + 240}px"><div class="timeline-ruler" style="margin-left:240px;width:${width}px">${Array.from({ length: Math.ceil(span / step) }, (_, i) => `<span style="left:${i * step * unit}px">${esc(new Date(min + i * step * DAY).toISOString().slice(0, 10))}</span>`).join("")}</div><svg class="timeline-dependencies" width="${width}" height="${dated.length * 44}" style="left:240px;top:32px" aria-label="Task dependencies">${lines}</svg>${dated.map((t) => `<div class="timeline-row"><button data-action="task-open" data-id="${esc(t.id)}">${esc(t.key || "")} ${esc(t.title)}</button><div class="timeline-track" style="width:${width}px" data-schedule-target><div tabindex="0" role="slider" aria-label="Schedule ${esc(t.title)}" aria-valuetext="${esc(t.start || t.due)} to ${esc(t.due || t.start)}" class="timeline-bar ${t.milestone ? "milestone" : ""}" data-timeline-task="${esc(t.id)}" title="${esc(t.start || t.due)} to ${esc(t.due || t.start)} · Alt+arrows moves by a day" style="left:${x(t.start || t.due)}px;width:${Math.max(12, x(t.due || t.start) - x(t.start || t.due) + unit)}px"><span data-date-end="start" role="separator" aria-label="Resize start date"></span>${esc(t.title)}<span data-date-end="due" role="separator" aria-label="Resize due date"></span></div><button class="milestone-toggle" data-milestone="${esc(t.id)}" aria-pressed="${!!t.milestone}" title="Toggle milestone">◇</button></div></div>`).join("")}${!dated.length ? `<div class="timeline-empty-track" data-schedule-target style="margin-left:240px;width:${width}px;height:100px">Drop an unscheduled task here</div>` : ""}</div></div><div class="timeline-unscheduled"><strong>Unscheduled (${undated.length})</strong>${undated.map((t) => `<button draggable="true" data-unscheduled="${esc(t.id)}" data-action="task-open" data-id="${esc(t.id)}">${esc(t.key || "")} ${esc(t.title)}</button>`).join("")}</div></section>`;
+  const pager = `<div class="timeline-page-summary" role="status">${dated.length} of ${allDated.length} dated tasks on this page${page.pages > 1 ? ` · Page ${page.page + 1} of ${page.pages} <button class="button small" data-timeline-page="${page.page - 1}" ${!page.page ? "disabled" : ""}>Previous tasks</button><button class="button small" data-timeline-page="${page.page + 1}" ${page.page + 1 >= page.pages ? "disabled" : ""}>Next tasks</button> · Arrows connect tasks on this page.` : ""}</div>`;
+  return `<section class="task-timeline" data-timeline="${esc(scope)}" data-min="${min}" data-unit="${unit}"><div class="planning-head"><label>Scale <select data-timeline-scale aria-label="Timeline scale">${["day", "week", "month"].map((s) => `<option ${scale === s ? "selected" : ""}>${s}</option>`).join("")}</select></label><span>Drag bars to move dates; drag either end to resize. Other tasks stay in place.</span><button type="button" class="button small" data-feature="schedule-preview">Review schedule</button></div>${pager}<div class="timeline-scroll"><div class="timeline-sheet" style="width:${width + 240}px"><div class="timeline-ruler" style="margin-left:240px;width:${width}px">${Array.from({ length: Math.ceil(span / step) }, (_, i) => `<span style="left:${i * step * unit}px">${esc(new Date(min + i * step * DAY).toISOString().slice(0, 10))}</span>`).join("")}</div><svg class="timeline-dependencies" width="${width}" height="${dated.length * 44}" style="left:240px;top:32px" aria-label="Task dependencies">${lines}</svg>${dated.map((t) => `<div class="timeline-row"><button data-action="task-open" data-id="${esc(t.id)}">${esc(t.key || "")} ${esc(t.title)}</button><div class="timeline-track" style="width:${width}px" data-schedule-target><div tabindex="0" role="slider" aria-label="Schedule ${esc(t.title)}" aria-valuetext="${esc(t.start || t.due)} to ${esc(t.due || t.start)}" class="timeline-bar ${t.milestone ? "milestone" : ""}" data-timeline-task="${esc(t.id)}" title="${esc(t.start || t.due)} to ${esc(t.due || t.start)} · Alt+arrows moves by a day" style="left:${x(t.start || t.due)}px;width:${Math.max(12, x(t.due || t.start) - x(t.start || t.due) + unit)}px"><span data-date-end="start" role="separator" aria-label="Resize start date"></span>${esc(t.title)}<span data-date-end="due" role="separator" aria-label="Resize due date"></span></div><button class="milestone-toggle" data-milestone="${esc(t.id)}" aria-pressed="${!!t.milestone}" title="Toggle milestone">◇</button></div></div>`).join("")}${!dated.length ? `<div class="timeline-empty-track" data-schedule-target style="margin-left:240px;width:${width}px;height:100px">Drop an unscheduled task here</div>` : ""}</div></div><div class="timeline-unscheduled"><strong>Unscheduled (${undated.length})</strong>${undated.map((t) => `<button draggable="true" data-unscheduled="${esc(t.id)}" data-action="task-open" data-id="${esc(t.id)}">${esc(t.key || "")} ${esc(t.title)}</button>`).join("")}</div></section>`;
 }
 export function timelineInteractions(ctx, onScale) {
   const { state, patchTask, task, renderView, toast } = ctx;
@@ -136,6 +142,16 @@ export function timelineInteractions(ctx, onScale) {
     (e) => {
       if (suppress) {
         stop(e);
+        return;
+      }
+      const paging = e.target.closest("[data-timeline-page]");
+      if (paging) {
+        stop(e);
+        state.timelinePages ||= {};
+        state.timelinePages[
+          `${state.project.id}/${paging.closest("[data-timeline]").dataset.timeline}`
+        ] = Number(paging.dataset.timelinePage);
+        renderView(true);
         return;
       }
       const id = e.target.closest("[data-milestone]")?.dataset.milestone;

@@ -1,9 +1,15 @@
+import {sourceFields,sourceLabel} from "./source-model.js";
+import { visibilitySummary } from "./task-visibility.js";
+import { tableResult, activeTableFilter } from "./table-model.js";
+import { tableTools } from "./table-tools.js";
+import { tableColumnDrag } from "./table-column-drag.js";
 import {
   nextStatuses,
   canTransition,
   transitionError,
 } from "./workflow-model.js";
-import { assigneeOptions } from "./teams.js";
+import { preparePaste } from "./table-paste.js";
+import { assigneeOptions, projectPeople } from "./teams.js";
 export function grid(ctx) {
   const {
     state,
@@ -20,7 +26,9 @@ export function grid(ctx) {
     dialogHead,
     toast,
   } = ctx;
+  const tools = tableTools(ctx);
   const standard = [
+    "key",
     "title",
     "type",
     "status",
@@ -38,6 +46,10 @@ export function grid(ctx) {
     rowIds = [],
     columns = [];
   const selected = new Set();
+  let matchingRows = [];
+  const bulkIds=()=> $("#bulk-scope")?.value === "matching" ? matchingRows.map(t=>t.id) : $("#bulk-scope")?.value === "page" ? [...rowIds] : [...selected];
+  const scopeName=()=> $("#bulk-scope")?.selectedOptions[0]?.textContent || "Selected rows";
+  const bulkAllowed=ids=>{if(ids.length>500) {toast("Narrow the filters to 500 tasks or fewer before a bulk update.",true);return false;}return ids.length>0;};
   const fieldValue = (t, key) =>
     key.startsWith("fields.") ? t.fields?.[key.slice(7)] : t[key];
   const fields = () => [
@@ -45,9 +57,14 @@ export function grid(ctx) {
     ...(state.config?.fields || []).map((f) => `fields.${f.id}`),
   ];
   const fieldName = (key) =>
-    key.startsWith("fields.")
-      ? state.config.fields.find((f) => `fields.${f.id}` === key)?.name
-      : label(key);
+    !key
+      ? "Unmapped"
+      : key === "key"
+        ? "ID"
+        : key.startsWith("fields.")
+          ? state.config.fields.find((f) => `fields.${f.id}` === key)?.name
+          : label(key);
+  tableColumnDrag(ctx, fieldName);
   function config() {
     const saved =
       state.tableColumns ||
@@ -63,9 +80,40 @@ export function grid(ctx) {
     }
     return valid;
   }
-  function render(tasks) {
-    columns = config().filter((c) => c.visible !== false);
-    rowIds = tasks.map((t) => t.id);
+  function columnsMenu() {
+    return `<details class="board-menu table-columns-menu" data-board-menu="table-columns" ${state.headerMenu === "table-columns" ? "open" : ""}><summary>Columns<span aria-hidden="true">⌄</span></summary><div class="board-menu-panel table-columns-panel" data-menu-keep-open><header><strong>Table columns</strong><button type="button" class="icon-button" data-feature="columns-close" aria-label="Close table columns">${ctx.icon("close")}</button></header><div id="column-list">${state.tableColumns.map((c, i) => `<div class="column-setting" data-column-setting="${esc(c.key)}"><label><input type="checkbox" data-column-visible="${esc(c.key)}" ${c.visible !== false ? "checked" : ""}><span>${esc(fieldName(c.key))}</span></label><button type="button" class="icon-button" data-feature="column-up" data-index="${i}" aria-label="Move ${esc(fieldName(c.key))} up" title="Move up" ${i === 0 ? "disabled" : ""}>${ctx.icon("priority-high")}</button><button type="button" class="icon-button" data-feature="column-down" data-index="${i}" aria-label="Move ${esc(fieldName(c.key))} down" title="Move down" ${i === state.tableColumns.length - 1 ? "disabled" : ""}>${ctx.icon("down")}</button></div>`).join("")}</div><small>Changes apply immediately. Save a view to keep this layout. Drag headers to reorder, or their edges to resize. Alt + ← / → moves a focused header.</small></div></details>`;
+  }
+  function redrawColumns(key, action) {
+    const top = $("#column-list")?.scrollTop || 0;
+    const scroll = $(".table-scroll")?.scrollLeft || 0;
+    state.headerMenu = "table-columns";
+    renderView(true);
+    $("#column-list").scrollTop = top;
+    $(".table-scroll").scrollLeft = scroll;
+    const row = $(`[data-column-setting="${CSS.escape(key)}"]`);
+    const target = action && row.querySelector(`[data-feature="${action}"]:not(:disabled)`);
+    (target || row.querySelector("input")).focus({ preventScroll: true });
+  }
+  function render(input) {
+    const preferences = tools.preferences();
+    const parents=new Map(state.tasks.map(t=>[t.id,t]));
+    const result = tableResult(input, preferences, state.config, state.tasks, {
+      me: state.session?.user?.username || "",
+    });
+    matchingRows = result.tasks;
+    state.tableGroupPaths = [...result.counts.keys()];
+    const total = result.tasks.length;
+    const pages = Math.max(1, Math.ceil(total / 100));
+    state.page = Math.min(state.page || 0, pages - 1);
+    const tasks = result.tasks.slice(state.page * 100, (state.page + 1) * 100);
+    state.tableColumns = config();
+    columns = state.tableColumns.filter((c) => c.visible !== false);
+    let pinOffset = 0;
+    for (const col of columns) {
+      col.pinOffset = pinOffset;
+      if (["key", "title"].includes(col.key)) pinOffset += col.width || 160;
+    }
+    rowIds = [];
     cells = [];
     anchor = null;
     focus = null;
@@ -74,7 +122,7 @@ export function grid(ctx) {
     const cell = (t, key) => {
       const field = custom(key),
         value = fieldValue(t, key),
-        attrs = `data-task-field="${esc(key)}" data-id="${esc(t.id)}" aria-label="${esc(fieldName(key))} for ${esc(t.title)}"`;
+        attrs = `tabindex="-1" data-task-field="${esc(key)}" data-id="${esc(t.id)}" aria-label="${esc(fieldName(key))} for ${esc(t.title)}"`;
       const values =
         key === "type"
           ? state.config.types
@@ -85,6 +133,9 @@ export function grid(ctx) {
               : field?.type === "select"
                 ? field.options
                 : null;
+      if(t.source && sourceFields.includes(key))return `<span title="Source-owned field">${esc(value)}${key==="title"?`<small class="source-badge">${esc(sourceLabel(t))}</small>`:""}</span>`;
+      if (key === "key")
+        return `<span class="task-id">${esc(t.key || "")}</span>`;
       if (key === "assignee")
         return `<select ${attrs}>${assigneeOptions(state, value, esc)}</select>`;
       if (values)
@@ -99,9 +150,58 @@ export function grid(ctx) {
           .join("")}</select>`;
       if (field?.type === "checkbox")
         return `<select ${attrs}>${options(["false", "true"], String(value || false))}</select>`;
-      return `${key === "title" ? `<span class="task-id">${esc(t.key || "")}</span>` : ""}<input ${attrs} type="${["start", "due"].includes(key) || field?.type === "date" ? "date" : key === "estimate" || field?.type === "number" ? "number" : "text"}" value="${esc(Array.isArray(value) ? value.join(", ") : (value ?? ""))}" ${key === "title" ? 'maxlength="300" required' : ""}>`;
+      return `<input ${attrs} type="${["start", "due"].includes(key) || field?.type === "date" ? "date" : key === "estimate" || field?.type === "number" ? "number" : "text"}" value="${esc(Array.isArray(value) ? value.join(", ") : (value ?? ""))}" ${key === "title" ? 'maxlength="300" required' : ""}>`;
     };
-    return `<div class="grid-tools"><button class="button small" data-feature="columns">Columns</button><label>Bulk status <select id="bulk-status"><option value="">Choose…</option>${options(state.config.statuses, "")}</select></label><button class="button small" data-feature="bulk-archive">Archive selected rows</button><span>Shift-click cells for a range · Ctrl/Cmd+C/V · Alt+arrows to navigate</span></div><div class="table-scroll"><table class="task-table spreadsheet" role="grid" aria-label="Tasks spreadsheet"><colgroup><col style="width:60px">${columns.map((c) => `<col style="width:${c.width || 160}px">`).join("")}</colgroup><thead><tr><th><input type="checkbox" id="grid-all" aria-label="Select all visible rows"></th>${columns.map((c) => `<th><button data-action="sort-column" data-field="${esc(c.key)}">${esc(fieldName(c.key))}</button><span class="column-resizer" data-resize-column="${esc(c.key)}" role="separator" aria-label="Resize ${esc(fieldName(c.key))}" tabindex="0"></span></th>`).join("")}</tr></thead><tbody>${tasks.map((t, r) => `<tr><td><input type="checkbox" data-row-select="${t.id}" ${selected.has(t.id) ? "checked" : ""} aria-label="Select ${esc(t.title)}"><button class="table-open" data-action="task-open" data-id="${t.id}" aria-label="Open ${esc(t.title)}">↗</button></td>${columns.map((c, k) => `<td data-cell="${r},${k}">${cell(t, c.key)}</td>`).join("")}</tr>`).join("")}</tbody></table></div><button class="add-row" data-action="task-new">+ New row</button>`;
+    let previous = [],
+      body = "";
+    for (const t of tasks) {
+      const path = result.groupPath(t);
+      let hidden = false;
+      for (let level = 0; level < path.length; level++) {
+        const group = JSON.stringify(path.slice(0, level + 1));
+        if (
+          !hidden &&
+          (previous.length === 0 ||
+            path.slice(0, level + 1).some((v, i) => v !== previous[i]))
+        ) {
+          const collapsed = state.tableCollapsed?.has(group),
+            key = preferences.groups[level];
+          body += `<tr class="table-group-row"><td colspan="${columns.length + 1}"><button type="button" data-table-action="group-toggle" data-group="${esc(group)}" aria-expanded="${!collapsed}" style="padding-left:${12 + level * 20}px">${ctx.icon("chevron")}<span class="table-group-field">${esc(fieldName(key))}</span><strong>${esc(tools.display(key, path[level]))}</strong><span class="count">${result.counts.get(group)} tasks</span><span class="table-group-summary">${result.summaries.get(group).estimate} h · ${result.summaries.get(group).done}/${result.counts.get(group)} complete${result.summaries.get(group).unestimated ? ` · ${result.summaries.get(group).unestimated} unestimated` : ""}</span></button></td></tr>`;
+        }
+        if (state.tableCollapsed?.has(group)) hidden = true;
+      }
+      previous = path;
+      if (hidden) continue;
+      const r = rowIds.length;
+      rowIds.push(t.id);
+      body += `<tr data-table-task="${esc(t.id)}"><td><input type="checkbox" data-row-select="${t.id}" ${selected.has(t.id) ? "checked" : ""} aria-label="Select ${esc(t.title)}"><button class="table-open" data-action="task-open" data-id="${t.id}" aria-label="Open ${esc(t.title)}">↗</button></td>${columns.map((c, k) => `<td role="gridcell" tabindex="${r === 0 && k === 0 ? 0 : -1}" data-cell="${r},${k}" data-column-key="${esc(c.key)}" style="--pin-offset:${c.pinOffset}px">${preferences.outline && c.key === "title" && t.parent ? `<small class="table-parent-context" style="padding-left:${Math.min(12,result.depths.get(t.id)||0)*12}px">↳ ${esc(parents.get(t.parent)?.key || t.parent)}${!result.depths.get(t.id)?" · parent outside this group or filter":""}</small>`:""}${cell(t, c.key)}</td>`).join("")}</tr>`;
+    }
+    // Bulk actions and clipboard ranges must never target filtered or collapsed rows.
+    for (const id of selected) if (!rowIds.includes(id)) selected.delete(id);
+    return `${tools.html()}<div class="grid-tools">${columnsMenu()}<span id="grid-selection-count" role="status">${selected.size} selected on this page</span><span id="grid-bulk" ${selected.size ? "" : "hidden"}><label>Apply to <select id="bulk-scope"><option value="selected">Selected rows</option><option value="page">Visible rows on this page (${rowIds.length})</option><option value="matching">All matching tasks (${matchingRows.length})</option></select></label><label>Bulk status <select id="bulk-status"><option value="">Choose…</option>${options(state.config.statuses, "")}</select></label><button class="button small" data-feature="bulk-archive">Archive tasks</button></span><button class="button small" data-feature="table-export">Export matching CSV</button><span>Arrows to navigate · Enter to edit · Escape to cancel · Shift+arrows for a range</span></div><div class="table-scroll"><table class="task-table spreadsheet" role="grid" aria-label="Tasks spreadsheet"><colgroup><col style="width:60px">${columns.map((c) => `<col style="width:${c.width || 160}px">`).join("")}</colgroup><thead><tr><th><input type="checkbox" id="grid-all" aria-label="Select all visible rows" ${rowIds.length && rowIds.every((id) => selected.has(id)) ? "checked" : ""}></th>${columns
+      .map((c) => {
+        const sort = preferences.sorts.findIndex((s) => s.field === c.key),
+          active = preferences.filters.some(
+            (f) => f.field === c.key && activeTableFilter(f),
+          );
+        return `<th data-column-key="${esc(c.key)}" style="--pin-offset:${c.pinOffset}px" aria-sort="${sort === 0 ? (preferences.sorts[sort].dir === 1 ? "ascending" : "descending") : sort > 0 ? "other" : "none"}"><div class="table-column-heading"><button type="button" data-table-sort-column="${esc(c.key)}" aria-keyshortcuts="Alt+ArrowLeft Alt+ArrowRight" title="Sort ${esc(fieldName(c.key))}: ascending, descending, then clear. Shift-click to add a sort. Drag to reorder; Alt + Left/Right moves this column." aria-label="Sort by ${esc(fieldName(c.key))}"><span class="table-column-grip" aria-hidden="true">⠿</span><span class="table-column-name">${esc(fieldName(c.key))}</span>${sort >= 0 ? `<span class="table-sort-indicator">${preferences.sorts[sort].dir === 1 ? "↑" : "↓"}${preferences.sorts.length > 1 ? sort + 1 : ""}</span>` : ""}</button><button type="button" class="table-column-filter ${active ? "active" : ""}" data-table-filter-column="${esc(c.key)}" aria-label="Filter ${esc(fieldName(c.key))}" title="Filter ${esc(fieldName(c.key))}" aria-pressed="${active}">${ctx.icon("filter")}</button><details class="board-menu table-header-menu"><summary aria-label="${esc(fieldName(c.key))} column actions">⋯</summary><div class="board-menu-panel"><strong>${esc(fieldName(c.key))}</strong><small>${esc(c.key.startsWith("fields.") ? custom(c.key)?.type || "text" : ["due", "start"].includes(c.key) ? "Date" : c.key === "estimate" ? "Number of hours" : "Task field")}</small>${[
+          ["asc", "Sort ascending"],
+          ["desc", "Sort descending"],
+          ["filter", "Filter column"],
+          ["group", "Group by column"],
+          ["hide", "Hide column"],
+        ]
+          .map(
+            ([action, title]) =>
+              `<button type="button" data-table-column-action="${action}" data-column="${esc(c.key)}">${title}</button>`,
+          )
+          .join(
+            "",
+          )}</div></details></div><span class="column-resizer" data-resize-column="${esc(c.key)}" role="separator" aria-orientation="vertical" aria-valuemin="90" aria-valuemax="900" aria-valuenow="${c.width || 160}" aria-valuetext="${c.width || 160} pixels" aria-label="Resize ${esc(fieldName(c.key))}" tabindex="0"></span></th>`;
+      })
+      .join(
+        "",
+      )}</tr></thead><tbody>${body || `<tr><td colspan="${columns.length + 1}"><div class="table-no-results">No tasks match these filters. <button class="button small" data-table-action="clear-filters">Clear column filters</button><button class="button small" data-action="filters-reset">Clear all filters</button></div></td></tr>`}</tbody></table></div><span class="sr-only" data-table-reorder-status role="status" aria-live="polite"></span><div class="table-result-summary" role="status">${esc(visibilitySummary(state.tasks, result.tasks, rowIds.length))}${preferences.filters.some(activeTableFilter) ? " · Column filters active" : ""}</div>${pages > 1 ? `<div class="pagination"><button class="button small" data-feature="page-prev" ${!state.page ? "disabled" : ""}>← Previous</button><span>Page ${state.page + 1} of ${pages}</span><button class="button small" data-feature="page-next" ${state.page + 1 >= pages ? "disabled" : ""}>Next →</button></div>` : ""}<button class="add-row" data-action="task-new">+ New row</button>`;
   }
   function paint() {
     if (!anchor || !focus) return;
@@ -149,6 +249,14 @@ export function grid(ctx) {
     paint();
     if (event.shiftKey) event.preventDefault();
   });
+  document.addEventListener("focusin", (event) => {
+    const cell = event.target.closest("[data-cell]");
+    if (!cell) return;
+    focus = cell.dataset.cell.split(",").map(Number);
+    if (!anchor) anchor = focus;
+    if (event.target.matches("input,select"))
+      event.target.dataset.editStart = event.target.value;
+  });
   document.addEventListener("copy", (event) => {
     if (state.view !== "table" || !cells.length || state.dialog) return;
     if (
@@ -193,57 +301,88 @@ export function grid(ctx) {
     const text = event.clipboardData.getData("text/plain");
     if (!/[\t\n]/.test(text)) return;
     event.preventDefault();
-    try {
-      const rows = text
+    const targets = rowIds.slice(focus[0]).map(task),
+      map = columns.slice(focus[1]).map((c) => c.key);
+    const count = Math.max(
+      ...text
         .replace(/\r/g, "")
-        .replace(/\n$/, "")
+        .trimEnd()
         .split("\n")
-        .map((r) => r.split("\t"));
-      if (rows.length > 100) throw new Error("Paste up to 100 rows at a time.");
-      const patches = new Map();
-      for (let r = 0; r < rows.length; r++) {
-        const id = rowIds[focus[0] + r];
-        if (!id) throw new Error("Add enough rows before pasting.");
-        for (let c = 0; c < rows[r].length; c++) {
-          const col = columns[focus[1] + c];
-          if (!col)
-            throw new Error(
-              "The pasted range extends beyond the visible columns.",
-            );
-          const next = patch(id, col.key, value(col.key, rows[r][c])),
-            current = patches.get(id) || {};
-          patches.set(id, {
-            ...current,
-            ...next,
-            ...(next.fields
-              ? {
-                  fields: {
-                    ...next.fields,
-                    ...current.fields,
-                    [col.key.slice(7)]: value(col.key, rows[r][c]),
-                  },
-                }
-              : {}),
-          });
-        }
-      }
-      for (const [id, changes] of patches)
-        if (
-          changes.status &&
-          !canTransition(state.config, task(id).status, changes.status)
-        )
-          throw new Error(
-            transitionError(state.config, task(id).status, changes.status),
-          );
-      for (const [id, changes] of patches) await patchTask(id, changes, false);
-      renderView(true);
-      toast(
-        `Pasted ${patches.size} rows. Check Recovery for any rejected values.`,
+        .map((row) => row.split("\t").length),
+    );
+    let plan;
+    const build = () =>
+      preparePaste(
+        text,
+        targets,
+        map,
+        state.config,
+        state.tasks,
+        (state.organisation?.teams || []).length
+          ? projectPeople(state).map((p) => p.name)
+          : null,
       );
-    } catch (error) {
-      toast(error.message, true);
-    }
+    const preview = () => {
+      plan = build();
+      document.querySelector("#paste-preview").innerHTML =
+        `<p>${plan.patches.size} existing tasks · ${plan.rows.length} clipboard rows. Columns are mapped in clipboard order. Changes are saved individually; server rejections remain in Recovery.</p><div class="paste-mapping">${Array.from(
+          { length: count },
+          (_, i) =>
+            `<label>Clipboard column ${i + 1}<select data-paste-map="${i}"><option value="">Choose column</option>${columns
+              .filter((c) => c.key !== "key")
+              .map(
+                (c) =>
+                  `<option value="${esc(c.key)}" ${map[i] === c.key ? "selected" : ""}>${esc(fieldName(c.key))}</option>`,
+              )
+              .join("")}</select></label>`,
+        ).join("")}</div>${
+          plan.errors.length
+            ? `<div role="alert"><strong>${plan.errors.length} problems — nothing will be saved</strong><ul>${plan.errors
+                .slice(0, 50)
+                .map((error) => `<li>${esc(error)}</li>`)
+                .join("")}</ul></div>`
+            : "<p>Values, date ranges, workflow moves and hierarchy checked. Review the mapped values below.</p>"
+        }<div class="table-scroll"><table><thead><tr><th>Task</th>${map
+          .slice(0, count)
+          .map((key) => `<th>${esc(fieldName(key) || "Unmapped")}</th>`)
+          .join(
+            "",
+          )}</tr></thead><tbody>${plan.rows.map((row, i) => `<tr><th>${esc(targets[i]?.key || targets[i]?.title || "Missing row")}</th>${row.map((value) => `<td>${esc(value)}</td>`).join("")}</tr>`).join("")}</tbody></table></div>`;
+      document.querySelector("#paste-apply").disabled = !!plan.errors.length;
+    };
+    showDialog(
+      `<dialog class="dialog wide-dialog">${dialogHead("Review pasted changes")}<div class="dialog-body" id="paste-preview"></div><div class="dialog-foot"><button class="button" id="paste-cancel">Cancel</button><button class="button primary" id="paste-apply">Apply changes</button></div></dialog>`,
+      "paste",
+    );
+    preview();
+    document
+      .querySelector("#paste-preview")
+      .addEventListener("change", (event) => {
+        if (event.target.dataset.pasteMap != null) {
+          map[+event.target.dataset.pasteMap] = event.target.value;
+          preview();
+        }
+      });
+    document.querySelector("#paste-cancel").onclick = () =>
+      closeDialog(false, { confirmDirty: false });
+    document.querySelector("#paste-apply").onclick = async (event) => {
+      if (plan.errors.length) return;
+      event.target.disabled = true;
+      try {
+        for (const [id, changes] of plan.patches)
+          await patchTask(id, changes, false);
+        closeDialog(true);
+        renderView(true);
+        toast(
+          `Submitted changes for ${plan.patches.size} tasks. Rejected saves remain in Recovery.`,
+        );
+      } catch (error) {
+        toast(error.message, true);
+        event.target.disabled = false;
+      }
+    };
   });
+
   document.addEventListener("keydown", (event) => {
     if (
       state.view !== "table" ||
@@ -264,23 +403,60 @@ export function grid(ctx) {
       renderView(true);
       return;
     }
-    if (!focus) return;
+    const currentCell = event.target.closest("[data-cell]");
+    if (!currentCell) return;
+    const point = currentCell.dataset.cell.split(",").map(Number);
+    const editing = event.target !== currentCell;
     const directions = {
       ArrowDown: [1, 0],
       ArrowUp: [-1, 0],
       ArrowLeft: [0, -1],
       ArrowRight: [0, 1],
     };
-    if ((event.altKey && directions[event.key]) || event.key === "Enter") {
+    if (event.key === "Escape" && editing) {
       event.preventDefault();
-      const delta = directions[event.key] || [event.shiftKey ? -1 : 1, 0];
-      focus = [
-        Math.min(rowIds.length - 1, Math.max(0, focus[0] + delta[0])),
-        Math.min(columns.length - 1, Math.max(0, focus[1] + delta[1])),
+      event.target.value = event.target.dataset.editStart ?? event.target.value;
+      currentCell.focus();
+      return;
+    }
+    if (event.key === "Enter" && !editing) {
+      event.preventDefault();
+      const control = currentCell.querySelector("input,select,button");
+      if (control) {
+        control.dataset.editStart = control.value;
+        control.focus();
+        if (control.type === "text") control.select();
+      }
+      return;
+    }
+    const move = (!editing || event.altKey) && directions[event.key];
+    if (!move && event.key !== "Tab" && !(editing && event.key === "Enter"))
+      return;
+    let next;
+    if (event.key === "Tab") {
+      const index =
+        point[0] * columns.length + point[1] + (event.shiftKey ? -1 : 1);
+      if (index < 0 || index >= rowIds.length * columns.length) return;
+      next = [Math.floor(index / columns.length), index % columns.length];
+    } else {
+      const delta = move || [event.shiftKey ? -1 : 1, 0];
+      next = [
+        Math.max(0, Math.min(rowIds.length - 1, point[0] + delta[0])),
+        Math.max(0, Math.min(columns.length - 1, point[1] + delta[1])),
       ];
-      if (!event.shiftKey) anchor = focus;
-      paint();
-      $(`[data-cell="${focus}"] input,[data-cell="${focus}"] select`)?.focus();
+    }
+    event.preventDefault();
+    if (editing)
+      event.target.dispatchEvent(new Event("change", { bubbles: true }));
+    if (!event.shiftKey || !anchor) anchor = point;
+    focus = next;
+    if (!event.shiftKey) anchor = next;
+    paint();
+    $$('[data-cell][tabindex="0"]').forEach((cell) => (cell.tabIndex = -1));
+    const nextCell = $(`[data-cell="${next}"]`);
+    if (nextCell) {
+      nextCell.tabIndex = 0;
+      nextCell.focus();
     }
   });
   let resize = null;
@@ -308,7 +484,11 @@ export function grid(ctx) {
     const col = $$(".spreadsheet col")[index + 1];
     if (col) col.style.width = `${width}px`;
   });
-  document.addEventListener("pointerup", () => (resize = null));
+  document.addEventListener("pointerup", () => {
+    if (!resize) return;
+    resize = null;
+    renderView(true);
+  });
   document.addEventListener("change", async (event) => {
     const el = event.target;
     if (el.dataset.rowSelect) {
@@ -316,13 +496,19 @@ export function grid(ctx) {
         ? selected.add(el.dataset.rowSelect)
         : selected.delete(el.dataset.rowSelect);
     }
+    if (el.dataset.rowSelect) {
+      $("#grid-selection-count").textContent =
+        `${selected.size} selected on this page`;
+      $("#grid-bulk").hidden = !selected.size;
+    }
     if (el.id === "grid-all") {
       for (const id of rowIds)
         el.checked ? selected.add(id) : selected.delete(id);
       renderView(true);
     }
     if (el.id === "bulk-status" && el.value) {
-      const blocked = [...selected]
+      const ids=bulkIds();if(!bulkAllowed(ids)) {el.value="";return;}
+      const blocked = ids
         .map(task)
         .find((t) => t && !canTransition(state.config, t.status, el.value));
       if (blocked) {
@@ -330,56 +516,89 @@ export function grid(ctx) {
         el.value = "";
         return;
       }
-      for (const id of [...selected].filter((id) => task(id)))
+      if (
+        !confirm(
+          `Change status to ${ctx.statusNames[el.value] || el.value} for ${ids.length} tasks (${scopeName()})?`,
+        )
+      ) {
+        el.value = "";
+        return;
+      }
+      for (const id of ids.filter((id) => task(id)))
         await patchTask(id, { status: el.value }, false);
       renderView(true);
     }
   });
   async function click(action, el) {
-    if (action === "columns") {
-      state.tableColumns = config();
-      showDialog(
-        `<dialog class="dialog">${dialogHead("Table columns")}<div class="dialog-body"><p>Show, resize and reorder columns. Save a named view to share this layout.</p><div id="column-list">${state.tableColumns.map((c, i) => `<div class="column-setting"><label><input type="checkbox" data-column-visible="${esc(c.key)}" ${c.visible !== false ? "checked" : ""}> ${esc(fieldName(c.key))}</label><button class="button small" data-feature="column-up" data-index="${i}" ${i === 0 ? "disabled" : ""}>↑</button><button class="button small" data-feature="column-down" data-index="${i}" ${i === state.tableColumns.length - 1 ? "disabled" : ""}>↓</button></div>`).join("")}</div></div><div class="dialog-foot"><button class="button primary" data-feature="columns-done">Done</button></div></dialog>`,
-        "columns",
+    if (action === "table-export") {
+      const csv = (value) => {
+        let text = String(
+          Array.isArray(value) ? value.join(", ") : (value ?? ""),
+        );
+        if (/^[\s]*[=+@-]/.test(text)) text = "'" + text;
+        return '"' + text.replaceAll('"', '""') + '"';
+      };
+      const data = [
+        columns.map((c) => csv(fieldName(c.key))).join(","),
+        ...matchingRows.map((t) =>
+          columns.map((c) => csv(fieldValue(t, c.key))).join(","),
+        ),
+      ].join("\r\n");
+      const url = URL.createObjectURL(
+        new Blob(["\ufeff", data], { type: "text/csv;charset=utf-8" }),
       );
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = "matching-tasks.csv";
+      link.click();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+      toast(`Exported ${matchingRows.length} matching tasks across all pages.`);
       return true;
     }
     if (action === "column-up" || action === "column-down") {
       const i = Number(el.dataset.index),
         j = i + (action === "column-up" ? -1 : 1);
+      if (j < 0 || j >= state.tableColumns.length) return true;
+      const key = state.tableColumns[i].key;
       [state.tableColumns[i], state.tableColumns[j]] = [
         state.tableColumns[j],
         state.tableColumns[i],
       ];
-      closeDialog(true);
-      await click("columns");
+      redrawColumns(key, action);
       return true;
     }
-    if (action === "columns-done") {
-      closeDialog(true);
-      renderView();
+    if (action === "columns-close") {
+      state.headerMenu = null;
+      const menu = $(".table-columns-menu");
+      menu.open = false;
+      menu.querySelector("summary").focus({ preventScroll: true });
       return true;
     }
     if (action === "bulk-archive") {
-      if (!selected.size) {
-        toast("Select rows first.");
-        return true;
-      }
-      if (confirm(`Archive ${selected.size} selected tasks?`)) {
-        for (const id of [...selected].filter((id) => task(id)))
-          await patchTask(id, { archived: true }, false);
-        selected.clear();
-        renderView(true);
+      const ids=bulkIds();
+      if(!bulkAllowed(ids)) return true;
+      if(confirm(`Archive ${ids.length} tasks (${scopeName()})? They remain recoverable with Include archived.`)) {
+        for(const id of ids) if(task(id)) await patchTask(id,{archived:true},false);
+        selected.clear();renderView(true);
       }
       return true;
     }
     return false;
   }
   document.addEventListener("change", (event) => {
-    if (event.target.dataset.columnVisible)
+    if (event.target.dataset.columnVisible) {
       state.tableColumns.find(
         (c) => c.key === event.target.dataset.columnVisible,
       ).visible = event.target.checked;
+      redrawColumns(event.target.dataset.columnVisible);
+    }
   });
-  return { render, click, value, patch };
+  return {
+    render,
+    click,
+    value,
+    patch,
+    preferences: tools.preferences,
+    persist: tools.persist,
+  };
 }

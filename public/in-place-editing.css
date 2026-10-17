@@ -161,6 +161,22 @@
 #canvas-inline-form :is(.inline-rich, .inline-preview) {
   flex: 0 1 auto;
 }
+/* The note is the editing surface; padding belongs inside the full-size editor. */
+.board-node.sticky:not(.task-as-note).inline-editing {
+  padding: 0;
+}
+.board-node.sticky:not(.task-as-note)
+  #canvas-inline-form
+  > :is(.inline-rich, .inline-preview, .inline-source) {
+  flex: 1 1 0;
+  min-height: 0;
+  padding: var(--board-text-padding);
+}
+.board-node.sticky:not(.task-as-note)
+  #canvas-inline-form
+  > :is(.inline-rich, .inline-preview) {
+  align-content: var(--note-text-alignment, safe center);
+}
 #canvas-inline-form .inline-rich:focus,
 [data-inline-title][contenteditable="true"]:focus {
   outline: var(--focus-ring);
@@ -394,11 +410,34 @@
   outline: var(--focus-ring);
   outline-offset: -1px;
 }
-.live-card-state .canvas-task-priority select {
+.canvas-task-priority select {
   position: absolute;
   inset: 0;
   width: 100%;
   height: 100%;
   opacity: 0;
   cursor: pointer;
+}
+
+.board-node.project-frame > .project-frame-update {
+  position: absolute;
+  right: 48px;
+  top: 7px;
+  display: inline-flex;
+  gap: 6px;
+  align-items: center;
+  min-height: 28px;
+  padding: 3px 8px;
+  font-size: 13px;
+  background: var(--surface);
+}
+.board-node.project-frame .frame-title {
+  padding-right: 180px;
+}
+.project-frame-update svg {
+  width: 16px;
+  height: 16px;
+}
+.presenting .project-frame-update {
+  display: none;
 }

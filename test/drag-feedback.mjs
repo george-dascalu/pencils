@@ -1,4 +1,4 @@
-import { openBoardSearch } from "./menu-controls.mjs";
+import { openBoardSearch, selectProjectView } from "./menu-controls.mjs";
 import assert from "node:assert/strict";
 import fs from "node:fs/promises";
 import os from "node:os";
@@ -166,8 +166,27 @@ try {
   console.log(
     "PASS: sticky drag preview, single persisted drop, outside-drop and Escape cancellation",
   );
-  await page.locator("[data-view=kanban]").click();
+  await selectProjectView(page, "kanban");
   const card = (id) => page.locator(`[data-drag-task="${id}"]`);
+  async function checkTaskEditor() {
+    await page.locator("#task-form").waitFor();
+    assert.equal(await page.locator("#task-form").getAttribute("data-id"), a.id);
+    assert.equal(await page.locator('#task-form [name="title"]').inputValue(), a.title);
+    assert.ok(await page.getByRole("textbox", { name: "Task description", exact: true }).isVisible());
+    assert.ok(await page.locator('#task-form [name="status"]').isVisible());
+    assert.ok(await page.locator('[data-task-picker="priority"]').isVisible());
+    await page.locator('[data-action="dialog-close"]').click();
+    await page.locator("dialog").waitFor({ state: "detached" });
+  }
+  await card(a.id).click({ position: { x: 5, y: 5 } });
+  await checkTaskEditor();
+  for (const target of [".task-id", ".card-bottom .due", ".task-title"]) {
+    await card(a.id).locator(target).click();
+    await checkTaskEditor();
+  }
+  await card(a.id).locator(".task-title").focus();
+  await page.keyboard.press("Enter");
+  await checkTaskEditor();
   let from = await card(b.id).boundingBox(),
     to = await card(a.id).boundingBox();
   await page.mouse.move(from.x + from.width / 2, from.y + 20);
@@ -175,6 +194,7 @@ try {
   await page.mouse.move(from.x + from.width / 2, from.y + 40, { steps: 5 });
   await page.mouse.move(to.x + to.width / 2, to.y + 8, { steps: 8 });
   await page.locator(".kanban-drop-placeholder").waitFor();
+  assert.equal(await page.locator("#task-form").count(), 0, "Dragging does not open the card");
   assert.equal(
     await page
       .locator(".kanban-drop-placeholder")
@@ -201,6 +221,7 @@ try {
     );
   });
   assert.equal(await page.locator(".kanban-drop-placeholder").count(), 0);
+  assert.equal(await page.locator("#task-form").count(), 0, "Dropping does not open the card");
   await card(c.id).dragTo(card(a.id), { targetPosition: { x: 80, y: 8 } });
   await until(async () => {
     const tasks = (await snap()).tasks;
@@ -238,10 +259,14 @@ try {
   await page.mouse.up();
   assert.equal(await page.locator(".kanban-drop-placeholder").count(), 0);
   assert.equal((await snap()).tasks.find((t) => t.id === a.id).status, "todo");
+  assert.equal(await page.locator("#task-form").count(), 0, "Cancelling a drag does not open the card");
+  await page.setViewportSize({ width: 390, height: 844 });
+  await card(a.id).click({ position: { x: 5, y: 5 } });
+  await checkTaskEditor();
   assert.deepEqual(errors, []);
   assert.deepEqual(external, []);
   console.log(
-    "PASS: Kanban insertion preview, within-column ordering, cross-column persistence, edge scroll and cancelled drag",
+    "PASS: whole Kanban cards open the shared task editor on desktop/mobile; keyboard access, insertion preview, ordering, cross-column persistence, edge scroll and cancelled drag",
   );
 } catch (e) {
   await page.screenshot({

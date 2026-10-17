@@ -1,3 +1,10 @@
+import {
+  noteStyles,
+  noteStyleControls,
+  paintNoteStyle,
+  isNote,
+} from "./note-style.js";
+import { selectSymbol } from "./select-symbols.js";
 export const shapeTypes = [
   "rectangle",
   "rounded",
@@ -26,7 +33,9 @@ export function shapeSVG(n, esc) {
 }
 export function validObjectGeometry(n) {
   return (
-    (n.borderColor==null || /^#[a-f0-9]{6}$/i.test(n.borderColor)) &&
+    (n.noteStyle == null ||
+      noteStyles.some(([value]) => value === n.noteStyle)) &&
+    (n.borderColor == null || /^#[a-f0-9]{6}$/i.test(n.borderColor)) &&
     (n.rotation == null ||
       (Number.isFinite(n.rotation) && Math.abs(n.rotation) <= 360)) &&
     (n.shape == null || shapeTypes.includes(n.shape)) &&
@@ -47,10 +56,11 @@ export function objectGeometryControls(n, ctx) {
   const field = (label, glyph, control, extra = "") =>
     `<label class="geometry-field ${extra}" title="${label}">${icon(glyph)}${control}</label>`;
   const select = (key, label, options, value, suffix = "") =>
-    `<select data-object-geometry="${key}" aria-label="${label}">${options.map((v) => `<option value="${v}" ${v === value ? "selected" : ""}>${typeof v === "string" ? v[0].toUpperCase() + v.slice(1) : v}${suffix}</option>`).join("")}</select>`;
+    `<span class="symbol-select"><span data-select-symbol-preview aria-hidden="true">${selectSymbol(key, value)}</span>${icon("chevron")}<select data-object-geometry="${key}" data-select-symbol="${key}" aria-label="${label}" title="${label}: ${value}${suffix}">${options.map((v) => `<option value="${v}" ${v === value ? "selected" : ""}>${typeof v === "string" ? v[0].toUpperCase() + v.slice(1) : v}${suffix}</option>`).join("")}</select></span>`;
   return `<details class="selection-menu" data-selection-menu="geometry">
     <summary aria-label="Shape, border and rotation" title="Shape, border and rotation">${icon("shape")}${icon("chevron")}</summary>
     <div class="selection-popover geometry-popover" role="group" aria-label="Object appearance">
+      ${noteStyleControls(n, ctx)}
       ${n.type === "shape" ? field("Shape", "shape", select("shape", "Shape", shapeTypes, n.shape || "rectangle"), "geometry-wide") : ""}
       ${field("Rotation (degrees)", "rotate", `<input data-object-geometry="rotation" aria-label="Object rotation" type="number" min="-360" max="360" value="${n.rotation || 0}"><span aria-hidden="true">°</span>`)}
       ${field("Border width", "stroke-width", select("borderWidth", "Border width", [0, 1, 2, 3, 5, 8], n.borderWidth ?? 2, " px"))}
@@ -64,6 +74,7 @@ export function objectGeometryControls(n, ctx) {
   </details>`;
 }
 export function paintObjectGeometry(el, n, esc) {
+  paintNoteStyle(el, n, esc);
   el.style.rotate = n.rotation ? `${n.rotation}deg` : "";
   if (n.borderStyle) el.style.borderStyle = n.borderStyle;
   if (n.borderWidth != null) el.style.borderWidth = `${n.borderWidth}px`;
@@ -93,7 +104,7 @@ export function paintObjectGeometry(el, n, esc) {
       maxWidth: "none",
       left: `${(-l * 100) / (1 - l - r)}%`,
       top: `${(-t * 100) / (1 - t - b)}%`,
-      objectFit: "fill",
+      objectFit: n.crop?.some(Boolean) ? "fill" : "contain",
     });
   }
 }
@@ -126,6 +137,17 @@ export function objectGeometry(ctx, pick) {
     changeBoard(() => nodes.forEach((n, i) => Object.assign(n, changes[i])));
   });
   document.addEventListener("click", (e) => {
+    const style = e.target.closest("[data-note-style]")?.dataset.noteStyle;
+    if (style && noteStyles.some(([value]) => value === style)) {
+      const notes = pick().filter((n) => !n.locked && isNote(n));
+      if (notes.length)
+        changeBoard(() =>
+          notes.forEach((n) => {
+            n.noteStyle = style;
+          }),
+        );
+      return;
+    }
     const action = e.target.closest("[data-image-command]")?.dataset
         .imageCommand,
       n = pick()[0];

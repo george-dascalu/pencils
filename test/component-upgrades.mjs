@@ -1,3 +1,4 @@
+import { selectProjectView } from "./menu-controls.mjs";
 import assert from "node:assert/strict";
 import fs from "node:fs/promises";
 import os from "node:os";
@@ -135,8 +136,8 @@ try {
   );
   await menu("text-align");
   await page
-    .locator("#selection-tools [data-text-style=verticalAlign]")
-    .selectOption("bottom");
+    .locator('#selection-tools [data-text-style=verticalAlign][value="bottom"]')
+    .click();
   await until(
     async () =>
       (await current()).nodes.find((n) => n.id === "note").verticalAlign ===
@@ -296,7 +297,7 @@ try {
         .status === "in-progress",
   );
   console.log("Embedded Kanban updates project task");
-  await page.locator("[data-view=timeline]").click();
+  await selectProjectView(page, "timeline");
   const bar = page.locator(`[data-timeline-task="${task.id}"]`),
     b = await bar.boundingBox();
   await page.mouse.move(b.x + b.width / 2, b.y + b.height / 2);

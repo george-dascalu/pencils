@@ -41,7 +41,7 @@ try {
     page.waitForFunction(
       () =>
         document.querySelector("#board-save").textContent ===
-        "All changes saved",
+        "Saved automatically",
     );
   await open();
   await page.locator('[name="pattern"][value="grid"]').check();

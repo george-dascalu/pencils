@@ -185,9 +185,8 @@ try {
     "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aZ1kAAAAASUVORK5CYII=",
     "base64",
   );
-  await page.locator("[data-board-menu=more] > summary").click();
   const chooser = page.waitForEvent("filechooser");
-  await page.locator("[data-feature=image-add]").click();
+  await page.locator(".board-tools [data-feature=image-add]").click();
   await (
     await chooser
   ).setFiles({ name: "image.png", mimeType: "image/png", buffer: png });

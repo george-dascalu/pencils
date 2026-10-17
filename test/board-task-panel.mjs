@@ -1,3 +1,4 @@
+import { selectProjectView } from "./menu-controls.mjs";
 import assert from "node:assert/strict";
 import fs from "node:fs/promises";
 import os from "node:os";
@@ -20,18 +21,30 @@ page.on("pageerror", (e) => errors.push(e.message));
 const snapshot = () => store.snapshot(project.id);
 const checkMetadataLayout = async () => {
   const rows = await page.locator(".task-metadata > div").evaluateAll((rows) =>
-    rows.map((row) => [...row.querySelectorAll(".field")].map((field) => ({
-      name: field.querySelector("[name]").name,
-      x: field.getBoundingClientRect().x,
-      y: field.getBoundingClientRect().y,
-    }))),
+    rows.map((row) =>
+      [...row.querySelectorAll(".field")].map((field) => ({
+        name: field.querySelector("[name]").name,
+        x: field.getBoundingClientRect().x,
+        y: field.getBoundingClientRect().y,
+      })),
+    ),
   );
-  assert.deepEqual(rows.map((row) => row.map((field) => field.name)), [
-    ["priority", "status", "assignee"], ["parent", "due"],
-  ]);
+  assert.deepEqual(
+    rows.map((row) => row.map((field) => field.name)),
+    [
+      ["priority", "status", "assignee"],
+      ["parent", "due"],
+    ],
+  );
   for (const row of rows) {
-    assert.ok(Math.max(...row.map((field) => field.y)) - Math.min(...row.map((field) => field.y)) < 2);
-    assert.ok(row.every((field, index) => index === 0 || field.x > row[index - 1].x));
+    assert.ok(
+      Math.max(...row.map((field) => field.y)) -
+        Math.min(...row.map((field) => field.y)) <
+        2,
+    );
+    assert.ok(
+      row.every((field, index) => index === 0 || field.x > row[index - 1].x),
+    );
   }
   assert.ok(rows[1][0].y > rows[0][0].y);
 };
@@ -229,8 +242,8 @@ try {
     editCamera,
   );
   assert.equal(
-    await editPanel.locator(".task-footer-actions button").count(),
-    4,
+    await editPanel.locator(".task-editor-actions button").count(),
+    5,
   );
   assert.match(
     await editPanel.locator("[data-subtask-list]").textContent(),
@@ -300,6 +313,11 @@ try {
     .fill("Updated rich description");
   await page.screenshot({ path: "/tmp/pencils-edit-task-panel.png" });
   await page.locator("#task-form [name=title]").press("Control+Enter");
+  await page
+    .locator("[data-autosave-status]")
+    .filter({ hasText: /^Saved automatically$/ })
+    .waitFor();
+  await page.locator("[data-action=dialog-close]").click();
   await editPanel.waitFor({ state: "detached" });
   await until(
     async () =>
@@ -316,7 +334,7 @@ try {
     updated.boards[0].nodes.filter((n) => n.task === task.id).length,
     1,
   );
-  await page.locator("[data-action=board-task-close]").click();
+  assert.equal(await page.locator("#board-task-panel").count(), 0);
   await card.locator("[data-pro=task-details]").click();
   await page.locator("[data-action=task-new]").first().click();
   assert.equal(await page.locator("#task-form").getAttribute("data-id"), "");
@@ -327,7 +345,7 @@ try {
   await page.locator("dialog [data-action=dialog-close]").click();
   await page.locator("[data-action=task-new]").first().click();
   await page.locator("#task-form [name=title]").fill("Preserve on navigation");
-  await page.locator("[data-view=list]").click();
+  await selectProjectView(page, "list");
   assert.equal(await page.locator(".board-task-editor").count(), 0);
   assert.deepEqual(errors, []);
   console.log(

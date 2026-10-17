@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
-import { chromium, firefox } from "playwright";
+import { chromium, firefox, webkit } from "playwright";
 import { Store } from "../server/store.js";
 import { createServer } from "../server/index.js";
 const root = await fs.mkdtemp(path.join(os.tmpdir(), "pencils-search-"));
@@ -33,7 +33,7 @@ const before = await store.snapshot(project.id);
 const server = createServer(store);
 await new Promise((r) => server.listen(0, "127.0.0.1", r));
 const browser = await (
-  process.env.BROWSER === "firefox" ? firefox : chromium
+  process.env.BROWSER === "webkit" ? webkit : process.env.BROWSER === "firefox" ? firefox : chromium
 ).launch({ headless: true });
 const page = await browser.newPage({ viewport: { width: 1440, height: 1000 } });
 const errors = [];
@@ -53,6 +53,9 @@ try {
   await page.locator('#canvas-find-results [data-id="note"]').click();
   assert.ok(await panel.isHidden());
   await page.locator('[data-node="note"]').waitFor({ state: "visible" });
+  await button.click();
+  await page.locator('[data-pro="return-viewport"]').click();
+  assert.ok(await panel.isHidden());
   await page.keyboard.press("Control+f");
   assert.ok(await field.evaluate((el) => el === document.activeElement));
   await page.locator("#canvas-owner").fill("Alice");
@@ -81,7 +84,7 @@ try {
       );
       await button.click();
       const box = await panel.boundingBox();
-      assert.ok(box.height < 160, "Empty search panel stays compact");
+      assert.ok(box.height < 550, "Object navigator stays bounded");
       assert.ok(box.x >= 0 && box.x + box.width <= width, JSON.stringify(box));
       assert.ok(await page.locator("#canvas-status").isVisible());
       await page.screenshot({

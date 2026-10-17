@@ -121,6 +121,9 @@ button svg {
   padding: 30px 18px 18px;
   z-index: 30;
 }
+.sidebar > * {
+  flex-shrink: 0;
+}
 .brand {
   display: flex;
   align-items: center;
@@ -252,7 +255,7 @@ button svg {
   align-items: center;
   gap: 5px;
   font-size: 11px;
-  color: #d3dfcd;
+  color: var(--ink);
   padding: 0;
 }
 .side-footer {
@@ -272,7 +275,7 @@ button svg {
 }
 .side-footer .version {
   margin-left: auto;
-  color: #789081;
+  color: #a6b7ac;
   font-size: 10px;
 }
 .main {
@@ -314,7 +317,7 @@ button svg {
   gap: 6px;
   align-items: center;
   font-size: 10px;
-  color: #85907f;
+  color: var(--muted);
 }
 .save-state svg {
   width: 13px;
@@ -479,7 +482,7 @@ button svg {
   border-bottom: 2px solid transparent;
   margin-bottom: -1px;
   font-size: 12px;
-  color: #8b9185;
+  color: var(--muted);
 }
 .tab svg {
   width: 15px;
@@ -654,7 +657,7 @@ button svg {
   align-items: center;
   gap: 5px;
   font-size: 10px;
-  color: #7b8771;
+  color: var(--muted);
   white-space: nowrap;
 }
 .task-type svg {
@@ -747,7 +750,7 @@ button svg {
 }
 .due {
   font-size: 10px;
-  color: #9aa18f;
+  color: var(--muted);
   white-space: nowrap;
 }
 .due.overdue {
@@ -775,7 +778,7 @@ button svg {
   display: flex;
   align-items: center;
   gap: 7px;
-  color: #98a18c;
+  color: var(--muted);
   font-size: 11px;
   padding: 13px 11px;
   width: 100%;
@@ -811,7 +814,7 @@ button svg {
 }
 .empty p {
   font-size: 12px;
-  color: #939c87;
+  color: var(--muted);
   line-height: 1.8;
   margin: 10px auto 20px;
   max-width: 400px;
@@ -880,7 +883,7 @@ button svg {
   text-align: left;
   padding: 13px 10px;
   background: #f2f4ec;
-  color: #7c8970;
+  color: var(--muted);
   font-size: 10px;
   font-weight: 500;
   border-bottom: 1px solid var(--line);
@@ -1145,7 +1148,7 @@ button svg {
 .dialog-body p {
   font-size: 12px;
   line-height: 1.8;
-  color: #7b8771;
+  color: var(--muted);
   margin-bottom: 14px;
 }
 .dialog-foot {
@@ -1368,7 +1371,7 @@ button svg {
 }
 .board-save {
   font-size: 10px;
-  color: #90a07e;
+  color: var(--muted);
 }
 .canvas {
   height: calc(100vh - 353px);
@@ -1898,6 +1901,7 @@ button svg {
   margin-bottom: 5px;
 }
 .organisation-choice select {
+  appearance: none;
   display: block;
   width: 100%;
   min-width: 0;
@@ -1906,6 +1910,9 @@ button svg {
   border-radius: 3px;
   background: transparent;
   color: #edf2e7;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='m3 4.5 3 3 3-3' fill='none' stroke='%23edf2e7' stroke-width='1.5'/%3E%3C/svg%3E");
+  background-position: right center;
+  background-repeat: no-repeat;
   font-size: 12px;
   cursor: pointer;
   text-overflow: ellipsis;
@@ -1943,7 +1950,7 @@ button svg {
 }
 .organisation-crumb {
   padding: 0;
-  color: #7d8a72;
+  color: var(--muted);
   font-size: 11px;
   max-width: 180px;
   overflow: hidden;
@@ -2268,8 +2275,12 @@ button svg {
 .task-editor-head > .icon-button {
   flex-shrink: 0;
 }
-.task-dialog.with-task-history {
+.task-dialog:is(.with-task-history, .with-task-comments) {
   width: min(1280px, calc(100vw - 24px));
+  height: 94dvh;
+}
+.task-dialog:is(.with-task-history, .with-task-comments) #task-form {
+  height: 100%;
 }
 .task-editor-content {
   display: grid;
@@ -2277,7 +2288,7 @@ button svg {
   position: relative;
   min-height: 0;
 }
-.with-task-history .task-editor-content {
+:is(.with-task-history, .with-task-comments) .task-editor-content {
   grid-template-columns: minmax(0, 1fr) 300px;
 }
 .task-editor-content > .dialog-body {
@@ -2443,7 +2454,7 @@ button svg {
   min-width: 0;
   font-size: 13px;
 }
-.task-history-panel {
+:is(.task-history-panel, .task-comments-panel) {
   border-left: 1px solid var(--line);
   padding: 16px;
   max-height: calc(90dvh - 120px);
@@ -2478,10 +2489,10 @@ button svg {
   .task-editor-head .title-input {
     grid-column: 1 / -1;
   }
-  .with-task-history .task-editor-content {
+  :is(.with-task-history, .with-task-comments) .task-editor-content {
     grid-template-columns: minmax(0, 1fr);
   }
-  .task-history-panel {
+  :is(.task-history-panel, .task-comments-panel) {
     position: absolute;
     inset: 0 0 0 auto;
     width: min(360px, 100%);
@@ -2665,7 +2676,7 @@ button svg {
   grid-template-rows: minmax(0, 1fr);
 }
 .task-dialog .task-editor-content > .dialog-body,
-.task-dialog .task-history-panel {
+.task-dialog :is(.task-history-panel, .task-comments-panel) {
   min-height: 0;
   max-height: none;
   overflow-y: auto;
@@ -2822,3 +2833,50 @@ button svg {
 .directory-page .team-heading > input {
   flex-basis: 180px;
 }
+
+/* Task comments occupy the same sidebar slot as version history. */
+.task-dialog .task-comments-panel {
+  position: static;
+  inset: auto;
+  display: flex;
+  width: auto;
+  height: auto;
+  min-width: 0;
+  min-height: 0;
+  max-height: none;
+  padding: 16px;
+  border: 0;
+  border-left: 1px solid var(--line);
+  border-radius: 0;
+  box-shadow: none;
+  font-size: 12px;
+  overflow: hidden;
+}
+.task-comments-panel .board-comments-head {
+  padding: 0;
+  gap: 8px;
+}
+.task-comments-panel .board-comments-head strong {
+  margin: 0 0 10px;
+  font-size: 13px;
+}
+.task-comments-panel .board-comments-object {
+  display: none;
+}
+.task-comments-panel .board-comments-list {
+  padding: 16px 0;
+}
+.task-comments-panel #board-comment-form {
+  flex: 0 0 auto;
+  padding: 12px 0 0;
+}
+@media (max-width: 800px) {
+  .task-dialog .task-comments-panel {
+    position: absolute;
+    inset: 0 0 0 auto;
+    width: min(360px, 100%);
+    box-shadow: -8px 0 25px #0002;
+  }
+}
+
+.sidebar .text-link {color:#d3dfcd}

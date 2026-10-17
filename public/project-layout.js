@@ -1,6 +1,7 @@
+import { positionPopover } from "./popover-position.js";
 // Group the existing controls without replacing their handlers or save state.
 export function projectLayout(ctx) {
-  const { $, state, esc } = ctx;
+  const { $, state, esc, icon, label, viewLabel, taskViews, planningViews, openView } = ctx;
   function menu(host, key, title) {
     let el = host.querySelector(`[data-board-menu="${key}"]`);
     if (!el) {
@@ -27,9 +28,37 @@ export function projectLayout(ctx) {
       );
       projectTools = $("#board-project-tools");
     }
+    let switcher = projectTools.querySelector(".mobile-view-switcher");
+    if (!switcher) {
+      switcher = document.createElement("label");
+      switcher.className = "mobile-view-switcher";
+      projectTools.prepend(switcher);
+    }
+    const projectView = taskViews.includes(state.view) ? "tasks" : planningViews.includes(state.view) ? "planning" : state.view;
+    switcher.innerHTML = `View <select id="project-view-switcher" aria-label="Project view">${[...tabs.querySelectorAll("[data-view]")].map((button) => `<option value="${esc(button.dataset.view)}" ${button.dataset.view === projectView ? "selected" : ""}>${esc(viewLabel(button.dataset.view))}</option>`).join("")}</select>`;
     const projectPanel = menu(projectTools, "project", "Project");
     projectPanel.innerHTML = `<div class="compact-project-info"><strong>${esc(state.project.title)}</strong><p>${esc($(".hero p")?.textContent || "")}</p><p>${esc($(".stats-strip")?.textContent.replace(/\s+/g, " ").trim() || "")}</p></div>`;
+    $(".shared-query-controls")?.remove();
     const features = $("#feature-toolbar");
+    const queryHost = $(".toolbar-left");
+    if (
+      features &&
+      queryHost &&
+      !["board", "drawing", "overview", "settings"].includes(state.view)
+    ) {
+      const controls = document.createElement("div");
+      controls.className = "shared-query-controls";
+      for (const el of features.querySelectorAll(
+        '#saved-view,[data-feature="view-save"],[data-feature="view-save-as"],[data-feature="view-delete"]',
+      ))
+        controls.append(el);
+      queryHost.prepend(controls);
+    }
+    $(".view-layout-switcher")?.remove();
+    const taskLayout = taskViews.includes(state.view);
+    const layouts = taskLayout ? taskViews : planningViews.includes(state.view) ? planningViews : [];
+    if (queryHost && layouts.length)
+      queryHost.insertAdjacentHTML("afterbegin", `<div class="view-layout-switcher ${taskLayout ? "task" : "planning"}-view-switcher" role="group" aria-label="${taskLayout ? "Task" : "Planning"} layout">${layouts.map((view) => `<button type="button" data-action="view" data-view="${view}" aria-pressed="${state.view === view}" title="${label(view)} layout">${icon(view)}<span>${label(view)}</span></button>`).join("")}</div>`);
     if (features) {
       for (const el of [...features.children])
         if (!el.classList.contains("spacer")) projectPanel.append(el);
@@ -46,9 +75,14 @@ export function projectLayout(ctx) {
       panel.replaceChildren(...advanced.children);
       advanced.remove();
       const f = state.extraFilters || {};
-      const count = [f.assignee, f.tag, f.due, f.blocked, f.archived].filter(
-        Boolean,
-      ).length;
+      const count = [
+        f.assignee,
+        f.tag,
+        f.due,
+        f.blocked,
+        f.archived,
+        f.completion,
+      ].filter(Boolean).length;
       panel.parentElement.querySelector("summary").innerHTML =
         `Filters${count ? ` (${count})` : ""}<span aria-hidden="true">⌄</span>`;
     }
@@ -57,13 +91,13 @@ export function projectLayout(ctx) {
   function render() {
     const toolbar = $(".board-toolbar");
     if (!$("#canvas") || !toolbar) return;
-    const boards = menu(toolbar, "board", "Board");
+    const boards = menu(toolbar, "board", viewLabel("board"));
     move(boards, '[data-action="board-new"]');
 
     const more = menu(toolbar, "more", "More");
     // Dynamic tools are recreated on each board render; remove their old copies.
     for (const panel of [boards, more])
-      for (const el of [...panel.children]) if (!el.dataset.action) el.remove();
+      for (const el of [...panel.children]) if (!el.dataset.action && !el.dataset.boardPersistent) el.remove();
     const extras = $("#canvas-extras");
     const addFeatures = ["grid-add", "frame-add", "draw-tool", "image-add"];
     const addPro = ["note-add", "query-add"];
@@ -89,11 +123,51 @@ export function projectLayout(ctx) {
     if (recovery) toolbar.append(recovery);
     restoreMenus();
   }
+  function positionMenus() {
+    for (const details of document.querySelectorAll(".board-menu[open]")) {
+      const panel = details.querySelector(".board-menu-panel");
+      panel.style.position = "fixed";
+      const anchor = details.querySelector("summary").getBoundingClientRect(),
+        toolbar = details
+          .closest(".table-view-tools,.toolbar-left,.board-toolbar")
+          ?.getBoundingClientRect();
+      positionPopover(
+        panel,
+        {
+          left: anchor.left,
+          top: toolbar ? Math.min(anchor.top, toolbar.top) : anchor.top,
+          bottom: toolbar
+            ? Math.max(anchor.bottom, toolbar.bottom)
+            : anchor.bottom,
+        },
+        { width: 320, maxHeight: 560 },
+      );
+    }
+  }
+  document.addEventListener(
+    "toggle",
+    (e) => {
+      if (e.target.matches(".board-menu")) positionMenus();
+    },
+    true,
+  );
+  window.addEventListener("resize", positionMenus);
+  window.addEventListener("scroll", positionMenus, true);
+  window.visualViewport?.addEventListener("resize", positionMenus);
   function restoreMenus() {
     document.querySelectorAll(".board-menu").forEach((el) => {
       el.open = el.dataset.boardMenu === state.headerMenu;
     });
+    requestAnimationFrame(positionMenus);
   }
+  document.addEventListener("change", (event) => {
+    if (event.target.id === "project-view-switcher") {
+      openView(event.target.value);
+      const switcher = $("#project-view-switcher");
+      switcher.value = taskViews.includes(state.view) ? "tasks" : planningViews.includes(state.view) ? "planning" : state.view;
+      switcher.focus({ preventScroll: true });
+    }
+  });
   // Native disclosures support keyboard activation and keep controls reachable.
   document.addEventListener(
     "click",
@@ -104,6 +178,8 @@ export function projectLayout(ctx) {
         document.querySelectorAll(".board-menu[open]").forEach((other) => {
           if (other !== el) other.open = false;
         });
+        // Position after the native disclosure toggles, before its first paint.
+        requestAnimationFrame(positionMenus);
       }
       if (!el) {
         state.headerMenu = null;
@@ -112,7 +188,7 @@ export function projectLayout(ctx) {
           .forEach((menu) => (menu.open = false));
       } else if (
         event.target.closest("button") &&
-        !event.target.closest("form")
+        !event.target.closest("form, [data-menu-keep-open]")
       ) {
         state.headerMenu = null;
         el.open = false;

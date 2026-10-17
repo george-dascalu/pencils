@@ -1,7 +1,20 @@
+import { canvasPointerTool } from "./drawing-input.js";
+import {hierarchyError} from "./hierarchy-model.js";
+import {sourceLabel} from "./source-model.js";
+import { renderCanvasEdges } from "./canvas-lines.js";
+import {
+  boardTaskState,
+  taskStateBadge,
+  unavailableTaskHTML,
+} from "./board-task-state.js";
+import { dependencyStyle } from "./dependency-style.js";
+import { edgeDependency } from "./dependency-model.js";
+import { draftTaskData, validDraftTask } from "./draft-task.js";
 import { boardComments } from "./board-comments.js";
 import { assigneeOptions, assigneeHint, projectPeople } from "./teams.js";
 import {
   nextStatuses,
+  initialStatus,
   statusLabel,
   canTransition,
   statusColor,
@@ -90,6 +103,7 @@ export function canvasPro(ctx, basic) {
     outlineOpen = false,
     searchOpen = false,
     search = "",
+    searchLimit=50, previousViewport=null,
     owner = "",
     status = "",
     presenting = -1,
@@ -165,14 +179,19 @@ export function canvasPro(ctx, basic) {
     if (!b) return "";
     index = new Map(b.nodes.map((n) => [n.id, n]));
     const r = rect();
+    const taskMap = new Map(state.tasks.map((task) => [task.id, task]));
     let content = "";
     for (const e of b.edges) {
       const a = exporting ? index.get(e.from) : effectiveNode(e.from),
         c = exporting ? index.get(e.to) : effectiveNode(e.to);
       if (!a || !c || a.id === c.id) continue;
       if (!exporting && !intersects(bounds([a, c]), r)) continue;
-      const p = routeEdge(e, a, c),
-        color = palette[e.color] || e.color || "#78906f";
+      const dependency = edgeDependency(b, e, taskMap, index);
+      const appearance = dependency.active
+        ? { ...e, ...dependencyStyle(b, state.project) }
+        : e;
+      const p = routeEdge(e, a, c, b.nodes),
+        color = palette[appearance.color] || appearance.color || "#78906f";
       if (e.lineJumps && ["straight", "elbow"].includes(e.routing)) {
         const routes = b.edges
           .filter(
@@ -183,12 +202,24 @@ export function canvasPro(ctx, basic) {
           .map((other) => {
             const start = index.get(other.from),
               end = index.get(other.to);
-            return start && end ? routeEdge(other, start, end).points : [];
+            return start && end ? routeEdge(other, start, end, b.nodes).points : [];
           });
         p.d = lineJumps(p.points, routes);
       }
-      const style = connectorStyle(e, color, esc);
-      content += `<g data-edge="${esc(e.id)}"><defs>${style.defs}</defs>${exporting ? "" : `<path class="connector-selection" d="${p.d}" fill="none" stroke-width="${style.width + 8 / state.camera.z}" aria-hidden="true"/><path class="connector-hit" d="${p.d}" fill="none" stroke="transparent" stroke-width="${Math.max(12 / state.camera.z, e.width || 2)}"/>`}<path class="canvas-edge ${basic.selectedEdges.has(e.id) || e.id === state.selectedEdge ? "selected" : ""}" data-edge="${esc(e.id)}" d="${p.d}" fill="none" stroke="${esc(color)}" ${style.attrs}/>${e.label || (e.relationship && e.relationship !== "relates") ? `<text class="edge-label" data-edge="${esc(e.id)}" data-edge-label="main" x="${p.x + (e.labelOffset?.x || 0)}" y="${p.y - 9 + (e.labelOffset?.y || 0)}">${esc(e.label || e.relationship)}</text>` : ""}${(e.labels || []).map((label, i) => `<text class="edge-label" data-edge="${esc(e.id)}" data-edge-label="${i}" x="${p.x + label.x}" y="${p.y + label.y}">${esc(label.text)}</text>`).join("")}</g>`;
+      const edgeLabel = dependency.active
+        ? e.planRelation === "dependency"
+          ? "blocks"
+          : e.label
+            ? `${e.label} · blocks`
+            : "blocks"
+        : e.label ||
+          (dependency.valid && e.relationship === "blocks"
+            ? ""
+            : e.relationship === "relates"
+              ? ""
+              : e.relationship || "");
+      const style = connectorStyle(appearance, color, esc);
+      content += `<g data-edge="${esc(e.id)}"${dependency.active ? ' data-task-dependency="true"' : ""}><defs>${style.defs}</defs>${exporting ? "" : `<path class="connector-selection" d="${p.d}" fill="none" stroke-width="${style.width + 8 / state.camera.z}" aria-hidden="true"/><path class="connector-hit" d="${p.d}" fill="none" stroke="transparent" stroke-width="${Math.max(12 / state.camera.z, appearance.width || 2)}"/>`}<path class="canvas-edge ${basic.selectedEdges.has(e.id) || e.id === state.selectedEdge ? "selected" : ""}" data-edge="${esc(e.id)}" d="${p.d}" fill="none" stroke="${esc(color)}" ${style.attrs}/>${edgeLabel ? `<text class="edge-label" data-edge="${esc(e.id)}" data-edge-label="main" x="${p.x + (e.labelOffset?.x || 0)}" y="${p.y - 9 + (e.labelOffset?.y || 0)}">${esc(edgeLabel)}</text>` : ""}${(e.labels || []).map((label, i) => `<text class="edge-label" data-edge="${esc(e.id)}" data-edge-label="${i}" x="${p.x + label.x}" y="${p.y + label.y}">${esc(label.text)}</text>`).join("")}</g>`;
     }
     return content + (exporting ? "" : endpointHandles(b));
   }
@@ -199,7 +230,7 @@ export function canvasPro(ctx, basic) {
         a = e && effectiveNode(e.from),
         c = e && effectiveNode(e.to);
       if (a && c) {
-        const path = routeEdge(e, a, c);
+        const path = routeEdge(e, a, c, b.nodes);
         for (const [i, p] of (e.bends || []).entries())
           content += `<circle class="connector-endpoint connector-bend" data-edge="${esc(e.id)}" data-bend="${i}" cx="${p.x}" cy="${p.y}" r="${6 / state.camera.z}" aria-label="Drag bend; double-click to remove"/>`;
         if ((e.bends?.length || 0) < 20)
@@ -304,7 +335,7 @@ export function canvasPro(ctx, basic) {
                 (f) =>
                   `<td>${
                     f === "status"
-                      ? `<select data-canvas-status="${esc(t.id)}" aria-label="Task status">${nextStatuses(
+                      ? `<select data-canvas-status="${esc(t.id)}" ${t.source?"disabled":""} aria-label="Task status">${nextStatuses(
                           state.config,
                           t.status,
                         )
@@ -352,8 +383,14 @@ export function canvasPro(ctx, basic) {
       notes.set(file, { error: e.message });
     } finally {
       loading.delete(file);
-      if (state.project?.id === project && state.view === "board") enhance();
+      if (state.project?.id === project && ["board", "drawing"].includes(state.view)) enhance();
     }
+  }
+  function cardPriority(data, attributes) {
+    return `<label class="canvas-task-priority priority ${esc(data.priority || "none")}" title="Priority: ${esc(ctx.label(data.priority || "none"))}">${icon(`priority-${data.priority || "none"}`)}<select data-canvas-task-field="priority" ${data.source?"disabled":""} ${attributes} aria-label="Priority for ${esc(data.title)}">${["none", "low", "medium", "high", "urgent"].map((value) => `<option value="${value}" ${value === (data.priority || "none") ? "selected" : ""}>${ctx.label(value)}</option>`).join("")}</select></label>`;
+  }
+  function cardAssignee(data, attributes) {
+    return `<select class="canvas-task-assignee" data-canvas-task-field="assignee" ${data.source?"disabled":""} ${attributes} aria-label="Assignee for ${esc(data.title)}" title="${esc(assigneeHint(state) || data.assignee || "Unassigned")}">${assigneeOptions(state, data.assignee, esc)}</select>`;
   }
   function enhance(only = null) {
     if (!board()) return;
@@ -384,9 +421,35 @@ export function canvasPro(ctx, basic) {
               : "#ffffff";
         } else el.style.removeProperty("color");
       }
-      if (n.type === "task") {
+      const availability = boardTaskState(
+        n,
+        byTask.get(n.task),
+        state.taskAvailability,
+      );
+      el.classList.toggle("archived-task", availability?.status === "archived");
+      el.classList.toggle("deleted-task", availability?.status === "deleted");
+      el.classList.toggle(
+        "unavailable-task",
+        availability?.status === "unavailable",
+      );
+      el.classList.toggle("draft-task", n.type === "draft");
+      if (n.type === "draft") {
+        const d = draftTaskData(n),
+          count = n.comments?.filter((c) => !c.deleted).length || 0;
+        el.innerHTML = `<div class="live-card-heading"><span class="canvas-task-type" role="img" aria-label="Draft task" title="Draft task">${icon("pencil")}</span><strong class="task-title">${esc(d.title)}</strong><div class="live-card-actions">${btn("convert", icon("task"), `data-id="${esc(n.id)}" aria-label="Finalise task" title="Finalise task" ${n.locked ? "disabled" : ""}`)}${btn("comments", icon("comment") + (count ? `<span class="task-comment-count">${count}</span>` : ""), `data-id="${esc(n.id)}" aria-label="Comments on ${esc(d.title)}"`)}${btn("draft-edit", "↗", `data-id="${esc(n.id)}" aria-label="Edit draft task" title="Edit draft task"`)}</div></div><div class="draft-task-meta"><span class="draft-task-badge">${icon("pencil")}Draft</span><span>${icon(d.type)}${esc(ctx.label(d.type))}</span>${cardPriority(d, `data-draft-node="${esc(n.id)}" ${n.locked ? "disabled" : ""}`)}${cardAssignee(d, `data-draft-node="${esc(n.id)}" ${n.locked ? "disabled" : ""}`)}</div><div class="canvas-markdown">${d.body ? markdown(d.body) : '<span class="is-placeholder">Add task notes…</span>'}</div>`;
+      } else if (n.type === "task" && !byTask.has(n.task)) {
+        el.classList.remove("overdue", "blocked-task", "dimmed");
+        el.setAttribute(
+          "aria-label",
+          `${availability?.title || "Task"} — ${availability?.status === "deleted" ? "Deleted task" : "Task unavailable"}`,
+        );
+        el.innerHTML = unavailableTaskHTML(n, availability, ctx);
+      } else if (n.type === "task") {
         const t = byTask.get(n.task);
-        if (!t) continue;
+        el.setAttribute(
+          "aria-label",
+          `${t.title}${t.archived ? " — Archived" : ""}`,
+        );
         const asNote = isTaskNote(n),
           flags = taskFlags(t),
           section = markdownSlice(t.body || "", n.subpath || ""),
@@ -406,7 +469,7 @@ export function canvasPro(ctx, basic) {
         if (asNote) {
           el.innerHTML = `<div class="note-content ${section?.text ? "has-body" : ""}"><div class="note-title canvas-markdown" data-inline-title>${esc(t.title)}</div><div class="note-body node-text canvas-markdown">${section ? (section.text ? markdown(section.text) : "") : "<p>Heading or block not found.</p>"}</div></div>`;
         } else {
-          el.innerHTML = `<div class="live-card-heading"><strong class="task-title" data-inline-title>${esc(t.title)}</strong><div class="live-card-actions">${btn("comments", icon("comment") + (commentCount ? `<span class="task-comment-count" aria-hidden="true">${commentCount}</span>` : ""), `data-id="${esc(n.id)}" aria-label="Comments on ${esc(t.title)}${commentCount ? ` (${commentCount})` : ""}" title="Comments${commentCount ? ` (${commentCount})` : ""}"`)}${btn("task-details", "↗", `data-task="${esc(t.id)}" aria-label="Open task details" title="Expand task"`)}</div></div><div class="live-card-state"><span class="canvas-task-key" title="${esc(t.key || t.id)} · ${esc(ctx.label(t.type))}">${esc(t.key || t.id)}</span><label class="canvas-task-priority priority ${esc(t.priority || "none")}" title="Priority: ${esc(ctx.label(t.priority || "none"))}">${icon(`priority-${t.priority || "none"}`)}<select data-canvas-task-field="priority" data-task="${esc(t.id)}" aria-label="Priority for ${esc(t.title)}">${["none", "low", "medium", "high", "urgent"].map((value) => `<option value="${value}" ${value === (t.priority || "none") ? "selected" : ""}>${ctx.label(value)}</option>`).join("")}</select></label><select class="canvas-task-status" style="--task-status-color:${statusColor(state.config, t.status)}" data-canvas-status="${esc(t.id)}" aria-label="Task status" title="${esc(statusLabel(state.config, t.status))}">${nextStatuses(
+          el.innerHTML = `<div class="live-card-heading"><span class="canvas-task-type" role="img" aria-label="${esc(ctx.label(t.type))}" title="${esc(ctx.label(t.type))}">${icon(t.type)}</span><strong class="task-title" data-inline-title>${esc(t.title)}</strong><div class="live-card-actions">${btn("comments", icon("comment") + (commentCount ? `<span class="task-comment-count" aria-hidden="true">${commentCount}</span>` : ""), `data-id="${esc(n.id)}" aria-label="Comments on ${esc(t.title)}${commentCount ? ` (${commentCount})` : ""}" title="Comments${commentCount ? ` (${commentCount})` : ""}"`)}${btn("task-details", "↗", `data-task="${esc(t.id)}" aria-label="Open task details" title="Expand task"`)}</div></div><div class="live-card-state"><span class="canvas-task-key" title="${esc(t.key || t.id)} · ${esc(ctx.label(t.type))}">${esc(t.key || t.id)}</span>${cardPriority(t, `data-task="${esc(t.id)}"`)}<select class="canvas-task-status" style="--task-status-color:${statusColor(state.config, t.status)}" data-canvas-status="${esc(t.id)}" ${t.source?"disabled":""} aria-label="Task status" title="${esc(statusLabel(state.config, t.status))}">${nextStatuses(
             state.config,
             t.status,
           )
@@ -416,7 +479,7 @@ export function canvasPro(ctx, basic) {
             )
             .join(
               "",
-            )}</select><select class="canvas-task-assignee" data-canvas-task-field="assignee" data-task="${esc(t.id)}" aria-label="Assignee for ${esc(t.title)}" title="${esc(assigneeHint(state) || t.assignee || "Unassigned")}">${assigneeOptions(state, t.assignee, esc)}</select></div>${flags.overdue || flags.blocked ? `<div class="canvas-task-flags">${flags.overdue ? "<b>Overdue</b>" : ""}${flags.blocked ? "<b>Blocked</b>" : ""}</div>` : ""}${n.h > 175 ? `<div class="canvas-markdown">${section ? (section.text ? markdown(section.text) : '<span class="is-placeholder">Add task notes…</span>') : "<p>Heading or block not found.</p>"}</div>` : ""}${n.subpath ? `<small class="embed-label">${esc(n.subpath)}</small>` : ""}`;
+            )}</select>${cardAssignee(t, `data-task="${esc(t.id)}"`)}</div>${t.source?`<small class="source-badge">${esc(sourceLabel(t))} · Source fields are read-only</small>`:""}${flags.overdue || flags.blocked ? `<div class="canvas-task-flags">${flags.overdue ? "<b>Overdue</b>" : ""}${flags.blocked ? "<b>Blocked</b>" : ""}</div>` : ""}${n.h > 175 ? `<div class="canvas-markdown">${section ? (section.text ? markdown(section.text) : '<span class="is-placeholder">Add task notes…</span>') : "<p>Heading or block not found.</p>"}</div>` : ""}${n.subpath ? `<small class="embed-label">${esc(n.subpath)}</small>` : ""}`;
         }
       } else if (n.type === "file") {
         loadNote(n);
@@ -444,6 +507,12 @@ export function canvasPro(ctx, basic) {
             `<div class="object-caption ${defaultText(n) ? "is-placeholder" : ""}">${esc(n.text || placeholder(n))}</div>`,
           );
       }
+      if (availability?.status === "archived") {
+        const badge = `<div class="board-task-recovery">${taskStateBadge(availability, ctx)}<button type="button" class="button small" data-pro="task-unarchive" data-task="${esc(n.task)}">${icon("folder")}Unarchive</button></div>`;
+        const stateRow = el.querySelector(".live-card-heading");
+        if (stateRow) stateRow.insertAdjacentHTML("afterend", badge);
+        else el.insertAdjacentHTML("afterbegin", badge);
+      }
       // Clip contents, while connection ports and resize handles remain outside.
       if (!el.querySelector(":scope > .board-node-content")) {
         const content = document.createElement("div");
@@ -465,6 +534,13 @@ export function canvasPro(ctx, basic) {
             `data-id="${esc(n.id)}" aria-label="Object comments"`,
           ),
         );
+      if (n.projectFrame) {
+        el.classList.add("project-frame");
+        el.insertAdjacentHTML(
+          "beforeend",
+          `<button type="button" class="button small project-frame-update" data-feature="project-frame-update" data-id="${esc(n.id)}" ${n.locked ? "disabled" : ""}>${icon("refresh")}Update plan</button>`,
+        );
+      }
       if (n.type === "frame")
         el.insertAdjacentHTML(
           "beforeend",
@@ -686,7 +762,7 @@ export function canvasPro(ctx, basic) {
       const button = event.target.closest(
         '[data-action="board-undo"],[data-action="board-redo"]',
       );
-      if (!button || state.view !== "board") return;
+      if (!button || !["board", "drawing"].includes(state.view)) return;
       event.preventDefault();
       event.stopImmediatePropagation();
       if (undoBusy) return;
@@ -725,6 +801,7 @@ export function canvasPro(ctx, basic) {
       identity = b.id;
       search = "";
       searchOpen = false;
+      previousViewport=null;searchLimit=50;
       owner = "";
       status = "";
       presenting = -1;
@@ -735,7 +812,7 @@ export function canvasPro(ctx, basic) {
     updateUndo();
     $("#canvas-extras")?.insertAdjacentHTML(
       "afterbegin",
-      `<button type="button" class="button small" data-session="open">Board session</button>${btn("note-add", "Live note")}${btn("query-add", "Live task view")}${btn("templates", "Templates")}${btn("outline", "Outline")}${btn("present", "Present")}${btn("activity", "Activity")}${btn("shortcuts", "?", 'aria-label="Board shortcuts"')}`,
+      `<button type="button" class="button small" data-session="open">Board session</button>${btn("note-add", "Live note")}${btn("query-add", "Live task view")}${btn("templates", "Templates")}${btn("outline", "Outline")}${btn("connections", "Connections")}${btn("present", "Present")}${btn("activity", "Activity")}${btn("shortcuts", "?", 'aria-label="Board shortcuts"')}`,
     );
     $("#canvas").insertAdjacentHTML(
       "beforeend",
@@ -753,7 +830,7 @@ export function canvasPro(ctx, basic) {
   function reconcile() {
     cameraFrame = null;
     if (
-      state.view !== "board" ||
+      !["board", "drawing"].includes(state.view) ||
       !$("#canvas-world") ||
       !board() ||
       editor ||
@@ -783,14 +860,7 @@ export function canvasPro(ctx, basic) {
       enhance(added);
     }
     const svg = $("#canvas-lines");
-    if (svg) {
-      const markup = edges();
-      if (svg._cameraMarkup !== markup) {
-        svg.querySelectorAll("[data-edge]").forEach((el) => el.remove());
-        svg.insertAdjacentHTML("beforeend", markup);
-        svg._cameraMarkup = markup;
-      }
-    }
+    if (svg) renderCanvasEdges(svg, edges());
     paintMap();
     paintPresence();
     paintOverview(ids);
@@ -904,24 +974,15 @@ export function canvasPro(ctx, basic) {
   function searchResults() {
     const el = $("#canvas-find-results");
     if (!el) return;
-    const results = search
-      ? board()
-          .nodes.filter((n) =>
-            `${n.text || ""} ${task(n.task)?.key || ""} ${(task(n.task)?.aliases || []).join(" ")} ${task(n.task)?.title || ""} ${n.file || ""} ${n.src || ""}`
-              .toLowerCase()
-              .includes(search.toLowerCase()),
-          )
-          .slice(0, 30)
-      : [];
-    el.innerHTML = results
-      .map((n) =>
-        btn(
-          "find-result",
-          esc(task(n.task)?.title || n.text || n.file || n.type),
-          `data-id="${esc(n.id)}"`,
-        ),
-      )
-      .join("");
+    const entries=board().nodes.map(n=>{
+      const availability=boardTaskState(n,task(n.task),state.taskAvailability),
+        title=task(n.task)?.title || availability?.title || n.draft?.title || n.text || n.file || n.type;
+      const flags=[n.type,n.locked?"Locked":"",n.layerHidden?"Hidden layer":"",availability?.status || ""].filter(Boolean);
+      return {n,title,flags,text:`${title} ${task(n.task)?.key || availability?.key || ""} ${(task(n.task)?.aliases || []).join(" ")} ${n.src || ""} ${flags.join(" ")}`.toLowerCase()};
+    }).filter(entry=>entry.text.includes(search.toLowerCase()));
+    const results=entries.slice(0,searchLimit);
+    el.innerHTML=`${previousViewport?btn("return-viewport","Return to previous position"):""}<p class="field-hint">${results.length} of ${entries.length} matching objects</p>`+results.map(({n,title,flags})=>btn("find-result",`${esc(title)}<small>${esc(flags.join(" · "))}${n.layerHidden?" · Show layer and jump":""}</small>`,`data-id="${esc(n.id)}"`)).join("")+(entries.length>searchLimit?btn("find-more","Show 50 more objects"):"");
+
   }
   function reveal(n) {
     const expand = [];
@@ -970,7 +1031,8 @@ export function canvasPro(ctx, basic) {
   async function inline(n = pick()[0], focusTitle = false) {
     rebuild();
     n = index.get(n?.id);
-    if (!n || n.locked || editor) return;
+    if (!n || n.locked || n.projectFrame || editor) return;
+    if (n.type === "draft") return ctx.draftTaskDialog(n.id);
 
     const gridTitle = n.type === "grid" && focusTitle;
     let note = null,
@@ -1063,7 +1125,8 @@ export function canvasPro(ctx, basic) {
       letterSpacing: typography.letterSpacing,
       textAlign: typography.textAlign,
       whiteSpace: typography.whiteSpace,
-      padding: typography.padding,
+      padding:
+        n.type === "sticky" ? "var(--board-text-padding)" : typography.padding,
     };
     Object.assign(rich.style, textStyle);
     rich.classList.add("inline-rich");
@@ -1582,6 +1645,7 @@ export function canvasPro(ctx, basic) {
     nodes = nodes.map((n) => ({
       ...n,
       id: ids.get(n.id),
+      projectFrameOwner: ids.get(n.projectFrameOwner),
       ...(n.group ? { group: groups.get(n.group) } : {}),
       x: n.x - box.x + p.x,
       y: n.y - box.y + p.y,
@@ -1600,6 +1664,7 @@ export function canvasPro(ctx, basic) {
       .map((e) => ({
         ...e,
         id: uid("e"),
+        projectFrameOwner: ids.get(e.projectFrameOwner),
         from: ids.get(e.from) || e.from,
         to: ids.get(e.to) || e.to,
         ...(e.bends && ids.has(e.from) && ids.has(e.to)
@@ -1633,10 +1698,42 @@ export function canvasPro(ctx, basic) {
     }
     basic.focusSelection();
   }
+  function connections() {
+    const b=board(),nodes=b.nodes.filter(n=>!["frame","grid","draw"].includes(n.type)),name=n=>task(n.task)?.title || n.draft?.title || n.text || n.type;
+    const options=selected=>nodes.map(n=>`<option value="${esc(n.id)}" ${n.id===selected?"selected":""}>${esc(name(n).slice(0,100))}</option>`).join("");
+    const ports=value=>["left","right","top","bottom"].map(side=>`<option ${side===value?"selected":""}>${side}</option>`).join("");
+    showDialog(`<dialog class="dialog"><form id="keyboard-connector">${dialogHead("Connections")}<div class="dialog-body"><p>Select objects and attachment sides using the keyboard. Dependency arrows update the same relationships as task details.</p><label class="field">From object<select name="from">${options(state.selectedNode)}</select></label><label class="field">From side<select name="fromSide">${ports("right")}</select></label><label class="field">To object<select name="to">${options(nodes.find(n=>n.id!==state.selectedNode)?.id)}</select></label><label class="field">To side<select name="toSide">${ports("left")}</select></label><label class="field">Relationship<select name="relationship"><option value="relates">Related to</option><option value="blocks">Blocks (task dependency)</option></select></label><label class="field">Label<input name="label" maxlength="500"></label><p class="form-error" role="alert"></p><h3>Existing relationships</h3>${b.edges.map(e=>`<p>${esc(name(b.nodes.find(n=>n.id===e.from)||{}))} → ${esc(name(b.nodes.find(n=>n.id===e.to)||{}))} · ${esc(e.label || e.relationship || "Related")}</p>`).join("") || "<p>No connections.</p>"}</div><div class="dialog-foot"><button type="submit" class="button primary" ${nodes.length<2?"disabled":""}>Connect objects</button></div></form></dialog>`,"keyboard-connector");
+    const form=document.querySelector("#keyboard-connector");form.addEventListener("submit",async event=>{event.preventDefault();event.stopImmediatePropagation();const values=Object.fromEntries(new FormData(form));if(values.from===values.to){form.querySelector(".form-error").textContent="Choose two different objects.";return;}if(values.relationship==="blocks" && [values.from,values.to].some(id=>b.nodes.find(n=>n.id===id)?.type!=="task")){form.querySelector(".form-error").textContent="A dependency connects two finalised task cards.";return;}try {const edge={id:uid("e"),...values,routing:"elbow"};if(values.relationship==="blocks"){await ctx.flushBoard();await api(route("boards",b.id)+"/dependency",{method:"POST",body:{edge:edge.id,newEdge:edge,revision:board().revision}});await ctx.refresh(false);}else changeBoard(board=>board.edges.push(edge));closeDialog(true);ctx.renderView();}catch(error){form.querySelector(".form-error").textContent=error.message;}});
+  }
   async function click(action, el) {
+    if(action === "connections")return connections();
     rebuild();
     const n = index.get(el?.dataset.id) || pick()[0];
-    if (action === "frame-link" && n) {
+    if(action === "task-detach" && n?.type==="task" && !n.locked){
+      const unavailable=boardTaskState(n,task(n.task),state.taskAvailability);
+      if(!unavailable || unavailable.status==="archived")return;
+      changeBoard(()=>{n.type="sticky";n.text=`${unavailable.title || "Unavailable task"}\n\n${unavailable.key || n.task} · detached board card`;delete n.task;});
+      toast("Card detached as a note. Undo restores the link.");return;
+    }
+    if (action === "task-restore" || action === "task-unarchive") {
+      if (el.disabled) return true;
+      el.disabled = true;
+      try {
+        if (action === "task-restore") {
+          await api(route("tasks", el.dataset.task) + "/restore", {
+            method: "POST",
+            body: {},
+          });
+          await ctx.refresh();
+          toast("Task restored. Its board cards are linked again.");
+        } else {
+          await patchTask(el.dataset.task, { archived: false });
+          toast("Task unarchived.");
+        }
+      } finally {
+        el.disabled = false;
+      }
+    } else if (action === "frame-link" && n) {
       const url = new URL(location.href);
       url.hash = `project/${state.project.id}/board/${board().id}/frame/${n.id}`;
       try {
@@ -1667,7 +1764,14 @@ export function canvasPro(ctx, basic) {
     else if (action === "inline-preview") {
       editor?.rich.preview();
     } else if (action === "zoom-selection") focus(pick());
+    else if(action === "find-more") {searchLimit+=50;searchResults();}
+    else if(action === "return-viewport" && previousViewport) {
+      state.camera={...previousViewport.camera};selected.clear();for(const id of previousViewport.selected) if(board().nodes.some(n=>n.id===id)) selected.add(id);
+      state.selectedNode=[...selected][0] || null;previousViewport=null;ctx.updateCamera();basic.selection();searchResults();showSearch(false);
+    }
     else if (action === "find-result") {
+      previousViewport={camera:{...state.camera},selected:[...selected]};
+      if(n.layerHidden) changeBoard(b=>{const layer=b.layers?.find(l=>l.id===n.layer);if(layer) layer.hidden=false;for(const node of b.nodes) if(node.layer===n.layer) node.layerHidden=false;});
       reveal(n);
       search = "";
       $("#canvas-find").value = "";
@@ -1715,7 +1819,10 @@ export function canvasPro(ctx, basic) {
       $("#presentation-controls")?.remove();
       renderView(true);
     } else if (action === "comments") comments(n);
-    else if (action === "edge-dependency") {
+    else if (
+      action === "edge-dependency" ||
+      action === "edge-dependency-remove"
+    ) {
       const edgeId = state.selectedEdge,
         projectId = state.project.id,
         boardId = board().id;
@@ -1728,10 +1835,14 @@ export function canvasPro(ctx, basic) {
         );
       await api(route("boards", boardId) + "/dependency", {
         method: "POST",
-        body: { edge: edgeId },
+        body: { edge: edgeId, remove: action === "edge-dependency-remove" },
       });
       await ctx.refresh();
-      toast("Task dependency created.");
+      toast(
+        action === "edge-dependency-remove"
+          ? "Task dependency removed."
+          : "Task dependency created.",
+      );
     } else if (action === "edge-edit")
       editConnector(board().edges.find((e) => e.id === state.selectedEdge));
     else if (action === "activity") await activity();
@@ -1751,19 +1862,38 @@ export function canvasPro(ctx, basic) {
     else if (action === "file-history") {
       closeDialog(true);
       document.querySelector("[data-feature=canvas-history]")?.click();
-    } else if (action === "task-details" || action === "open-task")
+    } else if (action === "draft-edit") ctx.draftTaskDialog(n?.id);
+    else if (action === "task-details" || action === "open-task")
       ctx.taskDialog(el.dataset.task);
     else if (action === "query-add" || action === "query-edit")
       queryDialog(action === "query-edit" ? n : null);
     else if (action === "templates") templateDialog();
     else if (action === "template-insert") insertTemplate(el.dataset.id);
     else if (action === "convert-note" || action === "convert") {
-      if (!n || n.locked || converting || !["task", "sticky"].includes(n.type))
+      if (
+        !n ||
+        n.locked ||
+        converting ||
+        !["task", "sticky", "draft"].includes(n.type)
+      )
         return;
       if (action === "convert-note") {
-        if (n.type !== "task") return;
+        if (!["task", "draft"].includes(n.type)) return;
         changeBoard(() => {
-          n.displayAs = "note";
+          if (n.type === "task") n.displayAs = "note";
+          else {
+            const body = n.text || "";
+            const firstLine = body
+              .split("\n")
+              .find((line) => line.trim())
+              ?.replace(/^#+\s*/, "")
+              .trim();
+            // Keep task details on the note so a round trip never loses draft work.
+            n.draft.notePrefix =
+              firstLine === n.draft.title.trim() ? "" : `${n.draft.title}\n\n`;
+            n.text = n.draft.notePrefix + body;
+            n.type = "sticky";
+          }
         });
         return;
       }
@@ -1776,6 +1906,13 @@ export function canvasPro(ctx, basic) {
         });
         return;
       }
+      if(n.type==="draft" && el.dataset.reviewed!=="true"){
+        const d=draftTaskData(n),parent=task(d.parent),signature=JSON.stringify(d);
+        const errors=[!d.title?.trim()?"A title is required.":"",!state.config.types.includes(d.type)?"Choose a current task type.":"",!state.config.statuses.includes(d.status)?"Choose a current status.":"",d.parent&&!parent?"The parent task is unavailable.":"",hierarchyError(state.config,d,parent),...(d.subtasks || []).map(child=>hierarchyError(state.config,child,d))].filter(Boolean);
+        showDialog(`<dialog class="board-comments draft-review-panel" aria-label="Review draft task"><div class="board-comments-head"><strong>Review draft task</strong><button type="button" class="icon-button" data-action="dialog-close" aria-label="Close review">${icon("close")}</button></div><div class="dialog-body"><p><strong>${esc(d.title)}</strong></p><p>Project: ${esc(state.project.title)}</p><p>Type: ${esc(d.type)} · Status: ${esc(statusLabel(state.config,d.status))}</p><p>Parent: ${esc(parent?.title || "No parent")} · ${(d.subtasks || []).length} subtasks</p><p>Your card position, connections and comments stay in place.</p><div class="form-error ${errors.length ? "" : "hidden"}" role="alert">${errors.map(esc).join(" ")}</div></div><div class="dialog-foot"><button type="button" class="button" data-pro="draft-edit" data-id="${esc(n.id)}">Edit draft</button><button type="button" class="button primary" id="draft-finalise-confirm" ${errors.length?"disabled":""}>Finalise task</button></div></dialog>`,"draft-review",{nodeId:n.id});
+        document.querySelector('#draft-finalise-confirm').onclick=async()=>{const current=board()?.nodes.find(v=>v.id===n.id);if(!current||JSON.stringify(draftTaskData(current))!==signature){const error=document.querySelector('.draft-review-panel .form-error');error.classList.remove("hidden");error.textContent="The draft changed. Close this preview and review it again.";return;}closeDialog(true);try{await click("convert",{dataset:{id:n.id,reviewed:"true"}});}catch(error){toast(error.message,true);}};
+        return;
+      }
       converting = true;
       const projectId = state.project.id,
         boardId = board().id,
@@ -1784,7 +1921,52 @@ export function canvasPro(ctx, basic) {
         await basic.flush();
         if (state.project?.id !== projectId || board()?.id !== boardId) return;
         const source = board().nodes.find((node) => node.id === nodeId);
-        if (!source || source.locked || source.type !== "sticky") return;
+        if (
+          !source ||
+          source.locked ||
+          !["sticky", "draft"].includes(source.type)
+        )
+          return;
+        if (source.type === "sticky") {
+          const retained = validDraftTask(source)
+            ? structuredClone(source.draft)
+            : null;
+          const title =
+            (source.text || "")
+              .split("\n")
+              .find((line) => line.trim())
+              ?.replace(/^#+\s*/, "")
+              .trim()
+              .slice(0, 300) || "New task";
+          changeBoard(() => {
+            source.type = "draft";
+            source.draft = retained || {
+              title,
+              type: state.config.types.includes("task")
+                ? "task"
+                : state.config.types[0],
+              status: initialStatus(state.config),
+              priority: "none",
+              parent: null,
+              assignee: "",
+              due: null,
+              subtasks: [],
+            };
+            if (retained) {
+              if (
+                retained.notePrefix &&
+                source.text?.startsWith(retained.notePrefix)
+              )
+                source.text = source.text.slice(retained.notePrefix.length);
+              delete source.draft.notePrefix;
+            } else source.text = "";
+            source.w = Math.max(220, source.w);
+            source.h = Math.max(200, source.h);
+          });
+          toast("Note converted to a draft task. Finalise it when ready.");
+          return;
+        }
+        const draft = source.type === "draft" ? draftTaskData(source) : null;
         const text = source.text || "";
         if (sync.entries.size)
           throw new Error(
@@ -1794,9 +1976,12 @@ export function canvasPro(ctx, basic) {
         // body with an older note when that note is converted again.
         const marker = `canvas:${boardId}:${nodeId}`;
         let created = state.tasks.find((t) => t.canvas_source === marker);
-        if (created && created.body !== text)
+        if (
+          created &&
+          (created.body !== text || (draft && created.title !== draft.title))
+        )
           throw new Error(
-            "A task from this note already exists with different text. Duplicate the note to create a separate task; both versions are preserved.",
+            "A project task already exists for this draft with different text. Duplicate the draft to create a separate task; both versions are preserved.",
           );
         if (!created)
           created = await api(route("tasks"), {
@@ -1809,6 +1994,7 @@ export function canvasPro(ctx, basic) {
                   ?.replace(/^#+\s*/, "")
                   .slice(0, 300) || "New task",
               body: text,
+              ...(draft || {}),
               canvas_source: marker,
             },
           });
@@ -1816,10 +2002,19 @@ export function canvasPro(ctx, basic) {
         if (!task(created.id)) state.tasks.push(created);
         if (board()?.id !== boardId) return;
         const current = board().nodes.find((node) => node.id === nodeId);
-        if (!current || current.locked || current.type !== "sticky") return;
-        if ((current.text || "") !== text)
+        if (
+          !current ||
+          current.locked ||
+          !["sticky", "draft"].includes(current.type)
+        )
+          return;
+        if (
+          (current.text || "") !== text ||
+          (draft &&
+            JSON.stringify(draftTaskData(current)) !== JSON.stringify(draft))
+        )
           throw new Error(
-            "The note changed during conversion. Its latest text is preserved; the task contains the earlier version.",
+            "The draft changed while finalising. Its latest details are preserved; the project task contains the earlier version.",
           );
         changeBoard(() => {
           current.type = "task";
@@ -1827,10 +2022,9 @@ export function canvasPro(ctx, basic) {
           current.w = Math.max(220, current.w);
           current.h = Math.max(200, current.h);
           delete current.text;
+          delete current.draft;
         });
-        toast(
-          "Note converted to a task. Text, comments and connectors are preserved.",
-        );
+        toast("Draft finalised as a project task.");
       } finally {
         converting = false;
       }
@@ -1855,7 +2049,7 @@ export function canvasPro(ctx, basic) {
       );
     else if (action === "shortcuts")
       showDialog(
-        `<dialog class="dialog">${dialogHead("Board shortcuts")}<div class="dialog-body"><p>V: select · H: hand · N: sticky · T: text · S / R: shape<br>L: connector · P: pen · F: draw frame · D: task card · C: comment on selection<br>Click to place a sticky, text, shape or grid; Escape cancels<br>Grid: double-click its title to rename; click outside to save<br>Grid: double-click a cell to edit; Tab moves to the next cell<br>Grid: drag its top strip to move; internal borders resize one row/column<br>Grid: outer edges resize all tracks; label ends resize the final row/column<br>F: drag a frame around content, or click for 16:9<br>Click empty frame space to select it; drag selected frame space to move it<br>Drag inside an unselected frame to select objects<br>Drag a frame border/title to move contents; resizing keeps content sizes<br>Double-click or Enter: edit inline · Click outside to save<br>Escape or Ctrl / ⌘ Enter: finish editing · Undo: revert saved text<br>Ctrl / ⌘ click or Shift-click: select multiple objects<br>Drag empty canvas with select tool: selection box<br>Right-drag, middle-drag or Space + drag: pan<br>Scroll: zoom at pointer · Shift + scroll: move up / down<br>Pinch or Ctrl / ⌘ wheel: zoom<br>Expand board: fill window · Full screen: hide browser chrome<br>Ctrl / ⌘ + / −: zoom · Ctrl / ⌘ 0: 100%<br>Alt / Option 1: fit board · Alt / Option 2: focus selection<br>M: minimap · G: grid · Ctrl / ⌘ F: find on board<br>Ctrl / ⌘ A: select all · Ctrl / ⌘ D or Alt / Option drag: duplicate<br>Ctrl / ⌘ C, V: copy and paste objects<br>Ctrl / ⌘ G: group · Ctrl / ⌘ Shift G: ungroup<br>Ctrl / ⌘ Shift L: lock / unlock<br>Arrow keys: move selection or pan (Shift for larger steps)<br>Ctrl / ⌘ Z: undo · Ctrl / ⌘ Shift Z: redo<br>Shift + corner drag: resize horizontally or vertically<br>Drag near objects: align edges, centres and equal gaps<br>Resize near objects: match widths and heights<br>Hold Alt during drag: bypass snapping · Board settings: Align with nearby objects / Snap to grid<br>Drag a connection handle: curved preview and nearby port snapping<br>Drag a selected line endpoint to reconnect · Ctrl / ⌘: bypass snapping · Escape: cancel<br>P: pen · E: eraser (drawings only) · Shift: straight stroke<br>Pen presets remember colour, thickness and pressure; highlighter is translucent<br>Pen: draw with pressure; two fingers: pan and zoom<br>Escape: clear selection or exit current tool / editor / presentation</p></div></dialog>`,
+        `<dialog class="dialog">${dialogHead("Board shortcuts")}<div class="dialog-body"><p>V: select · H: hand · N: sticky · T: text · S / R: shape<br>L: connector · P: pen · F: draw frame · D: task card · C: comment on selection<br>Click to place a sticky, text, shape or grid; Escape cancels<br>Images / GIFs: choose files from the sidebar or drop them onto the board<br>Grid: double-click its title to rename; click outside to save<br>Grid: double-click a cell to edit; Tab moves to the next cell<br>Grid: drag its top strip to move; internal borders resize one row/column<br>Grid: outer edges resize all tracks; label ends resize the final row/column<br>F: drag a frame around content, or click for 16:9<br>Click empty frame space to select it; drag selected frame space to move it<br>Drag inside an unselected frame to select objects<br>Drag a frame border/title to move contents; resizing keeps content sizes<br>Double-click or Enter: edit inline · Click outside to save<br>Selected arrow: Enter to edit its label; Enter again to save<br>Escape or Ctrl / ⌘ Enter: finish editing · Undo: revert saved text<br>Ctrl / ⌘ click or Shift-click: select multiple objects<br>Drag empty canvas with select tool: selection box<br>Right-drag, middle-drag or Space + drag: pan<br>Scroll: zoom at pointer · Shift + scroll: move up / down<br>Pinch or Ctrl / ⌘ wheel: zoom<br>Expand board: fill window · Full screen: hide browser chrome<br>Ctrl / ⌘ + / −: zoom · Ctrl / ⌘ 0: 100%<br>Alt / Option 1: fit board · Alt / Option 2: focus selection<br>M: minimap · G: grid · Ctrl / ⌘ F: find on board<br>Ctrl / ⌘ A: select all · Ctrl / ⌘ D or Alt / Option drag: duplicate<br>Ctrl / ⌘ C, V: copy and paste objects<br>Ctrl / ⌘ G: group · Ctrl / ⌘ Shift G: ungroup<br>Ctrl / ⌘ Shift L: lock / unlock<br>Arrow keys: move selection or pan (Shift for larger steps)<br>Ctrl / ⌘ Z: undo · Ctrl / ⌘ Shift Z: redo<br>Shift + corner drag: resize horizontally or vertically<br>Drag near objects: align edges, centres and equal gaps<br>Resize near objects: match widths and heights<br>Hold Alt during drag: bypass snapping · Board settings: Align with nearby objects / Snap to grid<br>Drag a connection handle: curved preview and nearby port snapping<br>Drag a selected line endpoint to reconnect · Ctrl / ⌘: bypass snapping · Escape: cancel<br>P: pen · E: eraser (drawings only) · Shift: straight stroke<br>Pen presets remember colour, thickness and pressure; highlighter is translucent<br>Pen: draw with pressure; two fingers: pan and zoom<br>Escape: clear selection or exit current tool / editor / presentation</p></div></dialog>`,
         "canvas-shortcuts",
       );
     else return false;
@@ -1997,6 +2191,7 @@ export function canvasPro(ctx, basic) {
       );
     if (event.target.id === "canvas-find") {
       search = event.target.value;
+      searchLimit=50;
       searchResults();
     }
     if (event.target.id === "canvas-owner") {
@@ -2016,6 +2211,23 @@ export function canvasPro(ctx, basic) {
         ? "status"
         : control.dataset.canvasTaskField,
       id = control.dataset.canvasStatus || control.dataset.task;
+    if (control.dataset.draftNode && ["priority", "assignee"].includes(field)) {
+      const draft = board()?.nodes.find(
+        (n) => n.id === control.dataset.draftNode,
+      );
+      if (
+        !draft ||
+        draft.type !== "draft" ||
+        draft.locked ||
+        draft.draft[field] === control.value
+      )
+        return;
+      const value = control.value;
+      changeBoard(() => {
+        draft.draft[field] = value;
+      });
+      return;
+    }
     if (["status", "priority", "assignee"].includes(field) && id) {
       const current = task(id);
       if (!current || current[field] === control.value) return;
@@ -2036,7 +2248,7 @@ export function canvasPro(ctx, basic) {
     "dblclick",
     (event) => {
       if (
-        state.view !== "board" ||
+        !["board", "drawing"].includes(state.view) ||
         event.target.closest("button,input,textarea,select,a")
       )
         return;
@@ -2074,7 +2286,7 @@ export function canvasPro(ctx, basic) {
     "keydown",
     (event) => {
       if (
-        state.view !== "board" ||
+        !["board", "drawing"].includes(state.view) ||
         state.dialog ||
         event.target.closest(".board-task-editor")
       )
@@ -2145,6 +2357,22 @@ export function canvasPro(ctx, basic) {
               ? "slide-next"
               : "slide-prev",
         );
+        return;
+      }
+      if (
+        event.key === "Enter" &&
+        !event.isComposing &&
+        !event.repeat &&
+        !command &&
+        !event.altKey &&
+        !event.shiftKey &&
+        !event.target.closest("button,summary,a") &&
+        !pick().length &&
+        basic.pickEdges().length === 1
+      ) {
+        event.preventDefault();
+        event.stopImmediatePropagation();
+        editConnector(basic.pickEdges()[0]);
         return;
       }
       if (event.key === "Enter" && pick().length) {
@@ -2453,7 +2681,8 @@ export function canvasPro(ctx, basic) {
     "pointerdown",
     (event) => {
       let canvas = event.target.closest("#canvas");
-      if (!canvas || state.tool === "frame") return;
+      let tool = canvasPointerTool(state.tool, event.pointerType);
+      if (!canvas || ["frame", "project-frame"].includes(tool)) return;
       if (
         connecting?.latched &&
         event.button === 0 &&
@@ -2478,7 +2707,7 @@ export function canvasPro(ctx, basic) {
         ) &&
         state.tool !== "erase"
       )
-        state.tool = "draw";
+        tool = state.tool = "draw";
       if (event.target.closest("#canvas-minimap")) {
         event.preventDefault();
         event.stopImmediatePropagation();
@@ -2502,6 +2731,7 @@ export function canvasPro(ctx, basic) {
       }
       if (
         event.pointerType === "touch" &&
+        state.view !== "board" &&
         !event.target.closest("button,input,select")
       ) {
         touches.set(event.pointerId, { x: event.clientX, y: event.clientY });
@@ -2522,9 +2752,9 @@ export function canvasPro(ctx, basic) {
           return;
         }
         if (
-          (!event.target.closest("[data-node],[data-edge]") ||
+          ((!event.target.closest("[data-node],[data-edge]") ||
             ["sticky", "text", "shape", "grid"].includes(state.tool)) &&
-          !penActive(state.tool)
+          !penActive(state.tool))
         ) {
           touchPan = {
             start: { x: event.clientX, y: event.clientY },
@@ -2537,7 +2767,7 @@ export function canvasPro(ctx, basic) {
         }
       }
       const endpoint = event.target.closest("[data-edge-end]");
-      if (endpoint && !penActive(state.tool)) {
+      if (endpoint && !penActive(tool)) {
         const edge = board().edges.find((e) => e.id === endpoint.dataset.edge);
         if (!edge) return;
         const movingEnd = endpoint.dataset.edgeEnd,
@@ -2563,7 +2793,7 @@ export function canvasPro(ctx, basic) {
         return;
       }
       const edge = event.target.closest("[data-edge]");
-      if (edge && state.tool !== "hand" && !penActive(state.tool)) {
+      if (edge && tool !== "hand" && !penActive(tool)) {
         event.stopImmediatePropagation();
         event.preventDefault();
         basic.selectEdge(
@@ -2574,7 +2804,7 @@ export function canvasPro(ctx, basic) {
         return;
       }
       const handle = event.target.closest("[data-port]");
-      if (handle && !penActive(state.tool)) {
+      if (handle && !penActive(tool)) {
         if (index.get(handle.dataset.source)?.locked) return;
         const pendingSource = state.tool === "connect" && state.connectFrom;
         startConnection(event, {
@@ -2614,7 +2844,7 @@ export function canvasPro(ctx, basic) {
   document.addEventListener(
     "pointermove",
     (event) => {
-      if (state.view !== "board" || !$("#canvas")) return;
+      if (!["board", "drawing"].includes(state.view) || !$("#canvas")) return;
       hoverPointer = { x: event.clientX, y: event.clientY };
       if (event.target.closest("#canvas")) cursor = point(event);
       if (connecting) {
@@ -2848,7 +3078,7 @@ export function canvasPro(ctx, basic) {
   async function heartbeat() {
     if (heartbeatBusy) return;
     const current =
-      state.view === "board" && board() ? route("boards", board().id) : null;
+      ["board", "drawing"].includes(state.view) && board() ? route("boards", board().id) : null;
     if (!current) {
       if (lastRoom) {
         const old = lastRoom;
@@ -2885,7 +3115,8 @@ export function canvasPro(ctx, basic) {
       if (presenceVersion !== result.version) {
         presenceVersion = result.version;
         notes.clear();
-        if (
+        const canRefresh = () =>
+          current === route("boards", board()?.id) &&
           !editor &&
           !connecting &&
           !converting &&
@@ -2895,9 +3126,10 @@ export function canvasPro(ctx, basic) {
           !state.boardTaskEditor &&
           !state.selectionToolbarOpen &&
           !state.toolDragging &&
-          !document.activeElement?.matches("input,textarea,select")
-        ) {
-          await ctx.refresh();
+          !document.querySelector("#shared-select-menu") &&
+          !document.activeElement?.matches("input,textarea,select");
+        if (canRefresh()) {
+          await ctx.refresh(true, canRefresh);
         }
       }
     } catch {
@@ -2944,6 +3176,8 @@ export function canvasPro(ctx, basic) {
     edit: (id) => inline(index.get(id)).catch((e) => toast(e.message, true)),
     click,
     editConnector,
+    finishEditing: finishInline,
+    cancelPointer: stopConnection,
     busy: () => !!editor || !!connecting || !!gesture || !!draggedFrame,
     exportCanvas: () => encodeCanvas(board()),
   };

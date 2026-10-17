@@ -1,3 +1,4 @@
+import { BACKUP_BYTES } from "./backup-limits.js";
 export function recoveryUI(ctx) {
   const {
     state,
@@ -27,11 +28,11 @@ export function recoveryUI(ctx) {
     showDialog(
       `<dialog class="dialog wide-dialog">${dialogHead("Recovery & backups")}<div class="dialog-body"><h3>Pending saves</h3>${[...sync.entries.values()].map((e) => `<section class="recovery-item"><strong>${esc(e.local.title || e.url)}</strong><p>${esc(e.error || "Waiting to save")}</p>${e.conflict ? `<ul>${e.conflict.conflicts.map((c) => `<li><strong>${esc(c.path)}</strong><div class="conflict-values"><pre>Your edit: ${esc(JSON.stringify(c.local))}</pre><pre>On disk: ${esc(JSON.stringify(c.remote))}</pre></div></li>`).join("")}</ul><button class="button small" data-feature="resolve-local" data-url="${esc(e.url)}">Keep my conflicting values</button><button class="button small" data-feature="resolve-remote" data-url="${esc(e.url)}">Use disk values for conflicts</button>` : ""}<button class="button small" data-feature="draft-download" data-url="${esc(e.url)}">Export draft</button><button class="button small" data-feature="draft-retry" data-url="${esc(e.url)}">Retry</button><button class="button small danger" data-feature="draft-discard" data-url="${esc(e.url)}">Discard draft</button></section>`).join("") || "<p>All queued changes are saved.</p>"}<p class="field-hint">Editor drafts are restored when you reopen the same task or new-task editor in this browser. Drafts are separate from vault backups.</p>${
         state.session?.user?.admin
-          ? `<h3>Vault backups</h3><p>Automatic backup before the first edit each day. Download a copy to another disk for protection against disk failure.</p><button class="button" data-feature="backup-create">Create backup now</button> <button class="button" data-feature="backup-upload">Upload backup ZIP</button>${backups.backups
+          ? `<h3>Project backups</h3><p>Includes Projects and Organisations. Accounts, history, trash and other vault folders require an installation backup. Automatic backup before the first edit each day. Keep a copy on another disk.</p><p class="field-hint">Up to 220 MB per ZIP, 200 MB expanded and 30,000 files. Verify a backup before restoring it.</p><button class="button" data-feature="backup-create">Create backup now</button> <button class="button" data-feature="backup-upload">Upload backup ZIP</button>${backups.backups
               .slice(0, 40)
               .map(
                 (b) =>
-                  `<div class="recovery-item"><strong>${esc(new Date(b.created).toLocaleString())}</strong><p>${esc(b.reason)} · ${b.files} files · ${(b.size / 1024).toFixed(0)} KB</p><a class="button small" href="/api/backups/${esc(b.id)}" download>Download ZIP</a><button class="button small danger" data-feature="backup-restore" data-id="${esc(b.id)}">Restore vault</button></div>`,
+                  `<div class="recovery-item"><strong>${esc(new Date(b.created).toLocaleString())}</strong><p>${esc(b.reason)} · ${b.files} files · ${(b.size / 1024).toFixed(0)} KB</p><a class="button small" href="/api/backups/${esc(b.id)}" download>Download ZIP</a><button class="button small" data-feature="backup-verify" data-id="${esc(b.id)}">Verify</button><button class="button small danger" data-feature="backup-restore" data-id="${esc(b.id)}">Restore vault</button></div>`,
               )
               .join(
                 "",
@@ -62,16 +63,16 @@ export function recoveryUI(ctx) {
         try {
           const file = input.files[0];
           if (!file) return;
-          if (file.size > 10_000_000)
-            throw new Error("Upload a ZIP up to 10 MB.");
-          const bytes = new Uint8Array(await file.arrayBuffer());
-          let raw = "";
-          for (let i = 0; i < bytes.length; i += 8192)
-            raw += String.fromCharCode(...bytes.subarray(i, i + 8192));
-          await api("/backups/import", {
+          if (file.size > BACKUP_BYTES)
+            throw new Error("Upload a ZIP up to 220 MB.");
+          const response = await fetch("/api/backups/upload", {
             method: "POST",
-            body: { data: btoa(raw) },
+            headers: { "Content-Type": "application/zip" },
+            body: file,
           });
+          const result = await response.json();
+          if (!response.ok)
+            throw new Error(result.error || "Backup upload failed.");
           await open();
           toast("Backup uploaded. Choose Restore vault to apply it.");
         } catch (error) {
@@ -79,6 +80,21 @@ export function recoveryUI(ctx) {
         }
       };
       input.click();
+      return true;
+    }
+    if (action === "backup-verify") {
+      el.disabled = true;
+      try {
+        const result = await api(`/backups/${el.dataset.id}/verify`, {
+          method: "POST",
+          body: {},
+        });
+        toast(
+          `Backup verified: ${result.files} files, ${(result.bytes / 1000000).toFixed(1)} MB expanded.`,
+        );
+      } finally {
+        el.disabled = false;
+      }
       return true;
     }
     if (action === "backup-create") {

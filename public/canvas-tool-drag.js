@@ -1,3 +1,5 @@
+import { newGrid, GRID_DEFAULT_SIZE } from "./grid-model.js";
+
 // Drag a tool onto the canvas without creating anything until a valid drop.
 export function canvasToolDrag(ctx, place, placeTask) {
   const { state, $, task, board, esc, icon, label, statusNames } = ctx;
@@ -43,7 +45,9 @@ export function canvasToolDrag(ctx, place, placeTask) {
       drag.preview = document.createElement("div");
       drag.preview.className = drag.taskId
         ? "task-drop-preview"
-        : "sticky-drop-preview";
+        : drag.tool === "grid"
+          ? "grid-drop-preview"
+          : "sticky-drop-preview";
       if (drag.taskId) {
         const t = task(drag.taskId);
         if (!t || t.archived) {
@@ -51,6 +55,9 @@ export function canvasToolDrag(ctx, place, placeTask) {
           return;
         }
         drag.preview.innerHTML = `<div class="task-drop-heading">${icon(t.type)} ${esc(label(t.type))}<span>${esc(t.key || "")}</span></div><strong>${esc(t.title)}</strong><div class="task-drop-meta">${esc(statusNames[t.status] || t.status)}${t.assignee ? ` · ${esc(t.assignee)}` : ""}</div><small>Drop to place task</small>`;
+      } else if (drag.tool === "grid") {
+        const grid = newGrid();
+        drag.preview.innerHTML = `<div class="grid-grip">${icon("table")}<span>Drop to add a grid</span></div><div class="grid-cells" style="grid-template-columns:${grid.columns.map((v) => `${v}fr`).join(" ")};grid-template-rows:${grid.rows.map((v) => `${v}fr`).join(" ")}">${grid.cells.map((row, r) => row.map(() => `<div class="grid-cell ${grid.header && r === 0 ? "grid-header" : ""}"></div>`).join("")).join("")}</div>`;
       } else drag.preview.textContent = "Drop to add a note";
       drag.preview.setAttribute("aria-hidden", "true");
       canvas.append(drag.preview);
@@ -62,9 +69,11 @@ export function canvasToolDrag(ctx, place, placeTask) {
     Object.assign(drag.preview.style, {
       left: `${e.clientX - r.left - drag.offsetX}px`,
       top: `${e.clientY - r.top - drag.offsetY}px`,
-      width: `${drag.taskId ? 280 : 220 * z}px`,
-      height: `${drag.taskId ? 180 : 180 * z}px`,
-      ...(drag.taskId ? { transform: `scale(${z})` } : {}),
+      width: `${drag.taskId ? 280 : drag.tool === "grid" ? GRID_DEFAULT_SIZE.w : 220 * z}px`,
+      height: `${drag.taskId ? 180 : drag.tool === "grid" ? GRID_DEFAULT_SIZE.h : 180 * z}px`,
+      ...(drag.taskId || drag.tool === "grid"
+        ? { transform: `scale(${z})` }
+        : {}),
     });
     drag.preview.classList.toggle("invalid", !valid(e.clientX, e.clientY));
   }
@@ -84,7 +93,7 @@ export function canvasToolDrag(ctx, place, placeTask) {
     (e) => {
       suppressClickUntil = 0;
       const button = e.target.closest(
-        ".board-tools [data-tool=sticky],#board-task-panel [data-action=board-pick]",
+        ".board-tools :is([data-tool=sticky],[data-tool=grid]),#board-task-panel [data-action=board-pick]",
       );
       if (
         !button ||
@@ -99,6 +108,7 @@ export function canvasToolDrag(ctx, place, placeTask) {
       e.stopImmediatePropagation();
       drag = {
         id: e.pointerId,
+        tool: button.dataset.tool,
         taskId:
           button.dataset.action === "board-pick" ? button.dataset.id : null,
         board: board()?.id,
@@ -140,7 +150,7 @@ export function canvasToolDrag(ctx, place, placeTask) {
           )
             placeTask(old.taskId, point);
         } else {
-          state.tool = "sticky";
+          state.tool = old.tool;
           place(point);
         }
       }

@@ -45,7 +45,35 @@ export function directory(people = [], teams = []) {
       fail(
         "Weekly task limit must be a whole number from 0 to 10000, or blank.",
       );
-    return { ...p, name, capacity, task_capacity };
+    const working_days = p.working_days ?? [1, 2, 3, 4, 5];
+    if (
+      !Array.isArray(working_days) ||
+      working_days.length > 7 ||
+      working_days.some((d) => !Number.isInteger(d) || d < 0 || d > 6) ||
+      new Set(working_days).size !== working_days.length
+    )
+      fail("Working days must be distinct weekdays.");
+    const time_off = p.time_off ?? [];
+    if (
+      !Array.isArray(time_off) ||
+      time_off.length > 366 ||
+      time_off.some(
+        (d) =>
+          typeof d !== "string" ||
+          !/^\d{4}-\d{2}-\d{2}$/.test(d) ||
+          !Number.isFinite(Date.parse(d)) ||
+          new Date(d).toISOString().slice(0, 10) !== d,
+      )
+    )
+      fail("Time off must contain up to 366 dates in YYYY-MM-DD format.");
+    return {
+      ...p,
+      name,
+      capacity,
+      task_capacity,
+      working_days,
+      time_off: [...new Set(time_off)],
+    };
   });
   const teamNames = new Set();
   const cleanedTeams = list(teams, "Teams", 100).map((t) => {

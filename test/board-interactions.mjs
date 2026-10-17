@@ -85,7 +85,7 @@ async function saved() {
       page
         .locator("#board-save")
         .textContent()
-        .then((t) => /All (canvas )?changes saved/.test(t)),
+        .then((t) => t === "Saved automatically"),
     "save",
   );
 }
@@ -100,11 +100,17 @@ const currentNode = async (id) =>
   (await current()).nodes.find((n) => n.id === id);
 const currentTask = async (id) => (await snap()).tasks.find((t) => t.id === id);
 async function convert(id, target) {
-  await node(id).click();
+  const heading = node(id).locator(".task-title,.note-title").first();
+  if (await heading.count()) await heading.click();
+  else await node(id).click();
   await page.locator('[data-selection-menu="convert"] summary').click();
   await page
-    .locator(`[data-pro="${target === "Task" ? "convert" : "convert-note"}"]`)
+    .locator(
+      `#selection-tools [data-pro="${target === "Task" ? "convert" : "convert-note"}"]`,
+    )
     .click();
+  if (await page.locator("#draft-finalise-confirm").isVisible())
+    await page.locator("#draft-finalise-confirm").click();
   await saved();
 }
 async function portPosition(id, side) {
@@ -156,11 +162,42 @@ try {
       );
     });
   const noteSurface = await surface("note");
+  const noteCamera = await page.locator("#canvas-world").getAttribute("style");
+  await convert("note", "Task");
+  await until(async () => (await currentNode("note")).type === "draft");
+  let draft = await currentNode("note");
+  assert.equal(
+    (await snap()).tasks.length,
+    2,
+    "Note conversion must not create a project task",
+  );
+  assert.equal(draft.task, undefined);
+  assert.equal(draft.draft.title, "First idea");
+  assert.equal(draft.text, "", "New drafts start with a blank description");
+  assert.deepEqual(draft.comments, original.comments);
+  assert.equal(
+    await page.locator("#canvas-world").getAttribute("style"),
+    noteCamera,
+  );
+  await page.reload();
+  await node("note").waitFor();
+  assert.match(await node("note").innerText(), /Draft/);
+  await page.locator('[data-action="board-undo"]').click();
+  await until(async () => (await currentNode("note")).type === "sticky");
+  assert.equal((await snap()).tasks.length, 2);
+  assert.equal(
+    (await currentNode("note")).text,
+    original.text,
+    "Undo restores the original note text",
+  );
+  await page.locator('[data-action="board-redo"]').click();
+  await until(async () => (await currentNode("note")).type === "draft");
   await convert("note", "Task");
   await until(async () => (await currentNode("note")).type === "task");
   const converted = await currentNode("note"),
     created = await currentTask(converted.task);
-  assert.equal(created.body, original.text);
+  assert.equal(created.body, "");
+  assert.ok(created.key, "Only finalised tasks receive a project ID");
   assert.deepEqual(converted.comments, original.comments);
   assert.equal(converted.group, original.group);
   assert.equal(converted.color, original.color);

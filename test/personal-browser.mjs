@@ -1,3 +1,4 @@
+import { selectProjectView } from "./menu-controls.mjs";
 import assert from "node:assert/strict";
 import fs from "node:fs/promises";
 import os from "node:os";
@@ -36,6 +37,7 @@ const until = async (fn) => {
   throw Error("Timed out waiting for change");
 };
 async function setStatuses(names, done) {
+  await page.locator("[data-status-details] > summary").click();
   const existing = await page.locator('[data-workflow-status]').evaluateAll(els=>els.map(el=>el.dataset.workflowStatus));
   for (const name of names) {
     await page.getByLabel('New status name',{exact:true}).fill(name);
@@ -156,7 +158,7 @@ try {
   await until(
     async () => (await store.snapshot(project.id)).tasks.length === 1,
   );
-  await page.locator("[data-view=kanban]").click();
+  await selectProjectView(page, "kanban");
   assert.deepEqual(
     await page
       .locator(".kanban-column")

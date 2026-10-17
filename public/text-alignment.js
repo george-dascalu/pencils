@@ -7,7 +7,7 @@ export function textAlignment(node) {
       : "left";
 }
 export function alignmentButtons(icon, current, disabled = false) {
-  return textAlignments
+  return `<div class="text-alignment-row" role="group" aria-label="Horizontal text alignment">${textAlignments
     .map((value) => {
       const label = {
         left: "Align text left",
@@ -15,7 +15,7 @@ export function alignmentButtons(icon, current, disabled = false) {
         right: "Align text right",
         justify: "Justify text",
       }[value];
-      return `<button type="button" class="selection-action" data-text-align="${value}" aria-label="${label}" title="${label}" aria-pressed="${current === value}" ${disabled ? "disabled" : ""}>${icon(`text-${value}`)}<span class="selection-action-label">${label}</span></button>`;
+      return `<button type="button" class="selection-action" data-text-align="${value}" aria-label="${label}" title="${label}" aria-pressed="${current === value}" ${disabled ? "disabled" : ""}>${icon(`text-${value}`)}</button>`;
     })
-    .join("");
+    .join("")}</div>`;
 }

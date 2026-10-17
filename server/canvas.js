@@ -288,9 +288,11 @@ export function installCanvas(Store) {
           ))
       )
         throw new Problem(400, "Presentation must contain frame IDs.");
-      // Log the exact persisted node representation, including integer geometry
-      // and generated Markdown fallbacks, so a read/write round trip is undoable.
-      data.nodes = decodeCanvas(encodeCanvas(data)).nodes;
+      // Log the persisted representation of both cards and connectors so
+      // generated metadata and native Canvas fallbacks remain undoable.
+      const persisted = decodeCanvas(encodeCanvas(data));
+      data.nodes = persisted.nodes;
+      data.edges = persisted.edges;
       const changes = difference(current.data, data);
       if (!changes.length) return this.public(current, file);
       const operation = {
@@ -343,21 +345,25 @@ export function installCanvas(Store) {
       );
     },
     async boardDependency(project, id, input) {
-      const board = await this.read(this.file(project, "boards", id)),
-        edge = board.data.edges.find((e) => e.id === input.edge);
-      if (!edge || edge.relationship !== "blocks")
-        throw new Problem(400, "Choose a blocks connector first.");
+      if (input.remove != null && typeof input.remove !== "boolean")
+        throw new Problem(400, "Remove dependency must be a boolean.");
+      let board = await this.read(this.file(project, "boards", id));
+      if(input.newEdge){this.checkRevision(board,input.revision);if(input.newEdge.id!==input.edge || board.data.edges.some(e=>e.id===input.edge))throw new Problem(400,"Choose a unique connector ID.");await this.updateBoard(project,id,{revision:board.revision,edges:[...board.data.edges,input.newEdge]});board=await this.read(this.file(project,"boards",id));}
+      const edge = board.data.edges.find((e) => e.id === input.edge);
+      if (!edge) throw new Problem(400, "Choose a connector first.");
       const from = board.data.nodes.find((n) => n.id === edge.from),
         to = board.data.nodes.find((n) => n.id === edge.to);
       if (from?.type !== "task" || to?.type !== "task")
         throw new Problem(400, "A dependency requires two task cards.");
       const file = this.file(project, "tasks", to.task),
         target = await this.read(file);
-      if (target.data.dependencies?.includes(from.task))
+      if (from.task === to.task) throw new Problem(400, "A task cannot depend on itself.");
+      const dependencies = target.data.dependencies || [];
+      if (dependencies.includes(from.task) === !input.remove)
         return this.public(target, file);
       return this.updateTask(project, to.task, {
         revision: target.revision,
-        dependencies: [...(target.data.dependencies || []), from.task],
+        dependencies: input.remove ? dependencies.filter((task) => task !== from.task) : [...dependencies, from.task],
       });
     },
     async canvasNote(project, relative) {

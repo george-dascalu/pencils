@@ -32,6 +32,9 @@ export function partialErase(n, from, to, radius, uid) {
     for (let j = 1; j <= steps; j++) {
       const t = j / steps;
       samples.push({
+        time:(n.sampleTimes?.[Math.max(0,i-1)] || 0)*(1-t)+(n.sampleTimes?.[i] || 0)*t,
+        tiltX:(n.tilts?.[Math.max(0,i-1)]?.[0] || 0)*(1-t)+(n.tilts?.[i]?.[0] || 0)*t,
+        tiltY:(n.tilts?.[Math.max(0,i-1)]?.[1] || 0)*(1-t)+(n.tilts?.[i]?.[1] || 0)*t,
         x: n.x + prev[0] + (p[0] - prev[0]) * t,
         y: n.y + prev[1] + (p[1] - prev[1]) * t,
         pressure:
@@ -91,6 +94,8 @@ export function recogniseStroke(n) {
         ...n,
         points: [first, last],
         pressures: [0.5, 0.5],
+        ...(n.sampleTimes?{sampleTimes:[n.sampleTimes[0],n.sampleTimes.at(-1)]}:{}),
+        ...(n.tilts?{tilts:[n.tilts[0],n.tilts.at(-1)]}:{}),
         pressure: false,
       };
     return n;
@@ -164,6 +169,7 @@ export function lassoTool(ctx, basic) {
     (e) => {
       if (
         state.tool !== "lasso" ||
+        (state.view === "board" && e.pointerType === "touch") ||
         !e.target.closest("#canvas") ||
         e.target.closest(
           "button,input,select,.canvas-panel,#selection-tools",
@@ -229,4 +235,5 @@ export function lassoTool(ctx, basic) {
     true,
   );
   window.addEventListener("blur", () => end(null, true));
+  return { cancel: () => end(null, true) };
 }

@@ -1,3 +1,13 @@
+import {projectAutomations} from "./project-automations.js";
+import {drawingView} from "./drawing-view.js";
+import {projectSources} from "./project-sources.js";
+import { recurrenceControls } from "./recurrence-controls.js";
+import { showSchedulePreview } from "./schedule-preview.js";
+import { localDate } from "./task-visibility.js";
+import { taskDependencies } from "./task-dependencies.js";
+import { draftAutosave } from "./draft-autosave.js";
+import { taskAutosave } from "./task-autosave.js";
+import { boardComments } from "./board-comments.js";
 import { workflowEditor } from "./workflow-editor.js";
 import { organisationTeams, projectTeamControls } from "./teams.js";
 import { taskModalControls } from "./task-modal.js";
@@ -19,6 +29,7 @@ export function installFeatures(ctx) {
     esc,
     icon,
     label,
+    viewLabel,
     options,
     $,
     $$,
@@ -36,6 +47,8 @@ export function installFeatures(ctx) {
     patchTask,
     clearProject,
   } = ctx;
+  projectAutomations(ctx);
+  const sources = projectSources(ctx), drawings=drawingView(ctx);
   const plan = planning(ctx),
     sheet = grid(ctx),
     recovery = recoveryUI(ctx),
@@ -47,6 +60,9 @@ export function installFeatures(ctx) {
     reloadTeams = null,
     taskModal = null,
     taskEditor = null,
+    autosave = null,
+    taskComments = null,
+    dependencyEditor = null,
     activeDraft = null,
     boot,
     events,
@@ -89,10 +105,11 @@ export function installFeatures(ctx) {
   function filter(t) {
     const f = state.extraFilters || {},
       done = config().done.includes(t.status),
-      now = new Date().toISOString().slice(0, 10),
-      soon = new Date(Date.now() + 7 * 86400000).toISOString().slice(0, 10);
+      now = localDate(),
+      soon = localDate(new Date(Date.now() + 7 * 86400000));
     return (
       (!t.archived || f.archived) &&
+      (!f.completion || (f.completion === "done" ? done : !done)) &&
       (!f.assignee ||
         String(t.assignee || "")
           .toLowerCase()
@@ -120,6 +137,35 @@ export function installFeatures(ctx) {
     state.project = result;
     return result;
   }
+  const personalViewKey = () =>
+    `views:${state.session?.user?.username || "shared"}:${state.project.id}`;
+  const personalViews = () => storage.get(personalViewKey(), []);
+  const savedViews = () => [...personalViews(), ...(state.project.views || [])];
+  function viewDefinition() {
+    return {
+      view: state.view,
+      search: state.search || "",
+      status: state.status || "all",
+      type: state.type || "all",
+      sort: state.sort || "created",
+      sortDir: state.sortDir || 1,
+      filters: state.extraFilters || {},
+      groupBy: state.groupBy || "status",
+      columns: state.tableColumns || null,
+      ...(state.view === "table"
+        ? { table: structuredClone(sheet.preferences()) }
+        : {}),
+    };
+  }
+  function viewChanged(view) {
+    if (!view) return false;
+    const current = viewDefinition();
+    return Object.keys(current).some(
+      (key) =>
+        JSON.stringify(view[key] ?? current[key]) !==
+        JSON.stringify(current[key]),
+    );
+  }
   function viewToolbar() {
     $("#feature-toolbar")?.remove();
     $(".advanced-filters")?.remove();
@@ -128,23 +174,62 @@ export function installFeatures(ctx) {
     const f = state.extraFilters || {};
     host.insertAdjacentHTML(
       "afterbegin",
-      `<div class="feature-toolbar" id="feature-toolbar"><select id="saved-view" aria-label="Saved project views"><option value="">Unsaved view</option>${(state.project.views || []).map((v) => `<option value="${esc(v.id)}" ${v.id === state.savedView ? "selected" : ""}>${esc(v.name)}</option>`).join("")}</select>${button("view-save", "Save view")}${state.savedView ? button("view-delete", "Delete view") : ""}${button("workflow", "Workflow & fields")}${button("import", "Import notes")}${button("templates", "Templates")}<span class="spacer"></span><form id="quick-capture"><input name="title" aria-label="Quick capture task" placeholder="Quick capture…" required maxlength="300"><button class="button small" type="submit">Add</button></form></div>${["board", "overview"].includes(state.view) ? "" : `<div class="advanced-filters"><input id="filter-assignee" aria-label="Filter assignee" placeholder="Assignee" value="${esc(f.assignee || "")}"><input id="filter-tag" aria-label="Filter tag" placeholder="Tag" value="${esc(f.tag || "")}"><select id="filter-due" aria-label="Filter deadline">${options(["", "overdue", "week", "none"], f.due || "", { "": "Any deadline", overdue: "Overdue", week: "Next 7 days", none: "No deadline" })}</select><select id="group-by" aria-label="Group tasks">${options(["status", "type", "assignee", "priority", "none"], state.groupBy || "status", { status: "Group: status", type: "Group: type", assignee: "Group: assignee", priority: "Group: priority", none: "No grouping" })}</select><label><input type="checkbox" id="filter-blocked" ${f.blocked ? "checked" : ""}> Blocked</label><label><input type="checkbox" id="filter-archived" ${f.archived ? "checked" : ""}> Include archived</label></div>`}`,
+      `<div class="feature-toolbar" id="feature-toolbar"><select id="saved-view" aria-label="Saved project views"><option value="">Unsaved view</option>${[
+        ["Personal · this browser", personalViews()],
+        ["Project · shared", state.project.views || []],
+      ]
+        .map(
+          ([name, views]) =>
+            `<optgroup label="${name}">${views.map((v) => `<option value="${esc(v.id)}" ${v.id === state.savedView ? "selected" : ""}>${esc(v.name)}${v.id === state.savedView && viewChanged(v) ? " · Unsaved changes" : ""}</option>`).join("")}</optgroup>`,
+        )
+        .join(
+          "",
+        )}</select>${button("view-save", "Save view")}${state.savedView ? button("view-save-as", "Save as…") : ""}${state.savedView ? button("view-delete", "Delete view") : ""}${button("workflow", "Workflow & fields")}${button("import", "Import notes")}${button("templates", "Templates")}<span class="spacer"></span><form id="quick-capture"><input name="title" aria-label="Quick capture task" placeholder="Quick capture…" required maxlength="300"><button class="button small" type="submit">Add</button></form></div>${["board", "drawing", "overview"].includes(state.view) ? "" : `<div class="advanced-filters"><input id="filter-assignee" aria-label="Filter assignee" placeholder="Assignee" value="${esc(f.assignee || "")}"><input id="filter-tag" aria-label="Filter tag" placeholder="Tag" value="${esc(f.tag || "")}"><select id="filter-due" aria-label="Filter deadline">${options(["", "overdue", "week", "none"], f.due || "", { "": "Any deadline", overdue: "Overdue", week: "Next 7 days", none: "No deadline" })}</select><select id="group-by" aria-label="Group tasks">${options(["status", "type", "assignee", "priority", "none"], state.groupBy || "status", { status: "Group: status", type: "Group: type", assignee: "Group: assignee", priority: "Group: priority", none: "No grouping" })}</select><label>Completion<select id="filter-completion">${options(["", "open", "done"], f.completion || "", { "": "Any completion", open: "Open", done: "Completed" })}</select></label><label><input type="checkbox" id="filter-blocked" ${f.blocked ? "checked" : ""}> Blocked</label><label><input type="checkbox" id="filter-archived" ${f.archived ? "checked" : ""}> Include archived</label></div>`}`,
     );
+    if (state.view === "table") {
+      $("#group-by")?.remove();
+      $(".toolbar-right")?.setAttribute("hidden", "");
+    } else $(".toolbar-right")?.removeAttribute("hidden");
     layout.projectHeader();
   }
   function pagination(total) {
     $("#pagination")?.remove();
     if (
       total <= 100 ||
-      ["calendar", "timeline", "capacity"].includes(state.view)
+      [
+        "calendar",
+        "timeline",
+        "capacity",
+        "kanban",
+        "board",
+        "overview",
+      ].includes(state.view)
     )
       return;
     $("#view-content")?.insertAdjacentHTML(
       "beforeend",
-      `<div id="pagination" class="pagination">${button("page-prev", "← Previous", state.page ? "" : "disabled")}<span>Page ${(state.page || 0) + 1} of ${Math.ceil(total / 100)} · ${total} tasks</span>${button("page-next", "Next →", (state.page || 0) + 1 >= Math.ceil(total / 100) ? "disabled" : "")}</div>`,
+      `<div id="pagination" class="pagination">${button("page-prev", "← Previous", state.page ? "" : "disabled")}<span>Page ${(state.page || 0) + 1} of ${Math.ceil(total / 100)} · ${total} ${state.view === "tree" ? "root groups" : "tasks"}</span>${button("page-next", "Next →", (state.page || 0) + 1 >= Math.ceil(total / 100) ? "disabled" : "")}</div>`,
     );
   }
+  document.addEventListener("click", (event) => {
+    const el = event.target.closest("[data-kanban-more]");
+    if (!el || state.view !== "kanban") return;
+    state.kanbanLimits ||= {};
+    const key = `${state.project.id}/${el.dataset.kanbanMore}`;
+    state.kanbanLimits[key] = (state.kanbanLimits[key] || 100) + 100;
+    renderView(true);
+  });
+  document.addEventListener("change", (event) => {
+    if (event.target.id === "filter-completion") {
+      state.extraFilters ||= {};
+      state.extraFilters.completion = event.target.value;
+      state.page = 0;
+      renderView(true);
+    }
+  });
   function afterRender() {
+    if (state.view !== "board") drawings.reset();
+    connectEvents();
     personal.render();
     const sidebar = $(".sidebar-directory") || $(".side-new");
     if (sidebar)
@@ -191,15 +276,7 @@ export function installFeatures(ctx) {
         );
       })
       .join("");
-    return `<details class="task-extra"><summary>Planning & relationships</summary><div class="field-row">${field("start", "Start date", t.start, "date")}${field("estimate", "Estimate (hours)", t.estimate, "number", 'min="0" step="any"')}</div><label class="field">Dependencies <select name="dependencies" multiple size="3">${state.tasks
-      .filter((x) => x.id !== t.id)
-      .map(
-        (x) =>
-          `<option value="${x.id}" ${(t.dependencies || []).includes(x.id) ? "selected" : ""}>${esc(x.title)}</option>`,
-      )
-      .join(
-        "",
-      )}</select><span class="field-hint">Select prerequisite tasks. Hold Ctrl or Cmd to select more than one.</span></label><div class="field-row"><label class="field">Repeat after completion<select name="recurrence-unit">${options(["", "day", "week", "month"], t.recurrence?.unit || "", { "": "Does not repeat", day: "Days", week: "Weeks", month: "Months" })}</select></label>${field("recurrence-interval", "Every", t.recurrence?.interval || 1, "number", 'min="1" max="365"')}</div>${fields ? `<h3>Custom fields</h3><div class="custom-fields">${fields}</div>` : ""}</details>${t.id ? `<div class="task-actions">${button("task-template", "Save as template")}${button("attach", "Attach file")}</div><details class="task-extra"><summary>Comments (${(t.comments || []).length})</summary>${(t.comments || []).map((c) => `<article class="comment"><strong>${esc(c.author || "Workspace")}</strong><small>${esc(new Date(c.created).toLocaleString())}</small><p>${esc(c.text)}</p></article>`).join("")}<label class="field">New comment<textarea name="new-comment" rows="2" maxlength="20000"></textarea></label></details>` : ""}`;
+    return `<details class="task-extra"><summary>Planning</summary><div class="field-row">${field("estimate", "Estimate (hours)", t.estimate, "number", 'min="0" step="any"')}</div><div class="field-row"><label class="field">Repeat after completion<select name="recurrence-unit">${options(["", "day", "week", "month"], t.recurrence?.unit || "", { "": "Does not repeat", day: "Days", week: "Weeks", month: "Months" })}</select></label>${field("recurrence-interval", "Every", t.recurrence?.interval || 1, "number", 'min="1" max="365"')}</div>${fields ? `<h3>Custom fields</h3><div class="custom-fields">${fields}</div>` : ""}</details>${t.id ? `<div class="task-actions">${button("task-template", "Save as template")}${button("attach", "Attach file")}</div>` : ""}`;
   }
   function taskData(form) {
     const data = new FormData(form),
@@ -226,6 +303,7 @@ export function installFeatures(ctx) {
           ? null
           : Number(data.get("estimate")),
       dependencies: data.getAll("dependencies"),
+      related_records: data.getAll("related_records"),
       recurrence: data.get("recurrence-unit")
         ? {
             unit: data.get("recurrence-unit"),
@@ -249,13 +327,18 @@ export function installFeatures(ctx) {
     };
   }
   function draftKey(form) {
-    return `draft:${state.session?.user?.username || "shared"}:${state.project?.id || state.organisation?.id || "workspace"}:${form.id}:${form.dataset.id || form.dataset.edit || "new"}${form.dataset.directoryPage ? `:${form.dataset.directoryPage}` : ""}`;
+    return `draft:${state.session?.user?.username || "shared"}:${state.project?.id || state.organisation?.id || "workspace"}:${form.id}:${form.dataset.draftNode ? `board:${form.dataset.board}:draft:${form.dataset.draftNode}` : form.dataset.id || form.dataset.edit || "new"}${form.dataset.directoryPage ? `:${form.dataset.directoryPage}` : ""}`;
   }
   function dialogOpened(kind, pageForm) {
+    autosave?.destroy();
+    autosave = null;
+    taskComments?.destroy();
+    taskComments = null;
     taskModal?.destroy();
     taskModal = null;
     taskEditor?.destroy();
     taskEditor = null;
+    dependencyEditor = null;
     const form = pageForm || $("dialog form");
     activeDraft = null;
     reloadWorkflow = null;
@@ -277,14 +360,20 @@ export function installFeatures(ctx) {
       formBases.set(form, structuredClone(t));
       if (t.id)
         $(".dialog-body", form).insertAdjacentHTML("beforeend", taskExtras(t));
+      sources.decorateTask(form,t);
+      const linkedDrawings=state.boards.filter(b=>b.settings?.linked_tasks?.includes(t.id));
+      if(linkedDrawings.length)form.querySelector('.dialog-body').insertAdjacentHTML('beforeend',`<section><h3>Canvases</h3>${linkedDrawings.map(b=>`<a class="button small" href="#project/${state.project.id}/board/${b.id}" target="_blank">${esc(b.title)} ↗</a>`).join('')}</section>`);
+      recurrenceControls(form, t, state.tasks, esc);
+      dependencyEditor = taskDependencies(ctx, form, t);
       taskEditor = taskDescription(form, ctx.markdown, ctx.icon);
       taskModal = taskModalControls(ctx, form, async (version) => {
         if (
           !confirm(
-            "Restore this version? Current saved content stays in history; unsaved editor changes will be replaced.",
+            "Restore this version? Your current edits will be saved in history first.",
           )
         )
           return;
+        if (autosave && !(await autosave.flush())) return;
         await api("/history", {
           method: "POST",
           body: { file: t.file, version, revision: form.dataset.revision },
@@ -294,6 +383,86 @@ export function installFeatures(ctx) {
         taskDialog(t.id, {}, true);
         await taskModal.history();
       });
+    }
+    if (kind === "task" && form?.dataset.draftNode) {
+      const savedDraftKey = draftKey(form);
+      autosave = draftAutosave(ctx, form, taskEditor, {
+        readExtra: () => taskData(form),
+        onSaved: ({ disposed }) => {
+          storage.set(savedDraftKey, null);
+          if (!disposed) state.dirty = false;
+        },
+        refreshNode: (id) => canvas.nodeSaved(id),
+      });
+    }
+    if (kind === "task" && form?.dataset.id) {
+      const id = form.dataset.id,
+        url = route("tasks", id),
+        projectId = state.project.id;
+      const editor = taskEditor,
+        savedDraftKey = draftKey(form);
+      const read = () => {
+        const data = new FormData(form);
+        const result = { ...taskData(form) };
+        delete result.comments;
+        for (const key of [
+          "title",
+          "body",
+          "type",
+          "status",
+          "priority",
+          "assignee",
+          "parent",
+          "due",
+        ])
+          result[key] =
+            data.get(key) || (["parent", "due"].includes(key) ? null : "");
+        result.title = result.title.trim();
+        return result;
+      };
+      autosave = taskAutosave(form, {
+        read,
+        flushEditor: () => editor.flush(),
+        task: () => task(id),
+        sync,
+        url,
+        onSaved: ({ disposed }) => {
+          if (!form.elements.subtaskTitle.value.trim())
+            storage.set(savedDraftKey, null);
+          if (state.project?.id !== projectId || !task(id)) return;
+          if (["board", "drawing"].includes(state.view)) canvas.taskSaved(id);
+          else if (state.view !== "settings") renderView(true);
+          if (disposed) return;
+          formBases.set(form, structuredClone(task(id)));
+          state.dirty = false;
+          taskModal?.refreshStatuses();
+          canvas.saved();
+        },
+      });
+      const trigger = form.querySelector('[data-feature="task-comments"]');
+      taskComments = boardComments(
+        ctx,
+        () => state.session?.user?.username || "Workspace",
+        (prefix) => `${prefix}-${crypto.randomUUID?.() || Date.now()}`,
+        {
+          host: form.closest("dialog"),
+          mount: form.querySelector(".task-editor-content"),
+          onOpen: () =>
+            form.closest("dialog").classList.add("with-task-comments"),
+          item: () => (state.project?.id === projectId ? task(id) : null),
+          title: () => task(id)?.title || "Task",
+          change: (mutate) => {
+            const base = structuredClone(task(id));
+            mutate();
+            void sync.enqueue(url, base, { comments: task(id).comments });
+          },
+          onClose: () => {
+            trigger.setAttribute("aria-expanded", "false");
+            form.closest("dialog")?.classList.remove("with-task-comments");
+          },
+          trigger: '[data-feature="task-comments"]',
+        },
+      );
     }
     if (kind === "project" && form) {
       const c =
@@ -368,12 +537,17 @@ export function installFeatures(ctx) {
         searchDialog();
       }
     });
-    events = new EventSource("/api/events");
+    connectEvents();
+  }
+  let eventProject;
+  function connectEvents(){
+    const project=state.project?.id || "";if(events && eventProject===project)return;eventProject=project;events?.close();
+    events = new EventSource(`/api/events${project?`?project=${project}`:""}`);
     events.onmessage = (e) => {
       const version = JSON.parse(e.data).version;
       if (version !== lastVersion) {
         lastVersion = version;
-        scheduleRefresh();
+        if (version !== state.snapshotVersion) scheduleRefresh();
       }
     };
     events.onerror = () => {};
@@ -395,14 +569,17 @@ export function installFeatures(ctx) {
         "input,textarea,select,[contenteditable=true]",
       ) ||
       document.querySelector(
-        "button:active,summary:active,.board-node:active,[data-edge]:active",
+        "#shared-select-menu,button:active,summary:active,.board-node:active,[data-edge]:active",
       ) ||
-      (state.view === "board" && !["cursor", "hand"].includes(state.tool))
+      (["board", "drawing"].includes(state.view) && !["cursor", "hand"].includes(state.tool))
     );
   }
   function scheduleRefresh() {
     clearTimeout(refreshTimer);
     refreshTimer = setTimeout(async () => {
+      // A save response may already have applied the event's version while
+      // this timer waited. Do not replace focused controls with identical DOM.
+      if (lastVersion === state.snapshotVersion) return;
       if (refreshing || refreshBlocked()) {
         scheduleRefresh();
         return;
@@ -424,24 +601,67 @@ export function installFeatures(ctx) {
     }, 700);
   }
   async function searchDialog() {
-    state.overview = await api("/overview");
     showDialog(
-      `<dialog class="dialog wide-dialog">${dialogHead("Search every organisation and project")}<div class="dialog-body"><label class="field">Search<input id="global-search-input" type="search" placeholder="Title, notes, assignee, tag…" autofocus></label><div id="global-search-results"></div></div><div class="dialog-foot"><button class="button" data-action="dialog-close">Close</button></div></dialog>`,
+      `<dialog class="dialog wide-dialog">${dialogHead("Search and commands")}<div class="dialog-body"><label class="field">Search<input id="global-search-input" type="search" placeholder="Tasks, views or commands…" autofocus></label><div id="command-results"></div><div id="global-search-results"></div></div><div class="dialog-foot"><button class="button" data-action="dialog-close">Close</button></div></dialog>`,
       "search",
     );
     searchResults("");
   }
-  function searchResults(query) {
-    const words = query.toLowerCase().trim().split(/\s+/),
-      results = (state.overview?.tasks || [])
-        .filter((t) =>
-          words.every((w) =>
-            `${t.key || ""} ${(t.aliases || []).join(" ")} ${t.title} ${t.body} ${t.assignee} ${(t.tags || []).join(" ")}`
-              .toLowerCase()
-              .includes(w),
-          ),
-        )
-        .slice(0, 60);
+  function commands() {
+    return [
+      ...(state.project
+        ? [
+            { id: "new-task", title: "New task", run: () => taskDialog(null) },
+            ...[
+              "overview",
+              "list",
+              "tree",
+              "table",
+              "kanban",
+              "board",
+              "calendar",
+              "timeline",
+              "capacity",
+            ].map((view) => ({
+              id: `view-${view}`,
+              title: `Open ${viewLabel(view)} view`,
+              run: () => ctx.openView(view),
+            })),
+            {
+              id: "project-settings",
+              title: "Project settings",
+              run: () =>
+                document.querySelector('[data-action="project-edit"]')?.click(),
+            },
+          ]
+        : []),
+      {
+        id: "recovery",
+        title: "Recovery and backups",
+        run: () => click("recovery", {}),
+      },
+      {
+        id: "personal",
+        title: "Personal settings",
+        run: () =>
+          document.querySelector('[data-personal="settings"]')?.click(),
+      },
+    ];
+  }
+  let searchSequence=0;
+  async function searchResults(query) {
+    const matches = commands().filter((command) =>
+      query
+        .toLowerCase()
+        .trim()
+        .split(/\s+/)
+        .every((word) => command.title.toLowerCase().includes(word)),
+    );
+    $("#command-results").innerHTML =
+      `<p class="field-hint">Commands</p>${matches.map((command) => `<button class="search-result command-result" data-feature="command-run" data-command="${esc(command.id)}">${esc(command.title)}</button>`).join("") || "<p>No matching commands.</p>"}<p class="field-hint">Tasks</p>`;
+    const sequence=++searchSequence;
+    let results;try{results=(await api(`/search?q=${encodeURIComponent(query)}`)).tasks;}catch(error){if(sequence===searchSequence && $("#global-search-results"))$("#global-search-results").textContent=error.message;return;}
+    if(sequence!==searchSequence || !$("#global-search-results"))return;
     $("#global-search-results").innerHTML =
       results
         .map(
@@ -450,6 +670,30 @@ export function installFeatures(ctx) {
         )
         .join("") || "<p>No matching tasks.</p>";
   }
+  document.addEventListener("keydown", (event) => {
+    if (
+      state.dialog !== "search" ||
+      !["ArrowDown", "ArrowUp", "Enter"].includes(event.key)
+    )
+      return;
+    const results = [
+      ...document.querySelectorAll(
+        "#command-results button, #global-search-results button",
+      ),
+    ];
+    if (!results.length) return;
+    const index = results.indexOf(document.activeElement);
+    if (event.key === "Enter" && event.target.id === "global-search-input") {
+      event.preventDefault();
+      results[0].click();
+    } else if (event.key !== "Enter") {
+      event.preventDefault();
+      results[
+        (index + (event.key === "ArrowDown" ? 1 : -1) + results.length) %
+          results.length
+      ].focus();
+    }
+  });
   function workflow() {
     const c = config();
     showDialog(
@@ -489,6 +733,17 @@ export function installFeatures(ctx) {
       clearProject();
       renderApp();
     }
+    if (action === "schedule-preview") {
+      if (autosave && !(await autosave.flush())) return;
+      showSchedulePreview(ctx);
+    }
+    if (action === "command-run") {
+      const command = commands().find(
+        (command) => command.id === el.dataset.command,
+      );
+      closeDialog();
+      if (!state.dialog) await command?.run();
+    }
     if (action === "global-search") await searchDialog();
     if (action === "global-open" || action === "note-open") {
       closeDialog();
@@ -497,19 +752,26 @@ export function installFeatures(ctx) {
         await openProject(el.dataset.project);
       taskDialog(el.dataset.id);
     }
-    if (action === "view-save") {
-      const current = (state.project.views || []).find(
-        (v) => v.id === state.savedView,
-      );
+    if (action === "view-save" || action === "view-save-as") {
+      const current = savedViews().find((v) => v.id === state.savedView);
+      state.savingViewAs = action === "view-save-as";
       showDialog(
-        `<dialog class="dialog"><form id="view-form">${dialogHead("Save this view")}<div class="dialog-body">${field("name", "View name", current?.name || "", "text", 'required maxlength="100"')}<p>The view, filters, grouping, sorting and column layout are saved for everyone in this project.</p></div><div class="dialog-foot"><button class="button primary" type="submit">Save view</button></div></form></dialog>`,
+        `<dialog class="dialog"><form id="view-form">${dialogHead("Save this view")}<div class="dialog-body">${field("name", "View name", current?.name || "", "text", 'required maxlength="100"')}<label class="field">Who can use this view<select name="scope"><option value="personal" ${current?.scope === "personal" || !current ? "selected" : ""}>Personal · this browser</option><option value="project" ${current && current.scope !== "personal" ? "selected" : ""}>Project · shared with project members</option></select></label><p>Includes filters, grouping, sorting and columns. Personal views stay in this browser.</p></div><div class="dialog-foot"><button class="button primary" type="submit">Save view</button></div></form></dialog>`,
         "view",
       );
     }
     if (action === "view-delete" && confirm("Delete this saved view?")) {
-      await saveProject({
-        views: state.project.views.filter((v) => v.id !== state.savedView),
-      });
+      if (personalViews().some((v) => v.id === state.savedView))
+        storage.set(
+          personalViewKey(),
+          personalViews().filter((v) => v.id !== state.savedView),
+        );
+      else
+        await saveProject({
+          views: (state.project.views || []).filter(
+            (v) => v.id !== state.savedView,
+          ),
+        });
       state.savedView = null;
       renderView();
     }
@@ -545,6 +807,7 @@ export function installFeatures(ctx) {
         }
         taskEditor?.reload();
         taskModal?.reload();
+        dependencyEditor?.refresh();
         reloadTeams?.();
         reloadWorkflow?.();
         if (
@@ -554,19 +817,57 @@ export function installFeatures(ctx) {
           state.settingsDirty = true;
         state.dirty = true;
         $(".draft-notice")?.remove();
-        toast("Browser draft restored. Save to update the vault.");
+        autosave?.schedule();
+        toast(
+          autosave
+            ? "Browser draft restored. Changes save automatically."
+            : "Browser draft restored. Save to update the vault.",
+        );
       }
     }
     if (action === "form-discard") {
       storage.set(activeDraft, null);
       $(".draft-notice")?.remove();
     }
+    if (
+      [
+        "task-duplicate",
+        "task-archive",
+        "task-history",
+        "task-template",
+      ].includes(action) &&
+      autosave &&
+      !(await autosave.flush())
+    )
+      return;
+    if (action === "draft-finalise") {
+      if (!autosave || !(await autosave.flush())) return;
+      const id = $("#task-form")?.dataset.draftNode;
+      if (!id || id === "new") return;
+      closeDialog(false, { confirmDirty: false });
+      await canvas.finaliseDraft(id);
+      return;
+    }
     const currentTask = task($("#task-form")?.dataset.id);
+    if (action === "task-comments" && currentTask) {
+      taskModal?.hideHistory();
+      taskComments?.open(currentTask);
+      $("[data-feature=task-comments]")?.setAttribute("aria-expanded", "true");
+    }
     if (action === "task-duplicate" && currentTask) {
+      const {
+        id,
+        key,
+        aliases,
+        revision,
+        canvas_source,
+        creation_request,
+        ...copyData
+      } = currentTask;
       const copy = await api(route("tasks"), {
         method: "POST",
         body: {
-          ...currentTask,
+          ...copyData,
           title: `${currentTask.title} (copy)`,
           comments: [],
           archived: false,
@@ -602,6 +903,7 @@ export function installFeatures(ctx) {
       }
     }
     if (action === "task-history" && currentTask) {
+      taskComments?.close();
       await taskModal?.history();
     }
     if (action === "project-history") {
@@ -778,11 +1080,13 @@ export function installFeatures(ctx) {
       renderApp();
     }
     if (el.id === "saved-view") {
-      const view = (state.project.views || []).find((v) => v.id === el.value);
+      const view = savedViews().find((v) => v.id === el.value);
       state.savedView = view?.id || null;
       if (view) {
+        state.boardGallery = false;
+        drawings.reset();
         Object.assign(state, {
-          view: view.view,
+          view: view.view === "drawing" ? "board" : view.view,
           search: view.search || "",
           status: view.status || "all",
           type: view.type || "all",
@@ -791,9 +1095,18 @@ export function installFeatures(ctx) {
           extraFilters: structuredClone(view.filters || {}),
           tableColumns: structuredClone(view.columns || null),
           groupBy: view.groupBy || "status",
+          ...(view.view === "table"
+            ? {
+                tablePreferences: structuredClone(
+                  view.table || { groups: [], sorts: [], filters: [] },
+                ),
+                tableCollapsed: new Set(),
+              }
+            : {}),
           page: 0,
         });
       }
+      if (view?.view === "table") sheet.persist();
       renderApp();
     }
   });
@@ -856,26 +1169,32 @@ export function installFeatures(ctx) {
         await refresh();
       }
       if (form.id === "view-form") {
-        const id = state.savedView || `v-${Date.now()}`,
-          view = {
-            id,
-            name: data.get("name"),
-            view: state.view,
-            search: state.search,
-            status: state.status,
-            type: state.type,
-            sort: state.sort,
-            sortDir: state.sortDir,
-            filters: state.extraFilters || {},
-            groupBy: state.groupBy || "status",
-            columns: state.tableColumns || null,
-          };
-        await saveProject({
-          views: [
-            ...(state.project.views || []).filter((v) => v.id !== id),
+        const scope = data.get("scope");
+        const current = savedViews().find((v) => v.id === state.savedView);
+        const sameScope = (current?.scope || "project") === scope;
+        const id =
+          !state.savingViewAs && sameScope && current
+            ? current.id
+            : `${scope === "personal" ? "pv" : "v"}-${crypto.randomUUID()}`;
+        const view = {
+          ...viewDefinition(),
+          id,
+          name: String(data.get("name")).trim(),
+          scope,
+        };
+        if (!view.name) throw new Error("Enter a view name.");
+        if (scope === "personal")
+          storage.set(personalViewKey(), [
+            ...personalViews().filter((v) => v.id !== id),
             view,
-          ],
-        });
+          ]);
+        else
+          await saveProject({
+            views: [
+              ...(state.project.views || []).filter((v) => v.id !== id),
+              view,
+            ],
+          });
         state.savedView = id;
         closeDialog(true);
         renderView();
@@ -912,12 +1231,24 @@ export function installFeatures(ctx) {
   });
   return {
     afterRender,
+    drawingReady: drawings.ready,
+    drawingReset: drawings.reset,
+    drawingGallery: drawings.gallery,
+    drawingEnter: drawings.enter,
+    drawingRender: drawings.render,
+    drawingCheckpoint: drawings.checkpoint,
     viewToolbar,
     pagination,
     filter,
     progress,
     dialogOpened,
+    flushTask: () => autosave?.flush() || Promise.resolve(true),
+    taskSyncChanged: () => autosave?.syncChanged(),
     dialogClosed: () => {
+      autosave?.destroy();
+      autosave = null;
+      taskComments?.destroy();
+      taskComments = null;
       taskModal?.destroy();
       taskModal = null;
       taskEditor?.destroy();
@@ -929,6 +1260,8 @@ export function installFeatures(ctx) {
     session,
     start,
     table: sheet.render,
+    tablePreferences: sheet.preferences,
+    tablePersist: sheet.persist,
     cellValue: sheet.value,
     cellPatch: sheet.patch,
     overview: () => plan.overview(progress()),

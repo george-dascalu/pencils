@@ -1,6 +1,6 @@
 {
   "name": "pencils",
-  "version": "0.14.25",
+  "version": "0.15.5",
   "private": true,
   "type": "module",
   "description": "An offline, Markdown-backed project workspace",
@@ -23,10 +23,15 @@
     "test:connect-tool": "node test/connect-tool.mjs",
     "test:board-editor": "node test/board-editor.mjs",
     "test:task-editor": "node test/task-editor.mjs",
+    "test:select-menu": "node test/select-menu.mjs",
+    "test:task-autosave": "node test/task-autosave.mjs",
+    "test:task-dependencies": "node test/task-dependencies.mjs",
+    "test:draft-tasks": "node test/draft-tasks.mjs",
     "test:text-alignment": "node test/text-alignment.mjs",
     "test:live-typography": "node test/live-typography.mjs",
     "test:board-search": "node test/board-search.mjs",
     "test:board-settings": "node test/board-settings.mjs",
+    "test:board-images": "node test/board-images.mjs",
     "test:color-picker": "node test/color-picker.mjs",
     "test:board-background": "node test/board-background.mjs",
     "test:in-place-editing": "node test/in-place-editing.mjs",
@@ -35,8 +40,13 @@
     "test:inline-autosave": "node test/inline-autosave.mjs",
     "test:bullet-shortcuts": "node test/bullet-shortcuts.mjs",
     "test:board-interactions": "node test/board-interactions.mjs",
+    "test:connector-zoom": "node test/connector-zoom.mjs",
     "test:connector-toolbar": "node test/connector-toolbar.mjs",
     "test:selection-filter": "node test/selection-filter.mjs",
+    "test:table-tools": "node test/table-tools.mjs",
+    "test:table-column-drag": "node test/table-column-drag.mjs",
+    "test:note-styles": "node test/note-styles.mjs",
+    "test:grid-drag": "node test/grid-drag.mjs",
     "test:grid": "node test/board-grid.mjs",
     "test:pen": "node test/pen-tool.mjs",
     "test:grid-upgrade": "node test/grid-upgrade.mjs",
@@ -52,13 +62,26 @@
     "test:board-task-drag": "node test/board-task-drag.mjs",
     "test:board-task-panel": "node test/board-task-panel.mjs",
     "test:create-another": "node test/create-another.mjs",
-    "test:board-popovers": "node test/board-popovers.mjs"
+    "test:board-popovers": "node test/board-popovers.mjs",
+    "test:project-frame": "node test/project-frame.mjs",
+    "test:visual-rules": "node test/visual-rules.mjs",
+    "test:board-task-state": "node test/board-task-state.mjs",
+    "test:release": "npm run check && npm test && node test/browser-gate.mjs",
+    "test:review": "node test/review-visibility.mjs",
+    "test:table-performance": "node test/table-benchmark.mjs",
+    "index:rebuild": "node server/rebuild-index.js",
+    "test:sources": "node test/project-sources.mjs",
+    "test:drawing": "node test/drawing-view.mjs",
+    "test:drawing-gestures": "node test/drawing-gestures.mjs",
+    "test:accessibility": "node test/accessibility.mjs",
+    "test:review-workflows": "node test/review-workflows.mjs"
   },
   "engines": {
-    "node": ">=22"
+    "node": ">=22.12.0"
   },
   "dependencies": {
     "dompurify": "^3.4.17",
+    "fast-xml-parser": "5.11.2",
     "fflate": "^0.8.3",
     "marked": "^18.1.1",
     "turndown": "^7.2.4",
@@ -66,6 +89,7 @@
     "yaml": "^2.8.1"
   },
   "devDependencies": {
+    "@axe-core/playwright": "4.14.0",
     "playwright": "^1.61.1",
     "prettier": "^3.9.10"
   }

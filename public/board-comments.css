@@ -162,3 +162,10 @@
   height: 24px;
   padding: 4px;
 }
+
+/* Draft review uses the same anchored surface as object comments. */
+.draft-review-panel[open] { display: flex; height: auto; z-index: 120; }
+.draft-review-panel .dialog-body { padding: 0 12px 12px; overflow-y: auto; min-height: 0; }
+.draft-review-panel .dialog-body p { margin: 10px 0; font-size: 13px; overflow-wrap: anywhere; }
+.draft-review-panel .dialog-foot { padding: 10px 12px; gap: 8px; }
+.draft-review-panel .button { padding: 8px 10px; font-size: 12px; }

@@ -1,3 +1,5 @@
+export { nextDate } from "../public/recurrence-model.js";
+import { validTablePreferences } from "../public/table-model.js";
 import { Problem } from "./problem.js";
 
 export const DEFAULT_SCHEMA = {
@@ -204,7 +206,7 @@ export function validateViews(views) {
         "tree",
         "table",
         "kanban",
-        "board",
+        "board", "drawing",
         "calendar",
         "timeline",
         "capacity",
@@ -219,6 +221,8 @@ export function validateViews(views) {
       )
         fail("Invalid saved view filter.");
     }
+    if (view.table != null && !validTablePreferences(view.table))
+      fail("Invalid saved table view.");
     if (view.sortDir != null && ![1, -1].includes(view.sortDir))
       fail("Invalid saved view sort direction.");
     if (view.filters != null) {
@@ -237,7 +241,7 @@ export function validateViews(views) {
         if (
           !column ||
           typeof column.key !== "string" ||
-          !/^(title|type|status|priority|parent|assignee|start|due|estimate|tags|fields\.[a-zA-Z][a-zA-Z0-9_-]*)$/.test(
+          !/^(key|title|type|status|priority|parent|assignee|start|due|estimate|tags|fields\.[a-zA-Z][a-zA-Z0-9_-]*)$/.test(
             column.key,
           ) ||
           keys.has(column.key) ||
@@ -271,22 +275,4 @@ export function progress(tasks, config = DEFAULT_SCHEMA) {
     done: leaves.filter((t) => config.done.includes(t.status)).length,
     percent: total ? Math.round((completed / total) * 100) : 0,
   };
-}
-export function nextDate(value, rule) {
-  const date = new Date(
-    `${value || new Date().toISOString().slice(0, 10)}T12:00:00Z`,
-  );
-  if (rule.unit === "month") {
-    const day = date.getUTCDate();
-    date.setUTCDate(1);
-    date.setUTCMonth(date.getUTCMonth() + rule.interval);
-    const last = new Date(
-      Date.UTC(date.getUTCFullYear(), date.getUTCMonth() + 1, 0),
-    ).getUTCDate();
-    date.setUTCDate(Math.min(day, last));
-  } else
-    date.setUTCDate(
-      date.getUTCDate() + rule.interval * (rule.unit === "week" ? 7 : 1),
-    );
-  return date.toISOString().slice(0, 10);
 }

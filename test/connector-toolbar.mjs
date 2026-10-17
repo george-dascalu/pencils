@@ -56,6 +56,9 @@ async function until(fn) {
   throw Error("Save timed out");
 }
 async function selectEdge() {
+  await page
+    .locator('path.canvas-edge[data-edge="edge"]')
+    .waitFor({ state: "attached" });
   const p = await page.evaluate(() => {
     const el = document.querySelector('path.canvas-edge[data-edge="edge"]');
     const p = el.getPointAtLength(el.getTotalLength() / 2);
@@ -84,6 +87,45 @@ try {
   await page.locator("[data-view=board]").click();
   await selectEdge();
   assert.equal(await page.locator("dialog").count(), 0);
+  await page.keyboard.press("Enter");
+  const labelInput = page.locator('[data-edge-field="label"]');
+  await labelInput.waitFor();
+  await page.waitForFunction(() =>
+    document.activeElement?.matches('[data-edge-field="label"]'),
+  );
+  await page.keyboard.press("Control+A");
+  await page.keyboard.type("Keyboard connection");
+  await page.keyboard.press("Enter");
+  await until(
+    async () => (await current()).edges[0].label === "Keyboard connection",
+  );
+  assert.equal(
+    await page.locator(".edge-label").textContent(),
+    "Keyboard connection",
+  );
+  // The same shortcut also labels a previously empty arrow.
+  await selectEdge();
+  await page.keyboard.press("Enter");
+  await labelInput.fill("");
+  await labelInput.press("Enter");
+  await until(async () => !(await current()).edges[0].label);
+  await selectEdge();
+  await page.keyboard.press("Enter");
+  await page.waitForFunction(() =>
+    document.activeElement?.matches('[data-edge-field="label"]'),
+  );
+  await page.keyboard.type("New arrow label");
+  await page.keyboard.press("Enter");
+  await until(
+    async () => (await current()).edges[0].label === "New arrow label",
+  );
+  await page.reload();
+  await selectEdge();
+  assert.equal(
+    await page.locator(".edge-label").textContent(),
+    "New arrow label",
+  );
+
   for (const kind of [
     "triangle",
     "circle",

@@ -1,3 +1,9 @@
+import { dependencyStyle, defaultDependencyStyle } from "./dependency-style.js";
+import {
+  dependencyStyleHTML,
+  readDependencyStyle,
+  previewDependencyStyle,
+} from "./dependency-style-editor.js";
 const hex = (value) => /^#[\da-f]{6}$/i.test(value || "");
 export function backgroundStyle(settings = {}) {
   const color = hex(settings.color) ? settings.color : "var(--board-paper)",
@@ -76,7 +82,7 @@ export function boardSettings(ctx, controls) {
   }
   function position() {
     if (!popup) return;
-    if (state.view !== "board" || board()?.id !== boardId) return close();
+    if (!["board", "drawing"].includes(state.view) || board()?.id !== boardId) return close();
     if (!trigger?.isConnected) trigger = visibleTrigger();
     if (!trigger) return close();
     const r = trigger.getBoundingClientRect();
@@ -104,7 +110,7 @@ export function boardSettings(ctx, controls) {
         popup &&
         !popup.contains(e.target) &&
         !e.target.closest(
-          '[data-feature="board-settings"],[data-action="board-undo"],[data-action="board-redo"]',
+          '#shared-select-menu,[data-feature="board-settings"],[data-action="board-undo"],[data-action="board-redo"]',
         )
       )
         close();
@@ -118,7 +124,7 @@ export function boardSettings(ctx, controls) {
         popup &&
         !popup.contains(e.target) &&
         !e.target.closest(
-          '[data-feature="board-settings"],[data-action="board-undo"],[data-action="board-redo"]',
+          '#shared-select-menu,[data-feature="board-settings"],[data-action="board-undo"],[data-action="board-redo"]',
         )
       )
         close();
@@ -130,7 +136,11 @@ export function boardSettings(ctx, controls) {
     (e) => {
       if (!popup) return;
       if (e.key === "Escape") {
-        if (e.target.closest(".color-picker[open]")) return;
+        if (
+          e.target.closest(".color-picker[open]") ||
+          document.querySelector("#shared-select-menu")
+        )
+          return;
         e.preventDefault();
         e.stopImmediatePropagation();
         close(true);
@@ -162,6 +172,7 @@ export function boardSettings(ctx, controls) {
     };
   }
   function preview(form) {
+    previewDependencyStyle(form, esc);
     const settings = values(form);
     paintBoardBackground(form.querySelector(".background-preview"), {
       ...settings,
@@ -213,7 +224,7 @@ export function boardSettings(ctx, controls) {
       )
       .join(
         "",
-      )}</fieldset><div class="field-row"><div class="field">Background colour${colorPicker({ value: s.color === "auto" ? "#f5f6ee" : s.color, name: "background-color", label: "Background colour" })}<label class="background-auto"><input type="checkbox" name="theme-color" ${s.color === "auto" ? "checked" : ""}> Use theme colour</label></div><div class="field">Pattern colour${colorPicker({ value: s.lineColor === "auto" ? "#ced6c1" : s.lineColor, name: "line-color", label: "Pattern colour" })}<label class="background-auto"><input type="checkbox" name="auto-line" ${s.lineColor === "auto" ? "checked" : ""}> Automatic contrast</label></div></div><label class="field">Pattern spacing <output>${s.spacing} px</output><input name="spacing" type="range" min="8" max="160" step="4" value="${s.spacing}"></label><div class="background-preview" role="img" aria-label="Background preview"><span>Preview</span></div><p class="field-hint">Changes save automatically. Use Ctrl / ⌘ Z to undo. Snapping and background are saved with this board for everyone. Fine grid adds a stronger line every five squares. Pattern spacing sets the small square size; it is visual and does not change the snapping distance.</p></section><section class="board-settings-section" aria-labelledby="board-display-heading"><h3 id="board-display-heading">Display</h3><label class="board-setting-toggle"><input name="show-pattern" type="checkbox" ${display.grid ? "checked" : ""}><span>Show background pattern<small>Toggle with G while on the board.</small></span></label><label class="board-setting-toggle"><input name="show-minimap" type="checkbox" ${display.minimap ? "checked" : ""}><span>Show minimap<small>Toggle with M while on the board.</small></span></label><p class="field-hint">Display preferences are remembered for this board in this browser.</p></section></div></form>`;
+      )}</fieldset><div class="field-row"><div class="field">Background colour${colorPicker({ value: s.color === "auto" ? "#f5f6ee" : s.color, name: "background-color", label: "Background colour" })}<label class="background-auto"><input type="checkbox" name="theme-color" ${s.color === "auto" ? "checked" : ""}> Use theme colour</label></div><div class="field">Pattern colour${colorPicker({ value: s.lineColor === "auto" ? "#ced6c1" : s.lineColor, name: "line-color", label: "Pattern colour" })}<label class="background-auto"><input type="checkbox" name="auto-line" ${s.lineColor === "auto" ? "checked" : ""}> Automatic contrast</label></div></div><label class="field">Pattern spacing <output>${s.spacing} px</output><input name="spacing" type="range" min="8" max="160" step="4" value="${s.spacing}"></label><div class="background-preview" role="img" aria-label="Background preview"><span>Preview</span></div><p class="field-hint">Changes save automatically. Use Ctrl / ⌘ Z to undo. Snapping and background are saved with this board for everyone. Fine grid adds a stronger line every five squares. Pattern spacing sets the small square size; it is visual and does not change the snapping distance.</p></section>${dependencyStyleHTML(board(), ctx)}<section class="board-settings-section" aria-labelledby="board-display-heading"><h3 id="board-display-heading">Display</h3><label class="board-setting-toggle"><input name="show-pattern" type="checkbox" ${display.grid ? "checked" : ""}><span>Show background pattern<small>Toggle with G while on the board.</small></span></label><label class="board-setting-toggle"><input name="show-minimap" type="checkbox" ${display.minimap ? "checked" : ""}><span>Show minimap<small>Toggle with M while on the board.</small></span></label><p class="field-hint">Display preferences are remembered for this board in this browser.</p></section></div></form>`;
     document.body.append(popup);
     popup.addEventListener("toggle", (e) => {
       if (e.newState === "closed" && popup === e.target) close();
@@ -238,6 +249,7 @@ export function boardSettings(ctx, controls) {
       snap: form.elements.snap.checked,
       alignObjects: form.elements["align-objects"].checked,
       background: values(form),
+      dependency_style: readDependencyStyle(form),
     };
     const beforeDisplay = controls.display();
     const display = {
@@ -300,6 +312,14 @@ export function boardSettings(ctx, controls) {
     form.elements["theme-color"].checked = true;
     form.elements["auto-line"].checked = true;
     form.elements.spacing.value = 20;
+    for (const [key, value] of Object.entries(defaultDependencyStyle))
+      form.elements[`dependency-${key}`].value = value;
+    form.elements["dependency-color"].closest(".color-picker").outerHTML =
+      colorPicker({
+        name: "dependency-color",
+        value: defaultDependencyStyle.color,
+        label: "Dependency arrow colour",
+      });
     for (const name of [
       "snap",
       "align-objects",
@@ -317,7 +337,7 @@ export function boardSettings(ctx, controls) {
   });
   function sync() {
     if (!popup) return;
-    if (state.view !== "board" || board()?.id !== boardId) return close();
+    if (!["board", "drawing"].includes(state.view) || board()?.id !== boardId) return close();
     trigger = visibleTrigger();
     trigger?.setAttribute("aria-expanded", "true");
     trigger?.setAttribute("aria-controls", "board-settings-popover");
@@ -332,6 +352,9 @@ export function boardSettings(ctx, controls) {
       spacing: 20,
       ...b.settings?.background,
     };
+    const arrows = dependencyStyle(b, state.project);
+    for (const key of ["lineStyle", "width", "toEnd"])
+      form.elements[`dependency-${key}`].value = arrows[key];
     form.elements.title.value = b.title;
     form.elements.title.setCustomValidity("");
     form.elements.snap.checked = b.settings?.snap !== false;
@@ -344,6 +367,7 @@ export function boardSettings(ctx, controls) {
     form.elements["show-pattern"].checked = display.grid;
     form.elements["show-minimap"].checked = display.minimap;
     for (const [name, value, label] of [
+      ["dependency-color", arrows.color, "Dependency arrow colour"],
       [
         "background-color",
         s.color === "auto" ? "#f5f6ee" : s.color,

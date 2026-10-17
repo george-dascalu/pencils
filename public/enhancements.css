@@ -144,7 +144,7 @@ summary:focus,
   border-radius: 5px;
 }
 .grid-tools > span {
-  color: #586853;
+  color: var(--muted);
 }
 .task-table.spreadsheet {
   table-layout: fixed;
@@ -341,7 +341,7 @@ summary:focus,
 }
 .dashboard-deadlines small {
   display: block;
-  color: #627359;
+  color: var(--muted);
   margin-top: 4px;
 }
 .project-health {
@@ -367,7 +367,7 @@ summary:focus,
 }
 .search-result span {
   font-size: 12px;
-  color: #627359;
+  color: var(--muted);
 }
 .planning-head {
   display: flex;
@@ -404,7 +404,7 @@ summary:focus,
   border: 0;
   background: transparent;
   padding: 4px;
-  color: #314630;
+  color: var(--ink);
 }
 .calendar-day.today {
   background: #eff5df;

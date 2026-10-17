@@ -25,6 +25,7 @@
         ? raw.theme
         : "system",
       collapsed: raw.collapsed === true,
+      density: raw.density === "compact" ? "compact" : "comfortable",
       navigation: raw.navigation === "trackpad" ? "trackpad" : "mouse",
       singleKeys: raw.singleKeys !== false,
     };
@@ -39,6 +40,7 @@
           : "light"
         : value.theme;
     root.dataset.font = value.font;
+    root.dataset.density = value.density;
     root.dataset.sidebar = value.collapsed ? "collapsed" : "expanded";
     root.style.colorScheme = root.dataset.theme;
     window.dispatchEvent(new Event("pencils-appearance"));

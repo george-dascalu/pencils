@@ -24,6 +24,7 @@ const grid = {
   h: 360,
   grid: newGrid(2, 2),
 };
+grid.grid.cells[0][0].autoFit = true; // Legacy files keep the chosen font size too.
 grid.grid.cells[0][0].text = "Draft\n\n- First item\n- Second item";
 grid.grid.cells[0][1] = { text: "Neighbour", fontSize: 18, fontFamily: "Lora" };
 syncGrid(grid);
@@ -85,21 +86,28 @@ async function styles(locator = rich()) {
   });
 }
 async function change(key, value, inputOnly = false) {
-  await control(key).focus();
-  if (inputOnly)
-    await control(key).evaluate((el, value) => {
+  const field =
+    key === "verticalAlign"
+      ? page.locator(
+          `.inline-floating-tools [data-text-style="verticalAlign"][value="${value}"]`,
+        )
+      : control(key);
+  await field.focus();
+  if (key === "verticalAlign") await field.click();
+  else if (inputOnly)
+    await field.evaluate((el, value) => {
       el.value = value;
       el.dispatchEvent(new Event("input", { bubbles: true }));
     }, value);
-  else if (typeof value === "boolean") await control(key).setChecked(value);
-  else await control(key).selectOption(value);
+  else if (typeof value === "boolean") await field.setChecked(value);
+  else await field.selectOption(value);
   assert.equal(
     await page.locator(".board-node.inline-editing").count(),
     1,
     "Editor stays open",
   );
   assert.equal(
-    await control(key).evaluate((el) => el === document.activeElement),
+    await field.evaluate((el) => el === document.activeElement),
     true,
     "Toolbar keeps focus",
   );
@@ -153,17 +161,8 @@ try {
   assert.equal((await styles()).align, "flex-end");
   await change("verticalAlign", "top");
   await change("fontSize", "96");
-  await change("autoFit", true);
-  assert.ok(
-    parseFloat((await styles()).size) < 96,
-    "Fit applies while editing",
-  );
-  await change("autoFit", false);
-  assert.equal(
-    (await styles()).size,
-    "96px",
-    "Disabling Fit immediately restores chosen size",
-  );
+  assert.equal(await page.locator('[data-text-style="autoFit"]').count(), 0);
+  assert.equal((await styles()).size, "96px", "Text keeps the chosen size even in a small object");
   await change("fontSize", "28");
   await page.locator('[data-pro="inline-preview"]').click();
   assert.equal((await styles(page.locator(".inline-preview"))).size, "28px");
@@ -179,8 +178,10 @@ try {
   const draft = await rich().textContent();
   await change("fontSize", "28");
   assert.equal(await rich().textContent(), draft);
-  // Native keyboard selection must not be intercepted by toolbar navigation.
+  // Keyboard selection in the shared dropdown must not be intercepted by toolbar navigation.
   await control("fontSize").focus();
+  await page.keyboard.press("ArrowDown");
+  await page.locator("#shared-select-menu").waitFor();
   await page.keyboard.press("ArrowDown");
   await page.keyboard.press("Enter");
   assert.equal(await control("fontSize").inputValue(), "32");
@@ -224,11 +225,13 @@ try {
     .dblclick();
   await change("fontSize", "20");
   assert.equal((await styles()).size, "20px");
+  const family = await control("fontFamily").boundingBox(), size = await control("fontSize").boundingBox();
+  assert.ok(family.width > size.width * 2 && size.width <= 56, "Font name has more room than the compact size control");
   await page.screenshot({ path: "/tmp/pencils-live-typography-mobile.png" });
   await page.keyboard.press("Escape");
   assert.deepEqual(errors, []);
   console.log(
-    "PASS: live font family/size, keyboard controls, line spacing, vertical alignment, Fit, preview, preserved draft/selection, grid neighbours, reload and mobile/dark across board components.",
+    "PASS: live font family/size, keyboard controls, line spacing, vertical alignment, fixed font size, preview, preserved draft/selection, grid neighbours, reload and mobile/dark across board components.",
   );
 } catch (e) {
   await page.screenshot({ path: "/tmp/pencils-live-typography-failure.png" });

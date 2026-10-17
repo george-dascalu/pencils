@@ -1,5 +1,6 @@
 import { canParent } from "./hierarchy-model.js";
 import { nextStatuses, initialStatus } from "./workflow-model.js";
+import { positionPopover } from "./popover-position.js";
 export function taskPickerHTML(
   { name, title, value, choices, iconOnly },
   { esc, icon },
@@ -68,7 +69,9 @@ export function taskModalControls(ctx, form, restoreVersion) {
     form.querySelector("[data-subtask-hint]").textContent = !allowed.length
       ? "This card type cannot have subtasks under the project hierarchy rules."
       : !form.dataset.id
-        ? "Subtasks are created when you create this task."
+        ? form.dataset.draftNode
+          ? "Subtasks are created when you finalise this draft."
+          : "Subtasks are created when you create this task."
         : "";
     for (const picker of form.querySelectorAll("[data-task-picker]")) {
       const select = picker.querySelector("select"),
@@ -99,17 +102,7 @@ export function taskModalControls(ctx, form, restoreVersion) {
         .getBoundingClientRect(),
       panel = openPicker.querySelector(".task-picker-popover"),
       bounds = dialog.getBoundingClientRect();
-    const width = Math.min(
-      openPicker.dataset.taskPicker === "parent" ? 360 : 220,
-      bounds.width - 24,
-    );
-    panel.style.width = `${width}px`;
-    panel.style.left = `${Math.max(bounds.left + 12, Math.min(r.left, bounds.right - width - 12))}px`;
-    const below = bounds.bottom - r.bottom - 12,
-      above = r.top - bounds.top - 12;
-    const height = Math.min(300, Math.max(below, above));
-    panel.style.maxHeight = `${Math.max(80, height)}px`;
-    panel.style.top = `${below >= Math.min(240, above) ? r.bottom + 4 : Math.max(bounds.top + 8, r.top - panel.offsetHeight - 4)}px`;
+    positionPopover(panel,r,{width:openPicker.dataset.taskPicker === "parent"?360:220,maxHeight:300,bounds});
   }
   function showPicker(picker) {
     if (openPicker === picker) {
@@ -396,6 +389,18 @@ export function taskModalControls(ctx, form, restoreVersion) {
   subtasks();
   return {
     history,
+    hideHistory,
+    refreshStatuses() {
+      const saved = task(form.dataset.id),
+        select = form.elements.status;
+      if (!saved || select.value !== saved.status) return;
+      select.innerHTML = nextStatuses(state.config, saved.status)
+        .map(
+          (s) =>
+            `<option value="${esc(s)}" ${s === saved.status ? "selected" : ""}>${esc(ctx.statusNames[s] || ctx.label(s))}</option>`,
+        )
+        .join("");
+    },
     reload() {
       paintPickers();
       subtasks();

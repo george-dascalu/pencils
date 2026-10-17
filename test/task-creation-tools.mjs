@@ -115,6 +115,7 @@ try {
   // Hierarchy editor persists and keeps invalid relationships from being saved.
   await page.locator("[data-action=project-edit]").click();
   await page.locator("[data-hierarchy-mode]").selectOption("enforced");
+  await page.locator(".hierarchy-matrix > summary").click();
   await page
     .locator('[data-hierarchy-parent="task"][data-hierarchy-child="bug"]')
     .uncheck();

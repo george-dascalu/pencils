@@ -144,6 +144,46 @@ try {
       ]),
     ["16px"],
   );
+  const textMenu = page.locator('[data-selection-menu="text-align"]');
+  for (const [value, expected] of [
+    ["top", "flex-start"],
+    ["middle", "center"],
+    ["bottom", "flex-end"],
+  ]) {
+    if (!(await textMenu.evaluate((el) => el.open)))
+      await textMenu.locator("summary").click();
+    await textMenu
+      .locator(`[data-text-style="verticalAlign"][value="${value}"]`)
+      .click();
+    await until(
+      async () =>
+        (await current()).nodes.find((n) => n.id === "sticky").verticalAlign ===
+        value,
+    );
+    assert.equal(
+      await node("sticky")
+        .locator(".board-node-content")
+        .evaluate((el) => getComputedStyle(el).justifyContent),
+      expected,
+    );
+  }
+  if (!(await textMenu.evaluate((el) => el.open)))
+    await textMenu.locator("summary").click();
+  assert.ok(
+    (await textMenu.locator(".selection-popover").boundingBox()).width <= 210,
+  );
+  for (const button of await textMenu
+    .locator(
+      "[data-text-align],button[data-text-style=verticalAlign],[data-object-style]",
+    )
+    .all()) {
+    assert.equal((await button.innerText()).trim(), "");
+    assert.ok(await button.getAttribute("aria-label"));
+    assert.ok(await button.locator("svg").count());
+  }
+  await page.screenshot({ path: "/tmp/pencils-alignment-icons.png" });
+  // Close the menu to reuse the normal horizontal-alignment helper below.
+  await textMenu.locator("summary").click();
   for (const value of ["center", "right", "justify", "left"]) {
     await align(value);
     await until(
@@ -277,6 +317,9 @@ try {
   assert.equal((await store.snapshot(project.id)).tasks[0].body, task.body);
   await page.locator("#canvas").focus();
   await page.keyboard.press("Control+a");
+  await page.locator('[data-selection-menu="filter"] > summary').click();
+  await page.locator('[data-selection-type="edge"]').uncheck();
+  await page.locator("[data-selection-apply]").click();
   await align("center");
   await until(async () =>
     (await current()).nodes
@@ -311,7 +354,10 @@ try {
   await page
     .locator('path.canvas-edge[data-edge="edge"]')
     .dispatchEvent("pointerdown", { button: 0 });
-  assert.equal(await page.locator(".connector-endpoint").count(), 2);
+  assert.equal(
+    await page.locator(".connector-endpoint[data-edge-end]").count(),
+    2,
+  );
   await clear();
   await assertClear();
   await find("sticky");

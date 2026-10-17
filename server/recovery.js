@@ -5,6 +5,11 @@ import path from "node:path";
 import { createHash, randomUUID } from "node:crypto";
 import { zip, unzip } from "fflate";
 import { Problem } from "./problem.js";
+import {
+  BACKUP_BYTES,
+  BACKUP_EXPANDED_BYTES,
+  BACKUP_FILES,
+} from "../public/backup-limits.js";
 
 const digest = (value) => createHash("sha256").update(value).digest("hex");
 const pack = (files) =>
@@ -23,14 +28,15 @@ const unpack = (data) =>
         filter: (file) => {
           size += file.originalSize;
           count++;
-          if (size > 200_000_000 || count > 30000) return false;
+          if (size > BACKUP_EXPANDED_BYTES || count > BACKUP_FILES)
+            return false;
           return true;
         },
       },
       (error, files) =>
         error
           ? reject(new Problem(400, "Invalid ZIP archive."))
-          : size > 200_000_000 || count > 30000
+          : size > BACKUP_EXPANDED_BYTES || count > BACKUP_FILES
             ? reject(
                 new Problem(
                   413,
@@ -40,17 +46,41 @@ const unpack = (data) =>
             : resolve(files),
     );
   });
-export async function collect(root, prefix = "", result = {}) {
+export async function collect(
+  root,
+  prefix = "",
+  result = {},
+  budget = {
+    bytes: Object.values(result).reduce((sum, value) => sum + value.length, 0),
+    count: Object.keys(result).length,
+  },
+) {
   for (const entry of await fs.readdir(path.join(root, prefix), {
     withFileTypes: true,
   })) {
     if (entry.name.startsWith(".") || entry.isSymbolicLink()) continue;
     const relative = path.posix.join(prefix, entry.name);
-    if (entry.isDirectory()) await collect(root, relative, result);
-    else if (entry.isFile() && !entry.name.endsWith(".tmp"))
-      result[relative] = new Uint8Array(
-        await fs.readFile(path.join(root, relative)),
-      );
+    if (entry.isDirectory()) await collect(root, relative, result, budget);
+    else if (entry.isFile() && !entry.name.endsWith(".tmp")) {
+      const file = path.join(root, relative),
+        stat = await fs.stat(file);
+      if (
+        ++budget.count > BACKUP_FILES ||
+        budget.bytes + stat.size > BACKUP_EXPANDED_BYTES
+      )
+        throw new Problem(
+          413,
+          "Project backup exceeds 200 MB / 30,000 files. Use a complete installation backup; see the recovery guide in README.",
+        );
+      const data = new Uint8Array(await fs.readFile(file));
+      budget.bytes += data.length;
+      if (budget.bytes > BACKUP_EXPANDED_BYTES)
+        throw new Problem(
+          413,
+          "Project files grew beyond the backup limit while collecting them. Pause external edits and retry.",
+        );
+      result[relative] = data;
+    }
   }
   return result;
 }
@@ -163,8 +193,25 @@ export function installRecovery(Store) {
       await fs.mkdir(folder, { recursive: true });
       const files = await collect(this.root, "Projects");
       await collect(this.root, "Organisations", files);
+      const totalBytes = Object.values(files).reduce(
+        (sum, bytes) => sum + bytes.length,
+        0,
+      );
+      if (
+        totalBytes > BACKUP_EXPANDED_BYTES ||
+        Object.keys(files).length > BACKUP_FILES
+      )
+        throw new Problem(
+          413,
+          "Project backup exceeds 200 MB / 30,000 files. Use a complete installation backup; see the recovery guide.",
+        );
       const id = `${new Date().toISOString().replace(/[:.]/g, "-")}-${randomUUID().slice(0, 8)}`;
       const bytes = await pack(files);
+      if (bytes.length > BACKUP_BYTES)
+        throw new Problem(
+          413,
+          "Backup exceeds the supported 220 MB archive limit.",
+        );
       await fs.writeFile(path.join(folder, `${id}.zip`), bytes, { flag: "wx" });
       await fs.writeFile(
         path.join(folder, `${id}.json`),
@@ -189,6 +236,11 @@ export function installRecovery(Store) {
       const bytes = Buffer.from(input.data, "base64");
       if (bytes.length > 10_000_000)
         throw new Problem(413, "Upload a backup ZIP up to 10 MB.");
+      return this.importBackupBytes(bytes);
+    },
+    async importBackupBytes(bytes) {
+      if (bytes.length > BACKUP_BYTES)
+        throw new Problem(413, "Upload a backup ZIP up to 220 MB.");
       const files = await unpack(bytes);
       for (const name of Object.keys(files)) this.resolveFile(name);
       if (
@@ -214,6 +266,24 @@ export function installRecovery(Store) {
         JSON.stringify(metadata),
       );
       return metadata;
+    },
+    async verifyBackup(id) {
+      const entries = await unpack(await this.backupBytes(id));
+      for (const name of Object.keys(entries)) this.resolveFile(name);
+      if (
+        !Object.keys(entries).some((name) =>
+          /^Organisations\/[^/]+\.md$/.test(name),
+        )
+      )
+        throw new Problem(400, "Backup has no organisations.");
+      return {
+        ok: true,
+        files: Object.keys(entries).length,
+        bytes: Object.values(entries).reduce(
+          (sum, data) => sum + data.length,
+          0,
+        ),
+      };
     },
     async autoBackup() {
       const today = new Date().toISOString().slice(0, 10);
@@ -327,6 +397,8 @@ export function installRecovery(Store) {
             result.push({
               key: entry.name,
               title: record.data.title,
+              task_key:
+                record.data.kind === "task" ? record.data.key : undefined,
               kind: record.data.kind,
               project: record.data.project,
               organisation: record.data.organisation,
@@ -363,9 +435,20 @@ export function installRecovery(Store) {
         folder,
         `${Date.now()}-${kind === "project" ? project : id}${kind === "project" ? "" : path.extname(file)}`,
       );
-      await fs.rename(source, target);
+      await this.journal.move(source, target);
       this.changed();
       return { ok: true };
+    },
+    async restoreTask(project, id) {
+      // Resolve only within the authorised project; never accept a global trash key.
+      await this.read(this.file(project, "project"));
+      this.file(project, "tasks", id);
+      const item = (await this.trash()).find(
+        (entry) =>
+          entry.kind === "task" && entry.project === project && entry.id === id,
+      );
+      if (!item) throw new Problem(404, "This task is no longer in the trash.");
+      return this.restoreTrash(item.key);
     },
     async restoreTrash(key) {
       const item = (await this.trash()).find((t) => t.key === key);
@@ -390,7 +473,7 @@ export function installRecovery(Store) {
         if (error.code !== "ENOENT") throw error;
       }
       await fs.mkdir(path.dirname(target), { recursive: true });
-      await fs.rename(path.join(this.root, ".trash", key), target);
+      await this.journal.move(path.join(this.root, ".trash", key), target);
       this.changed();
       return { ok: true };
     },

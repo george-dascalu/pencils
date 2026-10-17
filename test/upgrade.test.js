@@ -451,3 +451,76 @@ test("retrying a partially completed recurrence does not duplicate its successor
     1,
   );
 });
+
+test("task restoration is scoped to the project and requires editor access", async (t) => {
+  const { store, auth, request } = await setup(t, true);
+  const org = await store.createOrganisation({ title: "Private recovery" });
+  const project = await store.createProject({ title: "Recover here" });
+  const privateProject = await store.createProject({
+    title: "Private",
+    organisation: org.id,
+  });
+  const task = await store.createTask(project.id, {
+    title: "Restore original",
+    body: "Original description",
+  });
+  const original = await fs.readFile(
+    store.file(project.id, "tasks", task.id),
+    "utf8",
+  );
+  const privateTask = await store.createTask(privateProject.id, {
+    title: "Private task",
+  });
+  await store.deleteTask(project.id, task.id, task.revision);
+  await store.deleteTask(
+    privateProject.id,
+    privateTask.id,
+    privateTask.revision,
+  );
+  const cookies = {};
+  for (const role of ["viewer", "editor"]) {
+    await auth.save({
+      username: role,
+      password: "a-long-recovery-password",
+      admin: false,
+      organisations: { "o-default": role },
+    });
+    cookies[role] = (
+      await request("/session", "POST", {
+        username: role,
+        password: "a-long-recovery-password",
+      })
+    ).cookie.split(";")[0];
+  }
+  const url = `/projects/${project.id}/tasks/${task.id}/restore`;
+  assert.equal((await request(url, "POST", {}, cookies.viewer)).status, 403);
+  assert.equal(
+    (
+      await request(
+        `/projects/${privateProject.id}/tasks/${privateTask.id}/restore`,
+        "POST",
+        {},
+        cookies.editor,
+      )
+    ).status,
+    403,
+  );
+  assert.equal(
+    (
+      await request(
+        `/projects/${project.id}/tasks/${privateTask.id}/restore`,
+        "POST",
+        {},
+        cookies.editor,
+      )
+    ).status,
+    404,
+  );
+  assert.equal((await request(url, "POST", {}, cookies.editor)).status, 200);
+  assert.equal(
+    await fs.readFile(store.file(project.id, "tasks", task.id), "utf8"),
+    original,
+  );
+  assert.equal((await request(url, "POST", {}, cookies.editor)).status, 404);
+  assert.ok((await store.trash()).some((item) => item.id === privateTask.id));
+});

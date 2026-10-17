@@ -1,3 +1,4 @@
+import {orthogonalRoute} from "./orthogonal-route.js";
 import { throughPoints } from "./connector-path.js";
 export const sides = ["top", "right", "bottom", "left"];
 export function port(n, side) {
@@ -16,7 +17,7 @@ export function port(n, side) {
     y: cy + dx * Math.sin(a) + dy * Math.cos(a),
   };
 }
-export function routeEdge(edge, a, b) {
+export function routeEdge(edge, a, b, obstacles = null) {
   const dx = b.x + b.w / 2 - a.x - a.w / 2,
     dy = b.y + b.h / 2 - a.y - a.h / 2;
   const fromSide =
@@ -51,6 +52,68 @@ export function routeEdge(edge, a, b) {
     x: q.x + vector[toSide][0] * length,
     y: q.y + vector[toSide][1] * length,
   };
+  if(obstacles && edge.routing === "elbow" && !edge.bends?.length && !a.rotation && !b.rotation) {
+    if(edge.planRelation === "parent" && toSide === "left") q.y=b.y+b.h*.25;
+    const route=orthogonalRoute(p,q,fromSide,toSide,obstacles,a.id,b.id);
+    if(route)return {d:throughPoints(route.points),...route,p,q};
+  }
+  // Generated project plans keep their relationship arrows outside the cards,
+  // including when a child is only slightly indented from its parent.
+  if (
+    edge.planRelation &&
+    edge.routing === "elbow" &&
+    !edge.bends?.length &&
+    !a.rotation &&
+    !b.rotation
+  ) {
+    let points, label;
+    if (
+      edge.planRelation === "parent" &&
+      fromSide === "bottom" &&
+      toSide === "left"
+    ) {
+      q.y = b.y + b.h * 0.25;
+      const left = Math.min(a.x, b.x) - 24,
+        gap = a.y + a.h + 18;
+      points = [
+        p,
+        { x: p.x, y: gap },
+        { x: left, y: gap },
+        { x: left, y: q.y },
+        q,
+      ];
+      label = { x: (p.x + left) / 2, y: gap };
+    } else if (
+      edge.planRelation === "dependency" &&
+      fromSide === "right" &&
+      toSide === "left"
+    ) {
+      // Use the space between columns whenever the target is to the right.
+      // The outside detour is only needed for indented or backward links.
+      if (q.x - p.x >= 48) {
+        const middle = (p.x + q.x) / 2;
+        points =
+          p.y === q.y
+            ? [p, q]
+            : [p, { x: middle, y: p.y }, { x: middle, y: q.y }, q];
+        label = { x: middle, y: (p.y + q.y) / 2 };
+        return { d: throughPoints(points), points, ...label, p, q };
+      }
+      const right = Math.max(a.x + a.w, b.x + b.w) + 32,
+        left = b.x - 24;
+      const gap = b.y > a.y ? b.y - 18 : b.y + b.h + 18;
+      points = [
+        p,
+        { x: right, y: p.y },
+        { x: right, y: gap },
+        { x: left, y: gap },
+        { x: left, y: q.y },
+        q,
+      ];
+      label = { x: (right + left) / 2, y: gap };
+    }
+    if (points) return { d: throughPoints(points), points, ...label, p, q };
+  }
   let d = `M${p.x},${p.y}`;
   if (edge.routing === "straight") d += ` L${q.x},${q.y}`;
   else if (edge.routing === "elbow") {

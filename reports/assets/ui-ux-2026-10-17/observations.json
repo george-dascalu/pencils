@@ -1,0 +1,1070 @@
+{
+  "date": "2026-10-17",
+  "environment": "Isolated sample project; Chromium; touch emulation for phone and tablet; not production data or physical device testing",
+  "task_panels": [
+    {
+      "name": "desktop-list-task",
+      "viewport": [
+        1440,
+        960
+      ],
+      "panel": {
+        "x": 868,
+        "y": 12,
+        "width": 560,
+        "height": 936,
+        "top": 12,
+        "right": 1428,
+        "bottom": 948,
+        "left": 868
+      },
+      "modal": false
+    },
+    {
+      "name": "desktop-board-task",
+      "viewport": [
+        1440,
+        960
+      ],
+      "panel": {
+        "x": 88,
+        "y": 157,
+        "width": 400,
+        "height": 760,
+        "top": 157,
+        "right": 488,
+        "bottom": 917,
+        "left": 88
+      },
+      "modal": false
+    },
+    {
+      "name": "phone-list-task",
+      "viewport": [
+        390,
+        844
+      ],
+      "panel": {
+        "x": 0,
+        "y": 0,
+        "width": 390,
+        "height": 844,
+        "top": 0,
+        "right": 390,
+        "bottom": 844,
+        "left": 0
+      },
+      "modal": false
+    },
+    {
+      "name": "tablet-list-task-comments",
+      "viewport": [
+        1024,
+        768
+      ],
+      "panel": {
+        "x": 452,
+        "y": 12,
+        "width": 560,
+        "height": 744,
+        "top": 12,
+        "right": 1012,
+        "bottom": 756,
+        "left": 452
+      },
+      "modal": false
+    },
+    {
+      "name": "phone-board-create",
+      "viewport": [
+        390,
+        844
+      ],
+      "panel": {
+        "x": 18,
+        "y": 204,
+        "width": 354,
+        "height": 618,
+        "top": 204,
+        "right": 372,
+        "bottom": 822,
+        "left": 18
+      },
+      "modal": false
+    },
+    {
+      "name": "tablet-board-create",
+      "viewport": [
+        1024,
+        768
+      ],
+      "panel": {
+        "x": 298,
+        "y": 166,
+        "width": 400,
+        "height": 574,
+        "top": 166,
+        "right": 698,
+        "bottom": 740,
+        "left": 298
+      },
+      "modal": false
+    }
+  ],
+  "focus": [
+    {
+      "name": "desktop-overview-focus-after-escape",
+      "active": {
+        "tag": "BODY",
+        "label": null,
+        "text": "\n    \n    \n    \n      pencils.\n      ORGANISATIONOur organisationNew organisatio"
+      }
+    },
+    {
+      "name": "desktop-list-focus-after-escape",
+      "active": {
+        "tag": "BUTTON",
+        "label": "Version history",
+        "text": ""
+      }
+    },
+    {
+      "name": "desktop-tree-focus-after-escape",
+      "active": {
+        "tag": "BODY",
+        "label": null,
+        "text": "\n    \n    \n    \n      pencils.\n      ORGANISATIONOur organisationNew organisatio"
+      }
+    },
+    {
+      "name": "desktop-table-focus-after-escape",
+      "active": {
+        "tag": "BODY",
+        "label": null,
+        "text": "\n    \n    \n    \n      pencils.\n      ORGANISATIONOur organisationNew organisatio"
+      }
+    },
+    {
+      "name": "desktop-kanban-focus-after-escape",
+      "active": {
+        "tag": "BODY",
+        "label": null,
+        "text": "\n    \n    \n    \n      pencils.\n      ORGANISATIONOur organisationNew organisatio"
+      }
+    },
+    {
+      "name": "desktop-calendar-focus-after-escape",
+      "active": {
+        "tag": "BODY",
+        "label": null,
+        "text": "\n    \n    \n    \n      pencils.\n      ORGANISATIONOur organisationNew organisatio"
+      }
+    },
+    {
+      "name": "desktop-timeline-focus-after-escape",
+      "active": {
+        "tag": "BODY",
+        "label": null,
+        "text": "\n    \n    \n    \n      pencils.\n      ORGANISATIONOur organisationNew organisatio"
+      }
+    },
+    {
+      "name": "desktop-capacity-focus-after-escape",
+      "active": {
+        "tag": "BODY",
+        "label": null,
+        "text": "\n    \n    \n    \n      pencils.\n      ORGANISATIONOur organisationNew organisatio"
+      }
+    },
+    {
+      "name": "desktop-board-focus-after-escape",
+      "active": {
+        "tag": "BUTTON",
+        "label": "Version history",
+        "text": ""
+      }
+    },
+    {
+      "name": "phone-list-focus-after-escape",
+      "active": {
+        "tag": "BUTTON",
+        "label": "Version history",
+        "text": ""
+      }
+    },
+    {
+      "name": "tablet-list-focus-after-escape",
+      "active": {
+        "tag": "BUTTON",
+        "label": "Version history",
+        "text": ""
+      }
+    }
+  ],
+  "flows": [
+    {
+      "name": "task-comments-after-board-comment",
+      "text": "Comments\n\nNo comments yet. Start the conversation.\n\nComment\nAdd comment"
+    },
+    {
+      "name": "persisted-comment-scope",
+      "board": [
+        {
+          "id": "comment-1792232673712-k80640np",
+          "author": "Guest giva",
+          "text": "Board conversation",
+          "created": "2026-10-17T10:24:33.712Z"
+        }
+      ],
+      "task": [
+        {
+          "id": "comment-fcc7c2df-2855-430b-8322-991a4680bb64",
+          "author": "Shared workspace",
+          "text": "Task conversation",
+          "created": "2026-10-17T10:24:34.495Z"
+        }
+      ]
+    },
+    {
+      "name": "invalid-close-reopen",
+      "title": "Map the first user journey",
+      "draftNotice": 1
+    },
+    {
+      "name": "native-dialog",
+      "type": "confirm",
+      "message": "Close this editor? Your draft will remain available in this browser."
+    },
+    {
+      "name": "source-draft-reopen",
+      "nameValue": "",
+      "restoreDraft": 0
+    },
+    {
+      "name": "phone-table-id-visibility",
+      "value": [
+        {
+          "text": "ALITTL-1",
+          "display": "none"
+        },
+        {
+          "text": "ALITTL-2",
+          "display": "none"
+        },
+        {
+          "text": "ALITTL-3",
+          "display": "none"
+        },
+        {
+          "text": "ALITTL-4",
+          "display": "none"
+        },
+        {
+          "text": "ALITTL-5",
+          "display": "none"
+        },
+        {
+          "text": "ALITTL-6",
+          "display": "none"
+        },
+        {
+          "text": "ALITTL-7",
+          "display": "none"
+        },
+        {
+          "text": "ALITTL-8",
+          "display": "none"
+        }
+      ],
+      "firstTaskY": 499.5
+    },
+    {
+      "name": "phone-calendar-controls",
+      "controls": [
+        {
+          "text": "← Previous",
+          "rect": {
+            "x": 6,
+            "y": 334.5,
+            "width": 82,
+            "height": 44,
+            "top": 334.5,
+            "right": 88,
+            "bottom": 378.5,
+            "left": 6
+          }
+        },
+        {
+          "text": "2026-10-12 → 2026-10-18",
+          "rect": {
+            "x": 103,
+            "y": 274,
+            "width": 68,
+            "height": 165,
+            "top": 274,
+            "right": 171,
+            "bottom": 439,
+            "left": 103
+          }
+        },
+        {
+          "text": "Next →",
+          "rect": {
+            "x": 186,
+            "y": 334.5,
+            "width": 61,
+            "height": 44,
+            "top": 334.5,
+            "right": 247,
+            "bottom": 378.5,
+            "left": 186
+          }
+        },
+        {
+          "text": "MonthAgenda",
+          "rect": {
+            "x": 262,
+            "y": 344.5,
+            "width": 95,
+            "height": 43,
+            "top": 344.5,
+            "right": 357,
+            "bottom": 387.5,
+            "left": 262
+          }
+        },
+        {
+          "text": "DayWeekMonth",
+          "rect": {
+            "x": 372,
+            "y": 344.5,
+            "width": 88,
+            "height": 43,
+            "top": 344.5,
+            "right": 460,
+            "bottom": 387.5,
+            "left": 372
+          }
+        },
+        {
+          "text": "Agenda date",
+          "rect": {
+            "x": 475,
+            "y": 335,
+            "width": 48,
+            "height": 43,
+            "top": 335,
+            "right": 523,
+            "bottom": 378,
+            "left": 475
+          }
+        },
+        {
+          "text": "Choose Agenda date",
+          "rect": {
+            "x": 442,
+            "y": 338,
+            "width": 30,
+            "height": 37,
+            "top": 338,
+            "right": 472,
+            "bottom": 375,
+            "left": 442
+          }
+        }
+      ]
+    },
+    {
+      "name": "tablet-calendar-controls",
+      "controls": [
+        {
+          "text": "← Previous",
+          "rect": {
+            "x": 222,
+            "y": 190,
+            "width": 82,
+            "height": 44,
+            "top": 190,
+            "right": 304,
+            "bottom": 234,
+            "left": 222
+          }
+        },
+        {
+          "text": "October 2026",
+          "rect": {
+            "x": 421,
+            "y": 195.5,
+            "width": 154,
+            "height": 33,
+            "top": 195.5,
+            "right": 575,
+            "bottom": 228.5,
+            "left": 421
+          }
+        },
+        {
+          "text": "Next →",
+          "rect": {
+            "x": 692,
+            "y": 190,
+            "width": 61,
+            "height": 44,
+            "top": 190,
+            "right": 753,
+            "bottom": 234,
+            "left": 692
+          }
+        },
+        {
+          "text": "MonthAgenda",
+          "rect": {
+            "x": 917,
+            "y": 190.5,
+            "width": 95,
+            "height": 43,
+            "top": 190.5,
+            "right": 1012,
+            "bottom": 233.5,
+            "left": 917
+          }
+        }
+      ]
+    }
+  ],
+  "accessibility": [
+    {
+      "name": "desktop-list-comments-a11y",
+      "violations": [
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "description": "Ensure the contrast between foreground and background colors meets WCAG 2 AA minimum contrast ratio thresholds",
+          "nodes": [
+            {
+              "target": [
+                ".done.task-title[data-id=\"t-469da196\"]"
+              ],
+              "summary": "Fix any of the following:\n  Element has insufficient color contrast of 2.83 (foreground color: #959c8b, background color: #ffffff, font size: 9.0pt (12px), font weight: normal). Expected contrast ratio of 4.5:1"
+            },
+            {
+              "target": [
+                ".discovery"
+              ],
+              "summary": "Fix any of the following:\n  Element has insufficient color contrast of 3.02 (foreground color: #699495, background color: #edf5f4, font size: 6.8pt (9px), font weight: normal). Expected contrast ratio of 4.5:1"
+            },
+            {
+              "target": [
+                ".task-metadata-main > .field:nth-child(1) > span"
+              ],
+              "summary": "Fix any of the following:\n  Element has insufficient color contrast of 3.37 (foreground color: #849075, background color: #ffffff, font size: 8.3pt (11px), font weight: normal). Expected contrast ratio of 4.5:1"
+            },
+            {
+              "target": [
+                ".task-metadata-main > .field:nth-child(2)"
+              ],
+              "summary": "Fix any of the following:\n  Element has insufficient color contrast of 3.37 (foreground color: #849075, background color: #ffffff, font size: 8.3pt (11px), font weight: normal). Expected contrast ratio of 4.5:1"
+            },
+            {
+              "target": [
+                ".field:nth-child(3)"
+              ],
+              "summary": "Fix any of the following:\n  Element has insufficient color contrast of 3.37 (foreground color: #849075, background color: #ffffff, font size: 8.3pt (11px), font weight: normal). Expected contrast ratio of 4.5:1"
+            },
+            {
+              "target": [
+                ".task-metadata-secondary > .field > span"
+              ],
+              "summary": "Fix any of the following:\n  Element has insufficient color contrast of 3.37 (foreground color: #849075, background color: #ffffff, font size: 8.3pt (11px), font weight: normal). Expected contrast ratio of 4.5:1"
+            },
+            {
+              "target": [
+                ".task-dates > .field:nth-child(1)"
+              ],
+              "summary": "Fix any of the following:\n  Element has insufficient color contrast of 3.37 (foreground color: #849075, background color: #ffffff, font size: 8.3pt (11px), font weight: normal). Expected contrast ratio of 4.5:1"
+            },
+            {
+              "target": [
+                ".task-dates > .field:nth-child(2)"
+              ],
+              "summary": "Fix any of the following:\n  Element has insufficient color contrast of 3.37 (foreground color: #849075, background color: #ffffff, font size: 8.3pt (11px), font weight: normal). Expected contrast ratio of 4.5:1"
+            },
+            {
+              "target": [
+                "code"
+              ],
+              "summary": "Fix any of the following:\n  Element has insufficient color contrast of 2.73 (foreground color: #8c967c, background color: #eff2e7, font size: 7.5pt (10px), font weight: normal). Expected contrast ratio of 4.5:1"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "desktop-board-comments-a11y",
+      "violations": [
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "description": "Ensure the contrast between foreground and background colors meets WCAG 2 AA minimum contrast ratio thresholds",
+          "nodes": [
+            {
+              "target": [
+                ".task-metadata-main > .field:nth-child(1) > span"
+              ],
+              "summary": "Fix any of the following:\n  Element has insufficient color contrast of 3.37 (foreground color: #849075, background color: #ffffff, font size: 8.3pt (11px), font weight: normal). Expected contrast ratio of 4.5:1"
+            },
+            {
+              "target": [
+                ".task-metadata-main > .field:nth-child(2)"
+              ],
+              "summary": "Fix any of the following:\n  Element has insufficient color contrast of 3.37 (foreground color: #849075, background color: #ffffff, font size: 8.3pt (11px), font weight: normal). Expected contrast ratio of 4.5:1"
+            },
+            {
+              "target": [
+                ".field:nth-child(3)"
+              ],
+              "summary": "Fix any of the following:\n  Element has insufficient color contrast of 3.37 (foreground color: #849075, background color: #ffffff, font size: 8.3pt (11px), font weight: normal). Expected contrast ratio of 4.5:1"
+            },
+            {
+              "target": [
+                ".task-metadata-secondary > .field > span"
+              ],
+              "summary": "Fix any of the following:\n  Element has insufficient color contrast of 3.37 (foreground color: #849075, background color: #ffffff, font size: 8.3pt (11px), font weight: normal). Expected contrast ratio of 4.5:1"
+            },
+            {
+              "target": [
+                ".task-dates > .field:nth-child(1)"
+              ],
+              "summary": "Fix any of the following:\n  Element has insufficient color contrast of 3.37 (foreground color: #849075, background color: #ffffff, font size: 8.3pt (11px), font weight: normal). Expected contrast ratio of 4.5:1"
+            },
+            {
+              "target": [
+                ".task-dates > .field:nth-child(2)"
+              ],
+              "summary": "Fix any of the following:\n  Element has insufficient color contrast of 3.37 (foreground color: #849075, background color: #ffffff, font size: 8.3pt (11px), font weight: normal). Expected contrast ratio of 4.5:1"
+            }
+          ]
+        },
+        {
+          "id": "nested-interactive",
+          "impact": "serious",
+          "description": "Ensure interactive controls are not nested as they are not always announced by screen readers or can cause focus problems for assistive technologies",
+          "nodes": [
+            {
+              "target": [
+                ".task"
+              ],
+              "summary": "Fix any of the following:\n  Element has focusable descendants. Move them outside of the element, or remove them."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "desktop-settings-a11y",
+      "violations": [
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "description": "Ensure the contrast between foreground and background colors meets WCAG 2 AA minimum contrast ratio thresholds",
+          "nodes": [
+            {
+              "target": [
+                ".dialog-body > .field:nth-child(2)"
+              ],
+              "summary": "Fix any of the following:\n  Element has insufficient color contrast of 3.37 (foreground color: #849075, background color: #ffffff, font size: 8.3pt (11px), font weight: normal). Expected contrast ratio of 4.5:1"
+            },
+            {
+              "target": [
+                ".field:nth-child(3)"
+              ],
+              "summary": "Fix any of the following:\n  Element has insufficient color contrast of 3.37 (foreground color: #849075, background color: #ffffff, font size: 8.3pt (11px), font weight: normal). Expected contrast ratio of 4.5:1"
+            },
+            {
+              "target": [
+                ".field:nth-child(4)"
+              ],
+              "summary": "Fix any of the following:\n  Element has insufficient color contrast of 3.37 (foreground color: #849075, background color: #ffffff, font size: 8.3pt (11px), font weight: normal). Expected contrast ratio of 4.5:1"
+            },
+            {
+              "target": [
+                ".field:nth-child(6)"
+              ],
+              "summary": "Fix any of the following:\n  Element has insufficient color contrast of 3.37 (foreground color: #849075, background color: #ffffff, font size: 8.3pt (11px), font weight: normal). Expected contrast ratio of 4.5:1"
+            },
+            {
+              "target": [
+                ".field-row > .field:nth-child(1)"
+              ],
+              "summary": "Fix any of the following:\n  Element has insufficient color contrast of 3.37 (foreground color: #849075, background color: #ffffff, font size: 8.3pt (11px), font weight: normal). Expected contrast ratio of 4.5:1"
+            },
+            {
+              "target": [
+                ".field-row > .field:nth-child(2)"
+              ],
+              "summary": "Fix any of the following:\n  Element has insufficient color contrast of 3.37 (foreground color: #849075, background color: #ffffff, font size: 8.3pt (11px), font weight: normal). Expected contrast ratio of 4.5:1"
+            },
+            {
+              "target": [
+                ".hierarchy-editor > .field"
+              ],
+              "summary": "Fix any of the following:\n  Element has insufficient color contrast of 3.37 (foreground color: #849075, background color: #ffffff, font size: 8.3pt (11px), font weight: normal). Expected contrast ratio of 4.5:1"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "desktop-workflow-a11y",
+      "violations": [
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "description": "Ensure the contrast between foreground and background colors meets WCAG 2 AA minimum contrast ratio thresholds",
+          "nodes": [
+            {
+              "target": [
+                ".dialog-body > .field"
+              ],
+              "summary": "Fix any of the following:\n  Element has insufficient color contrast of 3.27 (foreground color: #849075, background color: #fcfcf8, font size: 8.3pt (11px), font weight: normal). Expected contrast ratio of 4.5:1"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "desktop-source-a11y",
+      "violations": [
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "description": "Ensure the contrast between foreground and background colors meets WCAG 2 AA minimum contrast ratio thresholds",
+          "nodes": [
+            {
+              "target": [
+                "#source-config > .dialog-body > .field:nth-child(2)"
+              ],
+              "summary": "Fix any of the following:\n  Element has insufficient color contrast of 3.27 (foreground color: #849075, background color: #fcfcf8, font size: 8.3pt (11px), font weight: normal). Expected contrast ratio of 4.5:1"
+            },
+            {
+              "target": [
+                "#source-config > .dialog-body > .field:nth-child(3)"
+              ],
+              "summary": "Fix any of the following:\n  Element has insufficient color contrast of 3.27 (foreground color: #849075, background color: #fcfcf8, font size: 8.3pt (11px), font weight: normal). Expected contrast ratio of 4.5:1"
+            },
+            {
+              "target": [
+                "div[data-source-scope=\"\"] > .field:nth-child(2)"
+              ],
+              "summary": "Fix any of the following:\n  Element has insufficient color contrast of 3.27 (foreground color: #849075, background color: #fcfcf8, font size: 8.3pt (11px), font weight: normal). Expected contrast ratio of 4.5:1"
+            },
+            {
+              "target": [
+                "div[data-source-scope=\"\"] > .field:nth-child(3)"
+              ],
+              "summary": "Fix any of the following:\n  Element has insufficient color contrast of 3.27 (foreground color: #849075, background color: #fcfcf8, font size: 8.3pt (11px), font weight: normal). Expected contrast ratio of 4.5:1"
+            },
+            {
+              "target": [
+                "div[data-source-scope=\"\"] > .field:nth-child(4)"
+              ],
+              "summary": "Fix any of the following:\n  Element has insufficient color contrast of 3.27 (foreground color: #849075, background color: #fcfcf8, font size: 8.3pt (11px), font weight: normal). Expected contrast ratio of 4.5:1"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "desktop-board-settings-a11y",
+      "violations": [
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "description": "Ensure the contrast between foreground and background colors meets WCAG 2 AA minimum contrast ratio thresholds",
+          "nodes": [
+            {
+              "target": [
+                ".board-settings-section:nth-child(1) > .field"
+              ],
+              "summary": "Fix any of the following:\n  Element has insufficient color contrast of 3.37 (foreground color: #849075, background color: #ffffff, font size: 8.3pt (11px), font weight: normal). Expected contrast ratio of 4.5:1"
+            },
+            {
+              "target": [
+                ".field-row > .field:nth-child(1)"
+              ],
+              "summary": "Fix any of the following:\n  Element has insufficient color contrast of 3.37 (foreground color: #849075, background color: #ffffff, font size: 8.3pt (11px), font weight: normal). Expected contrast ratio of 4.5:1"
+            },
+            {
+              "target": [
+                ".field-row > .field:nth-child(2)"
+              ],
+              "summary": "Fix any of the following:\n  Element has insufficient color contrast of 3.37 (foreground color: #849075, background color: #ffffff, font size: 8.3pt (11px), font weight: normal). Expected contrast ratio of 4.5:1"
+            },
+            {
+              "target": [
+                "section[aria-labelledby=\"board-background-heading\"] > .field"
+              ],
+              "summary": "Fix any of the following:\n  Element has insufficient color contrast of 3.37 (foreground color: #849075, background color: #ffffff, font size: 8.3pt (11px), font weight: normal). Expected contrast ratio of 4.5:1"
+            },
+            {
+              "target": [
+                "output"
+              ],
+              "summary": "Fix any of the following:\n  Element has insufficient color contrast of 3.37 (foreground color: #849075, background color: #ffffff, font size: 8.3pt (11px), font weight: normal). Expected contrast ratio of 4.5:1"
+            }
+          ]
+        },
+        {
+          "id": "nested-interactive",
+          "impact": "serious",
+          "description": "Ensure interactive controls are not nested as they are not always announced by screen readers or can cause focus problems for assistive technologies",
+          "nodes": [
+            {
+              "target": [
+                ".task"
+              ],
+              "summary": "Fix any of the following:\n  Element has focusable descendants. Move them outside of the element, or remove them."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "phone-list-comments-a11y",
+      "violations": [
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "description": "Ensure the contrast between foreground and background colors meets WCAG 2 AA minimum contrast ratio thresholds",
+          "nodes": [
+            {
+              "target": [
+                ".done.task-title[data-id=\"t-469da196\"]"
+              ],
+              "summary": "Fix any of the following:\n  Element has insufficient color contrast of 2.83 (foreground color: #959c8b, background color: #ffffff, font size: 8.3pt (11px), font weight: normal). Expected contrast ratio of 4.5:1"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "phone-settings-a11y",
+      "violations": [
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "description": "Ensure the contrast between foreground and background colors meets WCAG 2 AA minimum contrast ratio thresholds",
+          "nodes": [
+            {
+              "target": [
+                ".dialog-body > .field:nth-child(2)"
+              ],
+              "summary": "Fix any of the following:\n  Element has insufficient color contrast of 3.37 (foreground color: #849075, background color: #ffffff, font size: 8.3pt (11px), font weight: normal). Expected contrast ratio of 4.5:1"
+            },
+            {
+              "target": [
+                ".field:nth-child(3)"
+              ],
+              "summary": "Fix any of the following:\n  Element has insufficient color contrast of 3.37 (foreground color: #849075, background color: #ffffff, font size: 8.3pt (11px), font weight: normal). Expected contrast ratio of 4.5:1"
+            },
+            {
+              "target": [
+                ".field:nth-child(4)"
+              ],
+              "summary": "Fix any of the following:\n  Element has insufficient color contrast of 3.37 (foreground color: #849075, background color: #ffffff, font size: 8.3pt (11px), font weight: normal). Expected contrast ratio of 4.5:1"
+            },
+            {
+              "target": [
+                ".field:nth-child(6)"
+              ],
+              "summary": "Fix any of the following:\n  Element has insufficient color contrast of 3.37 (foreground color: #849075, background color: #ffffff, font size: 8.3pt (11px), font weight: normal). Expected contrast ratio of 4.5:1"
+            },
+            {
+              "target": [
+                ".field-row > .field:nth-child(1)"
+              ],
+              "summary": "Fix any of the following:\n  Element has insufficient color contrast of 3.37 (foreground color: #849075, background color: #ffffff, font size: 8.3pt (11px), font weight: normal). Expected contrast ratio of 4.5:1"
+            },
+            {
+              "target": [
+                ".field-row > .field:nth-child(2)"
+              ],
+              "summary": "Fix any of the following:\n  Element has insufficient color contrast of 3.37 (foreground color: #849075, background color: #ffffff, font size: 8.3pt (11px), font weight: normal). Expected contrast ratio of 4.5:1"
+            },
+            {
+              "target": [
+                ".hierarchy-editor > .field"
+              ],
+              "summary": "Fix any of the following:\n  Element has insufficient color contrast of 3.37 (foreground color: #849075, background color: #ffffff, font size: 8.3pt (11px), font weight: normal). Expected contrast ratio of 4.5:1"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "phone-workflow-a11y",
+      "violations": [
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "description": "Ensure the contrast between foreground and background colors meets WCAG 2 AA minimum contrast ratio thresholds",
+          "nodes": [
+            {
+              "target": [
+                ".dialog-body > .field"
+              ],
+              "summary": "Fix any of the following:\n  Element has insufficient color contrast of 3.27 (foreground color: #849075, background color: #fcfcf8, font size: 8.3pt (11px), font weight: normal). Expected contrast ratio of 4.5:1"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "phone-source-a11y",
+      "violations": [
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "description": "Ensure the contrast between foreground and background colors meets WCAG 2 AA minimum contrast ratio thresholds",
+          "nodes": [
+            {
+              "target": [
+                "#source-config > .dialog-body > .field:nth-child(2)"
+              ],
+              "summary": "Fix any of the following:\n  Element has insufficient color contrast of 3.27 (foreground color: #849075, background color: #fcfcf8, font size: 8.3pt (11px), font weight: normal). Expected contrast ratio of 4.5:1"
+            },
+            {
+              "target": [
+                "#source-config > .dialog-body > .field:nth-child(3)"
+              ],
+              "summary": "Fix any of the following:\n  Element has insufficient color contrast of 3.27 (foreground color: #849075, background color: #fcfcf8, font size: 8.3pt (11px), font weight: normal). Expected contrast ratio of 4.5:1"
+            },
+            {
+              "target": [
+                "div[data-source-scope=\"\"] > .field:nth-child(2)"
+              ],
+              "summary": "Fix any of the following:\n  Element has insufficient color contrast of 3.27 (foreground color: #849075, background color: #fcfcf8, font size: 8.3pt (11px), font weight: normal). Expected contrast ratio of 4.5:1"
+            },
+            {
+              "target": [
+                "div[data-source-scope=\"\"] > .field:nth-child(3)"
+              ],
+              "summary": "Fix any of the following:\n  Element has insufficient color contrast of 3.27 (foreground color: #849075, background color: #fcfcf8, font size: 8.3pt (11px), font weight: normal). Expected contrast ratio of 4.5:1"
+            },
+            {
+              "target": [
+                "div[data-source-scope=\"\"] > .field:nth-child(4)"
+              ],
+              "summary": "Fix any of the following:\n  Element has insufficient color contrast of 3.27 (foreground color: #849075, background color: #fcfcf8, font size: 8.3pt (11px), font weight: normal). Expected contrast ratio of 4.5:1"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "phone-board-settings-a11y",
+      "violations": [
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "description": "Ensure the contrast between foreground and background colors meets WCAG 2 AA minimum contrast ratio thresholds",
+          "nodes": [
+            {
+              "target": [
+                "div[data-node=\"n-note2\"] > .board-node-content > .node-text.canvas-markdown > p"
+              ],
+              "summary": "Fix any of the following:\n  Element has insufficient color contrast of 4.29 (foreground color: #70673e, background color: #d6e4d3, font size: 12.0pt (16px), font weight: normal). Expected contrast ratio of 4.5:1"
+            },
+            {
+              "target": [
+                ".board-settings-section:nth-child(1) > .field"
+              ],
+              "summary": "Fix any of the following:\n  Element has insufficient color contrast of 3.37 (foreground color: #849075, background color: #ffffff, font size: 8.3pt (11px), font weight: normal). Expected contrast ratio of 4.5:1"
+            },
+            {
+              "target": [
+                ".field-row > .field:nth-child(1)"
+              ],
+              "summary": "Fix any of the following:\n  Element has insufficient color contrast of 3.37 (foreground color: #849075, background color: #ffffff, font size: 8.3pt (11px), font weight: normal). Expected contrast ratio of 4.5:1"
+            },
+            {
+              "target": [
+                ".field-row > .field:nth-child(2)"
+              ],
+              "summary": "Fix any of the following:\n  Element has insufficient color contrast of 3.37 (foreground color: #849075, background color: #ffffff, font size: 8.3pt (11px), font weight: normal). Expected contrast ratio of 4.5:1"
+            }
+          ]
+        },
+        {
+          "id": "nested-interactive",
+          "impact": "serious",
+          "description": "Ensure interactive controls are not nested as they are not always announced by screen readers or can cause focus problems for assistive technologies",
+          "nodes": [
+            {
+              "target": [
+                ".task"
+              ],
+              "summary": "Fix any of the following:\n  Element has focusable descendants. Move them outside of the element, or remove them."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "tablet-list-comments-a11y",
+      "violations": [
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "description": "Ensure the contrast between foreground and background colors meets WCAG 2 AA minimum contrast ratio thresholds",
+          "nodes": [
+            {
+              "target": [
+                ".bug > span"
+              ],
+              "summary": "Fix any of the following:\n  Element has insufficient color contrast of 3.51 (foreground color: #b87969, background color: #ffffff, font size: 7.5pt (10px), font weight: normal). Expected contrast ratio of 4.5:1"
+            },
+            {
+              "target": [
+                ".low"
+              ],
+              "summary": "Fix any of the following:\n  Element has insufficient color contrast of 2.65 (foreground color: #99a28e, background color: #ffffff, font size: 7.5pt (10px), font weight: normal). Expected contrast ratio of 4.5:1"
+            },
+            {
+              "target": [
+                ".list-group:nth-child(1) > div > .task-row:nth-child(2) > .story.task-type[title=\"Story\"] > span"
+              ],
+              "summary": "Fix any of the following:\n  Element has insufficient color contrast of 3.4 (foreground color: #789180, background color: #ffffff, font size: 7.5pt (10px), font weight: normal). Expected contrast ratio of 4.5:1"
+            },
+            {
+              "target": [
+                ".list-group:nth-child(2) > div > .task-row:nth-child(1) > .row-meta > .medium.priority[title=\"Medium priority\"]"
+              ],
+              "summary": "Fix any of the following:\n  Element has insufficient color contrast of 2.65 (foreground color: #99a28e, background color: #ffffff, font size: 7.5pt (10px), font weight: normal). Expected contrast ratio of 4.5:1"
+            },
+            {
+              "target": [
+                ".milestone > span"
+              ],
+              "summary": "Fix any of the following:\n  Element has insufficient color contrast of 3.67 (foreground color: #8780ad, background color: #ffffff, font size: 7.5pt (10px), font weight: normal). Expected contrast ratio of 4.5:1"
+            },
+            {
+              "target": [
+                ".list-group:nth-child(2) > div > .task-row:nth-child(2) > .row-meta > .high.priority[title=\"High priority\"]"
+              ],
+              "summary": "Fix any of the following:\n  Element has insufficient color contrast of 3.14 (foreground color: #b6885e, background color: #ffffff, font size: 7.5pt (10px), font weight: normal). Expected contrast ratio of 4.5:1"
+            },
+            {
+              "target": [
+                ".epic > span"
+              ],
+              "summary": "Fix any of the following:\n  Element has insufficient color contrast of 3.74 (foreground color: #958258, background color: #ffffff, font size: 7.5pt (10px), font weight: normal). Expected contrast ratio of 4.5:1"
+            },
+            {
+              "target": [
+                ".task-row:nth-child(1) > .row-meta > .high.priority[title=\"High priority\"]"
+              ],
+              "summary": "Fix any of the following:\n  Element has insufficient color contrast of 3.14 (foreground color: #b6885e, background color: #ffffff, font size: 7.5pt (10px), font weight: normal). Expected contrast ratio of 4.5:1"
+            },
+            {
+              "target": [
+                ".list-group:nth-child(3) > div > .task-row:nth-child(2) > .story.task-type[title=\"Story\"] > span"
+              ],
+              "summary": "Fix any of the following:\n  Element has insufficient color contrast of 3.4 (foreground color: #789180, background color: #ffffff, font size: 7.5pt (10px), font weight: normal). Expected contrast ratio of 4.5:1"
+            },
+            {
+              "target": [
+                ".list-group:nth-child(3) > div > .task-row:nth-child(2) > .row-meta > .high.priority[title=\"High priority\"]"
+              ],
+              "summary": "Fix any of the following:\n  Element has insufficient color contrast of 3.14 (foreground color: #b6885e, background color: #ffffff, font size: 7.5pt (10px), font weight: normal). Expected contrast ratio of 4.5:1"
+            },
+            {
+              "target": [
+                ".list-group:nth-child(4) > div > .task-row > .row-meta > .medium.priority[title=\"Medium priority\"]"
+              ],
+              "summary": "Fix any of the following:\n  Element has insufficient color contrast of 2.65 (foreground color: #99a28e, background color: #ffffff, font size: 7.5pt (10px), font weight: normal). Expected contrast ratio of 4.5:1"
+            },
+            {
+              "target": [
+                ".done.task-title[data-id=\"t-469da196\"]"
+              ],
+              "summary": "Fix any of the following:\n  Element has insufficient color contrast of 2.83 (foreground color: #959c8b, background color: #ffffff, font size: 9.0pt (12px), font weight: normal). Expected contrast ratio of 4.5:1"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "columns_change": [
+    {
+      "name": "hide-immediate",
+      "before": 12,
+      "after": 11,
+      "open": true,
+      "modal": 0
+    },
+    {
+      "name": "reorder-immediate",
+      "columns": [
+        "key",
+        "type",
+        "title",
+        "status",
+        "parent",
+        "assignee",
+        "start",
+        "due",
+        "estimate",
+        "tags"
+      ],
+      "focus": "Move Type up",
+      "menuOrder": [
+        "key",
+        "type",
+        "title",
+        "status",
+        "priority",
+        "parent",
+        "assignee",
+        "start",
+        "due",
+        "estimate",
+        "tags"
+      ]
+    },
+    {
+      "name": "escape",
+      "open": false,
+      "focus": "Columns⌄"
+    },
+    {
+      "name": "outside-click",
+      "open": false
+    },
+    {
+      "name": "phone-bounds",
+      "rect": {
+        "x": 8,
+        "y": 386,
+        "width": 320,
+        "height": 431
+      },
+      "trigger": {
+        "x": 6,
+        "y": 338,
+        "width": 93,
+        "height": 44
+      }
+    },
+    {
+      "name": "phone-close",
+      "open": false
+    }
+  ],
+  "limitations": [
+    "Focus with an auxiliary panel open is an intermediate close step, not a task-panel close.",
+    "Accessibility scans include the page behind nonmodal panels.",
+    "Automation selector/navigation failures are not counted as application failures.",
+    "Other assessment findings remain recommendations."
+  ]
+}

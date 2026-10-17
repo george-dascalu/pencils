@@ -1,3 +1,4 @@
+import { selectProjectView } from "./menu-controls.mjs";
 import assert from "node:assert/strict";
 import fs from "node:fs/promises";
 import os from "node:os";
@@ -189,7 +190,7 @@ try {
     2,
   );
   await page.setViewportSize({ width: 1500, height: 1000 });
-  await page.locator("[data-view=list]").click();
+  await selectProjectView(page, "list");
   await page.locator("[data-action=task-new]").first().click();
   assert.equal(
     await form.getByText("Planning & relationships", { exact: true }).count(),

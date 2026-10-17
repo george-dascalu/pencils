@@ -1,3 +1,4 @@
+import { edgeDependency, dependencyCycle } from "./dependency-model.js";
 import { arrowHeads, headSample } from "./connector-style.js";
 import { palette } from "./canvas-format.js";
 export function connectorToolbar(
@@ -12,8 +13,16 @@ export function connectorToolbar(
     menu(
       key,
       label,
-      headSample(edge[key] || fallback, key === "fromEnd"),
+      headSample(
+        dependency.active
+          ? key === "fromEnd"
+            ? "none"
+            : "arrow"
+          : edge[key] || fallback,
+        key === "fromEnd",
+      ),
       `<strong>${label}</strong>${arrowHeads.map(([value, name]) => `<button type="button" class="selection-action" data-edge-head="${key}" data-value="${value}" aria-label="${label}: ${name}" aria-pressed="${(edge[key] || fallback) === value}">${headSample(value, key === "fromEnd")}<span class="selection-action-label">${name}</span></button>`).join("")}`,
+      dependency.active,
     );
   const lineIcon = (key, value) => {
     const path =
@@ -89,21 +98,35 @@ export function connectorToolbar(
         ["auto", "top", "right", "bottom", "left"],
         edge.toSide || "auto",
       ) +
-      button(
-        "pro",
-        "edge-dependency",
-        "Create task dependency",
-        "connect",
-        edge.relationship !== "blocks",
-      ) +
       '<button type="button" data-connector-command="reset-bends">Reset bends</button><label><input type="checkbox" data-edge-field="lineJumps" ' +
       (edge.lineJumps ? "checked" : "") +
-      '> Line jumps (straight / elbow)</label><p class="conversion-hint">For task cards: the destination depends on the source. Deleting this line leaves the task dependency intact.</p>',
+      '> Line jumps (straight / elbow)</label><p class="conversion-hint">Use Task dependency to link two project tasks. Removing a line keeps its task dependency.</p>',
+  );
+  const dependency = edgeDependency(ctx.board(), edge, ctx.state.tasks);
+  const cyclic =
+    dependency.valid &&
+    !dependency.active &&
+    dependencyCycle(
+      ctx.state.tasks,
+      dependency.target.id,
+      dependency.source.id,
+    );
+  const dependencyMenu = menu(
+    "dependency",
+    "Task dependency",
+    icon("connect"),
+    `<strong>Task dependency</strong>${
+      dependency.valid
+        ? `<p class="conversion-hint">${esc(dependency.source.key || dependency.source.title)} → ${esc(dependency.target.key || dependency.target.title)}<br>The start task must finish before the end task.</p>${button("pro", dependency.active ? "edge-dependency-remove" : "edge-dependency", dependency.active ? "Remove dependency" : "Make dependency", "connect", !dependency.active && cyclic)}${cyclic && !dependency.active ? '<p class="conversion-hint">This direction would create a dependency cycle.</p>' : ""}<p class="conversion-hint">Removing the line keeps the dependency. Use Remove dependency to unlink the tasks.</p>`
+        : edge.planRelation === "parent"
+          ? '<p class="conversion-hint">This arrow shows a parent–child relationship. Change the task parent, then choose Update plan on its Project frame.</p>'
+          : '<p class="conversion-hint">Connect two different project task cards. Finalise draft tasks first.</p>'
+    }`,
   );
   const color = ctx.colorPicker({
     value: palette[edge.color] || edge.color || "#78906f",
     label: "Connector colour",
     selection: true,
   });
-  return `<div id="selection-tools" class="selection-tools connector-tools" role="toolbar" aria-label="${count > 1 ? "Selected connectors" : "Selected connector"}" data-connector-id="${esc(edge.id)}">${filter ? group("Selection", filter) : ""}${group("Endpoints", head("fromEnd", "Start style", "none") + head("toEnd", "End style", "arrow"))}${group("Line appearance", route + color)}${count === 1 ? group("Connection details", label + more) : ""}${group("Connector actions", count === 1 ? button("action", "edge-delete", "Delete connector", "trash") : button("feature", "duplicate", "Duplicate", "duplicate") + button("feature", "selection-delete", "Delete", "trash"))}</div>`;
+  return `<div id="selection-tools" class="selection-tools connector-tools" role="toolbar" aria-label="${count > 1 ? "Selected connectors" : "Selected connector"}" data-connector-id="${esc(edge.id)}">${filter ? group("Selection", filter) : ""}${count === 1 && dependency.active ? group("Dependency style", button("feature", "board-settings", "Dependency arrow style in Board settings", "settings")) : group("Endpoints", head("fromEnd", "Start style", "none") + head("toEnd", "End style", "arrow")) + group("Line appearance", route + color)}${count === 1 ? group("Connection details", dependencyMenu + label + more) : ""}${group("Connector actions", count === 1 ? button("action", "edge-delete", "Delete connector", "trash") : button("feature", "duplicate", "Duplicate", "duplicate") + button("feature", "selection-delete", "Delete", "trash"))}</div>`;
 }

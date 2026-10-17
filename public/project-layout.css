@@ -134,7 +134,8 @@
   right: 0;
   width: 320px;
 }
-.board-menu-panel > :is(button, select) {
+.board-menu-panel > :is(button, select),
+.canvas-library-tools > :is(button, a) {
   width: 100%;
   max-width: none;
   justify-content: flex-start;
@@ -264,8 +265,55 @@
 .main:has(.tabs) .toolbar-right .caption {
   display: none;
 }
+.view-layout-switcher {
+  display: inline-flex;
+  flex-shrink: 0;
+  gap: 2px;
+  padding: 2px;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: var(--surface);
+}
+.view-layout-switcher button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 30px;
+  padding: 4px 9px;
+  border: 1px solid transparent;
+  border-radius: 5px;
+  color: var(--muted);
+  font-size: 12px;
+}
+.view-layout-switcher button:hover {
+  background: var(--surface-soft);
+  color: var(--ink);
+}
+.view-layout-switcher button[aria-pressed="true"] {
+  background: var(--surface-soft);
+  border-color: var(--green);
+  color: var(--ink);
+}
+.view-layout-switcher .icon {
+  width: 16px;
+  height: 16px;
+}
+@media (pointer: coarse) {
+  .view-layout-switcher button {
+    min-height: 44px;
+  }
+}
 .main:has(.tabs) .toolbar :is(input, select) {
   font-size: 12px;
+}
+.main:has(.tabs) .toolbar select,
+.mobile-view-switcher select {
+  appearance: none;
+  padding-right: 26px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='m3 4.5 3 3 3-3' fill='none' stroke='%23647760' stroke-width='1.5'/%3E%3C/svg%3E");
+  background-position: right 8px center;
+  background-repeat: no-repeat;
 }
 .board-menu-panel > input {
   width: 100%;

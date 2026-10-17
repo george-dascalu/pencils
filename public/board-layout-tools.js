@@ -260,7 +260,7 @@ export function boardLayoutTools(ctx, basic) {
         return;
       }
       if (
-        state.view !== "board" ||
+        !["board", "drawing"].includes(state.view) ||
         state.dialog ||
         e.target.closest('input,textarea,select,[contenteditable="true"]')
       )

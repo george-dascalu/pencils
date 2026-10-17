@@ -1,17 +1,22 @@
+.object-typography {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 52px;
+  gap: 6px;
+  width: 220px;
+  max-width: 100%;
+  min-width: 0;
+}
+.object-text-control {
+  min-width: 0;
+}
 .object-text-control select {
-  max-width: 125px;
-  min-width: 48px;
+  width: 100%;
+  max-width: none;
+  min-width: 0;
   padding: 6px;
   border: 0;
   background: transparent;
   font-size: 12px;
-}
-.object-fit-label {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  font-size: 12px;
-  padding: 0 6px;
 }
 .board-node
   .board-node-content
@@ -66,6 +71,8 @@
   opacity: 0.55;
 }
 .edge-label {
+  /* Scale glyph metrics continuously instead of snapping them at each zoom level. */
+  text-rendering: geometricPrecision;
   cursor: move;
   paint-order: stroke;
   stroke: var(--surface, #fff);
@@ -247,6 +254,20 @@
   height: 100%;
   flex: 1;
 }
+.canvas.image-drop-active::after {
+  content: "Drop images or GIFs here";
+  position: absolute;
+  inset: 8px;
+  z-index: 50;
+  display: grid;
+  place-items: center;
+  border: 2px dashed var(--green);
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--surface) 85%, transparent);
+  color: var(--ink);
+  pointer-events: none;
+  font-size: 18px;
+}
 .session-status {
   position: absolute;
   right: 20px;
@@ -272,14 +293,10 @@
 }
 .selection-popover .object-typography {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  width: 100%;
   border: 0;
   padding: 8px 0;
-  gap: 8px;
-}
-.selection-popover .object-typography select {
-  width: 100%;
-  max-width: 160px;
+  gap: 6px;
 }
 #canvas:has(.multi-resize-box) .board-node > .resize-handle {
   display: none;

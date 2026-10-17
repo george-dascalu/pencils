@@ -1,3 +1,6 @@
+import {Automations} from "./automations.js";
+import {RecordIndex} from "./record-index.js";
+import {Diagnostics} from "./diagnostics.js";
 import http from "node:http";
 import https from "node:https";
 import fs from "node:fs/promises";
@@ -5,6 +8,9 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { Store, Problem } from "./store.js";
 import { Auth } from "./auth.js";
+import { Sources, sourceAccess } from "./sources.js";
+import { randomUUID } from "node:crypto";
+import { BACKUP_BYTES } from "../public/backup-limits.js";
 
 const displayName = (req) => {
   try {
@@ -80,8 +86,12 @@ async function input(req) {
 export function createServer(store, options = {}) {
   const auth = options.auth || new Auth(store);
   store.watch();
+  const sources = new Sources(store, auth, options.sources),index=new RecordIndex(store),diagnostics=new Diagnostics();
+  sources.start();
+  const automations=new Automations(store,auth);store.automations=automations;
   const rooms = new Map();
   const handler = async (req, res) => {
+    const started=performance.now();res.once('finish',()=>{if(req.url.startsWith('/api/'))diagnostics.request(req.url.split('?')[0],performance.now()-started,res.statusCode);});
     const headers = {
       "X-Content-Type-Options": "nosniff",
       "Referrer-Policy": "same-origin",
@@ -120,7 +130,14 @@ export function createServer(store, options = {}) {
           throw new Problem(405, "Method not allowed.");
         if (write) {
           if (
-            !(req.headers["content-type"] || "").startsWith("application/json")
+            !(req.headers["content-type"] || "").startsWith(
+              "application/json",
+            ) &&
+            !(
+              url.pathname === "/api/backups/upload" &&
+              method === "POST" &&
+              req.headers["content-type"] === "application/zip"
+            )
           )
             throw new Problem(415, "Use application/json.");
           if (
@@ -155,6 +172,10 @@ export function createServer(store, options = {}) {
             return json(200, { ok: true });
           }
         }
+        if(resource === "source-callback" && method === "GET") {
+          const projectId=await store.mutate(()=>sources.callback(project,Object.fromEntries(url.searchParams)));
+          res.writeHead(303,{...headers,"Cache-Control":"no-store",Location:`/#project/${encodeURIComponent(projectId)}/settings`});res.end();return;
+        }
         if (!user) throw new Problem(401, "Please sign in to continue.");
         const mutate = (fn) =>
           store.mutate(async () => {
@@ -168,9 +189,11 @@ export function createServer(store, options = {}) {
               auth.admin(active);
             if (resource === "organisations" && project)
               auth.require(active, project, true);
+            if(resource === "projects" && kind === "sources") auth.admin(active);
             if (resource === "projects" && project) {
               const current = await store.read(store.file(project, "project"));
               auth.require(active, current.data.organisation, true);
+              if(!sourceAccess(active,current.data)) throw new Problem(403,"This project contains private source data.");
             }
             if ((resource === "projects" && !project) || resource === "demo")
               auth.require(active, data.organisation || "o-default", true);
@@ -215,21 +238,30 @@ export function createServer(store, options = {}) {
             return json(200, await mutate(() => auth.save(data)));
           }
         }
+        if(resource === "diagnostics"){auth.admin(user);if(method === "GET")return json(200,{...diagnostics.report(),index:index.lastRebuild,journal_conflicts:await store.journal.issues(),limits:{backup_archive_mb:220,backup_expanded_mb:200,source_records:10000}});if(method === "POST"){await input(req);return json(200,await mutate(()=>index.rebuild()));}}
+        if(resource === "search" && method === "GET"){
+          const projects=(await store.list()).projects.filter(p=>auth.allow(user,p.organisation)&&sourceAccess(user,p)),tasks=[];
+          for(const p of projects){for(const t of await index.search(p.id,url.searchParams.get('q'),Math.max(1,60-tasks.length)))tasks.push({...t,project_title:p.title,organisation:p.organisation});if(tasks.length>=60)break;}
+          return json(200,{tasks,limit:60});
+        }
         if (resource === "changes" && method === "GET")
           return json(200, { version: store.version });
         if (resource === "events" && method === "GET") {
+          const subscription=url.searchParams.get('project');if(subscription){const p=(await store.read(store.file(subscription,'project'))).data;auth.require(user,p.organisation);if(!sourceAccess(user,p))throw new Problem(403,"Private source project.");}
           res.writeHead(200, {
             ...headers,
             "Content-Type": "text/event-stream",
             "Cache-Control": "no-cache",
             "X-Accel-Buffering": "no",
           });
-          const changed = (version) =>
-            res.write(`data: ${JSON.stringify({ version })}\n\n`);
+          const changed = (version,change={}) => {
+            if(subscription && change.project && change.project!==subscription)return;
+            res.write(`data: ${JSON.stringify({ version,project:change.project || null })}\n\n`);
+          };
           changed(store.version);
           store.events.on("change", changed);
           const heartbeat = setInterval(
-            () => res.write(": heartbeat\n\n"),
+            async () => {const active=await auth.user(req);if(!active){res.end();return;}if(subscription){try{const p=(await store.read(store.file(subscription,'project'))).data;if(!auth.allow(active,p.organisation)||!sourceAccess(active,p)){res.end();return;}}catch{res.end();return;}}res.write(": heartbeat\n\n");},
             25000,
           );
           heartbeat.unref();
@@ -242,7 +274,7 @@ export function createServer(store, options = {}) {
         if (resource === "overview" && method === "GET")
           return json(
             200,
-            await store.overview((p) => auth.allow(user, p.organisation)),
+            await store.overview((p) => auth.allow(user, p.organisation) && sourceAccess(user,p)),
           );
         if (resource === "history") {
           const data = write
@@ -258,6 +290,10 @@ export function createServer(store, options = {}) {
                 : (await store.read(store.file(record.data.project, "project")))
                     .data.organisation;
           auth.require(user, organisation, write);
+          if(record.data.kind !== "organisation") {
+            const accessProject=record.data.kind === "project"?record.data:(await store.read(store.file(record.data.project,"project"))).data;
+            if(!sourceAccess(user,accessProject)) throw new Problem(403,"This project contains private source data.");
+          }
           if (method === "GET")
             return json(200, { versions: await store.history(data.file) });
           if (method === "POST") {
@@ -278,6 +314,33 @@ export function createServer(store, options = {}) {
         }
         if (resource === "backups") {
           auth.admin(user);
+          if (method === "POST" && project === "upload") {
+            const folder = path.join(store.root, ".uploads");
+            await store.safe(folder);
+            await fs.mkdir(folder, { recursive: true });
+            const file = path.join(folder, `${randomUUID()}.zip`);
+            const handle = await fs.open(file, "wx", 0o600);
+            try {
+              let size = 0;
+              for await (const chunk of req) {
+                size += chunk.length;
+                if (size > BACKUP_BYTES)
+                  throw new Problem(413, "Upload a backup ZIP up to 220 MB.");
+                await handle.writeFile(chunk);
+              }
+              await handle.close();
+              const data = await fs.readFile(file);
+              return json(
+                201,
+                await mutate(() => store.importBackupBytes(data)),
+              );
+            } finally {
+              await handle.close();
+              await fs.rm(file, { force: true });
+            }
+          }
+          if (method === "POST" && kind === "verify")
+            return json(200, await store.verifyBackup(project));
           if (method === "POST" && project === "import") {
             const data = await input(req);
             return json(201, await mutate(() => store.importBackup(data)));
@@ -345,7 +408,7 @@ export function createServer(store, options = {}) {
             const data = await store.list(url.searchParams.get("organisation"));
             return json(200, {
               projects: data.projects.filter((p) =>
-                auth.allow(user, p.organisation),
+                auth.allow(user, p.organisation) && sourceAccess(user,p),
               ),
               warnings: user.admin ? data.warnings : [],
             });
@@ -366,8 +429,31 @@ export function createServer(store, options = {}) {
           auth.require(
             user,
             record.data.organisation,
-            write && parts[5] !== "presence",
+            write && parts[5] !== "presence" && kind !== "query",
           );
+          if(!sourceAccess(user,record.data)) throw new Problem(403,"This project contains private source data.");
+          if(kind === "automations"){
+            if(method === "GET")return json(200,await automations.list(project));
+            if(method === "POST"){const data=await input(req);return json(200,await mutate(()=>id?automations.run(project,id,data):automations.configure(project,data.rules,user)));}
+          }
+          if(kind === "delta" && method === "GET")return json(200,await store.delta(project,Number(url.searchParams.get('since'))));
+          if(kind === "query" && method === "POST"){const data=await input(req);return json(200,await index.query(project,data,user));}
+          if(kind === "sources") {
+            auth.admin(user);
+            if(method === "GET" && !id)return json(200,await sources.list(project));
+            if(method === "POST" && !id){await input(req);return json(201,await mutate(()=>sources.configure(project,user,req.pencilsInput)));}
+            if(method === "PATCH" && id){await input(req);return json(200,await mutate(()=>sources.configure(project,user,req.pencilsInput,id)));}
+            if(method === "POST" && id){const data=await input(req),action=parts[5];
+              if(action === "authorize") return json(200,await mutate(()=>sources.authorize(project,id,user)));
+              if(action === "resources") return json(200,await mutate(()=>sources.resources(project,id)));
+              if(action === "preview"){const result=await mutate(()=>sources.preview(project,id));delete result.records;return json(200,result);}
+              if(action === "sync") return json(200,await mutate(()=>sources.sync(project,id)));
+              if(action === "resolve") return json(200,await mutate(()=>sources.resolve(project,id,data)));
+              if(action === "disconnect") return json(200,await mutate(()=>sources.disconnect(project,id)));
+              if(action === "write") return json(200,await mutate(()=>sources.writeback(project,id,data)));
+            }
+            throw new Problem(404,"Source action not found.");
+          }
           if (parts.length === 3) {
             if (method === "GET")
               return json(200, await store.snapshot(project));
@@ -387,6 +473,18 @@ export function createServer(store, options = {}) {
                   store.removeRecord(project, "project", null, data.revision),
                 ),
               );
+          }
+          if (
+            kind === "tasks" &&
+            id &&
+            parts.length === 6 &&
+            parts[5] === "restore" &&
+            method === "POST"
+          ) {
+            return json(
+              200,
+              await mutate(() => store.restoreTask(project, id)),
+            );
           }
           if (kind === "notes") {
             if (method === "GET" && url.searchParams.has("backlinks"))
@@ -617,7 +715,7 @@ export function createServer(store, options = {}) {
   const server = options.tls
     ? https.createServer(options.tls, handler)
     : http.createServer(handler);
-  server.on("close", () => store.close());
+  server.on("close", () => {sources.close();automations.close();store.automations=null;index.close();store.close();});
   return server;
 }
 if (

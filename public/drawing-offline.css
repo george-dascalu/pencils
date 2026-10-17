@@ -1,0 +1,6 @@
+body {margin:0;padding:16px;background:var(--board-paper,#f7f7ef);color:var(--ink,#263c34);}
+#offline-drawings header {display:flex;align-items:center;gap:12px;flex-wrap:wrap;}
+.offline-tools {display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:8px;}
+#offline-canvas {position:relative;height:calc(100dvh - 180px);min-height:240px;border:1px solid var(--border,#ccd4c9);overflow:hidden;touch-action:none;background:#fff;border-radius:8px;}
+#offline-canvas > svg,#offline-ink {position:absolute;inset:0;width:100%;height:100%;pointer-events:none;}
+#offline-drawings .local-document {display:flex;gap:12px;margin-block:12px;align-items:center;}

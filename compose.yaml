@@ -10,6 +10,13 @@ services:
       PORT: 3000
       AUTH_MODE: ${AUTH_MODE:-shared}
       COOKIE_SECURE: ${COOKIE_SECURE:-false}
+      APP_ORIGIN: ${APP_ORIGIN:-}
+      JIRA_CLIENT_ID: ${JIRA_CLIENT_ID:-}
+      JIRA_CLIENT_SECRET: ${JIRA_CLIENT_SECRET:-}
+      MS_CLIENT_ID: ${MS_CLIENT_ID:-}
+      MS_CLIENT_SECRET: ${MS_CLIENT_SECRET:-}
+      MS_TENANT: ${MS_TENANT:-organizations}
+      OBSIDIAN_ROOT: ${OBSIDIAN_CONTAINER_ROOT:-}
     user: "${LOCAL_UID:-1000}:${LOCAL_GID:-1000}"
     volumes:
       - "${VAULT_PATH:-./vault}:/data"

@@ -1,8 +1,9 @@
+import { selectProjectView } from "./menu-controls.mjs";
 import assert from "node:assert/strict";
 import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
-import { chromium, firefox } from "playwright";
+import { chromium, firefox, webkit } from "playwright";
 import { Store } from "../server/store.js";
 import { createServer } from "../server/index.js";
 const root = await fs.mkdtemp(path.join(os.tmpdir(), "pencils-capacity-ui-"));
@@ -11,9 +12,9 @@ await store.init();
 const project = await store.createProject({ title: "Team planning" });
 const server = createServer(store);
 await new Promise((r) => server.listen(0, "127.0.0.1", r));
-const browser = await (
-  process.env.BROWSER === "firefox" ? firefox : chromium
-).launch({ headless: true });
+const browser = await { chromium, firefox, webkit }[
+  process.env.BROWSER || "chromium"
+].launch({ headless: true });
 const page = await browser.newPage({ viewport: { width: 1440, height: 1000 } }),
   errors = [];
 page.on("pageerror", (e) => errors.push(e.message));
@@ -142,39 +143,74 @@ try {
     );
   }
   const checkCardFocus = async () => {
-    for (const control of await card.locator(".live-card-state select, .live-card-heading button").all()) {
-      await control.focus();
+    for (const control of await card
+      .locator(".live-card-state select, .live-card-heading button")
+      .all()) {
       const ring = await control.evaluate((el) => {
+        el.focus();
         const target = el.closest(".canvas-task-priority") || el;
         const style = getComputedStyle(target);
         const bounds = target.getBoundingClientRect();
-        const overflow = Math.max(0, parseFloat(style.outlineWidth) + parseFloat(style.outlineOffset));
+        const overflow = Math.max(
+          0,
+          parseFloat(style.outlineWidth) + parseFloat(style.outlineOffset),
+        );
         const clipped = [];
-        for (let parent = target.parentElement; parent && !parent.matches("#canvas"); parent = parent.parentElement) {
+        for (
+          let parent = target.parentElement;
+          parent && !parent.matches("#canvas");
+          parent = parent.parentElement
+        ) {
           const css = getComputedStyle(parent);
           const r = parent.getBoundingClientRect();
-          if (/(hidden|clip|auto|scroll)/.test(css.overflowX) &&
-              (bounds.left - overflow < r.left - 1 || bounds.right + overflow > r.right + 1)) clipped.push(parent.className);
-          if (/(hidden|clip|auto|scroll)/.test(css.overflowY) &&
-              (bounds.top - overflow < r.top - 1 || bounds.bottom + overflow > r.bottom + 1)) clipped.push(parent.className);
+          if (
+            /(hidden|clip|auto|scroll)/.test(css.overflowX) &&
+            (bounds.left - overflow < r.left - 1 ||
+              bounds.right + overflow > r.right + 1)
+          )
+            clipped.push(parent.className);
+          if (
+            /(hidden|clip|auto|scroll)/.test(css.overflowY) &&
+            (bounds.top - overflow < r.top - 1 ||
+              bounds.bottom + overflow > r.bottom + 1)
+          )
+            clipped.push(parent.className);
         }
-        return {width: style.outlineWidth, offset: style.outlineOffset, clipped, target: target.outerHTML, focused: document.activeElement === el, visible: el.matches(":focus-visible")};
+        return {
+          width: style.outlineWidth,
+          offset: style.outlineOffset,
+          clipped,
+          target: target.outerHTML,
+          focused: document.activeElement === el,
+          visible: el.matches(":focus-visible"),
+        };
       });
       assert.equal(ring.width, "1px", JSON.stringify(ring));
       assert.equal(ring.offset, "-1px");
-      assert.deepEqual(ring.clipped, [], "All four sides of the focus ring fit inside clipping containers");
+      assert.deepEqual(
+        ring.clipped,
+        [],
+        "All four sides of the focus ring fit inside clipping containers",
+      );
     }
     await assignee.focus();
   };
   await checkCardFocus();
   await page.screenshot({ path: "/tmp/pencils-board-task-controls.png" });
   const zoomTarget = await card.boundingBox();
-  await page.mouse.move(zoomTarget.x + zoomTarget.width / 2, zoomTarget.y + zoomTarget.height / 2);
+  await page.mouse.move(
+    zoomTarget.x + zoomTarget.width / 2,
+    zoomTarget.y + zoomTarget.height / 2,
+  );
   await page.mouse.wheel(0, -700);
-  await page.waitForFunction(() => parseInt(document.querySelector("#zoom-label").textContent) > 150);
-  await page.waitForFunction(() => !document.querySelector("#canvas").classList.contains("zooming"));
+  await page.waitForFunction(
+    () => parseInt(document.querySelector("#zoom-label").textContent) > 150,
+  );
+  await page.waitForFunction(
+    () => !document.querySelector("#canvas").classList.contains("zooming"),
+  );
   await checkCardFocus();
-  await page.screenshot({path: "/tmp/pencils-board-focus-zoomed.png"});
+  await page.screenshot({ path: "/tmp/pencils-board-focus-zoomed.png" });
   await page.setViewportSize({ width: 390, height: 844 });
   await page.evaluate(() => (document.documentElement.dataset.theme = "dark"));
   await page.locator('[data-action="board-fit"]').click();
@@ -182,11 +218,17 @@ try {
     () => !document.querySelector("#canvas").classList.contains("zooming"),
   );
   assert.ok(await assignee.isVisible());
-  const narrowBounds = await card.boundingBox();
-  for (const select of await card.locator(".live-card-state select").all()) {
-    const box = await select.boundingBox();
+  const { narrowBounds, selectBounds } = await card.evaluate((el) => ({
+    narrowBounds: el.getBoundingClientRect().toJSON(),
+    selectBounds: [...el.querySelectorAll(".live-card-state select")].map(
+      (select) => select.getBoundingClientRect().toJSON(),
+    ),
+  }));
+  for (const box of selectBounds) {
     assert.ok(
-      box.x >= narrowBounds.x &&
+      box.width > 0 &&
+        box.height > 0 &&
+        box.x >= narrowBounds.x &&
         box.x + box.width <= narrowBounds.x + narrowBounds.width,
     );
   }
@@ -201,7 +243,7 @@ try {
   await card.waitFor();
   assert.equal(await priority.inputValue(), "high");
   assert.equal(await assignee.inputValue(), "Alice");
-  await page.locator("[data-view=capacity]").click();
+  await selectProjectView(page, "capacity");
   await page.getByRole("region", { name: "Team capacity" }).waitFor();
   assert.ok(
     await page
@@ -217,7 +259,7 @@ try {
   );
   assert.deepEqual(
     await page
-      .locator('[aria-label="Schedule views"] [data-view]')
+      .locator('.planning-view-switcher [data-view]')
       .evaluateAll((els) => els.map((el) => el.dataset.view)),
     ["calendar", "timeline", "capacity"],
   );
@@ -254,7 +296,7 @@ try {
   }
   await page.setViewportSize({ width: 1440, height: 1000 });
   await page.locator(".capacity-work summary").first().click();
-  await page.locator(".capacity-work [data-action=task-open]").click();
+  await page.locator(".capacity-work [data-feature=global-open]").click();
   assert.equal(
     await page.locator("#task-form [name=title]").inputValue(),
     "Planned work",

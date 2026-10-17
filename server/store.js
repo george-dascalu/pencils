@@ -1,3 +1,6 @@
+import {WriteJournal} from "./journal.js";
+import { validDependencyStyle } from "../public/dependency-style.js";
+import { validDraftTask } from "../public/draft-task.js";
 import { commentReactions } from "../public/comment-model.js";
 import { hierarchyError } from "../public/hierarchy-model.js";
 import { canTransition, initialStatus, transitionError } from "../public/workflow-model.js";
@@ -154,6 +157,9 @@ export class Store {
     this.events = new EventEmitter();
     this.events.setMaxListeners(0);
     this.version = 0;
+    this.changeLog=[];
+    this.recentWrites=new Map();
+    this.journal=new WriteJournal(this);
   }
   async init() {
     // A single, restart-safe migration. Project paths, task IDs and canvas links stay stable.
@@ -166,6 +172,7 @@ export class Store {
   }
   async initialise() {
     await fs.mkdir(this.root, { recursive: true });
+    await this.journal.recover();
     for (const name of ["Projects", "Organisations"]) {
       const dir = path.join(this.root, name);
       await this.safe(dir);
@@ -218,15 +225,33 @@ export class Store {
   // Serialize app writers; file revisions also detect edits from Obsidian/other clients.
   mutate(fn) {
     const next = this.queue.then(async () => {
-      await this.autoBackup();
-      return fn();
+      await this.init();
+      await this.journal.start();
+      const version=this.version;
+      try {await this.autoBackup();const result=await fn();await this.journal.finish(true);
+        const changes=this.changeLog.filter(c=>c.version>version);
+        if(changes.length){const projects=new Set(changes.map(c=>c.record?.kind!=="project"?c.record?.project:null));if(projects.has(null)||projects.has(undefined))this.events.emit("change",this.version,{});else for(const project of projects)this.events.emit("change",this.version,{project});}
+        return result;}
+      catch(error){await this.journal.finish(false);this.changed();throw error;}
     });
     this.queue = next.catch(() => {});
     return next;
   }
-  changed() {
+  changed(file=null) {
     this.version++;
-    this.events.emit("change", this.version);
+    const relative=file?path.relative(this.root,file).split(path.sep).join('/'):"";
+    const match=/^Projects\/([\w-]+)\/(?:(tasks|boards)\/([\w-]+)\.(md|canvas)|project\.md)$/.exec(relative);
+    const identity=/^Projects\/([\w-]+)\/identity\.md$/.exec(relative);
+    const record=match?{project:match[1],kind:match[2] || "project",id:match[3] || match[1]}:identity?{project:identity[1],kind:"identity",id:"identity"}:null;
+    this.changeLog.push({version:this.version,record});if(this.changeLog.length>1000)this.changeLog.shift();
+    if(!this.journal.active)this.events.emit("change",this.version,{project:record?.kind!=="project"?record?.project:null});
+  }
+  async delta(project,since){
+    const version=this.version;if(!Number.isInteger(since) || since<0 || since>version || (this.changeLog[0] && since<this.changeLog[0].version-1))return {full:true,version};
+    const changes=this.changeLog.filter(c=>c.version>since);if(changes.some(c=>!c.record))return {full:true,version};
+    const records=new Map();for(const {record:r} of changes)if(r.project===project && r.kind!=="identity")records.set(`${r.kind}/${r.id}`,r);
+    const result=[];for(const r of records.values()){try{const file=this.file(project,r.kind,r.id),record=await this.read(file);if(r.kind==="tasks")this.validateTask(record.data,schema((await this.read(this.file(project,"project"))).data.schema));if(r.kind==="boards")this.validateBoard(record.data);result.push({kind:r.kind,value:this.public(record,file)});}catch{return {full:true,version};}}
+    return {full:false,version,records:result};
   }
   watch() {
     if (this.watcher || this.watchFallback) return;
@@ -239,11 +264,19 @@ export class Store {
         this.watchFallback.unref();
       }
     };
-    const changed = (_, file) => {
-      if (file?.endsWith(".tmp")) return;
+    const pendingFiles=new Set();
+    const changed = (name, _, file) => {
+      if(file?.endsWith(".tmp"))return;
+      pendingFiles.add(file?path.join(this.root,name,String(file)):null);
       clearTimeout(this.watchTimer);
-      this.watchTimer = setTimeout(() => this.changed(), 100);
-      this.watchTimer.unref();
+      this.watchTimer=setTimeout(async()=>{
+        const files=[...pendingFiles];pendingFiles.clear();
+        for(const file of files){
+          const expected=this.recentWrites.get(file);
+          if(expected){try{await this.safe(file);if(hash(await fs.readFile(file,"utf8"))===expected.hash){this.recentWrites.delete(file);continue;}}catch{}}
+          this.changed(file);
+        }
+      },100);this.watchTimer.unref();
     };
     try {
       // Recovery/history files can outnumber live notes. Watch only public content.
@@ -251,7 +284,7 @@ export class Store {
         const handle = watch(
           path.join(this.root, name),
           { recursive: true },
-          changed,
+          (event,file)=>changed(name,event,file),
         );
         handle.on("error", fallback);
         handle.unref();
@@ -391,9 +424,15 @@ export class Store {
           if (error.code !== "ENOENT") throw error;
         }
       }
-      await fs.rename(temporary, file);
+      await this.journal.stage(file,text);
+      if(existing && (await this.read(file)).revision!==existing.revision)throw new Problem(409,"This file changed while the save was being prepared. Your edit is retained for review.");
+      this.recentWrites.set(file,{hash:hash(text)});if(this.recentWrites.size>2000)this.recentWrites.delete(this.recentWrites.keys().next().value);
+      if(existing)await fs.rename(temporary,file);
+      else {await fs.link(temporary,file);await fs.rm(temporary,{force:true});}
+      const directory=await fs.open(path.dirname(file),"r");
+      try{await directory.sync();}finally{await directory.close();}
       this.cache.delete(file);
-      this.changed();
+      this.changed(file);
     } finally {
       await fs.rm(temporary, { force: true });
     }
@@ -555,6 +594,7 @@ export class Store {
   async snapshot(id) {
     await this.init();
     await this.ensureTaskIdentities(id);
+    const snapshotVersion=this.version;
     const file = this.file(id, "project");
     const project = this.public(await this.read(file), file);
     const organisation = await this.getOrganisation(project.organisation);
@@ -588,9 +628,30 @@ export class Store {
         parent = byId.get(parent).parent;
       }
     }
+    // Keep board references useful after deletion without returning deleted
+    // tasks as active project tasks or guessing that an unreadable file is gone.
+    const taskAvailability = Object.create(null);
+    const missing = [...new Set(boards.items.flatMap((b) => b.nodes
+      .filter((n) => n.type === "task" && !byId.has(n.task)).map((n) => n.task)))];
+    if (missing.length) {
+      const trash = (await this.trash()).filter((t) => t.kind === "task" && t.project === id);
+      for (const taskId of missing) {
+        taskAvailability[taskId] = { status: "unavailable" };
+        if (!idPattern.test(taskId)) continue;
+        let absent = false;
+        try { await fs.stat(this.file(id, "tasks", taskId)); }
+        catch (error) { absent = error.code === "ENOENT"; }
+        const deleted = absent && trash.find((t) => t.id === taskId);
+        if (deleted) taskAvailability[taskId] = {
+          status: "deleted", title: deleted.title, key: deleted.task_key,
+        };
+      }
+    }
     return {
+      version:snapshotVersion,
       project,
       tasks: tasks.items,
+      taskAvailability,
       boards: boards.items,
       warnings,
       progress: progress(tasks.items, schema(project.schema)),
@@ -649,6 +710,7 @@ export class Store {
           "table",
           "kanban",
           "board",
+          "drawing",
           "calendar",
           "timeline",
           "capacity",
@@ -715,6 +777,7 @@ export class Store {
     choice(data.priority, PRIORITIES, "priority");
     date(data.due ?? null);
     tags(data.tags ?? []);
+    if(data.related_records !== undefined && (!Array.isArray(data.related_records) || data.related_records.length>200 || data.related_records.some(id=>typeof id!=="string" || !idPattern.test(id)))) throw new Problem(400,"Related records must be up to 200 task IDs.");
     if (data.parent) validId(data.parent);
     if (data.milestone != null && typeof data.milestone !== "boolean")
       throw new Problem(400, "Invalid milestone.");
@@ -801,7 +864,6 @@ export class Store {
       const existing = (await this.children(project, "tasks")).items.find(t => t.creation_request === input.creation_request);
       if (existing) return existing;
     }
-    if (!internal.prepare && input.subtasks !== undefined) return this.createTaskBundle(project, input);
     if (input.canvas_source) {
       if (
         typeof input.canvas_source !== "string" ||
@@ -814,6 +876,7 @@ export class Store {
       );
       if (existing) return existing;
     }
+    if (!internal.prepare && input.subtasks !== undefined) return this.createTaskBundle(project, input);
     const config = schema(
       (await this.read(this.file(project, "project"))).data.schema,
     );
@@ -869,6 +932,9 @@ export class Store {
     const file = this.file(project, "tasks", id),
       current = await this.read(file);
     this.checkRevision(current, input.revision);
+    if(current.data.source) {
+      for(const key of ["title","type","status","priority","assignee","due"]) if(key in input && JSON.stringify(input[key] || null)!==JSON.stringify(current.data[key] || null)) throw new Problem(403,"This field belongs to a data source. Use Publish to source or edit it in the source, then sync.");
+    }
     const data = { ...current.data, updated: now() };
     for (const key of [
       "title",
@@ -883,6 +949,7 @@ export class Store {
       "milestone",
       "estimate",
       "dependencies",
+      "related_records",
       "recurrence",
       "fields",
       "comments",
@@ -934,12 +1001,14 @@ export class Store {
       }
       data.recurrence_next = successor.id;
     }
-    return this.write(
+    const saved=await this.write(
       file,
       data,
       "body" in input ? body(input.body) : current.body,
       current,
     );
+    if(this.automations && current.data.status!==saved.status){await this.automations.onStatus(project,current.data,saved);return this.public(await this.read(file),file);}
+    return saved;
   }
   async deleteTask(project, id, revision) {
     const file = this.file(project, "tasks", id),
@@ -958,11 +1027,13 @@ export class Store {
     await fs.mkdir(path.dirname(trash), { recursive: true });
     if (items.some((t) => (t.dependencies || []).includes(id)))
       throw new Problem(400, "Remove references to this dependency first.");
-    await fs.rename(file, trash);
+    await this.journal.move(file, trash);
     this.changed();
     return { ok: true };
   }
   validateBoard(data) {
+    if (data.settings?.dependency_style !== undefined && !validDependencyStyle(data.settings.dependency_style))
+      throw new Problem(400, "Invalid dependency arrow style.");
     title(data.title);
     if (
       data.settings !== undefined &&
@@ -1063,6 +1134,7 @@ export class Store {
         [
           "task",
           "sticky",
+          "draft",
           "text",
           "shape",
           "grid",
@@ -1085,6 +1157,11 @@ export class Store {
         (typeof node.text !== "string" || node.text.length > 200000)
       )
         throw new Problem(400, "Board text is too long.");
+      if (node.projectFrame !== undefined && (typeof node.projectFrame !== "boolean" || node.type !== "frame"))
+        throw new Problem(400, "Invalid project frame.");
+      if (node.projectFrameOwner != null) validId(node.projectFrameOwner);
+      if (node.type === "draft" && !validDraftTask(node))
+        throw new Problem(400, "Invalid draft task.");
       if (node.type === "grid" && !validGrid(node.grid))
         throw new Problem(
           400,
@@ -1195,6 +1272,10 @@ export class Store {
             node.pressures.some((p) => !Number.isFinite(p) || p < 0 || p > 1))
         )
           throw new Problem(400, "Invalid pen pressure samples.");
+        if (node.sampleTimes != null && (!Array.isArray(node.sampleTimes) || node.sampleTimes.length !== node.points.length || node.sampleTimes.some((v,i)=>!Number.isFinite(v) || v<0 || v>86400000 || (i>0 && v<node.sampleTimes[i-1]))))
+          throw new Problem(400, "Invalid pen timing samples.");
+        if (node.tilts != null && (!Array.isArray(node.tilts) || node.tilts.length !== node.points.length || node.tilts.some(v=>!Array.isArray(v) || v.length!==2 || v.some(n=>!Number.isFinite(n) || n< -90 || n>90))))
+          throw new Problem(400, "Invalid pen tilt samples.");
       }
     }
     if (data.nodes.filter((n) => n.type === "frame").length > 500)
@@ -1230,6 +1311,8 @@ export class Store {
     const edges = new Set();
     for (const edge of data.edges) {
       validId(edge.id);
+      if (edge.projectFrameOwner != null) validId(edge.projectFrameOwner);
+      if (edge.planRelation != null) choice(edge.planRelation, ["dependency", "parent"], "project frame relationship");
       if (!validConnectorGeometry(edge))
         throw new Problem(400, "Invalid connector geometry.");
       if (

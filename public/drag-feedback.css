@@ -17,11 +17,11 @@
   opacity: 0.3;
   border-style: dashed;
 }
-.board-tools [data-tool="sticky"] {
+.board-tools :is([data-tool="sticky"], [data-tool="grid"]) {
   touch-action: none;
   cursor: grab;
 }
-.board-tools [data-tool="sticky"]:active {
+.board-tools :is([data-tool="sticky"], [data-tool="grid"]):active {
   cursor: grabbing;
 }
 .kanban-column {
@@ -143,4 +143,22 @@
     opacity: 0;
     pointer-events: none;
   }
+}
+
+.grid-drop-preview {
+  position: absolute;
+  z-index: 40;
+  pointer-events: none;
+  transform-origin: top left;
+  background: var(--surface);
+  color: var(--ink);
+  outline: 1px solid var(--green);
+  border-radius: 6px;
+  box-shadow: 0 12px 28px #0003;
+  opacity: 0.85;
+  overflow: hidden;
+}
+.grid-drop-preview.invalid {
+  opacity: 0.3;
+  outline-style: dashed;
 }

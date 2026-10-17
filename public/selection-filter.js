@@ -1,6 +1,7 @@
 const types = [
   ["edge", "Arrows", "connect"],
   ["task", "Tasks", "task"],
+  ["draft", "Draft tasks", "pencil"],
   ["sticky", "Notes", "sticky"],
   ["text", "Text", "text"],
   ["shape", "Shapes", "shape"],

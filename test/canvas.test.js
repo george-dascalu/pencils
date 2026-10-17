@@ -44,6 +44,67 @@ const write = async (store, p, b, changes, extra = {}) =>
       ...extra,
     }),
   );
+test("draft tasks retain metadata in Canvas and reject malformed draft records", async (t) => {
+  const { store, project, board, root } = await setup(t);
+  const draft = {
+    ...sticky("draft-a"),
+    type: "draft",
+    text: "## Explore\nA draft description",
+    draft: {
+      title: "Explore an idea",
+      type: "story",
+      priority: "high",
+      status: "todo",
+      assignee: "George",
+      due: "2026-10-20",
+      subtasks: [{ title: "Investigate", type: "task" }],
+    },
+    comments: [
+      {
+        id: "c",
+        author: "George",
+        text: "Keep this discussion",
+        created: "2026-10-15T10:00:00.000Z",
+      },
+    ],
+  };
+  await write(store, project, board, { nodes: [draft], edges: [] });
+  const fresh = new Store(root);
+  await fresh.init();
+  const snapshot = await fresh.snapshot(project.id);
+  assert.equal(snapshot.tasks.length, 0);
+  assert.equal(snapshot.boards[0].nodes[0].type, "draft");
+  assert.deepEqual(snapshot.boards[0].nodes[0].draft, draft.draft);
+  assert.equal(snapshot.boards[0].nodes[0].text, draft.text);
+  assert.deepEqual(snapshot.boards[0].nodes[0].comments, draft.comments);
+  for (const metadata of [
+    null,
+    { title: "" },
+    { title: "Idea", subtasks: [null] },
+    { title: "Idea", priority: 42 },
+  ])
+    await assert.rejects(() =>
+      write(fresh, project, snapshot.boards[0], {
+        nodes: [{ ...draft, draft: metadata }],
+      }),
+    );
+});
+test("draft conversion retries create one parent and one set of subtasks", async (t) => {
+  const { store, project, board } = await setup(t);
+  const payload = {
+    title: "Draft idea",
+    type: "story",
+    body: "Description",
+    canvas_source: `canvas:${board.id}:draft-a`,
+    subtasks: [{ title: "Investigate", type: "task" }],
+  };
+  const parent = await store.createTask(project.id, payload);
+  const retry = await store.createTask(project.id, payload);
+  assert.equal(retry.id, parent.id);
+  const tasks = (await store.snapshot(project.id)).tasks;
+  assert.equal(tasks.length, 2);
+  assert.equal(tasks.filter((task) => task.parent === parent.id).length, 1);
+});
 test("native JSON Canvas round trips standard fields and unknown extensions after external edits", async (t) => {
   const { store, project, root, board } = await setup(t);
   const source = {
@@ -328,7 +389,7 @@ test("semantic connectors create real cycle-checked dependencies and sticky conv
       { ...sticky("a"), type: "task", task: a.id },
       { ...sticky("b", 300), type: "task", task: b.id },
     ],
-    edges: [{ id: "e", from: "a", to: "b", relationship: "blocks" }],
+    edges: [{ id: "e", from: "a", to: "b", relationship: "relates" }],
   });
   const dependent = await store.boardDependency(project.id, board.id, {
     edge: "e",
@@ -346,6 +407,13 @@ test("semantic connectors create real cycle-checked dependencies and sticky conv
     store.boardDependency(project.id, board.id, { edge: "reverse" }),
     (e) => e.status === 400,
   );
+  const removed = await store.boardDependency(project.id, board.id, { edge: "e", remove: true });
+  assert.deepEqual(removed.dependencies, []);
+  const removedAgain = await store.boardDependency(project.id, board.id, { edge: "e", remove: true });
+  assert.equal(removedAgain.revision, removed.revision);
+  const reversed = await store.boardDependency(project.id, board.id, { edge: "reverse" });
+  assert.deepEqual(reversed.dependencies, [b.id]);
+
 });
 test("nested frames, collapse visibility and connector routes have deterministic geometry", () => {
   const outer = {
@@ -805,3 +873,4 @@ test("text alignment persists in native Canvas without changing Markdown and rej
     /text alignment/i,
   );
 });
+test('creating a dependency connector and its task relationship is journaled together',async t=>{const {store,project,board}=await setup(t),first=await store.createTask(project.id,{title:'A'}),second=await store.createTask(project.id,{title:'B',dependencies:[first.id]});const current=await write(store,project,board,{nodes:[{id:'a',type:'task',task:first.id,x:0,y:0,w:300,h:240},{id:'b',type:'task',task:second.id,x:400,y:0,w:300,h:240}],edges:[]});await assert.rejects(store.mutate(()=>store.boardDependency(project.id,board.id,{revision:current.revision,edge:'cycle',newEdge:{id:'cycle',from:'b',to:'a',fromSide:'right',toSide:'left'}})),/cycle/i);assert.equal((await store.snapshot(project.id)).boards[0].edges.length,0);});

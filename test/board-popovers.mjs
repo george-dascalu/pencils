@@ -46,7 +46,7 @@ const saved = () =>
   page.waitForFunction(
     () =>
       document.querySelector("#board-save")?.textContent ===
-      "All changes saved",
+      "Saved automatically",
   );
 const keyboard = async (key) => {
   await page.keyboard.press(key);

@@ -1,4 +1,4 @@
-import { newGrid, syncGrid, cellAt } from "./grid-model.js";
+import { newGrid, syncGrid, cellAt, GRID_DEFAULT_SIZE } from "./grid-model.js";
 import { routeEdge } from "./canvas-geometry.js";
 import { canvasToolDrag } from "./canvas-tool-drag.js";
 // Navigation preferences belong to the browser, never to the shared board.
@@ -35,7 +35,7 @@ export function canvasControls(ctx, basic) {
     e.preventDefault();
     e.stopImmediatePropagation();
   };
-  const active = () => state.view === "board" && board() && $("#canvas");
+  const active = () => ["board", "drawing"].includes(state.view) && board() && $("#canvas");
   // Programmatic focus during a drag can retain the browser's keyboard ring.
   // Show the canvas indicator only after actual Tab navigation.
   window.addEventListener(
@@ -71,7 +71,8 @@ export function canvasControls(ctx, basic) {
     }
     canvas.classList.toggle(
       "placing",
-      placement.includes(state.tool) || state.tool === "frame",
+      placement.includes(state.tool) ||
+        ["frame", "project-frame"].includes(state.tool),
     );
     canvas.classList.toggle(
       "pan-mode",
@@ -105,18 +106,20 @@ export function canvasControls(ctx, basic) {
     };
     for (const el of $$(".board-tools [data-tool]")) {
       el.classList.toggle("active", el.dataset.tool === state.tool);
-      el.title = `${el.getAttribute("aria-label") || el.dataset.tool} (${keys[el.dataset.tool] || ""})`;
+      el.title = `${el.getAttribute("aria-label") || el.dataset.tool}${keys[el.dataset.tool] ? ` (${keys[el.dataset.tool]})` : ""}`;
     }
     const help = $(".board-help");
     if (help)
       help.textContent =
-        state.tool === "frame"
-          ? "Drag to draw a frame · Click for 16:9 · Esc to cancel"
-          : state.tool === "connect"
-            ? "Hover to show connection points · Drag or click two points · Esc to cancel"
-            : placement.includes(state.tool)
-              ? "Click to place · Esc to cancel"
-              : "V select · H hand · Scroll zoom · Shift-scroll pan · F1 shortcuts";
+        state.tool === "project-frame"
+          ? "Drag to draw a Project frame · Click for 16:9 · Esc to cancel"
+          : state.tool === "frame"
+            ? "Drag to draw a frame · Click for 16:9 · Esc to cancel"
+            : state.tool === "connect"
+              ? "Hover to show connection points · Drag or click two points · Esc to cancel"
+              : placement.includes(state.tool)
+                ? "Click to place · Esc to cancel"
+                : "V select · H hand · Scroll zoom · Shift-scroll pan · F1 shortcuts";
   }
   function tool(value) {
     state.tool = value;
@@ -296,8 +299,8 @@ export function canvasControls(ctx, basic) {
         type,
         x: Math.round(p.x),
         y: Math.round(p.y),
-        w: type === "grid" ? 540 : type === "text" ? 360 : 220,
-        h: type === "grid" ? 312 : type === "text" ? 90 : 180,
+        w: type === "grid" ? GRID_DEFAULT_SIZE.w : type === "text" ? 360 : 220,
+        h: type === "grid" ? GRID_DEFAULT_SIZE.h : type === "text" ? 90 : 180,
         ...(type === "grid" ? { grid: newGrid() } : {}),
         text: "",
         ...(type === "sticky" ? { color: "#f5e7a2" } : {}),

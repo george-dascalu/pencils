@@ -1,3 +1,4 @@
+import { canvasPointerTool } from "./drawing-input.js";
 import { gridReorderPreview } from "./grid-reorder.js";
 import { mergedCell, mergeGrid, unmergeGrid } from "./grid-merge.js";
 import {
@@ -275,8 +276,8 @@ export function boardGrid(ctx, basic) {
     "pointerdown",
     (e) => {
       if (
-        state.view !== "board" ||
-        state.tool !== "cursor" ||
+        !["board", "drawing"].includes(state.view) ||
+        canvasPointerTool(state.tool, e.pointerType) !== "cursor" ||
         e.button !== 0 ||
         state.canvasEditing
       )
@@ -430,7 +431,7 @@ export function boardGrid(ctx, basic) {
     },
     true,
   );
-  function finish(cancel = false) {
+  function finish(cancel = false, preserveTouchTarget = false) {
     if (!drag) return;
     const d = drag,
       n = board()?.nodes.find((n) => n.id === d.id);
@@ -460,7 +461,8 @@ export function boardGrid(ctx, basic) {
         ctx.remember(d.before);
         ctx.saveBoard();
       }
-      renderView();
+      if (cancel && preserveTouchTarget) basic.moveDOM();
+      else renderView();
       if (d.type === "reorder")
         requestAnimationFrame(() => {
           $(
@@ -791,4 +793,5 @@ export function boardGrid(ctx, basic) {
     },
     true,
   );
+  return { cancel: () => finish(true, true) };
 }

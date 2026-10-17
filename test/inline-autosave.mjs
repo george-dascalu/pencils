@@ -1,4 +1,4 @@
-import { openBoardSearch } from "./menu-controls.mjs";
+import { openBoardSearch, selectProjectView } from "./menu-controls.mjs";
 import assert from "node:assert/strict";
 import fs from "node:fs/promises";
 import os from "node:os";
@@ -195,7 +195,7 @@ try {
   // The first outside click both saves and switches views.
   await node("note").dblclick();
   await rich.fill("Saved while navigating");
-  await page.locator("[data-view=list]").click();
+  await selectProjectView(page, "list");
   await until(async () => (await text()) === "Saved while navigating");
   assert.equal(await page.locator("#canvas").count(), 0);
   await page.locator("[data-view=board]").click();

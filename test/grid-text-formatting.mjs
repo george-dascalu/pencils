@@ -72,8 +72,8 @@ try {
   await page.getByLabel("Object font", { exact: true }).selectOption("Lora");
   await page.getByLabel("Font size", { exact: true }).selectOption("24");
   await page
-    .getByLabel("Vertical alignment", { exact: true })
-    .selectOption("middle");
+    .getByRole("button", { name: "Align text middle", exact: true })
+    .click();
   await toggle("bold");
   await toggle("italic");
   await toggle("strike");
@@ -154,6 +154,9 @@ try {
   await page.locator("[data-node=grid] .grid-grip").click();
   await page.getByRole("button", { name: "Select row 2", exact: true }).click();
   await formatting();
+  assert.equal(await page.locator('[data-text-style="autoFit"]').count(), 0);
+  const family = await page.getByLabel("Object font", { exact: true }).boundingBox(), size = await page.getByLabel("Font size", { exact: true }).boundingBox();
+  assert.ok(family.width > size.width * 2 && size.width <= 56, "Formatting menu gives more width to the font name");
   await page.screenshot({ path: "/tmp/pencils-grid-formatting.png" });
   assert.deepEqual(errors, []);
   console.log(

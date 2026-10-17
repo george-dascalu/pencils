@@ -1,3 +1,4 @@
+import { smoothInk } from "./ink-smoothing.js";
 // Shared by live preview, board objects and SVG/PNG export.
 export function penStyle(n = {}) {
   return {
@@ -6,6 +7,11 @@ export function penStyle(n = {}) {
     opacity: Math.max(0.1, Math.min(1, Number(n.opacity) || 1)),
     brush: n.brush === "highlighter" ? "highlighter" : "pen",
     pressure: n.pressure !== false,
+    smoothing: Math.max(
+      0,
+      Math.min(0.8, Number.isFinite(n.smoothing) ? n.smoothing : 0.35),
+    ),
+    pressureCurve: Math.max(0.4, Math.min(2, Number(n.pressureCurve) || 1)),
   };
 }
 const fmt = (n) => Math.round(n * 100) / 100;
@@ -20,7 +26,7 @@ export function strokeMarkup(n) {
       ? 1 + (n.pressures[i] ?? 0.5) * 5
       : s.strokeWidth *
         (s.pressure && s.brush !== "highlighter" && n.pressures?.length
-          ? 0.35 + 0.9 * (n.pressures[i] ?? 0.5)
+          ? 0.35 + 0.9 * Math.pow(n.pressures[i] ?? 0.5, s.pressureCurve)
           : 1);
   let marks = "";
   if (p.length === 1)
@@ -42,6 +48,8 @@ export function strokeMarkup(n) {
   return `<g fill="none" stroke="${s.color}" stroke-linecap="round" stroke-linejoin="round" opacity="${s.opacity}">${marks}</g>`;
 }
 export function makeStroke(samples, style, id) {
+  const raw = samples;
+  samples = smoothInk(samples, penStyle(style).smoothing);
   const s = penStyle(style),
     margin = Math.ceil(s.strokeWidth * 0.65) + 2;
   const xs = samples.map((p) => p.x),
@@ -58,7 +66,15 @@ export function makeStroke(samples, style, id) {
     text: "",
     ...s,
     points: samples.map((p) => [p.x - x, p.y - y]),
+    rawPoints: raw.map((p) => [p.x - x, p.y - y]),
     pressures: samples.map((p) => Math.max(0, Math.min(1, p.pressure ?? 0.5))),
+    sampleTimes: samples.map((p) =>
+      Math.max(0, (p.time || 0) - (samples[0]?.time || 0)),
+    ),
+    tilts: samples.map((p) => [
+      Math.max(-90, Math.min(90, p.tiltX || 0)),
+      Math.max(-90, Math.min(90, p.tiltY || 0)),
+    ]),
   };
 }
 function distance(p, a, b) {
@@ -92,10 +108,16 @@ function segmentsNear(a, b, c, d, r) {
 }
 export function hitsStroke(n, from, to, radius) {
   if (n.type !== "draw" || n.locked || !n.points?.length) return false;
-  if(n.rotation){
-    const angle=-n.rotation*Math.PI/180,cx=n.x+n.w/2,cy=n.y+n.h/2;
-    const rotate=p=>({x:cx+(p.x-cx)*Math.cos(angle)-(p.y-cy)*Math.sin(angle),y:cy+(p.x-cx)*Math.sin(angle)+(p.y-cy)*Math.cos(angle)});
-    from=rotate(from);to=rotate(to);
+  if (n.rotation) {
+    const angle = (-n.rotation * Math.PI) / 180,
+      cx = n.x + n.w / 2,
+      cy = n.y + n.h / 2;
+    const rotate = (p) => ({
+      x: cx + (p.x - cx) * Math.cos(angle) - (p.y - cy) * Math.sin(angle),
+      y: cy + (p.x - cx) * Math.sin(angle) + (p.y - cy) * Math.cos(angle),
+    });
+    from = rotate(from);
+    to = rotate(to);
   }
   const r = radius + penStyle(n).strokeWidth * 0.65;
   if (

@@ -5,6 +5,7 @@ import {
   recentColors,
   clamp,
 } from "./color-model.js";
+import { positionPopover } from "./popover-position.js";
 // One swatch, palette and custom-hex editor for every colour field.
 export function installColorPickers({ esc, icon }) {
   const colors = [
@@ -100,10 +101,7 @@ export function installColorPickers({ esc, icon }) {
       return; // Canvas controls clamp top-level menus.
     const panel = root.querySelector(".color-picker-panel"),
       r = root.querySelector("summary").getBoundingClientRect();
-    const height = panel.offsetHeight;
-    panel.style.left = `${Math.max(8, Math.min(r.left, innerWidth - panel.offsetWidth - 8))}px`;
-    panel.style.top = `${Math.max(8, r.bottom + height + 8 <= innerHeight ? r.bottom + 8 : r.top - height - 8)}px`;
-    panel.style.maxHeight = `${innerHeight - 16}px`;
+    positionPopover(panel,r,{width:260,maxHeight:innerHeight-16,gap:8});
   }
   function close(root, focus = false) {
     root.open = false;

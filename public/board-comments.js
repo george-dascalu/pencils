@@ -1,11 +1,15 @@
+import { positionBoardObjectPanel } from "./board-object-panel.js";
 import {
   commentReactions,
   commentThreads,
   deleteComment,
 } from "./comment-model.js";
 // A nonmodal thread anchored to its board object; drafts survive light dismiss.
-export function boardComments(ctx, author, uid) {
-  const { $, state, board, task, esc, icon, changeBoard } = ctx;
+export function boardComments(ctx, author, uid, adapter = null) {
+  const listeners = new AbortController();
+  const { $, state, board, task, esc, icon } = ctx;
+  const changeBoard = adapter?.change || ctx.changeBoard;
+  const embedded = !!adapter?.mount;
   let panel = null,
     target = null,
     boardId = null,
@@ -13,7 +17,8 @@ export function boardComments(ctx, author, uid) {
     replyTo = null;
   const drafts = new Map();
   const key = () => `${projectId}:${boardId}:${target}`;
-  const node = () => board()?.nodes.find((n) => n.id === target);
+  const node = () =>
+    adapter ? adapter.item() : board()?.nodes.find((n) => n.id === target);
   const actor = () => {
     if (state.session?.user?.username)
       return `user:${state.session.user.username}`;
@@ -36,7 +41,7 @@ export function boardComments(ctx, author, uid) {
       : "";
     const field = panel.querySelector("textarea");
     field.placeholder = parent ? "Write a reply…" : "Write a comment…";
-    panel.querySelector('[type="submit"]').textContent = parent
+    panel.querySelector("[data-comment-submit]").textContent = parent
       ? "Reply"
       : "Add comment";
   }
@@ -45,16 +50,36 @@ export function boardComments(ctx, author, uid) {
     drafts.set(key(), { text: panel.querySelector("textarea").value, replyTo });
     panel.remove();
     panel = null;
-    if (state.dialog === "board-comments") state.dialog = null;
-    if (focus)
+    if (!adapter && state.dialog === "board-comments") state.dialog = null;
+    adapter?.onClose?.();
+    if (adapter && focus)
+      adapter.host
+        .querySelector(adapter.trigger)
+        ?.focus({ preventScroll: true });
+    if (focus && !adapter)
       ($(`[data-node="${CSS.escape(target)}"]`) || $("#canvas"))?.focus({
         preventScroll: true,
       });
   }
   function position() {
     if (!panel) return;
+    if (embedded) {
+      if (!adapter.host.isConnected || !node()) close();
+      return;
+    }
+    if (adapter) {
+      const anchor = adapter.anchor();
+      if (!anchor?.isConnected || !node()) return close();
+      const r = anchor.getBoundingClientRect(),
+        width = Math.min(300, innerWidth - 24);
+      panel.style.width = `${width}px`;
+      panel.style.maxHeight = `${Math.min(520, innerHeight - 24)}px`;
+      panel.style.left = `${Math.max(12, Math.min(r.right + 12, innerWidth - width - 12))}px`;
+      panel.style.top = `${Math.max(12, Math.min(r.top, innerHeight - panel.offsetHeight - 12))}px`;
+      return;
+    }
     if (
-      state.view !== "board" ||
+      !["board", "drawing"].includes(state.view) ||
       state.project?.id !== projectId ||
       board()?.id !== boardId ||
       !node()
@@ -63,15 +88,7 @@ export function boardComments(ctx, author, uid) {
     const canvas = $("#canvas"),
       n = node();
     if (!canvas) return close();
-    const c = canvas.getBoundingClientRect(),
-      z = state.camera.z;
-    const right = c.left + state.camera.x + (n.x + n.w) * z;
-    const top = c.top + state.camera.y + n.y * z;
-    const width = Math.min(300, innerWidth - 24);
-    panel.style.width = `${width}px`;
-    panel.style.maxHeight = `${Math.min(520, innerHeight - 24)}px`;
-    panel.style.left = `${Math.max(12, Math.min(right + 12, innerWidth - width - 12))}px`;
-    panel.style.top = `${Math.max(12, Math.min(top, innerHeight - panel.offsetHeight - 12))}px`;
+    positionBoardObjectPanel(panel, n, canvas, state.camera);
   }
   function sync(scroll = false) {
     if (!panel) return;
@@ -79,7 +96,12 @@ export function boardComments(ctx, author, uid) {
     if (!panel) return;
     const n = node();
     panel.querySelector(".board-comments-object").textContent =
-      task(n.task)?.title || n.text || n.file || n.type;
+      adapter?.title?.() ||
+      task(n.task)?.title ||
+      n.draft?.title ||
+      n.text ||
+      n.file ||
+      n.type;
     const list = panel.querySelector(".board-comments-list");
     const actorId = actor();
     const markup =
@@ -110,25 +132,27 @@ export function boardComments(ctx, author, uid) {
   }
   function open(n) {
     if (!n) return;
-    if (panel && target === n.id && boardId === board().id)
+    if (panel && target === n.id && boardId === (adapter ? null : board().id))
       return panel.querySelector("textarea").focus();
     close();
     target = n.id;
-    boardId = board().id;
+    boardId = adapter ? null : board().id;
     projectId = state.project.id;
     panel = document.createElement("section");
-    panel.className = "board-comments";
-    panel.setAttribute("popover", "manual");
+    panel.className = `board-comments${embedded ? " task-comments-panel" : ""}`;
+    if (!embedded) panel.setAttribute("popover", "manual");
     panel.setAttribute("role", "dialog");
     panel.setAttribute("aria-label", "Comments on this object");
     panel.setAttribute("aria-modal", "false");
-    panel.innerHTML = `<header class="board-comments-head"><strong>Comments</strong><button type="button" class="icon-button" data-comments-close aria-label="Close comments">${icon("close")}</button></header><div class="board-comments-object"></div><div class="board-comments-list" role="log" aria-label="Object comments" aria-live="polite"></div><form id="board-comment-form"><div class="comment-reply-context" hidden><span></span><button type="button" class="icon-button" data-comment-reply-cancel aria-label="Cancel reply" title="Cancel reply">${icon("close")}</button></div><label class="sr-only" for="board-comment-text">Comment</label><textarea id="board-comment-text" name="text" rows="3" maxlength="10000" required placeholder="Write a comment…"></textarea><button class="button primary small" type="submit">Add comment</button></form>`;
+    // An embedded composer must not participate in task-form validation.
+    panel.innerHTML = `<header class="board-comments-head"><strong>Comments</strong><button type="button" class="icon-button" data-comments-close aria-label="Close comments">${icon("close")}</button></header><div class="board-comments-object"></div><div class="board-comments-list" role="log" aria-label="Object comments" aria-live="polite"></div><${embedded ? "div" : "form"} id="board-comment-form"><div class="comment-reply-context" hidden><span></span><button type="button" class="icon-button" data-comment-reply-cancel aria-label="Cancel reply" title="Cancel reply">${icon("close")}</button></div><label class="sr-only" for="board-comment-text">Comment</label><textarea id="board-comment-text" name="text" ${embedded ? 'form="task-comment-composer"' : ""} rows="3" maxlength="10000" required placeholder="Write a comment…"></textarea><button class="button primary small" data-comment-submit type="${embedded ? "button" : "submit"}">Add comment</button></${embedded ? "div" : "form"}>`;
     const draft = drafts.get(key());
     replyTo = draft?.replyTo || null;
     panel.querySelector("textarea").value = draft?.text || "";
-    document.body.append(panel);
-    panel.showPopover();
-    state.dialog = "board-comments";
+    (adapter?.mount || adapter?.host || document.body).append(panel);
+    if (!embedded) panel.showPopover();
+    adapter?.onOpen?.();
+    if (!adapter) state.dialog = "board-comments";
     sync(true);
     panel.querySelector("textarea").focus({ preventScroll: true });
     panel.addEventListener("keydown", (e) => {
@@ -138,7 +162,8 @@ export function boardComments(ctx, author, uid) {
         close(true);
       } else if ((e.ctrlKey || e.metaKey) && e.key === "Enter") {
         e.preventDefault();
-        panel.querySelector("form").requestSubmit();
+        if (embedded) submitComment();
+        else panel.querySelector("form").requestSubmit();
       }
     });
     panel.addEventListener("click", (e) => {
@@ -199,9 +224,10 @@ export function boardComments(ctx, author, uid) {
           ?.focus({ preventScroll: true });
       }
     });
-    panel.querySelector("form").addEventListener("submit", (e) => {
-      e.preventDefault();
-      e.stopPropagation();
+    function submitComment(e) {
+      e?.preventDefault();
+      e?.stopPropagation();
+      if (!panel.querySelector("textarea").reportValidity()) return;
       const field = panel.querySelector("textarea"),
         text = field.value.trim();
       if (!text || !node()) return;
@@ -220,7 +246,15 @@ export function boardComments(ctx, author, uid) {
       drafts.delete(key());
       sync(true);
       field.focus({ preventScroll: true });
-    });
+    }
+    if (embedded) {
+      panel
+        .querySelector("[data-comment-submit]")
+        .addEventListener("click", submitComment);
+      for (const event of ["input", "change"])
+        panel.addEventListener(event, (e) => e.stopPropagation());
+    } else
+      panel.querySelector("form").addEventListener("submit", submitComment);
   }
   for (const type of ["pointerdown", "click"])
     document.addEventListener(
@@ -229,19 +263,29 @@ export function boardComments(ctx, author, uid) {
         if (
           panel &&
           !panel.contains(e.target) &&
-          !e.target.closest('[data-pro="comments"]')
+          !e.target.closest(adapter?.trigger || '[data-pro="comments"]') &&
+          !(adapter && adapter.host.contains(e.target))
         )
           close();
       },
-      true,
+      { capture: true, signal: listeners.signal },
     );
-  window.addEventListener("resize", position);
+  window.addEventListener("resize", position, { signal: listeners.signal });
   document.addEventListener(
     "scroll",
     (e) => {
       if (panel && !panel.contains(e.target)) position();
     },
-    true,
+    { capture: true, signal: listeners.signal },
   );
-  return { open, sync, position, close };
+  return {
+    open,
+    sync,
+    position,
+    close,
+    destroy() {
+      close();
+      listeners.abort();
+    },
+  };
 }

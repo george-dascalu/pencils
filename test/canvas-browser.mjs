@@ -203,6 +203,14 @@ try {
   await clickControl(pro("convert"));
   await until(
     async () =>
+      (await current()).nodes.find((n) => n.id === "note").type === "draft",
+  );
+  await page
+    .locator("[data-node=note]")
+    .getByRole("button", { name: "Finalise task", exact: true })
+    .click();
+  await until(
+    async () =>
       (await current()).nodes.find((n) => n.id === "note").type === "task",
   );
   assert.equal(

@@ -79,7 +79,7 @@ try {
     .click();
   await page.waitForFunction(
     () =>
-      document.querySelector("#board-save").textContent === "All changes saved",
+      document.querySelector("#board-save").textContent === "Saved automatically",
   );
   assert.equal(
     (await store.snapshot(project.id)).boards.find((b) => b.id === board.id)
@@ -174,7 +174,7 @@ try {
     .click();
   await page.waitForFunction(
     () =>
-      document.querySelector("#board-save").textContent === "All changes saved",
+      document.querySelector("#board-save").textContent === "Saved automatically",
   );
   await page.reload();
   await snap(page, true);

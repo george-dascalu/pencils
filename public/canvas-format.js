@@ -87,7 +87,7 @@ export function decodeCanvas(source, defaults = {}) {
       Object.assign(node, { type: "link", url: n.url, text: n.url });
     else if (n.type === "text")
       Object.assign(node, {
-        type: ["sticky", "shape", "draw", "query", "grid"].includes(ext.type)
+        type: ["sticky", "shape", "draw", "query", "grid", "draft"].includes(ext.type)
           ? ext.type
           : "text",
         text: n.text || "",
@@ -226,6 +226,8 @@ export function encodeCanvas(board) {
         "routing",
         "relationship",
         "dependency",
+        "projectFrameOwner",
+        "planRelation",
         "width",
         "lineStyle",
       ]),

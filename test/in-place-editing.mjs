@@ -111,7 +111,7 @@ async function saved() {
       page
         .locator("#board-save")
         .textContent()
-        .then((t) => /All (canvas )?changes saved/.test(t)),
+        .then((t) => t === "Saved automatically"),
     "save",
   );
 }
@@ -122,6 +122,15 @@ async function find(id, text) {
     .locator(`#canvas-find-results [data-pro=find-result][data-id="${id}"]`)
     .click();
   await page.waitForTimeout(100);
+}
+async function textBounds(locator) {
+  return locator.evaluate((el) => {
+    const text = document.createTreeWalker(el, NodeFilter.SHOW_TEXT).nextNode();
+    const range = document.createRange();
+    range.selectNodeContents(text);
+    const { x, y } = range.getBoundingClientRect();
+    return { x, y };
+  });
 }
 try {
   await enter();
@@ -134,7 +143,7 @@ try {
   const fontBefore = await node
     .locator(".canvas-markdown")
     .evaluate((el) => getComputedStyle(el).font);
-  const textBefore = await node.locator(".canvas-markdown").boundingBox();
+  const textBefore = await textBounds(node.locator(".canvas-markdown"));
   await node.dblclick();
   assert.deepEqual(
     await node.boundingBox(),
@@ -150,7 +159,8 @@ try {
     await rich.evaluate((el) => getComputedStyle(el).font),
     fontBefore,
   );
-  const textEditing = await rich.boundingBox();
+  assert.deepEqual(await rich.boundingBox(), before, "The editor fills the note");
+  const textEditing = await textBounds(rich);
   assert.ok(
     Math.abs(textEditing.x - textBefore.x) < 1 &&
       Math.abs(textEditing.y - textBefore.y) < 1,

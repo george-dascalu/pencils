@@ -1,4 +1,4 @@
-import { openBoardSearch } from "./menu-controls.mjs";
+import { openBoardSearch, selectProjectView } from "./menu-controls.mjs";
 import { clickControl } from "./menu-controls.mjs";
 import assert from "node:assert/strict";
 import fs from "node:fs/promises";
@@ -145,7 +145,7 @@ try {
   await page.locator("[data-action=dialog-close]").first().click();
   // Trigger a complete content redraw; every menu must keep exactly one action.
   await clickControl(page.locator(".board-menu [data-pro=outline]"));
-  await page.locator("[data-view=list]").click();
+  await selectProjectView(page, "list");
   assert.ok(await page.locator(".hero").isHidden());
   assert.equal(await page.locator("#board-project-tools").count(), 1);
   await page.locator("[data-view=board]").click();

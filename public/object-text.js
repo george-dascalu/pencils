@@ -19,13 +19,13 @@ export const styleKeys = [
   "fontSize",
   "fontFamily",
   "verticalAlign",
-  "autoFit",
   "textAlign",
   "align",
   "color",
   "borderColor",
   "borderWidth",
   "borderStyle",
+  "noteStyle",
 ];
 export function validTextStyle(n) {
   return (
@@ -37,10 +37,11 @@ export function validTextStyle(n) {
     (n.fontFamily == null || objectFonts.includes(n.fontFamily)) &&
     (n.verticalAlign == null ||
       ["auto", "top", "middle", "bottom"].includes(n.verticalAlign)) &&
+    // Accept legacy metadata without applying automatic text shrinking.
     (n.autoFit == null || typeof n.autoFit === "boolean")
   );
 }
-export function textStyleControls(n, { esc, icon, state }) {
+export function textStyleControls(n, { esc, icon, state, textNodes }) {
   const value =
     n.type === "grid"
       ? {
@@ -54,7 +55,9 @@ export function textStyleControls(n, { esc, icon, state }) {
           ...n,
           ...n.grid.cells[r][c],
         }))
-      : [n];
+      : textNodes || [n];
+  const disabled =
+    n.type === "grid" ? n.locked : cells.every((cell) => cell.locked);
   const emphasis =
     n.type === "grid" && !state.canvasEditing
       ? `<div class="grid-text-emphasis" role="group" aria-label="Text emphasis">${[
@@ -64,7 +67,7 @@ export function textStyleControls(n, { esc, icon, state }) {
         ]
           .map(([key, label, glyph]) => {
             const count = cells.filter((cell) => cell[key]).length;
-            return `<button type="button" class="selection-action" data-cell-text-toggle="${key}" aria-label="${label}" title="${label}" aria-pressed="${count === cells.length ? "true" : count ? "mixed" : "false"}" ${n.locked ? "disabled" : ""}>${icon(glyph)}</button>`;
+            return `<button type="button" class="selection-action" data-cell-text-toggle="${key}" aria-label="${label}" title="${label}" aria-pressed="${count === cells.length ? "true" : count ? "mixed" : "false"}" ${disabled ? "disabled" : ""}>${icon(glyph)}</button>`;
           })
           .join("")}</div>`
       : "";
@@ -81,11 +84,22 @@ export function textStyleControls(n, { esc, icon, state }) {
       ),
     ).size > 1;
   const select = (key, label, choices, current) =>
-    `<label class="object-text-control" title="${label}"><span class="sr-only">${label}</span><select data-text-style="${key}" aria-label="${label}" ${n.locked ? "disabled" : ""}>${mixed(key) ? '<option value="" selected disabled>Mixed</option>' : ""}${choices.map(([v, t]) => `<option value="${esc(v)}" ${!mixed(key) && String(v) === String(current) ? "selected" : ""}>${esc(t)}</option>`).join("")}</select></label>`;
-  return `${emphasis}<div class="selection-group object-typography" role="group" aria-label="Text appearance">${select(
+    `<label class="object-text-control" title="${label}"><span class="sr-only">${label}</span><select data-text-style="${key}" aria-label="${label}" ${disabled ? "disabled" : ""}>${mixed(key) ? '<option value="" selected disabled>Mixed</option>' : ""}${choices.map(([v, t]) => `<option value="${esc(v)}" ${!mixed(key) && String(v) === String(current) ? "selected" : ""}>${esc(t)}</option>`).join("")}</select></label>`;
+  const vertical = `<div class="text-alignment-row vertical-alignment-row" role="group" aria-label="Vertical text alignment">${[
+    ["top", "Align text top", "text-top"],
+    ["middle", "Align text middle", "text-middle"],
+    ["bottom", "Align text bottom", "text-bottom"],
+    ["auto", "Automatic vertical alignment", "refresh"],
+  ]
+    .map(
+      ([value, label, glyph]) =>
+        `<button type="button" class="selection-action" data-text-style="verticalAlign" value="${value}" aria-label="${label}" title="${label}" aria-pressed="${!mixed("verticalAlign") && (cells[0].verticalAlign || "auto") === value}" ${disabled ? "disabled" : ""}>${icon(glyph)}</button>`,
+    )
+    .join("")}</div>`;
+  return `${vertical}${emphasis}<div class="selection-group object-typography" role="group" aria-label="Text appearance">${select(
     "fontFamily",
     "Object font",
-    objectFonts.map((v) => [v, v === "inherit" ? "Workspace font" : v]),
+    objectFonts.map((v) => [v, v === "inherit" ? "Default font" : v]),
     value.fontFamily || "inherit",
   )}${select(
     "fontSize",
@@ -95,17 +109,7 @@ export function textStyleControls(n, { esc, icon, state }) {
       `${v}`,
     ]),
     value.fontSize || defaultFontSize(n),
-  )}${select(
-    "verticalAlign",
-    "Vertical alignment",
-    [
-      ["auto", "Auto"],
-      ["top", "Top"],
-      ["middle", "Middle"],
-      ["bottom", "Bottom"],
-    ],
-    value.verticalAlign || "auto",
-  )}<label class="object-fit-label" title="Shrink text to fit the object"><input type="checkbox" data-text-style="autoFit" ${value.autoFit ? "checked" : ""} ${n.locked ? "disabled" : ""}>Fit</label></div>`;
+  )}</div>`;
 }
 export function paintTextStyle(el, n) {
   if (!el) return;
@@ -125,14 +129,20 @@ export function paintTextStyle(el, n) {
   if (content) {
     content.style.justifyContent = align || "";
   }
+  if (n.type === "sticky")
+    el.style.setProperty(
+      "--note-text-alignment",
+      { top: "start", middle: "safe center", bottom: "safe end" }[
+        n.verticalAlign
+      ] || "safe center",
+    );
   if (n.type === "grid") {
     el.querySelectorAll(".grid-cell").forEach((cell) => {
       const data = {
           ...n,
           ...n.grid.cells[+cell.dataset.gridRow][+cell.dataset.gridColumn],
         },
-        texts = cell.querySelectorAll(".grid-cell-text"),
-        text = [...texts].find((text) => !text.classList.contains("hidden"));
+        texts = cell.querySelectorAll(".grid-cell-text");
       cell.style.setProperty(
         "--object-font",
         objectFonts.includes(data.fontFamily) && data.fontFamily !== "inherit"
@@ -151,27 +161,7 @@ export function paintTextStyle(el, n) {
             data.verticalAlign
           ] || "flex-start";
       }
-      if (data.autoFit && text) fit(text, data.fontSize || 14, cell);
     });
-  } else if (n.autoFit && content) {
-    fit(content, n.fontSize || defaultFontSize(n), el);
-  }
-}
-function fit(content, max, root) {
-  for (let size = max; size >= 8; size -= 1) {
-    if (root) root.style.setProperty("--object-font-size", `${size}px`);
-    else content.style.fontSize = `${size}px`;
-    const overflow = [
-      content,
-      ...content.querySelectorAll(
-        ".node-text,.note-content,.canvas-markdown,.task-title",
-      ),
-    ].some(
-      (e) =>
-        e.scrollHeight > e.clientHeight + 2 ||
-        e.scrollWidth > e.clientWidth + 2,
-    );
-    if (!overflow) break;
   }
 }
 export function objectText(ctx, pick) {
@@ -199,18 +189,41 @@ export function objectText(ctx, pick) {
   };
   function updateStyle(e) {
     const el = e.target.closest("[data-text-style]");
-    if (!el || state.view !== "board") return;
+    if (!el || el.disabled || !["board", "drawing"].includes(state.view)) return;
+    const restoreFocus = document.activeElement === el;
+    const toolbar = el.closest(".inline-floating-tools")
+      ? ".inline-floating-tools"
+      : "#selection-tools";
     const key = el.dataset.textStyle,
-      value =
-        key === "autoFit"
-          ? el.checked
-          : key === "fontSize"
-            ? Number(el.value)
-            : el.value;
+      value = key === "fontSize" ? Number(el.value) : el.value;
     if (!validTextStyle({ [key]: value })) return;
     const changed = targets().filter((n) => n[key] !== value);
     if (changed.length) change(() => changed.forEach((n) => (n[key] = value)));
+    if (key === "verticalAlign") {
+      if (restoreFocus)
+        document
+          .querySelector(
+            `${toolbar} button[data-text-style="verticalAlign"][value="${value}"]`,
+          )
+          ?.focus({ preventScroll: true });
+      document
+        .querySelectorAll('button[data-text-style="verticalAlign"]')
+        .forEach((button) => {
+          button.setAttribute(
+            "aria-pressed",
+            String(
+              targets().every(
+                (n) => (n.verticalAlign || "auto") === button.value,
+              ),
+            ),
+          );
+        });
+    }
   }
+  document.addEventListener("click", (e) => {
+    if (e.target.closest('button[data-text-style="verticalAlign"]'))
+      updateStyle(e);
+  });
   document.addEventListener("input", updateStyle);
   document.addEventListener("change", updateStyle);
   let repaint = null;
@@ -254,7 +267,7 @@ export function objectText(ctx, pick) {
   }
   document.addEventListener("click", (e) => {
     const toggle = e.target.closest("[data-cell-text-toggle]");
-    if (toggle && !toggle.disabled && state.view === "board") {
+    if (toggle && !toggle.disabled && ["board", "drawing"].includes(state.view)) {
       const cells = targets(),
         key = toggle.dataset.cellTextToggle;
       if (!cells.length || !["bold", "italic", "strike"].includes(key)) return;
@@ -274,7 +287,7 @@ export function objectText(ctx, pick) {
     "keydown",
     (e) => {
       if (
-        state.view !== "board" ||
+        !["board", "drawing"].includes(state.view) ||
         state.dialog ||
         state.canvasEditing ||
         e.target.closest("input,textarea,[contenteditable]")

@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
-import { chromium, firefox } from "playwright";
+import { chromium, firefox, webkit } from "playwright";
 import { Store } from "../server/store.js";
 import { createServer } from "../server/index.js";
 const root = await fs.mkdtemp(path.join(os.tmpdir(), "pencils-task-editor-"));
@@ -28,7 +28,7 @@ const original = await store.createTask(project.id, {
 const server = createServer(store);
 await new Promise((r) => server.listen(0, "127.0.0.1", r));
 const browser = await (
-  process.env.BROWSER === "firefox" ? firefox : chromium
+  ({chromium,firefox,webkit}[process.env.BROWSER || "chromium"])
 ).launch({ headless: true });
 const page = await browser.newPage({ viewport: { width: 1400, height: 1000 } });
 const errors = [];
@@ -39,7 +39,12 @@ const open = async () =>
     .first()
     .click();
 const save = async () => {
-  await page.locator('#task-form [type="submit"]').click();
+  await page.locator("#task-form").evaluate((form) => form.requestSubmit());
+  await page
+    .locator("[data-autosave-status]")
+    .filter({ hasText: /^Saved automatically$/ })
+    .waitFor();
+  await page.locator("[data-action=dialog-close]").click();
   await page.locator("dialog").waitFor({ state: "detached" });
 };
 try {
@@ -145,21 +150,20 @@ try {
         (theme) => (document.documentElement.dataset.theme = theme),
         theme,
       );
+      await page.waitForFunction(() => {
+        const r = document.querySelector("dialog").getBoundingClientRect();
+        return r.x >= 0 && r.right <= innerWidth;
+      });
       const r = await page.locator("dialog").boundingBox();
       assert.ok(r.x >= 0 && r.x + r.width <= width);
-      assert.ok(await page.locator('#task-form [type="submit"]').isVisible());
-      const submitBox = await page.locator('#task-form [type="submit"]').boundingBox();
-      assert.ok(submitBox.y >= r.y && submitBox.y + submitBox.height <= r.y + r.height, 'Save stays inside the modal on every screen size');
+      assert.equal(await page.locator('#task-form [type="submit"]').count(), 0);
+      assert.ok(await page.locator("[data-autosave-status]").isVisible());
 
       const layout = await page.locator("#task-form").evaluate((form) => {
         const rect = (selector) =>
           form.querySelector(selector).getBoundingClientRect();
         return {
-          identity: [
-            ".task-key",
-            '[data-task-picker="type"]',
-            '[name="title"]',
-          ].map((s) => {
+          identity: ['[data-task-picker="type"]', '[name="title"]'].map((s) => {
             const r = rect(s);
             return r.top + r.height / 2;
           }),
@@ -176,17 +180,21 @@ try {
       if (width === 1400) {
         assert.ok(
           Math.max(...layout.identity) - Math.min(...layout.identity) < 2,
-          "ID, type and title share a row",
+          "Type and title share a row",
         );
       }
 
       assert.ok(
-        Math.max(...layout.fields.slice(0, 3)) - Math.min(...layout.fields.slice(0, 3)) < 2,
+        Math.max(...layout.fields.slice(0, 3)) -
+          Math.min(...layout.fields.slice(0, 3)) <
+          2,
         "Priority, status and assignee share the first metadata row",
       );
       assert.ok(
-        Math.abs(layout.fields[3] - layout.fields[4]) < 2 && layout.fields[3] > layout.fields[0],
-        "Parent task and due date share the next row on desktop and mobile",
+        Math.abs(layout.fields[4] - layout.fields[5]) < 2 &&
+          layout.fields[3] > layout.fields[0] &&
+          layout.fields[4] > layout.fields[3],
+        "Parent precedes the paired start and due dates in the compact panel",
       );
 
       assert.ok(layout.iconOnly, "Task type remains icon-only in both themes");
@@ -215,10 +223,11 @@ try {
   const draftTypeIcon = await typeIcon(),
     draftPriorityIcon = await priorityIcon();
   const draftBody = await source.inputValue();
-  await page.mouse.click(5, 5);
+  await page.locator("[data-action=dialog-close]").click();
   await page.locator("dialog").waitFor({ state: "detached" });
   await open();
-  await page.locator('[data-feature="form-restore"]').click();
+  if (await page.locator('[data-feature="form-restore"]').count())
+    await page.locator('[data-feature="form-restore"]').click();
   assert.equal(await rich.innerText(), "Retain this description draft");
   assert.equal(await type.inputValue(), "bug");
   assert.equal(await priority.inputValue(), "low");
@@ -260,12 +269,28 @@ try {
     "History is alongside the editor",
   );
   await page.screenshot({ path: "/tmp/pencils-task-history.png" });
-  await page.locator(".task-history-panel .recovery-item summary").first().click();
-  await page.locator('dialog').evaluate(el => el.dataset.sameDialog = 'yes');
-  page.once('dialog', dialog => dialog.accept());
-  await page.locator('[data-task-modal=history-restore]').first().click();
-  await page.waitForFunction(() => document.querySelector('[data-feature=task-history]')?.getAttribute('aria-expanded') === 'true' && document.querySelector('#task-form [name=title]')?.value !== 'Unsaved title');
-  assert.equal(await page.locator('dialog').getAttribute('data-same-dialog'),'yes','Restoration keeps the same modal');
+  await page
+    .locator(".task-history-panel .recovery-item summary")
+    .first()
+    .click();
+  await page
+    .locator("dialog")
+    .evaluate((el) => (el.dataset.sameDialog = "yes"));
+  page.once("dialog", (dialog) => dialog.accept());
+  await page.locator("[data-task-modal=history-restore]").first().click();
+  await page.waitForFunction(
+    () =>
+      document
+        .querySelector("[data-feature=task-history]")
+        ?.getAttribute("aria-expanded") === "true" &&
+      document.querySelector("#task-form [name=title]")?.value !==
+        "Unsaved title",
+  );
+  assert.equal(
+    await page.locator("dialog").getAttribute("data-same-dialog"),
+    "yes",
+    "Restoration keeps the same modal",
+  );
   await page.locator("[data-task-modal=history-close]").click();
   await page.locator("[data-task-picker=parent] .task-picker-trigger").click();
   assert.equal(
@@ -275,7 +300,7 @@ try {
   );
   await page.keyboard.press("Escape");
   assert.ok(await page.locator("dialog").isVisible());
-  await page.mouse.click(5, 5);
+  await page.locator("[data-action=dialog-close]").click();
   assert.deepEqual(errors, []);
   console.log(
     "PASS: compact task dialog, collapsed planning, WYSIWYG formatting and bullets, Markdown preservation, preview, draft restore, desktop/mobile and light/dark themes.",

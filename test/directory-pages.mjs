@@ -175,7 +175,7 @@ try {
   await page.locator(".project-link").click();
   await page.waitForURL((url) => !url.hash.startsWith("#organisation/"));
   await page.reload();
-  await page.locator("[data-view=list]").waitFor();
+  await page.locator("[data-view=tasks]").waitFor();
   assert.equal(await page.locator(".directory-page").count(), 0);
   assert.deepEqual(errors, []);
   console.log(

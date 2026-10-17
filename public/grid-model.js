@@ -1,6 +1,7 @@
 import { mergedCell, validMerges, unmergeGrid } from "./grid-merge.js";
 // Grid content stays portable Markdown; layout and cell styling are Canvas metadata.
 export const GRID_LIMIT = 30;
+export const GRID_DEFAULT_SIZE = { w: 540, h: 312 };
 export function newGrid(rows = 3, columns = 3) {
   return {
     rows: Array(rows).fill(96),

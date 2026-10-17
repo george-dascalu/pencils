@@ -1,3 +1,4 @@
+import { selectProjectView } from "./menu-controls.mjs";
 import assert from "node:assert/strict";
 import fs from "node:fs/promises";
 import os from "node:os";
@@ -44,6 +45,7 @@ try {
   await page.goto(`http://127.0.0.1:${server.address().port}`);
   await page.locator(".project-link").click();
   await page.locator("[data-action=project-edit]").click();
+  await page.locator("[data-status-details] > summary").click();
   await row("todo").locator("[data-status-name]").fill("Ready queue");
   await page.locator("[data-workflow-rules]").check();
   await row("todo").locator("summary").click();
@@ -98,7 +100,7 @@ try {
     "doing",
   );
   await page.mouse.click(5, 5);
-  await page.locator("[data-view=kanban]").click();
+  await selectProjectView(page, "kanban");
   assert.ok(
     (
       await page.locator("[data-drop-status=todo] .column-header").innerText()
@@ -112,7 +114,7 @@ try {
   );
   await card.dragTo(page.locator("[data-drop-status=doing]"));
   assert.equal((await saved).status(), 200);
-  await page.locator("[data-view=table]").click();
+  await selectProjectView(page, "table");
   let select = page.locator(`[data-task-field=status][data-id="${task.id}"]`);
   assert.deepEqual(await values(select), ["todo", "doing", "done"]);
   const saved2 = page.waitForResponse(

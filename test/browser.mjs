@@ -1,4 +1,4 @@
-import { clickControl } from "./menu-controls.mjs";
+import { clickControl, selectProjectView } from "./menu-controls.mjs";
 import assert from "node:assert/strict";
 import fs from "node:fs/promises";
 import os from "node:os";
@@ -47,7 +47,7 @@ const shot = (name) =>
   });
 const click = (action) =>
   clickControl(page.locator(`[data-action="${action}"]`).first());
-const view = (name) => page.locator(`[data-view="${name}"]`).click();
+const view = (name) => selectProjectView(page, name);
 const saved = async (fn, entityId) => {
   const response = page.waitForResponse(
     (r) =>

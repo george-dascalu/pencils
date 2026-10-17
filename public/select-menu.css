@@ -1,0 +1,114 @@
+/* Shared menu surface and options, including the original priority/type pickers. */
+.select-menu,
+.task-picker-popover.selection-popover {
+  box-sizing: border-box;
+  padding: 6px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--surface);
+  color: var(--ink);
+  box-shadow: 0 8px 30px #0003;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+.select-menu {
+  position: fixed;
+  inset: auto;
+  margin: 0;
+  z-index: 100;
+  font: 13px/1.4 var(--app-font, "Work Sans", sans-serif);
+  text-align: left;
+}
+.select-menu::backdrop {
+  background: transparent;
+  pointer-events: none;
+}
+.select-menu [role="option"],
+.task-picker-popover [role="option"] {
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  min-height: 36px;
+  padding: 9px 8px;
+  margin: 0;
+  border: 1px solid transparent;
+  border-radius: 5px;
+  background: transparent;
+  color: var(--ink);
+  font: inherit;
+  font-size: 13px;
+  text-align: left;
+  cursor: pointer;
+}
+.select-menu [role="option"] span {
+  flex: 1;
+  overflow-wrap: anywhere;
+}
+.select-menu [role="option"] .icon {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+}
+.select-menu [role="option"] .icon:last-child {
+  visibility: hidden;
+}
+.select-menu [aria-selected="true"] .icon:last-child {
+  visibility: visible;
+}
+.select-menu [role="option"]:is(:hover, :focus-visible, [aria-selected="true"]),
+.task-picker-popover
+  [role="option"]:is(:hover, :focus-visible, [aria-selected="true"]) {
+  background: var(--surface-soft, #eff2e7);
+}
+.select-menu [aria-selected="true"],
+.task-picker-popover [role="option"][aria-selected="true"] {
+  border-color: var(--green);
+}
+.select-menu [role="option"]:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+.select-menu-group {
+  padding: 9px 8px 4px;
+  font-size: 11px;
+  color: var(--muted);
+  font-weight: 600;
+}
+.select-symbol {
+  width: 44px;
+  height: 24px;
+  flex-shrink: 0;
+  color: var(--ink);
+}
+.select-menu .select-symbol {
+  flex: 1;
+}
+.symbol-select {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex: 1;
+  min-width: 0;
+  height: 28px;
+  border-radius: 3px;
+}
+.symbol-select [data-select-symbol-preview] {
+  display: flex;
+  min-width: 0;
+}
+.symbol-select .select-symbol {
+  max-width: 100%;
+}
+.symbol-select > select {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+.symbol-select:focus-within {
+  outline: 1px solid var(--green);
+  outline-offset: -1px;
+}

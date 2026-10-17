@@ -66,12 +66,12 @@
 .canvas.pen-eraser .board-node {
   cursor: cell;
 }
-.canvas.pen-mode
+.canvas.pen-mode:not(.drawing-canvas)
   :is(#selection-tools, .connection-port, .resize-handle, .connector-endpoint) {
   visibility: hidden;
   pointer-events: none;
 }
-.canvas.pen-mode .board-node :is(button, select, a) {
+.canvas.pen-mode:not(.drawing-canvas) .board-node :is(button, select, a) {
   pointer-events: none;
 }
 .board-node.pen-erased {
@@ -97,3 +97,22 @@
     font-size: 11px;
   }
 }
+
+.canvas[data-drawing-hand="left"] #pen-tools {left:auto;right:16px;transform:none;}
+.pen-preferences {position:relative;}
+.pen-preferences summary {padding:10px;cursor:pointer;}
+.pen-preferences .selection-popover {position:fixed;right:auto;min-width:0;padding:12px;display:grid;gap:12px;background:var(--surface);}
+.pen-preferences:not([open]) .selection-popover {display:none;}
+.pen-preferences .selection-popover {
+  width: min(340px, calc(100vw - 100px));
+  max-height: min(70dvh, 620px);
+  overflow-y: auto;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  box-shadow: 0 8px 24px #0002;
+}
+.drawing-gesture-settings { min-width: 0; }
+.drawing-gesture-settings .field { margin: 10px 0; }
+.drawing-gesture-settings select { width: 100%; min-width: 0; }
+.drawing-gesture-settings :is(p, small) { font-size: 12px; line-height: 1.5; }
+[data-pen-move] {touch-action:none;cursor:grab;}
