@@ -30,7 +30,7 @@ export function validQuery(root) {
       );
     return (
       typeof node.field === "string" &&
-      /^(key|created|updated|title|type|status|priority|parent|assignee|start|due|estimate|tags|fields\.[a-zA-Z][a-zA-Z0-9_-]*)$/.test(
+      /^(key|created|updated|title|body|type|status|priority|parent|assignee|start|due|estimate|tags|fields\.[a-zA-Z][a-zA-Z0-9_-]*)$/.test(
         node.field,
       ) &&
       ops.has(node.op) &&

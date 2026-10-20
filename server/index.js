@@ -11,6 +11,8 @@ import { Auth } from "./auth.js";
 import { Sources, sourceAccess } from "./sources.js";
 import { randomUUID } from "node:crypto";
 import { BACKUP_BYTES } from "../public/backup-limits.js";
+import { staticAssets } from "./static-assets.js";
+import { MiroImport } from "./miro-import.js";
 
 const displayName = (req) => {
   try {
@@ -56,6 +58,7 @@ const mime = {
   ".zip": "application/zip",
   ".txt": "text/plain; charset=utf-8",
   ".md": "text/plain; charset=utf-8",
+  ".csv": "text/csv; charset=utf-8",
 };
 async function input(req) {
   const chunks = [];
@@ -84,9 +87,16 @@ async function input(req) {
   }
 }
 export function createServer(store, options = {}) {
+  const serveAsset = staticAssets({
+    publicDir: publicDir.replace(/\/$/, ""),
+    builtDir: fileURLToPath(new URL("../dist/public", import.meta.url)),
+    vendor, mime,
+    production: options.productionAssets ?? process.env.NODE_ENV === "production",
+  });
   const auth = options.auth || new Auth(store);
   store.watch();
   const sources = new Sources(store, auth, options.sources),index=new RecordIndex(store),diagnostics=new Diagnostics();
+  const miro = new MiroImport(store, auth, options.miro);
   sources.start();
   const automations=new Automations(store,auth);store.automations=automations;
   const rooms = new Map();
@@ -151,7 +161,7 @@ export function createServer(store, options = {}) {
         const user = await auth.user(req);
         if (resource === "session" && parts.length === 2) {
           if (method === "GET")
-            return json(200, { required: auth.enabled, user });
+            return json(200, { required: auth.enabled, automatic: !!user?.automatic, user });
           if (method === "POST") {
             const result = await auth.login(
               await input(req),
@@ -171,6 +181,10 @@ export function createServer(store, options = {}) {
             );
             return json(200, { ok: true });
           }
+        }
+        if (resource === "miro-callback" && method === "GET") {
+          await miro.callback(Object.fromEntries(url.searchParams));
+          return bytes("<!doctype html><html lang=\"en\"><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width\"><title>Miro connected</title><body><h1>Miro connected</h1><p>Return to Import from Miro in Pencils. You can close this window.</p></body></html>", "text/html; charset=utf-8");
         }
         if(resource === "source-callback" && method === "GET") {
           const projectId=await store.mutate(()=>sources.callback(project,Object.fromEntries(url.searchParams)));
@@ -432,6 +446,23 @@ export function createServer(store, options = {}) {
             write && parts[5] !== "presence" && kind !== "query",
           );
           if(!sourceAccess(user,record.data)) throw new Problem(403,"This project contains private source data.");
+          if (kind === "miro") {
+            if (method === "GET" && !id) return json(200, miro.status(project, user));
+            if (method === "GET" && id === "boards") return json(200, await miro.boards(project, user));
+            if (method === "POST") {
+              const data = await input(req);
+              if (id === "authorize") return json(200, await miro.authorize(project, user));
+              if (id === "connect") return json(200, await miro.connect(project, user, data.token));
+              if (id === "disconnect") return json(200, miro.disconnect(project, user));
+              if (id === "preview") return json(200, await miro.preview(project, user, data));
+              if (id === "import") {
+                const result = await mutate(() => miro.commit(project, user, data));
+                miro.completed(project, user, data, result);
+                return json(201, result);
+              }
+            }
+            throw new Problem(404, "Miro import action not found.");
+          }
           if(kind === "automations"){
             if(method === "GET")return json(200,await automations.list(project));
             if(method === "POST"){const data=await input(req);return json(200,await mutate(()=>id?automations.run(project,id,data):automations.configure(project,data.rules,user)));}
@@ -485,6 +516,20 @@ export function createServer(store, options = {}) {
               200,
               await mutate(() => store.restoreTask(project, id)),
             );
+          }
+          if (kind === "documents" && parts.length <= 5) {
+            if (method === "GET")
+              return json(200, id ? await store.getDocument(project, id) : await store.children(project, "documents"));
+            const data = await input(req);
+            if (method === "POST" && !id)
+              return json(201, await mutate(() => store.createDocument(project, data)));
+            if (method === "PATCH" && id)
+              return json(200, await mutate(() => store.updateDocument(project, id, data)));
+            if (method === "DELETE" && id)
+              return json(200, await mutate(async () => {
+                await store.getDocument(project, id);
+                return store.removeRecord(project, "documents", id, data.revision);
+              }));
           }
           if (kind === "notes") {
             if (method === "GET" && url.searchParams.has("backlinks"))
@@ -617,12 +662,19 @@ export function createServer(store, options = {}) {
           if (kind === "attachments") {
             if (method === "GET" && id) {
               const data = await store.attachment(project, id);
+              const previewPDF = data.ext === ".pdf" && url.searchParams.get("preview") === "1";
               return bytes(
                 data.bytes,
                 mime[data.ext],
                 [".png", ".jpg", ".jpeg", ".gif", ".webp"].includes(data.ext)
                   ? {}
-                  : { "Content-Disposition": `attachment; filename="${id}"` },
+                  : previewPDF
+                    ? {
+                        "Content-Disposition": `inline; filename="${id}"`,
+                        "X-Frame-Options": "SAMEORIGIN",
+                        "Content-Security-Policy": headers["Content-Security-Policy"].replace("frame-ancestors 'none'", "frame-ancestors 'self'"),
+                      }
+                    : { "Content-Disposition": `attachment; filename="${id}"` },
               );
             }
             if (method === "POST" && !id) {
@@ -682,25 +734,8 @@ export function createServer(store, options = {}) {
       }
       if (!["GET", "HEAD"].includes(method))
         throw new Problem(405, "Method not allowed.");
-      const name =
-          url.pathname === "/"
-            ? "index.html"
-            : decodeURIComponent(url.pathname).slice(1),
-        file = path.resolve(publicDir, name);
-      if (!file.startsWith(publicDir) || name.includes(".."))
+      if (!(await serveAsset(req, res, url.pathname, headers)))
         throw new Problem(404, "Not found.");
-      let content;
-      try {
-        content = await fs.readFile(vendor[url.pathname] || file);
-      } catch {
-        throw new Problem(404, "Not found.");
-      }
-      res.writeHead(200, {
-        ...headers,
-        "Content-Type": mime[path.extname(file)] || "application/octet-stream",
-        "Cache-Control": "no-cache",
-      });
-      res.end(method === "HEAD" ? undefined : content);
     } catch (error) {
       if (!error.status) console.error(error);
       if (!res.headersSent)
@@ -715,7 +750,7 @@ export function createServer(store, options = {}) {
   const server = options.tls
     ? https.createServer(options.tls, handler)
     : http.createServer(handler);
-  server.on("close", () => {sources.close();automations.close();store.automations=null;index.close();store.close();});
+  server.on("close", () => {miro.close();sources.close();automations.close();store.automations=null;index.close();store.close();});
   return server;
 }
 if (

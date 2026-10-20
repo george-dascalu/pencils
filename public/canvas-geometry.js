@@ -73,7 +73,9 @@ export function routeEdge(edge, a, b, obstacles = null) {
       toSide === "left"
     ) {
       q.y = b.y + b.h * 0.25;
-      const left = Math.min(a.x, b.x) - 24,
+      const left = q.x - p.x >= 48 && b.y >= a.y + a.h + 36
+          ? q.x - 24
+          : Math.min(a.x, b.x) - 24,
         gap = a.y + a.h + 18;
       points = [
         p,

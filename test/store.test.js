@@ -22,11 +22,13 @@ test("projects, tasks and canvases persist as portable Markdown and survive rest
     tags: ["design"],
   });
   const raw = await fs.readFile(path.join(root, task.file), "utf8");
+  assert.equal(task.priority, "medium");
   assert.match(raw, /^---\nid:/);
   assert.match(raw, /\[\[another-note\]\]/);
   const reopened = new Store(root),
     snapshot = await reopened.snapshot(project.id);
   assert.equal(snapshot.tasks[0].title, task.title);
+  assert.equal(snapshot.tasks[0].priority, "medium");
   assert.deepEqual(snapshot.tasks[0].tags, ["design"]);
   assert.equal(snapshot.boards.length, 1);
   assert.equal(snapshot.warnings.length, 0);
@@ -35,6 +37,7 @@ test("updates preserve Markdown and unknown YAML fields and comments", async (t)
   const { root, store, project } = await workspace(t);
   const task = await store.createTask(project.id, {
     title: "A task",
+    priority: "none",
     body: "\n## Exact Markdown\n\n<script>raw content</script>\n",
   });
   const file = path.join(root, task.file);
@@ -52,6 +55,7 @@ test("updates preserve Markdown and unknown YAML fields and comments", async (t)
     status: "done",
   });
   assert.equal(updated.body, task.body);
+  assert.equal(updated.priority, "none", "Explicit Lowest priority is retained on edit");
   assert.deepEqual(updated.custom, { nested: "yes" });
   assert.deepEqual(updated.aliases, ["a", "b"]);
   const result = await fs.readFile(file, "utf8");

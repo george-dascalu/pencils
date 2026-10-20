@@ -15,8 +15,8 @@ export function taskDependencies(ctx, form, current) {
     )
     .join(
       "",
-    )}</select><div data-prerequisites></div><details class="dependency-picker"><summary>Add prerequisite</summary><input type="search" aria-label="Search prerequisites" placeholder="Search by task ID or title…"><div data-dependency-options></div></details><div data-dependants></div><details><summary>Related records</summary><p class="field-hint">Links across local, Obsidian, Jira and Excel records are kept in this project. They do not merge records or publish dependencies to a provider.</p><div class="related-record-list">${state.tasks.filter(t=>t.id!==current.id).map(t=>`<label><input type="checkbox" name="related_records" value="${esc(t.id)}" ${(current.related_records || []).includes(t.id)?"checked":""}>${esc(t.key || t.id)} · ${esc(t.title)} · ${esc(sourceLabel(t))}</label>`).join("")}</div></details>`;
-  form.querySelector(".task-subtasks").before(host);
+    )}</select><div data-prerequisites></div><details class="dependency-picker"><summary>Add prerequisite</summary><input type="search" aria-label="Search prerequisites" placeholder="Search by task ID or title…"><div data-dependency-options></div></details><div data-dependants></div>`;
+  form.querySelector(".task-parent-field").after(host);
   const select = host.querySelector("select");
   const search = host.querySelector("input");
   const selected = () =>

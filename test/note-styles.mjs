@@ -103,6 +103,7 @@ try {
   await clickControl(page.locator('[data-feature="canvas-svg"]'));
   const svg = await fs.readFile(await (await download).path(), "utf8");
   assert.match(svg, /fill-opacity=".14"/);
+  assert.match(svg, /<text[^>]+fill="#000000"/, "Exported note text keeps its readable foreground");
   // Unknown styles cannot be persisted through the backend.
   const saved = (await store.snapshot(project.id)).boards[0];
   await assert.rejects(

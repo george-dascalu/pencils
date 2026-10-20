@@ -4,6 +4,477 @@ User-facing additions, changes and fixes, newest first. Dates use Europe/London 
 
 ## Unreleased
 
+## 0.16.12 — 2026-10-20
+
+### Fixed
+
+- Press the Documents Outline button again to close its panel. Its active state stays in sync when closing with Escape, the close button or a click outside.
+
+## 0.16.11 — 2026-10-20
+
+### Added
+
+- Drag folders in the Documents explorer into other folders, or onto the Documents heading to move them to the root. Moves keep all nested folders and documents together, highlight valid destinations and prevent dropping a folder inside itself or its descendants.
+
+## 0.16.10 — 2026-10-20
+
+### Added
+
+- Documents have a Page width / Full width toggle beside the editor modes. The setting applies to Live preview, Source and Reading and is remembered on this device.
+
+### Fixed
+
+- Live preview and Reading share the same page column, heading styles and paragraph rhythm. Live preview renders dividers and hides escape backslashes outside the line being edited.
+
+## 0.16.9 — 2026-10-20
+
+### Added
+
+- Board task cards have a description collapse/expand button before Comments. Expanding fits the full description; each card remembers its state, and generated plan rows make room.
+- Documents have automatic numbered versions, with previews and restoration of earlier saves.
+- The Documents sidebar can be collapsed. Create nested folders, rename or move them, and organise documents with drag and drop or Move to folder.
+
+### Changed
+
+- Document outlines show a collapsible heading tree before the editor mode controls. Live preview, Source and Reading use icons with labels and tooltips.
+
+### Fixed
+
+- Generated project plans indent children beyond their parent's connector port so parent/child arrows continue to the right.
+
+## 0.16.8 — 2026-10-20
+
+### Added
+
+- One-time Miro import in Board settings, with a layout preview, selected frames, draft cards or project tasks, assignee matching and a conversion report. Imports copy supported images/files locally, preserve editable objects and connectors, and can create a canvas or add only new objects to the current one. Miro connections are temporary and do not sync subsequent edits.
+
+### Changed
+
+- Phone task and planning toolbars keep search and layout switching visible, with saved views, filters, grouping and other options together in View options.
+- List and Tree rows reflow on narrow screens so titles and task actions stay visible. Desktop rows retain their compact layout. Comments and History replace the Details pane on smaller screens, with a shared switch to return.
+- Production assets are bundled, compressed and cached by content hash. Board, drawing and Documents controllers load when first opened; development and the prepared offline drawing shell remain available.
+
+### Fixed
+
+- Board text chooses a readable colour over custom frame or canvas backgrounds, including light-coloured Miro frames in dark mode.
+- Board task cards and task editors share one comment conversation. Opening an older card preserves and imports its legacy comments, replies and reactions without duplicating them.
+- Closing task details returns keyboard focus to the original task, including after autosave refreshes its row. Invalid edits stay open with options to keep editing or keep a browser draft and close.
+- Closing a task's date popup retains keyboard focus on its date button when autosave refreshes the view.
+- Board priority controls keep their keyboard focus ring visible when zoomed.
+- The attachment drop instruction also opens a file chooser for keyboard and touch users.
+- Table task IDs remain visible on phones. Table open actions, Calendar agenda tasks and zoomed Board card controls have full touch targets.
+- Board cards expose their individual controls correctly to assistive technology. Markdown checklists have accessible names, task date buttons include their visible date, and Timeline's Today marker has a valid semantic role.
+- Sticky notes and shapes choose readable text for custom fills in either theme and in image/PDF exports.
+- Kanban supports Alt+Up/Down to reorder tasks within a column or swimlane, with focus retained and the move announced.
+- Overdue dates have sufficient text contrast in the light theme.
+
+## 0.16.7 — 2026-10-20
+
+### Added
+
+- Documents now has Markdown-native Live preview, Source and Reading views, with formatting shortcuts, find/replace, folding, an outline, document links and embeds, backlinks, checklists, tables, callouts, footnotes, highlights, math and Mermaid diagrams. Attach files from Insert or by dropping them into the editor. Switching views preserves the Markdown source and undo history.
+- Open in Obsidian opens the same document in a configured local vault for Obsidian's native features and plugins. Vault settings are stored per browser/device.
+
+## 0.16.6 — 2026-10-20
+
+### Changed
+
+- Removed Task scope and its explanatory text from the Board toolbar.
+
+## 0.16.5 — 2026-10-20
+
+### Changed
+
+- Removed the introductory help text from Table's Sort and Column filters dropdowns. Dropdown contents use smaller 28px desktop controls, tighter spacing and shared styling; touch controls retain 44px targets.
+- Added more space between the Documents welcome text and New document button.
+
+## 0.16.4 — 2026-10-20
+
+### Added
+
+- Reset grouping inside the Table Group dropdown clears both grouping levels while preserving sorting, filters and column settings.
+
+## 0.16.3 — 2026-10-20
+
+### Fixed
+
+- Task and Planning toolbar controls now share the same outer height, including the view switcher. Search icons stay vertically centered in standard, Compact and touch layouts.
+
+## 0.16.2 — 2026-10-20
+
+### Fixed
+
+- List and Tree place the drag handle directly beside the checkbox. Tree's expand/collapse control sits before the drag handle, keeping task columns aligned between views.
+
+## 0.16.1 — 2026-10-20
+
+### Changed
+
+- List, Tree and Table use smaller 13px checkboxes, including Table’s select-all checkbox. Keyboard access and generous touch targets are preserved.
+
+## 0.16.0 — 2026-10-20
+
+### Added
+
+- Documents sits between Overview and Planning, with a searchable explorer and rich text/Markdown editor. Documents save automatically, support Markdown import/export, retain offline edits and can be restored from Trash.
+- Relationship rows show assignee, priority and status with the same colours as other task views. Sort each relationship group by these fields, in either direction.
+
+### Changed
+
+- Buttons, fields, dropdown options and editor controls now use shared sizing throughout the workspace: 36px normally, 32px in Compact mode and 44px on touch screens.
+
+## 0.15.55 — 2026-10-20
+
+### Added
+
+- Table view has a Description column beside Title, with compact text previews. Click a description to edit it in the task editor. The column supports hiding, resizing, reordering, saved views, filtering, sorting and CSV export; existing descriptions and attachments are preserved.
+
+### Changed
+
+- Removed the grouping summary text (such as “Assignee → Title”) beside Reset table view.
+
+## 0.15.54 — 2026-10-20
+
+### Changed
+
+- Table rows, headers, group headings and toolbar gaps are more compact. Desktop rows are approximately 32px high, with tighter cell padding and row controls; touch controls keep 44px targets. Font sizes and configured column widths are preserved.
+
+## 0.15.53 — 2026-10-20
+
+### Changed
+
+- Removed the visible selection count and keyboard-help text from the Table toolbar. Selection actions, screen-reader announcements and keyboard shortcuts remain available.
+
+## 0.15.52 — 2026-10-20
+
+### Changed
+
+- Table column drag and menu icons appear only on the hovered header, without shifting its title. They remain visible during keyboard focus, dragging or an open menu, and on touch screens.
+
+## 0.15.51 — 2026-10-20
+
+### Changed
+
+- Table columns have visible drag handles, a preview of their cell values and clearer placement feedback. Dragging highlights the whole column, scrolls smoothly near either edge and keeps the moved column in view. Touch users can swipe column titles to scroll; use the grip to reorder. Sorting, widths, hidden fields and saved layouts are preserved.
+
+## 0.15.50 — 2026-10-20
+
+### Changed
+
+- Table cells show task types as icons and assignees as colored avatars. All editable dropdown cells share the same arrow, spacing and menu behavior; full names remain available in tooltips and menus.
+
+## 0.15.49 — 2026-10-20
+
+### Changed
+
+- List and Tree show the assignee as a compact avatar, with the name available on hover and in the selection menu. Drag handles come first, the open button sits between completion and task type, and clicking the task type or ID also opens the task editor.
+
+## 0.15.48 — 2026-10-20
+
+### Changed
+
+- Task date popups save valid date changes automatically and keep the popup open while editing. Removed the heading, task title and Save dates button; Clear dates now sits beside Close and clears both dates immediately across List, Tree and Timeline.
+
+## 0.15.47 — 2026-10-20
+
+### Changed
+
+- Lowest priority uses two downward chevrons, mirroring Urgent's two upward chevrons, consistently across task menus and views.
+
+## 0.15.46 — 2026-10-20
+
+### Fixed
+
+- List and Tree share the same heading height and root-row column positions, so switching views no longer shifts tasks down or sideways. Child tasks retain their indentation, and row controls stay aligned on desktop and touch screens.
+
+## 0.15.45 — 2026-10-19
+
+### Added
+
+- Edit assignee, priority, status and title directly in compact List and Tree rows. Click the date to edit start and due dates in a small popup, or use the left-hand open icon for the task side panel. Titles save on Enter or when leaving the field; Escape cancels unfinished edits.
+
+### Fixed
+
+- Shared dropdown menus now respond reliably to taps in WebKit when the browser omits the click event after cancelling its native picker.
+
+## 0.15.44 — 2026-10-19
+
+### Changed
+
+- Renamed the lowest priority from None to Lowest across task editors, cards, groups, filters and automation menus. New local tasks and Board drafts default to Medium; existing priorities and saved choices are preserved.
+
+## 0.15.43 — 2026-10-19
+
+### Added
+
+- Task attachments appear in a compact list beneath the description. Click a file to open a nearby preview with a download action; images, text, Markdown, CSV and supported browser PDF viewers display in the popup. Drag-and-drop uploads, existing attachments and portable Markdown links are preserved across task and Board editors.
+
+### Fixed
+
+- CSV attachments now return the correct content type so they can be opened and downloaded.
+
+## 0.15.42 — 2026-10-19
+
+### Changed
+
+- Status settings now use a compact list with one column header, smaller editable rows and no repeated status labels, internal IDs or help text. Completed, default, reorder and remove controls remain available, with compact wrapping on smaller screens.
+
+## 0.15.41 — 2026-10-19
+
+### Changed
+
+- Priority menus now list Urgent, High, Medium, Low and None, consistently across task editors, Board cards, Table cells, filters and automation settings.
+
+## 0.15.40 — 2026-10-19
+
+### Added
+
+- Consistent assignee, priority and status colors in task editors, selection menus, List, Tree, Table, Kanban and Board cards. People keep a stable color; priorities run from blue through amber and orange to red, with neutral unassigned/no-priority values. Status colors also carry into Overview, Calendar and Timeline, and assignee colors into Capacity.
+
+## 0.15.39 — 2026-10-19
+
+### Changed
+
+- Added more space above and below Description in the shared task editor, separating it from task fields and Relationships on desktop and mobile.
+
+## 0.15.38 — 2026-10-19
+
+### Added
+
+- A compact Relationships section in the task editor brings parent, child, blocked-by, blocks and related-task links together. Search by task ID or title, open linked tasks and remove links; hierarchy and blocker changes also update Tree and Board. Invalid hierarchy and blocking cycles are prevented.
+
+## 0.15.37 — 2026-10-19
+
+### Changed
+
+- Comments and version history open to the left of a right-docked task editor, keeping the editor anchored to the right. Compact board editors retain their existing placement and narrow screens keep panels within the viewport.
+
+## 0.15.36 — 2026-10-19
+
+### Changed
+
+- Removed Parent task, Dependencies and the Markdown file path from the shared task editor. Existing parent links and dependencies are preserved when editing tasks or board drafts.
+
+## 0.15.35 — 2026-10-19
+
+### Changed
+
+- Removed the Planning section from the task editor. Existing estimates, recurrence settings and custom-field values are preserved when editing tasks.
+
+## 0.15.34 — 2026-10-19
+
+### Changed
+
+- The shared task editor shows card type, ID and title together, followed by assignee, priority, status, start date and due date, then the description. Narrow panels wrap the metadata without changing its order.
+- Removed Save as template, Attach file, Related records and Subtasks from the task editor. Existing relationships and saved draft subtasks are preserved.
+
+### Added
+
+- Drop files onto the task editor to attach them to the description as image previews or file links. Multiple uploads show progress and errors, preserve ongoing edits and save automatically with existing tasks and board drafts.
+
+## 0.15.33 — 2026-10-19
+
+### Changed
+
+- Table parent/child outlines are always enabled, including existing saved views. The Group menu now shows just the grouping fields and expand/collapse actions, without the checkbox or explanatory text.
+- Tree's empty area matches the List page background. List and Tree use the shared New task button in the header instead of duplicate add-task links below their rows or in empty states.
+
+## 0.15.32 — 2026-10-19
+
+### Changed
+
+- List and Tree use slimmer, single-line task rows: type icon, ID, assignee, priority icon, due date and title. Desktop rows are roughly half their previous height; touch controls retain their larger targets and narrow views scroll to keep every field accessible.
+
+## 0.15.31 — 2026-10-19
+
+### Changed
+
+- Scrollbars appear only when content overflows in Kanban, swimlanes, Table, Tree and Timeline. Views still fill the available space, without empty scrollbar tracks or reserved gutters.
+
+## 0.15.30 — 2026-10-19
+
+### Added
+
+- Group Kanban tasks into collapsible swimlanes by assignee, priority or task type, with status columns aligned across lanes. Grouping is remembered per project and included in saved views. Dragging between lanes updates the matching field, and Add task inherits its lane and status.
+
+## 0.15.29 — 2026-10-19
+
+### Changed
+
+- Kanban cards use a compact two-row layout: task icon, ID and title above assignee and priority. Reduced padding keeps more cards visible, while other details remain available in the full task editor.
+
+### Fixed
+
+- Tapping Kanban card metadata or padding opens the task editor on Safari as well as tapping the title.
+
+## 0.15.28 — 2026-10-18
+
+### Added
+
+- Schedule tasks directly on Timeline with two clicks or taps: choose the start day, then the end day. A preview follows the chosen dates; Escape cancels before saving.
+- Set a custom start/end range for the Timeline, or return to Automatic range. The setting also works in embedded Board timelines and does not change task dates.
+
+## 0.15.27 — 2026-10-18
+
+### Added
+
+- Reorder tasks in Table, List and Tree using row drag handles or Alt + Up/Down. Manual order saves automatically and carries between views; Tree keeps children with their parents. Moving across groups clears grouping without changing task fields.
+
+## 0.15.26 — 2026-10-18
+
+### Added
+
+- Set and edit task dates directly from Timeline using a compact panel beside the row. Set dates, the row's calendar button or a task bar opens the shared start/due calendar controls, including timelines embedded in Boards.
+
+## 0.15.25 — 2026-10-18
+
+### Added
+
+- Timeline has a Show weekends option that remembers your choice. Hiding Saturday and Sunday compresses the timeline without changing task dates, including timelines embedded in boards.
+
+### Changed
+
+- Timeline uses a two-row date header with month bands, Monday-aligned weekly labels, week-range tooltips and a today marker. Date dragging, resizing and scheduling follow the visible date columns.
+
+## 0.15.24 — 2026-10-18
+
+### Changed
+
+- Board tools are grouped into Navigate, Tasks, Create, Arrange and History, with labelled sections and scrolling on smaller screens.
+- Timeline fills its available height and width, keeps scrolling inside the view and shows unplanned tasks as full-width rows with access to their date editor. Date labels extend across the available timeline width.
+
+## 0.15.23 — 2026-10-18
+
+### Fixed
+
+- Updating a project frame with existing positions preserved places new dependent cards to the right of their prerequisites' actual positions and widths. New chains and child trees follow the initial layout spacing, avoid occupied cards and expand the frame as needed.
+
+## 0.15.22 — 2026-10-18
+
+### Changed
+
+- Simplified the Update project frame panel to the rearrange option, its hint and Update frame. Removed change counts, explanatory copy, expandable card lists and the duplicate Cancel button; the close button, Escape and outside taps still dismiss it.
+
+## 0.15.21 — 2026-10-18
+
+### Changed
+
+- Update plan opens a compact panel beside its project frame, matching board comments and draft review. The board stays visible and usable; Escape, Cancel or an outside click/tap dismisses the preview without changing the frame.
+- Small contextual panels are now the project-wide default for routine actions, with blocking or fullscreen dialogs reserved for warnings and major workflows.
+
+## 0.15.20 — 2026-10-18
+
+### Fixed
+
+- Project frames update successfully on iPads and other devices using local-network HTTP, where the browser's `randomUUID` API is unavailable. Shared ID generation also covers new board cards, task drafts, comments, saved views, custom fields, automation rules and offline strokes.
+
+## 0.15.19 — 2026-10-17
+
+### Changed
+
+- Removed the filter icon from table column headers. Filtering remains available in each column's actions menu and the Column Filters toolbar; the actions button indicates an active filter.
+
+## 0.15.18 — 2026-10-17
+
+### Changed
+
+- Project Settings uses a grouped left sidebar with dedicated General, Organisation & teams, Statuses & workflow, Types & hierarchy, Custom fields, Data sources & sync, Import notes, Automation, Diagnostics and Archive & recovery pages. Templates and duplicate workflow controls are removed from the settings menu.
+- Settings pages and source/rule editors have their own URLs with Back, Forward and reload support. Pages save independently, retain edits when a conflicting save fails and warn before discarding unsaved changes. Small screens use a section selector.
+- Automation uses valid priority, status and assignee choices, supports editing rules and saves changes disabled for review. Import notes shows selected files before creating tasks; diagnostics presents readable health metrics with optional technical details.
+
+### Fixed
+
+- Shared form labels use the theme's readable text colour instead of a faint fixed green.
+
+## 0.15.17 — 2026-10-17
+
+### Changed
+
+- Removed the sidebar's organisation overview, search, recovery, archived-project controls and vault information panel. Search, recovery, archived projects and account actions are available in Personal settings; the organisation breadcrumb and Help retain overview and vault guidance.
+
+## 0.15.16 — 2026-10-17
+
+### Added
+
+- Local automatic sign-in opens the workspace as George with administrator access, including project data sources and background sync. This single-user mode removes the password prompt for local/LAN access and shows the active identity in the profile menu.
+
+## 0.15.15 — 2026-10-17
+
+### Changed
+
+- Removed the task-count footer from List, Tree, Table and Kanban. Clear filters is available in the Filters menu; pagination and task-creation controls remain in place.
+
+## 0.15.14 — 2026-10-17
+
+### Changed
+
+- Tree fills the available width and height, even with few tasks or no results. Scrollbars stay at the viewport edges while the heading, Add a root task and task count remain visible. Expanding branches and browser Back preserve the tree's scroll position; nested tasks remain reachable on smaller screens.
+
+## 0.15.13 — 2026-10-17
+
+### Added
+
+- Help now opens a searchable wiki page with article navigation, contents links and browser Back/Forward support. Step-by-step guides cover combining project sources, Obsidian, Jira Cloud and SharePoint Excel, including setup, permissions, mapping, sync and troubleshooting. Existing local-access and keyboard-shortcut help remains available.
+
+### Changed
+
+- Kanban fills the available view height even with few or no tasks. Columns scroll independently beneath fixed headers, with the horizontal scrollbar along the bottom; dragging scrolls the target column and Back restores the previous scroll positions.
+
+## 0.15.12 — 2026-10-17
+
+### Added
+
+- Browser Back and Forward now navigate throughout the workspace: project views, Overview shortcuts, canvases, project settings, projects and organisation pages. Returning restores the view's filters, sorting and table layout; refreshing keeps the current location.
+
+### Changed
+
+- The table fills the available width and height, keeping its scrollbars at the bottom and right edges even with few tasks or visible columns. Column widths remain adjustable without stretching to fill empty space.
+
+## 0.15.11 — 2026-10-17
+
+### Changed
+
+- New task uses the same compact floating panel in Overview, Tasks, Planning and Boards, with consistent field spacing, a scrollable form and an always-visible Create task footer. The panel opens beneath the view toolbar and fits smaller screens.
+
+## 0.15.10 — 2026-10-17
+
+### Changed
+
+- Project navigation is ordered Overview, Planning, Tasks, Boards in the desktop header and mobile view selector.
+
+## 0.15.9 — 2026-10-17
+
+### Fixed
+
+- Dropdown action rows now respond to hover, press and keyboard focus across the shared menus. Column action menus are compact, include icons and applied-state indicators, and preserve focus after sorting, grouping or hiding columns. Arrow keys navigate actions; Escape returns to the trigger. Touch targets remain comfortably sized.
+- Column filters focus the chosen field when other filters already exist, and open column menu buttons stay visibly highlighted.
+
+## 0.15.8 — 2026-10-17
+
+### Changed
+
+- Project navigation now sits in the centre of the top header, followed by New task, with Project settings on the right. The Project dropdown is removed; workflow, import and template tools live in Project settings and remain available in the command menu. Saved views stay accessible from the view toolbar or the board’s More menu.
+
+### Fixed
+
+- Table headers use one consistent background, including pinned ID and Title columns and their action buttons, in both light and dark themes.
+
+## 0.15.7 — 2026-10-17
+
+### Fixed
+
+- Table columns respect their chosen widths after reordering, including Type in the first position. Narrow tables no longer stretch columns to fill the viewport, and keyboard resizing keeps focus on the column edge.
+
+### Changed
+
+- Column drag handles appear when hovering over a header, using keyboard focus or dragging, keeping the table header uncluttered at rest. Narrow headers keep labels readable and retain filtering in the column actions menu.
+
+## 0.15.6 — 2026-10-17
+
+### Fixed
+
+- Project navigation tabs stay in the same positions when switching views. Selecting a tab no longer changes its text width or shifts neighbouring buttons.
+
 ## 0.15.5 — 2026-10-17
 
 ### Added

@@ -1,0 +1,222 @@
+/* Shared sizing contract, loaded after view styles. Geometry is intentionally
+   authoritative here so contextual controls cannot drift back to local sizes.
+   Content cards, multiline editors, canvas objects and resize handles are not
+   controls and keep their own dimensions. */
+:root {
+  --control-height: 36px;
+  --control-padding: 10px;
+  --control-font-size: 13px;
+  --control-icon-size: 16px;
+  --menu-control-height: 28px;
+  --menu-panel-padding: 8px;
+  --task-checkbox-size: 13px;
+  --task-checkbox-target: 17px;
+}
+:root[data-density="compact"] { --control-height: 32px; }
+@media (pointer: coarse) {
+  :root, :root[data-density] {
+    --control-height: 44px;
+    --menu-control-height: 44px;
+    --task-checkbox-target: 44px;
+  }
+}
+
+/* Dropdown contents use one compact variant; triggers retain the page size. */
+:is(.board-menu-panel, .select-menu, .task-picker-popover, .document-panel,
+    .selection-menu > .selection-popover) {
+  --control-height: var(--menu-control-height);
+  --control-padding: 8px;
+  --control-font-size: 12px;
+  --control-option-padding: 4px;
+  font-size: var(--control-font-size);
+}
+.board-menu .board-menu-panel {
+  padding: var(--menu-panel-padding);
+  gap: 4px;
+}
+.board-menu-panel .field {
+  gap: 4px;
+  padding-block: 3px;
+  font-size: var(--control-font-size);
+}
+
+:is(
+  .button, .icon-button, .tab, .task-picker-trigger,
+  .avatar, .organisation-crumb, .project-link, .directory-link, .side-new,
+  .organisation-actions button, .side-label button, .settings-navigation nav a,
+  .board-menu > summary, .selection-menu > summary, .color-picker > summary,
+  .view-layout-switcher button, .selection-action, .symbol-select,
+  .board-tools button,
+  .board-menu-panel > button, .selection-popover > button,
+  .select-menu [role="option"], .task-picker-popover [role="option"],
+  .date-picker-head button, .date-picker-foot button, .date-picker-popover td button,
+  .document-link, .document-panel-item, .cm-search .cm-button, .row-choice, .row-due, .row-task-link, .row-open,
+  .task-reorder-handle, .tree-toggle, .tree-toggle-spacer,
+  .table-description, .table-open
+) {
+  box-sizing: border-box;
+  min-height: var(--control-height) !important;
+  height: var(--control-height) !important;
+  padding-block: 0 !important;
+  line-height: 1.4;
+}
+:is(
+  .button, .tab, .task-picker-trigger, .board-menu > summary,
+  .view-layout-switcher button, .board-menu-panel > button,
+  .select-menu [role="option"], .task-picker-popover [role="option"],
+  .date-picker-foot button, .document-link, .document-panel-item, .cm-search .cm-button
+) {
+  padding-inline: var(--control-padding) !important;
+  font-size: var(--control-font-size) !important;
+}
+/* Options may wrap without clipping translated or long labels. */
+:is(.board-menu-panel > button, .selection-popover > button,
+    .select-menu [role="option"], .task-picker-popover [role="option"], .document-link, .document-panel-item) {
+  height: auto !important;
+  padding-block: var(--control-option-padding, 5px) !important;
+}
+:is(
+  input:not([type="hidden"], [type="checkbox"], [type="radio"], [type="range"], [type="color"], [type="file"]),
+  select:not([multiple])
+) {
+  box-sizing: border-box;
+  min-height: var(--control-height) !important;
+  height: var(--control-height) !important;
+  padding-block: 0 !important;
+  line-height: normal;
+}
+:is(input, select):not(.title-input, .task-title, [name="title"], [multiple],
+    [type="hidden"], [type="checkbox"], [type="radio"], [type="range"], [type="color"], [type="file"]) {
+  font-size: var(--control-font-size) !important;
+}
+:is(.icon-button, .avatar, .side-label button, .organisation-actions button[aria-label],
+    .board-tools button, .row-open,
+    .task-reorder-handle, .tree-toggle, .tree-toggle-spacer) {
+  width: var(--control-height) !important;
+  min-width: var(--control-height) !important;
+  flex: 0 0 var(--control-height) !important;
+  padding-inline: 0 !important;
+}
+:is(.selection-action, .selection-menu > summary) {
+  min-width: var(--control-height) !important;
+  padding-inline: 8px !important;
+}
+:is(.button, .icon-button, .tab, .selection-action, .view-layout-switcher button,
+    .board-menu > summary, .board-tools button) > .icon {
+  width: var(--control-icon-size);
+  height: var(--control-icon-size);
+  flex-shrink: 0;
+}
+.task-picker.icon-only .task-picker-trigger {
+  width: calc(var(--control-height) + 12px);
+  padding-inline: 6px !important;
+}
+.view-layout-switcher {
+  padding: 0;
+  border: 0;
+  box-shadow: inset 0 0 0 1px var(--line);
+}
+.search > .icon {
+  top: 50%;
+  transform: translateY(-50%);
+  width: var(--control-icon-size);
+  height: var(--control-icon-size);
+}
+.planning-head { flex-wrap: wrap; }
+.planning-head > .date-field { flex: 0 1 180px; }
+.planning-head > h2 { overflow-wrap: anywhere; }
+.task-table.spreadsheet {
+  --table-selection-width: 94px;
+  --table-row-height: var(--control-height);
+  --table-row-action-height: var(--control-height);
+  --table-header-height: var(--control-height);
+}
+.task-checkbox,
+.task-row > .check-button {
+  position: relative;
+  display: inline-grid;
+  place-items: center;
+  flex: 0 0 var(--task-checkbox-target);
+  width: var(--task-checkbox-target);
+  height: var(--task-checkbox-target);
+  padding: 0;
+  margin: 0;
+  cursor: pointer;
+}
+.task-table.spreadsheet .task-checkbox > input[type="checkbox"] {
+  width: var(--task-checkbox-size);
+  height: var(--task-checkbox-size);
+  min-height: var(--task-checkbox-size);
+  margin: 0;
+  padding: 0;
+  cursor: inherit;
+}
+/* The small visual sits inside the existing keyboard/touch control. */
+.task-row > .check-button {
+  border: 0;
+  background: transparent;
+}
+.task-row > .check-button::before {
+  content: "";
+  box-sizing: border-box;
+  position: absolute;
+  inset: auto;
+  width: var(--task-checkbox-size);
+  height: var(--task-checkbox-size);
+  border: 1px solid var(--line);
+  border-radius: 3px;
+  background: var(--surface);
+}
+.task-row > .check-button.done::before {
+  border-color: var(--green);
+  background: var(--surface-soft);
+}
+.task-row > .check-button > .icon {
+  position: relative;
+  width: 10px;
+  height: 10px;
+  color: var(--green);
+}
+@media (pointer: coarse) {
+  .task-table.spreadsheet { --table-selection-width: 122px; }
+}
+.task-table.spreadsheet .task-row-actions { gap: 2px; }
+.task-row > :is(.row-assignee, .row-priority, .task-type) {
+  flex-basis: var(--control-height);
+}
+/* Inputs inside an outlined field share its height, rather than stacking
+   their own padding/borders on top of it. */
+.date-field > input { padding-right: calc(var(--control-height) + 4px) !important; }
+.date-picker-trigger {
+  top: 0;
+  bottom: 0;
+  right: 1px;
+  width: var(--control-height);
+}
+#selection-tools .geometry-field { height: var(--control-height); }
+.date-picker-popover { width: max(310px, calc(var(--control-height) * 7 + 26px)); }
+.date-picker-popover td { padding: 0; }
+/* Hidden controls must stay hidden even when their component uses flex/grid. */
+[hidden] { display: none !important; }
+
+.task-attachment-choose { min-height: var(--control-height); text-align: start; }
+@media (pointer: coarse) {
+  .task-table.spreadsheet { --table-selection-width: 142px; }
+  .spreadsheet .task-row-actions > .table-open {
+    width: var(--control-height); min-width: var(--control-height);
+    flex-basis: var(--control-height);
+  }
+  .agenda-row > button { min-height: 44px; }
+  #canvas .live-card-actions > button,
+  #canvas .canvas-task-priority,
+  #canvas .canvas-task-status,
+  #canvas .canvas-task-assignee {
+    min-width: var(--canvas-touch-target, 44px) !important;
+    min-height: var(--canvas-touch-target, 44px) !important;
+    height: var(--canvas-touch-target, 44px) !important;
+  }
+  #canvas .canvas-task-priority select { height: 100% !important; }
+  #canvas .board-node.task .live-card-state {
+    grid-template-columns: minmax(34px, auto) var(--canvas-touch-target, 44px) repeat(2, minmax(0, 1fr));
+  }
+}

@@ -1,8 +1,15 @@
-import { canTransition } from "./workflow-model.js";
+import { kanbanDropChanges, kanbanDropError, laneValue } from "./kanban-model.js";
+import { reorderTasks } from "./task-order-model.js";
 export function kanbanDrag(ctx) {
   const { state, task, patchTask, renderView, storage, toast } = ctx;
   let drag = null,
     frame = null;
+  function changesFor(t, column) {
+    return kanbanDropChanges(t, column.dataset.dropStatus, column.dataset.kanbanField, column.dataset.kanbanValue);
+  }
+  function dropError(t, column) {
+    return t ? kanbanDropError(state.config, t, changesFor(t, column), state.tasks) : "This task is no longer available.";
+  }
   const reduce = matchMedia("(prefers-reduced-motion: reduce)");
   function clean() {
     cancelAnimationFrame(frame);
@@ -28,13 +35,7 @@ export function kanbanDrag(ctx) {
     const column = document
       .elementFromPoint(x, y)
       ?.closest("[data-drop-status]");
-    const permitted =
-      column &&
-      canTransition(
-        state.config,
-        task(drag.id)?.status,
-        column.dataset.dropStatus,
-      );
+    const permitted = column && !dropError(task(drag.id), column);
     document.querySelectorAll(".kanban-column.over").forEach((el) => {
       if (el !== column) el.classList.remove("over");
     });
@@ -87,9 +88,16 @@ export function kanbanDrag(ctx) {
           ? Math.min(18, (p - end + 60) / 3)
           : 0;
     const horizontal = speed(drag.x, r.left, Math.min(innerWidth, r.right));
-    const vertical = speed(drag.y, 0, innerHeight);
     if (drag.y >= r.top && drag.y <= r.bottom) board.scrollLeft += horizontal;
-    if (drag.x >= r.left && drag.x <= r.right) window.scrollBy(0, vertical);
+    // Swimlanes share one scroll surface; ungrouped columns scroll independently.
+    const column = drag.column;
+    const grouped = board.classList.contains("kanban-swimlanes");
+    const scroller = grouped ? board : column;
+    const bounds = scroller?.getBoundingClientRect();
+    const headerHeight = grouped ? board.querySelector(".kanban-lanes-header").offsetHeight : column?.querySelector(".column-header")?.offsetHeight || 0;
+    const vertical = bounds && drag.x >= bounds.left && drag.x <= bounds.right && drag.y >= bounds.top && drag.y <= bounds.bottom
+      ? speed(drag.y, bounds.top + headerHeight, Math.min(innerHeight, bounds.bottom)) : 0;
+    if (vertical) scroller.scrollTop += vertical;
     if (horizontal || vertical) update(drag.x, drag.y);
     frame = requestAnimationFrame(scroll);
   }
@@ -118,15 +126,10 @@ export function kanbanDrag(ctx) {
       Math.max(12, Math.min(r.height - 12, e.clientY - r.top)),
     );
     for (const col of document.querySelectorAll("[data-drop-status]")) {
-      if (
-        !canTransition(
-          state.config,
-          task(card.dataset.dragTask)?.status,
-          col.dataset.dropStatus,
-        )
-      ) {
+      const error = dropError(task(card.dataset.dragTask), col);
+      if (error) {
         col.classList.add("workflow-blocked");
-        col.title = "This move is not allowed by the project workflow.";
+        col.title = error;
       }
     }
     drag = {
@@ -166,6 +169,8 @@ export function kanbanDrag(ctx) {
       return;
     }
     const status = column.dataset.dropStatus;
+    const changes = changesFor(task(id), column);
+    const field = column.dataset.kanbanField, value = column.dataset.kanbanValue;
     // Keep the visible order even when the view was sorted by another field.
     // Hidden cards retain their relative order after the visible cards.
     const visible = [...column.querySelectorAll("[data-drag-task]")]
@@ -173,7 +178,7 @@ export function kanbanDrag(ctx) {
       .filter((key) => key !== id);
     const hidden = state.tasks
       .filter(
-        (t) => t.status === status && t.id !== id && !visible.includes(t.id),
+        (t) => t.status === status && (!field || laneValue(t, field) === value) && t.id !== id && !visible.includes(t.id),
       )
       .sort(
         (a, b) => (a.order || 0) - (b.order || 0) || a.id.localeCompare(b.id),
@@ -192,12 +197,11 @@ export function kanbanDrag(ctx) {
       const saving = Promise.all(
         ordered.flatMap((key, order) => {
           const t = task(key);
-          return t && (t.order !== order || t.status !== status)
-            ? [patchTask(key, { status, order }, false)]
-            : [];
+          const patch = { ...(t?.order !== order ? { order } : {}), ...(key === id ? changes : {}) };
+          return t && Object.keys(patch).length ? [patchTask(key, patch, false)] : [];
         }),
       );
-      renderView();
+      renderView(true);
       await saving;
     } catch (error) {
       toast(error.message, true);
@@ -209,6 +213,24 @@ export function kanbanDrag(ctx) {
     "keydown",
     (e) => {
       if (drag && e.key === "Escape") clean();
+      const card = e.target.closest("[data-drag-task]");
+      if (!card || state.view !== "kanban" || !e.altKey || !["ArrowUp", "ArrowDown"].includes(e.key)) return;
+      e.preventDefault();
+      e.stopImmediatePropagation();
+      const ids = [...card.parentElement.querySelectorAll("[data-drag-task]")].map(el => el.dataset.dragTask);
+      const id = card.dataset.dragTask;
+      const after = e.key === "ArrowDown";
+      const target = ids[ids.indexOf(id) + (after ? 1 : -1)];
+      if (!target) return;
+      const changes = reorderTasks(state.tasks, ids, id, target, after);
+      state.sort = "order";
+      state.sortDir = 1;
+      storage.set(`sort:${state.project.id}`, "order");
+      const saving = Promise.all(changes.map(({ id, order }) => patchTask(id, { order }, false)));
+      renderView(true);
+      document.querySelector(`[data-drag-task="${CSS.escape(id)}"] [data-action="task-open"]`)?.focus({ preventScroll: true });
+      toast(`${task(id).title} moved ${after ? "down" : "up"} in ${card.parentElement?.getAttribute("aria-label") || "its column"}.`);
+      saving.catch(error => toast(error.message, true));
     },
     true,
   );

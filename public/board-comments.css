@@ -163,9 +163,48 @@
   padding: 4px;
 }
 
-/* Draft review uses the same anchored surface as object comments. */
-.draft-review-panel[open] { display: flex; height: auto; z-index: 120; }
-.draft-review-panel .dialog-body { padding: 0 12px 12px; overflow-y: auto; min-height: 0; }
-.draft-review-panel .dialog-body p { margin: 10px 0; font-size: 13px; overflow-wrap: anywhere; }
-.draft-review-panel .dialog-foot { padding: 10px 12px; gap: 8px; }
-.draft-review-panel .button { padding: 8px 10px; font-size: 12px; }
+/* Object actions use the same anchored surface as comments. */
+.board-object-panel[open] {
+  display: flex;
+  height: auto;
+  z-index: 120;
+}
+.board-object-panel .board-comments-head,
+.board-object-panel .dialog-foot {
+  flex-shrink: 0;
+}
+.board-object-panel .dialog-body {
+  padding: 0 12px 12px;
+  overflow-y: auto;
+  min-height: 0;
+  overscroll-behavior: contain;
+}
+.board-object-panel .dialog-body p {
+  margin: 10px 0;
+  font-size: 13px;
+  overflow-wrap: anywhere;
+}
+.board-object-panel .dialog-foot {
+  padding: 10px 12px;
+  gap: 8px;
+}
+.board-object-panel .button {
+  padding: 8px 10px;
+  font-size: 12px;
+}
+.frame-update-option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  cursor: pointer;
+}
+.frame-update-option input {
+  flex-shrink: 0;
+}
+.frame-update-panel [data-frame-error]:empty {
+  display: none;
+}
+.frame-update-panel [data-frame-error] {
+  color: var(--danger);
+}

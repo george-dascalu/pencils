@@ -1,3 +1,4 @@
+import { selectSettingsPage } from "./menu-controls.mjs";
 import { selectProjectView } from "./menu-controls.mjs";
 import assert from "node:assert/strict";
 import fs from "node:fs/promises";
@@ -45,7 +46,7 @@ try {
   await page.goto(`http://127.0.0.1:${server.address().port}`);
   await page.locator(".project-link").click();
   await page.locator("[data-action=project-edit]").click();
-  await page.locator("[data-status-details] > summary").click();
+  await selectSettingsPage(page, "workflow");
   await row("todo").locator("[data-status-name]").fill("Ready queue");
   await page.locator("[data-workflow-rules]").check();
   await row("todo").locator("summary").click();
@@ -74,14 +75,12 @@ try {
     }
   }
   await page.setViewportSize({ width: 1440, height: 1000 });
-  page.once('dialog', d => d.accept());
+  page.once('dialog', d => d.dismiss());
   await page.locator('[data-action=settings-close]').click();
-  await page.locator('[data-action=project-edit]').click();
-  await page.locator('[data-feature=form-restore]').click();
   assert.equal(await row('todo').locator('[data-status-name]').inputValue(), 'Ready queue');
   assert.ok(await page.locator('[data-workflow-rules]').isChecked());
-  await page.getByRole("button", { name: /Save project/ }).click();
-  await page.getByText("Project updated.", { exact: true }).waitFor();
+  await page.getByRole("button", { name: "Save changes", exact: true }).click();
+  await page.getByText("Statuses & workflow saved.", { exact: true }).waitFor();
   await page
     .getByRole("button", { name: "Back to project", exact: true })
     .click();
@@ -93,13 +92,13 @@ try {
     "todo",
     "doing",
   ]);
-  await page.mouse.click(5, 5);
+  await page.locator('#task-form [data-action="dialog-close"]').click();
   await page.locator("[data-action=task-new]:visible").first().click();
   assert.equal(
     await page.locator("#task-form [name=status]").inputValue(),
     "doing",
   );
-  await page.mouse.click(5, 5);
+  await page.locator('#task-form [data-action="dialog-close"]').click();
   await selectProjectView(page, "kanban");
   assert.ok(
     (

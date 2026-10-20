@@ -1,3 +1,4 @@
+import { selectSettingsPage } from "./menu-controls.mjs";
 import { selectProjectView } from "./menu-controls.mjs";
 import assert from "node:assert/strict";
 import fs from "node:fs/promises";
@@ -37,7 +38,7 @@ const until = async (fn) => {
   throw Error("Timed out waiting for change");
 };
 async function setStatuses(names, done) {
-  await page.locator("[data-status-details] > summary").click();
+  if (!(await page.locator("[data-status-details]").evaluate(el => el.open))) await page.locator("[data-status-details] > summary").click();
   const existing = await page.locator('[data-workflow-status]').evaluateAll(els=>els.map(el=>el.dataset.workflowStatus));
   for (const name of names) {
     await page.getByLabel('New status name',{exact:true}).fill(name);
@@ -128,8 +129,9 @@ try {
   await page
     .getByRole("button", { name: "Project settings", exact: true })
     .click();
+  await selectSettingsPage(page, "workflow");
   await setStatuses(["ideas", "active", "shipped"], "shipped");
-  await page.locator("#project-form [type=submit]").click();
+  await page.locator("#workflow-form [type=submit]").click();
   await until(
     async () =>
       (await store.snapshot(project.id)).project.schema.statuses[0] === "ideas",
@@ -168,9 +170,10 @@ try {
   await page
     .getByRole("button", { name: "Project settings", exact: true })
     .click();
+  await selectSettingsPage(page, "workflow");
   assert.ok(await page.locator('[data-workflow-status=ideas] [data-status-remove]').isDisabled());
   assert.deepEqual((await store.snapshot(project.id)).project.schema.statuses, ["ideas","active","shipped"]);
-  await page.locator('#project-form [data-action=settings-close]').click();
+  await page.locator('[data-action=settings-close]').click();
   await page
     .getByRole("button", { name: "Expand sidebar", exact: true })
     .click();

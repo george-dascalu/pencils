@@ -4,10 +4,11 @@ import {
   tableResult,
   tablePreferences,
   validTablePreferences,
+  tableFields,
 } from "../public/table-model.js";
-test("outline keeps children in their own group, orders matching families and retains counts",()=>{
+test("default outline upgrades old preferences, keeps families in their own group and retains counts",()=>{
   const tasks=[{id:"c",title:"Child",parent:"p",status:"todo"},{id:"p",title:"Parent",status:"todo"},{id:"other",title:"Other child",parent:"p",status:"done"}];
-  const prefs={groups:["status"],sorts:[],filters:[],outline:true};
+  const prefs=tablePreferences({groups:["status"],sorts:[],filters:[],outline:false},{fields:[]});
   const result=tableResult(tasks,prefs,{statuses:["todo","done"],types:["task"],done:["done"],fields:[]});
   assert.deepEqual(result.tasks.map(t=>t.id),["p","c","other"]);
   assert.equal(result.depths.get("c"),1);assert.equal(result.depths.get("other"),0);
@@ -61,6 +62,19 @@ const rows = [
 ];
 const prefs = (p = {}) => ({ groups: [], sorts: [], filters: [], ...p });
 const ids = (r) => r.tasks.map((t) => t.id);
+test("Description participates in saved table filters, sorting and advanced queries", () => {
+  const tasks = [{ id: "a", body: "Beta\n\nDetails" }, { id: "b", body: "Alpha" }, { id: "c", body: "" }];
+  const p = prefs({ sorts: [{ field: "body", dir: 1 }] });
+  assert.ok(validTablePreferences(p));
+  assert.equal(tableFields(config).find(f => f.key === "body").name, "Description");
+  assert.deepEqual(ids(tableResult(tasks, p, config)), ["b", "a", "c"]);
+  p.filters = [{ field: "body", op: "contains", value: "details" }];
+  assert.deepEqual(ids(tableResult(tasks, p, config)), ["a"]);
+  p.filters = [];
+  p.query = { match: "all", rules: [{ field: "body", op: "contains", value: "Alpha" }] };
+  assert.ok(validTablePreferences(p));
+  assert.deepEqual(ids(tableResult(tasks, p, config)), ["b"]);
+});
 test("table sorts numeric custom fields, workflow order, priority and natural text with empty values last", () => {
   assert.deepEqual(
     ids(
@@ -244,5 +258,6 @@ test("saved table preferences reject malformed rules and drop removed fields", (
     tablePreferences(prefs({ groups: ["fields.removed"] }), config).groups,
     [],
   );
-  assert.deepEqual(tablePreferences(null, config), prefs());
+  assert.deepEqual(tablePreferences(null, config), prefs({ outline: true }));
+  assert.equal(tablePreferences(prefs(), config).outline, true);
 });

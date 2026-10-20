@@ -3,37 +3,51 @@ export function tableColumnDrag({ state, renderView }, fieldName) {
   let drag = null;
   let suppressClick = false;
   const headers = table => [...table.querySelectorAll("thead th[data-column-key]")];
+  const keyFor = button => button.dataset.columnDrag || button.dataset.tableSortColumn;
+  const controlSelector = ".spreadsheet :is([data-column-drag], [data-table-sort-column])";
   const announce = text => {
     const status = document.querySelector("[data-table-reorder-status]");
     if (status) status.textContent = text;
   };
 
-  function move(key, beforeKey, scroll) {
+  function move(key, beforeKey, scroll, grip = false) {
     const columns = [...state.tableColumns];
     const index = columns.findIndex(c => c.key === key);
     if (index < 0) return;
     const [column] = columns.splice(index, 1);
     const before = columns.findIndex(c => c.key === beforeKey);
     columns.splice(before < 0 ? columns.length : before, 0, column);
-    if (columns.every((c, i) => c === state.tableColumns[i])) return;
-    state.tableColumns = columns;
-    renderView(true);
+    const visible = columns.filter(c => c.visible !== false);
+    const previous = state.tableColumns.filter(c => c.visible !== false);
+    const changed = visible.some((c, i) => c.key !== previous[i].key);
+    // Dropping back in the same visible slot must not move hidden fields.
+    if (changed) {
+      state.tableColumns = columns;
+      renderView(true);
+    }
     const scroller = document.querySelector(".spreadsheet")?.closest(".table-scroll");
     if (scroller) {
       scroller.scrollLeft = scroll.left;
       scroller.scrollTop = scroll.top;
     }
-    document.querySelector(`[data-table-sort-column="${CSS.escape(key)}"]`)?.focus({ preventScroll: true });
-    const position = columns.filter(c => c.visible !== false).findIndex(c => c.key === key) + 1;
-    announce(`${fieldName(key)} moved to column ${position}.`);
+    const button = document.querySelector(`[${grip ? "data-column-drag" : "data-table-sort-column"}="${CSS.escape(key)}"]`);
+    button?.focus({ preventScroll: true });
+    button?.scrollIntoView({ block: "nearest", inline: "nearest" });
+    const position = visible.findIndex(c => c.key === key) + 1;
+    announce(`${fieldName(key)} ${changed ? "moved to" : "kept at"} column ${position}.`);
   }
 
+  function bounds(d) {
+    const rect = d.scroller.getBoundingClientRect();
+    return {
+      top: Math.max(0, rect.top), bottom: Math.min(innerHeight, rect.bottom),
+      left: Math.max(0, rect.left), right: Math.min(innerWidth, rect.right),
+    };
+  }
   function paint() {
     const d = drag;
     if (!d?.active) return;
-    const bounds = d.scroller.getBoundingClientRect();
-    const top = Math.max(0, bounds.top), bottom = Math.min(innerHeight, bounds.bottom);
-    const left = Math.max(0, bounds.left), right = Math.min(innerWidth, bounds.right);
+    const { top, bottom, left, right } = bounds(d);
     d.valid = d.x >= left && d.x <= right && d.y >= top && d.y <= bottom;
     const remaining = headers(d.table).filter(h => h.dataset.columnKey !== d.key);
     const before = remaining.find(h => {
@@ -41,19 +55,28 @@ export function tableColumnDrag({ state, renderView }, fieldName) {
       return d.x < rect.left + rect.width / 2;
     });
     d.beforeKey = before?.dataset.columnKey ?? null;
+    const index = before ? remaining.indexOf(before) : remaining.length;
+    const unchanged = index === d.index;
     const markerX = before?.getBoundingClientRect().left ?? remaining.at(-1)?.getBoundingClientRect().right;
-    d.marker.hidden = !d.valid || markerX == null || markerX < left || markerX > right;
+    d.marker.hidden = !d.valid || unchanged || markerX == null;
     Object.assign(d.marker.style, {
-      left: `${markerX}px`, top: `${top}px`, height: `${bottom - top}px`,
+      left: `${Math.max(left + 2, Math.min(right - 2, markerX))}px`,
+      top: `${top}px`, height: `${bottom - top}px`,
     });
+    const ghostWidth = d.ghost.offsetWidth;
+    const ghostX = d.x + 16 + ghostWidth < innerWidth - 8 ? d.x + 16 : d.x - ghostWidth - 16;
     Object.assign(d.ghost.style, {
-      left: `${Math.max(8, Math.min(innerWidth - d.ghost.offsetWidth - 8, d.x + 12))}px`,
+      left: `${Math.max(8, Math.min(innerWidth - ghostWidth - 8, ghostX))}px`,
       top: `${Math.max(8, Math.min(innerHeight - d.ghost.offsetHeight - 8, d.y + 16))}px`,
     });
     d.ghost.classList.toggle("invalid", !d.valid);
-    if (d.valid && d.announced !== d.beforeKey) {
-      d.announced = d.beforeKey;
-      announce(`Move ${fieldName(d.key)} ${d.beforeKey ? `before ${fieldName(d.beforeKey)}` : "to the end"}.`);
+    const placement = !d.valid ? "Outside table · release to cancel"
+      : unchanged ? "Keep current position"
+      : d.beforeKey ? `Before ${fieldName(d.beforeKey)}` : "After the last column";
+    if (d.announced !== placement) {
+      d.announced = placement;
+      d.placement.textContent = placement;
+      announce(`${fieldName(d.key)}: ${placement}. Column ${index + 1} of ${remaining.length + 1}.`);
     }
   }
 
@@ -61,14 +84,15 @@ export function tableColumnDrag({ state, renderView }, fieldName) {
     const d = drag;
     if (!d?.active) return;
     if (!d.table.isConnected || state.view !== "table") return finish(false);
-    const bounds = d.scroller.getBoundingClientRect();
-    const left = Math.max(0, bounds.left), right = Math.min(innerWidth, bounds.right);
+    const { left, right, top, bottom } = bounds(d);
     const elapsed = Math.min(32, time - (d.time ?? time));
     d.time = time;
-    if (d.valid) {
-      const speed = d.x < left + 48 ? -Math.min(1, (left + 48 - d.x) / 48)
-        : d.x > right - 48 ? Math.min(1, (d.x - right + 48) / 48) : 0;
-      d.scroller.scrollLeft += speed * elapsed * 0.8;
+    // A small overshoot still scrolls, but dropping outside always cancels.
+    if (d.y >= top && d.y <= bottom && d.x >= left - 24 && d.x <= right + 24) {
+      const zone = Math.min(64, (right - left) / 4);
+      const speed = d.x < left + zone ? -Math.min(1, (left + zone - d.x) / zone)
+        : d.x > right - zone ? Math.min(1, (d.x - right + zone) / zone) : 0;
+      d.scroller.scrollLeft += speed * Math.abs(speed) * elapsed * 1.1;
     }
     paint();
     d.frame = requestAnimationFrame(frame);
@@ -78,12 +102,33 @@ export function tableColumnDrag({ state, renderView }, fieldName) {
     const d = drag;
     d.active = true;
     suppressClick = true;
+    d.index = headers(d.table).findIndex(h => h.dataset.columnKey === d.key);
     d.table.classList.add("table-reordering");
-    d.button.closest("th").classList.add("table-column-drag-source");
+    d.source = [...d.table.querySelectorAll(`[data-column-key="${CSS.escape(d.key)}"]`)];
+    d.source.forEach(cell => cell.classList.add("table-column-drag-source"));
     document.body.classList.add("table-column-dragging");
     d.ghost = document.createElement("div");
     d.ghost.className = "table-column-drag-ghost";
-    d.ghost.textContent = fieldName(d.key);
+    d.ghost.style.width = `${Math.min(280, Math.max(144, d.button.closest("th").offsetWidth))}px`;
+    const heading = document.createElement("strong");
+    heading.textContent = fieldName(d.key);
+    d.placement = document.createElement("small");
+    d.ghost.append(heading, d.placement);
+    // Preview a few actual values without duplicating interactive controls or IDs.
+    for (const cell of d.source.filter(cell => cell.matches("td")).slice(0, 3)) {
+      const sample = document.createElement("div");
+      sample.className = "table-column-drag-sample";
+      const value = cell.querySelector(".table-cell-value, .table-cell-readonly");
+      if (value) sample.append(value.cloneNode(true));
+      else sample.textContent = cell.querySelector("input")?.value || cell.textContent.trim() || "—";
+      const colored = cell.querySelector("[data-task-color]");
+      if (colored) {
+        const css = getComputedStyle(colored);
+        sample.style.background = css.backgroundColor;
+        sample.style.color = css.color;
+      }
+      d.ghost.append(sample);
+    }
     d.ghost.setAttribute("aria-hidden", "true");
     d.marker = document.createElement("div");
     d.marker.className = "table-column-drop-marker";
@@ -101,17 +146,18 @@ export function tableColumnDrag({ state, renderView }, fieldName) {
     cancelAnimationFrame(d.frame);
     if (d.button.hasPointerCapture(d.id)) d.button.releasePointerCapture(d.id);
     d.table.classList.remove("table-reordering");
-    d.button.closest("th").classList.remove("table-column-drag-source");
+    d.source?.forEach(cell => cell.classList.remove("table-column-drag-source"));
     document.body.classList.remove("table-column-dragging");
     d.ghost?.remove();
     d.marker?.remove();
     if (!d.active) return;
     suppressClick = true;
     if (commit && d.valid && d.table.isConnected && state.view === "table") {
-      move(d.key, d.beforeKey, { left: d.scroller.scrollLeft, top: d.scroller.scrollTop });
+      move(d.key, d.beforeKey, { left: d.scroller.scrollLeft, top: d.scroller.scrollTop }, d.grip);
     } else {
       d.scroller.scrollLeft = d.scroll.left;
       d.scroller.scrollTop = d.scroll.top;
+      if (d.button.isConnected) d.button.focus({ preventScroll: true });
       announce("Column move cancelled.");
     }
   }
@@ -119,17 +165,21 @@ export function tableColumnDrag({ state, renderView }, fieldName) {
   document.addEventListener("pointerdown", event => {
     suppressClick = false;
     if (drag) return finish(false); // A second finger cancels, rather than moving a column.
-    const button = event.target.closest(".spreadsheet [data-table-sort-column]");
+    const button = event.target.closest(controlSelector);
     if (!button || state.view !== "table" || state.dialog || state.toolDragging ||
         !event.isPrimary || event.button !== 0) return;
+    const grip = button.hasAttribute("data-column-drag");
+    // Header labels remain available for touch scrolling and taps to sort.
+    if (event.pointerType === "touch" && !grip) return;
     const table = button.closest("table"), scroller = table.closest(".table-scroll");
     drag = {
-      button, table, scroller, key: button.dataset.tableSortColumn, id: event.pointerId,
+      button, table, scroller, grip, key: keyFor(button), id: event.pointerId,
       x: event.clientX, y: event.clientY, startX: event.clientX, startY: event.clientY,
       threshold: event.pointerType === "touch" ? 8 : 6,
       scroll: { left: scroller.scrollLeft, top: scroller.scrollTop },
     };
     state.toolDragging = true; // Prevent presence refreshes replacing the pointer target.
+    button.focus({ preventScroll: true });
     button.setPointerCapture(event.pointerId);
   });
   document.addEventListener("pointermove", event => {
@@ -170,16 +220,16 @@ export function tableColumnDrag({ state, renderView }, fieldName) {
       finish(false);
       return;
     }
-    const button = event.target.closest(".spreadsheet [data-table-sort-column]");
+    const button = event.target.closest(controlSelector);
     if (!button || state.view !== "table" || state.dialog || !event.altKey ||
         !["ArrowLeft", "ArrowRight"].includes(event.key)) return;
     event.preventDefault();
     const visible = state.tableColumns.filter(c => c.visible !== false);
-    const key = button.dataset.tableSortColumn, index = visible.findIndex(c => c.key === key);
+    const key = keyFor(button), index = visible.findIndex(c => c.key === key);
     if ((event.key === "ArrowLeft" && index === 0) ||
         (event.key === "ArrowRight" && index === visible.length - 1)) return;
     const before = event.key === "ArrowLeft" ? visible[index - 1].key : visible[index + 2]?.key;
     const scroller = button.closest(".table-scroll");
-    move(key, before, { left: scroller.scrollLeft, top: scroller.scrollTop });
+    move(key, before, { left: scroller.scrollLeft, top: scroller.scrollTop }, button.hasAttribute("data-column-drag"));
   }, true);
 }

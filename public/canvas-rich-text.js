@@ -13,6 +13,8 @@ export function canvasRichText(
     reposition = () => {},
     onAlignment = () => {},
     sourceName = "text",
+    readSource = value => value,
+    writeSource = value => value,
   } = {},
 ) {
   const lifecycle = new AbortController();
@@ -33,7 +35,7 @@ export function canvasRichText(
     return open;
   }
   function positionMenus() {
-    const canvas = controls.closest("#canvas, .dialog-body");
+    const canvas = controls.closest("#canvas, .dialog-body, .document-editor");
     if (!canvas) return;
     for (const menu of menus)
       if (menu.open)
@@ -86,7 +88,7 @@ export function canvasRichText(
     previous = "source";
   function flush() {
     if (mode !== "rich" || rich.innerHTML === lastHTML) return;
-    source.value = plain ? rich.innerText : converter.turndown(rich);
+    source.value = writeSource(plain ? rich.innerText : converter.turndown(rich), source.value);
     rich.dataset.empty = String(
       !rich.textContent.trim() && !rich.querySelector("img"),
     );
@@ -97,8 +99,9 @@ export function canvasRichText(
     flush();
     mode = next;
     if (next === "rich") {
-      if (plain) rich.textContent = source.value;
-      else rich.innerHTML = source.value ? markdown(source.value) : "";
+      const value = readSource(source.value);
+      if (plain) rich.textContent = value;
+      else rich.innerHTML = value.trim() ? markdown(value) : "";
       rich.dataset.empty = String(
         !rich.textContent.trim() && !rich.querySelector("img"),
       );
@@ -107,8 +110,9 @@ export function canvasRichText(
       lastHTML = rich.innerHTML;
     }
     if (next === "preview") {
-      if (plain) preview.textContent = source.value;
-      else preview.innerHTML = markdown(source.value);
+      const value = readSource(source.value);
+      if (plain) preview.textContent = value;
+      else preview.innerHTML = value.trim() ? markdown(value) : "";
     }
     source.classList.toggle("hidden", next !== "source");
     rich.classList.toggle("hidden", next !== "rich");
@@ -393,6 +397,7 @@ export function richToolbar(
     restored = false,
     alignment = "left",
     previewAction = 'data-pro="inline-preview"',
+    idPrefix = "canvas",
   } = {},
 ) {
   const action = (label, glyph, attributes = "") =>
@@ -414,6 +419,6 @@ export function richToolbar(
   <div class="selection-group ${alignment === null ? "hidden" : ""}" role="group" aria-label="Text alignment"><details class="selection-menu rich-align-menu"><summary aria-label="Text alignment" title="Text alignment">${icon(`text-${alignment || "left"}`)}${icon("chevron")}</summary><div class="selection-popover" role="group" aria-label="Text alignment">${alignmentButtons(icon, alignment)}</div></details></div>
   <div class="selection-group rich-modes" role="group" aria-label="Text editing mode">${action("Markdown", "code", 'data-rich-mode="source" aria-pressed="false"')}</div>
   <div class="selection-group" role="group" aria-label="Text preview">${action("Preview", "preview", `${previewAction} aria-pressed="false"`)}</div>
-  <div class="selection-popover rich-link-field hidden" role="group" aria-label="Insert link"><label for="canvas-rich-url">Link address</label><div class="rich-link-input"><input id="canvas-rich-url" name="rich-url" aria-label="Link URL" placeholder="https://…"><button type="button" class="selection-action rich-save" data-rich-link-save aria-label="Apply link" title="Apply link">${icon("check")}</button></div></div>
+  <div class="selection-popover rich-link-field hidden" role="group" aria-label="Insert link"><label for="${idPrefix}-rich-url">Link address</label><div class="rich-link-input"><input id="${idPrefix}-rich-url" name="rich-url" aria-label="Link URL" placeholder="https://…"><button type="button" class="selection-action rich-save" data-rich-link-save aria-label="Apply link" title="Apply link">${icon("check")}</button></div></div>
   ${restored ? '<span class="rich-draft" role="status">Draft restored</span>' : ""}<p class="inline-error" role="alert"></p>`;
 }

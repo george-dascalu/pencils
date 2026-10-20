@@ -37,6 +37,10 @@ export function preparePaste(
       const key = mapping[c],
         text = rows[r][c],
         field = config.fields.find((f) => `fields.${f.id}` === key);
+      if (key === "body") {
+        fieldError(r, "Description", "Open the task editor to edit its description.");
+        continue;
+      }
       if (!key || ["key", "created", "updated"].includes(key)) {
         fieldError(r, key || `column ${c + 1}`, "choose an editable column.");
         continue;

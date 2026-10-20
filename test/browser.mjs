@@ -1,3 +1,4 @@
+import { selectSettingsPage } from "./menu-controls.mjs";
 import { clickControl, selectProjectView } from "./menu-controls.mjs";
 import assert from "node:assert/strict";
 import fs from "node:fs/promises";
@@ -160,7 +161,7 @@ try {
   console.log("PASS: kanban drag/drop and collapsible hierarchy");
 
   await page.locator("#search").fill("Edited in the grid");
-  assert.equal(await page.locator(".task-row").count(), 1);
+  assert.equal(await page.locator(".task-row:not(.tree-context)").count(), 1);
   await page.locator("#search").fill("");
   await view("board");
   await click("board-fit");
@@ -274,6 +275,7 @@ try {
   );
   page.once("dialog", (dialog) => dialog.accept());
   await click("dialog-close");
+  await page.getByRole("button", { name: "Personal settings", exact: true }).click();
   await page.locator('[data-feature="recovery"]').click();
   await page.locator('[data-feature="resolve-remote"]').click();
   await page.locator('[data-action="dialog-close"]').first().click();
@@ -354,6 +356,7 @@ try {
     .waitFor();
   const beforeMove = await store.snapshot(original.id);
   await click("project-edit");
+  await selectSettingsPage(page, "teams");
   await page
     .locator('#project-form [name="organisation"]')
     .selectOption(studio.id);
@@ -368,7 +371,7 @@ try {
   // The project settings page refreshes the workspace before navigation settles.
   await page
     .locator("#toasts")
-    .getByText("Project updated.", { exact: true })
+    .getByText("Organisation & teams saved.", { exact: true })
     .waitFor();
   const afterMove = await store.snapshot(original.id);
   assert.equal(afterMove.project.organisation, studio.id);

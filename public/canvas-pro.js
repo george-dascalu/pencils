@@ -1,3 +1,6 @@
+import { resizeTaskCard, taskCardHeight } from "./task-card-layout.js";
+import { priorityOptions, priorityLabel, defaultPriority } from "./task-priority.js";
+import { taskColorAttributes } from "./task-colors.js";
 import { canvasPointerTool } from "./drawing-input.js";
 import {hierarchyError} from "./hierarchy-model.js";
 import {sourceLabel} from "./source-model.js";
@@ -11,13 +14,13 @@ import { dependencyStyle } from "./dependency-style.js";
 import { edgeDependency } from "./dependency-model.js";
 import { draftTaskData, validDraftTask } from "./draft-task.js";
 import { boardComments } from "./board-comments.js";
+import { attachmentPreview } from "./attachment-preview.js";
 import { assigneeOptions, assigneeHint, projectPeople } from "./teams.js";
 import {
   nextStatuses,
   initialStatus,
   statusLabel,
   canTransition,
-  statusColor,
 } from "./workflow-model.js";
 import { viewportCache, viewportRect } from "./viewport-cache.js";
 import { boardSession } from "./board-session.js";
@@ -48,6 +51,7 @@ import {
   isTaskNote,
   nodeMinimum,
   nodeFill,
+  readableText,
 } from "./node-layout.js";
 import { canvasRichText, richToolbar } from "./canvas-rich-text.js";
 import { encodeCanvas, markdownSlice, palette } from "./canvas-format.js";
@@ -85,6 +89,14 @@ export function canvasPro(ctx, basic) {
   } = ctx;
   const { selected, pick, point, focusNode, uid } = basic;
   const sessionTools = boardSession(ctx, basic);
+  const filePreview = attachmentPreview(ctx, document.body);
+  function localAttachment(n) {
+    const prefix = `Projects/${state.project?.id}/attachments/`;
+    if (n?.type !== "file" || !n.file?.startsWith(prefix)) return null;
+    const file = n.file.slice(prefix.length);
+    if (!/^a-[\w-]+\.(png|jpe?g|gif|webp|pdf|txt|md|csv|zip)$/i.test(file)) return null;
+    return { file, name: n.name || file, extension: file.split(".").pop().toLowerCase(), url: `/api/projects/${state.project.id}/attachments/${file}` };
+  }
   document.addEventListener("click", (e) => {
     if (e.target.closest("[data-session-dismiss],[data-follow]"))
       $("#session-invitation")?.remove();
@@ -123,6 +135,8 @@ export function canvasPro(ctx, basic) {
     `Guest ${sync.client.slice(-4)}`;
   const btn = (action, text, extra = "") =>
     `<button type="button" class="button small" data-pro="${action}" ${extra}>${text}</button>`;
+  const disclosure = (n) => btn("task-collapse", icon("chevron"),
+    `data-id="${esc(n.id)}" aria-label="${n.taskCollapsed ? "Expand" : "Collapse"} task description" title="${n.taskCollapsed ? "Expand" : "Collapse"} description" aria-expanded="${!n.taskCollapsed}" ${n.locked ? "disabled" : ""}`);
   const input = (name, label, value = "", extra = "") =>
     extra === 'type="color"'
       ? `<div class="field">Colour${ctx.colorPicker({ name, value, label: "Colour" })}</div>`
@@ -304,7 +318,7 @@ export function canvasPro(ctx, basic) {
     if (n.viewType === "timeline")
       return (
         `<div class="query-title">${esc(n.text || "Live tasks")}</div>` +
-        timelineHTML(tasks, ctx, n.timelineScale || "week", n.id)
+        timelineHTML(tasks, ctx, n.timelineScale || "week", n.id, n.timelineShowWeekends !== false, n.timelineRange)
       );
     if (n.viewType === "kanban")
       return `<div class="query-title">${esc(n.text || "Live tasks")}</div><div class="embedded-kanban">${state.config.statuses
@@ -358,7 +372,7 @@ export function canvasPro(ctx, basic) {
         .slice(0, 100)
         .map(
           (t) =>
-            `<button data-pro="open-task" data-task="${esc(t.id)}"><span class="status-dot ${esc(t.status)}"></span>${esc(t.title)}<small>${esc(t.assignee || t.status)}</small></button>`,
+            `<button data-pro="open-task" data-task="${esc(t.id)}"><span class="status-dot ${esc(t.status)}" ${taskColorAttributes(state, "status", t.status)}></span>${esc(t.title)}<small>${esc(t.assignee || t.status)}</small></button>`,
         )
         .join("") || "<p>No matching tasks.</p>"
     }${tasks.length > 100 ? "<small>First 100 matches · narrow the saved view to see more.</small>" : ""}</div>`;
@@ -387,10 +401,10 @@ export function canvasPro(ctx, basic) {
     }
   }
   function cardPriority(data, attributes) {
-    return `<label class="canvas-task-priority priority ${esc(data.priority || "none")}" title="Priority: ${esc(ctx.label(data.priority || "none"))}">${icon(`priority-${data.priority || "none"}`)}<select data-canvas-task-field="priority" ${data.source?"disabled":""} ${attributes} aria-label="Priority for ${esc(data.title)}">${["none", "low", "medium", "high", "urgent"].map((value) => `<option value="${value}" ${value === (data.priority || "none") ? "selected" : ""}>${ctx.label(value)}</option>`).join("")}</select></label>`;
+    return `<label class="canvas-task-priority priority ${esc(data.priority || "none")}" ${taskColorAttributes(state, "priority", data.priority)} title="Priority: ${esc(priorityLabel(data.priority || "none"))}">${icon(`priority-${data.priority || "none"}`)}<select data-canvas-task-field="priority" ${data.source?"disabled":""} ${attributes} aria-label="Priority for ${esc(data.title)}">${priorityOptions.map((value) => `<option value="${value}" ${value === (data.priority || "none") ? "selected" : ""}>${priorityLabel(value)}</option>`).join("")}</select></label>`;
   }
   function cardAssignee(data, attributes) {
-    return `<select class="canvas-task-assignee" data-canvas-task-field="assignee" ${data.source?"disabled":""} ${attributes} aria-label="Assignee for ${esc(data.title)}" title="${esc(assigneeHint(state) || data.assignee || "Unassigned")}">${assigneeOptions(state, data.assignee, esc)}</select>`;
+    return `<select class="canvas-task-assignee" ${taskColorAttributes(state, "assignee", data.assignee)} data-canvas-task-field="assignee" ${data.source?"disabled":""} ${attributes} aria-label="Assignee for ${esc(data.title)}" title="${esc(assigneeHint(state) || data.assignee || "Unassigned")}">${assigneeOptions(state, data.assignee, esc)}</select>`;
   }
   function enhance(only = null) {
     if (!board()) return;
@@ -433,10 +447,11 @@ export function canvasPro(ctx, basic) {
         availability?.status === "unavailable",
       );
       el.classList.toggle("draft-task", n.type === "draft");
+      el.classList.toggle("task-card-expanded", n.taskCollapsed === false);
       if (n.type === "draft") {
         const d = draftTaskData(n),
           count = n.comments?.filter((c) => !c.deleted).length || 0;
-        el.innerHTML = `<div class="live-card-heading"><span class="canvas-task-type" role="img" aria-label="Draft task" title="Draft task">${icon("pencil")}</span><strong class="task-title">${esc(d.title)}</strong><div class="live-card-actions">${btn("convert", icon("task"), `data-id="${esc(n.id)}" aria-label="Finalise task" title="Finalise task" ${n.locked ? "disabled" : ""}`)}${btn("comments", icon("comment") + (count ? `<span class="task-comment-count">${count}</span>` : ""), `data-id="${esc(n.id)}" aria-label="Comments on ${esc(d.title)}"`)}${btn("draft-edit", "↗", `data-id="${esc(n.id)}" aria-label="Edit draft task" title="Edit draft task"`)}</div></div><div class="draft-task-meta"><span class="draft-task-badge">${icon("pencil")}Draft</span><span>${icon(d.type)}${esc(ctx.label(d.type))}</span>${cardPriority(d, `data-draft-node="${esc(n.id)}" ${n.locked ? "disabled" : ""}`)}${cardAssignee(d, `data-draft-node="${esc(n.id)}" ${n.locked ? "disabled" : ""}`)}</div><div class="canvas-markdown">${d.body ? markdown(d.body) : '<span class="is-placeholder">Add task notes…</span>'}</div>`;
+        el.innerHTML = `<div class="live-card-heading"><span class="canvas-task-type" role="img" aria-label="Draft task" title="Draft task">${icon("pencil")}</span><strong class="task-title">${esc(d.title)}</strong><div class="live-card-actions">${btn("convert", icon("task"), `data-id="${esc(n.id)}" aria-label="Finalise task" title="Finalise task" ${n.locked ? "disabled" : ""}`)}${disclosure(n)}${btn("comments", icon("comment") + (count ? `<span class="task-comment-count">${count}</span>` : ""), `data-id="${esc(n.id)}" aria-label="Comments on ${esc(d.title)}"`)}${btn("draft-edit", "↗", `data-id="${esc(n.id)}" aria-label="Edit draft task" title="Edit draft task"`)}</div></div><div class="draft-task-meta"><span class="draft-task-badge">${icon("pencil")}Draft</span><span>${icon(d.type)}${esc(ctx.label(d.type))}</span>${cardPriority(d, `data-draft-node="${esc(n.id)}" ${n.locked ? "disabled" : ""}`)}${cardAssignee(d, `data-draft-node="${esc(n.id)}" ${n.locked ? "disabled" : ""}`)}</div><div class="canvas-markdown task-card-description" ${n.taskCollapsed ? "hidden" : ""}>${d.body ? markdown(d.body) : '<span class="is-placeholder">Add task notes…</span>'}</div>`;
       } else if (n.type === "task" && !byTask.has(n.task)) {
         el.classList.remove("overdue", "blocked-task", "dimmed");
         el.setAttribute(
@@ -453,7 +468,7 @@ export function canvasPro(ctx, basic) {
         const asNote = isTaskNote(n),
           flags = taskFlags(t),
           section = markdownSlice(t.body || "", n.subpath || ""),
-          commentCount = n.comments?.filter((c) => !c.deleted).length || 0;
+          commentCount = t.comments?.filter((c) => !c.deleted).length || 0;
         el.classList.toggle("overdue", !asNote && flags.overdue);
         el.classList.toggle("blocked-task", !asNote && flags.blocked);
         el.classList.toggle(
@@ -469,7 +484,7 @@ export function canvasPro(ctx, basic) {
         if (asNote) {
           el.innerHTML = `<div class="note-content ${section?.text ? "has-body" : ""}"><div class="note-title canvas-markdown" data-inline-title>${esc(t.title)}</div><div class="note-body node-text canvas-markdown">${section ? (section.text ? markdown(section.text) : "") : "<p>Heading or block not found.</p>"}</div></div>`;
         } else {
-          el.innerHTML = `<div class="live-card-heading"><span class="canvas-task-type" role="img" aria-label="${esc(ctx.label(t.type))}" title="${esc(ctx.label(t.type))}">${icon(t.type)}</span><strong class="task-title" data-inline-title>${esc(t.title)}</strong><div class="live-card-actions">${btn("comments", icon("comment") + (commentCount ? `<span class="task-comment-count" aria-hidden="true">${commentCount}</span>` : ""), `data-id="${esc(n.id)}" aria-label="Comments on ${esc(t.title)}${commentCount ? ` (${commentCount})` : ""}" title="Comments${commentCount ? ` (${commentCount})` : ""}"`)}${btn("task-details", "↗", `data-task="${esc(t.id)}" aria-label="Open task details" title="Expand task"`)}</div></div><div class="live-card-state"><span class="canvas-task-key" title="${esc(t.key || t.id)} · ${esc(ctx.label(t.type))}">${esc(t.key || t.id)}</span>${cardPriority(t, `data-task="${esc(t.id)}"`)}<select class="canvas-task-status" style="--task-status-color:${statusColor(state.config, t.status)}" data-canvas-status="${esc(t.id)}" ${t.source?"disabled":""} aria-label="Task status" title="${esc(statusLabel(state.config, t.status))}">${nextStatuses(
+          el.innerHTML = `<div class="live-card-heading"><span class="canvas-task-type" role="img" aria-label="${esc(ctx.label(t.type))}" title="${esc(ctx.label(t.type))}">${icon(t.type)}</span><strong class="task-title" data-inline-title>${esc(t.title)}</strong><div class="live-card-actions">${disclosure(n)}${btn("comments", icon("comment") + (commentCount ? `<span class="task-comment-count" aria-hidden="true">${commentCount}</span>` : ""), `data-id="${esc(n.id)}" aria-label="Comments on ${esc(t.title)}${commentCount ? ` (${commentCount})` : ""}" title="Comments${commentCount ? ` (${commentCount})` : ""}"`)}${btn("task-details", "↗", `data-task="${esc(t.id)}" aria-label="Open task details" title="Open task details"`)}</div></div><div class="live-card-state"><span class="canvas-task-key" title="${esc(t.key || t.id)} · ${esc(ctx.label(t.type))}">${esc(t.key || t.id)}</span>${cardPriority(t, `data-task="${esc(t.id)}"`)}<select class="canvas-task-status" ${taskColorAttributes(state, "status", t.status)} data-canvas-status="${esc(t.id)}" ${t.source?"disabled":""} aria-label="Task status" title="${esc(statusLabel(state.config, t.status))}">${nextStatuses(
             state.config,
             t.status,
           )
@@ -479,20 +494,25 @@ export function canvasPro(ctx, basic) {
             )
             .join(
               "",
-            )}</select>${cardAssignee(t, `data-task="${esc(t.id)}"`)}</div>${t.source?`<small class="source-badge">${esc(sourceLabel(t))} · Source fields are read-only</small>`:""}${flags.overdue || flags.blocked ? `<div class="canvas-task-flags">${flags.overdue ? "<b>Overdue</b>" : ""}${flags.blocked ? "<b>Blocked</b>" : ""}</div>` : ""}${n.h > 175 ? `<div class="canvas-markdown">${section ? (section.text ? markdown(section.text) : '<span class="is-placeholder">Add task notes…</span>') : "<p>Heading or block not found.</p>"}</div>` : ""}${n.subpath ? `<small class="embed-label">${esc(n.subpath)}</small>` : ""}`;
+            )}</select>${cardAssignee(t, `data-task="${esc(t.id)}"`)}</div>${t.source?`<small class="source-badge">${esc(sourceLabel(t))} · Source fields are read-only</small>`:""}${flags.overdue || flags.blocked ? `<div class="canvas-task-flags">${flags.overdue ? "<b>Overdue</b>" : ""}${flags.blocked ? "<b>Blocked</b>" : ""}</div>` : ""}<div class="canvas-markdown task-card-description" ${n.taskCollapsed ? "hidden" : ""}>${section ? (section.text ? markdown(section.text) : '<span class="is-placeholder">Add task notes…</span>') : "<p>Heading or block not found.</p>"}</div>${n.subpath ? `<small class="embed-label">${esc(n.subpath)}</small>` : ""}`;
         }
       } else if (n.type === "file") {
-        loadNote(n);
-        const note = notes.get(n.file),
-          section =
-            note && !note.error
-              ? markdownSlice(note.body, n.subpath || "")
-              : null;
-        el.innerHTML = `<strong>${esc(n.file?.split("/").pop() || "Note")}${n.subpath ? ` · ${esc(n.subpath)}` : ""}</strong><div class="canvas-markdown">${note?.error ? esc(note.error) : section ? (section.text ? markdown(section.text) : '<span class="is-placeholder">Add notes…</span>') : note ? "Heading or block not found." : "Loading note…"}</div>`;
+        const attachment = localAttachment(n);
+        if (attachment) {
+          el.innerHTML = `<strong>${esc(attachment.name)}</strong><button type="button" class="button" data-pro="attachment-open" data-id="${esc(n.id)}" aria-haspopup="dialog" aria-expanded="false">${icon("file")}Open file</button>`;
+        } else {
+          loadNote(n);
+          const note = notes.get(n.file),
+            section =
+              note && !note.error
+                ? markdownSlice(note.body, n.subpath || "")
+                : null;
+          el.innerHTML = `<strong>${esc(n.file?.split("/").pop() || "Note")}${n.subpath ? ` · ${esc(n.subpath)}` : ""}</strong><div class="canvas-markdown">${note?.error ? esc(note.error) : section ? (section.text ? markdown(section.text) : '<span class="is-placeholder">Add notes…</span>') : note ? "Heading or block not found." : "Loading note…"}</div>`;
+        }
       } else if (n.type === "grid") el.innerHTML = gridHTML(n, ctx);
       else if (n.type === "query") el.innerHTML = queryRows(n);
       else if (n.type === "link")
-        el.innerHTML = `<span>Link</span><a href="${esc(n.url)}" target="_blank" rel="noopener noreferrer">${esc(n.url)}</a><small>Opens in a new tab</small>`;
+        el.innerHTML = `<span>Link</span><a href="${esc(n.url)}" target="_blank" rel="noopener noreferrer">${esc(n.name || n.url)}</a><small>Opens in a new tab</small>`;
       else if (["text", "sticky", "shape"].includes(n.type))
         el.innerHTML = `<div class="node-text canvas-markdown ${defaultText(n) ? "is-placeholder" : ""}">${n.text ? markdown(n.text) : esc(placeholder(n))}</div>`;
       else if (n.type === "frame")
@@ -521,6 +541,17 @@ export function canvasPro(ctx, basic) {
         el.append(content);
       }
       paintTextStyle(el, n);
+      if (n.type === "text") {
+        const parent = index.get(parents.get(n.id));
+        const fill = n.color || parent?.color || (!parent && board().settings?.background?.color);
+        if (/^#[0-9a-f]{6}$/i.test(fill || "")) {
+          el.style.color = readableText(fill);
+          el.querySelectorAll(".canvas-markdown a").forEach(link => {
+            link.style.color = "inherit";
+            link.style.textDecoration = "underline";
+          });
+        } else el.style.removeProperty("color");
+      }
       paintObjectGeometry(el, n, esc);
       if (
         !(n.type === "task" && !isTaskNote(n)) &&
@@ -1033,6 +1064,11 @@ export function canvasPro(ctx, basic) {
     n = index.get(n?.id);
     if (!n || n.locked || n.projectFrame || editor) return;
     if (n.type === "draft") return ctx.draftTaskDialog(n.id);
+    if (localAttachment(n)) {
+      const anchor = document.querySelector(`[data-pro="attachment-open"][data-id="${CSS.escape(n.id)}"]`);
+      if (anchor) return filePreview.open(localAttachment(n), anchor);
+      return;
+    }
 
     const gridTitle = n.type === "grid" && focusTitle;
     let note = null,
@@ -1706,6 +1742,11 @@ export function canvasPro(ctx, basic) {
     const form=document.querySelector("#keyboard-connector");form.addEventListener("submit",async event=>{event.preventDefault();event.stopImmediatePropagation();const values=Object.fromEntries(new FormData(form));if(values.from===values.to){form.querySelector(".form-error").textContent="Choose two different objects.";return;}if(values.relationship==="blocks" && [values.from,values.to].some(id=>b.nodes.find(n=>n.id===id)?.type!=="task")){form.querySelector(".form-error").textContent="A dependency connects two finalised task cards.";return;}try {const edge={id:uid("e"),...values,routing:"elbow"};if(values.relationship==="blocks"){await ctx.flushBoard();await api(route("boards",b.id)+"/dependency",{method:"POST",body:{edge:edge.id,newEdge:edge,revision:board().revision}});await ctx.refresh(false);}else changeBoard(board=>board.edges.push(edge));closeDialog(true);ctx.renderView();}catch(error){form.querySelector(".form-error").textContent=error.message;}});
   }
   async function click(action, el) {
+    if (action === "attachment-open") {
+      const n = board()?.nodes.find(n => n.id === el.dataset.id), file = localAttachment(n);
+      if (file) await filePreview.open(file, el);
+      return true;
+    }
     if(action === "connections")return connections();
     rebuild();
     const n = index.get(el?.dataset.id) || pick()[0];
@@ -1782,6 +1823,12 @@ export function canvasPro(ctx, basic) {
       outlineOpen = !outlineOpen;
       $("#canvas-outline")?.classList.toggle("hidden", !outlineOpen);
       outline();
+    } else if (action === "task-collapse" && n && !n.locked) {
+      const card = el.closest("[data-node]");
+      const collapsed = !n.taskCollapsed;
+      const height = Math.max(taskCardHeight(card, collapsed), collapsed ? 96 : (n.taskExpandedHeight || 180));
+      changeBoard(b => resizeTaskCard(b, n, collapsed, height));
+      $(`[data-node="${CSS.escape(n.id)}"] [data-pro="task-collapse"]`)?.focus({ preventScroll: true });
     } else if (action === "collapse") {
       if (n && !n.locked) changeBoard(() => (n.collapsed = !n.collapsed));
     } else if (action === "frame-present") {
@@ -1909,7 +1956,7 @@ export function canvasPro(ctx, basic) {
       if(n.type==="draft" && el.dataset.reviewed!=="true"){
         const d=draftTaskData(n),parent=task(d.parent),signature=JSON.stringify(d);
         const errors=[!d.title?.trim()?"A title is required.":"",!state.config.types.includes(d.type)?"Choose a current task type.":"",!state.config.statuses.includes(d.status)?"Choose a current status.":"",d.parent&&!parent?"The parent task is unavailable.":"",hierarchyError(state.config,d,parent),...(d.subtasks || []).map(child=>hierarchyError(state.config,child,d))].filter(Boolean);
-        showDialog(`<dialog class="board-comments draft-review-panel" aria-label="Review draft task"><div class="board-comments-head"><strong>Review draft task</strong><button type="button" class="icon-button" data-action="dialog-close" aria-label="Close review">${icon("close")}</button></div><div class="dialog-body"><p><strong>${esc(d.title)}</strong></p><p>Project: ${esc(state.project.title)}</p><p>Type: ${esc(d.type)} · Status: ${esc(statusLabel(state.config,d.status))}</p><p>Parent: ${esc(parent?.title || "No parent")} · ${(d.subtasks || []).length} subtasks</p><p>Your card position, connections and comments stay in place.</p><div class="form-error ${errors.length ? "" : "hidden"}" role="alert">${errors.map(esc).join(" ")}</div></div><div class="dialog-foot"><button type="button" class="button" data-pro="draft-edit" data-id="${esc(n.id)}">Edit draft</button><button type="button" class="button primary" id="draft-finalise-confirm" ${errors.length?"disabled":""}>Finalise task</button></div></dialog>`,"draft-review",{nodeId:n.id});
+        showDialog(`<dialog class="board-comments board-object-panel draft-review-panel" aria-label="Review draft task"><div class="board-comments-head"><strong>Review draft task</strong><button type="button" class="icon-button" data-action="dialog-close" aria-label="Close review">${icon("close")}</button></div><div class="dialog-body"><p><strong>${esc(d.title)}</strong></p><p>Project: ${esc(state.project.title)}</p><p>Type: ${esc(d.type)} · Status: ${esc(statusLabel(state.config,d.status))}</p><p>Parent: ${esc(parent?.title || "No parent")} · ${(d.subtasks || []).length} subtasks</p><p>Your card position, connections and comments stay in place.</p><div class="form-error ${errors.length ? "" : "hidden"}" role="alert">${errors.map(esc).join(" ")}</div></div><div class="dialog-foot"><button type="button" class="button" data-pro="draft-edit" data-id="${esc(n.id)}">Edit draft</button><button type="button" class="button primary" id="draft-finalise-confirm" ${errors.length?"disabled":""}>Finalise task</button></div></dialog>`,"draft-review",{nodeId:n.id});
         document.querySelector('#draft-finalise-confirm').onclick=async()=>{const current=board()?.nodes.find(v=>v.id===n.id);if(!current||JSON.stringify(draftTaskData(current))!==signature){const error=document.querySelector('.draft-review-panel .form-error');error.classList.remove("hidden");error.textContent="The draft changed. Close this preview and review it again.";return;}closeDialog(true);try{await click("convert",{dataset:{id:n.id,reviewed:"true"}});}catch(error){toast(error.message,true);}};
         return;
       }
@@ -1946,7 +1993,7 @@ export function canvasPro(ctx, basic) {
                 ? "task"
                 : state.config.types[0],
               status: initialStatus(state.config),
-              priority: "none",
+              priority: defaultPriority,
               parent: null,
               assignee: "",
               due: null,
@@ -2682,7 +2729,7 @@ export function canvasPro(ctx, basic) {
     (event) => {
       let canvas = event.target.closest("#canvas");
       let tool = canvasPointerTool(state.tool, event.pointerType);
-      if (!canvas || ["frame", "project-frame"].includes(tool)) return;
+      if (!canvas || event.target.closest(".board-tools") || ["frame", "project-frame"].includes(tool)) return;
       if (
         connecting?.latched &&
         event.button === 0 &&

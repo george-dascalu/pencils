@@ -1,4 +1,5 @@
 import { initialStatus } from "../public/workflow-model.js";
+import { defaultPriority } from "../public/task-priority.js";
 import fs from "node:fs/promises";
 import path from "node:path";
 import { randomUUID } from "node:crypto";
@@ -130,7 +131,7 @@ export function installWorkspace(Store) {
             properties.priority,
           )
             ? properties.priority
-            : "none",
+            : defaultPriority,
           due: properties.due || null,
           tags: Array.isArray(properties.tags) ? properties.tags : [],
         };

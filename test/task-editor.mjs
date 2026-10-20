@@ -18,13 +18,18 @@ const project = await store.createProject({
   organisation: organisation.id,
   teams: ["team"],
 });
+const ancestor = await store.createTask(project.id, { title: "Release", type: "epic" });
 const original = await store.createTask(project.id, {
   title: "Plan the next release",
   body: "## Scope\n\n**Keep this** and [[Reference]]\n\n- First item",
   start: "2026-10-14",
   estimate: 3,
+  parent: ancestor.id,
+  dependencies: [ancestor.id],
+  recurrence: { unit: "week", interval: 2 },
   tags: ["design", "release"],
 });
+const child = await store.createTask(project.id, { title: "Test child", parent: original.id });
 const server = createServer(store);
 await new Promise((r) => server.listen(0, "127.0.0.1", r));
 const browser = await (
@@ -57,8 +62,8 @@ try {
     original.title,
   );
   assert.equal(
-    await page.locator(".task-extra").first().getAttribute("open"),
-    null,
+    await page.locator(".task-extra,.task-parent-field,.task-dependencies,#task-form .file-path,[data-task-picker=parent]").count(),
+    0,
   );
   const type = page.locator("#task-form [name=type]"),
     priority = page.locator("#task-form [name=priority]");
@@ -109,7 +114,7 @@ try {
     original.body,
   );
   await save();
-  const savedMetadata = (await store.snapshot(project.id)).tasks[0];
+  const savedMetadata = (await store.snapshot(project.id)).tasks.find(t => t.id === original.id);
   assert.equal(savedMetadata.type, "story");
   assert.equal(savedMetadata.priority, "urgent");
   assert.equal(savedMetadata.status, "review");
@@ -117,7 +122,7 @@ try {
   assert.equal(savedMetadata.due, "2026-11-01");
   assert.deepEqual(savedMetadata.tags, ["design", "release"]);
   assert.equal(
-    (await store.snapshot(project.id)).tasks[0].body,
+    (await store.snapshot(project.id)).tasks.find(t => t.id === original.id).body,
     original.body,
     "Opening and saving must preserve original Markdown",
   );
@@ -163,7 +168,7 @@ try {
         const rect = (selector) =>
           form.querySelector(selector).getBoundingClientRect();
         return {
-          identity: ['[data-task-picker="type"]', '[name="title"]'].map((s) => {
+          identity: ['[data-task-picker="type"]', ".task-key", '[name="title"]'].map((s) => {
             const r = rect(s);
             return r.top + r.height / 2;
           }),
@@ -188,14 +193,10 @@ try {
         Math.max(...layout.fields.slice(0, 3)) -
           Math.min(...layout.fields.slice(0, 3)) <
           2,
-        "Priority, status and assignee share the first metadata row",
+        "Assignee, priority and status share the first metadata row",
       );
-      assert.ok(
-        Math.abs(layout.fields[4] - layout.fields[5]) < 2 &&
-          layout.fields[3] > layout.fields[0] &&
-          layout.fields[4] > layout.fields[3],
-        "Parent precedes the paired start and due dates in the compact panel",
-      );
+      assert.ok(Math.abs(layout.fields[3] - layout.fields[4]) < 2, "Dates share a row");
+      if (width === 1400) assert.ok(Math.max(...layout.fields) - Math.min(...layout.fields) < 2, "All five metadata fields share a row on desktop");
 
       assert.ok(layout.iconOnly, "Task type remains icon-only in both themes");
       assert.equal(layout.overflow, false, "Dialog fields do not overflow");
@@ -210,11 +211,14 @@ try {
     }
   }
   await save();
-  const task = (await store.snapshot(project.id)).tasks[0];
+  const task = (await store.snapshot(project.id)).tasks.find(t => t.id === original.id);
   assert.match(task.body, /\*\*Rich text\*\*/);
   assert.match(task.body, /\[\[Reference\]\]/);
   assert.equal(task.start, original.start);
   assert.equal(task.estimate, 3);
+  assert.equal(task.parent, ancestor.id);
+  assert.deepEqual(task.dependencies, [ancestor.id]);
+  assert.deepEqual(task.recurrence, original.recurrence);
   await page.setViewportSize({ width: 1400, height: 1000 });
   await open();
   await rich.fill("Retain this description draft");
@@ -242,16 +246,10 @@ try {
     "Draft restoration updates the priority icon",
   );
   await save();
-  assert.equal((await store.snapshot(project.id)).tasks[0].body, draftBody);
+  assert.equal((await store.snapshot(project.id)).tasks.find(t => t.id === original.id).body, draftBody);
   await open();
-  await page.getByLabel("New subtask title").fill("Test child");
-  await page.locator("[data-task-modal=subtask-add]").click();
-  await page.locator(".task-subtask-row").waitFor();
-  assert.equal(await page.locator("dialog").count(), 1);
-  const child = (await store.snapshot(project.id)).tasks.find(
-    (t) => t.title === "Test child",
-  );
-  assert.equal(child.parent, original.id);
+  assert.equal(await page.locator(".task-subtasks,.related-record-list,[data-feature=attach],[data-feature=task-template]").count(), 0);
+  assert.equal((await store.snapshot(project.id)).tasks.find(t => t.id === child.id).parent, original.id);
   await page.locator(".dialog-head [name=title]").fill("Unsaved title");
   await page.locator("[data-feature=task-history]").click();
   await page.locator(".task-history-panel .recovery-item").first().waitFor();
@@ -265,8 +263,8 @@ try {
     .locator(".task-editor-content > .dialog-body")
     .boundingBox();
   assert.ok(
-    panel.x >= body.x + body.width - 1,
-    "History is alongside the editor",
+    panel.x + panel.width <= body.x,
+    "History shares the left-side position beside a right-docked editor",
   );
   await page.screenshot({ path: "/tmp/pencils-task-history.png" });
   await page
@@ -292,18 +290,13 @@ try {
     "Restoration keeps the same modal",
   );
   await page.locator("[data-task-modal=history-close]").click();
-  await page.locator("[data-task-picker=parent] .task-picker-trigger").click();
-  assert.equal(
-    await page.locator(`[data-picker-value="${child.id}"]`).count(),
-    0,
-    "Cannot parent a task to its child",
-  );
+  await page.locator("[data-task-picker=type] .task-picker-trigger").click();
   await page.keyboard.press("Escape");
   assert.ok(await page.locator("dialog").isVisible());
   await page.locator("[data-action=dialog-close]").click();
   assert.deepEqual(errors, []);
   console.log(
-    "PASS: compact task dialog, collapsed planning, WYSIWYG formatting and bullets, Markdown preservation, preview, draft restore, desktop/mobile and light/dark themes.",
+    "PASS: compact task dialog, removed planning with saved values preserved, WYSIWYG formatting and bullets, Markdown preservation, preview, draft restore, desktop/mobile and light/dark themes.",
   );
 } catch (e) {
   await page.screenshot({ path: "/tmp/pencils-task-editor-failure.png" });

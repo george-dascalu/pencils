@@ -2,18 +2,36 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { randomBytes, scrypt as derive, timingSafeEqual } from "node:crypto";
 import { promisify } from "node:util";
+import { isIP } from "node:net";
 import { Problem } from "./problem.js";
 
 const scrypt = promisify(derive);
+const localAddress = (address = "") => {
+  const ip = address.toLowerCase().replace(/^::ffff:/, "");
+  if (isIP(ip) === 4) {
+    const [a, b] = ip.split(".").map(Number);
+    return a === 127 || a === 10 || (a === 172 && b >= 16 && b <= 31) ||
+      (a === 192 && b === 168) || (a === 169 && b === 254);
+  }
+  return isIP(ip) === 6 && (ip === "::1" || /^(f[cd][\da-f]{2}|fe[89ab][\da-f]):/.test(ip));
+};
 export class Auth {
-  constructor(store, enabled = process.env.AUTH_MODE === "required") {
+  constructor(store, mode = process.env.AUTH_MODE || "shared", localName = process.env.LOCAL_USER_NAME || "George") {
     this.store = store;
-    this.enabled = enabled;
+    this.mode = typeof mode === "boolean" ? (mode ? "required" : "shared") : mode;
+    if (!["shared", "required", "local"].includes(this.mode))
+      throw new Problem(500, "AUTH_MODE must be shared, required or local.");
+    this.enabled = this.mode !== "shared";
+    if (this.mode === "local" && !/^[a-zA-Z0-9_.-]{1,80}$/.test(localName))
+      throw new Problem(500, "LOCAL_USER_NAME must be a valid account name.");
+    this.localUser = this.mode === "local"
+      ? { username: localName, admin: true, organisations: {}, automatic: true }
+      : null;
     this.sessions = new Map();
     this.attempts = new Map();
     this.file = path.join(store.root, ".pencils", "accounts.json");
   }
-  async accounts() {
+  async storedAccounts() {
     await this.store.safe(this.file);
     try {
       return JSON.parse(await fs.readFile(this.file, "utf8"));
@@ -22,14 +40,25 @@ export class Auth {
       throw e;
     }
   }
+  async accounts() {
+    const accounts = await this.storedAccounts();
+    // The configured local identity also owns OAuth grants and background jobs.
+    // Keep it separate from password accounts so changing modes preserves them.
+    return this.localUser
+      ? [...accounts.filter((u) => u.username !== this.localUser.username), this.localUser]
+      : accounts;
+  }
   public(user) {
     return {
       username: user.username,
       admin: !!user.admin,
       organisations: user.organisations || {},
+      ...(user.automatic ? { automatic: true } : {}),
     };
   }
   async save(input) {
+    if (this.localUser?.username === input.username)
+      throw new Problem(400, "The automatic local account is managed by server settings.");
     if (
       typeof input.username !== "string" ||
       !/^[a-zA-Z0-9_.-]{1,80}$/.test(input.username)
@@ -38,7 +67,7 @@ export class Auth {
         400,
         "Use a username with letters, numbers, dots, hyphens or underscores.",
       );
-    const accounts = await this.accounts(),
+    const accounts = await this.storedAccounts(),
       old = accounts.find((u) => u.username === input.username);
     if (
       (!old || input.password) &&
@@ -107,7 +136,7 @@ export class Auth {
     if (this.attempts.size > 10000)
       this.attempts.delete(this.attempts.keys().next().value);
     const user = (await this.accounts()).find(
-      (u) => u.username === input.username,
+      (u) => u.username === input.username && !u.automatic,
     );
     const password =
       typeof input.password === "string" && input.password.length <= 200
@@ -138,10 +167,13 @@ export class Auth {
   async user(req) {
     if (!this.enabled)
       return { username: "Shared workspace", admin: true, organisations: {} };
+    // Use the socket address, never a browser-supplied Host/forwarded header.
+    if (this.localUser && localAddress(req.socket?.remoteAddress))
+      return this.public(this.localUser);
     const session = this.sessions.get(this.token(req));
     if (!session || session.expires < Date.now()) return null;
     const user = (await this.accounts()).find(
-      (u) => u.username === session.username,
+      (u) => u.username === session.username && !u.automatic,
     );
     return user ? this.public(user) : null;
   }

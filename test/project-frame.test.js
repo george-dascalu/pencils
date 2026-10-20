@@ -3,6 +3,50 @@ import assert from "node:assert/strict";
 import { updateProjectFrame } from "../public/project-frame.js";
 import { encodeCanvas, decodeCanvas } from "../public/canvas-format.js";
 import { edgeDependency } from "../public/dependency-model.js";
+import { routeEdge } from "../public/canvas-geometry.js";
+import { resizeTaskCard } from "../public/task-card-layout.js";
+
+test("nested children and additions to resized parents route forward", () => {
+  const frame = { id: "f", type: "frame", x: 0, y: 0, w: 640, h: 360 };
+  const board = { nodes: [frame], edges: [] };
+  const tasks = [{ id: "root" }, { id: "child", parent: "root" }, { id: "grandchild", parent: "child" }, { id: "sibling", parent: "root" }];
+  updateProjectFrame(board, frame, tasks, "Tree");
+  for (const obstacles of [null, board.nodes]) {
+    for (const edge of board.edges) {
+      const a = board.nodes.find(n => n.id === edge.from), b = board.nodes.find(n => n.id === edge.to);
+      const route = routeEdge(edge, a, b, obstacles);
+      for (let i = 1; i < route.points.length; i++)
+        assert.ok(route.points[i].x >= route.points[i - 1].x, "Parent arrows never turn left");
+    }
+  }
+  const root = board.nodes.find(n => n.task === "root");
+  root.w = 600;
+  updateProjectFrame(board, frame, [...tasks, { id: "addition", parent: "root" }], "Tree", { preservePlacement: true });
+  assert.ok(board.nodes.find(n => n.task === "addition").x > root.x + root.w / 2);
+});
+
+test("card disclosure persists per placement and makes room only inside its generated plan", () => {
+  const frame = { id: "f", type: "frame", x: 0, y: 0, w: 640, h: 360 };
+  const board = { nodes: [frame], edges: [] };
+  const tasks = [{ id: "root" }, { id: "child", parent: "root" }];
+  updateProjectFrame(board, frame, tasks, "Tree");
+  const parent = board.nodes.find(n => n.task === "root"), child = board.nodes.find(n => n.task === "child");
+  const unrelated = { id: "other", type: "task", task: "root", x: 1000, y: child.y, w: 340, h: 220 };
+  board.nodes.push(unrelated);
+  const before = structuredClone(unrelated), gap = child.y - parent.y - parent.h;
+  resizeTaskCard(board, parent, true, 112);
+  assert.equal(child.y - parent.y - parent.h, gap);
+  assert.equal(parent.taskExpandedHeight, 220);
+  resizeTaskCard(board, parent, false, 700);
+  assert.equal(child.y - parent.y - parent.h, gap);
+  assert.ok(frame.y + frame.h > child.y + child.h);
+  assert.deepEqual(unrelated, before);
+  const restored = decodeCanvas(encodeCanvas(board));
+  assert.equal(restored.nodes.find(n => n.id === parent.id).taskCollapsed, false);
+  updateProjectFrame(restored, restored.nodes.find(n => n.id === frame.id), tasks, "Tree");
+  assert.equal(restored.nodes.find(n => n.id === parent.id).h, 700);
+  assert.ok(restored.nodes.find(n => n.id === child.id).y > parent.y + parent.h);
+});
 test("frame refresh preserves manually moved cards and places additions without overlaps", () => {
   const frame = { id: "f", type: "frame", x: 0, y: 0, w: 640, h: 360 };
   const board = { nodes: [frame], edges: [] };
@@ -21,6 +65,127 @@ test("frame refresh preserves manually moved cards and places additions without 
       kept.x + kept.w <= added.x ||
       added.y + added.h <= kept.y ||
       kept.y + kept.h <= added.y,
+  );
+});
+
+test("frame updates place a new dependent to the right of its retained prerequisite", () => {
+  const frame = { id: "f", type: "frame", x: 0, y: 0, w: 640, h: 360 };
+  const board = { nodes: [frame], edges: [] };
+  const initial = [{ id: "phase" }, { id: "prerequisite" }];
+  updateProjectFrame(board, frame, initial, "Plan");
+  const card = (id) => board.nodes.find((n) => n.task === id);
+  Object.assign(card("prerequisite"), { x: 488, y: 88 });
+  const kept = structuredClone(board.nodes.filter((n) => n.type === "task"));
+  const tasks = [
+    { id: "dependent", dependencies: ["prerequisite"] },
+    ...initial,
+  ];
+  updateProjectFrame(board, frame, tasks, "Plan", { preservePlacement: true });
+  for (const old of kept) assert.deepEqual(card(old.task), old);
+  assert.equal(
+    card("dependent").x,
+    card("prerequisite").x + card("prerequisite").w + 100,
+  );
+  assert.equal(card("dependent").y, card("prerequisite").y);
+  assert.ok(
+    frame.x + frame.w >= card("dependent").x + card("dependent").w + 48,
+  );
+  const updated = structuredClone(board);
+  updateProjectFrame(board, frame, tasks, "Plan", { preservePlacement: true });
+  assert.deepEqual(board, updated, "Repeated updates keep positions and IDs");
+});
+
+test("new dependency chains follow moved and resized cards regardless of task order", () => {
+  const frame = { id: "f", type: "frame", x: 100, y: 200, w: 640, h: 360 };
+  const board = { nodes: [frame], edges: [] };
+  updateProjectFrame(board, frame, [{ id: "a" }], "Plan");
+  const card = (id) => board.nodes.find((n) => n.task === id);
+  Object.assign(card("a"), { x: 760, y: 540, w: 500, h: 300 });
+  const anchor = structuredClone(card("a"));
+  updateProjectFrame(
+    board,
+    frame,
+    [
+      { id: "c", dependencies: ["b"] },
+      { id: "b", dependencies: ["a", "missing"] },
+      { id: "a" },
+    ],
+    "Plan",
+    { preservePlacement: true },
+  );
+  assert.deepEqual(card("a"), anchor);
+  assert.equal(card("b").x, anchor.x + anchor.w + 100);
+  assert.equal(card("c").x, card("b").x + card("b").w + 100);
+  assert.equal(card("b").y, anchor.y);
+  assert.equal(card("c").y, anchor.y);
+});
+
+test("multiple prerequisites and occupied space keep additions to the right without moving retained cards", () => {
+  const frame = { id: "f", type: "frame", x: 0, y: 0, w: 640, h: 360 };
+  const board = { nodes: [frame], edges: [] };
+  const tasks = [{ id: "a" }, { id: "b" }, { id: "obstacle" }];
+  updateProjectFrame(board, frame, tasks, "Plan");
+  const card = (id) => board.nodes.find((n) => n.task === id);
+  Object.assign(card("a"), { x: 200, y: 100 });
+  Object.assign(card("b"), { x: 700, y: 500, w: 450 });
+  Object.assign(card("obstacle"), { x: 1250, y: 100, w: 400, h: 400 });
+  const kept = structuredClone(board.nodes.filter((n) => n.type === "task"));
+  updateProjectFrame(
+    board,
+    frame,
+    [...tasks, { id: "dependent", dependencies: ["a", "b"] }],
+    "Plan",
+    { preservePlacement: true },
+  );
+  for (const old of kept) assert.deepEqual(card(old.task), old);
+  assert.equal(card("dependent").x, card("b").x + card("b").w + 100);
+  assert.equal(
+    card("dependent").y,
+    card("obstacle").y + card("obstacle").h + 60,
+  );
+});
+
+test("new dependent trees retain the initial child indentation after anchoring to a kept card", () => {
+  const frame = { id: "f", type: "frame", x: 0, y: 0, w: 640, h: 360 };
+  const board = { nodes: [frame], edges: [] };
+  updateProjectFrame(board, frame, [{ id: "a" }], "Plan");
+  const card = (id) => board.nodes.find((n) => n.task === id);
+  Object.assign(card("a"), { x: 900, y: 600, w: 500 });
+  updateProjectFrame(
+    board,
+    frame,
+    [
+      { id: "child", parent: "dependent", dependencies: ["dependent"] },
+      { id: "dependent", dependencies: ["a"] },
+      { id: "a" },
+    ],
+    "Plan",
+    { preservePlacement: true },
+  );
+  assert.equal(card("dependent").x, card("a").x + card("a").w + 100);
+  assert.equal(card("dependent").y, card("a").y);
+  assert.ok(card("child").x > card("dependent").x + card("dependent").w / 2);
+  assert.equal(card("child").y, card("dependent").y + card("dependent").h + 60);
+});
+
+test("incremental layout tolerates imported dependency cycles", () => {
+  const frame = { id: "f", type: "frame", x: 0, y: 0, w: 640, h: 360 };
+  const board = { nodes: [frame], edges: [] };
+  updateProjectFrame(board, frame, [{ id: "kept" }], "Plan");
+  updateProjectFrame(
+    board,
+    frame,
+    [
+      { id: "kept" },
+      { id: "a", dependencies: ["b"] },
+      { id: "b", dependencies: ["a"] },
+    ],
+    "Plan",
+    { preservePlacement: true },
+  );
+  assert.equal(board.nodes.length, 4);
+  assert.ok(
+    board.nodes.every((n) => Number.isFinite(n.x) && Number.isFinite(n.y)),
   );
 });
 test("project plans reconcile their own cards and links without changing unrelated board content", () => {
@@ -59,7 +224,7 @@ test("project plans reconcile their own cards and links without changing unrelat
   assert.equal(board.edges.length, 2);
   const parent = board.nodes.find((n) => n.task === "parent"),
     child = board.nodes.find((n) => n.task === "child");
-  assert.equal(child.x - parent.x, 80);
+  assert.ok(child.x > parent.x + parent.w / 2);
   assert.ok(child.y > parent.y);
   assert.equal(
     board.nodes.find((n) => n.id === "other"),

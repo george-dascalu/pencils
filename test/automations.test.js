@@ -34,7 +34,7 @@ test("automation previews, disabled switch, stale checks and run logs", async (t
   await service.configure(project.id, [rule()], { username: "local" });
   const preview = await service.run(project.id, "r1");
   assert.equal(preview.changes.length, 1);
-  assert.equal((await store.snapshot(project.id)).tasks[0].priority, "none");
+  assert.equal((await store.snapshot(project.id)).tasks[0].priority, "medium");
   await assert.rejects(
     service.run(project.id, "r1", { preview: false }),
     /Enable/,

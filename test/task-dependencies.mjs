@@ -10,7 +10,7 @@ const store = new Store(root);
 await store.init();
 const project = await store.createProject({ title: "Dependency lab" });
 const first = await store.createTask(project.id, { title: "Design" });
-const second = await store.createTask(project.id, { title: "Build" });
+const second = await store.createTask(project.id, { title: "Build", dependencies: [first.id] });
 const third = await store.createTask(project.id, {
   title: "Ship",
   dependencies: [second.id],
@@ -82,17 +82,8 @@ try {
     );
   }
   await page.setViewportSize({ width: 1400, height: 1000 });
-  assert.match(await page.locator("[data-dependants]").innerText(), /Ship/);
-  await page.locator(".dependency-picker summary").click();
-  assert.ok(
-    await page.locator(`[data-dependency-add="${third.id}"]`).isDisabled(),
-  );
-  await page.getByLabel("Search prerequisites").fill(first.key);
-  await page.locator(`[data-dependency-add="${first.id}"]`).click();
-  await until(async () =>
-    (await saved(second.id)).dependencies?.includes(first.id),
-  );
-  await page.screenshot({ path: "/tmp/pencils-task-dependencies.png" });
+  assert.equal(await page.locator(".task-dependencies,.task-parent-field,#task-form .file-path").count(), 0);
+  assert.deepEqual((await saved(second.id)).dependencies, [first.id]);
   await page.locator("[data-action=dialog-close]").click();
   await page.locator("[data-view=board]").click();
   await page.locator("g[data-task-dependency=true]").waitFor();
@@ -238,10 +229,7 @@ try {
     (await saved(second.id)).dependencies?.includes(first.id),
   );
   await page.locator("[data-node=n1] [data-pro=task-details]").click();
-  assert.match(
-    await page.locator("[data-prerequisites]").innerText(),
-    /Design/,
-  );
+  assert.equal(await page.locator(".task-dependencies").count(), 0);
   for (const width of [1400, 390]) {
     await page.setViewportSize({ width, height: 1000 });
     await page.evaluate(() => {
@@ -259,11 +247,13 @@ try {
     });
     assert.ok(
       await page
-        .locator(".task-dependencies")
+        .locator("#task-form")
         .evaluate((el) => el.scrollWidth <= el.clientWidth + 1),
     );
   }
-  await page.locator(`[data-dependency-remove="${first.id}"]`).click();
+  await page.locator("[data-action=dialog-close]").click();
+  await dependencyMenu();
+  await page.getByRole("button", { name: "Remove dependency", exact: true }).click();
   await until(
     async () => !(await saved(second.id)).dependencies?.includes(first.id),
   );
@@ -271,7 +261,7 @@ try {
     async () =>
       (await page.locator("g[data-task-dependency=true]").count()) === 0,
   );
-  await page.locator("[data-action=dialog-close]").click();
+  await page.keyboard.press("Escape");
   await until(
     async () =>
       (await page.locator("g[data-task-dependency=true]").count()) === 0,
@@ -294,7 +284,7 @@ try {
   assert.deepEqual((await saved(second.id)).dependencies, [first.id]);
   assert.deepEqual(errors, []);
   console.log(
-    "PASS: adjacent dates, searchable prerequisites, cycle prevention, downstream tasks, arrow dependency add/remove, task editor sync, mobile/dark layouts and line deletion semantics",
+    "PASS: adjacent dates, hidden relationship sections, preserved dependencies, arrow dependency add/remove, task editor sync, mobile/dark layouts and line deletion semantics",
   );
 } catch (error) {
   await page.screenshot({ path: "/tmp/pencils-dependencies-failure.png" });

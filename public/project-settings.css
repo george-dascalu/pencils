@@ -1,0 +1,281 @@
+/* Project settings share one navigation rail and one page surface. */
+.main:has(.tabs) > #view-content.project-settings-layout {
+  display: grid;
+  grid-template-columns: 228px minmax(0, 1fr);
+  align-items: start;
+  gap: 32px;
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 28px;
+}
+.settings-navigation {
+  position: sticky;
+  top: 20px;
+  min-width: 0;
+}
+.settings-navigation h1 {
+  margin: 0;
+  font-size: 21px;
+}
+.settings-navigation > p {
+  color: var(--muted);
+  margin: 7px 0 18px;
+  overflow-wrap: anywhere;
+}
+.settings-navigation nav {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.settings-nav-group {
+  margin: 17px 10px 6px;
+  font-size: 11px;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.settings-navigation nav a {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 42px;
+  padding: 9px 11px;
+  color: var(--ink);
+  border-radius: 7px;
+  text-decoration: none;
+  font-size: 13px;
+}
+.settings-navigation nav a .icon {
+  width: 17px;
+  height: 17px;
+  flex-shrink: 0;
+}
+.settings-navigation nav a:is(:hover, :focus-visible) {
+  background: var(--surface-soft);
+}
+.settings-navigation nav a:active {
+  box-shadow: inset 0 0 0 1px var(--green);
+}
+.settings-navigation nav a[aria-current="page"] {
+  background: var(--surface-soft);
+  box-shadow: inset 3px 0 var(--green);
+  font-weight: 650;
+}
+.settings-return {
+  margin-top: 24px;
+}
+.settings-content {
+  min-width: 0;
+}
+.settings-section-heading {
+  margin-bottom: 24px;
+}
+.settings-section-heading h2 {
+  font-size: 25px;
+  margin: 0 0 8px;
+}
+.settings-section-heading h2:focus {
+  outline: none;
+}
+.settings-section-heading p {
+  color: var(--muted);
+  margin: 0;
+  line-height: 1.6;
+}
+.settings-section-heading > a {
+  margin-bottom: 18px;
+}
+#settings-panel {
+  min-width: 0;
+}
+#settings-panel > :is(form, .dialog-body, .settings-page-body) {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  min-width: 0;
+}
+#settings-panel :is(.dialog-body, .settings-page-body) {
+  padding: 24px;
+  max-height: none;
+}
+#settings-panel .dialog-body {
+  overflow: visible;
+}
+#settings-panel .dialog-foot {
+  padding: 16px 24px;
+  z-index: 3;
+  border-radius: 0 0 12px 12px;
+  gap: 10px;
+}
+#settings-panel .field {
+  margin-block: 0 20px;
+  min-width: 0;
+}
+#settings-panel .field input,
+#settings-panel .field select,
+#settings-panel .field textarea {
+  width: 100%;
+  min-width: 0;
+}
+#settings-panel :is(.color-picker, .color-picker input) {
+  width: auto;
+}
+#settings-panel .form-error:empty {
+  display: none;
+}
+.settings-save-bar > [role="status"] {
+  margin-right: auto;
+  font-size: 12px;
+  color: var(--muted);
+}
+.settings-field-row {
+  border-bottom: 1px solid var(--line);
+  padding: 0 0 20px;
+  margin-bottom: 24px;
+}
+.settings-field-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+.settings-field-row [hidden],
+#settings-panel [hidden] {
+  display: none !important;
+}
+.settings-action-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  padding: 24px 0;
+  border-bottom: 1px solid var(--line);
+}
+.settings-action-row:first-child {
+  padding-top: 0;
+}
+.settings-action-row:last-child {
+  border-bottom: 0;
+  padding-bottom: 0;
+}
+.settings-action-row > div {
+  min-width: 0;
+}
+.settings-action-row h3 {
+  margin: 0 0 8px;
+  font-size: 16px;
+}
+.settings-action-row p {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.6;
+}
+.settings-action-row button {
+  flex-shrink: 0;
+}
+.settings-danger h3 {
+  color: #a2473c;
+}
+[data-theme="dark"] .settings-danger h3 {
+  color: #ffb5a5;
+}
+.settings-health-summary {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+  padding-bottom: 24px;
+}
+.settings-health-summary section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  background: var(--surface-soft);
+  border-radius: 8px;
+  padding: 16px;
+}
+.settings-health-summary strong {
+  font-size: 24px;
+}
+.settings-health-summary span {
+  font-size: 12px;
+  color: var(--muted);
+}
+#settings-panel :is(.source-description, pre) {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  max-width: 100%;
+}
+#settings-panel .source-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+#settings-panel .workflow-editor {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  min-width: 0;
+}
+#settings-panel .hierarchy-editor {
+  border: 0;
+  padding-top: 0;
+}
+#settings-panel .workflow-editor > legend {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+}
+.settings-mobile-nav {
+  display: none;
+}
+@media (max-width: 1050px) {
+  .main:has(.tabs) > #view-content.project-settings-layout {
+    grid-template-columns: 200px minmax(0, 1fr);
+    gap: 20px;
+    padding: 20px;
+  }
+  .settings-action-row {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 14px;
+  }
+}
+@media (max-width: 780px) {
+  .main:has(.tabs) > #view-content.project-settings-layout {
+    display: block;
+    padding: 16px;
+  }
+  .settings-navigation {
+    position: static;
+    margin-bottom: 24px;
+  }
+  .settings-navigation nav {
+    display: none;
+  }
+  .settings-mobile-nav {
+    display: flex;
+    margin-top: 16px;
+  }
+  .settings-navigation .settings-return {
+    margin-top: 12px;
+  }
+  #settings-panel :is(.dialog-body, .settings-page-body) {
+    padding: 16px;
+  }
+  #settings-panel .dialog-foot {
+    padding: 12px 16px;
+  }
+  #settings-panel .field-row,
+  .settings-health-summary {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .settings-save-bar > [role="status"] {
+    flex-basis: 100%;
+  }
+  #settings-panel .dialog-foot button {
+    flex: 1;
+    white-space: normal;
+  }
+}

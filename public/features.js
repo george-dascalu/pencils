@@ -1,23 +1,29 @@
+import { deferredController } from "./deferred-controller.js";
+import { kanbanGroup, kanbanGroups } from "./kanban-model.js";
+import { priorityLabel } from "./task-priority.js";
+import { randomUUID } from "./uuid.js";
 import {projectAutomations} from "./project-automations.js";
-import {drawingView} from "./drawing-view.js";
+import { projectSettings } from "./project-settings.js";
 import {projectSources} from "./project-sources.js";
-import { recurrenceControls } from "./recurrence-controls.js";
 import { showSchedulePreview } from "./schedule-preview.js";
 import { localDate } from "./task-visibility.js";
-import { taskDependencies } from "./task-dependencies.js";
 import { draftAutosave } from "./draft-autosave.js";
 import { taskAutosave } from "./task-autosave.js";
 import { boardComments } from "./board-comments.js";
 import { workflowEditor } from "./workflow-editor.js";
 import { organisationTeams, projectTeamControls } from "./teams.js";
 import { taskModalControls } from "./task-modal.js";
+import { taskAttachments } from "./task-attachments.js";
+import { taskRelationshipsEditor } from "./task-relationships.js";
 import { taskDescription } from "./task-description.js";
 import { projectLayout } from "./project-layout.js";
 import { personalSettings } from "./personal-settings.js";
 import { planning } from "./planning.js";
 import { grid } from "./grid.js";
+import { tablePreferences } from "./table-model.js";
+import { taskReorder } from "./task-reorder.js";
+import { taskRowEditor } from "./task-row-editor.js";
 import { recoveryUI } from "./recovery-ui.js";
-import { canvasFeatures } from "./canvas.js";
 
 export function installFeatures(ctx) {
   const {
@@ -47,22 +53,39 @@ export function installFeatures(ctx) {
     patchTask,
     clearProject,
   } = ctx;
-  projectAutomations(ctx);
-  const sources = projectSources(ctx), drawings=drawingView(ctx);
+  const documentFeature = deferredController(() => import("./project-documents.js").then(m => m.projectDocuments(ctx)));
+  const documents = documentFeature.controller;
+  let settings;
+  const settingsContext = (section) => ({ ...ctx,
+    openSettings: (detail = "", opts) => settings.open(section, detail, opts),
+    presentSettings: (html, kind) => settings.present(html, kind, section),
+    settingsSaved: () => settings.clean(),
+    settingsCurrent: () => settings.current(section),
+    openDiagnostics: () => settings.open("diagnostics"),
+  });
+  const sources = projectSources(settingsContext("sources")),
+    automations = projectAutomations(settingsContext("automation")),
+    drawingFeature = deferredController(() => import("./drawing-view.js").then(m => m.drawingView(ctx)), { ready: false }, ["enter", "settled"]),
+    drawings = drawingFeature.controller;
+  settings = projectSettings(ctx, { sources, automations });
   const plan = planning(ctx),
     sheet = grid(ctx),
     recovery = recoveryUI(ctx),
     layout = projectLayout(ctx),
-    canvas = canvasFeatures({ ...ctx, layout }),
+    canvasFeature = deferredController(() => import("./canvas.js").then(m => m.canvasFeatures({ ...ctx, layout, openBoard: drawings.enter })), { visible: () => [], edges: "", busy: false, click: false }),
+    canvas = canvasFeature.controller,
     personal = personalSettings(ctx);
+  taskReorder(ctx, sheet);
+  taskRowEditor(ctx);
   const formBases = new WeakMap();
   let reloadWorkflow = null,
     reloadTeams = null,
     taskModal = null,
     taskEditor = null,
+    attachments = null,
+    relationships = null,
     autosave = null,
     taskComments = null,
-    dependencyEditor = null,
     activeDraft = null,
     boot,
     events,
@@ -151,6 +174,7 @@ export function installFeatures(ctx) {
       sortDir: state.sortDir || 1,
       filters: state.extraFilters || {},
       groupBy: state.groupBy || "status",
+      ...(state.view === "kanban" ? { kanbanGroupBy: kanbanGroup(state.kanbanGroupBy) } : {}),
       columns: state.tableColumns || null,
       ...(state.view === "table"
         ? { table: structuredClone(sheet.preferences()) }
@@ -162,7 +186,7 @@ export function installFeatures(ctx) {
     const current = viewDefinition();
     return Object.keys(current).some(
       (key) =>
-        JSON.stringify(view[key] ?? current[key]) !==
+        JSON.stringify(key === "table" ? tablePreferences(view[key], state.config) : view[key] ?? current[key]) !==
         JSON.stringify(current[key]),
     );
   }
@@ -184,12 +208,17 @@ export function installFeatures(ctx) {
         )
         .join(
           "",
-        )}</select>${button("view-save", "Save view")}${state.savedView ? button("view-save-as", "Save as…") : ""}${state.savedView ? button("view-delete", "Delete view") : ""}${button("workflow", "Workflow & fields")}${button("import", "Import notes")}${button("templates", "Templates")}<span class="spacer"></span><form id="quick-capture"><input name="title" aria-label="Quick capture task" placeholder="Quick capture…" required maxlength="300"><button class="button small" type="submit">Add</button></form></div>${["board", "drawing", "overview"].includes(state.view) ? "" : `<div class="advanced-filters"><input id="filter-assignee" aria-label="Filter assignee" placeholder="Assignee" value="${esc(f.assignee || "")}"><input id="filter-tag" aria-label="Filter tag" placeholder="Tag" value="${esc(f.tag || "")}"><select id="filter-due" aria-label="Filter deadline">${options(["", "overdue", "week", "none"], f.due || "", { "": "Any deadline", overdue: "Overdue", week: "Next 7 days", none: "No deadline" })}</select><select id="group-by" aria-label="Group tasks">${options(["status", "type", "assignee", "priority", "none"], state.groupBy || "status", { status: "Group: status", type: "Group: type", assignee: "Group: assignee", priority: "Group: priority", none: "No grouping" })}</select><label>Completion<select id="filter-completion">${options(["", "open", "done"], f.completion || "", { "": "Any completion", open: "Open", done: "Completed" })}</select></label><label><input type="checkbox" id="filter-blocked" ${f.blocked ? "checked" : ""}> Blocked</label><label><input type="checkbox" id="filter-archived" ${f.archived ? "checked" : ""}> Include archived</label></div>`}`,
+        )}</select>${button("view-save", "Save view")}${state.savedView ? button("view-save-as", "Save as…") : ""}${state.savedView ? button("view-delete", "Delete view") : ""}</div>${["board", "drawing", "overview"].includes(state.view) ? "" : `<div class="advanced-filters"><input id="filter-assignee" aria-label="Filter assignee" placeholder="Assignee" value="${esc(f.assignee || "")}"><input id="filter-tag" aria-label="Filter tag" placeholder="Tag" value="${esc(f.tag || "")}"><select id="filter-due" aria-label="Filter deadline">${options(["", "overdue", "week", "none"], f.due || "", { "": "Any deadline", overdue: "Overdue", week: "Next 7 days", none: "No deadline" })}</select><select id="group-by" aria-label="Group tasks">${options(["status", "type", "assignee", "priority", "none"], state.groupBy || "status", { status: "Group: status", type: "Group: type", assignee: "Group: assignee", priority: "Group: priority", none: "No grouping" })}</select><label>Completion<select id="filter-completion">${options(["", "open", "done"], f.completion || "", { "": "Any completion", open: "Open", done: "Completed" })}</select></label><label><input type="checkbox" id="filter-blocked" ${f.blocked ? "checked" : ""}> Blocked</label><label><input type="checkbox" id="filter-archived" ${f.archived ? "checked" : ""}> Include archived</label><button type="button" class="button small" data-action="filters-reset">Clear filters</button></div>`}`,
     );
     if (state.view === "table") {
       $("#group-by")?.remove();
       $(".toolbar-right")?.setAttribute("hidden", "");
     } else $(".toolbar-right")?.removeAttribute("hidden");
+    $(".kanban-group-control")?.remove();
+    if (state.view === "kanban") {
+      $("#group-by")?.remove();
+      $(".toolbar-right")?.insertAdjacentHTML("afterbegin", `<label class="kanban-group-control">Swimlanes<select id="kanban-group" class="filter" aria-label="Kanban swimlanes">${options(kanbanGroups, kanbanGroup(state.kanbanGroupBy), { none: "None", assignee: "Assignee", priority: "Priority", type: "Task type" })}</select></label>`);
+    }
     layout.projectHeader();
   }
   function pagination(total) {
@@ -212,6 +241,17 @@ export function installFeatures(ctx) {
     );
   }
   document.addEventListener("click", (event) => {
+    const toggle = event.target.closest("[data-kanban-collapse]");
+    if (toggle && state.view === "kanban") {
+      const key = toggle.dataset.kanbanCollapse;
+      const collapsed = new Set(state.kanbanCollapsed || []);
+      if (collapsed.has(key)) collapsed.delete(key); else collapsed.add(key);
+      state.kanbanCollapsed = [...collapsed];
+      storage.set(`kanban-collapsed:${state.project.id}`, state.kanbanCollapsed);
+      renderView(true);
+      [...document.querySelectorAll("[data-kanban-collapse]")].find(el => el.dataset.kanbanCollapse === key)?.focus({ preventScroll: true });
+      return;
+    }
     const el = event.target.closest("[data-kanban-more]");
     if (!el || state.view !== "kanban") return;
     state.kanbanLimits ||= {};
@@ -231,13 +271,7 @@ export function installFeatures(ctx) {
     if (state.view !== "board") drawings.reset();
     connectEvents();
     personal.render();
-    const sidebar = $(".sidebar-directory") || $(".side-new");
-    if (sidebar)
-      sidebar.insertAdjacentHTML(
-        "afterend",
-        `<div class="workspace-tools">${button("dashboard", "Organisation overview")}${button("global-search", "Search all projects ⌘/Ctrl K")}${button("recovery", "Recovery & backups")}${state.session?.required && state.session.user?.admin ? button("accounts", "Accounts & access") : ""}${state.session?.required ? button("logout", "Sign out") : ""}<label><input type="checkbox" id="show-archived-projects" ${state.showArchived ? "checked" : ""}> Archived projects</label></div>`,
-      );
-    if (!state.project && !state.directoryPage)
+    if (!state.project && !state.directoryPage && !state.helpArticle)
       plan.dashboard().catch((e) => toast(e.message, true));
     const metric = $(".stats-strip");
     if (metric)
@@ -249,7 +283,10 @@ export function installFeatures(ctx) {
         avatar.textContent = state.session.user.username
           .slice(0, 2)
           .toUpperCase();
-        avatar.title = state.session.user.username;
+        avatar.title = state.session.automatic
+          ? `${state.session.user.username} · Administrator · Automatic local sign-in`
+          : state.session.user.username;
+        avatar.setAttribute("aria-description", avatar.title);
       }
     }
     if (state.project?.archived)
@@ -259,57 +296,18 @@ export function installFeatures(ctx) {
       );
     ctx.updateEdges();
   }
-  function taskExtras(t) {
-    const fields = config()
-      .fields.map((f) => {
-        const name = `custom:${f.id}`,
-          value = t.fields?.[f.id];
-        if (f.type === "select")
-          return `<label class="field">${esc(f.name)}<select name="${esc(name)}"><option value="">None</option>${options(f.options, value)}</select></label>`;
-        if (f.type === "checkbox")
-          return `<label class="field">${esc(f.name)}<select name="${esc(name)}">${options(["false", "true"], String(value || false))}</select></label>`;
-        return field(
-          name,
-          f.name,
-          value || "",
-          f.type === "number" ? "number" : f.type === "date" ? "date" : "text",
-        );
-      })
-      .join("");
-    return `<details class="task-extra"><summary>Planning</summary><div class="field-row">${field("estimate", "Estimate (hours)", t.estimate, "number", 'min="0" step="any"')}</div><div class="field-row"><label class="field">Repeat after completion<select name="recurrence-unit">${options(["", "day", "week", "month"], t.recurrence?.unit || "", { "": "Does not repeat", day: "Days", week: "Weeks", month: "Months" })}</select></label>${field("recurrence-interval", "Every", t.recurrence?.interval || 1, "number", 'min="1" max="365"')}</div>${fields ? `<h3>Custom fields</h3><div class="custom-fields">${fields}</div>` : ""}</details>${t.id ? `<div class="task-actions">${button("task-template", "Save as template")}${button("attach", "Attach file")}</div>` : ""}`;
-  }
   function taskData(form) {
     const data = new FormData(form),
       id = form.dataset.id,
-      t = task(id) || {},
+      t = task(id) || formBases.get(form) || {},
       fields = { ...(t.fields || {}) };
-    for (const f of config().fields) {
-      if (!data.has(`custom:${f.id}`)) continue;
-      const raw = data.get(`custom:${f.id}`);
-      fields[f.id] =
-        f.type === "number"
-          ? raw === ""
-            ? null
-            : Number(raw)
-          : f.type === "checkbox"
-            ? raw === "true"
-            : raw || null;
-    }
     const comment = String(data.get("new-comment") || "").trim();
     return {
       start: data.get("start") || null,
-      estimate:
-        !data.has("estimate") || data.get("estimate") === ""
-          ? null
-          : Number(data.get("estimate")),
+      estimate: t.estimate ?? null,
       dependencies: data.getAll("dependencies"),
       related_records: data.getAll("related_records"),
-      recurrence: data.get("recurrence-unit")
-        ? {
-            unit: data.get("recurrence-unit"),
-            interval: Number(data.get("recurrence-interval")),
-          }
-        : null,
+      recurrence: t.recurrence ?? null,
       fields,
       comments: [
         ...(t.comments || []),
@@ -330,15 +328,18 @@ export function installFeatures(ctx) {
     return `draft:${state.session?.user?.username || "shared"}:${state.project?.id || state.organisation?.id || "workspace"}:${form.id}:${form.dataset.draftNode ? `board:${form.dataset.board}:draft:${form.dataset.draftNode}` : form.dataset.id || form.dataset.edit || "new"}${form.dataset.directoryPage ? `:${form.dataset.directoryPage}` : ""}`;
   }
   function dialogOpened(kind, pageForm) {
+    relationships?.destroy();
+    relationships = null;
     autosave?.destroy();
     autosave = null;
     taskComments?.destroy();
     taskComments = null;
     taskModal?.destroy();
     taskModal = null;
+    attachments?.destroy();
+    attachments = null;
     taskEditor?.destroy();
     taskEditor = null;
-    dependencyEditor = null;
     const form = pageForm || $("dialog form");
     activeDraft = null;
     reloadWorkflow = null;
@@ -358,14 +359,11 @@ export function installFeatures(ctx) {
     if (kind === "task" && form) {
       const t = task(form.dataset.id) || state.dialogTask || {};
       formBases.set(form, structuredClone(t));
-      if (t.id)
-        $(".dialog-body", form).insertAdjacentHTML("beforeend", taskExtras(t));
       sources.decorateTask(form,t);
       const linkedDrawings=state.boards.filter(b=>b.settings?.linked_tasks?.includes(t.id));
       if(linkedDrawings.length)form.querySelector('.dialog-body').insertAdjacentHTML('beforeend',`<section><h3>Canvases</h3>${linkedDrawings.map(b=>`<a class="button small" href="#project/${state.project.id}/board/${b.id}" target="_blank">${esc(b.title)} ↗</a>`).join('')}</section>`);
-      recurrenceControls(form, t, state.tasks, esc);
-      dependencyEditor = taskDependencies(ctx, form, t);
-      taskEditor = taskDescription(form, ctx.markdown, ctx.icon);
+      taskEditor = taskDescription(form, ctx.markdown, ctx.icon, state.project.id);
+      attachments = taskAttachments(ctx, form, taskEditor);
       taskModal = taskModalControls(ctx, form, async (version) => {
         if (
           !confirm(
@@ -427,8 +425,7 @@ export function installFeatures(ctx) {
         sync,
         url,
         onSaved: ({ disposed }) => {
-          if (!form.elements.subtaskTitle.value.trim())
-            storage.set(savedDraftKey, null);
+          storage.set(savedDraftKey, null);
           if (state.project?.id !== projectId || !task(id)) return;
           if (["board", "drawing"].includes(state.view)) canvas.taskSaved(id);
           else if (state.view !== "settings") renderView(true);
@@ -443,7 +440,7 @@ export function installFeatures(ctx) {
       taskComments = boardComments(
         ctx,
         () => state.session?.user?.username || "Workspace",
-        (prefix) => `${prefix}-${crypto.randomUUID?.() || Date.now()}`,
+        (prefix) => `${prefix}-${randomUUID()}`,
         {
           host: form.closest("dialog"),
           mount: form.querySelector(".task-editor-content"),
@@ -463,6 +460,15 @@ export function installFeatures(ctx) {
           trigger: '[data-feature="task-comments"]',
         },
       );
+    }
+    if (kind === "task" && form?.dataset.id) {
+      relationships = taskRelationshipsEditor(ctx, form, {
+        flush: () => autosave?.flush() || Promise.resolve(false),
+        changed: (id) => {
+          if (["board", "drawing"].includes(state.view)) canvas.taskSaved(id);
+          else if (state.view !== "settings") renderView(true);
+        },
+      });
     }
     if (kind === "project" && form) {
       const c =
@@ -556,6 +562,7 @@ export function installFeatures(ctx) {
     return (
       state.loading ||
       state.settingsDirty ||
+      state.settingsSaving ||
       state.dialog ||
       state.boardTaskEditor ||
       state.canvasEditing ||
@@ -563,6 +570,8 @@ export function installFeatures(ctx) {
       state.headerMenu ||
       state.selectionToolbarOpen ||
       state.kanbanDragging ||
+      state.timelineSelecting ||
+      state.taskReordering ||
       state.toolDragging ||
       sync.entries.size ||
       document.activeElement?.matches(
@@ -612,6 +621,7 @@ export function installFeatures(ctx) {
       ...(state.project
         ? [
             { id: "new-task", title: "New task", run: () => taskDialog(null) },
+            ...[["workflow", "Workflow & fields"], ["import", "Import notes"], ["templates", "Task templates"], ["quick-capture", "Quick capture task"]].map(([id, title]) => ({ id, title, run: () => click(id) })),
             ...[
               "overview",
               "list",
@@ -694,19 +704,6 @@ export function installFeatures(ctx) {
       ].focus();
     }
   });
-  function workflow() {
-    const c = config();
-    showDialog(
-      `<dialog class="dialog wide-dialog"><form id="workflow-form">${dialogHead("Workflow & custom fields")}<div class="dialog-body"><p>These settings belong only to ${esc(state.project.title)}. Task types use short names separated by commas.</p>${field("types", "Task types", c.types.join(", "), "text", "required")}<h3>Custom fields</h3><div id="custom-field-list">${c.fields.map(customFieldRow).join("")}</div>${button("field-add", "Add field")}<div class="form-error" role="alert"></div></div><div class="dialog-foot"><button type="submit" class="button primary">Save workflow</button></div></form></dialog>`,
-      "workflow",
-    );
-    workflowEditor($("#workflow-form"), c, state.tasks, ctx);
-  }
-  function customFieldRow(
-    f = { id: `field_${Date.now()}`, name: "", type: "text", options: [] },
-  ) {
-    return `<div class="custom-field-row" data-field-id="${esc(f.id)}"><input class="field-name" placeholder="Field name" aria-label="Field name" value="${esc(f.name)}" required maxlength="100"><select class="field-type" aria-label="Field type">${options(["text", "number", "date", "select", "checkbox"], f.type)}</select><input class="field-options" aria-label="Select options" placeholder="Options separated by commas" value="${esc((f.options || []).join(", "))}">${button("field-remove", "Remove")}</div>`;
-  }
   function templates() {
     showDialog(
       `<dialog class="dialog">${dialogHead("Task templates")}<div class="dialog-body"><p>Save an existing task as a template from its editor. Templates belong to this project.</p>${(state.project.templates || []).map((t, i) => `<div class="recovery-item"><strong>${esc(t.name)}</strong>${button("template-use", "Use template", `data-index="${i}"`)}${button("template-delete", "Delete", `data-index="${i}"`)}</div>`).join("") || "<p>No templates yet.</p>"}</div><div class="dialog-foot"><button class="button" data-action="dialog-close">Close</button></div></dialog>`,
@@ -775,10 +772,9 @@ export function installFeatures(ctx) {
       state.savedView = null;
       renderView();
     }
-    if (action === "workflow") workflow();
-    if (action === "field-add")
-      $("#custom-field-list").insertAdjacentHTML("beforeend", customFieldRow());
-    if (action === "field-remove") el.closest(".custom-field-row").remove();
+    if (action === "quick-capture")
+      showDialog(`<dialog class="dialog">${dialogHead("Quick capture task")}<form id="quick-capture" class="dialog-body"><label class="field">Title<input name="title" aria-label="Quick capture task" placeholder="Task title…" required maxlength="300" autofocus></label><button class="button primary" type="submit">Add task</button></form></dialog>`, "quick-capture");
+    if (action === "workflow") settings.open("workflow");
     if (action === "page-prev" || action === "page-next") {
       state.page = Math.max(
         0,
@@ -807,7 +803,7 @@ export function installFeatures(ctx) {
         }
         taskEditor?.reload();
         taskModal?.reload();
-        dependencyEditor?.refresh();
+        relationships?.refresh();
         reloadTeams?.();
         reloadWorkflow?.();
         if (
@@ -834,7 +830,6 @@ export function installFeatures(ctx) {
         "task-duplicate",
         "task-archive",
         "task-history",
-        "task-template",
       ].includes(action) &&
       autosave &&
       !(await autosave.flush())
@@ -876,31 +871,6 @@ export function installFeatures(ctx) {
       closeDialog(true);
       await refresh();
       taskDialog(copy.id);
-    }
-    if (action === "task-template" && currentTask) {
-      const name = prompt("Template name", currentTask.title);
-      if (name) {
-        await saveProject({
-          templates: [
-            ...(state.project.templates || []),
-            {
-              name,
-              task: {
-                title: currentTask.title,
-                body: currentTask.body,
-                type: currentTask.type,
-                status: currentTask.status,
-                priority: currentTask.priority,
-                tags: currentTask.tags,
-                fields: currentTask.fields,
-                estimate: currentTask.estimate,
-                recurrence: currentTask.recurrence,
-              },
-            },
-          ],
-        });
-        toast("Template saved.");
-      }
     }
     if (action === "task-history" && currentTask) {
       taskComments?.close();
@@ -970,62 +940,8 @@ export function installFeatures(ctx) {
       templates();
     }
     if (action === "import") {
-      const input = document.createElement("input");
-      input.type = "file";
-      input.accept = ".md";
-      input.multiple = true;
-      input.onchange = async () => {
-        try {
-          const files = [...input.files];
-          if (files.length > 200)
-            throw new Error("Import up to 200 notes at a time.");
-          const notes = await Promise.all(
-            files.map(async (f) => ({ name: f.name, content: await f.text() })),
-          );
-          const result = await api(route("import"), {
-            method: "POST",
-            body: { notes },
-          });
-          await refresh();
-          toast(`Imported ${result.tasks.length} notes.`);
-        } catch (e) {
-          toast(e.message, true);
-        }
-      };
-      input.click();
-    }
-    if (action === "attach") {
-      const input = document.createElement("input");
-      input.type = "file";
-      input.accept = ".png,.jpg,.jpeg,.gif,.webp,.pdf,.txt,.md,.csv,.zip";
-      input.onchange = async () => {
-        try {
-          const file = input.files[0];
-          if (!file) return;
-          if (file.size > 10000000) throw new Error("Use a file under 10 MB.");
-          const bytes = new Uint8Array(await file.arrayBuffer());
-          let raw = "";
-          for (let i = 0; i < bytes.length; i += 8192)
-            raw += String.fromCharCode(...bytes.subarray(i, i + 8192));
-          const attachment = await api(route("attachments"), {
-              method: "POST",
-              body: { name: file.name, data: btoa(raw) },
-            }),
-            body = $('#task-form [name="body"]');
-          if (body) {
-            body.value += `\n${file.type.startsWith("image/") ? "!" : ""}[${file.name.replace(/[\[\]]/g, "")}](../${attachment.path})\n`;
-            body.dispatchEvent(new Event("input", { bubbles: true }));
-            taskEditor?.reload();
-            taskModal?.reload();
-            reloadTeams?.();
-            reloadWorkflow?.();
-            toast("Attachment added. Save the task to retain the link.");
-          }
-        } catch (e) {
-          toast(e.message, true);
-        }
-      };
-      input.click();
+      settings.open("import");
+      return;
     }
     if (action === "accounts") await accounts();
     if (action === "account-edit") {
@@ -1071,12 +987,20 @@ export function installFeatures(ctx) {
       state.page = 0;
       renderView(true);
     }
+    if (el.id === "kanban-group") {
+      state.kanbanGroupBy = kanbanGroup(el.value);
+      storage.set(`kanban-group:${state.project.id}`, state.kanbanGroupBy);
+      renderView(true);
+      $("#kanban-group")?.focus({ preventScroll: true });
+    }
     if (el.id === "group-by") {
       state.groupBy = el.value;
+      storage.set(`group-by:${state.project.id}`, state.groupBy);
       renderView(true);
     }
     if (el.id === "show-archived-projects") {
       state.showArchived = el.checked;
+      if (state.dialog === "personal") state.dirty = false;
       renderApp();
     }
     if (el.id === "saved-view") {
@@ -1095,6 +1019,7 @@ export function installFeatures(ctx) {
           extraFilters: structuredClone(view.filters || {}),
           tableColumns: structuredClone(view.columns || null),
           groupBy: view.groupBy || "status",
+          ...(view.view === "kanban" ? { kanbanGroupBy: kanbanGroup(view.kanbanGroupBy) } : {}),
           ...(view.view === "table"
             ? {
                 tablePreferences: structuredClone(
@@ -1107,15 +1032,16 @@ export function installFeatures(ctx) {
         });
       }
       if (view?.view === "table") sheet.persist();
+      if (view?.view === "kanban") storage.set(`kanban-group:${state.project.id}`, state.kanbanGroupBy);
       renderApp();
     }
   });
   document.addEventListener("submit", async (event) => {
     const form = event.target;
+    if (form.hasAttribute("data-settings-form")) return;
     if (
       ![
         "quick-capture",
-        "workflow-form",
         "view-form",
         "account-form",
         "login-form",
@@ -1140,33 +1066,8 @@ export function installFeatures(ctx) {
           body: { title: data.get("title") },
         });
         await refresh();
+        form.reset();
         $("#quick-capture input")?.focus();
-      }
-      if (form.id === "workflow-form") {
-        const list = (key) =>
-          String(data.get(key))
-            .split(",")
-            .map((v) => v.trim())
-            .filter(Boolean);
-        const fields = $$(".custom-field-row", form).map((row) => ({
-          id: row.dataset.fieldId,
-          name: $(".field-name", row).value,
-          type: $(".field-type", row).value,
-          options: $(".field-options", row)
-            .value.split(",")
-            .map((v) => v.trim())
-            .filter(Boolean),
-        }));
-        await saveProject({
-          schema: {
-            ...JSON.parse(data.get("workflowSchema")),
-            types: list("types"),
-
-            fields,
-          },
-        });
-        closeDialog(true);
-        await refresh();
       }
       if (form.id === "view-form") {
         const scope = data.get("scope");
@@ -1175,7 +1076,7 @@ export function installFeatures(ctx) {
         const id =
           !state.savingViewAs && sameScope && current
             ? current.id
-            : `${scope === "personal" ? "pv" : "v"}-${crypto.randomUUID()}`;
+            : `${scope === "personal" ? "pv" : "v"}-${randomUUID()}`;
         const view = {
           ...viewDefinition(),
           id,
@@ -1230,27 +1131,46 @@ export function installFeatures(ctx) {
     }
   });
   return {
+    viewReady: () => state.view === "documents" ? documentFeature.ready()
+      : ["board", "drawing"].includes(state.view) ? canvasFeature.ready() && drawingFeature.ready() : true,
+    prepareView: () => state.view === "documents" ? documentFeature.load()
+      : Promise.all([canvasFeature.load(), drawingFeature.load()]),
+    documentsRender: documents.render,
+    documentsReset: documents.reset,
+    documentsSyncChanged: documents.syncChanged,
+    settingsRender: settings.render,
+    settingsOpen: settings.open,
+    settingsCanLeave: settings.canLeave,
     afterRender,
     drawingReady: drawings.ready,
     drawingReset: drawings.reset,
     drawingGallery: drawings.gallery,
     drawingEnter: drawings.enter,
+    drawingSettled: drawings.settled,
     drawingRender: drawings.render,
     drawingCheckpoint: drawings.checkpoint,
     viewToolbar,
+    adaptToolbar: layout.compactToolbar,
     pagination,
     filter,
     progress,
     dialogOpened,
     flushTask: () => autosave?.flush() || Promise.resolve(true),
-    taskSyncChanged: () => autosave?.syncChanged(),
+    taskSyncChanged: () => {
+      autosave?.syncChanged();
+      relationships?.refresh();
+    },
     dialogClosed: () => {
+      relationships?.destroy();
+      relationships = null;
       autosave?.destroy();
       autosave = null;
       taskComments?.destroy();
       taskComments = null;
       taskModal?.destroy();
       taskModal = null;
+      attachments?.destroy();
+      attachments = null;
       taskEditor?.destroy();
       taskEditor = null;
     },
@@ -1267,6 +1187,7 @@ export function installFeatures(ctx) {
     overview: () => plan.overview(progress()),
     calendar: plan.calendar,
     timeline: plan.timeline,
+    timelineRender: plan.timelineRender,
     capacity: plan.capacity,
     canvasRender: canvas.render,
     canvasEdit: canvas.edit,
@@ -1288,7 +1209,7 @@ export function installFeatures(ctx) {
       return [...groups]
         .map(
           ([name, items]) =>
-            `<section class="list-group"><h2 class="section-title">${esc(label(name))}<span class="count">${items.length}</span></h2>${items.map((t) => row(t)).join("")}</section>`,
+            `<section class="list-group"><h2 class="section-title">${esc(key === "priority" ? priorityLabel(name) : label(name))}<span class="count">${items.length}</span></h2>${items.map((t) => row(t)).join("")}</section>`,
         )
         .join("");
     },

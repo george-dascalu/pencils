@@ -1,7 +1,8 @@
-const CACHE = "pencils-drawing-shell-v3";
+const CACHE = "pencils-drawing-shell-v4";
 const files = [
   "/drawing-offline.html",
   "/drawing-offline.js",
+  "/uuid.js",
   "/drawing-store.js",
   "/ink-preview.js",
   "/pen-model.js",

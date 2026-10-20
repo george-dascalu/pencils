@@ -8,7 +8,15 @@ import {
 export function boardComments(ctx, author, uid, adapter = null) {
   const listeners = new AbortController();
   const { $, state, board, task, esc, icon } = ctx;
-  const changeBoard = adapter?.change || ctx.changeBoard;
+  const changeBoard = (mutate) => {
+    if (adapter) return adapter.change(mutate);
+    const record = linkedTask();
+    if (!record) return ctx.changeBoard(mutate);
+    const base = structuredClone(record);
+    mutate();
+    void ctx.sync.enqueue(ctx.route("tasks", record.id), base, { comments: record.comments });
+    ctx.renderView(true);
+  };
   const embedded = !!adapter?.mount;
   let panel = null,
     target = null,
@@ -17,8 +25,9 @@ export function boardComments(ctx, author, uid, adapter = null) {
     replyTo = null;
   const drafts = new Map();
   const key = () => `${projectId}:${boardId}:${target}`;
-  const node = () =>
-    adapter ? adapter.item() : board()?.nodes.find((n) => n.id === target);
+  const object = () => board()?.nodes.find((n) => n.id === target);
+  const linkedTask = () => !adapter && object()?.type === "task" ? task(object().task) : null;
+  const node = () => adapter ? adapter.item() : linkedTask() || object();
   const actor = () => {
     if (state.session?.user?.username)
       return `user:${state.session.user.username}`;
@@ -86,7 +95,7 @@ export function boardComments(ctx, author, uid, adapter = null) {
     )
       return close();
     const canvas = $("#canvas"),
-      n = node();
+      n = object();
     if (!canvas) return close();
     positionBoardObjectPanel(panel, n, canvas, state.camera);
   }
@@ -97,6 +106,7 @@ export function boardComments(ctx, author, uid, adapter = null) {
     const n = node();
     panel.querySelector(".board-comments-object").textContent =
       adapter?.title?.() ||
+      n.title ||
       task(n.task)?.title ||
       n.draft?.title ||
       n.text ||
@@ -138,6 +148,18 @@ export function boardComments(ctx, author, uid, adapter = null) {
     target = n.id;
     boardId = adapter ? null : board().id;
     projectId = state.project.id;
+    // Import legacy object discussions once, keeping their IDs, replies and
+    // reactions stable. Originals stay on the board as a recoverable copy.
+    const record = linkedTask();
+    if (record && n.comments?.length) {
+      const prefix = `board:${boardId}:${n.id}:`;
+      const existing = new Set((record.comments || []).map((c) => c.id));
+      const legacy = n.comments.filter((c) => !existing.has(prefix + c.id)).map((c) => ({
+        ...structuredClone(c), id: prefix + c.id,
+        ...(c.replyTo ? { replyTo: prefix + c.replyTo } : {}),
+      }));
+      if (legacy.length) changeBoard(() => { record.comments = [...(record.comments || []), ...legacy]; });
+    }
     panel = document.createElement("section");
     panel.className = `board-comments${embedded ? " task-comments-panel" : ""}`;
     if (!embedded) panel.setAttribute("popover", "manual");

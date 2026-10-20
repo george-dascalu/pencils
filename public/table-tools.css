@@ -2,9 +2,81 @@
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 8px;
-  margin-bottom: 12px;
+  gap: 6px;
+  margin-bottom: 8px;
 }
+.task-table.spreadsheet {
+  --table-row-height: 32px;
+  --table-row-action-height: 28px;
+  --table-header-height: 28px;
+}
+.task-table.spreadsheet td {
+  height: var(--table-row-height);
+}
+.task-table.spreadsheet td :is(input:not([type="checkbox"]), select) {
+  min-height: var(--table-row-height);
+  padding: 4px 8px;
+}
+.spreadsheet .table-description {
+  display: block;
+  width: 100%;
+  min-height: var(--table-row-height);
+  padding: 4px 8px;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: var(--ink);
+  font: inherit;
+  text-align: left;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  cursor: pointer;
+}
+.spreadsheet .table-description.is-empty { color: var(--muted); }
+.spreadsheet .table-description:hover { background: var(--surface-soft); }
+.spreadsheet .table-description:focus-visible { outline: 2px solid var(--green); outline-offset: -2px; }
+/* Every dropdown cell shares its value layout and chevron; native controls keep
+   keyboard navigation, accessible names and the existing table edit behaviour. */
+.spreadsheet .table-cell-select,
+.spreadsheet .table-cell-readonly {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  position: relative;
+  width: 100%;
+  min-height: var(--table-row-height);
+  padding: 2px 8px;
+}
+.spreadsheet .table-cell-select > select {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
+}
+.table-cell-value {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  pointer-events: none;
+}
+.table-cell-chevron {
+  display: grid;
+  place-items: center;
+  flex: 0 0 16px;
+  color: var(--muted);
+  pointer-events: none;
+}
+.table-cell-chevron > .icon { width: 16px; height: 16px; }
+.spreadsheet :is(.table-cell-value, .table-cell-readonly) .task-assignee { width: 24px; height: 24px; margin: 0; }
+.spreadsheet :is(.table-cell-value, .table-cell-readonly) .task-type > .icon { width: 16px; height: 16px; }
+.spreadsheet .table-cell-select:focus-within { outline: 2px solid var(--green); outline-offset: -2px; }
 .table-columns-panel {
   gap: 8px;
 }
@@ -143,16 +215,7 @@
   font-size: 12px;
   color: var(--muted);
 }
-.table-view-summary,
-.table-result-summary {
-  color: var(--muted);
-  font-size: 12px;
-}
-.table-result-summary {
-  margin: 12px 0;
-}
 .task-table.spreadsheet thead th {
-  --table-header-height: 32px;
   padding: 0;
 }
 .spreadsheet thead th:first-child {
@@ -164,11 +227,11 @@
   height: var(--table-header-height);
   padding-right: 8px;
 }
-.spreadsheet .table-column-heading > button:first-child {
+.spreadsheet .table-column-heading > [data-table-sort-column] {
   min-width: 0;
   flex: 1;
   align-items: center;
-  padding: 0 10px;
+  padding: 0 4px;
   text-align: left;
 }
 .table-column-name {
@@ -176,26 +239,9 @@
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-.spreadsheet .table-column-heading > button:first-child:hover {
+.spreadsheet .table-column-heading > button:hover {
   background: var(--surface);
   color: var(--ink);
-}
-.spreadsheet .table-column-filter {
-  flex: 0 0 var(--table-header-height);
-  width: var(--table-header-height);
-  height: var(--table-header-height);
-  align-items: center;
-  justify-content: center;
-  opacity: 0.6;
-}
-.spreadsheet .table-column-filter:is(:hover, :focus-visible, .active) {
-  opacity: 1;
-  background: var(--surface-soft);
-  color: var(--green);
-}
-.table-column-filter .icon {
-  width: 14px;
-  height: 14px;
 }
 .table-sort-indicator {
   flex-shrink: 0;
@@ -203,19 +249,40 @@
   font-weight: 700;
 }
 .spreadsheet [data-table-sort-column] {
+  cursor: pointer;
+  touch-action: pan-x pan-y;
+  user-select: none;
+  -webkit-user-select: none;
+}
+.spreadsheet .table-column-grip {
+  flex: 0 0 20px;
+  width: 20px;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  opacity: 0;
+  font-size: 13px;
+  line-height: 1;
   cursor: grab;
   touch-action: none;
   user-select: none;
   -webkit-user-select: none;
 }
-.table-column-grip {
-  flex: 0 0 auto;
-  opacity: 0.45;
-  font-size: 13px;
-  line-height: 1;
+.spreadsheet .table-header-menu > summary {
+  opacity: 0;
 }
-.spreadsheet [data-table-sort-column]:is(:hover, :focus-visible) .table-column-grip {
+.spreadsheet th:is(:hover, :has(:focus-visible), :has(.table-header-menu[open]), .table-column-drag-source) .table-column-grip,
+.spreadsheet th:is(:hover, :has(:focus-visible), :has(.table-header-menu[open]), .table-column-drag-source) .table-header-menu > summary {
   opacity: 1;
+}
+/* Touch screens have no hover; keep both actions discoverable and usable. */
+@media (hover: none), (pointer: coarse) {
+  .spreadsheet .table-column-grip,
+  .spreadsheet .table-header-menu > summary { opacity: 1; }
+}
+.spreadsheet .table-column-grip:focus-visible {
+  outline: 2px solid var(--green);
+  outline-offset: -2px;
 }
 .spreadsheet.table-reordering :is([data-column-key="key"], [data-column-key="title"]) {
   position: relative;
@@ -223,7 +290,7 @@
 }
 .spreadsheet .table-column-drag-source {
   box-shadow: inset 0 0 0 1px var(--green);
-  background: var(--surface-soft);
+  opacity: 0.5;
 }
 .table-column-dragging,
 .table-column-dragging * {
@@ -235,11 +302,10 @@
   position: fixed;
   z-index: 1000;
   pointer-events: none;
-  max-width: min(260px, calc(100vw - 16px));
+  max-width: calc(100vw - 16px);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  padding: 10px 16px;
   border: 1px solid var(--green);
   border-radius: 8px;
   background: var(--surface);
@@ -247,12 +313,35 @@
   font-size: 12px;
   box-shadow: 0 8px 24px #0003;
 }
+.table-column-drag-ghost > strong,
+.table-column-drag-ghost > small {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  padding: 8px 12px 4px;
+}
+.table-column-drag-ghost > small {
+  padding: 0 12px 8px;
+  color: var(--muted);
+  font-size: 11px;
+}
+.table-column-drag-sample {
+  display: flex;
+  align-items: center;
+  min-height: 38px;
+  padding: 8px 12px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  border-top: 1px solid var(--line);
+}
+.table-column-drag-sample .task-assignee { width: 24px; height: 24px; margin: 0; }
+.table-column-drag-sample .table-cell-readonly { padding: 0; }
 .table-column-drag-ghost.invalid { opacity: 0.5; }
 .table-column-drop-marker {
   position: fixed;
   z-index: 999;
-  width: 2px;
-  margin-left: -1px;
+  width: 3px;
+  margin-left: -1.5px;
   pointer-events: none;
   background: var(--green);
 }
@@ -274,8 +363,9 @@
 .table-group-row button {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 8px 12px;
+  gap: 6px;
+  padding: 4px 10px;
+  min-height: var(--table-header-height);
   color: var(--ink);
   font-size: 12px;
   position: sticky;
@@ -320,9 +410,6 @@
     right: auto;
     width: min(360px, calc(100vw - 32px));
   }
-  .table-view-summary {
-    flex-basis: 100%;
-  }
 }
 .table-group-summary {
   margin-left: auto;
@@ -342,6 +429,22 @@
   left: var(--pin-offset, 0px);
   z-index: 1;
   background: var(--surface);
+}
+
+/* Pinned identity headers use the same opaque background as every column. */
+.task-table.spreadsheet thead th {
+  background: var(--surface-soft);
+}
+.spreadsheet .table-header-menu > summary {
+  background: transparent;
+}
+.spreadsheet .table-header-menu > summary:is(:hover, :focus-visible),
+.spreadsheet .table-header-menu[open] > summary {
+  background: color-mix(in srgb, var(--green) 12%, var(--surface));
+  color: var(--ink);
+}
+.spreadsheet .table-header-menu > summary:active {
+  background: color-mix(in srgb, var(--green) 22%, var(--surface));
 }
 
 .spreadsheet thead [data-column-key] {
@@ -408,11 +511,50 @@
 }
 .table-header-menu .board-menu-panel {
   min-width: 180px;
+  padding: 6px;
+  gap: 2px;
+  text-align: left;
+  font: 13px/1.4 var(--app-font, sans-serif);
+  letter-spacing: normal;
+  text-transform: none;
+}
+.table-header-menu .board-menu-panel > header {
+  display: grid;
+  gap: 3px;
+  padding: 7px 10px 9px;
+  margin-bottom: 3px;
+  border-bottom: 1px solid var(--line);
+}
+.table-header-menu .board-menu-panel > header small {
+  color: var(--muted);
+  font-size: 11px;
+}
+.table-header-menu .board-menu-panel > button {
+  font-size: 13px;
+}
+.table-header-menu .board-menu-panel > button[data-applied="true"] {
+  background: var(--surface-soft);
+}
+.table-header-menu .column-action-check {
+  margin-left: auto;
+}
+/* Narrow fields keep their label and actions. */
+.spreadsheet .table-column-compact .table-header-menu > summary {
+  width: 24px;
+}
+.spreadsheet .table-header-menu.has-active-filter > summary {
+  color: var(--green);
+  background: var(--surface-soft);
 }
 @media (pointer: coarse) {
-  .task-table.spreadsheet thead th {
+  .task-table.spreadsheet {
+    --table-row-height: 44px;
+    --table-row-action-height: 44px;
     --table-header-height: 44px;
   }
+  .spreadsheet .table-column-grip { flex-basis: 44px; width: 44px; }
+  .spreadsheet .table-column-compact .table-column-grip { flex-basis: 28px; width: 28px; }
+  .spreadsheet .table-column-compact .table-header-menu > summary { width: 28px; }
 }
 .spreadsheet [role="gridcell"]:focus {
   outline: 1px solid var(--accent);

@@ -1,4 +1,5 @@
 import { queryEditor } from "./query-editor.js";
+import { priorityOptions, priorityLabel } from "./task-priority.js";
 import {
   tableFields,
   tablePreferences,
@@ -32,7 +33,8 @@ export function tableTools(ctx) {
     if (key === "parent")
       return state.tasks.find((t) => t.id === v)?.title || v;
     if (key === "status") return ctx.statusNames[v] || v;
-    if (["type", "priority"].includes(key)) return ctx.label(v);
+    if (key === "priority") return priorityLabel(v);
+    if (key === "type") return ctx.label(v);
     const custom = state.config.fields.find((f) => `fields.${f.id}` === key);
     if (custom?.type === "checkbox") return v === "true" ? "Yes" : "No";
     return v;
@@ -46,7 +48,7 @@ export function tableTools(ctx) {
         : key === "type"
           ? state.config.types
           : key === "priority"
-            ? ["none", "low", "medium", "high", "urgent"]
+            ? priorityOptions
             : field?.type === "select"
               ? field.options
               : field?.type === "checkbox"
@@ -60,6 +62,10 @@ export function tableTools(ctx) {
     preferences()
       .filters.find((f) => f.field === key)
       ?.values?.forEach((v) => values.add(v));
+    if (key === "priority") return [...values].sort((a, b) => {
+      const rank = value => priorityOptions.includes(value) ? priorityOptions.indexOf(value) : priorityOptions.length;
+      return rank(a) - rank(b) || display(key, a).localeCompare(display(key, b));
+    });
     return [...values].sort((a, b) =>
       display(key, a).localeCompare(display(key, b), undefined, {
         numeric: true,
@@ -124,8 +130,8 @@ export function tableTools(ctx) {
     const p = preferences(),
       fields = tableFields(state.config),
       count = p.filters.filter(activeTableFilter).length;
-    const groups = `<p>Group rows by up to two fields.</p><label><input type="checkbox" id="table-outline" ${p.outline?"checked":""}>Parent/child outline inside groups</label><p class="field-hint">Children remain in their own group. Filtered-out parents stay hidden; their identity is shown beside the child. Counts include each matching task once.</p>${[0, 1].map((i) => `<label class="field">${i ? "Then group by" : "Group by"}<select data-table-group="${i}" aria-label="${i ? "Then group by" : "Group table by"}" ${i && !p.groups[0] ? "disabled" : ""}><option value="">None</option>${fieldOptions(p.groups[i], p.groups)}</select></label>`).join("")}<div class="table-rule"><button class="button small" data-table-action="expand">Expand all</button><button class="button small" data-table-action="collapse">Collapse all</button></div>`;
-    const sorts = `<p>Sort rules apply in order. Empty values stay last.</p>${p.sorts
+    const groups = `${[0, 1].map((i) => `<label class="field">${i ? "Then group by" : "Group by"}<select data-table-group="${i}" aria-label="${i ? "Then group by" : "Group table by"}" ${i && !p.groups[0] ? "disabled" : ""}><option value="">None</option>${fieldOptions(p.groups[i], p.groups)}</select></label>`).join("")}<div class="table-rule"><button class="button small" data-table-action="expand">Expand all</button><button class="button small" data-table-action="collapse">Collapse all</button></div><button type="button" class="button small" data-table-action="clear-groups" ${p.groups.length ? "" : "disabled"}>Reset grouping</button>`;
+    const sorts = `${p.sorts
       .map(
         (s, i) =>
           `<div class="table-rule"><select data-table-sort="${i}" data-sort-part="field" aria-label="Sort field ${i + 1}">${fieldOptions(
@@ -139,8 +145,8 @@ export function tableTools(ctx) {
     const available = fields.filter(
       (f) => !p.filters.some((x) => x.field === f.key),
     );
-    const filters = `<p>Match all column filters; selected values within a column match any.</p>${p.filters.map(filterHTML).join("")}<label class="field">Add column filter<select id="table-add-filter" aria-label="Add column filter"><option value="">Choose a column…</option>${available.map((f) => `<option value="${esc(f.key)}">${esc(f.name)}</option>`).join("")}</select></label>${p.filters.length ? '<button class="button small" data-table-action="clear-filters">Clear column filters</button>' : ""}`;
-    return `<div class="table-view-tools">${menu("groups", `Group${p.groups.length ? ` (${p.groups.length})` : ""}`, groups)}${menu("sorts", `Sort${p.sorts.length ? ` (${p.sorts.length})` : ""}`, sorts)}${menu("filters", `Column filters${count ? ` (${count})` : ""}`, filters)}${`<button class="button small" data-query-open>Advanced filters${p.query ? " · Active" : ""}</button>`}${p.groups.length || p.sorts.length || p.filters.length || p.query || p.outline ? '<button class="button small" data-table-action="reset">Reset table view</button>' : ""}<span class="table-view-summary">${p.groups.map((k) => esc(fields.find((f) => f.key === k).name)).join(" → ")}</span></div>`;
+    const filters = `${p.filters.map(filterHTML).join("")}<label class="field">Add column filter<select id="table-add-filter" aria-label="Add column filter"><option value="">Choose a column…</option>${available.map((f) => `<option value="${esc(f.key)}">${esc(f.name)}</option>`).join("")}</select></label>${p.filters.length ? '<button class="button small" data-table-action="clear-filters">Clear column filters</button>' : ""}`;
+    return `<div class="table-view-tools">${menu("groups", `Group${p.groups.length ? ` (${p.groups.length})` : ""}`, groups)}${menu("sorts", `Sort${p.sorts.length ? ` (${p.sorts.length})` : ""}`, sorts)}${menu("filters", `Column filters${count ? ` (${count})` : ""}`, filters)}${`<button class="button small" data-query-open>Advanced filters${p.query ? " · Active" : ""}</button>`}${p.groups.length || p.sorts.length || p.filters.length || p.query ? '<button class="button small" data-table-action="reset">Reset table view</button>' : ""}</div>`;
   }
   function redraw() {
     const scroll = document.querySelector(".table-scroll")?.scrollLeft || 0;
@@ -191,13 +197,13 @@ export function tableTools(ctx) {
               : "contains",
       });
     commit("filters");
-    document.querySelector(".table-menu-panel [data-table-filter]")?.focus();
+    const index = preferences().filters.findIndex((filter) => filter.field === key);
+    document.querySelector(`[data-board-menu="table-filters"] [data-table-filter="${index}"]:not(:disabled)`)?.focus({ preventScroll: true });
   }
   function change(el) {
     if (state.view !== "table") return;
     const p = preferences();
-    if (el.id === "table-outline") {p.outline=el.checked;commit("groups");}
-    else if (el.dataset.tableGroup != null) {
+    if (el.dataset.tableGroup != null) {
       p.groups[Number(el.dataset.tableGroup)] = el.value;
       p.groups =
         el.dataset.tableGroup === "0" && !el.value
@@ -260,7 +266,7 @@ export function tableTools(ctx) {
   document.addEventListener("click", (e) => {
     if (state.view !== "table") return;
     const el = e.target.closest(
-      "[data-table-action],[data-table-sort-column],[data-table-filter-column],[data-table-column-action]",
+      "[data-table-action],[data-table-sort-column],[data-table-column-action]",
     );
     if (!el) return;
     const p = preferences();
@@ -268,6 +274,11 @@ export function tableTools(ctx) {
       const action = el.dataset.tableColumnAction,
         field = el.dataset.column;
       if (action === "filter") return addFilter(field);
+      const headers = [...document.querySelectorAll(".spreadsheet th[data-column-key]")];
+      const index = headers.findIndex((header) => header.dataset.columnKey === field);
+      const focusColumn = action === "hide"
+        ? (headers[index + 1] || headers[index - 1])?.dataset.columnKey
+        : field;
       if (action === "asc" || action === "desc")
         p.sorts = [{ field, dir: action === "asc" ? 1 : -1 }];
       if (action === "group") {
@@ -283,11 +294,9 @@ export function tableTools(ctx) {
         const column = state.tableColumns.find((c) => c.key === field);
         if (column) column.visible = false;
       }
-      commit();
-      return;
-    }
-    if (el.dataset.tableFilterColumn) {
-      addFilter(el.dataset.tableFilterColumn);
+      commit(null, { selector: focusColumn
+        ? `.spreadsheet th[data-column-key="${CSS.escape(focusColumn)}"] .table-header-menu > summary`
+        : '[data-board-menu="table-columns"] > summary' });
       return;
     }
     if (el.dataset.tableSortColumn) {
@@ -308,6 +317,12 @@ export function tableTools(ctx) {
       return;
     }
     const action = el.dataset.tableAction;
+    if (action === "clear-groups") {
+      p.groups = [];
+      state.tableCollapsed = new Set();
+      commit("groups", { selector: '[data-table-group="0"]' });
+      return;
+    }
     if (action === "remove-sort") p.sorts.splice(+el.dataset.index, 1);
     if (action === "clear-sorts") p.sorts = [];
     if (action === "add-sort" && p.sorts.length < 3)

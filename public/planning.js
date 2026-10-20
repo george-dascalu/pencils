@@ -1,3 +1,4 @@
+import { taskColorAttributes, taskColorDot } from "./task-colors.js";
 import { localDate } from "./task-visibility.js";
 import { capacityView } from "./capacity.js";
 import { timelineHTML, timelineInteractions } from "./task-timeline.js";
@@ -36,7 +37,7 @@ export function planning(ctx) {
         .sort((a, b) => a.due.localeCompare(b.due))
         .map(
           (t) =>
-            `<div class="agenda-row"><time datetime="${esc(t.due)}">${esc(new Date(t.due + "T12:00:00").toLocaleDateString(undefined, { weekday: "short", day: "numeric", month: "short" }))}</time><button data-action="task-open" data-id="${esc(t.id)}">${esc(t.key || "")} ${esc(t.title)}</button><input type="date" ${t.source?'disabled title="Change the due date in the source"':""} data-agenda-date="${esc(t.id)}" value="${esc(t.due)}" aria-label="Due date for ${esc(t.title)}"></div>`,
+            `<div class="agenda-row"><time datetime="${esc(t.due)}">${esc(new Date(t.due + "T12:00:00").toLocaleDateString(undefined, { weekday: "short", day: "numeric", month: "short" }))}</time><button data-action="task-open" data-id="${esc(t.id)}">${taskColorDot(state, "status", t.status)}${esc(t.key || "")} ${esc(t.title)}</button><input type="date" ${t.source?'disabled title="Change the due date in the source"':""} data-agenda-date="${esc(t.id)}" value="${esc(t.due)}" aria-label="Due date for ${esc(t.title)}"></div>`,
         )
         .join("") || '<p class="field-hint">No tasks due in this period.</p>'
     }</div>`;
@@ -45,7 +46,7 @@ export function planning(ctx) {
         .filter((t) => !t.due)
         .map(
           (t) =>
-            `<div class="agenda-row"><button data-action="task-open" data-id="${esc(t.id)}">${esc(t.key || "")} ${esc(t.title)}</button><input type="date" ${t.source?'disabled title="Change the due date in the source"':""} data-agenda-date="${esc(t.id)}" aria-label="Due date for ${esc(t.title)}"></div>`,
+            `<div class="agenda-row"><button data-action="task-open" data-id="${esc(t.id)}">${taskColorDot(state, "status", t.status)}${esc(t.key || "")} ${esc(t.title)}</button><input type="date" ${t.source?'disabled title="Change the due date in the source"':""} data-agenda-date="${esc(t.id)}" aria-label="Due date for ${esc(t.title)}"></div>`,
         )
         .join("") || "<p>All matching tasks have a due date.</p>"
     }</details>`;
@@ -62,7 +63,7 @@ export function planning(ctx) {
                 .filter((t) => t.due === key)
                 .map(
                   (t) =>
-                    `<button class="calendar-task" data-action="task-open" data-id="${esc(t.id)}">${esc(t.key || "")} ${esc(t.title)}</button>`,
+                    `<button class="calendar-task" ${taskColorAttributes(state, "status", t.status)} data-action="task-open" data-id="${esc(t.id)}">${esc(t.key || "")} ${esc(t.title)}</button>`,
                 )
                 .join("")}</div>`;
             },
@@ -70,19 +71,21 @@ export function planning(ctx) {
     }${unscheduled}<p class="field-hint">${tasks.filter((t) => !t.due).length} tasks have no due date. Select a date to add a task.</p>`;
   }
   let timelineScale = ctx.storage.get("timeline-scale", "week");
-  timelineInteractions(ctx, (scope, value) => {
+  let timelineWeekends = ctx.storage.get("timeline-weekends", true) !== false;
+  const timelineController = timelineInteractions(ctx, (scope, option, value) => {
     if (scope === "project") {
-      timelineScale = value;
-      ctx.storage.set("timeline-scale", value);
+      if (option === "scale") timelineScale = value;
+      else if (option === "weekends") timelineWeekends = value;
+      ctx.storage.set(option === "range" ? `timeline-range:${state.project.id}` : `timeline-${option}`, value);
       renderView(true);
     } else
-      ctx.changeBoard((b) => {
+      return ctx.changeBoard((b) => {
         const n = b.nodes.find((n) => n.id === scope);
-        if (n) n.timelineScale = value;
+        if (n) n[{ scale: "timelineScale", weekends: "timelineShowWeekends", range: "timelineRange" }[option]] = value;
       });
   });
   function timeline(tasks) {
-    return timelineHTML(tasks, ctx, timelineScale);
+    return timelineHTML(tasks, ctx, timelineScale, "project", timelineWeekends, ctx.storage.get(`timeline-range:${state.project.id}`, null));
   }
   function overview(metric) {
     const tasks = state.tasks.filter((t) => !t.archived),
@@ -99,7 +102,7 @@ export function planning(ctx) {
         ),
       ),
     );
-    return `<div class="project-overview"><p class="field-hint">All ${tasks.length} active project tasks · ${state.tasks.length-tasks.length} archived tasks excluded. Current project data; list filters do not apply.</p><div class="dashboard-metrics"><button class="dashboard-metric" data-feature="overview-open" data-query="done"><strong>${metric.percent}%</strong>Complete</button><button class="dashboard-metric" data-feature="overview-open" data-query="open"><strong>${open.length}</strong>Open tasks</button><button class="dashboard-metric" data-feature="overview-open" data-query="blocked"><strong>${blocked.length}</strong>Blocked</button><button class="dashboard-metric" data-feature="overview-open" data-query="overdue"><strong>${open.filter((t) => t.due && t.due < today()).length}</strong>Overdue</button></div><div class="project-overview-columns"><section class="overview-summary"><h2>About this project</h2><div class="canvas-markdown">${ctx.markdown(state.project.body || "Add a description in Project settings.")}</div><h2>Work by status</h2>${state.config.statuses.map((status) => `<div class="overview-status"><span>${esc(ctx.statusNames[status] || status)}</span><strong>${tasks.filter((t) => t.status === status).length}</strong></div>`).join("")}</section><section class="dashboard-deadlines"><h2>Upcoming and overdue</h2>${due.map((t) => `<button data-action="task-open" data-id="${esc(t.id)}"><span>${esc(t.title)}<small>${esc(t.assignee || "Unassigned")}</small></span><time>${esc(t.due)}</time></button>`).join("") || "<p>No open tasks have deadlines.</p>"}</section></div></div>`;
+    return `<div class="project-overview"><p class="field-hint">All ${tasks.length} active project tasks · ${state.tasks.length-tasks.length} archived tasks excluded. Current project data; list filters do not apply.</p><div class="dashboard-metrics"><button class="dashboard-metric" data-feature="overview-open" data-query="done"><strong>${metric.percent}%</strong>Complete</button><button class="dashboard-metric" data-feature="overview-open" data-query="open"><strong>${open.length}</strong>Open tasks</button><button class="dashboard-metric" data-feature="overview-open" data-query="blocked"><strong>${blocked.length}</strong>Blocked</button><button class="dashboard-metric" data-feature="overview-open" data-query="overdue"><strong>${open.filter((t) => t.due && t.due < today()).length}</strong>Overdue</button></div><div class="project-overview-columns"><section class="overview-summary"><h2>About this project</h2><div class="canvas-markdown">${ctx.markdown(state.project.body || "Add a description in Project settings.")}</div><h2>Work by status</h2>${state.config.statuses.map((status) => `<div class="overview-status"><span>${taskColorDot(state, "status", status)}${esc(ctx.statusNames[status] || status)}</span><strong>${tasks.filter((t) => t.status === status).length}</strong></div>`).join("")}</section><section class="dashboard-deadlines"><h2>Upcoming and overdue</h2>${due.map((t) => `<button data-action="task-open" data-id="${esc(t.id)}"><span>${esc(t.title)}<small class="task-color-badge" ${taskColorAttributes(state, "assignee", t.assignee)}>${esc(t.assignee || "Unassigned")}</small></span><time>${esc(t.due)}</time></button>`).join("") || "<p>No open tasks have deadlines.</p>"}</section></div></div>`;
   }
   async function dashboard() {
     const data = await api("/overview");
@@ -161,6 +164,7 @@ export function planning(ctx) {
   });
   function click(action, el) {
     if (action === "overview-open") {
+      if (!ctx.canNavigate()) return true;
       state.search = "";
       state.status = "all";
       state.type = "all";
@@ -206,6 +210,7 @@ export function planning(ctx) {
   return {
     calendar,
     timeline,
+    timelineRender: timelineController.render,
     capacity: capacity.render,
     overview,
     dashboard,

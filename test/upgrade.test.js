@@ -227,6 +227,7 @@ test("Markdown import preserves arbitrary properties, aliases, body and safe att
     ],
   });
   assert.equal(result.tasks[0].source, "Obsidian");
+  assert.equal(result.tasks[0].priority, "medium");
   assert.equal(result.tasks[0].custom, "yes");
   assert.ok(result.tasks[0].aliases.includes("Existing note"));
   assert.match(result.tasks[0].body, /\[\[Another note\]\]/);

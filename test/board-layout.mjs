@@ -115,40 +115,42 @@ try {
   assert.ok(rect.height > 750, `Canvas height: ${rect.height}px`);
   assert.ok(await page.locator(".hero").isHidden());
   const summary = (key) => page.locator(`[data-board-menu=${key}] > summary`);
-  await summary("project").focus();
-  await summary("project").press("Space");
-  assert.match(
-    await page.locator(".compact-project-info").textContent(),
-    /Board lab/,
-  );
+  await summary("more").focus();
+  await summary("more").press("Space");
+  assert.equal(await summary("project").count(), 0);
   assert.ok(await page.locator("#saved-view").isVisible());
   await page.keyboard.press("Escape");
   assert.ok(
-    await summary("project").evaluate((el) => el === document.activeElement),
+    await summary("more").evaluate((el) => el === document.activeElement),
   );
   await summary("more").click();
   assert.ok(await page.locator("[data-feature=canvas-json]").isVisible());
-  await summary("add").click();
+  await summary("board").click();
   assert.ok(await page.locator("[data-feature=canvas-json]").isHidden());
   assert.equal(await summary("navigate").count(), 0);
   assert.equal(await page.locator('[data-action="board-rename"]').count(), 0);
   await summary("more").click();
-  assert.ok(await page.locator(".board-toolbar [data-pro=outline]").isVisible());
-  assert.ok(await page.locator(".board-toolbar [data-pro=present]").isVisible());
+  assert.ok(
+    await page.locator(".board-toolbar [data-pro=outline]").isVisible(),
+  );
+  assert.ok(
+    await page.locator(".board-toolbar [data-pro=present]").isVisible(),
+  );
   assert.ok(await page.locator("#frame-nav").isVisible());
   await page.locator(".breadcrumb strong").click();
   assert.equal(await page.locator(".board-menu[open]").count(), 0);
   await page
     .getByRole("button", { name: "Project settings", exact: true })
     .click();
-  await page.locator("dialog").waitFor();
-  await page.locator("[data-action=dialog-close]").first().click();
+  await page.locator("#project-form").waitFor();
+  await selectProjectView(page, "board");
   // Trigger a complete content redraw; every menu must keep exactly one action.
   await clickControl(page.locator(".board-menu [data-pro=outline]"));
   await selectProjectView(page, "list");
   assert.ok(await page.locator(".hero").isHidden());
   assert.equal(await page.locator("#board-project-tools").count(), 1);
   await page.locator("[data-view=board]").click();
+  await page.locator("#canvas").waitFor();
   for (const sel of [
     "#saved-view",
     ".board-settings-button",
@@ -178,10 +180,11 @@ try {
     await page
       .getByRole("button", { name: "Project settings", exact: true })
       .click();
-    await page.locator("[data-action=dialog-close]").first().click();
+    await page.locator("#project-form").waitFor();
+    await selectProjectView(page, "board");
     await page.getByRole("button", { name: "New task", exact: true }).click();
     await page.locator("[data-action=dialog-close]").first().click();
-    for (const key of ["project", "board", "add", "more"]) {
+    for (const key of ["board", "more"]) {
       await summary(key).click();
       const box = await page
         .locator(`[data-board-menu=${key}] .board-menu-panel`)
@@ -191,6 +194,31 @@ try {
       await page.keyboard.press("Escape");
     }
   }
+  const tools = page.locator(".board-tools");
+  const cameraBeforeScroll = await page
+    .locator("#canvas-world")
+    .getAttribute("style");
+  await tools.evaluate((el) => {
+    el.scrollTop = 0;
+  });
+  await tools.hover();
+  await page.mouse.wheel(0, 300);
+  await page.waitForFunction(
+    () => document.querySelector(".board-tools").scrollTop > 0,
+  );
+  assert.equal(
+    await page.locator("#canvas-world").getAttribute("style"),
+    cameraBeforeScroll,
+    "Scrolling the tool categories does not zoom or pan the board",
+  );
+  await tools
+    .getByRole("button", { name: "Connect two objects", exact: true })
+    .click();
+  assert.ok(
+    await tools.evaluate((el) => el.scrollTop > 0),
+    "Selecting a tool keeps the toolbar scroll position",
+  );
+  await page.keyboard.press("v");
   await page.screenshot({
     path: "/tmp/pencils-compact-mobile.png",
     fullPage: true,

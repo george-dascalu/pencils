@@ -1,0 +1,125 @@
+.task-attachments {
+  margin-top: 20px;
+}
+.task-attachments[hidden] {
+  display: none;
+}
+.task-attachments h3 {
+  margin: 0 0 8px;
+  font-size: 14px;
+}
+.task-attachment-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+.task-attachment-list li + li {
+  border-top: 1px solid var(--line);
+}
+.task-attachment-open {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  width: 100%;
+  min-height: 38px;
+  padding: 8px;
+  border-radius: 5px;
+  text-align: left;
+}
+.task-attachment-open:is(:hover, :focus-visible, [aria-expanded="true"]) {
+  background: var(--surface-soft);
+}
+.task-attachment-open:active {
+  background: var(--accent-soft, var(--line));
+}
+.task-attachment-name {
+  flex: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.task-attachment-type {
+  flex-shrink: 0;
+  font-size: 11px;
+  color: var(--muted);
+}
+.attachment-preview.selection-popover {
+  position: fixed;
+  inset: auto;
+  margin: 0;
+  padding: 0;
+  min-width: 0;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  color: var(--ink);
+  background: var(--surface);
+  box-shadow: 0 10px 32px #0003;
+  overflow: auto;
+  overscroll-behavior: contain;
+}
+.attachment-preview:popover-open {
+  display: flex;
+  flex-direction: column;
+}
+.attachment-preview::backdrop {
+  background: transparent;
+  pointer-events: none;
+}
+.attachment-preview > :is(header, footer) {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  flex-shrink: 0;
+}
+.attachment-preview > header {
+  border-bottom: 1px solid var(--line);
+}
+.attachment-preview > header strong {
+  flex: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  font-size: 14px;
+}
+.attachment-preview > header .icon-button {
+  width: 30px;
+  height: 30px;
+  flex-shrink: 0;
+}
+.attachment-preview > footer {
+  justify-content: space-between;
+  border-top: 1px solid var(--line);
+}
+.attachment-preview [hidden] {
+  display: none;
+}
+.attachment-preview-content {
+  padding: 12px;
+  overflow: auto;
+  min-height: 0;
+}
+.attachment-preview-content > img {
+  display: block;
+  margin: auto;
+  max-width: 100%;
+  max-height: 350px;
+  object-fit: contain;
+}
+.attachment-preview-content > pre {
+  margin: 0;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  font:
+    12px/1.6 ui-monospace,
+    monospace;
+}
+.attachment-preview-content > p {
+  margin: 0;
+  line-height: 1.5;
+}
+.attachment-preview-content > iframe {
+  display: block;
+  width: 100%;
+  height: 350px;
+  border: 0;
+  background: white;
+}

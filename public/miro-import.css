@@ -1,0 +1,128 @@
+.miro-import {
+  width: min(700px, calc(100vw - 24px));
+  display: flex;
+  flex-direction: column;
+  max-height: var(--settings-height, calc(100dvh - 24px));
+}
+.miro-import:not(:popover-open) {
+  display: none;
+}
+.miro-import .dialog-head {
+  flex: 0 0 auto;
+  gap: 12px;
+}
+.miro-import .dialog-body {
+  min-height: 0;
+  overflow: auto;
+  padding: 16px;
+}
+.miro-import form,
+.miro-import details {
+  display: grid;
+  gap: 12px;
+}
+.miro-import details:not([open]) > :not(summary) {
+  display: none;
+}
+.miro-import details {
+  margin-block: 0;
+}
+.miro-import .dialog-body > details {
+  margin-top: 16px;
+}
+.miro-import summary {
+  cursor: pointer;
+}
+.miro-import p {
+  margin: 0 0 12px;
+}
+.miro-import-fields {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+.miro-import .field {
+  min-width: 0;
+  margin: 0;
+}
+.miro-import-source,
+.miro-import-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-block: 0 16px;
+  flex-wrap: wrap;
+}
+.miro-import-actions {
+  margin-block: 16px 0;
+  justify-content: flex-end;
+}
+.miro-default-priority {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: var(--control-height);
+}
+.miro-frame-list {
+  max-height: 180px;
+  overflow: auto;
+}
+.miro-check {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding-block: 5px;
+  overflow-wrap: anywhere;
+}
+.miro-check input {
+  flex: 0 0 auto;
+}
+.miro-import-review {
+  padding-top: 16px;
+  border-top: 1px solid var(--line);
+}
+.miro-import-counts {
+  font-weight: 600;
+  margin-bottom: 12px;
+}
+.miro-layout-preview {
+  display: block;
+  width: 100%;
+  height: 200px;
+  background: #f5f6ee;
+  border: 1px solid var(--line);
+  border-radius: var(--radius, 8px);
+  margin-bottom: 8px;
+}
+.miro-import-review > small {
+  display: block;
+  margin-bottom: 12px;
+}
+.miro-import-issues ul {
+  max-height: 180px;
+  overflow: auto;
+  padding-left: 20px;
+}
+.miro-import li {
+  margin-block: 6px;
+  overflow-wrap: anywhere;
+}
+.miro-import-feedback {
+  padding-inline: 16px;
+  flex: 0 0 auto;
+}
+.miro-import-feedback p:empty {
+  display: none;
+}
+@media (max-width: 600px) {
+  .miro-import-fields {
+    grid-template-columns: 1fr;
+  }
+  .miro-import .dialog-body {
+    padding: 12px;
+  }
+  .miro-check {
+    min-height: 44px;
+  }
+}

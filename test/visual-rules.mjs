@@ -1,3 +1,4 @@
+import { selectSettingsPage } from "./menu-controls.mjs";
 import assert from "node:assert/strict";
 import fs from "node:fs/promises";
 import os from "node:os";
@@ -32,6 +33,7 @@ try {
   await page.goto(`http://127.0.0.1:${server.address().port}`);
   await page.locator(".project-link").click();
   await page.locator("[data-action=project-edit]").click();
+  await selectSettingsPage(page, "workflow");
   assert.ok(
     await diagram("workflow").locator("[data-rule-connect]").isDisabled(),
   );
@@ -46,6 +48,9 @@ try {
   assert.ok((await schema()).transitions.todo.includes("done"));
   await workflow.locator("[data-rule-remove=done]").click();
   assert.ok(!(await schema()).transitions.todo.includes("done"));
+  await page.getByRole("button", { name: "Save changes", exact: true }).click();
+  await page.getByText("Changes saved", { exact: true }).waitFor();
+  await selectSettingsPage(page, "hierarchy");
   const hierarchy = diagram("hierarchy");
   await hierarchy.locator("[data-rule-node=epic]").click();
   await hierarchy.locator("[data-rule-remove=bug]").click();
@@ -70,10 +75,6 @@ try {
         ),
         false,
       );
-      await workflow.scrollIntoViewIfNeeded();
-      await page.screenshot({
-        path: `/tmp/pencils-visual-workflow-${width}-${theme}.png`,
-      });
       await hierarchy.scrollIntoViewIfNeeded();
       await page.screenshot({
         path: `/tmp/pencils-visual-hierarchy-${width}-${theme}.png`,
@@ -81,7 +82,7 @@ try {
     }
   }
   await page.setViewportSize({ width: 1440, height: 1000 });
-  await page.getByRole("button", { name: "Save project", exact: true }).click();
+  await page.getByRole("button", { name: "Save changes", exact: true }).click();
   await page.waitForTimeout(800);
   const saved = (await store.snapshot(project.id)).project.schema;
   assert.ok(!saved.transitions.todo.includes("done"));
@@ -92,6 +93,7 @@ try {
     .getByRole("button", { name: "Back to project", exact: true })
     .click();
   await page.locator("[data-action=project-edit]").click();
+  await selectSettingsPage(page, "hierarchy");
   assert.ok(!(await schema()).transitions.todo.includes("done"));
   assert.ok(!(await schema()).hierarchy.roots.includes("bug"));
   assert.deepEqual(errors, []);

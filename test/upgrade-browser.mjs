@@ -1,3 +1,4 @@
+import { selectSettingsPage } from "./menu-controls.mjs";
 import { clickControl, reveal, selectProjectView } from "./menu-controls.mjs";
 import assert from "node:assert/strict";
 import fs from "node:fs/promises";
@@ -97,15 +98,18 @@ try {
   ).selectOption((await snap()).project.views[0].id);
   assert.equal(await page.locator("#filter-assignee").inputValue(), "Alex");
   console.log("PASS: range paste and named views persist across reload");
-  await clickControl(feature("workflow"));
-  await page
-    .locator("#workflow-form [name=types]")
-    .fill("epic, milestone, story, task, bug, research");
-  await clickControl(feature("field-add"));
-  await page.locator(".field-name").fill("Cost");
-  await page.locator(".field-type").selectOption("number");
+  await page.locator('[data-action="project-edit"]').click();
+  await selectSettingsPage(page, "hierarchy");
+  await page.locator("#workflow-form [name=types]").fill("epic, milestone, story, task, bug, research");
   await page.locator("#workflow-form [type=submit]").click();
-  await page.locator("dialog").waitFor({ state: "detached" });
+  await page.getByText("Changes saved", { exact: true }).waitFor();
+  await selectSettingsPage(page, "fields");
+  await page.locator("[data-settings-add-field]").click();
+  await page.locator("[data-field-name]").fill("Cost");
+  await page.locator("[data-field-type]").selectOption("number");
+  await page.locator("#workflow-form [type=submit]").click();
+  await page.getByText("Changes saved", { exact: true }).waitFor();
+  await page.locator('[data-action="settings-close"]').click();
   await page.locator("[data-action=task-new]:visible").first().click();
   await page.locator("#task-form [name=title]").fill("Planned work");
   await page.locator("[data-task-picker=type] .task-picker-trigger").click();
@@ -117,6 +121,7 @@ try {
   const createdPlanned = (await snap()).tasks.find(
     (t) => t.title === "Planned work",
   );
+  await view("list");
   await (await reveal(page.locator("#filter-assignee"))).fill("");
   await page.locator("#filter-assignee").press("Tab");
   await view("list");
@@ -124,9 +129,9 @@ try {
     .locator(`[data-action="task-open"][data-id="${createdPlanned.id}"]`)
     .first()
     .click();
-  await page.getByText("Planning", { exact: true }).click();
   await page.locator("#task-form [name=start]").fill("2026-10-14");
   await page.locator("#task-form [name=due]").fill("2026-10-16");
+  await page.locator("#task-form summary").filter({ hasText: /^Planning$/ }).click();
   await page.locator('#task-form [name^="custom:"]').fill("42");
   await page.locator("#task-form").evaluate(form=>form.requestSubmit());
   await page.locator("[data-autosave-status]").filter({hasText:/^Saved automatically$/}).waitFor();
@@ -168,14 +173,10 @@ try {
     .locator(`[data-action=task-open][data-id="${planned.id}"]`)
     .first()
     .click();
-  const chooser = page.waitForEvent("filechooser");
-  await clickControl(feature("attach"));
-  await (
-    await chooser
-  ).setFiles({
-    name: "details.txt",
-    mimeType: "text/plain",
-    buffer: Buffer.from("Local attachment"),
+  await page.locator("#task-form").evaluate(form => {
+    const dataTransfer = new DataTransfer();
+    dataTransfer.items.add(new File(["Local attachment"], "details.txt", { type: "text/plain" }));
+    form.dispatchEvent(new DragEvent("drop", { bubbles: true, cancelable: true, dataTransfer }));
   });
   await until(async () =>
     (await page.locator("#task-form [name=body]").inputValue()).includes(

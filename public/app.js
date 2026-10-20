@@ -1,3 +1,9 @@
+import { taskFocus } from "./task-focus.js";
+import { randomUUID } from "./uuid.js";
+import { priorityOptions as priorities, priorityLabels, priorityLabel, defaultPriority } from "./task-priority.js";
+import { browserNavigation } from "./navigation.js";
+import { helpPageHTML } from "./help.js";
+import { helpArticle } from "./help-content.js";
 import {saveState} from "./save-state.js";
 import {sourceLabel} from "./source-model.js";
 import { pageOf, treePage, visibilitySummary } from "./task-visibility.js";
@@ -5,6 +11,7 @@ import { renderCanvasEdges } from "./canvas-lines.js";
 import { boardTaskState, unavailableTaskHTML } from "./board-task-state.js";
 import { draftTaskData, draftTaskFields } from "./draft-task.js";
 import { installSelectMenus } from "./select-menu.js";
+import { taskColorAttributes, taskColorDot, taskFieldColor, installTaskControlColors } from "./task-colors.js";
 import { boardObjectDialog } from "./board-object-panel.js";
 import { boardTaskEditor } from "./board-task-editor.js";
 import { installDatePickers } from "./date-picker.js";
@@ -25,6 +32,9 @@ import { smoothZoom } from "./camera-motion.js";
 import { paintBoardBackground } from "./board-background.js";
 import { installColorPickers } from "./color-picker.js";
 import { kanbanDrag } from "./kanban-drag.js";
+import { kanbanGroup, kanbanLanes, laneKey } from "./kanban-model.js";
+import { taskReorderHandle } from "./task-reorder.js";
+import { compareTaskOrder } from "./task-order-model.js";
 import { SaveQueue } from "./sync.js";
 import { createMarkdown } from "./markdown.js";
 import { installFeatures } from "./features.js";
@@ -47,6 +57,7 @@ const paths = {
   "text-right": "M4 5h16M10 10h10M4 15h16M10 20h10",
   "text-justify": "M4 5h16M4 10h16M4 15h16M4 20h16",
   filter: "M3 5h18l-7 8v6l-4 2v-8z",
+  hide: "M3 3l18 18M10.6 5.1A11 11 0 0 1 12 5c6 0 10 7 10 7a18 18 0 0 1-3 3.4M6.3 6.3A21 21 0 0 0 2 12s4 7 10 7a12 12 0 0 0 5.7-1.7M9.9 9.9a3 3 0 0 0 4.2 4.2",
   sort: "M7 3v18m-4-4 4 4 4-4M17 21V3m-4 4 4-4 4 4",
   bold: "M6 4h7a4 4 0 0 1 0 8H6zm0 8h8a4 4 0 0 1 0 8H6z",
   italic: "M10 4h10M4 20h10M15 4 9 20",
@@ -62,6 +73,7 @@ const paths = {
     "M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12Zm13 0a3 3 0 1 1-6 0 3 3 0 0 1 6 0",
 
   capacity: "M4 20V10h4v10M10 20V4h4v16M16 20v-7h4v7",
+  documents: "M5 3h9l5 5v13H5zM14 3v6h5M8 13h8M8 17h6",
   overview: "M3 3h7v7H3zM14 3h7v7h-7zM3 14h7v7H3zM14 14h7v7h-7z",
   comment: "M4 4h16v12H9l-5 4V4ZM8 8h8M8 12h5",
   duplicate: "M8 8h13v13H8zM16 8V3H3v13h5",
@@ -108,7 +120,7 @@ const paths = {
   settings: "M4 7h16M4 17h16M8 4v6M16 14v6",
   clock: "M12 8v5l3 2M22 12a10 10 0 1 1-20 0 10 10 0 0 1 20 0",
   flag: "M5 22V3m0 1c4-4 10 4 15 0v10c-5 4-11-4-15 0",
-  "priority-none": "M5 12h14",
+  "priority-none": "m6 5 6 6 6-6M6 13l6 6 6-6",
   "priority-low": "M12 4v16m-6-6 6 6 6-6",
   "priority-medium": "M5 9h14M5 15h14",
   "priority-high": "M12 20V4m-6 6 6-6 6 6",
@@ -128,6 +140,8 @@ const paths = {
   cursor: "m4 3 5 18 4-8 8-4L4 3Z",
   minus: "M5 12h14",
   fit: "M8 3H3v5M16 3h5v5M3 16v5h5M21 16v5h-5",
+  "width-full": "M3 4v16M21 4v16M4 12h16M8 8l-4 4 4 4M16 8l4 4-4 4",
+  "width-page": "M7 3v18M17 3v18M10 7h4M10 12h4M10 17h4",
   trash: "M3 6h18M9 6V3h6v3M6 6l1 15h10l1-15M10 10v7M14 10v7",
   undo: "M3 10h10a7 7 0 0 1 0 14M3 10l5-5M3 10l5 5",
   redo: "M21 10H11a7 7 0 0 0 0 14m10-14-5-5m5 5-5 5",
@@ -138,11 +152,17 @@ const paths = {
   eraser: "m4 13 9-10 8 8-9 10H7l-3-4v-4Zm3-3 9 8M12 21h10",
   "stroke-width": "M4 5h16M4 12h16M4 20h16M4 19h16M4 21h16",
   download: "M12 3v12m-5-5 5 5 5-5M4 16v5h16v-5",
+  upload: "M12 16V3m-5 5 5-5 5 5M4 16v5h16v-5",
+  repeat: "M3 7h15l-3-3M21 17H6l3 3M18 7l3 3V7M6 17l-3-3v3",
+  activity: "M3 12h4l3-8 4 16 3-8h4",
+  archive: "M3 3h18v5H3zM5 8v13h14V8M10 12h4",
+  "arrow-left": "M19 12H5m5-5-5 5 5 5",
 };
 const icon = (name) =>
   `<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="${paths[name] || paths.task}"/></svg>`;
 const colorPicker = installColorPickers({ esc, icon });
-installSelectMenus({ esc, icon });
+installSelectMenus({ esc, icon, taskColor: (field, value) => taskFieldColor(state, field, value) });
+installTaskControlColors(() => state);
 installDatePickers({ esc, icon });
 document.addEventListener(
   "keydown",
@@ -167,11 +187,11 @@ const statusNames = {
   done: "Done",
 };
 let types = ["epic", "milestone", "story", "task", "bug"];
-const priorities = ["none", "low", "medium", "high", "urgent"];
 const taskViews = ["list", "tree", "table", "kanban"];
 const planningViews = ["calendar", "timeline", "capacity"];
 const views = [
   "overview",
+  "documents",
   "list",
   "tree",
   "table",
@@ -204,6 +224,7 @@ const state = {
   organisations: [],
   organisation: null,
   directoryPage: null,
+  helpArticle: null,
   workspaceSignature: "",
   navigation: 0,
   projects: [],
@@ -260,12 +281,16 @@ const sync = new SaveQueue({
     );
     updateSaveState();
     features.taskSyncChanged();
+    features.documentsSyncChanged();
   },
   saved: (url, record) => {
     if (!url.startsWith(`/projects/${state.project?.id}/`)) return;
     if (url.includes("/tasks/"))
       state.tasks = state.tasks.map((t) => (t.id === record.id ? record : t));
-    else {
+    else if (url.includes("/documents/")) {
+      state.documents = state.documents.map(d => d.id === record.id ? record : d);
+      features.documentsSyncChanged();
+    } else {
       const current = state.boards.find((b) => b.id === record.id);
       if (current) {
         Object.assign(current, record);
@@ -303,7 +328,7 @@ async function api(url, options = {}) {
       },
       body:
         options.body === undefined ? undefined : JSON.stringify(options.body),
-      signal: AbortSignal.timeout(url.includes("/sources")?120000:15000),
+      signal: AbortSignal.timeout(url.includes("/miro") ? 300000 : url.includes("/sources") ? 120000 : 15000),
     });
   } catch {
     state.online = false;
@@ -350,6 +375,7 @@ function signature(snapshot) {
     snapshot.project.revision,
     snapshot.tasks.map((t) => t.revision),
     snapshot.boards.map((b) => b.revision),
+    (snapshot.documents || []).map(d => d.revision),
     snapshot.warnings,
     snapshot.taskAvailability,
   ]);
@@ -382,10 +408,14 @@ function applyWorkspace(data) {
   state.workspaceSignature = JSON.stringify(data);
 }
 function clearProject() {
+  features.documentsReset();
+  state.documents = [];
+  state.selectedDocument = null;
+  state.documentSearch = "";
+  state.documentExplorerOpen = false;
+  state.helpArticle = null;
   if (state.directoryPage) {
     state.dirty = false;
-    if (location.hash.startsWith("#organisation/"))
-      history.replaceState(null, "", location.pathname + location.search);
   }
   state.directoryPage = null;
   state.settingsDirty = false;
@@ -412,6 +442,7 @@ function clearProject() {
   state.signature = "";
 }
 function canNavigate() {
+  if (!features.settingsCanLeave()) return false;
   if (state.boardTaskEditor && !closeDialog(false, { confirmDirty: false }))
     return false;
   if (state.loading) {
@@ -437,7 +468,6 @@ function openView(view) {
   state.boardGallery = false;
   state.settingsDirty = false;
   state.dirty = false;
-  history.replaceState(null, "", location.pathname);
   state.view = next;
   state.page = 0;
   state.savedView = null;
@@ -459,7 +489,7 @@ async function refresh(render = true, shouldApply = () => true) {
   let snapshot=null,workspace=null;
   if(projectId && Number.isInteger(state.snapshotVersion)){
     const delta=await api(`/projects/${projectId}/delta?since=${state.snapshotVersion}`);
-    if(!delta.full){snapshot={version:delta.version,project:state.project,tasks:[...state.tasks],boards:[...state.boards],warnings:state.warnings,taskAvailability:state.taskAvailability,progress:state.progress};for(const record of delta.records){if(record.kind==="project")snapshot.project=record.value;else{const list=snapshot[record.kind],index=list.findIndex(v=>v.id===record.value.id);if(index<0)list.push(record.value);else list[index]=record.value;}}}
+    if(!delta.full){snapshot={version:delta.version,project:state.project,tasks:[...state.tasks],boards:[...state.boards],documents:[...(state.documents || [])],warnings:state.warnings,taskAvailability:state.taskAvailability,progress:state.progress};for(const record of delta.records){if(record.kind==="project")snapshot.project=record.value;else{const list=snapshot[record.kind],index=list.findIndex(v=>v.id===record.value.id);if(index<0)list.push(record.value);else list[index]=record.value;}}}
   }
   if(!snapshot){workspace=await fetchWorkspace();snapshot=projectId?await api(`/projects/${projectId}`):null;}
   // A user may start editing or placing an object while these requests are in flight.
@@ -502,9 +532,12 @@ function applySnapshot(snapshot) {
   state.tasks = snapshot.tasks;
   state.taskAvailability = snapshot.taskAvailability || {};
   state.boards = snapshot.boards;
+  state.documents = snapshot.documents || [];
   state.warnings = snapshot.warnings;
   state.signature = signature(snapshot);
   for (const entry of sync.entries.values()) {
+    if (entry.url.startsWith(`/projects/${state.project.id}/documents/`))
+      state.documents = state.documents.map(d => d.id === entry.local.id ? entry.local : d);
     if (entry.url.startsWith(`/projects/${state.project.id}/tasks/`))
       state.tasks = state.tasks.map((t) =>
         t.id === entry.local.id ? entry.local : t,
@@ -534,7 +567,10 @@ function activateProject(snapshot) {
   state.page = 0;
   applySnapshot(snapshot);
   const id = snapshot.project.id;
-  state.sort = storage.get(`sort:${id}`, "created");
+  state.groupBy = storage.get(`group-by:${id}`, "status");
+  state.kanbanGroupBy = kanbanGroup(storage.get(`kanban-group:${id}`, "none"));
+  state.kanbanCollapsed = storage.get(`kanban-collapsed:${id}`, []);
+  state.sort = storage.get(`sort:${id}`, snapshot.tasks.some(t => Number.isFinite(t.order)) ? "order" : "created");
   state.sortDir = 1;
   state.view = storage.get(
     `view:${id}`,
@@ -585,8 +621,6 @@ async function openOrganisation(id) {
     state.organisation = organisation;
     storage.set("organisation", id);
     if (snapshot?.project.organisation === id) activateProject(snapshot);
-    if (location.hash.startsWith("#project/"))
-      history.replaceState(null, "", location.pathname + location.search);
     renderApp();
     return true;
   } finally {
@@ -609,7 +643,6 @@ async function openDirectory(page, organisationId = state.organisation?.id) {
     state.organisation = organisation;
     state.directoryPage = page;
     storage.set("organisation", organisation.id);
-    history.replaceState(null, "", `#organisation/${organisation.id}/${page}`);
     renderApp();
     return true;
   } finally {
@@ -623,6 +656,10 @@ function directoryPageHTML() {
   return `<section class="content project-settings-page directory-page"><header class="settings-page-heading"><h1>${title}</h1><p>${page === "teams" ? "Build teams and choose their members." : "Manage people and their weekly task limits."} ${esc(o.title)}.</p></header><nav class="directory-tabs" aria-label="Organisation directory"><button class="button ${page === "teams" ? "soft" : ""}" data-action="directory-open" data-page="teams" ${page === "teams" ? 'aria-current="page"' : ""}>${icon("group")}Teams <span class="count">${o.teams?.length || 0}</span></button><button class="button ${page === "people" ? "soft" : ""}" data-action="directory-open" data-page="people" ${page === "people" ? 'aria-current="page"' : ""}>${icon("people")}People <span class="count">${o.people?.length || 0}</span></button></nav><form id="organisation-form" data-directory-page="${page}" data-id="${esc(o.id)}" data-revision="${esc(o.revision)}"><div class="dialog-body"><div class="form-error hidden" role="alert"></div></div><div class="dialog-foot"><span class="field-hint">Changes apply to this organisation.</span><button class="button primary" type="submit">Save ${page}</button></div></form></section>`;
 }
 function renderApp() {
+  const dateOpener = document.activeElement?.closest("[data-task-dates]");
+  const dateScope = dateOpener?.closest("[data-timeline]")?.dataset.timeline;
+  features.documentsReset();
+  navigation.schedule();
   if (
     state.boardTaskEditor &&
     (!["board", "drawing"].includes(state.view) ||
@@ -630,7 +667,7 @@ function renderApp() {
   )
     closeDialog(false, { confirmDirty: false });
   const p = state.project;
-  document.title = `${state.directoryPage ? label(state.directoryPage) + " · " + state.organisation?.title : p?.title || state.organisation?.title || "Workspace"} · Pencils`;
+  document.title = `${state.helpArticle ? helpArticle(state.helpArticle).title + " · Help" : state.directoryPage ? label(state.directoryPage) + " · " + state.organisation?.title : p?.title || state.organisation?.title || "Workspace"} · Pencils`;
   app.innerHTML = `<div class="shell">
     <button class="sidebar-overlay ${state.menu ? "visible" : ""}" data-action="menu" aria-label="Close sidebar"></button>
     <aside id="workspace-sidebar" class="sidebar ${state.menu ? "open" : ""}">
@@ -645,13 +682,13 @@ function renderApp() {
         .join("")}</nav>
       <button class="side-new" data-action="project-new">${icon("plus")}New project</button>
       ${state.organisation ? `<section class="sidebar-directory"><div class="side-label">TEAMS</div><nav class="directory-links" aria-label="Teams and people">${["teams", "people"].map((page) => `<button class="directory-link ${state.directoryPage === page ? "active" : ""}" data-action="directory-open" data-page="${page}" ${state.directoryPage === page ? 'aria-current="page"' : ""}>${icon(page === "teams" ? "group" : "people")}<span>${label(page)}</span><span class="directory-count">${state.organisation[page]?.length || 0}</span></button>`).join("")}</nav></section>` : ""}
-      <div class="side-bottom"><div class="vault-card"><div class="eyebrow">${icon("leaf")}Your files. Your space.</div><p>Plain Markdown. Open in Obsidian.<br>Always yours, even offline.</p><button class="text-link" data-action="help">About your vault ${icon("arrow")}</button></div>
-      <div class="side-footer"><span class="dot"></span>Local workspace<span class="version">v0.15.5</span></div></div>
+      <div class="side-bottom">
+      <div class="side-footer"><span class="dot"></span>Local workspace<span class="version">v0.16.12</span></div></div>
     </aside>
     <main class="main">
-      <header class="topbar"><div class="breadcrumb"><button class="icon-button desktop-sidebar-toggle" data-personal="sidebar" aria-controls="workspace-sidebar" aria-expanded="true" aria-label="Collapse sidebar">${icon("menu")}</button><button class="icon-button mobile-menu" data-action="menu" aria-label="Toggle sidebar">${icon("menu")}</button><button class="organisation-crumb" data-action="home" title="${esc(state.organisation?.title)}">${esc(state.organisation?.title || "Organisations")}</button><span>/</span><strong ${p ? 'role="heading" aria-level="1"' : ""}>${esc(state.directoryPage ? label(state.directoryPage) : p?.title || "Projects")}</strong></div><div class="top-actions"><span class="save-state ${!state.online || state.boardConflict ? "sync-problem" : ""}" id="save-state">${icon(state.online ? "check" : "clock")}${state.online ? "Connected to local server" : "Server unavailable"}</span><button class="icon-button" data-action="help" aria-label="Help & keyboard shortcuts">${icon("help")}</button><button class="avatar" data-personal="settings" aria-label="Personal settings" title="Personal settings">WE</button></div></header>
+      <header class="topbar"><div class="breadcrumb"><button class="icon-button desktop-sidebar-toggle" data-personal="sidebar" aria-controls="workspace-sidebar" aria-expanded="true" aria-label="Collapse sidebar">${icon("menu")}</button><button class="icon-button mobile-menu" data-action="menu" aria-label="Toggle sidebar">${icon("menu")}</button><button class="organisation-crumb" data-action="home" title="${esc(state.organisation?.title)}">${esc(state.organisation?.title || "Organisations")}</button><span>/</span><strong ${p ? 'role="heading" aria-level="1"' : ""}>${esc(state.helpArticle ? "Help" : state.directoryPage ? label(state.directoryPage) : p?.title || "Projects")}</strong></div>${p ? projectNavigationHTML() : ""}<div class="top-actions"><span class="save-state ${!state.online || state.boardConflict ? "sync-problem" : ""}" id="save-state">${icon(state.online ? "check" : "clock")}${state.online ? "Connected to local server" : "Server unavailable"}</span>${p ? `<button class="icon-button" data-action="project-edit" aria-label="Project settings" title="Project settings">${icon("settings")}</button>` : ""}<button class="icon-button" data-action="help" aria-label="Help & keyboard shortcuts">${icon("help")}</button><button class="avatar" data-personal="settings" aria-label="Personal settings" title="Personal settings">WE</button></div></header>
       ${!state.online ? '<div class="connection-banner">Local server unavailable. Reconnect to its network to save changes.</div>' : ""}
-      ${state.directoryPage ? directoryPageHTML() : p ? projectPage() : welcomePage()}
+      ${state.helpArticle ? helpPageHTML(state.helpArticle, { esc, icon }) : state.directoryPage ? directoryPageHTML() : p ? projectPage() : welcomePage()}
     </main></div>`;
   if (p) renderView();
   if (state.directoryPage) {
@@ -666,6 +703,13 @@ function renderApp() {
   }
   features.afterRender();
   setLoading(state.loading);
+  if (dateOpener && !dateOpener.isConnected) {
+    const scope = dateScope
+      ? `[data-timeline="${CSS.escape(dateScope)}"] `
+      : "";
+    document.querySelector(`${scope}[data-task-dates="${CSS.escape(dateOpener.dataset.taskDates)}"]`)
+      ?.focus({ preventScroll: true });
+  }
 }
 function safeColor(value) {
   return /^#[0-9a-f]{6}$/i.test(value) ? value : "#66856f";
@@ -698,23 +742,16 @@ function warningsHTML(warnings) {
     ? `<details class="warning"><summary>${warnings.length} vault ${warnings.length === 1 ? "issue" : "issues"} need attention</summary>${warnings.map((w) => `<div>${esc(w)}</div>`).join("")}</details>`
     : "";
 }
-function projectPage() {
-  if (taskViews.includes(state.view))
-    storage.set(`task-view:${state.project.id}`, state.view);
-  if (planningViews.includes(state.view))
-    storage.set(`planning-view:${state.project.id}`, state.view);
-  const total = state.tasks.filter((t) => !t.archived).length,
-    metric = features.progress(),
-    done = metric.done,
-    progress = metric.percent;
-  return `<section class="hero"><div><div class="eyebrow project-kicker"><span class="project-mark" style="background:${safeColor(state.project.color)}"></span>PROJECT WORKSPACE</div><h1>${esc(state.project.title)}</h1><p>${esc(projectDescription())}</p></div><div class="hero-right"><button class="icon-button" data-action="project-edit" aria-label="Project settings">${icon("settings")}</button><button class="button primary" data-action="task-new">${icon("plus")}New task</button></div></section>
-    <div class="stats-strip"><span class="stat">${icon("task")}<strong>${total}</strong> tasks</span><span class="stat-divider"></span><span class="stat"><span class="progress"><span style="width:${progress}%"></span></span><strong>${progress}%</strong> complete</span><span class="stat-divider"></span><span class="stat">${icon("check")}<strong>${done}</strong> done</span><span class="stat">${icon("file")}Markdown workspace</span></div>
-    ${warningsHTML([...state.globalWarnings, ...state.warnings])}
+function projectNavigationHTML() {
+  const total = state.tasks.filter((task) => !task.archived).length;
+  const area = taskViews.includes(state.view) ? "tasks" : planningViews.includes(state.view) ? "planning" : state.view;
+  return `<div id="board-project-tools" class="board-project-tools">
     <nav class="tabs" aria-label="Project views">${[
       ["Overview", ["overview"]],
+      ["Documents", ["documents"]],
+      ["Planning views", ["planning"]],
       ["Task views", ["tasks"]],
       ["Visual views", ["board"]],
-      ["Planning views", ["planning"]],
     ]
       .map(
         ([name, group]) =>
@@ -724,6 +761,23 @@ function projectPage() {
           }).join("")}</div>`,
       )
       .join("")}</nav>
+    <label class="mobile-view-switcher">View <select id="project-view-switcher" aria-label="Project view">${area === "settings" ? '<option value="settings" selected disabled>Settings</option>' : ""}${["overview", "documents", "planning", "tasks", "board"].map((view) => `<option value="${view}" ${view === area ? "selected" : ""}>${viewLabel(view)}</option>`).join("")}</select></label>
+    <button class="button primary" data-action="task-new" aria-label="New task">${icon("plus")}New task</button>
+  </div>`;
+}
+function projectPage() {
+  if (taskViews.includes(state.view))
+    storage.set(`task-view:${state.project.id}`, state.view);
+  if (planningViews.includes(state.view))
+    storage.set(`planning-view:${state.project.id}`, state.view);
+  const total = state.tasks.filter((t) => !t.archived).length,
+    metric = features.progress(),
+    done = metric.done,
+    progress = metric.percent;
+  return `<section class="hero"><div><div class="eyebrow project-kicker"><span class="project-mark" style="background:${safeColor(state.project.color)}"></span>PROJECT WORKSPACE</div><h1>${esc(state.project.title)}</h1><p>${esc(projectDescription())}</p></div></section>
+    <div class="stats-strip"><span class="stat">${icon("task")}<strong>${total}</strong> tasks</span><span class="stat-divider"></span><span class="stat"><span class="progress"><span style="width:${progress}%"></span></span><strong>${progress}%</strong> complete</span><span class="stat-divider"></span><span class="stat">${icon("check")}<strong>${done}</strong> done</span><span class="stat">${icon("file")}Markdown workspace</span></div>
+    ${warningsHTML([...state.globalWarnings, ...state.warnings])}
+
     <div id="view-toolbar"></div><section id="view-content"></section>`;
 }
 function filteredTasks() {
@@ -752,7 +806,7 @@ function filteredTasks() {
     let result;
     if (state.sort === "order") result = (a.order || 0) - (b.order || 0);
     else if (state.sort === "priority")
-      result = priorities.indexOf(b.priority) - priorities.indexOf(a.priority);
+      result = priorities.indexOf(a.priority) - priorities.indexOf(b.priority);
     else if (state.sort === "status")
       result = statuses.indexOf(a.status) - statuses.indexOf(b.status);
     else if (state.sort === "due")
@@ -765,6 +819,7 @@ function filteredTasks() {
   });
 }
 function renderView(onlyContent = false) {
+  navigation.schedule();
   if (
     state.boardTaskEditor &&
     state.selectedBoard !== state.boardTaskEditor.board
@@ -772,21 +827,26 @@ function renderView(onlyContent = false) {
     closeDialog(false, { confirmDirty: false });
   features.canvasBeforeRender();
   if (!state.project) return;
-  if (state.view === "settings") {
+  if (!features.viewReady()) {
+    const view = state.view, project = state.project.id;
     $("#view-toolbar").innerHTML = "";
-    $("#view-content").className = "content project-settings-page";
-    $("#view-content").innerHTML =
-      `<header class="settings-page-heading"><h1>Project settings</h1><p>Manage ${esc(state.project.title)}, its task IDs and workflow.</p><button type="button" class="button" data-source-action="open">Data sources & sync</button><button type="button" class="button" data-source-action="health">Diagnostics</button><button type="button" class="button" data-automation="open">Automation</button></header>${projectFormHTML(true)}`;
-    const form = $("#project-form");
-    features.dialogOpened("project", form);
-    form.addEventListener("input", () => {
-      state.settingsDirty = true;
-      state.dirty = true;
+    $("#view-content").innerHTML = '<p role="status">Opening view…</p>';
+    void features.prepareView().then(() => {
+      if (state.project?.id === project && state.view === view) renderView();
+    }).catch(error => {
+      if (state.project?.id === project && state.view === view)
+        $("#view-content").innerHTML = `<p role="alert">This view could not load. Retry the connection, or reload to use the latest app version.</p><button class="button" data-action="view" data-view="${esc(view)}">Retry opening view</button> <button class="button" data-action="reload-app">Reload app</button>`;
     });
-    form.addEventListener("change", () => {
-      state.settingsDirty = true;
-      state.dirty = true;
-    });
+    return;
+  }
+  if (state.view !== "documents") features.documentsReset();
+  if (state.view === "documents") {
+    $("#view-toolbar").innerHTML = "";
+    features.documentsRender();
+    return;
+  }
+  if (state.view === "settings") {
+    void features.settingsRender();
     return;
   }
   if (state.view === "board" && (state.boardGallery || !features.drawingReady())) {
@@ -802,14 +862,25 @@ function renderView(onlyContent = false) {
         ? boardToolbar()
         : state.view === "overview"
           ? '<div class="overview-toolbar">Project overview</div>'
-          : `<div class="toolbar"><div class="toolbar-left"><label class="search">${icon("search")}<input id="search" aria-label="Search tasks" placeholder="Find a task…" value="${esc(state.search)}"></label><select id="filter-status" class="filter" aria-label="Filter by status"><option value="all">All statuses</option>${options(statuses, state.status, statusNames)}</select><select id="filter-type" class="filter" aria-label="Filter by task type"><option value="all">All types</option>${options(types, state.type)}</select></div><div class="toolbar-right"><span class="caption">A place for every little detail</span><select id="sort" class="filter" aria-label="Sort tasks">${options(["created", "order", "title", "priority", "due", "status"], state.sort, { created: "Date created", title: "Title A–Z", priority: "Priority", due: "Due date", status: "Status" })}</select></div></div>`;
+          : `<div class="toolbar"><div class="toolbar-left"><label class="search">${icon("search")}<input id="search" aria-label="Search tasks" placeholder="Find a task…" value="${esc(state.search)}"></label><select id="filter-status" class="filter" aria-label="Filter by status"><option value="all">All statuses</option>${options(statuses, state.status, statusNames)}</select><select id="filter-type" class="filter" aria-label="Filter by task type"><option value="all">All types</option>${options(types, state.type)}</select></div><div class="toolbar-right"><span class="caption">A place for every little detail</span><select id="sort" class="filter" aria-label="Sort tasks">${options(["created", "order", "title", "priority", "due", "status"], state.sort, { created: "Date created", order: "Manual order", title: "Title A–Z", priority: "Priority", due: "Due date", status: "Status" })}</select></div></div>`;
   }
   const content = $("#view-content");
+  const previousKanban = onlyContent && state.view === "kanban" ? content.querySelector(".kanban") : null;
+  const kanbanScroll = previousKanban && { group: previousKanban.dataset.group, x: previousKanban.scrollLeft, y: previousKanban.scrollTop, columns: [...previousKanban.querySelectorAll(".kanban-column")].map(c => c.scrollTop) };
+  const previousTree = onlyContent && state.view === "tree"
+    ? content.querySelector(".tree-wrapper")
+    : null;
+  const treeScroll = previousTree && {
+    left: previousTree.scrollLeft,
+    top: previousTree.scrollTop,
+  };
   content.className = ["board", "drawing"].includes(state.view) ? "board-content" : "content";
+  const previousTools = content.querySelector(".board-tools");
+  const toolScroll = previousTools && previousTools.dataset.board === board()?.id ? previousTools.scrollTop : 0;
   const allTasks = filteredTasks();
   const page =
     state.view === "tree"
-      ? treePage(allTasks, state.tasks, state.page)
+      ? treePage(allTasks, state.tasks, state.page, undefined, state.sort === "order" ? compareTaskOrder : null)
       : pageOf(allTasks, state.page);
   if (["list", "tree"].includes(state.view)) state.page = page.page;
   const tasks = ["list", "tree"].includes(state.view) ? page.items : allTasks;
@@ -819,6 +890,9 @@ function renderView(onlyContent = false) {
     updateCamera();
     features.canvasRender();
     features.drawingRender();
+    features.timelineRender();
+    const tools = $(".board-tools");
+    if (tools) tools.scrollTop = toolScroll;
     taskPanelController?.position();
     return;
   }
@@ -834,15 +908,43 @@ function renderView(onlyContent = false) {
   };
   content.innerHTML =
     !tasks.length &&
-    !["kanban", "overview", "capacity", "table"].includes(state.view)
-      ? `<div class="empty">${icon("leaf")}<h2>${state.tasks.length ? "No matching tasks" : "Create your first task"}</h2><p>${state.tasks.length ? "No tasks match the current filters. Archived tasks are hidden unless Include archived is selected." : "Add your first task, then make the plan your own."}</p><button class="button soft" data-action="${state.tasks.length ? "filters-reset" : "task-new"}">${state.tasks.length ? "Clear filters" : "+ Add a task"}</button></div>`
+    !["kanban", "overview", "capacity", "table", "timeline"].includes(state.view)
+      ? `<div class="empty">${icon("leaf")}<h2>${state.tasks.length ? "No matching tasks" : "Create your first task"}</h2><p>${state.tasks.length ? "No tasks match the current filters. Archived tasks are hidden unless Include archived is selected." : ["list", "tree"].includes(state.view) ? "Use New task above to add your first task." : "Add your first task, then make the plan your own."}</p>${state.tasks.length ? '<button class="button soft" data-action="filters-reset">Clear filters</button>' : ["list", "tree"].includes(state.view) ? "" : '<button class="button soft" data-action="task-new">+ Add a task</button>'}</div>`
       : renderers[state.view](tasks);
-  if (["overview", "table"].includes(state.view)) return;
+  // Safari needs a local listener on non-button cards to send taps to the
+  // shared click handler, including taps on their padding and metadata.
+  if (state.view === "kanban")
+    content.querySelectorAll(".kanban-card").forEach((card) => {
+      card.addEventListener("click", () => {});
+    });
+  if (state.view === "tree") {
+    let tree = content.querySelector(".tree-wrapper");
+    if (!tree) {
+      // Empty and filtered trees use the same full-height viewport.
+      tree = document.createElement("div");
+      tree.className = "tree-wrapper";
+      tree.append(...content.childNodes);
+      content.append(tree);
+    }
+    tree.setAttribute("role", "region");
+    tree.setAttribute("aria-label", "Task hierarchy");
+    tree.tabIndex = 0;
+  }
+  features.timelineRender();
+  features.adaptToolbar();
+  if (["overview", "table", "timeline"].includes(state.view)) return;
   features.pagination(state.view === "tree" ? page.total : allTasks.length);
-  content.insertAdjacentHTML(
-    "beforeend",
-    `<div class="view-footnote">${icon("leaf")}${esc(visibilitySummary(state.tasks, allTasks, ["list", "tree"].includes(state.view) ? tasks.filter((t) => !t.contextOnly).length : state.view === "kanban" ? content.querySelectorAll(".kanban-card").length : null, page.context || 0))} <button class="text-link" data-action="filters-reset">Clear filters</button></div>`,
-  );
+  if (!["list", "tree", "kanban"].includes(state.view))
+    content.insertAdjacentHTML(
+      "beforeend",
+      `<div class="view-footnote">${icon("leaf")}${esc(visibilitySummary(state.tasks, allTasks))} <button class="text-link" data-action="filters-reset">Clear filters</button></div>`,
+    );
+  if (treeScroll) content.querySelector(".tree-wrapper").scrollTo(treeScroll);
+  const currentKanban = content.querySelector(".kanban");
+  if (kanbanScroll && currentKanban?.dataset.group === kanbanScroll.group) {
+    currentKanban.scrollTo(kanbanScroll.x, kanbanScroll.y);
+    if (kanbanScroll.group === "none") [...currentKanban.children].forEach((c, i) => c.scrollTop = kanbanScroll.columns[i] || 0);
+  }
 }
 function typeHTML(t) {
   return `<span class="task-type ${esc(t.type)}" title="${esc(label(t.type))}">${icon(t.type)}<span>${esc(label(t.type))}</span></span>${t.source?`<small class="source-badge" title="${esc(sourceLabel(t))}">${esc(t.source.provider)} · ${esc(t.source.key)}</small>`:""}`;
@@ -863,10 +965,10 @@ function assigneeHTML(t) {
     .slice(0, 2)
     .join("")
     .toUpperCase();
-  return `<span class="task-assignee ${initials ? "" : "unassigned"}" title="${esc(t.assignee || "Unassigned")}">${esc(initials) || "–"}</span>`;
+  return `<span class="task-assignee ${initials ? "" : "unassigned"}" ${taskColorAttributes(state, "assignee", t.assignee)} title="${esc(t.assignee || "Unassigned")}">${esc(initials) || "–"}</span>`;
 }
 function priorityHTML(t) {
-  return `<span class="priority ${esc(t.priority)}" title="${esc(label(t.priority))} priority">${icon(`priority-${t.priority}`)}${t.priority === "none" ? "" : esc(label(t.priority))}</span>`;
+  return `<span class="priority ${esc(t.priority)}" ${taskColorAttributes(state, "priority", t.priority)} title="${esc(priorityLabel(t.priority))} priority">${icon(`priority-${t.priority}`)}${esc(priorityLabel(t.priority))}</span>`;
 }
 function dueHTML(t) {
   const today = new Date(),
@@ -876,23 +978,34 @@ function dueHTML(t) {
     : "";
 }
 function taskRow(t, depth = null, hasChildren = false) {
-  return `<div class="task-row ${depth !== null ? "tree-row" : ""} ${t.contextOnly ? "tree-context" : ""}" ${depth !== null ? `style="--depth:${Math.min(depth, 12)}"` : ""}>
-    ${depth !== null ? `<button class="tree-toggle ${state.collapsed.has(t.id) ? "collapsed" : ""}" data-action="collapse" data-id="${esc(t.id)}" aria-label="${state.collapsed.has(t.id) ? "Expand" : "Collapse"} subtasks" ${hasChildren ? "" : "disabled"}>${hasChildren ? icon("chevron") : ""}</button>` : ""}
-    <button class="check-button ${state.config.done.includes(t.status) ? "done" : ""}" ${t.source?'disabled title="Change completion in the source"':""} data-action="task-check" data-id="${esc(t.id)}" aria-label="${state.config.done.includes(t.status) ? "Reopen" : "Complete"} ${esc(t.title)}">${state.config.done.includes(t.status) ? icon("check") : ""}</button>
-    <div class="row-title"><div class="tree-label"><span class="task-id">${esc(t.key || "")}</span><button class="task-title ${state.config.done.includes(t.status) ? "done" : ""}" data-action="task-open" data-id="${esc(t.id)}">${esc(t.title)}</button>${t.contextOnly ? '<span class="context-badge">Ancestor context</span>' : ""}</div>${depth !== null ? `<span class="tree-parent">${esc(statusNames[t.status])}${hasChildren ? ` · ${state.tasks.filter((c) => c.parent === t.id).length} subtasks` : ""}</span>` : ""}</div>
-    ${typeHTML(t)}<div class="row-meta">${tagsHTML(t)}${priorityHTML(t)}${dueHTML(t)}${assigneeHTML(t)}</div><button class="row-more" data-action="task-open" data-id="${esc(t.id)}" aria-label="Edit ${esc(t.title)}">${icon("more")}</button></div>`;
+  const done = state.config.done.includes(t.status);
+  const priority = t.priority || "none";
+  const assignee = t.assignee || "Unassigned";
+  const control = (field, name) => `name="${field}" data-row-field="${field}" data-id="${esc(t.id)}" aria-label="${name} for ${esc(t.title)}" ${t.source ? 'disabled title="Managed by the connected source"' : ""}`;
+  return `<div data-task-order-row="${esc(t.id)}" data-task-order-group="${esc(depth !== null || state.groupBy === "none" ? "" : t[state.groupBy || "status"] || "")}" class="task-row ${depth !== null ? "tree-row" : ""} ${t.contextOnly ? "tree-context" : ""}" ${depth !== null ? `style="--depth:${Math.min(depth, 12)}"` : ""}>
+    ${depth !== null ? `<button class="tree-toggle ${state.collapsed.has(t.id) ? "collapsed" : ""}" data-action="collapse" data-id="${esc(t.id)}" aria-label="${state.collapsed.has(t.id) ? "Expand" : "Collapse"} subtasks" ${hasChildren ? `aria-expanded="${!state.collapsed.has(t.id)}" title="${state.tasks.filter(c => c.parent === t.id).length} subtasks"` : "disabled"}>${hasChildren ? icon("chevron") : ""}</button>` : '<span class="tree-toggle-spacer" aria-hidden="true"></span>'}
+    ${taskReorderHandle(t, esc)}
+    <button class="check-button ${done ? "done" : ""}" ${t.source ? 'disabled title="Change completion in the source"' : `title="${esc(statusNames[t.status] || t.status)}"`} data-action="task-check" data-id="${esc(t.id)}" aria-label="${done ? "Reopen" : "Complete"} ${esc(t.title)}">${done ? icon("check") : ""}</button>
+    <button type="button" class="row-open" data-action="task-open" data-id="${esc(t.id)}" aria-label="Open ${esc(t.title)}" title="Open task details">${icon("external")}</button>
+    <button type="button" class="task-type row-task-link ${esc(t.type)}" data-action="task-open" data-id="${esc(t.id)}" aria-label="Open ${esc(t.title)} (${esc(label(t.type))})" title="${esc(label(t.type))} · Open task details">${icon(t.type)}</button>
+    <button type="button" class="task-id row-task-link" data-action="task-open" data-id="${esc(t.id)}" aria-label="Open ${esc(t.key || t.id)}: ${esc(t.title)}" title="${esc(t.source ? sourceLabel(t) : t.key || t.id)}">${esc(t.key || t.id)}</button>
+    <label class="row-assignee row-choice" title="${esc(assignee)}">${assigneeHTML(t)}<select ${control("assignee", "Assignee")}>${assigneeOptions(state, t.assignee, esc)}</select></label>
+    <label class="priority row-priority row-choice ${esc(priority)}" ${taskColorAttributes(state, "priority", priority)} title="${esc(priorityLabel(priority))} priority">${icon(`priority-${priority}`)}<select ${control("priority", "Priority")}>${options(priorities, priority, priorityLabels)}</select></label>
+    <label class="row-status row-choice task-color-badge" ${taskColorAttributes(state, "status", t.status)} title="${esc(statusNames[t.status] || t.status)}"><span aria-hidden="true">${esc(statusNames[t.status] || t.status)}</span><select ${control("status", "Status")}>${options(nextStatuses(state.config, t.status), t.status, statusNames)}</select></label>
+    <button type="button" class="row-due" data-row-dates="${esc(t.id)}" aria-label="${esc(t.due ? new Date(`${t.due}T12:00:00`).toLocaleDateString(undefined, { day: "numeric", month: "short" }) : "Set dates")} — edit dates for ${esc(t.title)}" aria-haspopup="dialog" aria-expanded="false" title="${esc(`Start: ${t.start || "Not set"} · Due: ${t.due || "Not set"}`)}">${dueHTML(t) || '<span class="due">—</span>'}</button>
+    <div class="row-title"><input class="task-title ${done ? "done" : ""}" data-row-field="title" data-id="${esc(t.id)}" aria-label="Title for ${esc(t.title)}" title="${esc(t.title)}" value="${esc(t.title)}" maxlength="300" required ${t.source ? 'readonly aria-description="Managed by the connected source"' : 'aria-description="Enter to save. Escape to cancel."'}>${t.contextOnly ? '<span class="context-badge">Ancestor context</span>' : ""}</div></div>`;
 }
 function listView(tasks) {
   return statuses
     .filter((s) => tasks.some((t) => t.status === s))
     .map(
       (status) =>
-        `<section class="list-group"><h2 class="section-title"><span class="status-dot ${status}"></span>${esc(statusNames[status])}<span class="count">${tasks.filter((t) => t.status === status).length}</span><span class="line"></span></h2><div>${tasks
+        `<section class="list-group"><h2 class="section-title"><span class="status-dot ${status}" ${taskColorAttributes(state, "status", status)}></span>${esc(statusNames[status])}<span class="count">${tasks.filter((t) => t.status === status).length}</span><span class="line"></span></h2><div>${tasks
           .filter((t) => t.status === status)
           .map((t) => taskRow(t))
           .join(
             "",
-          )}</div><button class="add-row" data-action="task-new" data-status="${status}">${icon("plus")}Add a task</button></section>`,
+          )}</div></section>`,
     )
     .join("");
 }
@@ -932,7 +1045,7 @@ function treeView(tasks) {
     .filter((t) => !seen.has(t.id))
     .map((t) => walk(t, 0))
     .join("");
-  return `<div class="section-title">${icon("tree")}The big picture<span class="line"></span><button class="button small" data-action="expand-all">Expand all</button></div><div class="tree-wrapper">${html}</div><button class="add-row" data-action="task-new">${icon("plus")}Add a root task</button>`;
+  return `<div class="section-title">${icon("tree")}The big picture<span class="line"></span><button class="button small" data-action="expand-all">Expand all</button></div><div class="tree-wrapper">${html}</div>`;
 }
 function parentOptions(current, exclude) {
   return `<option value="">No parent</option>${state.tasks
@@ -948,31 +1061,33 @@ function tableView(tasks) {
     `<select data-task-field="${key}" data-id="${esc(t.id)}" aria-label="${label(key)} for ${esc(t.title)}">${options(values, t[key], names)}</select>`;
   const input = (t, key, type = "text") =>
     `<input type="${type}" data-task-field="${key}" data-id="${esc(t.id)}" value="${esc(key === "tags" ? (t.tags || []).join(", ") : t[key] || "")}" aria-label="${label(key)} for ${esc(t.title)}" ${key === "title" ? 'maxlength="300" required' : ""}>`;
-  return `<div class="table-scroll"><table class="task-table"><thead><tr><th>#</th>${["title", "type", "status", "priority", "parent", "assignee", "due", "tags"].map((field) => `<th><button data-action="sort-column" data-field="${field}">${field === "due" ? "Due date" : label(field)}${state.sort === field ? (state.sortDir === 1 ? " ↑" : " ↓") : ""}</button></th>`).join("")}</tr></thead><tbody>${tasks.map((t, index) => `<tr><td>${index + 1}</td><td class="title-cell"><button class="table-open" data-action="task-open" data-id="${esc(t.id)}" aria-label="Open ${esc(t.title)}">${icon("external")}</button>${input(t, "title")}</td><td>${select(t, "type", types)}</td><td>${select(t, "status", statuses, statusNames)}</td><td>${select(t, "priority", priorities)}</td><td><select data-task-field="parent" data-id="${esc(t.id)}" aria-label="Parent for ${esc(t.title)}">${parentOptions(t.parent, t.id)}</select></td><td>${input(t, "assignee")}</td><td>${input(t, "due", "date")}</td><td>${input(t, "tags")}</td></tr>`).join("")}</tbody></table></div><button class="add-row" data-action="task-new">${icon("plus")}New row</button>`;
+  return `<div class="table-scroll"><table class="task-table"><thead><tr><th>#</th>${["title", "type", "status", "priority", "parent", "assignee", "due", "tags"].map((field) => `<th><button data-action="sort-column" data-field="${field}">${field === "due" ? "Due date" : label(field)}${state.sort === field ? (state.sortDir === 1 ? " ↑" : " ↓") : ""}</button></th>`).join("")}</tr></thead><tbody>${tasks.map((t, index) => `<tr><td>${index + 1}</td><td class="title-cell"><button class="table-open" data-action="task-open" data-id="${esc(t.id)}" aria-label="Open ${esc(t.title)}">${icon("external")}</button>${input(t, "title")}</td><td>${select(t, "type", types)}</td><td>${select(t, "status", statuses, statusNames)}</td><td>${select(t, "priority", priorities, priorityLabels)}</td><td><select data-task-field="parent" data-id="${esc(t.id)}" aria-label="Parent for ${esc(t.title)}">${parentOptions(t.parent, t.id)}</select></td><td>${input(t, "assignee")}</td><td>${input(t, "due", "date")}</td><td>${input(t, "tags")}</td></tr>`).join("")}</tbody></table></div><button class="add-row" data-action="task-new">${icon("plus")}New row</button>`;
+}
+function kanbanCard(t) {
+  return `<article class="kanban-card" draggable="true" data-drag-task="${esc(t.id)}"><div class="card-top"><span class="task-type ${esc(t.type)}" role="img" aria-label="${esc(label(t.type))}" title="${esc(label(t.type))}">${icon(t.type)}</span><span class="task-id" title="${esc(t.source ? sourceLabel(t) : t.key || t.id)}">${esc(t.key || t.id)}</span><button class="task-title" aria-keyshortcuts="Alt+ArrowUp Alt+ArrowDown" aria-description="Alt + Up or Down reorders this task within its column." data-action="task-open" data-id="${esc(t.id)}">${esc(t.title)}</button></div><div class="card-bottom"><span class="kanban-assignee" title="${esc(t.assignee || "Unassigned")}">${assigneeHTML(t)}<span class="kanban-assignee-name">${esc(t.assignee || "Unassigned")}</span></span>${priorityHTML(t)}</div></article>`;
 }
 function kanbanView(tasks) {
-  return `<div class="kanban">${statuses
-    .map(
-      (status) =>
-        `<section class="kanban-column" data-drop-status="${status}"><div class="column-header"><span class="status-dot ${status}"></span>${esc(statusNames[status])}<span class="count">${tasks.filter((t) => t.status === status).length}</span><button data-action="task-new" data-status="${status}" aria-label="Add task to ${esc(statusNames[status])}">${icon("plus")}</button></div>${tasks
-          .filter((t) => t.status === status)
-          .slice(
-            0,
-            state.kanbanLimits?.[`${state.project.id}/${status}`] || 100,
-          )
-          .map(
-            (t) =>
-              `<article class="kanban-card" draggable="true" data-drag-task="${esc(t.id)}"><div class="card-top">${typeHTML(t)}<span class="task-id">${esc(t.key || t.id)}</span></div>${t.parent && task(t.parent) ? `<div class="card-parent">${icon("tree")}${esc(task(t.parent).title)}</div>` : ""}<button class="task-title" data-action="task-open" data-id="${esc(t.id)}">${esc(t.title)}</button>${tagsHTML(t)}<div class="card-bottom">${priorityHTML(t)}${dueHTML(t)}${assigneeHTML(t)}</div></article>`,
-          )
-          .join(
-            "",
-          )}${tasks.filter((t) => t.status === status).length > (state.kanbanLimits?.[`${state.project.id}/${status}`] || 100) ? `<button class="button small" data-kanban-more="${esc(status)}">Show 100 more (${Math.min(state.kanbanLimits?.[`${state.project.id}/${status}`] || 100, tasks.filter((t) => t.status === status).length)} shown)</button>` : ""}<button class="add-row" data-action="task-new" data-status="${status}">${icon("plus")}Add task</button></section>`,
-    )
-    .join("")}</div>`;
+  const field = kanbanGroup(state.kanbanGroupBy);
+  const header = (status, items, defaults = "") => `<div class="column-header"><span class="status-dot ${esc(status)}" ${taskColorAttributes(state, "status", status)}></span>${esc(statusNames[status])}<span class="count">${items.length}</span><button data-action="task-new" data-status="${esc(status)}" ${defaults} aria-label="Add task to ${esc(statusNames[status])}">${icon("plus")}</button></div>`;
+  const column = (status, items, value = "") => {
+    const grouped = field !== "none";
+    const key = grouped ? JSON.stringify([field, value, status]) : status;
+    const limit = state.kanbanLimits?.[`${state.project.id}/${key}`] || 100;
+    const defaults = grouped ? `data-kanban-field="${field}" data-kanban-value="${esc(value)}"` : "";
+    return `<section class="kanban-column" data-drop-status="${esc(status)}" ${defaults} aria-label="${esc(statusNames[status])}">${grouped ? "" : header(status, items)}${items.slice(0, limit).map(kanbanCard).join("")}${items.length > limit ? `<button class="button small" data-kanban-more="${esc(key)}">Show 100 more (${Math.min(limit, items.length)} shown)</button>` : ""}<button class="add-row" data-action="task-new" data-status="${esc(status)}" ${defaults}>${icon("plus")}Add task</button></section>`;
+  };
+  if (field === "none") return `<div class="kanban" data-group="none">${statuses.map(status => column(status, tasks.filter(t => t.status === status))).join("")}</div>`;
+  const lanes = kanbanLanes(tasks, field, state.config);
+  return `<div class="kanban kanban-swimlanes" data-group="${field}" style="--kanban-columns:${statuses.length}"><div class="kanban-lanes-content"><div class="kanban-lanes-header">${statuses.map(status => header(status, tasks.filter(t => t.status === status))).join("")}</div>${lanes.map(([value, items], index) => {
+    const key = laneKey(field, value), collapsed = (state.kanbanCollapsed || []).includes(key);
+    const title = field === "assignee" ? value || "Unassigned" : field === "priority" ? priorityLabel(value) : label(value);
+    return `<section class="kanban-lane" data-lane-value="${esc(value)}"><h2 class="kanban-lane-heading"><button type="button" data-kanban-collapse="${esc(key)}" aria-expanded="${!collapsed}" aria-controls="kanban-lane-${index}">${icon("chevron")}${["assignee", "priority"].includes(field) ? taskColorDot(state, field, value) : ""}<span>${esc(title)}</span><span class="count">${items.length}</span></button></h2><div class="kanban-lane-row" id="kanban-lane-${index}" ${collapsed ? "hidden" : ""}>${statuses.map(status => column(status, items.filter(t => t.status === status), value)).join("")}</div></section>`;
+  }).join("")}</div></div>`;
 }
 
-let taskPanelController = null;
+let taskPanelController = null, restoreTaskFocus = null;
 function showDialog(html, kind, { boardPanel = false, nodeId = null } = {}) {
+  const opener = document.activeElement;
   if (taskPanelController && !closeDialog(false, { confirmDirty: false }))
     return;
   state.boardTaskEditor = boardPanel
@@ -986,6 +1101,9 @@ function showDialog(html, kind, { boardPanel = false, nodeId = null } = {}) {
   state.dirty = false;
   $("#dialogs").innerHTML = html;
   const dialog = $("dialog");
+  restoreTaskFocus = kind === "task"
+    ? taskFocus(opener, dialog.querySelector("#task-form")?.dataset.id)
+    : null;
   if (kind === "task")
     taskPanelController = boardTaskEditor(dialog, {
       $,
@@ -994,8 +1112,15 @@ function showDialog(html, kind, { boardPanel = false, nodeId = null } = {}) {
       renderView,
       icon,
     });
-  else if (kind === "draft-review")
-    taskPanelController = boardObjectDialog(dialog, { state, board, closeDialog, nodeId });
+  else if (["draft-review", "frame-update"].includes(kind))
+    taskPanelController = boardObjectDialog(dialog, {
+      state,
+      board,
+      closeDialog,
+      nodeId,
+      triggerSelector:
+        kind === "frame-update" ? ".project-frame-update" : '[data-pro="convert"]',
+    });
   else dialog.showModal();
   if (kind === "task" && !boardPanel && dialog.matches(":modal")) {
     let outsideDown = false;
@@ -1022,17 +1147,35 @@ function showDialog(html, kind, { boardPanel = false, nodeId = null } = {}) {
     closeDialog();
   });
   dialog.addEventListener("input", () => {
-    if (kind !== "search") state.dirty = true;
+    if (!["search", "frame-update"].includes(kind)) state.dirty = true;
   });
   dialog.addEventListener("change", () => {
-    if (kind !== "search") state.dirty = true;
+    if (!["search", "frame-update"].includes(kind)) state.dirty = true;
   });
   features.dialogOpened(kind);
   $("[autofocus]", dialog)?.focus();
 }
-function closeDialog(force = false, { confirmDirty = true } = {}) {
-  if ($("#task-form")?.dataset.id || $("#task-form")?.dataset.draftNode) {
+function closeDialog(force = false, { confirmDirty = true, keepDraft = false } = {}) {
+  const form = $("#task-form");
+  if (form?.dataset.id || form?.dataset.draftNode) {
     void features.flushTask();
+    if (!force && !keepDraft && (!form.checkValidity() || !form.elements.title.value.trim())) {
+      let notice = form.querySelector(".task-close-notice");
+      if (!notice) {
+        notice = document.createElement("div");
+        notice.className = "task-close-notice";
+        notice.setAttribute("role", "alert");
+        notice.innerHTML = '<p>Complete the required fields to save, or keep this edit as a browser draft.</p><button type="button" class="button small" data-keep-editing>Keep editing</button><button type="button" class="button small" data-keep-draft>Keep draft and close</button>';
+        form.querySelector(".dialog-body").prepend(notice);
+        notice.querySelector("[data-keep-editing]").onclick = () => {
+          notice.remove();
+          (form.querySelector(":invalid") || form.elements.title).focus();
+        };
+        notice.querySelector("[data-keep-draft]").onclick = () => closeDialog(false, { keepDraft: true });
+      }
+      notice.querySelector("[data-keep-editing]").focus();
+      return false;
+    }
     confirmDirty = false;
   }
   if (state.boardTaskEditor && !force) {
@@ -1057,10 +1200,171 @@ function closeDialog(force = false, { confirmDirty = true } = {}) {
   $("#dialogs").innerHTML = "";
   state.dialog = null;
   state.dirty = false;
+  const restore = restoreTaskFocus;
+  restoreTaskFocus = null;
+  requestAnimationFrame(() => {
+    if (!$("#dialogs").children.length) restore?.();
+  });
   return true;
 }
 const dialogHead = (title) =>
   `<div class="dialog-head"><h2>${esc(title)}</h2><button type="button" class="icon-button" data-action="dialog-close" aria-label="Close dialog">${icon("close")}</button></div>`;
+const navigationDefaults = {
+  search: "",
+  status: "all",
+  type: "all",
+  sort: "created",
+  sortDir: 1,
+  extraFilters: {},
+  groupBy: "status",
+  kanbanGroupBy: "none",
+  kanbanCollapsed: [],
+  page: 0,
+  savedView: null,
+  tableColumns: null,
+  tablePreferences: null,
+  settingsReturn: "list",
+};
+function navigationSnapshot() {
+  const route = state.helpArticle
+    ? { page: "help", article: state.helpArticle, organisation: state.organisation?.id || null }
+    : state.project
+    ? {
+        project: state.project.id,
+        view: state.view,
+        document: state.view === "documents" ? state.selectedDocument : null,
+        settingsSection: state.view === "settings" ? state.settingsSection || "general" : null,
+        settingsDetail: state.view === "settings" ? state.settingsDetail || "" : "",
+        board: state.view === "board" ? state.selectedBoard : null,
+        gallery: state.view === "board" && !!state.boardGallery,
+      }
+    : {
+        organisation: state.organisation?.id || null,
+        page: state.directoryPage || "home",
+      };
+  const preferences = Object.fromEntries(
+    Object.entries(navigationDefaults).map(([key, fallback]) => [
+      key,
+      structuredClone(state[key] ?? fallback),
+    ]),
+  );
+  preferences.collapsed = [...state.collapsed];
+  preferences.tableCollapsed = [...(state.tableCollapsed || [])];
+  return { route, preferences };
+}
+async function restoreNavigation(entry, stillCurrent = () => true) {
+  if (!features.settingsCanLeave()) return false;
+  if (state.loading || state.toolDragging || state.kanbanDragging || state.taskReordering) {
+    toast("Finish the current action before navigating back.");
+    return false;
+  }
+  setLoading(true);
+  state.navigation++;
+  try {
+    if (!(await features.flushTask())) {
+      toast("Finish saving this task before leaving it.", true);
+      return false;
+    }
+    await boardQueue;
+    if (state.boardConflict) {
+      toast("Resolve the canvas conflict before changing pages.", true);
+      return false;
+    }
+    if (!stillCurrent()) return false;
+    const destination = entry.route;
+    const snapshot =
+      destination.project && destination.project !== state.project?.id
+        ? await api(`/projects/${destination.project}`)
+        : null;
+    const organisation =
+      !destination.project && destination.organisation
+        ? state.organisations.find((o) => o.id === destination.organisation)
+        : null;
+    if (!destination.project && destination.organisation && !organisation)
+      throw new Error("This organisation is no longer available.");
+    if (!stillCurrent()) return false;
+    if ($("dialog") && !closeDialog(false)) return false;
+    features.canvasBeforeRender();
+    features.drawingReset();
+    state.settingsDirty = false;
+    state.dirty = false;
+    if (destination.project) {
+      if (snapshot) activateProject(snapshot);
+      Object.assign(state, structuredClone(navigationDefaults));
+      if (!entry.preferences) {
+        state.sort = storage.get(`sort:${state.project.id}`, state.tasks.some(t => Number.isFinite(t.order)) ? "order" : "created");
+        state.groupBy = storage.get(`group-by:${state.project.id}`, "status");
+        state.kanbanGroupBy = kanbanGroup(storage.get(`kanban-group:${state.project.id}`, "none"));
+        state.kanbanCollapsed = storage.get(`kanban-collapsed:${state.project.id}`, []);
+      }
+      for (const key of Object.keys(navigationDefaults))
+        if (entry.preferences && key in entry.preferences)
+          state[key] = structuredClone(entry.preferences[key]);
+      state.collapsed = new Set(entry.preferences?.collapsed || []);
+      state.tableCollapsed = new Set(entry.preferences?.tableCollapsed || []);
+      state.tableFilterSearch = {};
+      state.headerMenu = null;
+      state.view = destination.view;
+      state.selectedDocument = destination.document || null;
+      state.settingsSection = destination.settingsSection || "general";
+      state.settingsDetail = destination.settingsDetail || "";
+      state.boardGallery = !!destination.gallery;
+      if (state.view === "board") {
+        if (
+          destination.board &&
+          state.boards.some((b) => b.id === destination.board)
+        )
+          state.selectedBoard = destination.board;
+        state.history = [];
+        state.future = [];
+        state.selectedNode = state.selectedEdge = null;
+        state.selectedEdges?.clear();
+        storage.set(`board:${state.project.id}`, state.selectedBoard);
+        loadCamera();
+      }
+      storage.set(`view:${state.project.id}`, state.view);
+    } else {
+      clearProject();
+      state.organisation = organisation || state.organisation;
+      state.directoryPage = ["teams", "people"].includes(destination.page)
+        ? destination.page
+        : null;
+      state.helpArticle = destination.page === "help" ? helpArticle(destination.article).id : null;
+      if (state.organisation)
+        storage.set("organisation", state.organisation.id);
+    }
+    renderApp();
+    if (destination.view === "board" && !destination.gallery) {
+      await features.drawingSettled();
+      if (stillCurrent() && destination.frame)
+        focusLinkedFrame(destination.frame);
+    }
+    return true;
+  } finally {
+    setLoading(false);
+  }
+}
+function focusLinkedFrame(id) {
+  const n = board()?.nodes.find((n) => n.id === id),
+    c = $("#canvas");
+  if (!n || !c) return;
+  const z = Math.min(
+    1.5,
+    (c.clientWidth - 140) / n.w,
+    (c.clientHeight - 100) / n.h,
+  );
+  state.camera = {
+    z,
+    x: c.clientWidth / 2 - (n.x + n.w / 2) * z,
+    y: c.clientHeight / 2 - (n.y + n.h / 2) * z,
+  };
+  updateCamera();
+}
+const navigation = browserNavigation({
+  capture: navigationSnapshot,
+  restore: restoreNavigation,
+  onError: (error) => toast(error.message, true),
+});
 const features = installFeatures({
   state,
   taskViews,
@@ -1078,6 +1382,7 @@ const features = installFeatures({
   options,
   $,
   $$,
+  assigneeHTML,
   toast,
   task,
   board,
@@ -1139,11 +1444,7 @@ function projectDialog(edit = false) {
   if (!canNavigate()) return;
   if (!state.organisation) return organisationDialog();
   if (edit) {
-    if (state.view !== "settings") state.settingsReturn = state.view;
-    state.view = "settings";
-    storage.set(`view:${state.project.id}`, "settings");
-    history.replaceState(null, "", `#project/${state.project.id}/settings`);
-    renderApp();
+    features.settingsOpen("general");
   } else
     showDialog(
       `<dialog class="dialog">${projectFormHTML(false)}</dialog>`,
@@ -1172,7 +1473,7 @@ function taskDialog(id = null, defaults = {}, replace = false) {
         body: "",
         type: types.includes("task") ? "task" : types[0],
         status: initialStatus(state.config),
-        priority: "none",
+        priority: defaultPriority,
         parent: null,
         assignee: "",
         due: "",
@@ -1183,11 +1484,7 @@ function taskDialog(id = null, defaults = {}, replace = false) {
   const isDraft = !!t.draftNode;
   state.dialogTask = t;
   const picker = (name, title, value, choices, iconOnly = false) =>
-    taskPickerHTML({ name, title, value, choices, iconOnly }, { esc, icon });
-  const descendants = new Set(id ? [id] : []);
-  for (let i = 0; i < state.tasks.length; i++)
-    for (const child of state.tasks)
-      if (descendants.has(child.parent)) descendants.add(child.id);
+    taskPickerHTML({ name, title, value, choices, iconOnly }, { esc, icon, state });
   const metadata = {
     priority: `<div class="field"><span>Priority</span>${picker(
       "priority",
@@ -1195,20 +1492,18 @@ function taskDialog(id = null, defaults = {}, replace = false) {
       t.priority,
       priorities.map((value) => ({
         value,
-        label: label(value),
+        label: priorityLabel(value),
         icon: `priority-${value}`,
       })),
       true,
     )}</div>`,
-    status: `<label class="field">Status<select name="status" aria-label="Status">${options(id ? nextStatuses(state.config, t.status) : statuses, t.status, statusNames)}</select></label>`,
-    assignee: `<label class="field">Assignee<select name="assignee" aria-label="Assignee" ${assigneeHint(state) ? 'aria-describedby="task-assignee-help"' : ""}>${assigneeOptions(state, t.assignee, esc)}</select></label>`,
-    parent: `<div class="field"><span>Parent task</span>${picker("parent", "Parent task", t.parent || "", [{ value: "", label: "No parent", icon: "minus" }, ...state.tasks.filter((x) => !descendants.has(x.id)).map((x) => ({ value: x.id, label: `${x.key || x.id} · ${x.title}`, icon: x.type }))])}</div>`,
+    status: `<label class="field">Status<select name="status" aria-label="Status" ${taskColorAttributes(state, "status", t.status)}>${options(id ? nextStatuses(state.config, t.status) : statuses, t.status, statusNames)}</select></label>`,
+    assignee: `<label class="field">Assignee<select name="assignee" aria-label="Assignee" ${taskColorAttributes(state, "assignee", t.assignee)} ${assigneeHint(state) ? 'aria-describedby="task-assignee-help"' : ""}>${assigneeOptions(state, t.assignee, esc)}</select></label>`,
     start: `<label class="field">Start date<input type="date" name="start" aria-label="Start date" value="${esc(t.start || "")}"></label>`,
     due: `<label class="field">Due date<input type="date" name="due" aria-label="Due date" value="${esc(t.due)}"></label>`,
   };
   const html = `<dialog class="dialog task-dialog" aria-label="Task editor"><form id="task-form" class="${id ? "task-edit-form" : "task-create-form"}" data-board="${esc(!id && ["board", "drawing"].includes(state.view) ? state.selectedBoard : "")}" data-draft-node="${esc(t.draftNode || "")}" data-id="${esc(id || "")}" data-revision="${esc(t.revision || "")}">
     <div class="dialog-head task-editor-head"><div class="task-identity-row">
-      ${id ? `<span class="task-id task-key" title="${esc(t.key)}">${esc(t.key || id)}</span>` : ""}
       ${picker(
         "type",
         "Task type",
@@ -1216,15 +1511,19 @@ function taskDialog(id = null, defaults = {}, replace = false) {
         types.map((value) => ({ value, label: label(value), icon: value })),
         true,
       )}
+      <span class="task-id task-key" title="${esc(t.key || (isDraft ? "Draft" : "New task"))}">${esc(t.key || id || (isDraft ? "Draft" : "New"))}</span>
       <input class="title-input" name="title" aria-label="Task title" value="${esc(t.title)}" placeholder="Task title" required maxlength="300" autofocus>
     </div>${id ? `<div class="task-editor-actions" role="group" aria-label="Task actions"><button type="button" class="icon-button danger" data-action="task-delete" data-id="${esc(id)}" aria-label="Delete task" title="Delete task">${icon("trash")}</button><button type="button" class="icon-button" data-feature="task-duplicate" aria-label="Duplicate task" title="Duplicate task">${icon("duplicate")}</button><button type="button" class="icon-button" data-feature="task-archive" aria-label="${t.archived ? "Unarchive task" : "Archive task"}" title="${t.archived ? "Unarchive task" : "Archive task"}">${icon("folder")}</button><button type="button" class="icon-button" data-feature="task-history" aria-expanded="false" aria-label="Version history" title="Version history">${icon("clock")}</button><button type="button" class="icon-button" data-feature="task-comments" aria-expanded="false" aria-label="Task comments" title="Comments">${icon("comment")}</button></div>` : isDraft ? `<div class="task-editor-actions" role="group" aria-label="Draft actions"><button type="button" class="icon-button" data-feature="draft-finalise" aria-label="Finalise task" title="Finalise task">${icon("task")}</button></div>` : ""}<button type="button" class="icon-button" data-action="dialog-close" aria-label="Close dialog">${icon("close")}</button></div>
     <div class="task-editor-content"><div class="dialog-body"><div class="form-error hidden"></div>
-      <div class="task-metadata"><div class="task-metadata-main">${metadata.priority}${metadata.status}${metadata.assignee}</div><div class="task-metadata-secondary">${metadata.parent}<div class="task-dates">${metadata.start}${metadata.due}</div></div></div>
+      <div class="task-metadata"><div class="task-metadata-main">${metadata.assignee}${metadata.priority}${metadata.status}<div class="task-dates">${metadata.start}${metadata.due}</div></div></div>
       ${assigneeHint(state) ? `<p id="task-assignee-help" class="field-hint" role="status">${esc(assigneeHint(state))}</p>` : ""}
       ${taskDescriptionHTML(t.body, { esc, icon })}
+      <input type="hidden" name="parent" value="${esc(t.parent || "")}">
+      <select name="dependencies" multiple hidden>${[...new Set([...(t.dependencies || []), ...state.tasks.filter(task => task.id !== id).map(task => task.id)])].map(dependency => `<option value="${esc(dependency)}" ${(t.dependencies || []).includes(dependency) ? "selected" : ""}>${esc(dependency)}</option>`).join("")}</select>
       <input type="hidden" name="tags" value="${esc((t.tags || []).join(", "))}">
-      <section class="task-subtasks" aria-label="Subtasks"><h3>Subtasks <span data-subtask-count></span></h3><div data-subtask-list></div><input type="hidden" name="pendingSubtasks" value="${esc(JSON.stringify(t.subtasks || []))}"><input type="hidden" name="creation_request" value="${id ? "" : crypto.randomUUID?.() || `draft-${Date.now()}-${Math.random().toString(36).slice(2)}`}"><div class="subtask-capture"><select name="subtaskType" aria-label="New subtask type"></select><input name="subtaskTitle" aria-label="New subtask title" placeholder="Add a subtask…" maxlength="300"><button type="button" class="button small" data-task-modal="subtask-add">Add</button></div><p class="field-hint" data-subtask-hint></p><p class="form-error" data-subtask-error role="alert" hidden></p></section>
-      ${t.file ? `<code class="file-path">${esc(t.file)}</code>` : ""}</div>
+      <input type="hidden" name="pendingSubtasks" value="${esc(JSON.stringify(t.subtasks || []))}"><input type="hidden" name="creation_request" value="${id ? "" : randomUUID()}">
+      ${(t.related_records || []).map(record => `<input type="hidden" name="related_records" value="${esc(record)}">`).join("")}
+      </div>
       <aside class="task-history-panel" aria-label="Task version history" hidden></aside></div>
     <div class="dialog-foot task-editor-foot">${id || isDraft ? '<span class="task-autosave-status" data-autosave-status role="status" aria-live="polite">Saved automatically</span>' : `<div class="task-create-actions"><label class="create-another"><input type="checkbox" name="createAnother" ${t.createAnother ? "checked" : ""}>Create another</label><button class="button primary" type="submit">Create task</button></div>`}</div></form></dialog>`;
   if (replace && $(".task-dialog")) {
@@ -1248,11 +1547,16 @@ function taskDialog(id = null, defaults = {}, replace = false) {
   } else showDialog(html, "task", { boardPanel: ["board", "drawing"].includes(state.view) });
 }
 
-function helpDialog() {
-  showDialog(
-    `<dialog class="dialog">${dialogHead("Your files. Your space.")}<div class="dialog-body settings-copy"><p>Pencils runs on your own computer or server. Other devices on the same network use <code>http://SERVER-IP:3000</code>. Internet access is not needed while it runs.</p><h3>Open the vault in Obsidian</h3><p>Choose “Open folder as vault” and select the host’s <code>vault</code> folder (or your configured <code>VAULT_PATH</code>). Use a shared filesystem if Obsidian is on another computer.</p><pre>vault/\n  Organisations/\n    o-….md\n  Projects/\n    p-…/\n      project.md\n      tasks/t-….md\n      boards/b-….canvas</pre><p>Edit task content and YAML properties in Obsidian. Keep file names and IDs intact. External changes appear within a few seconds. Extra properties and Markdown content are preserved.</p><h3>Organisations and projects</h3><p>Switch organisations at the top of the sidebar. Each has its own projects. Use project settings to move a project; its files, tasks, and canvases stay together. Organisation notes live in <code>Organisations/</code>, and each project’s <code>organisation</code> property records its membership.</p><h3>Little shortcuts</h3><div class="shortcut-row"><span>New task</span><kbd>N</kbd></div><div class="shortcut-row"><span>Find a task</span><kbd>/</kbd></div><div class="shortcut-row"><span>Save an open editor</span><kbd>Ctrl / ⌘ + Enter</kbd></div><div class="shortcut-row"><span>Pan the canvas</span><kbd>Space + drag</kbd></div><div class="shortcut-row"><span>Zoom the canvas</span><kbd>Ctrl / ⌘ + wheel</kbd></div><div class="shortcut-row"><span>Undo a canvas change</span><kbd>Ctrl / ⌘ + Z</kbd></div><h3>A shared local workspace</h3><p>Shared mode lets trusted local devices edit together. Optional accounts provide administrator, organisation editor and viewer access. Configure authentication and HTTPS before exposing this server remotely. Recovery holds browser drafts, note history, trash and vault backups.</p></div><div class="dialog-foot"><button class="button primary" data-action="dialog-close">Back to the good work</button></div></dialog>`,
-    "help",
-  );
+async function openHelp(article = "start") {
+  const id = helpArticle(article).id;
+  if (state.helpArticle === id) return;
+  const opened = await restoreNavigation({ route: {
+    page: "help", article: id, organisation: state.organisation?.id || null,
+  } });
+  if (opened) {
+    window.scrollTo(0, 0);
+    $("#help-title")?.focus({ preventScroll: true });
+  }
 }
 async function patchTask(id, changes, rerender = true) {
   const t = task(id);
@@ -1267,10 +1571,19 @@ async function patchTask(id, changes, rerender = true) {
 }
 
 function boardToolbar() {
-  const b=board(),cards=b?.nodes.filter(n=>n.type==="task") || [],drafts=b?.nodes.filter(n=>n.type==="draft").length || 0;
-  const unavailable=cards.filter(n=>!task(n.task)).length,archived=cards.filter(n=>task(n.task)?.archived).length;
-  const summary=`${cards.length} task cards · ${new Set(cards.filter(n=>task(n.task)&&!task(n.task).archived).map(n=>n.task)).size} distinct active tasks / ${state.tasks.filter(t=>!t.archived).length} in project · ${drafts} drafts · ${archived} archived · ${unavailable} unavailable. Board cards are placed manually; List filters do not hide them.`;
-  return `<div class="board-toolbar"><select id="board-select" aria-label="Select canvas">${state.boards.filter(b=>!b.archived).map((b) => `<option value="${esc(b.id)}" ${b.id === state.selectedBoard ? "selected" : ""}>${esc(b.title)}</option>`).join("")}</select><button class="button small" data-action="board-new">${icon("plus")}New canvas</button><span class="spacer"></span><button type="button" class="button small board-settings-button" data-feature="board-settings">${icon("settings")}Board settings</button><span class="board-save" id="board-save">${esc(saveState([...sync.entries.values()],{storageError:sync.storageError,online:state.online}))}</span>${state.boardConflict ? '<button class="button small" data-feature="recovery">Resolve</button>' : ""}<details class="board-scope"><summary>Task scope</summary><p>${esc(summary)}</p><p>Use the Tasks icon to browse and place project tasks.</p></details></div>`;
+  return `<div class="board-toolbar"><select id="board-select" aria-label="Select canvas">${state.boards.filter(b=>!b.archived).map((b) => `<option value="${esc(b.id)}" ${b.id === state.selectedBoard ? "selected" : ""}>${esc(b.title)}</option>`).join("")}</select><button class="button small" data-action="board-new">${icon("plus")}New canvas</button><span class="spacer"></span><button type="button" class="button small board-settings-button" data-feature="board-settings">${icon("settings")}Board settings</button><span class="board-save" id="board-save">${esc(saveState([...sync.entries.values()],{storageError:sync.storageError,online:state.online}))}</span>${state.boardConflict ? '<button class="button small" data-feature="recovery">Resolve</button>' : ""}</div>`;
+}
+function boardToolsHTML() {
+  const tool = (name, title, action = "board-add", glyph = name) =>
+    `<button type="button" class="${state.tool === name ? "active" : ""}" data-action="${action}" data-tool="${name}" title="${title}" aria-label="${title}">${icon(glyph)}</button>`;
+  const groups = [
+    ["Navigate", tool("cursor", "Select / move", "board-tool") + tool("hand", "Pan canvas", "board-tool") + `<button type="button" data-pro="search-toggle" aria-label="Search board" title="Search board (Ctrl / ⌘ F)" aria-expanded="false" aria-controls="canvas-search-panel">${icon("search")}</button>`],
+    ["Tasks", `<button type="button" data-action="board-task" aria-label="Project tasks" title="Project tasks" aria-expanded="${!!state.boardTaskPanel}" aria-controls="board-task-panel">${icon("task")}</button><button type="button" data-feature="project-frame-add" data-tool="project-frame" title="Project frame" aria-label="Add Project frame">${icon("project-frame")}</button>`],
+    ["Create", tool("sticky", "Add sticky note") + tool("text", "Add text") + tool("shape", "Add shape") + `<button type="button" data-feature="image-add" aria-label="Add images or GIFs" title="Images / GIFs · PNG, JPG, WebP or GIF · Up to 10 MB each">${icon("image")}</button><button type="button" data-feature="draw-tool" data-tool="draw" aria-label="Pen" title="Pen (P)">${icon("pencil")}</button>`],
+    ["Arrange", `<button type="button" data-feature="frame-add" data-tool="frame" title="Frame (F)" aria-label="Draw frame">${icon("frame")}</button>` + tool("grid", "Add grid", "board-add", "table") + tool("connect", "Connect two objects", "board-tool")],
+    ["History", `<button type="button" data-action="board-undo" title="Undo" aria-label="Undo canvas change" ${state.history.length ? "" : "disabled"}>${icon("undo")}</button><button type="button" data-action="board-redo" title="Redo" aria-label="Redo canvas change" ${state.future.length ? "" : "disabled"}>${icon("redo")}</button>`],
+  ];
+  return `<div class="board-tools" role="toolbar" aria-label="Canvas tools" aria-orientation="vertical" data-board="${esc(board().id)}">${groups.map(([name, buttons]) => `<div class="board-tool-group" role="group" aria-label="${name}"><span class="board-tool-category" aria-hidden="true">${name}</span>${buttons}</div>`).join("")}</div>`;
 }
 function boardView() {
   const b = board();
@@ -1278,30 +1591,7 @@ function boardView() {
     return `<div class="empty">${icon("board")}<h2>A little room to think.</h2><p>Create a canvas to connect your tasks and ideas.</p><button class="button primary" data-action="board-new">Create a canvas</button></div>`;
   return `<div class="canvas ${state.tool === "hand" ? "pan-mode" : state.tool === "connect" ? "connect-mode" : ""}" id="canvas" tabindex="0" aria-label="Freeform project canvas. Use tools to add objects, drag to move them, and double-click to edit.">
     <div class="canvas-world" id="canvas-world"><svg class="canvas-lines" id="canvas-lines">${edgesHTML(b)}</svg>${features.canvasNodes(b).map(nodeHTML).join("")}</div>
-    <div class="board-tools" role="toolbar" aria-label="Canvas tools">${[
-      ["cursor", "Select / move"],
-      ["hand", "Pan canvas"],
-    ]
-      .map(
-        ([tool, title]) =>
-          `<button class="${state.tool === tool ? "active" : ""}" data-action="board-tool" data-tool="${tool}" title="${title}" aria-label="${title}">${icon(tool)}</button>`,
-      )
-      .join(
-        "",
-      )}<button type="button" data-pro="search-toggle" aria-label="Search board" title="Search board (Ctrl / ⌘ F)" aria-expanded="false" aria-controls="canvas-search-panel">${icon("search")}</button><div class="tool-separator"></div><button type="button" data-action="board-task" aria-label="Project tasks" title="Project tasks" aria-expanded="${!!state.boardTaskPanel}" aria-controls="board-task-panel">${icon("task")}</button><button type="button" data-feature="frame-add" data-tool="frame" title="Frame (F)" aria-label="Draw frame">${icon("frame")}</button><button type="button" data-feature="project-frame-add" data-tool="project-frame" title="Project frame" aria-label="Add Project frame">${icon("project-frame")}</button>${[
-      ["sticky", "Add sticky note"],
-      ["text", "Add text"],
-      ["shape", "Add shape"],
-      ["grid", "Add grid"],
-      ["connect", "Connect two objects"],
-    ]
-      .map(
-        ([tool, title]) =>
-          `<button class="${state.tool === tool ? "active" : ""}" data-action="${tool === "connect" ? "board-tool" : "board-add"}" data-tool="${tool}" title="${title}" aria-label="${title}">${icon(tool === "grid" ? "table" : tool)}</button>`,
-      )
-      .join(
-        "",
-      )}<button type="button" data-feature="image-add" aria-label="Add images or GIFs" title="Images / GIFs · PNG, JPG, WebP or GIF · Up to 10 MB each">${icon("image")}</button><button type="button" data-feature="draw-tool" data-tool="draw" aria-label="Pen" title="Pen (P)">${icon("pencil")}</button><div class="tool-separator"></div><button data-action="board-undo" title="Undo" aria-label="Undo canvas change" ${state.history.length ? "" : "disabled"}>${icon("undo")}</button><button data-action="board-redo" title="Redo" aria-label="Redo canvas change" ${state.future.length ? "" : "disabled"}>${icon("redo")}</button></div>
+    ${boardToolsHTML()}
     ${boardTaskPanelHTML()}${selectionHTML()}<div class="board-controls"><button class="icon-button" data-action="zoom-out" aria-label="Zoom out">${icon("minus")}</button><span id="zoom-label">${Math.round(state.camera.z * 100)}%</span><button class="icon-button" data-action="zoom-in" aria-label="Zoom in">${icon("plus")}</button><button class="icon-button" data-action="board-fit" aria-label="Fit canvas to screen">${icon("fit")}</button></div>
     <div class="board-footer"><div class="board-help">${state.tool === "connect" ? (state.connectFrom ? "Now choose the second object." : "Choose two objects to connect.") : "Drag to arrange · Double-click to edit · Space + drag to pan"}</div><div id="canvas-performance" aria-live="off"></div></div>
     ${!b.nodes.length ? '<div class="board-empty"><h3>Give your ideas a little room.</h3><p>Add notes, tasks, images or shapes.<br>Drop image files here to get started.</p></div>' : ""}</div>`;
@@ -1314,7 +1604,7 @@ function selectionHTML() {
 function nodeHTML(n) {
   const t = n.type === "task" ? task(n.task) : null;
   const availability = boardTaskState(n, t, state.taskAvailability);
-  return `<div class="board-node ${esc(visualNodeType(n))} ${isTaskNote(n) ? "task-as-note" : ""} ${n.id === state.selectedNode ? "selected" : ""}" data-node="${esc(n.id)}" tabindex="0" role="button" aria-label="${esc(n.type === "task" ? t?.title || "Missing task" : n.text || n.type)}" style="--node-text-align:${textAlignment(n)};left:${n.x}px;top:${n.y}px;width:${n.w}px;height:${n.h}px;${n.color && n.type !== "draw" ? `background:${safeColor(n.color)};` : ""}">${n.type === "task" && !t ? unavailableTaskHTML(n, availability, { esc, icon }) : isTaskNote(n) ? `<div class="node-text">${esc(t?.title || "Note unavailable")}</div>` : n.type === "task" ? `${t ? `${typeHTML(t)}<span class="task-title">${esc(t.title)}</span><div class="board-task-bottom"><span class="task-type"><span class="status-dot ${esc(t.status)}"></span>${esc(statusNames[t.status])}</span>${assigneeHTML(t)}</div>` : '<span class="task-title">Task was removed</span><span class="field-hint">Remove this card from the canvas.</span>'}` : `<div class="node-text">${esc(n.text)}</div>`}</div>`;
+  return `<div class="board-node ${esc(visualNodeType(n))} ${isTaskNote(n) ? "task-as-note" : ""} ${n.id === state.selectedNode ? "selected" : ""}" data-node="${esc(n.id)}" tabindex="0" role="group" aria-label="${esc(n.type === "task" ? t?.title || "Missing task" : n.text || n.type)}" style="--node-text-align:${textAlignment(n)};left:${n.x}px;top:${n.y}px;width:${n.w}px;height:${n.h}px;${n.color && n.type !== "draw" ? `background:${safeColor(n.color)};` : ""}">${n.type === "task" && !t ? unavailableTaskHTML(n, availability, { esc, icon }) : isTaskNote(n) ? `<div class="node-text">${esc(t?.title || "Note unavailable")}</div>` : n.type === "task" ? `${t ? `${typeHTML(t)}<span class="task-title">${esc(t.title)}</span><div class="board-task-bottom"><span class="task-type"><span class="status-dot ${esc(t.status)}" ${taskColorAttributes(state, "status", t.status)}></span>${esc(statusNames[t.status])}</span>${assigneeHTML(t)}</div>` : '<span class="task-title">Task was removed</span><span class="field-hint">Remove this card from the canvas.</span>'}` : `<div class="node-text">${esc(n.text)}</div>`}</div>`;
 }
 function edgesHTML(b) {
   return features.canvasEdges(b);
@@ -1331,6 +1621,7 @@ function updateCamera(animated = false) {
   if (!world) return;
   const { x, y, z } = state.camera;
   world.style.transform = `translate(${x}px,${y}px) scale(${z})`;
+  world.style.setProperty("--canvas-touch-target", `${44 / z}px`);
   paintBoardBackground(canvas, board()?.settings?.background, state.camera);
   $("#zoom-label").textContent = `${Math.round(z * 100)}%`;
   storage.set(`camera:${state.selectedBoard}`, state.camera);
@@ -1451,7 +1742,7 @@ function addNode(type, taskId = null, position = null, draft = null) {
   const canvas = $("#canvas");
   if (!canvas || !board()) return;
   const { x, y, z } = state.camera,
-    id = `n-${crypto.randomUUID?.() || `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`}`;
+    id = `n-${randomUUID()}`;
   const node = {
     id,
     type,
@@ -1606,6 +1897,10 @@ document.addEventListener("click", async (event) => {
   const { action, id } = el.dataset;
   try {
     switch (action) {
+      case "reload-app":
+        if ($("#task-form") && !closeDialog(false, { confirmDirty: false })) return;
+        location.reload();
+        break;
       case "directory-open":
         if (state.directoryPage !== el.dataset.page)
           await openDirectory(el.dataset.page);
@@ -1631,11 +1926,11 @@ document.addEventListener("click", async (event) => {
         projectDialog();
         break;
       case "settings-close":
+        if (!canNavigate()) return;
         state.settingsDirty = false;
         state.dirty = false;
         state.view = state.settingsReturn || "list";
         storage.set(`view:${state.project.id}`, state.view);
-        history.replaceState(null, "", location.pathname);
         renderApp();
         break;
       case "project-edit":
@@ -1660,7 +1955,14 @@ document.addEventListener("click", async (event) => {
         }
         break;
       case "help":
-        helpDialog();
+      case "help-article":
+        if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+        event.preventDefault();
+        await openHelp(el.dataset.article || id || "start");
+        break;
+      case "help-back":
+        if (history.state?.index > 0) history.back();
+        else { clearProject(); renderApp(); }
         break;
       case "dialog-close":
         closeDialog();
@@ -1668,6 +1970,7 @@ document.addEventListener("click", async (event) => {
       case "task-new":
         taskDialog(null, {
           status: el.dataset.status || initialStatus(state.config),
+          ...(kanbanGroup(el.dataset.kanbanField) !== "none" ? { [el.dataset.kanbanField]: el.dataset.kanbanValue } : {}),
         });
         break;
       case "task-open":
@@ -1738,10 +2041,12 @@ document.addEventListener("click", async (event) => {
           ? state.collapsed.delete(id)
           : state.collapsed.add(id);
         renderView(true);
+        $(`.tree-toggle[data-id="${CSS.escape(id)}"]`)?.focus({ preventScroll: true });
         break;
       case "expand-all":
         state.collapsed.clear();
         renderView(true);
+        $('[data-action="expand-all"]')?.focus({ preventScroll: true });
         break;
       case "sort-column":
         if (state.sort === el.dataset.field) state.sortDir *= -1;
@@ -1871,6 +2176,7 @@ document.addEventListener("click", async (event) => {
 });
 document.addEventListener("submit", async (event) => {
   const form = event.target;
+  if (form.hasAttribute("data-settings-form")) return;
   if (
     ![
       "organisation-form",
@@ -1935,11 +2241,6 @@ document.addEventListener("submit", async (event) => {
       Object.assign(data, features.taskData(form));
       if (!form.dataset.id) {
         data.subtasks = JSON.parse(data.pendingSubtasks || "[]");
-        if (data.subtaskTitle.trim())
-          data.subtasks.push({
-            title: data.subtaskTitle.trim(),
-            type: data.subtaskType,
-          });
       }
       delete data.pendingSubtasks;
       delete data.subtaskTitle;
@@ -2389,13 +2690,15 @@ setInterval(async () => {
     state.selectionToolbarOpen ||
     document.querySelector("#shared-select-menu") ||
     state.kanbanDragging ||
+    state.timelineSelecting ||
+    state.taskReordering ||
     state.toolDragging ||
     state.cameraAnimating ||
     state.boardSaves ||
     state.boardConflict ||
     dragging ||
     document.hidden ||
-    document.activeElement?.matches("input,textarea,select")
+    document.activeElement?.matches("input,textarea,select,[contenteditable=true]")
   )
     return;
   pollBusy = true;
@@ -2413,7 +2716,11 @@ setInterval(async () => {
       state.selectionToolbarOpen ||
       document.querySelector("#shared-select-menu") ||
       state.settingsDirty ||
+      state.settingsSaving ||
+      document.activeElement?.closest("#document-form") ||
       state.kanbanDragging ||
+      state.timelineSelecting ||
+      state.taskReordering ||
       state.toolDragging ||
       state.cameraAnimating ||
       state.boardSaves ||
@@ -2444,7 +2751,11 @@ setInterval(async () => {
         state.selectionToolbarOpen ||
         document.querySelector("#shared-select-menu") ||
         state.settingsDirty ||
+        state.settingsSaving ||
+        document.activeElement?.closest("#document-form") ||
         state.kanbanDragging ||
+        state.timelineSelecting ||
+        state.taskReordering ||
         state.toolDragging ||
         state.cameraAnimating ||
         state.boardSaves ||
@@ -2492,57 +2803,15 @@ async function boot() {
     const organisation =
       state.organisations.find((o) => o.id === lastOrganisation) ||
       state.organisations[0];
-    const link =
-      /^#project\/([\w-]+)\/(settings|board|drawing)(?:\/([\w-]+)(?:\/frame\/([\w-]+))?)?$/.exec(
-        location.hash,
-      );
-    const directoryLink = /^#organisation\/([\w-]+)\/(teams|people)$/.exec(
-      location.hash,
-    );
-    if (
-      directoryLink &&
-      state.organisations.some((o) => o.id === directoryLink[1])
-    ) {
-      await openDirectory(directoryLink[2], directoryLink[1]);
-    } else if (link && state.projects.some((p) => p.id === link[1])) {
-      await openProject(link[1]);
-      state.view = link[2] === "drawing" ? "board" : link[2];
-      if (link[3] && state.boards.some((b) => b.id === link[3]))
-        state.selectedBoard = link[3];
-      if (state.view === "board" && link[3])
-        await features.drawingEnter(link[3]);
-      else renderApp();
-      if (link[4])
-        requestAnimationFrame(() =>
-          document
-            .querySelector(
-              `[data-pro="find-result"][data-id="${CSS.escape(link[4])}"]`,
-            )
-            ?.click(),
-        );
-      if (link[4]) {
-        const n = board()?.nodes.find((n) => n.id === link[4]),
-          c = $("#canvas");
-        if (n && c) {
-          state.camera = {
-            z: Math.min(
-              1.5,
-              (c.clientWidth - 140) / n.w,
-              (c.clientHeight - 100) / n.h,
-            ),
-            x: 0,
-            y: 0,
-          };
-          state.camera.x = c.clientWidth / 2 - (n.x + n.w / 2) * state.camera.z;
-          state.camera.y =
-            c.clientHeight / 2 - (n.y + n.h / 2) * state.camera.z;
-          updateCamera();
-        }
-      }
+    const destination = navigation.initial();
+    if (destination) {
+      if (!(await restoreNavigation(destination))) renderApp();
     } else if (organisation) await openOrganisation(organisation.id);
     else renderApp();
+    navigation.start();
   } catch (error) {
     renderApp();
+    navigation.start();
     toast(error.message, true);
   }
 }

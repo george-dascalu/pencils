@@ -40,7 +40,7 @@ export function statusColor(config, status) {
   if (config.done.includes(status)) return "#648b50";
   const known = {
     backlog: "#89928b",
-    todo: "#7a8d79",
+    todo: "#508fb6",
     "in-progress": "#bc9235",
     review: "#9a79b7",
   };

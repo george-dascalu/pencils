@@ -1,15 +1,15 @@
-import { canParent } from "./hierarchy-model.js";
-import { nextStatuses, initialStatus } from "./workflow-model.js";
+import { nextStatuses } from "./workflow-model.js";
 import { positionPopover } from "./popover-position.js";
+import { taskColorAttributes, refreshTaskControlColors } from "./task-colors.js";
 export function taskPickerHTML(
   { name, title, value, choices, iconOnly },
-  { esc, icon },
+  { esc, icon, state },
 ) {
   const chosen = choices.find((c) => c.value === value) || choices[0];
-  return `<div class="task-picker ${iconOnly ? "icon-only" : ""}" data-task-picker="${name}">
+  return `<div class="task-picker ${iconOnly ? "icon-only" : ""}" data-task-picker="${name}" ${taskColorAttributes(state, name, value)}>
     <select name="${name}" aria-label="${title}" hidden>${choices.map((c) => `<option value="${esc(c.value)}" data-icon="${esc(c.icon)}" ${c.value === value ? "selected" : ""}>${esc(c.label)}</option>`).join("")}</select>
     <button type="button" class="task-picker-trigger" aria-haspopup="listbox" aria-expanded="false" aria-label="${title}: ${esc(chosen.label)}" title="${title}: ${esc(chosen.label)}"><span data-picker-symbol>${icon(chosen.icon)}</span>${iconOnly ? "" : `<span data-picker-label>${esc(chosen.label)}</span>`}${icon("chevron")}</button>
-    <div class="task-picker-popover selection-popover" hidden>${name === "parent" ? '<input type="search" placeholder="Find a parent task…" aria-label="Find a parent task">' : ""}<div role="listbox" aria-label="${title}">${choices.map((c) => `<button type="button" role="option" aria-selected="${c.value === chosen.value}" data-picker-value="${esc(c.value)}">${icon(c.icon)}<span>${esc(c.label)}</span>${icon("check")}</button>`).join("")}</div></div>
+    <div class="task-picker-popover selection-popover" hidden>${name === "parent" ? '<input type="search" placeholder="Find a parent task…" aria-label="Find a parent task">' : ""}<div role="listbox" aria-label="${title}">${choices.map((c) => `<button type="button" role="option" aria-selected="${c.value === chosen.value}" data-picker-value="${esc(c.value)}" ${taskColorAttributes(state, name, c.value)}>${icon(c.icon)}<span>${esc(c.label)}</span>${icon("check")}</button>`).join("")}</div></div>
   </div>`;
 }
 
@@ -19,12 +19,7 @@ export function taskModalControls(ctx, form, restoreVersion) {
     esc,
     icon,
     api,
-    route,
     task,
-    patchTask,
-    renderView,
-    closeDialog,
-    taskDialog,
   } = ctx;
   const dialog = form.closest("dialog");
   let openPicker = null,
@@ -40,39 +35,7 @@ export function taskModalControls(ctx, form, restoreVersion) {
     if (focus) trigger.focus();
   }
   function paintPickers() {
-    const parentPicker = form.querySelector('[data-task-picker="parent"]');
-    for (const button of parentPicker.querySelectorAll("[data-picker-value]")) {
-      const parent = state.tasks.find(
-        (t) => t.id === button.dataset.pickerValue,
-      );
-      button.disabled = !canParent(
-        state.config,
-        form.elements.type.value,
-        parent?.type ?? null,
-      );
-    }
-    const childSelect = form.elements.subtaskType,
-      current = childSelect.value;
-    const allowed = state.config.types.filter((t) =>
-      canParent(state.config, t, form.elements.type.value),
-    );
-    childSelect.innerHTML = allowed
-      .map((t) => `<option value="${esc(t)}">${esc(ctx.label(t))}</option>`)
-      .join("");
-    childSelect.value = allowed.includes(current)
-      ? current
-      : allowed.includes("task")
-        ? "task"
-        : allowed[0] || "";
-    form.querySelector('[data-task-modal="subtask-add"]').disabled =
-      !allowed.length;
-    form.querySelector("[data-subtask-hint]").textContent = !allowed.length
-      ? "This card type cannot have subtasks under the project hierarchy rules."
-      : !form.dataset.id
-        ? form.dataset.draftNode
-          ? "Subtasks are created when you finalise this draft."
-          : "Subtasks are created when you create this task."
-        : "";
+    refreshTaskControlColors(form, state);
     for (const picker of form.querySelectorAll("[data-task-picker]")) {
       const select = picker.querySelector("select"),
         option = select.selectedOptions[0];
@@ -168,25 +131,6 @@ export function taskModalControls(ctx, form, restoreVersion) {
       await history();
       return;
     }
-    if (action === "subtask-remove-draft") {
-      const drafts = JSON.parse(form.elements.pendingSubtasks.value);
-      drafts.splice(Number(button.dataset.index), 1);
-      form.elements.pendingSubtasks.value = JSON.stringify(drafts);
-      form.elements.pendingSubtasks.dispatchEvent(
-        new Event("input", { bubbles: true }),
-      );
-      subtasks();
-      return;
-    }
-    if (action === "subtask-open") {
-      closeDialog();
-      if (!state.dialog) taskDialog(button.dataset.id);
-      return;
-    }
-    if (action === "subtask-add") {
-      await addSubtask();
-      return;
-    }
     if (action === "history-restore") {
       button.disabled = true;
       try {
@@ -201,12 +145,6 @@ export function taskModalControls(ctx, form, restoreVersion) {
     }
   });
   form.addEventListener("keydown", (event) => {
-    if (event.target.name === "subtaskTitle" && event.key === "Enter") {
-      event.preventDefault();
-      event.stopPropagation();
-      addSubtask();
-      return;
-    }
     const picker = event.target.closest("[data-task-picker]");
     if (
       event.key === "Escape" &&
@@ -253,102 +191,6 @@ export function taskModalControls(ctx, form, restoreVersion) {
   window.addEventListener("resize", positionPicker);
   dialog.addEventListener("scroll", positionPicker, true);
 
-  function subtasks() {
-    const drafts = JSON.parse(form.elements.pendingSubtasks.value || "[]");
-    const children = state.tasks.filter(
-      (t) => t.parent === form.dataset.id && !t.archived,
-    );
-    form.querySelector("[data-subtask-count]").textContent =
-      `(${children.length + drafts.length})`;
-    form.querySelector("[data-subtask-list]").innerHTML =
-      children
-        .map(
-          (t) =>
-            `<div class="task-subtask-row">${icon(t.type)}<button type="button" class="text-link subtask-title" data-task-modal="subtask-open" data-id="${esc(t.id)}"><small>${esc(t.key || t.id)}</small><span>${esc(t.title)}</span></button><select aria-label="Status for ${esc(t.title)}" data-subtask-status="${esc(t.id)}">${nextStatuses(
-              state.config,
-              t.status,
-            )
-              .map(
-                (s) =>
-                  `<option value="${esc(s)}" ${s === t.status ? "selected" : ""}>${esc(ctx.statusNames[s] || ctx.label(s))}</option>`,
-              )
-              .join("")}</select></div>`,
-        )
-        .join("") +
-        drafts
-          .map(
-            (t, index) =>
-              `<div class="task-subtask-row">${icon(t.type)}<span class="subtask-title"><small>${esc(t.type)} · Draft</small><span>${esc(t.title)}</span></span><button type="button" class="icon-button" aria-label="Remove draft ${esc(t.title)}" data-task-modal="subtask-remove-draft" data-index="${index}">${icon("trash")}</button></div>`,
-          )
-          .join("") || '<p class="field-hint">No subtasks yet.</p>';
-  }
-  async function addSubtask() {
-    const input = form.elements.subtaskTitle,
-      button = form.querySelector("[data-task-modal=subtask-add]");
-    const title = input?.value.trim();
-    if (!title || button.disabled) {
-      input?.focus();
-      return;
-    }
-    if (!form.dataset.id) {
-      const drafts = JSON.parse(form.elements.pendingSubtasks.value || "[]");
-      drafts.push({ title, type: form.elements.subtaskType.value });
-      form.elements.pendingSubtasks.value = JSON.stringify(drafts);
-      input.value = "";
-      input.dispatchEvent(new Event("input", { bubbles: true }));
-      subtasks();
-      input.focus();
-      return;
-    }
-    button.disabled = true;
-    const errorBox = form.querySelector("[data-subtask-error]");
-    errorBox.hidden = true;
-    try {
-      const child = await api(route("tasks"), {
-        method: "POST",
-        body: {
-          title,
-          parent: form.dataset.id,
-          type: form.elements.subtaskType.value,
-          status: initialStatus(state.config),
-        },
-      });
-      if (!state.tasks.some((t) => t.id === child.id)) state.tasks.push(child);
-      if (disposed) return;
-      input.value = "";
-      input.dispatchEvent(new Event("input", { bubbles: true }));
-      subtasks();
-      renderView();
-      input.focus();
-    } catch (error) {
-      if (!disposed) {
-        errorBox.textContent = error.message;
-        errorBox.hidden = false;
-      }
-    } finally {
-      button.disabled = false;
-    }
-  }
-  form.addEventListener("change", async (event) => {
-    const select = event.target.closest("[data-subtask-status]");
-    if (!select) return;
-    event.stopPropagation();
-    select.disabled = true;
-    try {
-      await patchTask(
-        select.dataset.subtaskStatus,
-        { status: select.value },
-        false,
-      );
-      subtasks();
-      renderView();
-    } catch (error) {
-      ctx.toast(error.message, true);
-      select.value = task(select.dataset.subtaskStatus)?.status || select.value;
-    } finally {
-      select.disabled = false;
-    }
-  });
   function hideHistory() {
     form.querySelector(".task-history-panel").hidden = true;
     dialog.classList.remove("with-task-history");
@@ -386,7 +228,6 @@ export function taskModalControls(ctx, form, restoreVersion) {
     }
   }
   paintPickers();
-  subtasks();
   return {
     history,
     hideHistory,
@@ -403,7 +244,6 @@ export function taskModalControls(ctx, form, restoreVersion) {
     },
     reload() {
       paintPickers();
-      subtasks();
     },
     destroy() {
       disposed = true;

@@ -39,10 +39,17 @@ try {
   await page.goto(`http://127.0.0.1:${server.address().port}`);
   await page.locator(".project-link").click();
   await page.locator("[data-view=board]").click();
-  const camera = () =>
-    page
-      .locator("#canvas-world")
-      .evaluate((el) => getComputedStyle(el).transform);
+  const camera = async () => {
+    // Board saves can replace the world element during a read. Wait for the
+    // current element's transform rather than sampling a detached node.
+    const value = await page.waitForFunction(() => {
+      const world = document.querySelector("#canvas-world");
+      if (!world) return false;
+      const transform = getComputedStyle(world).transform;
+      return transform && transform !== "none" ? transform : false;
+    });
+    return value.jsonValue();
+  };
   const originalCamera = await camera();
   const canvas = await page.locator("#canvas").boundingBox();
   const start = { x: canvas.x + 150, y: canvas.y + 90 };

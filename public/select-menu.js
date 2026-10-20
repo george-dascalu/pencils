@@ -1,12 +1,14 @@
 import { selectSymbol } from "./select-symbols.js";
 import { positionPopover } from "./popover-position.js";
 // Keep native selects as the form controls; share a themed menu across every view.
-export function installSelectMenus({ esc, icon }) {
+export function installSelectMenus({ esc, icon, taskColor = () => "" }) {
   let source,
     menu,
     frame,
     query = "",
-    typedAt = 0;
+    typedAt = 0,
+    touchStart,
+    touchClick;
   const eligible = (el) =>
     el instanceof HTMLSelectElement &&
     !el.multiple &&
@@ -43,7 +45,9 @@ export function installSelectMenus({ esc, icon }) {
     )
       return close();
     const r = source.getBoundingClientRect();
-    positionPopover(menu,r,{width:Math.max(r.width,source.dataset.selectSymbol ? 116 : 220)});
+    positionPopover(menu, r, {
+      width: Math.max(r.width, source.dataset.selectSymbol ? 116 : 220),
+    });
   }
   function track() {
     position();
@@ -69,7 +73,10 @@ export function installSelectMenus({ esc, icon }) {
           option.dataset.icon ||
           (field === "priority" ? `priority-${option.value}` : "");
         const sample = selectSymbol(source.dataset.selectSymbol, option.value);
-        return `${heading}<button type="button" role="option" tabindex="-1" data-select-index="${index}" aria-selected="${option.selected}" title="${esc(option.label)}" ${option.disabled || parent.disabled ? "disabled" : ""}>${sample || (symbol ? icon(symbol) : "")}<span${sample ? ' class="sr-only"' : ""}>${esc(option.label)}</span>${icon("check")}</button>`;
+        const colorField =
+          source.closest("[data-task-color]")?.dataset.taskColor || field;
+        const color = taskColor(colorField, option.value);
+        return `${heading}<button type="button" role="option" tabindex="-1" ${color ? `data-task-color="${esc(colorField)}" style="--task-field-color:${color}"` : ""} data-select-index="${index}" aria-selected="${option.selected}" title="${esc(option.label)}" ${option.disabled || parent.disabled ? "disabled" : ""}>${color && colorField !== "priority" ? '<span class="task-color-dot" aria-hidden="true"></span>' : ""}${sample || (symbol ? icon(symbol) : "")}<span class="select-option-label${sample ? " sr-only" : ""}">${esc(option.label)}</span>${icon("check")}</button>`;
       })
       .join("");
     position();
@@ -119,6 +126,18 @@ export function installSelectMenus({ esc, icon }) {
     document.addEventListener(
       type,
       (event) => {
+        if (type === "pointerdown") {
+          touchStart =
+            eligible(event.target) && event.pointerType === "touch"
+              ? {
+                  target: event.target,
+                  x: event.clientX,
+                  y: event.clientY,
+                  id: event.pointerId,
+                }
+              : null;
+          touchClick = null;
+        }
         if (
           eligible(event.target) &&
           (event.button == null || event.button === 0)
@@ -132,12 +151,48 @@ export function installSelectMenus({ esc, icon }) {
       },
       true,
     );
+  // WebKit may omit the synthetic click after a native select's pointerdown
+  // is cancelled. Open on a completed tap, while allowing scroll gestures.
+  document.addEventListener(
+    "pointercancel",
+    () => {
+      touchStart = null;
+    },
+    true,
+  );
+  document.addEventListener(
+    "pointerup",
+    (event) => {
+      const start = touchStart;
+      touchStart = null;
+      if (
+        !start ||
+        start.id !== event.pointerId ||
+        !eligible(start.target) ||
+        Math.hypot(event.clientX - start.x, event.clientY - start.y) > 12
+      )
+        return;
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      touchClick = { target: start.target, until: performance.now() + 700 };
+      open(start.target);
+    },
+    true,
+  );
   document.addEventListener(
     "click",
     (event) => {
       if (eligible(event.target)) {
         event.preventDefault();
         event.stopImmediatePropagation();
+        if (
+          touchClick?.target === event.target &&
+          performance.now() < touchClick.until &&
+          event.detail !== 0
+        ) {
+          touchClick = null;
+          return;
+        }
         open(event.target);
       } else if (menu?.contains(event.target)) {
         event.preventDefault();
@@ -208,7 +263,7 @@ export function installSelectMenus({ esc, icon }) {
         ];
         next = ordered.find((b) =>
           b
-            .querySelector("span")
+            .querySelector(".select-option-label")
             .textContent.trim()
             .toLocaleLowerCase()
             .startsWith(needle),

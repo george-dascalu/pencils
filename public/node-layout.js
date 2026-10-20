@@ -4,6 +4,13 @@ export const visualNodeType = (node) =>
   isTaskNote(node) ? "sticky" : node.type === "draft" ? "task" : node.type;
 export const nodeFill = (node, fallback = "#ffffff") =>
   node.color || (visualNodeType(node) === "sticky" ? "#f5e7a2" : fallback);
+export function readableText(fill) {
+  const rgb = /^#[\da-f]{6}$/i.test(fill) ? fill.slice(1).match(/../g).map(v => parseInt(v, 16) / 255) : [1, 1, 1];
+  const linear = rgb.map(v => v <= 0.04045 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4);
+  const luminance = linear[0] * .2126 + linear[1] * .7152 + linear[2] * .0722;
+  // Black and white guarantee at least 4.5:1 for every opaque sRGB fill.
+  return luminance > .179 ? "#000000" : "#ffffff";
+}
 
 export function nodeMinimum(node) {
   if (node.type === "grid")
@@ -21,7 +28,7 @@ export function nodeMinimum(node) {
         : 168,
     };
   const sizes = {
-    task: [220, 180],
+    task: [220, node.taskCollapsed ? 96 : 180],
     file: [200, 140],
     query: [220, 160],
     sticky: [120, 100],

@@ -13,7 +13,7 @@ export function pageOf(items, page = 0, size = PAGE_SIZE) {
     total: items.length,
   };
 }
-export function treePage(matches, allTasks, page = 0, size = PAGE_SIZE) {
+export function treePage(matches, allTasks, page = 0, size = PAGE_SIZE, compare = null) {
   const all = new Map(allTasks.map((t) => [t.id, t]));
   const included = new Map(matches.map((t) => [t.id, t]));
   const matching = new Set(included.keys());
@@ -26,13 +26,15 @@ export function treePage(matches, allTasks, page = 0, size = PAGE_SIZE) {
       parent = all.get(parent.parent);
     }
   }
+  const ordered = [...included.values()];
+  if (compare) ordered.sort(compare);
   const children = new Map();
-  for (const task of included.values()) {
+  for (const task of ordered) {
     const list = children.get(task.parent) || [];
     list.push(task);
     children.set(task.parent, list);
   }
-  const roots = [...included.values()].filter((t) => !included.has(t.parent));
+  const roots = ordered.filter((t) => !included.has(t.parent));
   // Damaged external files can contain cycles. Keep every record reachable.
   const reachable = new Set();
   function visit(root, output, seen) {

@@ -141,6 +141,7 @@ try {
     await page.evaluate(() =>
       window.PencilsAppearance.write({ theme: "dark" }),
     );
+    await source.scrollIntoViewIfNeeded();
     const r = await source.boundingBox();
     const session = await context.newCDPSession(page);
     const before = (await nodes()).length;

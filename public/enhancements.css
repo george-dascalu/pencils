@@ -40,27 +40,6 @@ summary:focus,
 .field select[multiple] {
   min-height: 84px;
 }
-.workspace-tools {
-  display: grid;
-  gap: 6px;
-  padding: 12px 18px;
-}
-.workspace-tools .button {
-  background: transparent;
-  border: 1px solid #62746b;
-  color: #eef3e8;
-  justify-content: flex-start;
-  text-align: left;
-  min-height: 34px;
-}
-.workspace-tools label {
-  font-size: 12px;
-  color: #e1e9d9;
-  margin-top: 6px;
-}
-.side-bottom {
-  margin-top: 18px;
-}
 .sidebar {
   overflow: auto;
 }
@@ -128,10 +107,10 @@ summary:focus,
 .grid-tools {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
   flex-wrap: wrap;
   font-size: 12px;
-  margin-bottom: 12px;
+  margin-bottom: 8px;
 }
 .grid-tools label {
   display: flex;
@@ -148,8 +127,11 @@ summary:focus,
 }
 .task-table.spreadsheet {
   table-layout: fixed;
-  width: max-content;
-  min-width: 100%;
+  min-width: 0;
+}
+/* Column widths belong to fields, not their current position in the table. */
+.task-table.spreadsheet td[data-column-key] {
+  min-width: 0;
 }
 .spreadsheet th {
   position: relative;
@@ -701,9 +683,6 @@ summary:focus,
   }
   .dashboard-deadlines > button {
     gap: 12px;
-  }
-  .workspace-tools .button {
-    min-height: 40px;
   }
 }
 @media (max-width: 780px) {

@@ -1,3 +1,4 @@
+import { legacySubtasks } from "./task-editor-helpers.mjs";
 import assert from "node:assert/strict";
 import fs from "node:fs/promises";
 import os from "node:os";
@@ -46,13 +47,9 @@ try {
   await page.locator(`.project-link[data-id="${project.id}"]`).click();
   await page.locator("[data-action=task-new]").first().click();
   await page.locator("#task-form [name=title]").fill("Parent with drafts");
-  await page.locator("[name=subtaskTitle]").fill("First draft");
-  await page.locator("[name=subtaskTitle]").press("Enter");
-  await page.locator("[name=subtaskType]").selectOption("bug");
-  await page.locator("[name=subtaskTitle]").fill("Second draft");
-  await page.locator("[data-task-modal=subtask-add]").click();
+  await legacySubtasks(page.locator("#task-form"), [{ title: "First draft", type: "task" }, { title: "Second draft", type: "bug" }]);
   assert.match(
-    await page.locator("[data-subtask-list]").innerText(),
+    await page.locator("[name=pendingSubtasks]").inputValue(),
     /First draft/,
   );
   assert.equal((await store.snapshot(project.id)).tasks.length, 2);
@@ -66,7 +63,7 @@ try {
     request,
   );
   assert.match(
-    await page.locator("[data-subtask-list]").innerText(),
+    await page.locator("[name=pendingSubtasks]").inputValue(),
     /Second draft/,
   );
 
@@ -98,7 +95,7 @@ try {
     await page.screenshot({ path: `/tmp/pencils-date-picker-${width}.png` });
   }
   await page.setViewportSize({ width: 1440, height: 1000 });
-  await page.locator('[data-date-value="2026-10-19"]').click();
+  await page.locator('td [data-date-value="2026-10-19"]').click();
   assert.equal(await page.locator("[name=due]").inputValue(), "2026-10-19");
   await page.locator(".date-field:has([name=due]) [data-date-picker]").click();
   await page.keyboard.press("Escape");
@@ -114,12 +111,13 @@ try {
   assert.equal(tasks.find((t) => t.title === "Second draft").type, "bug");
   // Hierarchy editor persists and keeps invalid relationships from being saved.
   await page.locator("[data-action=project-edit]").click();
+  await page.locator('.settings-navigation [data-settings-section="hierarchy"]').click();
   await page.locator("[data-hierarchy-mode]").selectOption("enforced");
   await page.locator(".hierarchy-matrix > summary").click();
   await page
     .locator('[data-hierarchy-parent="task"][data-hierarchy-child="bug"]')
     .uncheck();
-  await page.locator("#project-form [type=submit]").click();
+  await page.locator("#settings-panel [type=submit]").click();
   await page.getByText(/Move existing tasks before enforcing/).waitFor();
   await page
     .locator('[data-hierarchy-parent="task"][data-hierarchy-child="bug"]')
@@ -136,7 +134,7 @@ try {
     );
   }
   await page.setViewportSize({ width: 1440, height: 1000 });
-  await page.locator("#project-form [type=submit]").click();
+  await page.locator("#settings-panel [type=submit]").click();
   await until(
     async () =>
       (await store.snapshot(project.id)).project.schema.hierarchy?.mode ===

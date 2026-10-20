@@ -160,6 +160,13 @@ export function installRecovery(Store) {
         old.data.kind !== current.data.kind
       )
         throw new Problem(400, "Version belongs to another record.");
+      if (current.data.kind === "document") {
+        // A restore is a new save; version numbers must never go backwards.
+        // Keep the document's current folder so reorganising it isn't undone.
+        return this.updateDocument(current.data.project, current.data.id, {
+          revision, title: old.data.title, body: old.body,
+        });
+      }
       if (current.data.kind === "task") {
         const config = schema(
           (await this.read(this.file(current.data.project, "project"))).data
@@ -461,7 +468,7 @@ export function installRecovery(Store) {
         await this.read(this.file(item.project, "project"));
         target = this.file(
           item.project,
-          item.kind === "board" ? "boards" : "tasks",
+          item.kind === "board" ? "boards" : item.kind === "document" ? "documents" : "tasks",
           item.id,
         );
       }

@@ -1,0 +1,26 @@
+{
+  "detector": {
+    "ignoreRules": [],
+    "ignoreFiles": [],
+    "ignoreValues": [
+      {
+        "rule": "dark-glow",
+        "value": "*",
+        "files": [
+          "public/index.html"
+        ],
+        "createdAt": "2026-10-20T13:26:22.941Z",
+        "reason": "Agent verified: index.html contains only stylesheet links and no shadow declarations; the Miro change adds one stylesheet link, and its stylesheet defines no glow."
+      },
+      {
+        "rule": "side-tab",
+        "value": "*",
+        "files": [
+          "public/index.html"
+        ],
+        "createdAt": "2026-10-20T13:47:02.525Z",
+        "reason": "Agent verified by detector output, CSS, event handlers and HEAD: the linked .board-node.blocked-task stripe indicates a blocked task, and #canvas-outline .frame-row-target is a temporary drag insertion marker. Both predate the Miro import and provide functional state feedback rather than decorative card accents."
+      }
+    ]
+  }
+}

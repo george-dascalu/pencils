@@ -1,4 +1,4 @@
-import { selectProjectView } from "./menu-controls.mjs";
+import { clickControl, selectProjectView } from "./menu-controls.mjs";
 import assert from "node:assert/strict";
 import fs from "node:fs/promises";
 import os from "node:os";
@@ -51,10 +51,11 @@ try {
   assert.equal(await page.locator(".timeline-row").count(), 200);
   assert.match(
     await page.locator(".timeline-page-summary").innerText(),
-    /200 of 205/,
+    /Page 1 of 2 · 206 tasks/,
   );
   await page.getByRole("button", { name: "Next tasks", exact: true }).click();
-  assert.equal(await page.locator(".timeline-row").count(), 5);
+  assert.equal(await page.locator(".timeline-row").count(), 6);
+  assert.equal(await page.locator(".timeline-unplanned").count(), 1);
   await selectProjectView(page, "kanban");
   assert.match(
     await page.locator('[data-drop-status="done"] .column-header').innerText(),
@@ -82,21 +83,20 @@ try {
     () => document.querySelectorAll(".tree-row").length === 2,
   );
   assert.match(
-    await page.locator(".tree-context").innerText(),
+    await page.locator(".tree-context .task-title").inputValue(),
     /Parent context/,
   );
-  await page.locator('[data-action="filters-reset"]').last().click();
+  await clickControl(page.locator('[data-action="filters-reset"]').first());
   await page.setViewportSize({ width: 390, height: 844 });
-  await page.locator("#project-view-switcher").selectOption("calendar");
+  await selectProjectView(page, "calendar");
   await page.locator("#calendar-mode").selectOption("agenda");
   assert.equal(await page.locator(".calendar-agenda").count(), 1);
   assert.equal(await page.locator(".calendar-unscheduled").count(), 1);
   await page.locator("#project-view-switcher").selectOption("overview");
   await page.locator('[data-query="done"]').click();
-  assert.match(
-    await page.locator(".view-footnote").innerText(),
-    /102 matching/,
-  );
+  assert.equal(await page.locator("#filter-completion").inputValue(), "done");
+  assert.equal(await page.locator(".task-row").count(), 100);
+  assert.match(await page.locator("#pagination").innerText(), /Page 1 of 2/);
   await page.keyboard.press("Control+k");
   await page.locator("#global-search-input").fill("open table");
   await page
@@ -123,7 +123,7 @@ try {
   await title.evaluate((el) => {
     const e = new Event("paste", { bubbles: true, cancelable: true });
     Object.defineProperty(e, "clipboardData", {
-      value: { getData: () => "New title\tinvalid-type" },
+      value: { getData: () => "New title\tDescription\tinvalid-type" },
     });
     el.dispatchEvent(e);
   });

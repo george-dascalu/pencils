@@ -176,7 +176,7 @@ export class Sources {
     if (!this.auth.enabled)
       throw new Problem(
         400,
-        "Enable required authentication before connecting data sources.",
+        "Use local automatic sign-in or required authentication before connecting data sources.",
       );
     this.auth.admin(user);
     const data = await this.load(project),
@@ -314,7 +314,7 @@ export class Sources {
   async authorize(project, id, user) {
     this.auth.admin(user);
     if (!this.auth.enabled)
-      throw new Problem(400, "Required authentication is needed.");
+      throw new Problem(400, "Use local automatic sign-in or required authentication.");
     const s = (await this.load(project)).sources.find((s) => s.id === id);
     if (!s || s.provider === "obsidian")
       throw new Problem(400, "Choose a cloud source.");

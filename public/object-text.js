@@ -1,4 +1,5 @@
 import { selectedCells, gridCell } from "./board-grid.js";
+import { nodeFill, readableText, visualNodeType } from "./node-layout.js";
 export const objectFonts = [
   "inherit",
   "Manrope",
@@ -113,6 +114,8 @@ export function textStyleControls(n, { esc, icon, state, textNodes }) {
 }
 export function paintTextStyle(el, n) {
   if (!el) return;
+  if (["sticky", "shape"].includes(visualNodeType(n)))
+    el.style.color = readableText(nodeFill(n));
   const font =
     objectFonts.includes(n.fontFamily) && n.fontFamily !== "inherit"
       ? `'${n.fontFamily}'`

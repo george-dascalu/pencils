@@ -1,7 +1,64 @@
 import { positionPopover } from "./popover-position.js";
 // Group the existing controls without replacing their handlers or save state.
 export function projectLayout(ctx) {
-  const { $, state, esc, icon, label, viewLabel, taskViews, planningViews, openView } = ctx;
+  const { $, state, icon, label, viewLabel, taskViews, planningViews, openView } = ctx;
+  const narrow = matchMedia("(max-width: 600px)");
+  let moved = [], compact = null;
+  function restoreToolbar() {
+    for (const [element, slot] of moved) {
+      if (slot.isConnected) slot.replaceWith(element);
+      else element.remove();
+    }
+    moved = [];
+    compact?.remove();
+    compact = null;
+  }
+  function compactToolbar() {
+    restoreToolbar();
+    const toolbar = $(".toolbar-left");
+    if (!narrow.matches || !toolbar) return;
+    compact = document.createElement("details");
+    compact.className = "mobile-view-options";
+    compact.open = !!state.mobileViewOptions;
+    compact.innerHTML = `<summary class="button">${icon("filter")}View options${icon("chevron")}</summary><div class="mobile-view-options-panel" aria-label="View options"><header><strong>View options</strong><button type="button" class="icon-button" aria-label="Close view options">${icon("close")}</button></header></div>`;
+    const panel = compact.lastElementChild;
+    for (const element of document.querySelectorAll(".shared-query-controls, .toolbar-left > .filter, .toolbar-left > .board-menu, .toolbar-right, .table-view-tools, .grid-tools")) {
+      const slot = document.createComment("view control position");
+      element.before(slot);
+      moved.push([element, slot]);
+      panel.append(element);
+    }
+    toolbar.append(compact);
+    compact.addEventListener("toggle", () => {
+      state.mobileViewOptions = compact?.open;
+      positionCompact();
+    });
+    panel.querySelector("header button").onclick = closeCompact;
+    positionCompact();
+  }
+  function closeCompact() {
+    if (!compact?.open) return;
+    compact.open = state.mobileViewOptions = false;
+    compact.querySelector("summary").focus({ preventScroll: true });
+  }
+  function positionCompact() {
+    if (compact?.open) positionPopover(compact.lastElementChild, compact.querySelector("summary").getBoundingClientRect(), { width: 360, maxHeight: 600 });
+  }
+  narrow.addEventListener("change", compactToolbar);
+  window.addEventListener("resize", positionCompact);
+  document.addEventListener("click", event => {
+    const inside = event.composedPath().some(el => el.classList?.contains("mobile-view-options"));
+    if (compact?.open && !inside && !event.target.closest(".select-menu,.date-picker-popover,#dialogs")) {
+      compact.open = state.mobileViewOptions = false;
+    }
+  });
+  document.addEventListener("keydown", event => {
+    if (event.key === "Escape" && compact?.open && compact.contains(event.target) && !event.defaultPrevented) {
+      event.preventDefault();
+      event.stopPropagation();
+      closeCompact();
+    }
+  });
   function menu(host, key, title) {
     let el = host.querySelector(`[data-board-menu="${key}"]`);
     if (!el) {
@@ -18,56 +75,31 @@ export function projectLayout(ctx) {
     if (el) panel.append(el);
   }
   function projectHeader() {
+    restoreToolbar();
     if (!state.project || !$(".tabs")) return;
-    const tabs = $(".tabs");
-    let projectTools = $("#board-project-tools");
-    if (!projectTools) {
-      tabs.insertAdjacentHTML(
-        "afterend",
-        '<div id="board-project-tools" class="board-project-tools"></div>',
-      );
-      projectTools = $("#board-project-tools");
-    }
-    let switcher = projectTools.querySelector(".mobile-view-switcher");
-    if (!switcher) {
-      switcher = document.createElement("label");
-      switcher.className = "mobile-view-switcher";
-      projectTools.prepend(switcher);
-    }
-    const projectView = taskViews.includes(state.view) ? "tasks" : planningViews.includes(state.view) ? "planning" : state.view;
-    switcher.innerHTML = `View <select id="project-view-switcher" aria-label="Project view">${[...tabs.querySelectorAll("[data-view]")].map((button) => `<option value="${esc(button.dataset.view)}" ${button.dataset.view === projectView ? "selected" : ""}>${esc(viewLabel(button.dataset.view))}</option>`).join("")}</select>`;
-    const projectPanel = menu(projectTools, "project", "Project");
-    projectPanel.innerHTML = `<div class="compact-project-info"><strong>${esc(state.project.title)}</strong><p>${esc($(".hero p")?.textContent || "")}</p><p>${esc($(".stats-strip")?.textContent.replace(/\s+/g, " ").trim() || "")}</p></div>`;
     $(".shared-query-controls")?.remove();
     const features = $("#feature-toolbar");
     const queryHost = $(".toolbar-left");
-    if (
-      features &&
-      queryHost &&
-      !["board", "drawing", "overview", "settings"].includes(state.view)
-    ) {
+    if (features) {
       const controls = document.createElement("div");
       controls.className = "shared-query-controls";
-      for (const el of features.querySelectorAll(
-        '#saved-view,[data-feature="view-save"],[data-feature="view-save-as"],[data-feature="view-delete"]',
-      ))
-        controls.append(el);
-      queryHost.prepend(controls);
+      controls.append(...features.children);
+      if ($(".board-toolbar")) {
+        controls.dataset.boardPersistent = "true";
+        menu($(".board-toolbar"), "board", viewLabel("board"));
+        menu($(".board-toolbar"), "more", "More").prepend(controls);
+      } else if (queryHost) queryHost.prepend(controls);
+      else {
+        const host = $(".overview-toolbar") || $("#view-toolbar");
+        host.prepend(controls);
+      }
+      features.remove();
     }
     $(".view-layout-switcher")?.remove();
     const taskLayout = taskViews.includes(state.view);
     const layouts = taskLayout ? taskViews : planningViews.includes(state.view) ? planningViews : [];
     if (queryHost && layouts.length)
       queryHost.insertAdjacentHTML("afterbegin", `<div class="view-layout-switcher ${taskLayout ? "task" : "planning"}-view-switcher" role="group" aria-label="${taskLayout ? "Task" : "Planning"} layout">${layouts.map((view) => `<button type="button" data-action="view" data-view="${view}" aria-pressed="${state.view === view}" title="${label(view)} layout">${icon(view)}<span>${label(view)}</span></button>`).join("")}</div>`);
-    if (features) {
-      for (const el of [...features.children])
-        if (!el.classList.contains("spacer")) projectPanel.append(el);
-      features.remove();
-    }
-    if (!projectTools.querySelector('[data-action="project-edit"]')) {
-      for (const el of [...($(".hero-right")?.children || [])])
-        projectTools.append(el);
-    }
     const toolbar = $(".toolbar-left");
     const advanced = $(".advanced-filters");
     if (toolbar && advanced) {
@@ -87,6 +119,7 @@ export function projectLayout(ctx) {
         `Filters${count ? ` (${count})` : ""}<span aria-hidden="true">⌄</span>`;
     }
     restoreMenus();
+    compactToolbar();
   }
   function render() {
     const toolbar = $(".board-toolbar");
@@ -140,7 +173,7 @@ export function projectLayout(ctx) {
             ? Math.max(anchor.bottom, toolbar.bottom)
             : anchor.bottom,
         },
-        { width: 320, maxHeight: 560 },
+        { width: details.classList.contains("table-header-menu") ? 240 : 320, maxHeight: 560 },
       );
     }
   }
@@ -174,7 +207,7 @@ export function projectLayout(ctx) {
     (event) => {
       const el = event.target.closest(".board-menu");
       if (el && event.target.closest("summary")) {
-        state.headerMenu = el.open ? null : el.dataset.boardMenu;
+        state.headerMenu = el.open ? null : el.dataset.boardMenu || null;
         document.querySelectorAll(".board-menu[open]").forEach((other) => {
           if (other !== el) other.open = false;
         });
@@ -192,6 +225,7 @@ export function projectLayout(ctx) {
       ) {
         state.headerMenu = null;
         el.open = false;
+        el.querySelector("summary").focus({ preventScroll: true });
       }
     },
     true,
@@ -200,6 +234,37 @@ export function projectLayout(ctx) {
     "keydown",
     (event) => {
       if (state.dialog) return;
+      const menu = event.target.closest(".board-menu");
+      if (event.key === "Tab" && menu?.open) {
+        requestAnimationFrame(() => {
+          if (menu.contains(document.activeElement)) return;
+          menu.open = false;
+          if (state.headerMenu === menu.dataset.boardMenu) state.headerMenu = null;
+        });
+      }
+      const summary = event.target.matches(".board-menu > summary");
+      const actions = menu ? [...menu.querySelectorAll(":scope > .board-menu-panel > button:not(:disabled)")].filter((el) => !el.hidden && el.getClientRects().length) : [];
+      // Arrow keys navigate action rows, while form fields keep their native keys.
+      if (menu && (summary || actions.includes(event.target)) &&
+          ["ArrowDown", "ArrowUp", "Home", "End"].includes(event.key)) {
+        const buttons = menu.querySelectorAll(":scope > .board-menu-panel > button:not(:disabled):not([hidden])");
+        if (buttons.length && (menu.open || ["ArrowDown", "ArrowUp"].includes(event.key))) {
+          event.preventDefault();
+          event.stopImmediatePropagation();
+          for (const other of document.querySelectorAll(".board-menu[open]"))
+            if (other !== menu) other.open = false;
+          menu.open = true;
+          state.headerMenu = menu.dataset.boardMenu || null;
+          positionMenus();
+          const items = [...buttons].filter((el) => el.getClientRects().length);
+          const current = items.indexOf(event.target);
+          const index = event.key === "Home" ? 0 : event.key === "End" ? items.length - 1
+            : current < 0 ? (event.key === "ArrowUp" ? items.length - 1 : 0)
+              : (current + (event.key === "ArrowDown" ? 1 : -1) + items.length) % items.length;
+          items[index]?.focus();
+          return;
+        }
+      }
       const open = document.querySelector(".board-menu[open]");
       if (event.key === "Escape" && open && !state.canvasEditing) {
         event.preventDefault();
@@ -218,5 +283,5 @@ export function projectLayout(ctx) {
     },
     true,
   );
-  return { render, projectHeader };
+  return { render, projectHeader, compactToolbar };
 }

@@ -1,3 +1,4 @@
+import { legacySubtasks } from "./task-editor-helpers.mjs";
 import assert from "node:assert/strict";
 import fs from "node:fs/promises";
 import os from "node:os";
@@ -54,7 +55,7 @@ try {
   await page
     .locator('[aria-label="Task description"]')
     .fill("Ideas before commitment");
-  await page.locator("#task-form [name=subtaskTitle]").fill("Investigate");
+  await legacySubtasks(page.locator("#task-form"), [{ title: "Investigate", type: "task" }]);
   const camera = await page.locator("#canvas-world").getAttribute("style");
   assert.equal(
     await page.getByRole("button", { name: "Save draft", exact: true }).count(),
@@ -69,6 +70,7 @@ try {
     draft = data.boards[0].nodes.find((n) => n.type === "draft");
   assert.equal(data.tasks.length, 0);
   assert.equal(draft.draft.title, "Explore a draft");
+  assert.equal(draft.draft.priority, "medium");
   assert.match(draft.text, /Ideas before commitment/);
   assert.equal(draft.draft.subtasks.length, 1);
   assert.equal(
@@ -80,6 +82,8 @@ try {
   await card.waitFor();
   assert.match(await card.innerText(), /Draft/);
   const priority = () => card.locator("[data-canvas-task-field=priority]");
+  assert.equal(await priority().inputValue(), "medium");
+  assert.equal(await priority().locator('option[value="none"]').textContent(), "Lowest");
   const assignee = () => card.locator("[data-canvas-task-field=assignee]");
   const savedFields = async () =>
     (await snap()).boards[0].nodes.find((n) => n.id === draft.id).draft;
@@ -119,7 +123,7 @@ try {
     "Explore a draft",
   );
   assert.match(
-    await page.locator("[data-subtask-list]").innerText(),
+    await page.locator("[name=pendingSubtasks]").inputValue(),
     /Investigate/,
   );
   await page.locator("#task-form [name=title]").fill("Autosaved while focused");

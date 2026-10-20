@@ -1,3 +1,4 @@
+import { selectSettingsPage } from "./menu-controls.mjs";
 import assert from "node:assert/strict";
 import fs from "node:fs/promises";
 import os from "node:os";
@@ -46,7 +47,7 @@ try {
   await page
     .getByRole("button", { name: "Project settings", exact: true })
     .click();
-  await page.locator('[data-source-action="open"]').click();
+  await selectSettingsPage(page, "sources");
   await page.locator('[data-source-action="new"]').click();
   await page.locator('#source-config [name="name"]').fill("Notes");
   await page.locator('#source-config [type="submit"]').click();
@@ -55,14 +56,14 @@ try {
     .getByText("1 records. First 1 shown. No tasks have been changed.")
     .waitFor();
   await page.locator('[data-action="dialog-close"]').click();
-  await page.locator('[data-source-action="open"]').click();
+  await selectSettingsPage(page, "sources");
   await page.locator('[data-source-action="sync"]').click();
   await page.getByText(/Up to date · 1 records/).waitFor();
-  await page.locator('[data-action="dialog-close"]').click();
   await page.locator('[data-action="settings-close"]').click();
   await page
-    .locator(".task-title")
-    .filter({ hasText: "Imported note" })
+    .locator(".task-row")
+    .filter({ has: page.locator('input.task-title[value="Imported note"]') })
+    .locator(".row-open")
     .click();
   assert.equal(
     await page.locator('#task-form [name="title"]').getAttribute("readonly"),

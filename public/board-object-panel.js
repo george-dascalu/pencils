@@ -17,7 +17,7 @@ export function positionBoardObjectPanel(panel, node, canvas, camera) {
 
 export function boardObjectDialog(
   dialog,
-  { state, board, closeDialog, nodeId },
+  { state, board, closeDialog, nodeId, triggerSelector },
 ) {
   const events = new AbortController();
   const projectId = state.project.id,
@@ -72,21 +72,21 @@ export function boardObjectDialog(
         event.preventDefault();
         event.stopPropagation();
         close();
-        document
-          .querySelector(
-            `[data-node="${CSS.escape(nodeId)}"] [data-pro="convert"]`,
-          )
-          ?.focus({ preventScroll: true });
+        if (triggerSelector)
+          document
+            .querySelector(
+              `[data-node="${CSS.escape(nodeId)}"] ${triggerSelector}`,
+            )
+            ?.focus({ preventScroll: true });
       }
     },
     { signal: events.signal },
   );
   dialog
-    .querySelector(
-      "#draft-finalise-confirm:not(:disabled),[data-action=dialog-close]",
-    )
+    .querySelector("[autofocus], [data-action=dialog-close]")
     ?.focus({ preventScroll: true });
   return {
+    position,
     destroy() {
       events.abort();
       observer.disconnect();

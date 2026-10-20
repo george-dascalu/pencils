@@ -1,3 +1,4 @@
+import { legacySubtasks } from "./task-editor-helpers.mjs";
 import { selectProjectView } from "./menu-controls.mjs";
 import assert from "node:assert/strict";
 import fs from "node:fs/promises";
@@ -20,33 +21,11 @@ const errors = [];
 page.on("pageerror", (e) => errors.push(e.message));
 const snapshot = () => store.snapshot(project.id);
 const checkMetadataLayout = async () => {
-  const rows = await page.locator(".task-metadata > div").evaluateAll((rows) =>
-    rows.map((row) =>
-      [...row.querySelectorAll(".field")].map((field) => ({
-        name: field.querySelector("[name]").name,
-        x: field.getBoundingClientRect().x,
-        y: field.getBoundingClientRect().y,
-      })),
-    ),
-  );
-  assert.deepEqual(
-    rows.map((row) => row.map((field) => field.name)),
-    [
-      ["priority", "status", "assignee"],
-      ["parent", "due"],
-    ],
-  );
-  for (const row of rows) {
-    assert.ok(
-      Math.max(...row.map((field) => field.y)) -
-        Math.min(...row.map((field) => field.y)) <
-        2,
-    );
-    assert.ok(
-      row.every((field, index) => index === 0 || field.x > row[index - 1].x),
-    );
-  }
-  assert.ok(rows[1][0].y > rows[0][0].y);
+  const fields = await page.locator(".task-metadata .field").evaluateAll(fields => fields.map(el => ({ name: el.querySelector("[name]").name, x: el.getBoundingClientRect().x, y: el.getBoundingClientRect().y })));
+  assert.deepEqual(fields.map(f => f.name), ["assignee", "priority", "status", "start", "due"]);
+  assert.ok(fields[0].x < fields[1].x && fields[1].x < fields[2].x);
+  assert.ok(Math.abs(fields[0].y - fields[2].y) < 2);
+  assert.ok(Math.abs(fields[3].y - fields[4].y) < 2);
 };
 
 const until = async (fn) => {
@@ -72,8 +51,7 @@ try {
   await page
     .locator('[aria-label="Task description"]')
     .fill("Rich description");
-  await page.locator("[name=subtaskTitle]").fill("Child from panel");
-  await page.locator("[data-task-modal=subtask-add]").click();
+  await legacySubtasks(page.locator("#task-form"), [{ title: "Child from panel", type: "task" }]);
   // Board remains interactive; resizing/rerendering retains form data and focus behavior.
   const c = await page.locator("#canvas").boundingBox();
   const before = await page.locator("#zoom-label").innerText();
@@ -107,7 +85,7 @@ try {
     "Compact task",
   );
   assert.match(
-    await page.locator("[data-subtask-list]").innerText(),
+    await page.locator("[name=pendingSubtasks]").inputValue(),
     /Child from panel/,
   );
   for (const width of [1500, 390])
@@ -245,10 +223,8 @@ try {
     await editPanel.locator(".task-editor-actions button").count(),
     5,
   );
-  assert.match(
-    await editPanel.locator("[data-subtask-list]").textContent(),
-    /Child from panel/,
-  );
+  assert.equal(await editPanel.locator(".task-subtasks").count(), 0);
+  assert.ok((await snapshot()).tasks.some(t => t.title === "Child from panel" && t.parent === task.id));
   await checkMetadataLayout();
   await editPanel.locator("[data-feature=task-history]").click();
   await editPanel

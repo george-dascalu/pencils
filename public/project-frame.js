@@ -1,3 +1,10 @@
+import { randomUUID } from "./uuid.js";
+const cardWidth = 340,
+  cardHeight = 220,
+  columnGap = 100,
+  rowGap = 60,
+  // The child's left edge sits beyond the parent's bottom-centre port.
+  childIndent = cardWidth / 2 + rowGap;
 // Project frames own only the cards and connectors they generate. Updating a
 // plan never moves unrelated cards or changes the project's relationships.
 export function updateProjectFrame(
@@ -42,6 +49,8 @@ export function updateProjectFrame(
   }
   const owned = board.nodes.filter((n) => n.projectFrameOwner === frame.id);
   const existing = new Map(owned.map((n) => [n.task, n]));
+  const heightFor = (task) => typeof existing.get(task.id)?.taskCollapsed === "boolean"
+    ? existing.get(task.id).h : cardHeight;
   // Keep each parent/children tree together, but place dependency columns on
   // shared rows instead of giving every task a new row in input order.
   const groups = [];
@@ -55,9 +64,10 @@ export function updateProjectFrame(
     nodes = [];
   for (const group of groups) {
     const root = group[0].task;
-    const x = frame.x + 48 + rank(root.id) * 440;
-    const width = 340 + Math.max(...group.map((entry) => entry.depth)) * 80;
-    const height = group.length * 280 - 60;
+    const x = frame.x + 48 + rank(root.id) * (cardWidth + columnGap);
+    const width =
+      cardWidth + Math.max(...group.map((entry) => entry.depth)) * childIndent;
+    const height = group.reduce((sum, entry) => sum + heightFor(entry.task) + rowGap, -rowGap);
     const prerequisites = (root.dependencies || [])
       .map((id) => placed.get(id))
       .filter(Boolean);
@@ -68,42 +78,73 @@ export function updateProjectFrame(
     for (;;) {
       const collision = occupied.find(
         (box) =>
-          x < box.x + box.w + 60 &&
-          x + width + 60 > box.x &&
-          y < box.y + box.h + 60 &&
-          y + height + 60 > box.y,
+          x < box.x + box.w + rowGap &&
+          x + width + rowGap > box.x &&
+          y < box.y + box.h + rowGap &&
+          y + height + rowGap > box.y,
       );
       if (!collision) break;
-      y = collision.y + collision.h + 60;
+      y = collision.y + collision.h + rowGap;
     }
     occupied.push({ x, y, w: width, h: height });
-    group.forEach(({ task, depth }, row) => {
+    let cardY = y;
+    group.forEach(({ task, depth }) => {
       const node = {
         ...existing.get(task.id),
-        id: existing.get(task.id)?.id || `n-${crypto.randomUUID()}`,
+        id: existing.get(task.id)?.id || `n-${randomUUID()}`,
         type: "task",
         task: task.id,
         frame: frame.id,
         projectFrameOwner: frame.id,
-        x: x + depth * 80,
-        y: y + row * 280,
-        w: 340,
-        h: 220,
+        x: x + depth * childIndent,
+        y: cardY,
+        w: cardWidth,
+        h: heightFor(task),
       };
       placed.set(task.id, node);
       nodes.push(node);
+      cardY += node.h + rowGap;
     });
   }
-  if (preservePlacement) {
+  const cards = new Map(nodes.map((n) => [n.task, n]));
+  if (preservePlacement && existing.size) {
+    const planned = new Map(nodes.map((n) => [n.task, { x: n.x, y: n.y }]));
     const kept = [];
+    const positioned = new Set(),
+      positioning = new Set();
     for (const n of nodes) {
       const old = existing.get(n.task);
       if (old) {
         Object.assign(n, { x: old.x, y: old.y, w: old.w, h: old.h });
         kept.push(n);
+        positioned.add(n.task);
       }
     }
-    for (const n of nodes.filter((n) => !existing.has(n.task))) {
+    function place(n) {
+      if (!n || positioning.has(n.task)) return null;
+      if (positioned.has(n.task)) return n;
+      positioning.add(n.task);
+      const task = byId.get(n.task);
+      // Preserve the initial layout's indented parent/child trees. Anchor
+      // new trees to actual prerequisite positions, including resized cards.
+      const parent = place(cards.get(task.parent));
+      if (parent) {
+        n.x = parent.x + parent.w / 2 + rowGap;
+        n.y =
+          parent.y +
+          planned.get(n.task).y -
+          planned.get(parent.task).y +
+          parent.h -
+          heightFor(byId.get(parent.task));
+      } else {
+        const prerequisites = (task.dependencies || [])
+          .map((id) => place(cards.get(id)))
+          .filter(Boolean);
+        if (prerequisites.length) {
+          n.x = Math.max(...prerequisites.map((p) => p.x + p.w)) + columnGap;
+          n.y = Math.min(...prerequisites.map((p) => p.y));
+        }
+      }
       for (;;) {
         const hit = kept.find(
           (k) =>
@@ -113,12 +154,15 @@ export function updateProjectFrame(
             n.y + n.h + 40 > k.y,
         );
         if (!hit) break;
-        n.y = hit.y + hit.h + 60;
+        n.y = hit.y + hit.h + rowGap;
       }
       kept.push(n);
+      positioning.delete(n.task);
+      positioned.add(n.task);
+      return n;
     }
+    for (const n of nodes) place(n);
   }
-  const cards = new Map(nodes.map((n) => [n.task, n]));
   const oldEdges = new Map(
     board.edges
       .filter((e) => e.projectFrameOwner === frame.id)
@@ -131,7 +175,7 @@ export function updateProjectFrame(
     if (!a || !b || a === b) return;
     const old = oldEdges.get(`${kind}:${a.id}:${b.id}`);
     edges.push({
-      id: old?.id || `e-${crypto.randomUUID()}`,
+      id: old?.id || `e-${randomUUID()}`,
       from: a.id,
       to: b.id,
       fromSide: kind === "dependency" ? "right" : "bottom",

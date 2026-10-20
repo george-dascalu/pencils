@@ -225,6 +225,7 @@ export function boardSettings(ctx, controls) {
       .join(
         "",
       )}</fieldset><div class="field-row"><div class="field">Background colour${colorPicker({ value: s.color === "auto" ? "#f5f6ee" : s.color, name: "background-color", label: "Background colour" })}<label class="background-auto"><input type="checkbox" name="theme-color" ${s.color === "auto" ? "checked" : ""}> Use theme colour</label></div><div class="field">Pattern colour${colorPicker({ value: s.lineColor === "auto" ? "#ced6c1" : s.lineColor, name: "line-color", label: "Pattern colour" })}<label class="background-auto"><input type="checkbox" name="auto-line" ${s.lineColor === "auto" ? "checked" : ""}> Automatic contrast</label></div></div><label class="field">Pattern spacing <output>${s.spacing} px</output><input name="spacing" type="range" min="8" max="160" step="4" value="${s.spacing}"></label><div class="background-preview" role="img" aria-label="Background preview"><span>Preview</span></div><p class="field-hint">Changes save automatically. Use Ctrl / ⌘ Z to undo. Snapping and background are saved with this board for everyone. Fine grid adds a stronger line every five squares. Pattern spacing sets the small square size; it is visual and does not change the snapping distance.</p></section>${dependencyStyleHTML(board(), ctx)}<section class="board-settings-section" aria-labelledby="board-display-heading"><h3 id="board-display-heading">Display</h3><label class="board-setting-toggle"><input name="show-pattern" type="checkbox" ${display.grid ? "checked" : ""}><span>Show background pattern<small>Toggle with G while on the board.</small></span></label><label class="board-setting-toggle"><input name="show-minimap" type="checkbox" ${display.minimap ? "checked" : ""}><span>Show minimap<small>Toggle with M while on the board.</small></span></label><p class="field-hint">Display preferences are remembered for this board in this browser.</p></section></div></form>`;
+    popup.querySelector(".dialog-body").insertAdjacentHTML("afterbegin", `<section class="board-settings-section"><button type="button" class="button" data-feature="miro-import">${icon("download")}Import from Miro</button></section>`);
     document.body.append(popup);
     popup.addEventListener("toggle", (e) => {
       if (e.newState === "closed" && popup === e.target) close();
@@ -385,5 +386,5 @@ export function boardSettings(ctx, controls) {
     }
     preview(form);
   }
-  return { open, flush, sync };
+  return { open, close, flush, sync };
 }

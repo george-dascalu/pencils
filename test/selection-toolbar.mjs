@@ -93,7 +93,7 @@ async function saved() {
       page
         .locator("#board-save")
         .textContent()
-        .then((t) => /All (canvas )?changes saved/.test(t)),
+        .then((t) => t === "Saved automatically"),
     "save",
   );
 }

@@ -1,0 +1,174 @@
+{
+  "fixture": "p-12931ad8",
+  "throttle": "1.6 Mbps, 150ms latency, 4x CPU",
+  "results": [
+    {
+      "run": "cold",
+      "readyMs": 3273,
+      "requests": 14,
+      "encodedBytes": 440024,
+      "transferredBytes": 444224,
+      "resources": [
+        {
+          "url": "/assets/appearance-QYCJOIEU.js",
+          "encodedBytes": 722,
+          "transferredBytes": 1022
+        },
+        {
+          "url": "/assets/styles-OJOYG7Q3.css",
+          "encodedBytes": 40668,
+          "transferredBytes": 40968
+        },
+        {
+          "url": "/assets/app-J5AHK6ME.js",
+          "encodedBytes": 144758,
+          "transferredBytes": 145058
+        },
+        {
+          "url": "/fonts/manrope/font.ttf",
+          "encodedBytes": 164700,
+          "transferredBytes": 165000
+        },
+        {
+          "url": "/assets/chunk-6XVMURQA.js",
+          "encodedBytes": 1869,
+          "transferredBytes": 2169
+        },
+        {
+          "url": "/assets/chunk-T4JB6BE6.js",
+          "encodedBytes": 21625,
+          "transferredBytes": 21925
+        },
+        {
+          "url": "/assets/chunk-RZKBPXZD.js",
+          "encodedBytes": 34152,
+          "transferredBytes": 34452
+        },
+        {
+          "url": "/assets/chunk-5GWV3PFP.js",
+          "encodedBytes": 7729,
+          "transferredBytes": 8029
+        },
+        {
+          "url": "/api/session",
+          "encodedBytes": 107,
+          "transferredBytes": 407
+        },
+        {
+          "url": "/api/events",
+          "encodedBytes": 0,
+          "transferredBytes": 300
+        },
+        {
+          "url": "/api/projects",
+          "encodedBytes": 574,
+          "transferredBytes": 874
+        },
+        {
+          "url": "/api/organisations",
+          "encodedBytes": 984,
+          "transferredBytes": 1284
+        },
+        {
+          "url": "/api/projects/p-12931ad8",
+          "encodedBytes": 21814,
+          "transferredBytes": 22114
+        },
+        {
+          "url": "/icon.svg",
+          "encodedBytes": 322,
+          "transferredBytes": 622
+        }
+      ]
+    },
+    {
+      "run": "warm",
+      "readyMs": 993,
+      "requests": 16,
+      "encodedBytes": 439702,
+      "transferredBytes": 25279,
+      "resources": [
+        {
+          "url": "/assets/appearance-QYCJOIEU.js",
+          "encodedBytes": 722,
+          "transferredBytes": 0
+        },
+        {
+          "url": "/assets/styles-OJOYG7Q3.css",
+          "encodedBytes": 40668,
+          "transferredBytes": 0
+        },
+        {
+          "url": "/assets/app-J5AHK6ME.js",
+          "encodedBytes": 144758,
+          "transferredBytes": 0
+        },
+        {
+          "url": "/fonts/manrope/font.ttf",
+          "encodedBytes": 164700,
+          "transferredBytes": 0
+        },
+        {
+          "url": "/assets/chunk-6XVMURQA.js",
+          "encodedBytes": 1869,
+          "transferredBytes": 0
+        },
+        {
+          "url": "/assets/chunk-T4JB6BE6.js",
+          "encodedBytes": 21625,
+          "transferredBytes": 0
+        },
+        {
+          "url": "/assets/chunk-RZKBPXZD.js",
+          "encodedBytes": 34152,
+          "transferredBytes": 0
+        },
+        {
+          "url": "/assets/chunk-5GWV3PFP.js",
+          "encodedBytes": 7729,
+          "transferredBytes": 0
+        },
+        {
+          "url": "/api/session",
+          "encodedBytes": 107,
+          "transferredBytes": 407
+        },
+        {
+          "url": "/api/events",
+          "encodedBytes": 0,
+          "transferredBytes": 300
+        },
+        {
+          "url": "/api/projects",
+          "encodedBytes": 574,
+          "transferredBytes": 874
+        },
+        {
+          "url": "/api/organisations",
+          "encodedBytes": 984,
+          "transferredBytes": 1284
+        },
+        {
+          "url": "/api/projects/p-12931ad8",
+          "encodedBytes": 21814,
+          "transferredBytes": 22114
+        },
+        {
+          "url": "/icon.svg",
+          "encodedBytes": 0,
+          "transferredBytes": 300
+        },
+        {
+          "url": "image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='m3 4.5 3 3 3-3' fill='none' stroke='%23edf2e7' stroke-width='1.5'/%3E%3C/svg%3E",
+          "encodedBytes": 0,
+          "transferredBytes": 0
+        },
+        {
+          "url": "image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='m3 4.5 3 3 3-3' fill='none' stroke='%23647760' stroke-width='1.5'/%3E%3C/svg%3E",
+          "encodedBytes": 0,
+          "transferredBytes": 0
+        }
+      ]
+    }
+  ]
+}

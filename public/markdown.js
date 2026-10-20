@@ -70,6 +70,14 @@ export function createMarkdown({ state, esc }) {
       ADD_ATTR: ["data-action", "data-id", "data-project"],
       FORBID_TAGS: ["style", "form"],
     });
+    // Marked emits read-only checkboxes; associate each with its own item text.
+    // Set the name after sanitisation, without introducing HTML or changing the
+    // input/checked markup used by the rich editor's Markdown round-trip.
+    for (const checkbox of fragment.querySelectorAll('input[type="checkbox"]')) {
+      const item = checkbox.closest("li")?.cloneNode(true);
+      item?.querySelectorAll("ul,ol,input").forEach((el) => el.remove());
+      checkbox.setAttribute("aria-label", item?.textContent.trim() || "Checklist item");
+    }
     for (const link of fragment.querySelectorAll("a")) {
       const href = (link.getAttribute("href") || "").replace(
         /^\.\.\/attachments\//,

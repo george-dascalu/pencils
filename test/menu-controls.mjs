@@ -1,6 +1,9 @@
 // Open the containing disclosure through its visible, keyboard-accessible control.
 export async function reveal(locator) {
   await locator.waitFor({ state: "attached" });
+  const options = locator.locator('xpath=ancestor::details[contains(@class,"mobile-view-options")]');
+  if ((await options.count()) && !(await options.evaluate(el => el.open)))
+    await options.locator(":scope > summary").click();
   const menu = locator.locator(
     'xpath=ancestor::details[contains(@class,"board-menu") or contains(@class,"selection-menu")]',
   );
@@ -26,4 +29,11 @@ export async function selectProjectView(page, view) {
 export async function openBoardSearch(page) {
   if (!(await page.locator("#canvas-find").isVisible()))
     await page.locator('[data-pro="search-toggle"]').click();
+}
+
+export async function selectSettingsPage(page, section) {
+  const mobile = page.locator("#settings-section-select");
+  if (await mobile.isVisible()) await mobile.selectOption(section);
+  else await page.locator(`.settings-navigation [data-settings-section="${section}"]`).click();
+  await page.locator(".settings-loading").waitFor({ state: "detached" });
 }

@@ -1,3 +1,4 @@
+import { randomUUID } from "./uuid.js";
 import { localDrawings, drawingCheckpoint } from "./drawing-store.js";
 import { makeStroke, strokeMarkup } from "./pen-model.js";
 import { inkPreview } from "./ink-preview.js";
@@ -151,7 +152,7 @@ function render() {
       if (undo.length > 40) undo.shift();
       redo = [];
       current.board.nodes.push(
-        makeStroke(samples, style, `n-${crypto.randomUUID()}`),
+        makeStroke(samples, style, `n-${randomUUID()}`),
       );
       save();
     }

@@ -221,6 +221,8 @@ export function validateViews(views) {
       )
         fail("Invalid saved view filter.");
     }
+    if (view.kanbanGroupBy != null && !["none", "assignee", "priority", "type"].includes(view.kanbanGroupBy))
+      fail("Invalid Kanban swimlanes.");
     if (view.table != null && !validTablePreferences(view.table))
       fail("Invalid saved table view.");
     if (view.sortDir != null && ![1, -1].includes(view.sortDir))
@@ -241,7 +243,7 @@ export function validateViews(views) {
         if (
           !column ||
           typeof column.key !== "string" ||
-          !/^(key|title|type|status|priority|parent|assignee|start|due|estimate|tags|fields\.[a-zA-Z][a-zA-Z0-9_-]*)$/.test(
+          !/^(key|title|body|type|status|priority|parent|assignee|start|due|estimate|tags|fields\.[a-zA-Z][a-zA-Z0-9_-]*)$/.test(
             column.key,
           ) ||
           keys.has(column.key) ||

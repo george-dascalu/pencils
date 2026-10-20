@@ -1,3 +1,4 @@
+import { legacySubtasks } from "./task-editor-helpers.mjs";
 import { selectProjectView } from "./menu-controls.mjs";
 import assert from "node:assert/strict";
 import fs from "node:fs/promises";
@@ -47,6 +48,7 @@ try {
   await page.locator("[data-action=board-task]").click();
   await page.locator("[data-action=board-create-task]").click();
   const form = page.locator("#task-form");
+  assert.equal(await form.locator("[name=priority]").inputValue(), "medium");
   const pick = async (name, value) => {
     await form
       .locator(`[data-task-picker="${name}"] .task-picker-trigger`)
@@ -61,7 +63,9 @@ try {
   );
   await pick("type", "story");
   await pick("priority", "high");
-  await pick("parent", parent.id);
+  await form.locator("[name=dependencies]").evaluate((select, id) => { select.value = id; select.dispatchEvent(new Event("change", { bubbles: true })); }, parent.id);
+  // A parent inherited from task creation or a restored browser draft stays intact.
+  await form.locator("[name=parent]").evaluate((input, id) => { input.value = id; input.dispatchEvent(new Event("input", { bubbles: true })); }, parent.id);
   await form.locator("[name=status]").selectOption("review");
   await form.locator("[name=assignee]").selectOption("Alice");
   await form.locator("[name=due]").fill("2026-10-30");
@@ -69,9 +73,7 @@ try {
   await form
     .locator('[aria-label="Task description"]')
     .fill("Only the first description");
-  await form.locator("[name=subtaskTitle]").fill("Queued child");
-  await form.locator("[data-task-modal=subtask-add]").click();
-  await form.locator("[name=subtaskTitle]").fill("Typed child");
+  await legacySubtasks(form, [{ title: "Queued child", type: "task" }, { title: "Typed child", type: "task" }]);
   await form.getByRole("checkbox", { name: "Create another" }).check();
   await page.locator("[data-task-list-back]").click();
   await page.locator("[data-action=board-create-task]").click();
@@ -122,7 +124,6 @@ try {
     parent: parent.id,
     due: "2026-10-30",
     title: "",
-    subtaskTitle: "",
     pendingSubtasks: "[]",
   }))
     assert.equal(
@@ -145,21 +146,21 @@ try {
   );
   for (const width of [1500, 390]) {
     await page.setViewportSize({ width, height: 1000 });
-    const rect = async (selector) => form.locator(selector).boundingBox();
-    const priority = await rect("[data-task-picker=priority]"),
-      status = await rect("[name=status]"),
-      assignee = await rect("[name=assignee]"),
-      parentBox = await rect("[data-task-picker=parent]"),
-      due = await rect(".date-field:has([name=due])");
-    assert.ok(priority.x < status.x && status.x < assignee.x);
+    await page.waitForFunction(() => document.querySelector(".board-task-editor").getBoundingClientRect().right <= innerWidth);
+    const { priority, status, assignee, start, due } = await form.evaluate(form => {
+      const rect = selector => form.querySelector(selector).getBoundingClientRect().toJSON();
+      return { priority: rect("[data-task-picker=priority]"), status: rect("[name=status]"), assignee: rect("[name=assignee]"), start: rect(".date-field:has([name=start])"), due: rect(".date-field:has([name=due])") };
+    });
+    assert.ok(assignee.x < priority.x && priority.x < status.x);
     assert.ok(
       Math.abs(priority.y - status.y) < 2 &&
         Math.abs(status.y - assignee.y) < 2,
+      JSON.stringify({width, priority, status, assignee}),
     );
     assert.ok(
-      parentBox.y > status.y &&
-        Math.abs(parentBox.y - due.y) < 2 &&
-        parentBox.x < due.x,
+      start.y > status.y &&
+        Math.abs(start.y - due.y) < 2 &&
+        start.x < due.x,
     );
     assert.ok(
       await form.evaluate((el) => el.scrollWidth <= el.clientWidth + 1),
@@ -183,6 +184,8 @@ try {
     assert.equal(task.estimate, null);
   }
   assert.equal(second.body.trim(), "");
+  assert.deepEqual(first.dependencies, [parent.id]);
+  assert.deepEqual(second.dependencies, []);
   assert.equal(final.tasks.filter((t) => t.parent === first.id).length, 2);
   assert.equal(final.tasks.filter((t) => t.parent === second.id).length, 0);
   assert.equal(
@@ -202,10 +205,120 @@ try {
   await until(
     async () => (await form.locator("[name=title]").inputValue()) === "",
   );
-  assert.equal(await page.locator("dialog:modal").count(), 1);
+  assert.equal(await page.locator("dialog:modal").count(), 0);
+  await form.locator("[name=title]").press("Escape");
+  assert.equal((await snapshot()).tasks.length, 6);
+  assert.equal(
+    (await snapshot()).boards[0].nodes.filter((n) => n.type === "task").length,
+    2,
+  );
+
+  // Every creation entry point shares the board's compact, non-blocking layout.
+  for (const width of [1500, 390]) {
+    await page.setViewportSize({ width, height: 1000 });
+    for (const theme of ["light", "dark"]) {
+      await page.evaluate((value) => {
+        document.documentElement.dataset.theme = value;
+      }, theme);
+      for (const view of [
+        "board",
+        "overview",
+        "list",
+        "tree",
+        "table",
+        "kanban",
+        "calendar",
+        "timeline",
+        "capacity",
+      ]) {
+        await selectProjectView(page, view);
+        await page.locator("[data-action=task-new]").first().click();
+        await form.waitFor();
+        assert.equal(await form.locator("[name=priority]").inputValue(), "medium");
+        await page.evaluate(
+          () =>
+            new Promise((resolve) =>
+              requestAnimationFrame(() => requestAnimationFrame(resolve)),
+            ),
+        );
+        const dialog = page.locator(".task-dialog");
+        const box = await dialog.boundingBox();
+        const footer = await form.locator(".task-editor-foot").boundingBox();
+        const toolbar = await page.locator("#view-toolbar").boundingBox();
+        const context = `${view}, ${width}px, ${theme}`;
+        assert.ok(
+          box.width <= 400 && box.height <= 760,
+          `Compact panel: ${context}`,
+        );
+        assert.ok(
+          box.x >= 12 && box.x + box.width <= width - 12,
+          `Fits width: ${context}`,
+        );
+        assert.ok(
+          box.y >= toolbar.y + toolbar.height && box.y + box.height <= 984,
+          `Below toolbar, within viewport: ${context}`,
+        );
+        assert.ok(
+          footer.y >= box.y && footer.y + footer.height <= box.y + box.height,
+          `Footer stays inside: ${context}`,
+        );
+        assert.equal(await page.locator("dialog:modal").count(), 0);
+        assert.equal(await dialog.locator(".task-panel-resizer").count(), 0);
+        assert.equal(
+          await form
+            .locator("[name=title]")
+            .evaluate((el) => el === document.activeElement),
+          true,
+        );
+        assert.ok(
+          await form.evaluate((el) => el.scrollWidth <= el.clientWidth + 1),
+        );
+        assert.ok(
+          await form
+            .getByRole("checkbox", { name: "Create another" })
+            .isVisible(),
+        );
+        assert.ok(
+          await form
+            .getByRole("button", { name: "Create task", exact: true })
+            .isVisible(),
+        );
+        await form.locator(".task-description").scrollIntoViewIfNeeded();
+        assert.ok(
+          await form.locator(".task-description").isVisible(),
+          `Lower fields reachable: ${context}`,
+        );
+        await form.locator("[name=title]").focus();
+        await form
+          .locator(".task-editor-content > .dialog-body")
+          .evaluate((el) => {
+            el.scrollTop = 0;
+          });
+        if (["table", "calendar"].includes(view))
+          await page.screenshot({
+            path: `/tmp/pencils-new-task-${view}-${width}-${theme}.png`,
+          });
+        await form.locator("[name=title]").press("Escape");
+        await form.waitFor({ state: "detached" });
+        if (view !== "board")
+          assert.ok(
+            await page
+              .locator("[data-action=task-new]")
+              .first()
+              .evaluate((el) => el === document.activeElement),
+            `Focus returns: ${context}`,
+          );
+      }
+    }
+  }
+  assert.equal(
+    (await snapshot()).tasks.length,
+    6,
+    "Opening and closing creates no tasks",
+  );
   assert.deepEqual(errors, []);
   console.log(
-    "PASS: creation order, no planning, create-another retention/reset, draft checkbox, failed save retains content, fresh request IDs, subtasks once, unchanged camera, mobile and shared List modal",
+    "PASS: create-another retention/reset, failed save retains content, subtasks once, unchanged camera, shared compact creation across all nine views, desktop/mobile, both themes and keyboard focus",
   );
 } catch (error) {
   await page.screenshot({ path: "/tmp/pencils-create-another-failure.png" });

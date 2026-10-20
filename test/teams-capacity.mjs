@@ -1,4 +1,4 @@
-import { selectProjectView } from "./menu-controls.mjs";
+import { selectProjectView, selectSettingsPage } from "./menu-controls.mjs";
 import assert from "node:assert/strict";
 import fs from "node:fs/promises";
 import os from "node:os";
@@ -35,9 +35,10 @@ try {
   assert.equal(org.people[0].task_capacity, 0);
   assert.deepEqual(org.teams[0].members, []);
   await page.locator("[data-action=project-edit]").click();
+  await selectSettingsPage(page, "teams");
   await page.locator("[data-project-team]").check();
-  await page.getByRole("button", { name: /Save project/ }).click();
-  await page.getByText("Project updated.", { exact: true }).waitFor();
+  await page.getByRole("button", { name: "Save changes", exact: true }).click();
+  await page.getByText("Changes saved", { exact: true }).waitFor();
   await page
     .getByRole("button", { name: "Back to project", exact: true })
     .click();
@@ -181,6 +182,8 @@ try {
           offset: style.outlineOffset,
           clipped,
           target: target.outerHTML,
+          bounds: bounds.toJSON(),
+          parentBounds: target.parentElement.getBoundingClientRect().toJSON(),
           focused: document.activeElement === el,
           visible: el.matches(":focus-visible"),
         };
@@ -190,7 +193,7 @@ try {
       assert.deepEqual(
         ring.clipped,
         [],
-        "All four sides of the focus ring fit inside clipping containers",
+        `All four sides of the focus ring fit inside clipping containers: ${JSON.stringify(ring)}`,
       );
     }
     await assignee.focus();

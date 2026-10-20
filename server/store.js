@@ -1,6 +1,9 @@
 import {WriteJournal} from "./journal.js";
+import { documentFolders, documentFolder } from "./document-folders.js";
 import { validDependencyStyle } from "../public/dependency-style.js";
 import { validDraftTask } from "../public/draft-task.js";
+import { defaultPriority } from "../public/task-priority.js";
+import { validTimelineRange } from "../public/timeline-dates.js";
 import { commentReactions } from "../public/comment-model.js";
 import { hierarchyError } from "../public/hierarchy-model.js";
 import { canTransition, initialStatus, transitionError } from "../public/workflow-model.js";
@@ -240,7 +243,7 @@ export class Store {
   changed(file=null) {
     this.version++;
     const relative=file?path.relative(this.root,file).split(path.sep).join('/'):"";
-    const match=/^Projects\/([\w-]+)\/(?:(tasks|boards)\/([\w-]+)\.(md|canvas)|project\.md)$/.exec(relative);
+    const match=/^Projects\/([\w-]+)\/(?:(tasks|boards|documents)\/([\w-]+)\.(md|canvas)|project\.md)$/.exec(relative);
     const identity=/^Projects\/([\w-]+)\/identity\.md$/.exec(relative);
     const record=match?{project:match[1],kind:match[2] || "project",id:match[3] || match[1]}:identity?{project:identity[1],kind:"identity",id:"identity"}:null;
     this.changeLog.push({version:this.version,record});if(this.changeLog.length>1000)this.changeLog.shift();
@@ -250,7 +253,7 @@ export class Store {
     const version=this.version;if(!Number.isInteger(since) || since<0 || since>version || (this.changeLog[0] && since<this.changeLog[0].version-1))return {full:true,version};
     const changes=this.changeLog.filter(c=>c.version>since);if(changes.some(c=>!c.record))return {full:true,version};
     const records=new Map();for(const {record:r} of changes)if(r.project===project && r.kind!=="identity")records.set(`${r.kind}/${r.id}`,r);
-    const result=[];for(const r of records.values()){try{const file=this.file(project,r.kind,r.id),record=await this.read(file);if(r.kind==="tasks")this.validateTask(record.data,schema((await this.read(this.file(project,"project"))).data.schema));if(r.kind==="boards")this.validateBoard(record.data);result.push({kind:r.kind,value:this.public(record,file)});}catch{return {full:true,version};}}
+    const result=[];for(const r of records.values()){try{const file=this.file(project,r.kind,r.id),record=await this.read(file);if(r.kind==="tasks")this.validateTask(record.data,schema((await this.read(this.file(project,"project"))).data.schema));if(r.kind==="boards")this.validateBoard(record.data);if(r.kind==="documents")this.validateDocument(record.data);result.push({kind:r.kind,value:this.public(record,file)});}catch{return {full:true,version};}}
     return {full:false,version,records:result};
   }
   watch() {
@@ -584,6 +587,7 @@ export class Store {
           throw new Problem(422, "Project ID does not match the folder.");
         if (kind === "tasks") this.validateTask(record.data, config);
         if (kind === "boards") this.validateBoard(record.data);
+        if (kind === "documents") this.validateDocument(record.data);
         items.push(this.public(record, file));
       } catch (error) {
         warnings.push(`${kind}/${entry.name}: ${error.message}`);
@@ -598,11 +602,12 @@ export class Store {
     const file = this.file(id, "project");
     const project = this.public(await this.read(file), file);
     const organisation = await this.getOrganisation(project.organisation);
-    const [tasks, boards] = await Promise.all([
+    const [tasks, boards, documents] = await Promise.all([
       this.children(id, "tasks"),
       this.children(id, "boards"),
+      this.children(id, "documents"),
     ]);
-    const warnings = [...tasks.warnings, ...boards.warnings];
+    const warnings = [...tasks.warnings, ...boards.warnings, ...documents.warnings];
     for (const task of tasks.items) {
       const person = (organisation.people || []).find(p => p.id === task.assignee_id);
       if (person) task.assignee = person.name;
@@ -653,9 +658,51 @@ export class Store {
       tasks: tasks.items,
       taskAvailability,
       boards: boards.items,
+      documents: documents.items,
       warnings,
       progress: progress(tasks.items, schema(project.schema)),
     };
+  }
+  validateDocument(data) {
+    validId(data.id);
+    validId(data.project);
+    if (data.kind !== "document") throw new Problem(422, "Expected a document.");
+    title(data.title);
+  }
+  async getDocument(project, id) {
+    const file = this.file(project, "documents", id);
+    const record = await this.read(file);
+    this.validateDocument(record.data);
+    if (record.data.id !== id || record.data.project !== project)
+      throw new Problem(422, "Document identity does not match its file.");
+    return this.public(record, file);
+  }
+  async createDocument(project, input) {
+    const parent = await this.read(this.file(project, "project"));
+    const id = `d-${randomUUID()}`;
+    return this.write(this.file(project, "documents", id), {
+      id, kind: "document", project,
+      title: title(input.title ?? "Untitled document"),
+      version: 1, folder: documentFolder(input.folder, parent.data.document_folders),
+      created: now(), updated: now(),
+    }, body(input.body ?? ""));
+  }
+  async updateDocument(project, id, input) {
+    await this.getDocument(project, id);
+    const file = this.file(project, "documents", id);
+    const current = await this.read(file);
+    this.checkRevision(current, input.revision);
+    const data = { ...current.data, updated: now() };
+    if ("title" in input) data.title = title(input.title);
+    if ("folder" in input) {
+      const parent = await this.read(this.file(project, "project"));
+      data.folder = documentFolder(input.folder, parent.data.document_folders);
+    }
+    const markdown = "body" in input ? body(input.body) : current.body;
+    if (data.title === current.data.title && markdown === current.body &&
+        (data.folder || null) === (current.data.folder || null)) return this.public(current, file);
+    data.version = (Number.isSafeInteger(current.data.version) && current.data.version > 0 ? current.data.version : 1) + 1;
+    return this.write(file, data, markdown, current);
   }
   async createProject(input) {
     const organisation = await this.getOrganisation(
@@ -700,11 +747,18 @@ export class Store {
         ];
     }
     if ("color" in input) data.color = color(input.color);
+    if ("document_folders" in input) {
+      data.document_folders = documentFolders(input.document_folders);
+      const { items, warnings } = await this.children(id, "documents");
+      if (warnings.length) throw new Problem(409, "Repair unreadable documents before changing folders.");
+      for (const document of items) documentFolder(document.folder, data.document_folders);
+    }
     if ("default_view" in input)
       data.default_view = choice(
         input.default_view,
         [
           "overview",
+          "documents",
           "list",
           "tree",
           "table",
@@ -894,7 +948,7 @@ export class Store {
       status:
         input.status ??
         initialStatus(config),
-      priority: input.priority ?? "none",
+      priority: input.priority ?? defaultPriority,
       parent: input.parent || null,
       assignee: input.assignee ?? "",
       due: input.due || null,
@@ -1124,6 +1178,8 @@ export class Store {
       if(node.viewType!=null&&!['list','table','kanban','timeline'].includes(node.viewType))throw new Problem(400,'Invalid embedded task layout.');
       if(node.visibleFields!=null&&(!Array.isArray(node.visibleFields)||node.visibleFields.length>7||node.visibleFields.some(f=>!['key','title','status','assignee','due','priority','type'].includes(f))))throw new Problem(400,'Invalid embedded task fields.');
       if(node.timelineScale!=null&&!['day','week','month'].includes(node.timelineScale))throw new Problem(400,'Invalid timeline scale.');
+      if(node.timelineShowWeekends!=null&&typeof node.timelineShowWeekends!=="boolean")throw new Problem(400,'Invalid timeline weekend setting.');
+      if(node.timelineRange!=null&&!validTimelineRange(node.timelineRange))throw new Problem(400,'Use a valid timeline start/end range of ten years or less.');
       if (!validObjectGeometry(node))
         throw new Problem(400, "Invalid object geometry.");
       if (ids.has(node.id))

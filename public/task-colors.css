@@ -1,0 +1,100 @@
+/* The same value keeps its hue in fields, menus, badges and planning views. */
+[data-task-color] {
+  --task-color-wash: color-mix(
+    in srgb,
+    var(--task-field-color) 14%,
+    var(--surface)
+  );
+  --task-color-border: color-mix(
+    in srgb,
+    var(--task-field-color) 50%,
+    var(--line)
+  );
+  --task-color-ink: color-mix(in srgb, var(--task-field-color) 45%, var(--ink));
+}
+.task-dialog select[data-task-color],
+.task-picker[data-task-color] .task-picker-trigger,
+.task-table select[data-task-color],
+.task-table .table-cell-select[data-task-color],
+#canvas .board-node :is(select, .canvas-task-priority)[data-task-color],
+.task-color-badge[data-task-color] {
+  background-color: var(--task-color-wash);
+  border-color: var(--task-color-border);
+  color: var(--task-color-ink);
+}
+/* Native WebKit controls can paint a white surface over the theme color. */
+.task-dialog select[data-task-color],
+.task-table select[data-task-color],
+#canvas .board-node select[data-task-color] {
+  -webkit-appearance: none;
+  appearance: none;
+  padding-inline-end: 1.8em;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='m3 4.5 3 3 3-3' fill='none' stroke='%23738478' stroke-width='1.5'/%3E%3C/svg%3E");
+  background-position: right 0.5em center;
+  background-size: 0.85em 0.85em;
+  background-repeat: no-repeat;
+}
+.task-dialog select[data-task-color]:focus-visible,
+.task-picker[data-task-color] .task-picker-trigger:focus-visible,
+.task-table select[data-task-color]:focus-visible {
+  outline: 2px solid var(--green);
+  outline-offset: 1px;
+}
+.task-assignee[data-task-color] {
+  background: var(--task-color-wash);
+  color: var(--task-color-ink);
+  border: 1px solid var(--task-color-border);
+}
+.priority[data-task-color] {
+  color: var(--task-color-ink);
+}
+.status-dot[data-task-color] {
+  background: var(--task-field-color);
+  border-color: var(--task-field-color);
+}
+.task-color-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--task-field-color);
+  flex: 0 0 8px;
+  margin-inline-end: 6px;
+}
+.select-menu [role="option"] > .task-color-dot {
+  flex: 0 0 8px;
+  margin: 0;
+}
+.task-picker-popover [data-task-color] > .icon:first-child {
+  color: var(--task-color-ink);
+}
+.select-menu [data-task-color="priority"] > .icon:first-of-type {
+  color: var(--task-color-ink);
+}
+.task-picker-popover [data-task-color][aria-selected="true"],
+.select-menu
+  [data-task-color]:is(:hover, :focus-visible, [aria-selected="true"]) {
+  background: var(--task-color-wash);
+  border-color: var(--task-color-border);
+}
+.task-picker-popover [data-task-color]:is(:hover, :focus-visible) {
+  background: var(--task-color-wash);
+}
+.task-color-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 6px;
+  border: 1px solid transparent;
+  border-radius: 5px;
+}
+.calendar-task[data-task-color] {
+  background: var(--task-color-wash);
+  color: var(--task-color-ink);
+  border-inline-start: 3px solid var(--task-field-color);
+}
+.timeline-bar[data-task-color] {
+  background: var(--task-color-wash);
+  color: var(--ink);
+  border: 1px solid var(--task-color-border);
+  border-inline-start: 4px solid var(--task-field-color);
+}

@@ -8,14 +8,13 @@
 body {
   font-family: var(--app-font);
 }
-/* Density changes document controls, never canvas coordinates or stroke sizes. */
+/* Row density is independent of canvas coordinates and stroke sizes.
+   Shared control dimensions live in controls.css. */
 :root {
   --row-padding: 14px;
-  --control-height: 40px;
 }
 :root[data-density="compact"] {
   --row-padding: 7px;
-  --control-height: 32px;
 }
 .task-row {
   padding-block: var(--row-padding);
@@ -108,9 +107,6 @@ body {
   }
 }
 @media (pointer: coarse) {
-  :root[data-density] {
-    --control-height: 44px;
-  }
   .button,
   .icon-button,
   .tab,
@@ -157,6 +153,19 @@ body {
 }
 .personal-dialog {
   width: min(740px, calc(100vw - 32px));
+}
+.personal-workspace-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+}
+.personal-workspace-actions label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-basis: 100%;
+  min-height: 40px;
 }
 .appearance-group,
 .project-status-settings {
@@ -462,10 +471,6 @@ body {
 [data-theme="dark"] .text-link {
   color: #b6d99c;
 }
-[data-theme="dark"] .workspace-tools .button {
-  background: transparent;
-  color: #e2e9e3;
-}
 [data-theme="dark"] .sidebar select {
   background: var(--side);
 }
@@ -633,7 +638,5 @@ body {
 .shared-query-controls #saved-view {max-width:220px}
 .board-menu-panel {overflow:auto;z-index:140}
 @media(max-width:600px){.shared-query-controls {width:100%}.shared-query-controls #saved-view{flex:1;min-width:120px}}
-
-.board-scope {font-size:12px;position:relative}.board-scope summary{cursor:pointer}.board-scope[open] {max-width:320px}.board-scope p {margin:6px 0}
 
 .agenda-row button,.timeline-row button {color:var(--ink)}

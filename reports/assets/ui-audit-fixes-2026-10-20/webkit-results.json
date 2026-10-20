@@ -1,0 +1,33 @@
+{
+  "production": false,
+  "errors": [],
+  "evidence": [
+    {
+      "boardRules": []
+    },
+    {
+      "width": 320,
+      "theme": "light",
+      "tableTop": 208,
+      "tableHeight": 745
+    },
+    {
+      "width": 320,
+      "theme": "dark",
+      "tableTop": 208,
+      "tableHeight": 745
+    },
+    {
+      "width": 390,
+      "theme": "light",
+      "tableTop": 208,
+      "tableHeight": 745
+    },
+    {
+      "width": 390,
+      "theme": "dark",
+      "tableTop": 208,
+      "tableHeight": 745
+    }
+  ]
+}

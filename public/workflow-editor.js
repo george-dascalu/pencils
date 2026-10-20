@@ -1,7 +1,7 @@
 import { ruleDiagram } from "./rule-diagram.js";
 import { hierarchyRules } from "./hierarchy-model.js";
 import { initialStatus, statusLabel } from "./workflow-model.js";
-export function workflowEditor(form, config, tasks, { esc, icon }) {
+export function workflowEditor(form, config, tasks, { esc, icon }, { section = "all" } = {}) {
   let model = structuredClone(config);
   model.initial_status = initialStatus(model);
   model.status_labels ||= {};
@@ -16,7 +16,7 @@ export function workflowEditor(form, config, tasks, { esc, icon }) {
   const names = () => model.statuses.map((id) => esc(statusLabel(model, id)));
   function diagrams() {
     const shared = { esc, icon };
-    ruleDiagram(host.querySelector("[data-workflow-diagram]"), {
+    if (section !== "hierarchy") ruleDiagram(host.querySelector("[data-workflow-diagram]"), {
       ...shared,
       id: "workflow",
       title: "Visual workflow",
@@ -48,7 +48,7 @@ export function workflowEditor(form, config, tasks, { esc, icon }) {
       },
     });
     const h = hierarchyRules(model);
-    ruleDiagram(host.querySelector("[data-hierarchy-diagram]"), {
+    if (section !== "workflow") ruleDiagram(host.querySelector("[data-hierarchy-diagram]"), {
       ...shared,
       id: "hierarchy",
       title: "Visual card hierarchy",
@@ -85,14 +85,14 @@ export function workflowEditor(form, config, tasks, { esc, icon }) {
       },
     });
   }
-  let detailsOpen = false;
+  let detailsOpen = section === "workflow";
   function paint() {
     detailsOpen =
       host.querySelector("[data-status-details]")?.open ?? detailsOpen;
-    host.innerHTML = `<legend>Statuses & workflow</legend><input type="hidden" name="workflowSchema"><p class="field-hint">Set the column order and names for this project. A completed status counts towards progress. Names can change without changing task data.</p><div class="workflow-mode"><label><input type="checkbox" data-workflow-rules ${model.transitions ? "checked" : ""}> Restrict status changes</label><span class="field-hint">${model.transitions ? "Tasks can only follow the allowed moves below." : "Tasks can move freely between any statuses."}</span></div><div data-workflow-diagram></div><details data-status-details ${detailsOpen ? "open" : ""}><summary>Status names, order &amp; defaults</summary><div class="workflow-statuses">${model.statuses
+    host.innerHTML = `<legend>${section === "hierarchy" ? "Card hierarchy" : "Statuses & workflow"}</legend><input type="hidden" name="workflowSchema"><div data-workflow-section ${section === "hierarchy" ? "hidden" : ""}><p class="field-hint">Set the column order and names for this project. A completed status counts towards progress. Names can change without changing task data.</p><div class="workflow-mode"><label><input type="checkbox" data-workflow-rules ${model.transitions ? "checked" : ""}> Restrict status changes</label><span class="field-hint">${model.transitions ? "Tasks can only follow the allowed moves below." : "Tasks can move freely between any statuses."}</span></div><div data-workflow-diagram></div><details data-status-details ${detailsOpen ? "open" : ""}><summary>Statuses</summary><div class="workflow-statuses"><div class="workflow-status-head" aria-hidden="true"><span>Status</span><span>Completed</span><span>Default</span><span></span></div><ul class="workflow-status-list">${model.statuses
       .map(
         (id, i) =>
-          `<section class="workflow-status" data-workflow-status="${esc(id)}"><div class="workflow-status-main"><label class="field">Status name<input data-status-name value="${esc(statusLabel(model, id))}" maxlength="100" required></label><label class="workflow-completed"><input type="checkbox" data-status-completed ${model.done.includes(id) ? "checked" : ""}> Completed</label><label><input type="radio" name="workflow-initial" value="${esc(id)}" data-status-initial ${model.initial_status === id ? "checked" : ""}> Default</label><div class="workflow-row-actions"><button type="button" class="icon-button" data-status-up aria-label="Move ${esc(statusLabel(model, id))} up" ${i === 0 ? "disabled" : ""}>${icon("priority-high")}</button><button type="button" class="icon-button" data-status-down aria-label="Move ${esc(statusLabel(model, id))} down" ${i === model.statuses.length - 1 ? "disabled" : ""}>${icon("down")}</button><button type="button" class="icon-button" data-status-remove aria-label="Remove ${esc(statusLabel(model, id))}" ${used.has(id) || model.statuses.length === 1 ? "disabled" : ""}>${icon("trash")}</button></div></div><small class="field-hint">${esc(id)}${used.has(id) ? " · In use: move its tasks before removing this status." : ""}</small>${
+          `<li class="workflow-status" data-workflow-status="${esc(id)}"><div class="workflow-status-main"><input class="workflow-status-name" data-status-name value="${esc(statusLabel(model, id))}" aria-label="Status name: ${esc(statusLabel(model, id))}" maxlength="100" required><label class="workflow-completed" title="Count ${esc(statusLabel(model, id))} as completed"><input type="checkbox" data-status-completed ${model.done.includes(id) ? "checked" : ""}><span class="workflow-toggle-label">Completed</span></label><label title="Use ${esc(statusLabel(model, id))} for new tasks"><input type="radio" name="workflow-initial" value="${esc(id)}" data-status-initial ${model.initial_status === id ? "checked" : ""}><span class="workflow-toggle-label">Default</span></label><div class="workflow-row-actions"><button type="button" class="icon-button" data-status-up aria-label="Move ${esc(statusLabel(model, id))} up" ${i === 0 ? "disabled" : ""}>${icon("priority-high")}</button><button type="button" class="icon-button" data-status-down aria-label="Move ${esc(statusLabel(model, id))} down" ${i === model.statuses.length - 1 ? "disabled" : ""}>${icon("down")}</button><button type="button" class="icon-button" data-status-remove aria-label="Remove ${esc(statusLabel(model, id))}" title="${used.has(id) ? "Move this status’s tasks before removing it." : model.statuses.length === 1 ? "Keep at least one status." : `Remove ${esc(statusLabel(model, id))}`}" ${used.has(id) || model.statuses.length === 1 ? "disabled" : ""}>${icon("trash")}</button></div></div>${
             model.transitions
               ? `<details class="workflow-moves"><summary>Allowed moves · ${(model.transitions[id] || []).length}</summary><div class="workflow-destinations">${model.statuses
                   .filter((to) => to !== id)
@@ -104,15 +104,15 @@ export function workflowEditor(form, config, tasks, { esc, icon }) {
                     "",
                   )}</div><small class="field-hint">${(model.transitions[id] || []).length ? "Only checked destinations are allowed." : "No outgoing moves. Tasks stay here until the workflow changes."}</small></details>`
               : ""
-          }</section>`,
+          }</li>`,
       )
       .join(
         "",
-      )}</div><div class="workflow-add"><input data-new-status placeholder="New status name…" aria-label="New status name" maxlength="100"><button type="button" class="button small" data-status-add>${icon("plus")}Add status</button></div><p class="field-hint">Default is used for new tasks unless a status is chosen explicitly. Order alone does not restrict moves. Existing tasks and archived tasks keep their status.</p><p class="form-error" data-workflow-error hidden></p></details>`;
+      )}</ul></div><div class="workflow-add"><input data-new-status placeholder="New status name…" aria-label="New status name" maxlength="100"><button type="button" class="button small" data-status-add>${icon("plus")}Add status</button></div><p class="form-error" data-workflow-error hidden></p></details></div>`;
     const h = hierarchyRules(model);
     host.insertAdjacentHTML(
       "beforeend",
-      `<section class="hierarchy-editor" aria-label="Cards Hierarchies"><h3>Cards Hierarchies</h3><label class="field">Hierarchy mode<select data-hierarchy-mode><option value="free" ${h.mode === "free" ? "selected" : ""}>Freeflow</option><option value="enforced" ${h.mode === "enforced" ? "selected" : ""}>Enforce rules</option></select></label><p class="field-hint">${h.mode === "free" ? "Any card type can parent any other type. Your rules below are kept for later." : "Only connected relationships are allowed. Existing tasks must match before these rules can be saved."} Cycles are never allowed.</p><div data-hierarchy-diagram></div><details class="hierarchy-matrix"><summary>Edit rules as a table</summary><div class="hierarchy-table-wrap"><table class="hierarchy-table"><caption>Rows are parents; columns are allowed child types.</caption><thead><tr><th>Parent / child</th>${model.types.map((t) => `<th>${icon(t)} ${esc(t)}</th>`).join("")}</tr></thead><tbody>${[null, ...model.types].map((parent) => `<tr><th>${parent === null ? "No parent (top level)" : esc(parent)}</th>${model.types.map((child) => `<td><input type="checkbox" data-hierarchy-parent="${parent ?? ""}" data-hierarchy-child="${esc(child)}" aria-label="${esc(parent ?? "No parent")} allows ${esc(child)}" ${(parent === null ? h.roots : h.children[parent] || []).includes(child) ? "checked" : ""}></td>`).join("")}</tr>`).join("")}</tbody></table></div></details><p class="field-hint">Uncheck a type in “No parent” to require a parent. Uncheck an entire parent row to prevent that type having children.</p></section>`,
+      `<section class="hierarchy-editor" aria-label="Cards Hierarchies" ${section === "workflow" ? "hidden" : ""}><h3>Card hierarchy</h3><label class="field">Hierarchy mode<select data-hierarchy-mode><option value="free" ${h.mode === "free" ? "selected" : ""}>Freeflow</option><option value="enforced" ${h.mode === "enforced" ? "selected" : ""}>Enforce rules</option></select></label><p class="field-hint">${h.mode === "free" ? "Any card type can parent any other type. Your rules below are kept for later." : "Only connected relationships are allowed. Existing tasks must match before these rules can be saved."} Cycles are never allowed.</p><div data-hierarchy-diagram></div><details class="hierarchy-matrix"><summary>Edit rules as a table</summary><div class="hierarchy-table-wrap"><table class="hierarchy-table"><caption>Rows are parents; columns are allowed child types.</caption><thead><tr><th>Parent / child</th>${model.types.map((t) => `<th>${icon(t)} ${esc(t)}</th>`).join("")}</tr></thead><tbody>${[null, ...model.types].map((parent) => `<tr><th>${parent === null ? "No parent (top level)" : esc(parent)}</th>${model.types.map((child) => `<td><input type="checkbox" data-hierarchy-parent="${parent ?? ""}" data-hierarchy-child="${esc(child)}" aria-label="${esc(parent ?? "No parent")} allows ${esc(child)}" ${(parent === null ? h.roots : h.children[parent] || []).includes(child) ? "checked" : ""}></td>`).join("")}</tr>`).join("")}</tbody></table></div></details><p class="field-hint">Uncheck a type in “No parent” to require a parent. Uncheck an entire parent row to prevent that type having children.</p></section>`,
     );
     diagrams();
     sync();

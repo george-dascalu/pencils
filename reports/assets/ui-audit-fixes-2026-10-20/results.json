@@ -1,0 +1,98 @@
+{
+  "production": true,
+  "errors": [],
+  "evidence": [
+    {
+      "boardRules": []
+    },
+    {
+      "width": 320,
+      "theme": "light",
+      "tableTop": 208,
+      "tableHeight": 745
+    },
+    {
+      "width": 320,
+      "theme": "dark",
+      "tableTop": 208,
+      "tableHeight": 745
+    },
+    {
+      "width": 390,
+      "theme": "light",
+      "tableTop": 208,
+      "tableHeight": 745
+    },
+    {
+      "width": 390,
+      "theme": "dark",
+      "tableTop": 208,
+      "tableHeight": 745
+    },
+    {
+      "productionCold": {
+        "readyMs": 3264,
+        "requests": 14,
+        "bytes": 425300,
+        "resources": [
+          {
+            "url": "http://127.0.0.1:41357/assets/appearance-QYCJOIEU.js",
+            "bytes": 722
+          },
+          {
+            "url": "http://127.0.0.1:41357/assets/styles-OJOYG7Q3.css",
+            "bytes": 40668
+          },
+          {
+            "url": "http://127.0.0.1:41357/assets/app-J5AHK6ME.js",
+            "bytes": 144758
+          },
+          {
+            "url": "http://127.0.0.1:41357/fonts/manrope/font.ttf",
+            "bytes": 164700
+          },
+          {
+            "url": "http://127.0.0.1:41357/assets/chunk-6XVMURQA.js",
+            "bytes": 1869
+          },
+          {
+            "url": "http://127.0.0.1:41357/assets/chunk-T4JB6BE6.js",
+            "bytes": 21625
+          },
+          {
+            "url": "http://127.0.0.1:41357/assets/chunk-RZKBPXZD.js",
+            "bytes": 34152
+          },
+          {
+            "url": "http://127.0.0.1:41357/assets/chunk-5GWV3PFP.js",
+            "bytes": 7729
+          },
+          {
+            "url": "http://127.0.0.1:41357/api/session",
+            "bytes": 107
+          },
+          {
+            "url": "http://127.0.0.1:41357/api/events",
+            "bytes": 0
+          },
+          {
+            "url": "http://127.0.0.1:41357/api/projects",
+            "bytes": 554
+          },
+          {
+            "url": "http://127.0.0.1:41357/api/organisations",
+            "bytes": 374
+          },
+          {
+            "url": "http://127.0.0.1:41357/api/projects/p-eb4274a7",
+            "bytes": 7720
+          },
+          {
+            "url": "http://127.0.0.1:41357/icon.svg",
+            "bytes": 322
+          }
+        ]
+      }
+    }
+  ]
+}

@@ -1,3 +1,4 @@
+import { selectSettingsPage } from "./menu-controls.mjs";
 import assert from "node:assert/strict";
 import fs from "node:fs/promises";
 import path from "node:path";
@@ -77,18 +78,19 @@ try {
     "sticky",
   );
   await page.locator('[data-action="project-edit"]').click();
-  await page.locator('[data-automation="open"]').click();
+  await selectSettingsPage(page, "automation");
   await page.locator('[data-automation="add"]').click();
   await page.locator('#automation-form [name="name"]').fill("Set important");
-  await page.locator('#automation-form [name="value"]').fill("high");
+  await page.locator('#automation-form [name="value"]').selectOption("high");
   await page
     .locator(
-      '#automation-form button[type="submit"],#automation-form .dialog-foot button',
+      '#automation-form button[type="submit"]',
     )
     .click();
   await page.locator('[data-automation="toggle"]').click();
   await page.locator('[data-automation="preview"]').click();
   await page.locator("#automation-apply").click();
+  await page.locator("#automation-apply").waitFor({ state: "detached" });
   await page.locator('[data-automation="preview"]').waitFor();
   assert.ok(
     (await store.snapshot(p.id)).tasks.every((t) => t.priority === "high"),

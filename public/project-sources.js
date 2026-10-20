@@ -6,11 +6,15 @@ export function projectSources(ctx) {
     route,
     esc,
     icon,
-    showDialog,
+    showDialog: modal,
     dialogHead,
     toast,
     refresh,
   } = ctx;
+  const showDialog = (html, kind) =>
+    ctx.settingsCurrent?.() && ["sources", "source-config"].includes(kind)
+      ? ctx.presentSettings(html, kind)
+      : modal(html, kind);
   const field = (name, title, value = "", extra = "") =>
     `<label class="field">${esc(title)}<input name="${name}" value="${esc(value)}" ${extra}></label>`;
   const action = (key, title, id = "") =>
@@ -18,13 +22,22 @@ export function projectSources(ctx) {
   let sources = [],
     setup = {},
     project = null;
-  async function open() {
+  async function open(detail = "", valid = () => true) {
     project = state.project.id;
     const data = await api(route("sources"));
+    if (!valid()) return;
     sources = data.sources;
     setup = data.setup;
+    if (detail) {
+      if (detail !== "new" && !sources.some((s) => s.id === detail))
+        throw new Error(
+          "This source no longer exists. Return to Data sources & sync.",
+        );
+      configure(detail === "new" ? undefined : detail);
+      return;
+    }
     showDialog(
-      `<dialog class="dialog wide-dialog">${dialogHead("Project data sources")}<div class="dialog-body"><p>Combine local tasks with Obsidian, Jira Cloud and a SharePoint Excel table. Source projects are private to their owner and workspace administrators. Cached records remain private in the app when disconnected. Imported data is also stored in vault files and backups; anyone with filesystem access can read it.</p><p class="field-hint">${setup.authenticated ? "Cloud credentials stay encrypted on the server. Automatic reads run every five minutes when enabled." : "Enable required authentication and sign in as an administrator before connecting sources."}</p>${sources.map((s) => `<section class="source-card"><h3>${esc(s.name)} <small>${esc(s.provider)}</small></h3><p>${esc(s.status)} · ${s.record_count} records${s.last_success ? ` · Last success ${esc(new Date(s.last_success).toLocaleString())}` : ""}</p>${s.last_error ? `<p class="form-error">${esc(s.last_error)}</p>` : ""}<div class="source-actions">${action("edit", "Configure", s.id)}${s.provider !== "obsidian" ? action("authorize", s.connected ? "Reconnect" : "Connect", s.id) : ""}${s.provider === "jira" && s.connected ? action("resources", "Show Jira sites", s.id) : ""}${action("preview", "Preview mapping", s.id)}${action("sync", "Sync now", s.id)}${action("toggle", s.enabled ? "Pause" : "Enable polling", s.id)}${action("disconnect", "Disconnect", s.id)}</div>${s.conflicts.length ? `<details><summary>${s.conflicts.length} conflicts</summary>${s.conflicts.map((c) => `<article><h4>${esc(c.key)}</h4>${c.fields.map((f) => `<p>${esc(f.field)} — Local: ${esc(f.local)} · Source: ${esc(f.remote)}</p>`).join("")}${action("local", "Keep local", `${s.id}|${c.task}`)}${action("remote", "Use source", `${s.id}|${c.task}`)}</article>`).join("")}</details>` : ""}${s.jobs.length ? `<details><summary>Publish log</summary>${s.jobs.map((j) => `<p>${esc(j.action)} · ${esc(j.state)} · ${esc(j.created)} ${esc(j.error || "")}</p>`).join("")}</details>` : ""}</section>`).join("") || "<p>No external sources yet. Existing project tasks remain local Markdown files.</p>"}${action("new", "+ Add source")}${action("diagnostics", "Export sync diagnostics")}</div></dialog>`,
+      `<dialog class="dialog wide-dialog">${dialogHead("Project data sources")}<div class="dialog-body"><p>Combine local tasks with Obsidian, Jira Cloud and a SharePoint Excel table. Source projects are private to their owner and workspace administrators. Cached records remain private in the app when disconnected. Imported data is also stored in vault files and backups; anyone with filesystem access can read it.</p><p class="field-hint">${setup.authenticated ? "Cloud credentials stay encrypted on the server. Automatic reads run every five minutes when enabled." : "Use local automatic sign-in, or sign in as an administrator in required mode, before connecting sources."}</p>${sources.map((s) => `<section class="source-card"><h3>${esc(s.name)} <small>${esc(s.provider)}</small></h3><p>${esc(s.status)} · ${s.record_count} records${s.last_success ? ` · Last success ${esc(new Date(s.last_success).toLocaleString())}` : ""}</p>${s.last_error ? `<p class="form-error">${esc(s.last_error)}</p>` : ""}<div class="source-actions">${action("edit", "Configure", s.id)}${s.provider !== "obsidian" ? action("authorize", s.connected ? "Reconnect" : "Connect", s.id) : ""}${s.provider === "jira" && s.connected ? action("resources", "Show Jira sites", s.id) : ""}${action("preview", "Preview mapping", s.id)}${action("sync", "Sync now", s.id)}${action("toggle", s.enabled ? "Pause" : "Enable polling", s.id)}${action("disconnect", "Disconnect", s.id)}</div>${s.conflicts.length ? `<details><summary>${s.conflicts.length} conflicts</summary>${s.conflicts.map((c) => `<article><h4>${esc(c.key)}</h4>${c.fields.map((f) => `<p>${esc(f.field)} — Local: ${esc(f.local)} · Source: ${esc(f.remote)}</p>`).join("")}${action("local", "Keep local", `${s.id}|${c.task}`)}${action("remote", "Use source", `${s.id}|${c.task}`)}</article>`).join("")}</details>` : ""}${s.jobs.length ? `<details><summary>Publish log</summary>${s.jobs.map((j) => `<p>${esc(j.action)} · ${esc(j.state)} · ${esc(j.created)} ${esc(j.error || "")}</p>`).join("")}</details>` : ""}</section>`).join("") || "<p>No external sources yet. Existing project tasks remain local Markdown files.</p>"}${action("new", "+ Add source")}${action("diagnostics", "Export sync diagnostics")}</div></dialog>`,
       "sources",
     );
   }
@@ -74,6 +87,10 @@ export function projectSources(ctx) {
     form.addEventListener("submit", async (e) => {
       e.preventDefault();
       e.stopImmediatePropagation();
+      const submit = form.querySelector('[type="submit"]');
+      if (submit.disabled) return;
+      submit.disabled = true;
+      state.settingsSaving = !!ctx.settingsCurrent?.();
       try {
         const d = new FormData(form),
           provider = form.elements.provider.value,
@@ -101,9 +118,14 @@ export function projectSources(ctx) {
           body: { provider, name: d.get("name"), scope, mapping, capabilities },
         });
         await refresh(false);
-        await open();
+        ctx.settingsSaved?.();
+        if (ctx.settingsCurrent?.()) ctx.openSettings("", { force: true });
+        else await open();
       } catch (error) {
         form.querySelector(".form-error").textContent = error.message;
+      } finally {
+        state.settingsSaving = false;
+        submit.disabled = false;
       }
     });
   }
@@ -169,6 +191,7 @@ export function projectSources(ctx) {
       e.stopImmediatePropagation();
       const button = form.querySelector('[type="submit"]');
       button.disabled = true;
+      state.settingsSaving = !!ctx.settingsCurrent?.();
       try {
         await api(route("sources", id) + "/write", {
           method: "POST",
@@ -184,6 +207,7 @@ export function projectSources(ctx) {
       } catch (error) {
         form.querySelector(".form-error").textContent = error.message;
       } finally {
+        state.settingsSaving = false;
         button.disabled = false;
       }
     });
@@ -196,6 +220,7 @@ export function projectSources(ctx) {
       id = button.dataset.sourceId;
     try {
       if (a === "health") {
+        if (ctx.openDiagnostics) return ctx.openDiagnostics();
         const data = await api("/diagnostics");
         showDialog(
           `<dialog class="dialog wide-dialog">${dialogHead("Workspace diagnostics")}<div class="dialog-body"><p>Aggregated request timings and HTTP error categories; no request bodies, OAuth tokens or task content.</p><pre class="source-description">${esc(JSON.stringify(data, null, 2))}</pre>${action("rebuild-index", "Rebuild search index")}<p class="field-hint">Markdown and canvas files remain authoritative. Journal conflicts preserve both the external file and the staged backup under .pencils/journal.</p></div></dialog>`,
@@ -208,8 +233,10 @@ export function projectSources(ctx) {
         toast("Search index rebuilt.");
         return;
       }
-      if (a === "open") return await open();
-      if (a === "new" || a === "edit") return configure(id);
+      if (a === "open")
+        return ctx.openSettings ? ctx.openSettings() : await open();
+      if (a === "new" || a === "edit")
+        return ctx.openSettings ? ctx.openSettings(id || "new") : configure(id);
       if (a === "publish") return await publish(id);
       if (a === "diagnostics") {
         const safe = sources.map(
@@ -251,6 +278,7 @@ export function projectSources(ctx) {
         return;
       }
       button.disabled = true;
+      state.settingsSaving = !!ctx.settingsCurrent?.();
       if (a === "toggle")
         await api(`/projects/${project}/sources/${id}`, {
           method: "PATCH",
@@ -292,8 +320,9 @@ export function projectSources(ctx) {
     } catch (error) {
       toast(error.message, true);
     } finally {
+      state.settingsSaving = false;
       button.disabled = false;
     }
   });
-  return { open, decorateTask };
+  return { open, renderPage: open, decorateTask };
 }

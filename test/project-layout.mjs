@@ -1,3 +1,4 @@
+import { selectSettingsPage } from "./menu-controls.mjs";
 import assert from "node:assert/strict";
 import fs from "node:fs/promises";
 import os from "node:os";
@@ -47,7 +48,7 @@ try {
           [...g.querySelectorAll("[data-view]")].map((el) => el.dataset.view),
         ),
       ),
-    [["overview"], ["tasks"], ["board"], ["planning"]],
+    [["overview"], ["documents"], ["planning"], ["tasks"], ["board"]],
   );
   // One navigation tab owns all task layouts, with shared filters and keyboard access.
   await selectProjectView(page, "table");
@@ -200,8 +201,15 @@ try {
       await page.evaluate(() => window.scrollTo(0, 0));
       const box = await boxOf(".topbar");
       const actions = await boxOf("#board-project-tools");
-      header ||= { box, actions };
+      const tabs = await page.locator(".tabs .tab").evaluateAll((buttons) =>
+        buttons.map((button) => ({
+          view: button.dataset.view,
+          rect: button.getBoundingClientRect().toJSON(),
+        })),
+      );
+      header ||= { box, actions, tabs };
       assert.deepEqual(box, header.box, `${view}: shared top bar`);
+      assert.deepEqual(tabs, header.tabs, `${view}: project tabs stay in place`);
       assert.deepEqual(
         actions,
         header.actions,
@@ -222,43 +230,43 @@ try {
         ),
         `${view}: horizontal overflow`,
       );
-      await page.locator("[data-board-menu=project] > summary").click();
-      await page.locator("#saved-view").waitFor({ state: "visible" });
-      assert.ok(
-        await page.locator("#saved-view").isVisible(),
-        `${view} at ${size.width}: saved view`,
-      );
-      const menu = await page
-        .locator("[data-board-menu=project] .board-menu-panel")
-        .boundingBox();
-      assert.ok(menu.x >= 0 && menu.x + menu.width <= size.width);
-      await page.keyboard.press("Escape");
+      assert.equal(await page.locator('[data-board-menu="project"]').count(), 0);
+      assert.equal(await page.locator('.topbar [data-action="task-new"]').count(), 1);
+      assert.equal(await page.locator('.topbar .top-actions [data-action="project-edit"]').count(), 1);
+      assert.equal(await page.locator('.topbar .tabs').count(), 1);
+      const create = await boxOf('[data-action="task-new"]');
+      const settings = await boxOf('[data-action="project-edit"]');
+      if (size.width > 1150) {
+        assert.ok(Math.abs(actions.x + actions.width / 2 - (box.x + box.width / 2)) < 1, "Navigation is centred");
+        const nav = await boxOf('.tabs');
+        assert.ok(create.x >= nav.right && create.y >= box.y && create.bottom <= box.bottom, "New task follows the navigation in the top row");
+        assert.ok(settings.x >= actions.right, "Project settings is on the right");
+      }
+      await reveal(page.locator('#saved-view'));
+      assert.ok(await page.locator('#saved-view').isVisible(), `${view}: saved views remain accessible`);
+      await page.keyboard.press('Escape');
       if (!["board", "drawing", "overview"].includes(view)) {
+        const taskLayout = ["list", "tree", "table", "kanban", "timeline"].includes(view);
         await (
           await reveal(page.locator("#filter-assignee"))
         ).fill("No matching owner");
         await page.locator("#filter-assignee").press("Tab");
-        await page.waitForFunction(() =>
-          document
-            .querySelector(".view-footnote,.table-result-summary")
-            ?.textContent.trim()
-            .startsWith("0 matching of"),
-        );
+        await page.waitForFunction((taskLayout) => taskLayout
+          ? !document.querySelector("#view-content .task-row,#view-content .kanban-card,#view-content [data-table-task],#view-content [data-timeline-row]")
+          : document.querySelector(".view-footnote")?.textContent.trim().startsWith("0 matching of"), taskLayout);
+        if (taskLayout) assert.equal(await page.locator(".view-footnote,.table-result-summary").count(), 0);
         assert.match(
           await page
             .locator("[data-board-menu=filters] > summary")
             .textContent(),
           /Filters \(1\)/,
         );
+        await page.keyboard.press("Escape");
         await (await reveal(page.locator("#filter-assignee"))).fill("");
         await page.locator("#filter-assignee").press("Tab");
-        await page.waitForFunction(
-          () =>
-            !document
-              .querySelector(".view-footnote,.table-result-summary")
-              ?.textContent.trim()
-              .startsWith("0 matching of"),
-        );
+        await page.waitForFunction((taskLayout) => taskLayout
+          ? document.querySelector("#view-content .task-row,#view-content .kanban-card,#view-content [data-table-task],#view-content [data-timeline-row]")
+          : !document.querySelector(".view-footnote")?.textContent.trim().startsWith("0 matching of"), taskLayout);
         await page.keyboard.press("Escape");
       }
       await page.screenshot({
@@ -268,15 +276,43 @@ try {
   }
   await page.setViewportSize({ width: 1440, height: 900 });
   await selectProjectView(page, "list");
-  await page.locator(".view-footnote").scrollIntoViewIfNeeded();
+  await page.locator(".task-row").last().scrollIntoViewIfNeeded();
   assert.ok(
-    await page.locator(".view-footnote").isVisible(),
+    await page.locator(".task-row").last().isVisible(),
     "Long views remain scrollable",
   );
   await page.evaluate(() => window.scrollTo(0, 0));
-  await clickControl(page.locator("[data-feature=workflow]"));
+  await page.locator('[data-action="project-edit"]').click();
+  for (const section of ["workflow", "import", "sources", "automation"])
+    assert.ok(await page.locator(`.settings-navigation [data-settings-section="${section}"]`).isVisible());
+  assert.equal(await page.locator('.settings-navigation [data-feature="templates"]').count(), 0);
+  await selectSettingsPage(page, "workflow");
   await page.locator("#workflow-form").waitFor();
-  await page.locator("[data-action=dialog-close]").first().click();
+  await selectProjectView(page, "table");
+  for (const theme of ["light", "dark"]) {
+    await page.evaluate((theme) => document.documentElement.dataset.theme = theme, theme);
+    const colours = await page.locator('.spreadsheet thead th').evaluateAll((cells) => cells.map((cell) => getComputedStyle(cell).backgroundColor));
+    assert.equal(new Set(colours).size, 1, `${theme}: all column headers have the same colour`);
+    await page.screenshot({ path: `/tmp/pencils-topbar-${theme}.png` });
+  }
+  await page.getByRole("button", { name: "Expand sidebar", exact: true }).click();
+  for (const width of [1920, 1440, 1280, 1024, 768, 390]) {
+    await page.setViewportSize({ width, height: 900 });
+    const left = await boxOf('.breadcrumb'), middle = await boxOf('#board-project-tools'), right = await boxOf('.top-actions');
+    if (width > 1150) {
+      assert.ok(left.right <= middle.left && middle.right <= right.left, `${width}: header columns never overlap with sidebar open`);
+    } else assert.ok(left.right <= right.left, `${width}: breadcrumb and actions never overlap`);
+    assert.ok(right.right <= width && middle.right <= width);
+    await page.screenshot({ path: `/tmp/pencils-topbar-expanded-${width}.png` });
+  }
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.keyboard.press("Control+k");
+  await page.locator('#global-search-input').fill('Quick capture');
+  await page.locator('[data-command="quick-capture"]').click();
+  await page.locator('#quick-capture input').fill('Quick capture still available');
+  await page.locator('#quick-capture [type="submit"]').click();
+  await page.waitForFunction(() => document.querySelector('#quick-capture input')?.value === '');
+  assert.ok((await store.snapshot(project.id)).tasks.some((task) => task.title === 'Quick capture still available'));
   assert.deepEqual(errors, []);
   console.log(
     "PASS: unified Tasks tab, per-project layout memory, keyboard selection, shared filters, and consistent desktop/mobile navigation across all nine views",

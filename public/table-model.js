@@ -1,11 +1,12 @@
 import { validQuery, compileQuery } from "./query-model.js";
 // Shared table rules: no task mutations, stable ordering, and empty values last.
 export const tableFieldKeys =
-  /^(key|created|updated|title|type|status|priority|parent|assignee|start|due|estimate|tags|fields\.[a-zA-Z][a-zA-Z0-9_-]*)$/;
+  /^(key|created|updated|title|body|type|status|priority|parent|assignee|start|due|estimate|tags|fields\.[a-zA-Z][a-zA-Z0-9_-]*)$/;
 export function tableFields(config) {
   return [
     ["key", "ID", "text"],
     ["title", "Title", "text"],
+    ["body", "Description", "text"],
     ["type", "Type", "options"],
     ["status", "Status", "options"],
     ["priority", "Priority", "options"],
@@ -73,11 +74,12 @@ export function validTablePreferences(p) {
   );
 }
 export function tablePreferences(p, config) {
-  if (!validTablePreferences(p)) return { groups: [], sorts: [], filters: [] };
+  if (!validTablePreferences(p)) return { outline: true, groups: [], sorts: [], filters: [] };
   const keys = new Set(tableFields(config).map((f) => f.key));
   return {
     ...(p.query ? { query: structuredClone(p.query) } : {}),
-    ...(p.outline ? {outline:true} : {}),
+    // Outline is now standard, including older saved views with it disabled.
+    outline: true,
     groups: p.groups.filter((k) => keys.has(k)),
     sorts: p.sorts.filter((s) => keys.has(s.field)),
     filters: p.filters.filter((f) => keys.has(f.field)),

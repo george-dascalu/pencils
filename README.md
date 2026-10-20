@@ -2,13 +2,13 @@
 
 An offline project workspace for **organisations → projects → hierarchical tasks**, with portable Markdown notes and a Docker web interface. Shared mode is ready for trusted devices on your local network; optional accounts restrict access by organisation.
 
-See [CHANGELOG.md](CHANGELOG.md) for dated additions, changes and fixes.
+See [CHANGELOG.md](CHANGELOG.md) for dated additions, changes and fixes. The [Project Settings assessment](reports/2026-10-17-project-settings-assessment.md) records this redesign and the next priorities.
 
 ## Make the workspace yours
 
-Every project view uses the same compact header: project title in the breadcrumb, view tabs, Project menu, Project settings and New task. The Project menu contains details, progress, workflow, imports and task templates. Saved views sit beside the task query controls. List, Tree, Table, Kanban, Calendar and Timeline keep search, status/type filters and sorting in one compact toolbar; additional filters and grouping are under **Filters**, with a count of active extra filters.
+Every project view uses the same compact header: project title in the breadcrumb, **Overview**, **Planning**, **Tasks**, **Boards**, **New task** and **Project settings**. Tasks contains List, Tree, Table and Kanban; Planning contains Calendar, Timeline and Capacity. Overview shows project progress, open/blocked/overdue tasks, status counts and upcoming deadlines.
 
-View tabs are grouped into **Overview**, **List / Tree / Table**, **Kanban / Board / Drawing**, and **Calendar / Timeline / Capacity**. Overview shows project progress, open/blocked/overdue tasks, status counts and upcoming deadlines.
+Project Settings has its own grouped sidebar and dedicated pages. General, Organisation & teams, Statuses & workflow, Types & hierarchy and Custom fields save independently. Data sources, Import notes, Automation, Diagnostics and Archive & recovery contain their own tools. Source configuration and automation editing have direct links; browser Back, Forward and reload preserve the page. Unsaved changes require an explicit discard before navigating away. Templates are removed from the settings navigation. On phones, choose a page using Settings section.
 
 Colour fields throughout the app use the same circular swatch and dropdown palette, with a custom hex editor for exact colours.
 
@@ -17,7 +17,7 @@ Development rule: **Consistency**. Reuse shared UI and keep common actions, term
 - Use the sidebar toggle in the top bar to collapse or expand navigation on desktop. Your choice survives reloads. On phones, the menu still opens a navigation drawer.
 - Open **Personal settings** with the avatar at the top right. Choose Light, Dark, or System appearance and one of eight fonts: Manrope (default), DM Sans, Space Grotesk, Outfit, Sora, Work Sans, Lora, or Fraunces. Preferences are local to this browser and shared across its tabs; other devices retain their own choices.
 - Fonts and their SIL Open Font Licenses are bundled under `public/fonts/`, with source links in `SOURCES.json`. No external font service is used at runtime.
-- Open **Project settings** to edit the ordered status list and specify which statuses count as completed. New projects can define their own workflow during creation. Changes apply only to that project and are stored in its Markdown frontmatter. A status used by an existing task cannot be removed until those tasks are moved to another status. **Workflow & fields** also manages task types and custom fields.
+- Open **Project settings** to edit the ordered status list and specify which statuses count as completed. New projects can define their own workflow during creation. Changes apply only to that project and are stored in its Markdown frontmatter. A status used by an existing task cannot be removed until those tasks are moved to another status. Use **Types & hierarchy** for card types and parent/child rules, and **Custom fields** for additional task information.
 
 ## Project settings and task IDs
 
@@ -32,7 +32,7 @@ cp .env.example .env
 docker compose up -d --build
 ```
 
-Open **http://localhost:3000**, or **http://SERVER-IP:3000** from another device on the same network. The server computer must be running and reachable. Core local features need no internet service, CDN, font server, account provider or API key. Optional Jira and SharePoint sources need internet access and registered OAuth applications. Building the image initially needs internet access for Node and npm packages; see the offline instructions below to transfer a prebuilt image.
+Open **http://localhost:3000**, or **http://SERVER-IP:3000** from another device on the same network. The server computer must be running and reachable. Core local features need no internet service, CDN, font server, account provider or API key. Optional Jira and SharePoint sources need internet access and registered OAuth applications. One-time Miro imports need internet access and either a Miro OAuth app or a temporary access token. Building the image initially needs internet access for Node and npm packages; see the offline instructions below to transfer a prebuilt image.
 
 Set `VAULT_PATH` to the folder you want to use, and set `LOCAL_UID` / `LOCAL_GID` to the output of `id -u` / `id -g` on Linux. The app runs as that user in a read-only container, with a writable vault mount. The host folder must be writable by that user. Stop with `docker compose down`; the vault remains on disk.
 
@@ -108,6 +108,14 @@ Each project can have multiple named canvases. The board includes eight connecte
 7. **LAN collaboration:** participants see each other’s names, cursors and selected objects. Object comments open in a compact nonmodal chat panel beside the object, with a scrollable thread, replies, deletion and five emoji reactions (👍 ❤️ 😂 🎉 👀). Independent changes merge; overlapping changes stay in Recovery for an explicit choice. Each save commits an operation log together with the board. **Activity** and keyboard undo/redo check affected values before changing them. Save retries reuse the original operation ID, including when an acknowledgement is lost. Each browser tab keeps its own pending queue.
 8. **Large boards and tablets:** search and jump to objects, navigate the minimap, use **Shift+2** to focus a selection, and pan/zoom with two fingers. Pen drawing stores pressure samples. Offscreen cards are culled; broad overviews use a bitmap so detailed DOM remains bounded.
 
+**One-time Miro import:** open **Board settings → Import from Miro**, connect, and paste a Miro board link or choose from the first 50 accessible boards. Load the board to preview its layout and conversion report. Import the whole board or select frames (including nested contents), choose draft cards or project tasks, and match Miro assignees to people in the project's teams. Choose a task type and status; imported cards default to Medium priority because the standard REST card response does not supply priority or task status. Available due dates and descriptions are copied. Changes to options require **Update preview** before **Import**.
+
+The importer copies sticky notes, rich text, supported shapes, frames, connectors, accessible images/GIFs and supported documents into ordinary `.canvas` objects and local attachments. Embeds become links. Unreadable or unsupported items returned by Miro become labelled links at their original positions. The report lists approximations and omitted connectors; Miro may not return some unsupported items at all. Comments, native tables/grids, freehand strokes, live queries and Pencils project-frame behaviour are not imported. Use separate CSV/image exports for content unavailable through Miro's API. Fonts, transparency and connector routing may differ. Visual connectors do not automatically create task dependencies.
+
+Choose **New canvas** or **Current canvas**. Existing-canvas imports preserve local changes to previously imported objects and add only new source objects; they never refresh or overwrite an earlier import. A changed destination requires a new preview. Imported task cards are local Markdown tasks, with no source-owned fields or background sync. A failed commit rolls back new tasks, attachments and canvas changes together. Retrying a completed preview does not duplicate its import. Previews last 30 minutes; the server retains tokens only in memory and clears the current connection after import or disconnect.
+
+For **Connect Miro**, create a Miro OAuth app with only `boards:read`, register the exact callback `${APP_ORIGIN}/api/miro-callback`, and set `MIRO_CLIENT_ID`, `MIRO_CLIENT_SECRET` and `APP_ORIGIN` on the server. Use HTTPS or a localhost callback; Docker Compose passes these variables through. Alternatively, **Use an access token** accepts a temporary token from a Miro app with `boards:read` and access to the source board, without OAuth server configuration. Both options require `AUTH_MODE=local` or a signed-in account with project write access in required mode. The import makes no changes in Miro. Large reads can hit Miro's rate limits; the error gives a retry delay. Each preview supports up to 9,500 source objects, 19,000 connectors and 50 MB of media, with a 10 MB limit per file; canvas storage limits still apply.
+
 **Grid titles:** double-click the title in a grid’s top bar, or click its pencil button, to rename it in place. Click outside or press Enter to save; Undo restores the previous title. The title is included above the Markdown table in Obsidian Canvas exports. Drag the top bar to move the grid.
 
 **Frames:** press **F** or choose the frame tool, then drag around content; click to place a 16:9 frame. Click any empty space inside a frame to select it, including frames without a title. Click an object inside it to select that object instead. Drag a frame's title or border to move it and its contents. Drag empty space inside a frame to select objects. Objects attach/detach as you move them between frames. Resizing and size presets change only the frame, preserving content positions and sizes.
@@ -132,6 +140,14 @@ The recent operation log retains up to 200 operations (approximately 2 MB, or on
 
 ## Markdown and Obsidian
 
+**Documents**, between Overview and Planning, provides a project document explorer and a Markdown-native editor. **Live preview** formats Markdown around the active line; click a rendered block to edit its Markdown. **Source** shows the complete Markdown with syntax highlighting and line numbers. **Reading** displays the formatted document. Switching views does not rewrite the source or clear undo history. Ctrl/⌘ E switches Live preview/Source, Ctrl/⌘ B and I format the selection, and Ctrl/⌘ F opens find/replace. Tab indents, lists continue on Enter, and the gutter folds headings and code.
+
+Use **Style**, the formatting buttons or **Insert** for headings, lists, checklists, quotes, code blocks, tables, callouts, footnotes, highlights, math and Mermaid diagrams. Live-preview checkboxes update their Markdown markers. Comments (`%%…%%`) stay in the source and are hidden in Reading. HTML is sanitised; executable scripts and remote image requests are excluded. Unknown plugin syntax stays intact in the source. **Document outline** jumps to headings; **Document tools** contains backlinks, undo/redo, export and Obsidian settings. Type `[[` to choose another project document: generated links use stable vault paths with readable labels. `![[…]]` embeds a document, heading or block, with bounded nesting. Duplicate document titles require a stable path. Attach local files through **Insert → Attach file**, or drop them onto the editor. Images render inline; other files open from their links.
+
+The **Open in Obsidian** icon in the document header opens the same Markdown file in the installed Obsidian app. On first use, enter the vault name as shown in Obsidian. If Pencils' data directory is a subfolder of that vault, enter its relative folder too. These settings are saved only in this browser. The vault must be accessible to Obsidian on the device opening the link; a browser connection to Pencils does not copy or sync the server's files. Pending edits must finish saving before opening. Obsidian's plugins run in Obsidian, not in the Pencils browser editor; desktop-only plugins still require Obsidian desktop.
+
+Search titles or content, create notes and import/export `.md` files. Edits save automatically; pending offline edits stay in this browser, and conflicting edits can be reviewed in Recovery. Deleted documents go to Trash. On narrow screens, **Browse documents** switches between the explorer and editor.
+
 Open `VAULT_PATH` as an Obsidian vault:
 
 ```text
@@ -141,6 +157,7 @@ vault/
     project.md
     identity.md              reserved task numbers and next sequence
     tasks/t-….md
+    documents/d-….md           project documents with Markdown content
     boards/b-….canvas
     notes/… .md               optional ordinary project notes
     attachments/a-….*
@@ -179,6 +196,10 @@ Practice recovery into a separate directory and an isolated server instance befo
 
 
 ## Optional accounts and remote access
+
+For single-user use on this computer or a trusted local network, set `AUTH_MODE=local` and `LOCAL_USER_NAME=George` in `.env`, then recreate the service with `docker compose up -d --no-build --force-recreate pencils`. Loopback and private-network connections automatically use George with administrator access, including source connections and background sync. Personal settings shows the name and role; no password or Sign out action is needed in this mode. Existing password accounts remain unchanged. The local identity is defined by these server settings and stops being available if you change the mode or name. Keep its name stable while it owns sources or automations.
+
+Local mode trusts the socket peer address, including Docker bridge/private LAN addresses; it ignores browser-supplied forwarding headers. Public peers still require a password account. Use `AUTH_MODE=required` behind a public reverse proxy, since the proxy itself may connect from a private address.
 
 Default `AUTH_MODE=shared` permits every device reaching the server to read and edit the workspace. This matches a trusted LAN deployment. For restricted access, first create an administrator (password is read from standard input):
 
@@ -228,6 +249,8 @@ npm start
 ```
 
 `VAULT_PATH`, `HOST` and `PORT` configure the local server. Runtime dependencies are served locally from `node_modules`; no browser CDN is used.
+
+For a production Node installation, run `npm run build` before `NODE_ENV=production npm start`. Docker builds these assets automatically. Production uses content-hashed JavaScript chunks, one minified stylesheet and negotiated Brotli/gzip compression; the HTML is revalidated so updates pick up the new asset names. Board/drawing and Documents controllers load on first use. Keep the previous hashed assets when updating a running Node installation so already-open pages can finish loading their matching chunks. The separate prepared offline drawing shell remains locally available.
 
 ## Validation
 
@@ -336,9 +359,11 @@ Board cards remain visible when a task is archived or deleted. **Archived** mean
 
 ## Mixed project sources
 
+The header's **Help** button opens a local wiki with searchable setup guides, article contents and browser Back/Forward navigation. Start with **Connect a project**, then **Server setup**, **Obsidian**, **Jira Cloud** or **SharePoint Excel**. Each guide includes the actual permissions and limits of this installation, mapping examples and troubleshooting. Direct links such as `/#help/jira` and `/#help/excel` can be bookmarked. The guides load locally; provider documentation opens only when you follow an external reference.
+
 In **Project settings → Data sources & sync**, add one or more Obsidian folders, Jira Cloud queries, or SharePoint Excel tables. Use **Preview mapping** before **Sync now**. Sources start with read access and polling disabled. Enable polling for five-minute reads; Pause or Disconnect stops future reads. Disconnect removes credentials while retaining imported tasks and local annotations.
 
-Integration setup requires `AUTH_MODE=required` and a workspace administrator. The first connected source makes that project private to its source owner and workspace administrators, even after disconnect. Provider fields (title, type, status, priority, assignee and due date) are read-only in local editors. Local descriptions, comments, dependencies and related-record links remain separate. Imported records have stable source IDs and source badges; source links open the original Jira issue, workbook or Obsidian note. A missing query result means **not returned**, not necessarily deleted.
+Integration setup supports `AUTH_MODE=local` automatic administrator access, or `AUTH_MODE=required` with a signed-in workspace administrator. The first connected source makes that project private to its source owner and workspace administrators, even after disconnect. Provider fields (title, type, status, priority, assignee and due date) are read-only in local editors. Local descriptions, comments, dependencies and related-record links remain separate. Imported records have stable source IDs and source badges; source links open the original Jira issue, workbook or Obsidian note. A missing query result means **not returned**, not necessarily deleted.
 
 This is a personal integration model. It does not reproduce each provider's record-level sharing rules. Imported Markdown, backups and browser/device caches can be read by people with access to those files/devices. Use a vault and devices whose readers are authorised for the imported data. Workspace administrators can read these projects. Loss of provider access stops synchronisation; it does not erase previous imports or exports.
 

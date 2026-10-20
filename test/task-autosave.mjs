@@ -108,14 +108,16 @@ try {
     .locator("[data-autosave-status]")
     .filter({ hasText: /^Saved automatically$/ })
     .waitFor();
+  const editorBeforeComments = await page.locator(".task-dialog").boundingBox();
   await page.locator("[data-feature=task-comments]").click();
   const comments = page.locator(".board-comments");
   await comments.waitFor();
   assert.equal(await comments.getAttribute("popover"), null);
   const commentsBox = await comments.boundingBox();
   const dialogBox = await page.locator(".task-dialog").boundingBox();
-  assert.ok(commentsBox.x >= dialogBox.x + dialogBox.width - 1, "Comments dock beside the shared task panel");
-  assert.ok(commentsBox.x + commentsBox.width <= 1400);
+  assert.ok(commentsBox.x + commentsBox.width <= dialogBox.x, "Comments open to the left of a right-docked editor");
+  assert.ok(commentsBox.x >= 0);
+  assert.deepEqual(dialogBox, editorBeforeComments, "Opening comments keeps the editor in place");
   assert.equal(
     await comments.locator("textarea").evaluate((el) => el.form),
     null,
@@ -142,11 +144,19 @@ try {
       `${key}: comments match history`,
     );
 
-  for (const width of [1400, 390]) {
+  for (const width of [1400, 1100, 390]) {
     await page.setViewportSize({ width, height: 1000 });
     await page.locator("[data-feature=task-comments]").click();
     const box = await comments.boundingBox();
     assert.ok(box.x >= 0 && box.x + box.width <= width);
+    if (width >= 1100) {
+      const editor = await page.locator(".task-dialog").boundingBox();
+      assert.ok(box.x + box.width <= editor.x);
+      assert.ok(await comments.evaluate(el => {
+        const rect = el.getBoundingClientRect();
+        return el.contains(document.elementFromPoint(rect.left + 16, rect.top + 16));
+      }), "The comments panel remains above the navigation sidebar");
+    }
     await page.screenshot({
       path: `/tmp/pencils-task-comments-modal-${width}.png`,
     });
@@ -183,7 +193,7 @@ try {
   );
   assert.equal(await title().inputValue(), "Live on the board");
   const actions = await panel
-    .locator(".board-task-editor-heading button")
+    .locator(".board-task-editor-heading > button, .task-editor-actions button")
     .evaluateAll((els) => els.map((el) => el.getAttribute("aria-label")));
   assert.deepEqual(actions, [
     "Back to project tasks",

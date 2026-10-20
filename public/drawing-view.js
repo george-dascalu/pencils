@@ -365,5 +365,5 @@ export function drawingView(ctx) {
       toast(error.message, true);
     }
   });
-  return { gallery, render, enter, checkpoint, ready, reset };
+  return { gallery, render, enter, checkpoint, ready, reset, settled: () => preparing };
 }
