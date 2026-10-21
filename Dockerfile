@@ -4,6 +4,7 @@ COPY package.json package-lock.json ./
 RUN npm ci --ignore-scripts --no-audit --no-fund
 COPY public ./public
 COPY scripts ./scripts
+COPY server ./server
 RUN npm run build
 
 FROM node:22-alpine
@@ -12,6 +13,7 @@ ENV NODE_ENV=production HOST=0.0.0.0 PORT=3000 VAULT_PATH=/data
 COPY package.json package-lock.json ./
 RUN npm ci --omit=dev --ignore-scripts --no-audit --no-fund && npm cache clean --force
 COPY server ./server
+COPY --from=build /app/server/http ./server/http
 COPY public ./public
 COPY --from=build /app/dist ./dist
 RUN mkdir /data && chown node:node /data

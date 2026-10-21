@@ -1,3 +1,4 @@
+import { boardDifference, applyBoardDelta } from "./board-delta.js";
 const equal = (a, b) => JSON.stringify(a) === JSON.stringify(b);
 const clone = (value) =>
   value === undefined ? undefined : structuredClone(value);
@@ -79,13 +80,25 @@ export function merge(base, local, remote, path = "", conflicts = []) {
   return { value: clone(local), conflicts };
 }
 
-function compact(record, url) {
-  const value = clone(record);
-  if (url.includes("/boards/")) {
-    delete value.operations;
-    delete value.native;
+function pack(entry) {
+  if (entry.packedBoard || !entry.url.includes("/boards/")) {
+    const { running, promise, ...value } = entry; return value;
   }
-  return value;
+  const { url, generation, error, blocked } = entry;
+  const changes = boardDifference(entry.base, entry.local);
+  const ids = new Set([...changes, ...(entry.delivery?.changes || [])].filter(c => c.id).map(c => c.id));
+  const originals = Object.fromEntries(["nodes", "edges"].map(kind => [kind, entry.base[kind].filter(n => ids.has(n.id))]));
+  return { url, generation, error, blocked, ...(entry.conflict ? { conflict: { conflicts: entry.conflict.conflicts } } : {}), packedBoard: true, revision: entry.base.revision,
+    changes, originals,
+    delivery: entry.delivery && { generation: entry.delivery.generation,
+      operationId: entry.delivery.operationId,
+      changes: entry.delivery.changes || boardDifference(entry.delivery.base, entry.delivery.sent) } };
+}
+function compact(record, url) {
+  if (url.includes("/boards/")) {
+    const { operations, native, ...value } = record; return clone(value);
+  }
+  return clone(record);
 }
 export class SaveQueue {
   constructor({ api, changed, saved }) {
@@ -156,7 +169,7 @@ export class SaveQueue {
         this.key(),
         JSON.stringify(
           [...this.entries.values()].map(
-            ({ running, promise, ...entry }) => entry,
+            (entry) => pack(entry),
           ),
         ),
       );
@@ -166,18 +179,24 @@ export class SaveQueue {
     }
     this.changed();
   }
-  enqueue(url, base, changes) {
+  enqueue(url, base, changes, { snapshot = false } = {}) {
+    const pending = this.entries.get(url);
+    if (pending?.packedBoard) {
+      // Hydrate against the displayed snapshot even if the server is offline.
+      this.hydrate(pending, base);
+    }
     let entry = this.entries.get(url);
     if (!entry) {
       entry = {
         url,
         base: compact(base, url),
-        local: compact(base, url),
+        local: null,
         generation: 0,
       };
+      entry.local = { ...entry.base };
       this.entries.set(url, entry);
     }
-    Object.assign(entry.local, clone(changes));
+    Object.assign(entry.local, snapshot ? changes : clone(changes));
     entry.generation++;
     entry.error = null;
     entry.blocked = false;
@@ -191,19 +210,44 @@ export class SaveQueue {
     entry.promise = this.perform(entry);
     return entry.promise;
   }
+  hydrate(entry, remote) {
+    const source = { ...remote };
+    for (const kind of ["nodes", "edges"]) {
+      const items = new Map((remote[kind] || []).map(n => [n.id, n]));
+      for (const n of entry.originals?.[kind] || []) if (!items.has(n.id)) items.set(n.id, n);
+      source[kind] = [...items.values()];
+    }
+    entry.base = applyBoardDelta(source, entry.changes, { guard: false, reverse: true });
+    entry.base.revision = entry.revision;
+    entry.local = applyBoardDelta(entry.base, entry.changes, { guard: false });
+    if (entry.delivery) {
+      entry.delivery.base = entry.base;
+      entry.delivery.sent = applyBoardDelta(entry.base, entry.delivery.changes, { guard: false });
+    }
+    if (entry.conflict) entry.conflict.remote = remote;
+    delete entry.packedBoard; delete entry.changes; delete entry.originals;
+  }
   async perform(entry) {
+    if (entry.packedBoard) {
+      try {
+        const remote = compact(await this.api(entry.url), entry.url);
+        if (entry.packedBoard) this.hydrate(entry, remote);
+      } catch (error) { entry.error = error.message; entry.running = false; this.persist(); return; }
+    }
     const isBoard = entry.url.includes("/boards/");
     // Retain the exact in-flight operation until its acknowledgement arrives.
     // New edits stay in local while a lost acknowledgement is retried idempotently.
     if (isBoard && !entry.delivery) {
       entry.delivery = {
         generation: entry.generation,
-        sent: compact(entry.local, entry.url),
-        base: compact(entry.base, entry.url),
+        sent: { ...entry.local },
+        base: entry.base,
         operationId: `op-${Date.now()}-${Math.random().toString(36).slice(2)}`,
       };
+      entry.delivery.changes = boardDifference(entry.delivery.base, entry.delivery.sent);
       this.persist();
     }
+    if (isBoard && !entry.delivery.changes) entry.delivery.changes = boardDifference(entry.delivery.base, entry.delivery.sent);
     const { generation, sent, base, operationId } = entry.delivery || {
       generation: entry.generation,
       sent: clone(entry.local),
@@ -213,9 +257,8 @@ export class SaveQueue {
       const result = await this.api(entry.url, {
         method: "PATCH",
         body: {
-          ...sent,
+          ...(isBoard ? { changes: entry.delivery.changes, client: this.client, operationId } : sent),
           revision: base.revision,
-          ...(isBoard ? { base, client: this.client, operationId } : {}),
         },
       });
       delete entry.delivery;
@@ -266,9 +309,10 @@ export class SaveQueue {
     )
       return this.run(entry);
   }
-  resolve(url, choice) {
+  async resolve(url, choice) {
     const entry = this.entries.get(url);
     if (!entry?.conflict) return;
+    if (entry.packedBoard) this.hydrate(entry, compact(await this.api(url), url));
     const remote = entry.conflict.remote;
     entry.local =
       choice === "local"

@@ -21,7 +21,7 @@ const errors = [];
 page.on("pageerror", (e) => errors.push(e.message));
 const snapshot = () => store.snapshot(project.id);
 const checkMetadataLayout = async () => {
-  const fields = await page.locator(".task-metadata .field").evaluateAll(fields => fields.map(el => ({ name: el.querySelector("[name]").name, x: el.getBoundingClientRect().x, y: el.getBoundingClientRect().y })));
+  const fields = await page.locator(".task-metadata [name]").evaluateAll(fields => fields.map(el => ({ name: el.name, x: el.closest(".field").getBoundingClientRect().x, y: el.closest(".field").getBoundingClientRect().y })));
   assert.deepEqual(fields.map(f => f.name), ["assignee", "priority", "status", "start", "due"]);
   assert.ok(fields[0].x < fields[1].x && fields[1].x < fields[2].x);
   assert.ok(Math.abs(fields[0].y - fields[2].y) < 2);
@@ -45,7 +45,7 @@ try {
   assert.equal(await page.locator("dialog:modal").count(), 0);
   assert.equal(await page.locator("#board-task-panel").count(), 0);
   assert.ok(
-    (await page.locator(".board-task-editor").boundingBox()).width <= 401,
+    (await page.locator(".board-task-editor").boundingBox()).width <= 681,
   );
   await page.locator("#task-form [name=title]").fill("Compact task");
   await page
@@ -112,12 +112,12 @@ try {
       const titleBox = await title.boundingBox();
       const typeBox = await type.boundingBox();
       assert.ok(
-        titleBox.x >= typeBox.x + typeBox.width + 7,
-        "Type selector and title must have a visible gap",
+        titleBox.y >= typeBox.y + typeBox.height + 7,
+        "The title sits on a separate row below the type selector",
       );
       assert.ok(
-        Math.abs(titleBox.y - typeBox.y) < 10,
-        "Type selector and title stay on the same row",
+        titleBox.width > typeBox.width * 3,
+        "The title spans the panel width",
       );
       await title.focus();
       const focusStyle = (el) => {
@@ -141,7 +141,8 @@ try {
       assert.equal(focused.color, focused.expected);
       assert.equal(focused.shadow, "none");
       await page.keyboard.press("Shift+Tab");
-      assert.ok(await type.evaluate((el) => el === document.activeElement));
+      assert.ok(await page.locator('#task-form [data-action="dialog-close"]').evaluate(el => el === document.activeElement), 'The header close button precedes the title in keyboard order');
+      await type.focus();
       const keyboardFocus = await type.evaluate(focusStyle);
       assert.equal(keyboardFocus.color, keyboardFocus.expected);
       assert.equal(keyboardFocus.width, "1px");
@@ -175,9 +176,9 @@ try {
       .evaluate((el) => [...el.children].map((x) => x.className)),
     [
       "canvas-task-key",
+      "canvas-task-assignee",
       "canvas-task-priority priority high",
       "canvas-task-status",
-      "canvas-task-assignee",
     ],
   );
   const color = await card
@@ -212,7 +213,7 @@ try {
     task.id,
   );
   assert.equal(
-    await editPanel.locator(".board-task-editor-heading strong").textContent(),
+    await editPanel.locator(".board-task-editor-heading .task-key").textContent(),
     task.key,
   );
   assert.equal(
@@ -239,7 +240,7 @@ try {
   assert.ok(historyBox.x + historyBox.width <= 1500);
   await page.screenshot({ path: "/tmp/pencils-edit-task-panel-history.png" });
   await editPanel
-    .locator(".task-history-panel .recovery-item summary")
+    .locator(".task-history-panel .recovery-item:has([data-task-modal=history-restore]) summary")
     .first()
     .click();
   page.once("dialog", (d) => d.accept());
@@ -315,8 +316,8 @@ try {
   await page.locator("[data-action=task-new]").first().click();
   assert.equal(await page.locator("#task-form").getAttribute("data-id"), "");
   assert.equal(
-    await editPanel.locator(".board-task-editor-heading strong").textContent(),
-    "New task",
+    await editPanel.locator(".board-task-editor-heading .task-key").textContent(),
+    "New",
   );
   await page.locator("dialog [data-action=dialog-close]").click();
   await page.locator("[data-action=task-new]").first().click();

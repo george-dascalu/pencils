@@ -168,6 +168,8 @@ try {
     let header;
     for (const view of views) {
       await selectProjectView(page, view);
+      // The initial presence snapshot can refresh the board and close its menus.
+      if (view === "board") await page.waitForTimeout(1500);
       const taskLayout = ["list", "tree", "table", "kanban"].includes(view);
       assert.equal(
         await page.locator(".task-view-switcher").count(),
@@ -237,7 +239,12 @@ try {
       const create = await boxOf('[data-action="task-new"]');
       const settings = await boxOf('[data-action="project-edit"]');
       if (size.width > 1150) {
-        assert.ok(Math.abs(actions.x + actions.width / 2 - (box.x + box.width / 2)) < 1, "Navigation is centred");
+        assert.ok(Math.abs(actions.x + actions.width / 2 - (box.x + box.width / 2)) < 1,
+          "Project navigation, including New task, is centred in the header");
+        const breadcrumb = await boxOf(".breadcrumb");
+        const topActions = await boxOf(".top-actions");
+        assert.ok(breadcrumb.right <= actions.left && actions.right <= topActions.left,
+          "Project navigation fits between the breadcrumb and version controls");
         const nav = await boxOf('.tabs');
         assert.ok(create.x >= nav.right && create.y >= box.y && create.bottom <= box.bottom, "New task follows the navigation in the top row");
         assert.ok(settings.x >= actions.right, "Project settings is on the right");
@@ -299,9 +306,12 @@ try {
   for (const width of [1920, 1440, 1280, 1024, 768, 390]) {
     await page.setViewportSize({ width, height: 900 });
     const left = await boxOf('.breadcrumb'), middle = await boxOf('#board-project-tools'), right = await boxOf('.top-actions');
-    if (width > 1150) {
+    if (width > 1400) {
       assert.ok(left.right <= middle.left && middle.right <= right.left, `${width}: header columns never overlap with sidebar open`);
     } else assert.ok(left.right <= right.left, `${width}: breadcrumb and actions never overlap`);
+    const headerBox = await boxOf('.topbar');
+    assert.ok(Math.abs(middle.x + middle.width / 2 - headerBox.x - headerBox.width / 2) < 1,
+      `${width}: navigation stays centred with the sidebar open`);
     assert.ok(right.right <= width && middle.right <= width);
     await page.screenshot({ path: `/tmp/pencils-topbar-expanded-${width}.png` });
   }

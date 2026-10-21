@@ -207,7 +207,9 @@ export class WriteJournal {
       }
     } finally {
       this.active = null;
-      this.store.cache.clear();
+      // Successful writes invalidate their own file. Clearing every parsed note
+      // here made unrelated readers reparse the entire vault after each save.
+      if (!success) this.store.cache.clear();
       await this.release();
     }
   }

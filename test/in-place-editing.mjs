@@ -271,9 +271,8 @@ try {
   await page.keyboard.press("Control+Enter");
   await saved();
   await page.waitForFunction(() =>
-    document
-      .querySelector('[data-node="note"]')
-      .classList.contains("content-truncated"),
+    [...document.querySelectorAll('[data-node="note"] .board-node-content, [data-node="note"] .canvas-markdown')]
+      .some(el => el.scrollHeight > el.clientHeight + 2 || el.scrollWidth > el.clientWidth + 2),
   );
   const content = await node.locator(".board-node-content").boundingBox(),
     card = await node.boundingBox();

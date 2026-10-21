@@ -172,8 +172,8 @@ try {
             const r = rect(s);
             return r.top + r.height / 2;
           }),
-          fields: [...form.querySelectorAll(".task-metadata .field")].map(
-            (el) => el.getBoundingClientRect().top,
+          fields: [...form.querySelectorAll(".task-metadata [name]")].map(
+            (el) => el.closest(".field").getBoundingClientRect().top,
           ),
 
           overflow: form.scrollWidth > form.clientWidth,
@@ -184,8 +184,8 @@ try {
       });
       if (width === 1400) {
         assert.ok(
-          Math.max(...layout.identity) - Math.min(...layout.identity) < 2,
-          "Type and title share a row",
+          Math.abs(layout.identity[0] - layout.identity[1]) < 2 && layout.identity[2] > layout.identity[0] + 20,
+          "Title has its own row below type and ID",
         );
       }
 
@@ -268,7 +268,7 @@ try {
   );
   await page.screenshot({ path: "/tmp/pencils-task-history.png" });
   await page
-    .locator(".task-history-panel .recovery-item summary")
+    .locator(".task-history-panel .recovery-item:has([data-task-modal=history-restore]) summary")
     .first()
     .click();
   await page

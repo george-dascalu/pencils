@@ -1,3 +1,4 @@
+import { BOARD_LIMITS } from "./board-limits.js";
 // Shared geometry for board rendering, editing and exports.
 export function throughPoints(points, curved = false) {
   let d = `M${points[0].x},${points[0].y}`;
@@ -59,8 +60,8 @@ export function validConnectorGeometry(e) {
     p &&
     Number.isFinite(p.x) &&
     Number.isFinite(p.y) &&
-    Math.abs(p.x) <= 100000 &&
-    Math.abs(p.y) <= 100000;
+    Math.abs(p.x) <= BOARD_LIMITS.coordinate &&
+    Math.abs(p.y) <= BOARD_LIMITS.coordinate;
   return (
     (e.bends == null ||
       (Array.isArray(e.bends) &&

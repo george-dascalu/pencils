@@ -27,13 +27,13 @@
   .toolbar-left > .search { min-width: 0; width: 100%; max-width: none; }
   .toolbar-left .view-layout-switcher button { flex: 1; }
 }
-.main:has(.tabs) {
+.main.project-main {
   min-height: 100dvh;
   display: grid;
   grid-template-columns: minmax(0, 1fr);
   grid-template-rows: auto auto minmax(0, 1fr);
 }
-.main:has(.tabs) > .topbar {
+.main.project-main > .topbar {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
   gap: 16px;
@@ -41,7 +41,7 @@
   height: auto;
   padding: 0 20px;
 }
-.main:has(.tabs) > :is(.hero, .stats-strip) {
+.main.project-main > :is(.hero, .stats-strip) {
   display: none;
 }
 .topbar .tabs {
@@ -68,66 +68,84 @@
   font-size: 12px;
   white-space: nowrap;
 }
-.main:has(.tabs) .top-actions {
+.main.project-main .top-actions {
   justify-self: end;
   gap: 10px;
 }
-.main:has(.tabs) .breadcrumb {
+.main.project-main .breadcrumb {
   min-width: 0;
   overflow: hidden;
   white-space: nowrap;
 }
-.main:has(.tabs) .breadcrumb > :not(strong) {
+.main.project-main .breadcrumb > :not(strong) {
   flex-shrink: 0;
 }
-.main:has(.tabs) > #view-toolbar {
+.main.project-main > #view-toolbar {
   grid-row: 2;
   min-width: 0;
 }
-.main:has(.tabs) > #view-content {
+.main.project-main > #view-content {
   grid-row: 3;
   min-height: 0;
   padding: 0 12px 12px;
 }
 @media (max-width: 1600px) {
-  .main:has(.tabs) .save-state { display: none; }
+  .main.project-main .save-state { display: none; }
 }
 @media (max-width: 1150px) {
-  .main:has(.tabs) > .topbar {
+  .main.project-main > .topbar {
     grid-template-columns: minmax(0, 1fr) auto;
     gap: 0 12px;
     padding-top: 6px;
   }
-  .main:has(.tabs) .top-actions { grid-column: 2; grid-row: 1; }
+  .main.project-main .top-actions { grid-column: 2; grid-row: 1; }
   .board-project-tools { grid-column: 1 / -1; grid-row: 2; }
   .topbar .tabs .tab { padding-block: 12px; }
+}
+/* With the sidebar open, give centred navigation its own row before the side
+   controls run out of room. Wide headers keep equal space on either side. */
+@media (min-width: 1151px) and (max-width: 1400px) {
+  :root:not([data-sidebar="collapsed"]) .main.project-main > .topbar {
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 0 12px;
+    padding-top: 6px;
+  }
+  :root:not([data-sidebar="collapsed"]) .main.project-main .top-actions {
+    grid-column: 2;
+    grid-row: 1;
+  }
+  :root:not([data-sidebar="collapsed"]) .board-project-tools {
+    grid-column: 1 / -1;
+    grid-row: 2;
+  }
+  :root:not([data-sidebar="collapsed"]) .topbar .tabs .tab { padding-block: 12px; }
 }
 @media (max-width: 780px) {
   .topbar .tabs { display: none; }
   .board-project-tools { padding-block: 6px; }
 }
-.main:has(#canvas) .canvas:not(.board-expanded) {
+.main:is([data-layout-view="board"], [data-layout-view="drawing"]) .canvas:not(.board-expanded) {
   height: 100%;
   min-height: 0;
 }
-.main:has(.tabs) .breadcrumb strong {
+.main.project-main .breadcrumb strong {
   font-size: 14px;
   font-weight: 600;
   max-width: 40vw;
 }
-.main:has(.tabs) .board-toolbar {
+.main.project-main .board-toolbar {
   padding: 7px 16px;
   gap: 7px;
   min-height: 46px;
   flex-wrap: wrap;
 }
-.main:has(.tabs) .board-toolbar > select {
+.main.project-main .board-toolbar > select {
   margin-right: 2px;
   max-width: 220px;
   font-size: 12px;
   padding: 7px 9px;
 }
-.main:has(.tabs) .board-save {
+.main.project-main .board-save {
   margin-left: auto;
   font-size: 11px;
   max-width: 230px;
@@ -240,42 +258,42 @@
   font-size: 12px;
 }
 /* Warnings remain visible and scrollable instead of being hidden by the compact header. */
-.main:has(.tabs):has(> .connection-banner, > .warning) {
+.main.project-main.project-warning {
   display: flex;
   flex-direction: column;
   height: auto;
   min-height: 100dvh;
 }
-.main:has(.tabs) > :is(.connection-banner, .warning) {
+.main.project-main > :is(.connection-banner, .warning) {
   grid-column: 1 / -1;
   grid-row: auto;
 }
-.main:has(.tabs):has(> .connection-banner, > .warning)
+.main.project-main.project-warning
   .canvas:not(.board-expanded) {
   height: 65dvh;
   min-height: 350px;
 }
 @media (max-width: 950px) {
-  .main:has(.tabs) .board-save {
+  .main.project-main .board-save {
     max-width: 150px;
   }
 }
 @media (max-width: 600px) {
-  .main:has(.tabs) > .topbar {
+  .main.project-main > .topbar {
     padding: 0 10px;
   }
-  .main:has(.tabs) .board-toolbar {
+  .main.project-main .board-toolbar {
     padding: 6px 10px;
     gap: 5px;
   }
-  .main:has(.tabs) .board-toolbar > select {
+  .main.project-main .board-toolbar > select {
     max-width: 150px;
   }
-  .main:has(.tabs) .board-save {
+  .main.project-main .board-save {
     max-width: none;
     font-size: 10px;
   }
-  .main:has(.tabs) > #view-content {
+  .main.project-main > #view-content {
     padding: 0 6px 6px;
   }
   .board-menu-panel {
@@ -290,29 +308,29 @@
 }
 
 /* The same navigation and action positions apply to every project view. */
-.main:has(#canvas) {
+.main:is([data-layout-view="board"], [data-layout-view="drawing"]) {
   height: 100dvh;
   grid-template-rows: auto auto minmax(0, 1fr);
 }
 /* Data views fill the page independently of their task count. */
-.main:has(> #view-content .spreadsheet),
-.main:has(> #view-content > .kanban),
-.main:has(> #view-content > .task-timeline),
-.main:has(> #view-content > .tree-wrapper) {
+.main[data-layout-view="table"],
+.main[data-layout-view="kanban"],
+.main[data-layout-view="timeline"],
+.main[data-layout-view="tree"] {
   height: 100dvh;
 }
-.main:has(.tabs) > #view-content:has(> .table-scroll > .spreadsheet),
-.main:has(.tabs) > #view-content:has(> .kanban),
-.main:has(.tabs) > #view-content:has(> .task-timeline),
-.main:has(.tabs) > #view-content:has(> .tree-wrapper) {
+.main.project-main > #view-content[data-layout-view="table"],
+.main.project-main > #view-content[data-layout-view="kanban"],
+.main.project-main > #view-content[data-layout-view="timeline"],
+.main.project-main > #view-content[data-layout-view="tree"] {
   display: flex;
   flex-direction: column;
   min-width: 0;
 }
-#view-content:has(> .table-scroll > .spreadsheet) > :not(.table-scroll),
-#view-content:has(> .kanban) > :not(.kanban),
-#view-content:has(> .task-timeline) > :not(.task-timeline),
-#view-content:has(> .tree-wrapper) > :not(.tree-wrapper) {
+#view-content[data-layout-view="table"] > :not(.table-scroll),
+#view-content[data-layout-view="kanban"] > :not(.kanban),
+#view-content[data-layout-view="timeline"] > :not(.task-timeline),
+#view-content[data-layout-view="tree"] > :not(.tree-wrapper) {
   flex-shrink: 0;
 }
 #view-content > .table-scroll:has(> .spreadsheet),
@@ -480,21 +498,21 @@
   position: sticky;
   top: 0;
 }
-.main:has(.tabs) .toolbar {
+.main.project-main .toolbar {
   padding: 7px 16px;
   min-height: 49px;
   gap: 7px;
   flex-wrap: wrap;
 }
-.main:has(.tabs) :is(.toolbar-left, .toolbar-right) {
+.main.project-main :is(.toolbar-left, .toolbar-right) {
   gap: 7px;
   flex-wrap: wrap;
   min-width: 0;
 }
-.main:has(.tabs) .toolbar-right {
+.main.project-main .toolbar-right {
   margin-left: auto;
 }
-.main:has(.tabs) .toolbar-right .caption {
+.main.project-main .toolbar-right .caption {
   display: none;
 }
 .view-layout-switcher {
@@ -536,10 +554,10 @@
     min-height: 44px;
   }
 }
-.main:has(.tabs) .toolbar :is(input, select) {
+.main.project-main .toolbar :is(input, select) {
   font-size: 12px;
 }
-.main:has(.tabs) .toolbar select,
+.main.project-main .toolbar select,
 .mobile-view-switcher select {
   appearance: none;
   padding-right: 26px;
@@ -553,16 +571,16 @@
   padding: 8px 10px;
 }
 @media (max-width: 600px) {
-  .main:has(.tabs) .toolbar {
+  .main.project-main .toolbar {
     padding: 6px 10px;
   }
-  .main:has(.tabs) .toolbar-left .search {
+  .main.project-main .toolbar-left .search {
     flex: 1 1 100%;
   }
-  .main:has(.tabs) .toolbar-left .search input {
+  .main.project-main .toolbar-left .search input {
     width: 100%;
   }
-  .main:has(.tabs) > #view-content {
+  .main.project-main > #view-content {
     padding: 0 6px 6px;
   }
 }

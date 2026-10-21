@@ -26,7 +26,7 @@ export function documentMarkdown({ documents, project, esc }) {
     renderer: {
       code(token) {
         if (token.lang?.split(/\s/)[0] === "mermaid")
-          return `<pre data-document-diagram role="img" aria-label="Mermaid diagram">${esc(token.text)}</pre>`;
+          return `<pre data-document-diagram data-document-source="${esc(token.raw)}" role="img" aria-label="Mermaid diagram">${esc(token.text)}</pre>`;
         return `<pre><code${token.lang ? ` class="language-${esc(token.lang.split(/\s/)[0])}"` : ""}>${esc(token.text)}</code></pre>`;
       },
       blockquote(token) {
@@ -36,8 +36,8 @@ export function documentMarkdown({ documents, project, esc }) {
         const body = makeParser().parse(token.text.slice(callout[0].length));
         const heading = inlineParser.parseInline(title);
         return callout[2]
-          ? `<details class="document-callout" ${callout[2] === "+" ? "open" : ""}><summary>${heading}</summary>${body}</details>`
-          : `<aside class="document-callout"><strong>${heading}</strong>${body}</aside>`;
+          ? `<details class="document-callout" data-document-callout="${esc(`[!${callout[1]}]${callout[2]}`)}" ${callout[2] === "+" ? "open" : ""}><summary>${heading}</summary>${body}</details>`
+          : `<aside class="document-callout" data-document-callout="${esc(`[!${callout[1]}]`)}"><strong>${heading}</strong>${body}</aside>`;
       },
     },
     extensions: [
@@ -48,7 +48,7 @@ export function documentMarkdown({ documents, project, esc }) {
           const m = /^\$\$[ \t]*\n?([\s\S]+?)\n?\$\$(?:[ \t]*\n|$)/.exec(src);
           if (m) return { type: "documentMathBlock", raw: m[0], text: m[1] };
         },
-        renderer: token => `<div class="document-math">${math(token.text, true)}</div>`,
+        renderer: token => `<div class="document-math" data-document-source="${esc(token.raw)}">${math(token.text, true)}</div>`,
       },
       {
         name: "documentMath", level: "inline", start: src => src.indexOf("$"),
@@ -56,7 +56,7 @@ export function documentMarkdown({ documents, project, esc }) {
           const m = /^\$(?!\s|\$)((?:\\.|[^$\n])+?[^\s$]|\S)\$(?!\d)/.exec(src);
           if (m) return { type: "documentMath", raw: m[0], text: m[1] };
         },
-        renderer: token => math(token.text, false),
+        renderer: token => `<span data-document-source="${esc(token.raw)}">${math(token.text, false)}</span>`,
       },
       {
         name: "documentHighlight", level: "inline", start: src => src.indexOf("=="),
@@ -72,7 +72,7 @@ export function documentMarkdown({ documents, project, esc }) {
           const m = /^%%([\s\S]*?)%%/.exec(src);
           if (m) return { type: "documentComment", raw: m[0] };
         },
-        renderer: () => "",
+        renderer: token => `<span hidden data-document-source="${esc(token.raw)}">${esc(token.raw)}</span>`,
       },
       {
         name: "documentWiki", level: "inline", start: src => src.search(/!?\[\[/),
@@ -88,12 +88,12 @@ export function documentMarkdown({ documents, project, esc }) {
             const fragment = ref.includes("#") ? ref.slice(ref.indexOf("#")) : "";
             depth++;
             try {
-              return `<div class="document-transclusion"><a href="#" data-document-ref="${esc(ref)}">${esc(label)}</a>${makeParser().parse(documentSection(record.body || "", fragment))}</div>`;
+              return `<div class="document-transclusion" data-document-source="${esc(token.raw)}"><a href="#" data-document-ref="${esc(ref)}">${esc(label)}</a>${makeParser().parse(documentSection(record.body || "", fragment))}</div>`;
             } finally { depth--; }
           }
           if (token.embed && /^(?:\.\.\/)?attachments\/a-[\w-]+\.(?:png|jpe?g|webp|gif)$/i.test(ref))
-            return `<img src="/api/projects/${esc(project())}/${esc(ref.replace(/^\.\.\//, ""))}" alt="${esc(label)}"${/^\d{1,4}$/.test(alias || "") ? ` width="${alias}"` : ""}>`;
-          return `<a href="#" class="${record ? "" : "unresolved-link"}" data-document-ref="${esc(ref)}">${esc(label)}</a>`;
+            return `<img data-document-source="${esc(token.raw)}" src="/api/projects/${esc(project())}/${esc(ref.replace(/^\.\.\//, ""))}" alt="${esc(label)}"${/^\d{1,4}$/.test(alias || "") ? ` width="${alias}"` : ""}>`;
+          return `<a href="#" data-document-source="${esc(token.raw)}" class="${record ? "" : "unresolved-link"}" data-document-ref="${esc(ref)}">${esc(label)}</a>`;
         },
       },
     ],
@@ -105,12 +105,13 @@ export function documentMarkdown({ documents, project, esc }) {
     const fragment = DOMPurify.sanitize(makeParser().parse(text), {
       RETURN_DOM_FRAGMENT: true,
       ALLOW_DATA_ATTR: false,
-      ADD_ATTR: ["data-document-ref", "data-document-diagram"],
+      ADD_ATTR: ["data-document-ref", "data-document-diagram", "data-document-source", "data-document-callout"],
       FORBID_TAGS: ["style", "form", "button", "textarea", "select", "option", "iframe", "object", "embed"],
       FORBID_ATTR: ["style"],
     });
     for (const link of fragment.querySelectorAll("a")) {
       const href = link.getAttribute("href") || "";
+      link.dataset.documentHref = href;
       if (link.hasAttribute("data-document-ref")) continue;
       if (/^https?:|^mailto:/i.test(href)) {
         link.target = "_blank"; link.rel = "noopener noreferrer";
@@ -128,6 +129,7 @@ export function documentMarkdown({ documents, project, esc }) {
     }
     for (const img of fragment.querySelectorAll("img")) {
       const src = img.getAttribute("src") || "";
+      img.dataset.documentSrc = src;
       if (/^(?:\.\.\/)?attachments\/a-[\w-]+\.(?:png|jpe?g|webp|gif)$/i.test(src))
         img.src = `/api/projects/${project()}/${src.replace(/^\.\.\//, "")}`;
       else if (!/^\/api\/projects\/[\w-]+\/attachments\/a-[\w-]+\.(?:png|jpe?g|webp|gif)$/i.test(src))

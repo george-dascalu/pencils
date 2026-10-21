@@ -109,26 +109,10 @@ export function installIdentity(Store) {
             422,
             "Task identity registry is invalid. Restore identity.md from history.",
           );
-        const taskDir = path.join(this.projectDir(project), "tasks");
-        await this.safe(taskDir);
-        const names = (
-          await fs.readdir(taskDir).catch((e) => {
-            if (e.code === "ENOENT") return [];
-            throw e;
-          })
-        )
-          .filter((n) => /^t-[\w-]+\.md$/.test(n))
-          .sort();
-        const records = [];
-        for (const name of names) {
-          try {
-            const r = await this.read(path.join(taskDir, name));
-            if (r.data.id === name.slice(0, -3) && r.data.project === project)
-              records.push({ r, file: path.join(taskDir, name) });
-          } catch {
-            /* Surface unreadable tasks through the normal task warnings. */
-          }
-        }
+        const { items } = await this.children(project, "tasks");
+        const records = [...items].sort((a, b) => a.id < b.id ? -1 : a.id > b.id ? 1 : 0).map(task => ({
+          r: { data: task }, file: this.file(project, "tasks", task.id),
+        }));
         // The ledger survives deletion and backup/restore, so numbers are never recycled.
         const used = new Set(Object.values(data.tasks));
         data.next = Math.max(data.next, ...[...used].map((n) => n + 1));
@@ -161,10 +145,11 @@ export function installIdentity(Store) {
           const number = data.tasks[r.data.id],
             key = `${p.data.key}-${number}`;
           if (r.data.number === number && r.data.key === key) continue;
+          const current = await this.read(taskFile);
           await this.write(
             taskFile,
             {
-              ...r.data,
+              ...current.data,
               number,
               key,
               aliases: [
@@ -174,8 +159,8 @@ export function installIdentity(Store) {
                 ]),
               ],
             },
-            r.body,
-            r,
+            current.body,
+            current,
           );
         }
         return reserveId

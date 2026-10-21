@@ -1,3 +1,4 @@
+import { SpatialIndex } from "./spatial-index.js";
 import {orthogonalRoute} from "./orthogonal-route.js";
 import { throughPoints } from "./connector-path.js";
 export const sides = ["top", "right", "bottom", "left"];
@@ -158,7 +159,8 @@ export function routeEdge(edge, a, b, obstacles = null) {
 export function frameParents(nodes) {
   const frames = nodes.filter((n) => n.type === "frame"),
     byId = new Map(nodes.map((n) => [n.id, n])),
-    parents = new Map();
+    parents = new Map(),
+    spatial = new SpatialIndex(frames);
   // Explicit nesting wins. Spatial containment supports groups created by Obsidian.
   for (const n of nodes) {
     if (n.frame && ["frame", "grid"].includes(byId.get(n.frame)?.type)) {
@@ -166,7 +168,7 @@ export function frameParents(nodes) {
       continue;
     }
     let parent = null;
-    for (const f of frames)
+    for (const f of spatial.search({ x: n.x, y: n.y, w: 0, h: 0 }))
       if (
         f.id !== n.id &&
         f.w * f.h > n.w * n.h &&

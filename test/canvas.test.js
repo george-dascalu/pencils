@@ -874,3 +874,40 @@ test("text alignment persists in native Canvas without changing Markdown and rej
   );
 });
 test('creating a dependency connector and its task relationship is journaled together',async t=>{const {store,project,board}=await setup(t),first=await store.createTask(project.id,{title:'A'}),second=await store.createTask(project.id,{title:'B',dependencies:[first.id]});const current=await write(store,project,board,{nodes:[{id:'a',type:'task',task:first.id,x:0,y:0,w:300,h:240},{id:'b',type:'task',task:second.id,x:400,y:0,w:300,h:240}],edges:[]});await assert.rejects(store.mutate(()=>store.boardDependency(project.id,board.id,{revision:current.revision,edge:'cycle',newEdge:{id:'cycle',from:'b',to:'a',fromSide:'right',toSide:'left'}})),/cycle/i);assert.equal((await store.snapshot(project.id)).boards[0].edges.length,0);});
+
+test("board delta drafts recover after reload, including conflict with a deleted object", async (t) => {
+  const { store, project, board } = await setup(t);
+  const base = await write(store, project, board, { nodes: [sticky("a"), sticky("b", 300)] });
+  const storage = () => { const values = new Map(); return { getItem: k => values.get(k) ?? null, setItem: (k,v) => values.set(k,String(v)), removeItem: k => values.delete(k) }; };
+  const previous = { window: globalThis.window, localStorage: globalThis.localStorage, sessionStorage: globalThis.sessionStorage };
+  globalThis.window = { addEventListener() {} }; globalThis.localStorage = storage(); globalThis.sessionStorage = storage();
+  const { SaveQueue } = await import('../public/sync.js');
+  const url = `/projects/${project.id}/boards/${board.id}`;
+  const queues = [];
+  let online = false;
+  const api = async (_url, options) => {
+    if (!online) throw new Error('offline');
+    if (options) return write(store, project, base, options.body);
+    const file = store.file(project.id, 'boards', board.id); return store.public(await store.read(file), file);
+  };
+  const make = () => { const queue = new SaveQueue({ api, changed() {}, saved() {} }); queues.push(queue); return queue; };
+  t.after(() => { for (const queue of queues) { clearInterval(queue.timer); clearInterval(queue.leaseTimer); } for (const [k,v] of Object.entries(previous)) v === undefined ? delete globalThis[k] : globalThis[k] = v; });
+  const first = make();
+  await first.enqueue(url, base, { nodes: [{ ...base.nodes[0], text: 'Offline work' }, base.nodes[1]] });
+  clearInterval(first.timer);
+  const packed = JSON.parse(localStorage.getItem(first.key()))[0];
+  assert.equal(packed.packedBoard, true); assert.equal(packed.nodes, undefined); assert.equal(packed.base, undefined);
+  assert.equal(packed.changes.length, 1);
+  // Another writer removes the card before this browser reconnects.
+  await write(store, project, base, { nodes: [base.nodes[1]] });
+  online = true;
+  const second = make(); second.load('shared');
+  await second.entries.get(url).promise;
+  const pending = second.entries.get(url);
+  assert.ok(pending.conflict, 'The deletion must surface as a conflict');
+  assert.equal(pending.local.nodes.find(n => n.id === 'a').text, 'Offline work');
+  await second.resolve(url, 'local');
+  const result = await api(url);
+  assert.equal(result.nodes.find(n => n.id === 'a').text, 'Offline work');
+  assert.equal(second.entries.size, 0);
+});

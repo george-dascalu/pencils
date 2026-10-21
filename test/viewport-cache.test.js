@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { viewportCache } from "../public/viewport-cache.js";
+import { detailLevel, viewportCache } from "../public/viewport-cache.js";
 const node = (id, x, y = 0) => ({ id, x, y, w: 80, h: 80 });
 const options = (overrides = {}) => ({
   key: "a",
@@ -9,6 +9,20 @@ const options = (overrides = {}) => ({
   height: 600,
   now: 0,
   ...overrides,
+});
+test("zoom detail does not thrash at the bitmap boundary and resets per board", () => {
+  const level = detailLevel();
+  assert.equal(level("a", 0.1), 0);
+  for (const z of [0.115, 0.125, 0.119, 0.13]) assert.equal(level("a", z), 0);
+  assert.equal(level("a", 0.14), 1);
+  for (const z of [0.24, 0.125, 0.115, 0.13]) assert.equal(level("a", z), 1);
+  assert.equal(level("a", 0.10), 0);
+  assert.equal(level("b", 0.125), 1);
+  assert.equal(level("b", 0.42), 2);
+  assert.equal(level("b", 0.39), 2);
+  assert.equal(level("b", 0.35), 1);
+  assert.equal(level("b", 0.5), 2);
+  assert.equal(level("b", 0.001), 0);
 });
 test("viewport preloads neighbours beyond the screen", () => {
   const cache = viewportCache();

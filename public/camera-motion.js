@@ -37,7 +37,7 @@ export function smoothZoom({
   }
   function zoom(multiplier, x, y) {
     const c = camera();
-    target = Math.min(3, Math.max(0.15, (target ?? c.z) * multiplier));
+    target = Math.min(3, Math.max(0.001, (target ?? c.z) * multiplier));
     anchor = { x, y, worldX: (x - c.x) / c.z, worldY: (y - c.y) / c.z };
     if (reduced()) {
       apply({

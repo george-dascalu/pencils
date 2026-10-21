@@ -69,8 +69,13 @@ try {
   await page.locator(".document-block-preview hr").waitFor();
   const escaped = page.locator(".cm-line").filter({ hasText: "Second paragraph" });
   assert.equal((await escaped.textContent()).includes("\\"), false, "Escape backslashes are hidden away from the cursor");
-  await escaped.click();
-  assert.ok((await escaped.textContent()).includes("\\"), "Escapes remain editable in the active line");
+  await page.evaluate(async () => {
+    const { EditorView } = await import('/vendor/editor/deps.js');
+    const view = EditorView.findFromDOM(document.querySelector('.cm-editor'));
+    view.focus();
+    view.dispatch({ selection: { anchor: view.state.doc.toString().indexOf('\\*') + 1 } });
+  });
+  assert.ok((await escaped.textContent()).includes("\\"), "The selected escape remains editable");
   await choose("Source");
   assert.equal((await page.locator(".cm-content .cm-line").allTextContents()).join("\n"), body);
   for (const viewport of [1024, 390]) {

@@ -1,5 +1,6 @@
+import { documentSearchPanel } from "./document-search.js";
 import {
-  EditorState, EditorSelection, StateField, Compartment, EditorView, Decoration, WidgetType,
+  EditorState, EditorSelection, StateEffect, StateField, Compartment, EditorView, Decoration, WidgetType,
   keymap, placeholder, drawSelection, highlightActiveLine, lineNumbers,
   defaultKeymap, history, historyKeymap, indentWithTab, undo, redo,
   syntaxTree, syntaxHighlighting, HighlightStyle, tags, foldGutter, foldKeymap, bracketMatching,
@@ -7,33 +8,70 @@ import {
   autocompletion, completionKeymap,
 } from "/vendor/editor/deps.js";
 import { documentReference } from "./document-model.js";
+import { editableDocumentComponent } from "./document-components.js";
 
-export function markdownDocumentEditor({ parent, text, mode = "live", renderer, documents, onChange, onError, onLink }) {
+export function markdownDocumentEditor({ parent, text, mode = "live", renderer, documents, onChange, onError, onLink, icon }) {
   const presentation = new Compartment();
-  let view, alive = true;
-  const active = (state, from, to) => state.selection.ranges.some(r =>
-    state.doc.lineAt(r.from).from <= to && state.doc.lineAt(r.to).to >= from);
+  let view, alive = true, focusedComponent = null;
+  const hoverEffect = StateEffect.define();
+  const focusEffect = StateEffect.define();
+  const revealField = StateField.define({
+    create: () => ({ hover: null, focused: false }),
+    update(value, tr) {
+      let { hover, focused } = value;
+      if (tr.docChanged && hover) hover = { from: tr.changes.mapPos(hover.from), to: tr.changes.mapPos(hover.to) };
+      for (const effect of tr.effects) {
+        if (effect.is(hoverEffect)) hover = effect.value;
+        if (effect.is(focusEffect)) focused = effect.value;
+      }
+      return { hover, focused };
+    },
+  });
+  let hoverTimer;
+  const active = (state, from, to) => {
+    const { hover, focused } = state.field(revealField);
+    return (focused && state.selection.ranges.some(r => r.from <= to && r.to >= from)) ||
+      (hover && hover.from < to && hover.to > from);
+  };
   function hydrate(element) {
     if (element.querySelector("[data-document-diagram]"))
       import("/vendor/editor/diagrams.js").then(m => alive && m.renderDiagrams(element)).catch(() => {});
   }
   class Preview extends WidgetType {
-    constructor(raw, from, block = false) { super(); this.raw = raw; this.from = from; this.block = block; }
-    eq(other) { return this.raw === other.raw && this.from === other.from && this.block === other.block; }
+    constructor(raw, from, block = false, kind = null) { super(); this.raw = raw; this.from = from; this.block = block; this.kind = kind; }
+    eq(other) { return this.raw === other.raw && this.from === other.from && this.block === other.block && this.kind === other.kind; }
+    updateDOM(element) {
+      return element.dataset.componentType === this.kind &&
+        !!element.documentComponent?.update(this.from, this.raw);
+    }
     toDOM(editor) {
       const element = document.createElement(this.block ? "div" : "span");
       element.className = this.block ? "document-block-preview document-prose" : "document-inline-preview";
       element.innerHTML = renderer.render(this.raw, !this.block);
+      if (["table", "blockquote", "code", "documentMathBlock", "html"].includes(this.kind)) {
+        editableDocumentComponent({
+          element, raw: this.raw, from: this.from, kind: this.kind, editor, renderer, onError, hydrate, icon, onLink,
+          onSearch: () => openSearchPanel(editor),
+          onFocus: component => { focusedComponent = component; },
+          history: backwards => backwards ? redo(editor) : undo(editor),
+        });
+      } else if (this.block) {
+        element.addEventListener("click", event => {
+          const link = event.target.closest("[data-document-ref]");
+          if (link) { event.preventDefault(); onLink(link.dataset.documentRef); }
+        });
+      } else {
       element.addEventListener("mousedown", e => {
         if (e.target.closest("a,button,input,summary")) return;
         e.preventDefault();
         editor.dispatch({ selection: { anchor: this.from }, scrollIntoView: true });
         editor.focus();
       });
+      }
       hydrate(element);
       return element;
     }
-    ignoreEvent() { return false; }
+    ignoreEvent() { return this.block; }
   }
   class Checkbox extends WidgetType {
     constructor(checked, from) { super(); this.checked = checked; this.from = from; }
@@ -50,7 +88,7 @@ export function markdownDocumentEditor({ parent, text, mode = "live", renderer, 
   }
   const previewField = StateField.define({
     create: state => decorate(state),
-    update: (value, tr) => tr.docChanged || tr.selection || tr.reconfigured || syntaxTree(tr.state) !== syntaxTree(tr.startState) ? decorate(tr.state) : value,
+    update: (value, tr) => tr.docChanged || tr.selection || tr.reconfigured || tr.effects.some(e => e.is(hoverEffect) || e.is(focusEffect)) || syntaxTree(tr.state) !== syntaxTree(tr.startState) ? decorate(tr.state) : value,
     provide: field => EditorView.decorations.from(field),
   });
   function decorate(state) {
@@ -63,14 +101,14 @@ export function markdownDocumentEditor({ parent, text, mode = "live", renderer, 
       offset = to;
       if (["code", "table", "blockquote", "documentMathBlock", "html", "hr"].includes(token.type) ||
           token.type === "paragraph" && /^!\[\[[^\]\n]+\]\]\s*$/.test(token.raw)) {
-        if (!active(state, from, Math.max(from, to - 1))) {
+        {
           let end = to;
           while (end > from && source[end - 1] === "\n") end--;
           if (end > from) {
-            ranges.push(Decoration.replace({ widget: new Preview(token.raw, from, true), block: true }).range(from, end));
+            ranges.push(Decoration.replace({ widget: new Preview(token.raw, from, true, token.type), block: true }).range(from, end));
             blocked.push([from, to]);
           }
-        } else if (token.type === "code") blocked.push([from, to]);
+        }
       }
     }
     const hidden = (from, to) => blocked.some(([a, b]) => from < b && to > a);
@@ -82,7 +120,10 @@ export function markdownDocumentEditor({ parent, text, mode = "live", renderer, 
           const level = Number(name.slice(-1)) || 1;
           ranges.push(Decoration.line({ class: `document-heading-${level}` }).range(state.doc.lineAt(node.from).from));
         }
-        if (active(state, node.from, node.to)) return;
+        // Reveal delimiters for this inline span only. A caret elsewhere in the
+        // same paragraph leaves checkboxes, links and other formatting rendered.
+        const span = ["EmphasisMark", "StrikethroughMark", "CodeMark"].includes(name) ? node.node.parent : node;
+        if (active(state, span.from, span.to)) return;
         if (name === "Escape" && source[node.from] === "\\")
           ranges.push(Decoration.replace({}).range(node.from, node.from + 1));
         if (["HeaderMark", "EmphasisMark", "StrikethroughMark", "CodeMark"].includes(name))
@@ -137,7 +178,7 @@ export function markdownDocumentEditor({ parent, text, mode = "live", renderer, 
     state: EditorState.create({
       doc: text,
       extensions: [
-        history(), drawSelection(), bracketMatching(), EditorView.lineWrapping,
+        revealField, history(), drawSelection(), bracketMatching(), EditorView.lineWrapping,
         markdown({ base: markdownLanguage, codeLanguages: languages }), syntaxHighlighting(HighlightStyle.define([
           { tag: tags.heading, fontWeight: "650", color: "var(--ink)" },
           { tag: tags.strong, fontWeight: "700" },
@@ -149,7 +190,7 @@ export function markdownDocumentEditor({ parent, text, mode = "live", renderer, 
           { tag: [tags.comment, tags.processingInstruction, tags.meta], color: "var(--muted)" },
         ])),
         foldGutter(), autocompletion({ override: [completion] }),
-        search({ top: true }),
+        search({ top: true, createPanel: editor => documentSearchPanel(editor, icon) }),
         keymap.of([
           shortcut("Mod-b", "bold"), shortcut("Mod-i", "italic"), shortcut("Mod-k", "link"),
           ...completionKeymap, ...markdownKeymap, ...defaultKeymap, ...historyKeymap,
@@ -164,6 +205,26 @@ export function markdownDocumentEditor({ parent, text, mode = "live", renderer, 
         }),
         EditorView.updateListener.of(update => { if (update.docChanged) onChange(update.state.doc.toString()); }),
         EditorView.domEventHandlers({
+          focusin(event) {
+            view.dispatch({ effects: focusEffect.of(true) });
+            if (!event.target.closest(".document-editable-component")) focusedComponent = null;
+          },
+          focusout() { view.dispatch({ effects: focusEffect.of(false) }); },
+          mousemove(event) {
+            if (mode !== "live" || !event.target.closest(".cm-line")) return;
+            const pos = view.posAtCoords({ x: event.clientX, y: event.clientY });
+            if (pos == null) return;
+            const word = view.state.wordAt(pos), previous = view.state.field(revealField).hover;
+            if (previous && previous.from <= pos && previous.to >= pos) return;
+            clearTimeout(hoverTimer);
+            hoverTimer = setTimeout(() => {
+              if (alive) view.dispatch({ effects: hoverEffect.of(word ? { from: word.from, to: word.to } : null) });
+            }, 80);
+          },
+          mouseleave() {
+            clearTimeout(hoverTimer);
+            if (view.state.field(revealField).hover) view.dispatch({ effects: hoverEffect.of(null) });
+          },
           click(event) {
             const link = event.target.closest("[data-document-ref]");
             if (link) { event.preventDefault(); onLink(link.dataset.documentRef); return true; }
@@ -176,6 +237,7 @@ export function markdownDocumentEditor({ parent, text, mode = "live", renderer, 
   function format(command) {
     if (command === "undo") return undo(view);
     if (command === "redo") return redo(view);
+    if (focusedComponent?.element.isConnected && focusedComponent.format(command)) return;
     const range = view.state.selection.main;
     const selected = view.state.sliceDoc(range.from, range.to);
     const wraps = { bold: ["**", "**"], italic: ["*", "*"], strike: ["~~", "~~"], highlight: ["==", "=="], code: ["`", "`"], link: ["[", "](https://)"], wiki: ["[[", "]]"], math: ["$", "$"] };
@@ -225,8 +287,11 @@ export function markdownDocumentEditor({ parent, text, mode = "live", renderer, 
       const anchor = Math.max(0, Math.min(from, view.state.doc.length));
       view.dispatch({ selection: EditorSelection.cursor(anchor), scrollIntoView: true }); view.focus();
     },
-    insert(value) { view.dispatch(view.state.replaceSelection(value)); view.focus(); },
-    destroy() { alive = false; view.destroy(); },
-    flush() {},
+    insert(value) {
+      if (focusedComponent?.element.isConnected && focusedComponent.insert(value)) return;
+      view.dispatch(view.state.replaceSelection(value)); view.focus();
+    },
+    destroy() { alive = false; clearTimeout(hoverTimer); view.destroy(); },
+    flush() { if (focusedComponent?.element.isConnected) focusedComponent.commit(); },
   };
 }

@@ -225,5 +225,9 @@ vault/*
 vault/.*
 !vault/.gitkeep
 artifacts/
+server/http/**/*.js
+server/http/**/*.js.map
 playwright-report/
 test-results/
+
+.release-backups/

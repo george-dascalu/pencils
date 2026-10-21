@@ -1,3 +1,4 @@
+import { boardScene, paintOverviewEdges } from "./board-scene.js";
 import { resizeTaskCard, taskCardHeight } from "./task-card-layout.js";
 import { priorityOptions, priorityLabel, defaultPriority } from "./task-priority.js";
 import { taskColorAttributes } from "./task-colors.js";
@@ -14,6 +15,7 @@ import { dependencyStyle } from "./dependency-style.js";
 import { edgeDependency } from "./dependency-model.js";
 import { draftTaskData, validDraftTask } from "./draft-task.js";
 import { boardComments } from "./board-comments.js";
+import { taskDateEditor } from "./task-date-editor.js";
 import { attachmentPreview } from "./attachment-preview.js";
 import { assigneeOptions, assigneeHint, projectPeople } from "./teams.js";
 import {
@@ -22,7 +24,7 @@ import {
   statusLabel,
   canTransition,
 } from "./workflow-model.js";
-import { viewportCache, viewportRect } from "./viewport-cache.js";
+import { detailLevel, viewportCache, viewportRect } from "./viewport-cache.js";
 import { boardSession } from "./board-session.js";
 import { paintObjectGeometry } from "./object-geometry.js";
 import { timelineHTML } from "./task-timeline.js";
@@ -47,7 +49,6 @@ import { connectorTarget, connectorPreview } from "./connector-drag.js";
 import {
   placeholder,
   defaultText,
-  markNodeOverflow,
   isTaskNote,
   nodeMinimum,
   nodeFill,
@@ -134,7 +135,7 @@ export function canvasPro(ctx, basic) {
     localStorage.getItem("pencils:participant") ||
     `Guest ${sync.client.slice(-4)}`;
   const btn = (action, text, extra = "") =>
-    `<button type="button" class="button small" data-pro="${action}" ${extra}>${text}</button>`;
+    `<button type="button" class="button small${action === "collapse" ? " icon-button" : ""}" data-pro="${action}" ${extra}>${text}</button>`;
   const disclosure = (n) => btn("task-collapse", icon("chevron"),
     `data-id="${esc(n.id)}" aria-label="${n.taskCollapsed ? "Expand" : "Collapse"} task description" title="${n.taskCollapsed ? "Expand" : "Collapse"} description" aria-expanded="${!n.taskCollapsed}" ${n.locked ? "disabled" : ""}`);
   const input = (name, label, value = "", extra = "") =>
@@ -143,11 +144,17 @@ export function canvasPro(ctx, basic) {
       : `<label class="field">${label}<input name="${name}" value="${esc(value)}" ${extra}></label>`;
   const select = (name, label, values, value) =>
     `<label class="field">${label}<select name="${name}">${values.map((v) => `<option value="${esc(v)}" ${v === value ? "selected" : ""}>${esc(v)}</option>`).join("")}</select></label>`;
-  function rebuild(b = board()) {
+  let scene = null, sceneBoard = null, sceneNodes = null, sceneEdges = null,
+    scenePresenting = null, mapImage = null, bitmapEdges = [], detailedEdges = new Set(), edgeDetailPending = false;
+  const zoomDetail = detailLevel(), parkedDetails = new Map();
+  const detail = () => zoomDetail(`${state.project?.id}:${board()?.id}`, state.camera.z);
+  function rebuild(b = board(), force = true) {
     if (!b) return;
-    index = new Map(b.nodes.map((n) => [n.id, n]));
-    parents = frameParents(b.nodes);
-    hidden = presenting >= 0 ? new Set() : hiddenByFrame(b.nodes, parents);
+    if (!force && sceneBoard === b && sceneNodes === b.nodes && sceneEdges === b.edges && scenePresenting === presenting) return;
+    parkedDetails.clear();
+    scene = boardScene(b, presenting >= 0);
+    sceneBoard = b; sceneNodes = b.nodes; sceneEdges = b.edges; scenePresenting = presenting;
+    index = scene.nodes; parents = scene.parents; hidden = scene.hidden; mapImage = null;
   }
   const viewport = viewportCache();
   let viewportCleanup = null;
@@ -161,12 +168,10 @@ export function canvasPro(ctx, basic) {
     );
   }
   function visible(b = board(), { limit = true } = {}) {
-    rebuild(b);
+    rebuild(b, false);
     if (!limit) {
       const r = rect();
-      return b.nodes.filter(
-        (n) => !hidden.has(n.id) && (selected.has(n.id) || intersects(n, r)),
-      );
+      return scene.spatial.search(r).filter(n => !hidden.has(n.id));
     }
     const canvas = $("#canvas");
     return viewport.choose(b.nodes, {
@@ -176,48 +181,61 @@ export function canvasPro(ctx, basic) {
       height: canvas?.clientHeight || 700,
       selected,
       hidden,
+      spatial: scene.spatial,
+      detailBudget: detail() === 0 ? Math.min(24, selected.size) : detail() === 1 ? 80 : 240,
       now: performance.now(),
     });
   }
 
-  function effectiveNode(id) {
-    let n = index.get(id);
-    const seen = new Set();
-    while (n && hidden.has(n.id) && !seen.has(n.id)) {
-      seen.add(n.id);
-      n = index.get(parents.get(n.id));
-    }
-    return n?.collapsed && presenting < 0 ? { ...n, h: 48 } : n;
-  }
-  function edges(b = board(), exporting = false) {
+  function effectiveNode(id) { return scene?.effective(id); }
+  function edges(b = board(), exporting = false, cameraOnly = false) {
     if (!b) return "";
-    index = new Map(b.nodes.map((n) => [n.id, n]));
+    rebuild(b, !cameraOnly);
     const r = rect();
     const taskMap = new Map(state.tasks.map((task) => [task.id, task]));
     let content = "";
-    for (const e of b.edges) {
+    const candidates = exporting ? b.edges.map(edge => {
+      const a = index.get(edge.from), c = index.get(edge.to);
+      return a && c ? { id: edge.id, edge, a, b: c, ...bounds([a,c]) } : null;
+    }).filter(Boolean) : scene.edges.search(r);
+    let detailed = candidates;
+    if (!exporting) {
+      const selectedIDs = new Set([...basic.selectedEdges, state.selectedEdge].filter(Boolean));
+      const connected = entry => selected.has(entry.a.id) || selected.has(entry.b.id);
+      const budget = detail() === 0 ? selectedIDs.size : 240;
+      const cx = (r.x + r.w / 2), cy = (r.y + r.h / 2);
+      const rank = e => selectedIDs.has(e.id) ? -2e20 : connected(e) ? -1e20 : (e.a.x - cx) ** 2 + (e.a.y - cy) ** 2;
+      detailed = budget === 0 ? [] : candidates.length > budget ? [...candidates].sort((a,b) => rank(a) - rank(b)).slice(0, Math.max(budget, selectedIDs.size)) : candidates;
+      edgeDetailPending = false;
+      if (cameraOnly) {
+        // Exact connector routing and SVG labels can be as costly as new cards.
+        // Keep the remaining connectors visible in the bitmap until their turn.
+        const pending = detailed.filter(entry => !detailedEdges.has(entry.id)).sort((a, b) => rank(a) - rank(b));
+        const promote = new Set(pending.slice(0, 8).map(entry => entry.id));
+        const ready = detailed.filter(entry => detailedEdges.has(entry.id) || promote.has(entry.id) || selectedIDs.has(entry.id));
+        edgeDetailPending = ready.length < detailed.length;
+        detailed = ready;
+      }
+      detailedEdges = new Set(detailed.map(e => e.id));
+      bitmapEdges = candidates.filter(e => !detailedEdges.has(e.id));
+    }
+    for (const entry of detailed) {
+      const e = entry.edge;
       const a = exporting ? index.get(e.from) : effectiveNode(e.from),
         c = exporting ? index.get(e.to) : effectiveNode(e.to);
       if (!a || !c || a.id === c.id) continue;
-      if (!exporting && !intersects(bounds([a, c]), r)) continue;
+      if (!exporting && !intersects(entry, r)) continue;
       const dependency = edgeDependency(b, e, taskMap, index);
       const appearance = dependency.active
         ? { ...e, ...dependencyStyle(b, state.project) }
         : e;
-      const p = routeEdge(e, a, c, b.nodes),
+      const p = exporting ? routeEdge(e, a, c, scene.spatial.search(entry)) : { ...scene.route(entry) },
         color = palette[appearance.color] || appearance.color || "#78906f";
       if (e.lineJumps && ["straight", "elbow"].includes(e.routing)) {
-        const routes = b.edges
-          .filter(
-            (other) =>
-              other.id !== e.id &&
-              ["straight", "elbow"].includes(other.routing),
-          )
-          .map((other) => {
-            const start = index.get(other.from),
-              end = index.get(other.to);
-            return start && end ? routeEdge(other, start, end, b.nodes).points : [];
-          });
+        const routes = scene.edges.search(entry)
+          .filter(other => other.id !== e.id && ["straight", "elbow"].includes(other.edge.routing))
+          .slice(0, exporting ? Infinity : 240)
+          .map(other => scene.route(other).points);
         p.d = lineJumps(p.points, routes);
       }
       const edgeLabel = dependency.active
@@ -404,10 +422,22 @@ export function canvasPro(ctx, basic) {
     return `<label class="canvas-task-priority priority ${esc(data.priority || "none")}" ${taskColorAttributes(state, "priority", data.priority)} title="Priority: ${esc(priorityLabel(data.priority || "none"))}">${icon(`priority-${data.priority || "none"}`)}<select data-canvas-task-field="priority" ${data.source?"disabled":""} ${attributes} aria-label="Priority for ${esc(data.title)}">${priorityOptions.map((value) => `<option value="${value}" ${value === (data.priority || "none") ? "selected" : ""}>${priorityLabel(value)}</option>`).join("")}</select></label>`;
   }
   function cardAssignee(data, attributes) {
-    return `<select class="canvas-task-assignee" ${taskColorAttributes(state, "assignee", data.assignee)} data-canvas-task-field="assignee" ${data.source?"disabled":""} ${attributes} aria-label="Assignee for ${esc(data.title)}" title="${esc(assigneeHint(state) || data.assignee || "Unassigned")}">${assigneeOptions(state, data.assignee, esc)}</select>`;
+    return `<label class="canvas-task-assignee" title="${esc(data.assignee || "Unassigned")}">${ctx.assigneeHTML(data)}<select ${taskColorAttributes(state, "assignee", data.assignee)} data-canvas-task-field="assignee" ${data.source?"disabled":""} ${attributes} aria-label="Assignee for ${esc(data.title)}" title="${esc(assigneeHint(state) || data.assignee || "Unassigned")}">${assigneeOptions(state, data.assignee, esc)}</select></label>`;
+  }
+  const cardDates = taskDateEditor({ ...ctx, patchTask: async (id, changes) => {
+    await patchTask(id, changes, false);
+    enhance();
+  } });
+  const cardDateFormat = new Intl.DateTimeFormat(undefined, { day: "numeric", month: "short" });
+  function cardEndDate(data, node, overdue) {
+    const date = data.due ? cardDateFormat.format(new Date(`${data.due}T12:00:00`)) : "End date";
+    const label = `End date: ${data.due || "Not set"}${overdue ? " · Overdue" : ""}`;
+    return `<button type="button" class="button small canvas-task-due" data-pro="task-dates" data-id="${esc(node.id)}" data-task="${esc(data.id)}" aria-label="${esc(label)} for ${esc(data.title)}" title="${esc(label)}" aria-haspopup="dialog" aria-expanded="false">${icon("calendar")}<span>${esc(date)}</span></button>`;
   }
   function enhance(only = null) {
     if (!board()) return;
+    // Task/note changes may not rebuild board geometry. Never revive stale cards.
+    if (!only) parkedDetails.clear();
     const byTask = new Map(state.tasks.map((t) => [t.id, t]));
     for (const el of $$(".board-node")) {
       const n = index.get(el.dataset.node);
@@ -451,7 +481,7 @@ export function canvasPro(ctx, basic) {
       if (n.type === "draft") {
         const d = draftTaskData(n),
           count = n.comments?.filter((c) => !c.deleted).length || 0;
-        el.innerHTML = `<div class="live-card-heading"><span class="canvas-task-type" role="img" aria-label="Draft task" title="Draft task">${icon("pencil")}</span><strong class="task-title">${esc(d.title)}</strong><div class="live-card-actions">${btn("convert", icon("task"), `data-id="${esc(n.id)}" aria-label="Finalise task" title="Finalise task" ${n.locked ? "disabled" : ""}`)}${disclosure(n)}${btn("comments", icon("comment") + (count ? `<span class="task-comment-count">${count}</span>` : ""), `data-id="${esc(n.id)}" aria-label="Comments on ${esc(d.title)}"`)}${btn("draft-edit", "↗", `data-id="${esc(n.id)}" aria-label="Edit draft task" title="Edit draft task"`)}</div></div><div class="draft-task-meta"><span class="draft-task-badge">${icon("pencil")}Draft</span><span>${icon(d.type)}${esc(ctx.label(d.type))}</span>${cardPriority(d, `data-draft-node="${esc(n.id)}" ${n.locked ? "disabled" : ""}`)}${cardAssignee(d, `data-draft-node="${esc(n.id)}" ${n.locked ? "disabled" : ""}`)}</div><div class="canvas-markdown task-card-description" ${n.taskCollapsed ? "hidden" : ""}>${d.body ? markdown(d.body) : '<span class="is-placeholder">Add task notes…</span>'}</div>`;
+        el.innerHTML = `<div class="live-card-heading"><span class="canvas-task-type" role="img" aria-label="${esc(ctx.label(d.type))}" title="Draft · ${esc(ctx.label(d.type))}">${icon(d.type)}</span><strong class="task-title" title="${esc(d.title)}">${esc(d.title)}</strong><div class="live-card-actions">${btn("convert", icon("task"), `data-id="${esc(n.id)}" aria-label="Finalise task" title="Finalise task" ${n.locked ? "disabled" : ""}`)}${disclosure(n)}${btn("comments", icon("comment") + (count ? `<span class="task-comment-count">${count}</span>` : ""), `data-id="${esc(n.id)}" aria-label="Comments on ${esc(d.title)}"`)}${btn("draft-edit", "↗", `data-id="${esc(n.id)}" aria-label="Edit draft task" title="Edit draft task"`)}</div></div><div class="draft-task-meta"><span class="draft-task-badge">${icon("pencil")}Draft</span>${cardAssignee(d, `data-draft-node="${esc(n.id)}" ${n.locked ? "disabled" : ""}`)}${cardPriority(d, `data-draft-node="${esc(n.id)}" ${n.locked ? "disabled" : ""}`)}</div><div class="canvas-markdown task-card-description" ${n.taskCollapsed ? "hidden" : ""}>${d.body ? markdown(d.body) : '<span class="is-placeholder">Add task notes…</span>'}</div>`;
       } else if (n.type === "task" && !byTask.has(n.task)) {
         el.classList.remove("overdue", "blocked-task", "dimmed");
         el.setAttribute(
@@ -484,7 +514,7 @@ export function canvasPro(ctx, basic) {
         if (asNote) {
           el.innerHTML = `<div class="note-content ${section?.text ? "has-body" : ""}"><div class="note-title canvas-markdown" data-inline-title>${esc(t.title)}</div><div class="note-body node-text canvas-markdown">${section ? (section.text ? markdown(section.text) : "") : "<p>Heading or block not found.</p>"}</div></div>`;
         } else {
-          el.innerHTML = `<div class="live-card-heading"><span class="canvas-task-type" role="img" aria-label="${esc(ctx.label(t.type))}" title="${esc(ctx.label(t.type))}">${icon(t.type)}</span><strong class="task-title" data-inline-title>${esc(t.title)}</strong><div class="live-card-actions">${disclosure(n)}${btn("comments", icon("comment") + (commentCount ? `<span class="task-comment-count" aria-hidden="true">${commentCount}</span>` : ""), `data-id="${esc(n.id)}" aria-label="Comments on ${esc(t.title)}${commentCount ? ` (${commentCount})` : ""}" title="Comments${commentCount ? ` (${commentCount})` : ""}"`)}${btn("task-details", "↗", `data-task="${esc(t.id)}" aria-label="Open task details" title="Open task details"`)}</div></div><div class="live-card-state"><span class="canvas-task-key" title="${esc(t.key || t.id)} · ${esc(ctx.label(t.type))}">${esc(t.key || t.id)}</span>${cardPriority(t, `data-task="${esc(t.id)}"`)}<select class="canvas-task-status" ${taskColorAttributes(state, "status", t.status)} data-canvas-status="${esc(t.id)}" ${t.source?"disabled":""} aria-label="Task status" title="${esc(statusLabel(state.config, t.status))}">${nextStatuses(
+          el.innerHTML = `<div class="live-card-heading"><span class="canvas-task-identity"><span class="canvas-task-type" role="img" aria-label="${esc(ctx.label(t.type))}" title="${esc(ctx.label(t.type))}">${icon(t.type)}</span><span class="canvas-task-key" title="${esc(t.key || t.id)}">${esc(t.key || t.id)}</span></span><strong class="task-title" title="${esc(t.title)}" data-inline-title>${esc(t.title)}</strong><div class="live-card-actions">${disclosure(n)}${btn("comments", icon("comment") + (commentCount ? `<span class="task-comment-count" aria-hidden="true">${commentCount}</span>` : ""), `data-id="${esc(n.id)}" aria-label="Comments on ${esc(t.title)}${commentCount ? ` (${commentCount})` : ""}" title="Comments${commentCount ? ` (${commentCount})` : ""}"`)}${btn("task-details", "↗", `data-task="${esc(t.id)}" aria-label="Open task details" title="Open task details"`)}</div></div><div class="live-card-state">${cardAssignee(t, `data-task="${esc(t.id)}"`)}${cardPriority(t, `data-task="${esc(t.id)}"`)}<select class="canvas-task-status" ${taskColorAttributes(state, "status", t.status)} data-canvas-status="${esc(t.id)}" ${t.source?"disabled":""} aria-label="Task status" title="${esc(statusLabel(state.config, t.status))}">${nextStatuses(
             state.config,
             t.status,
           )
@@ -494,7 +524,7 @@ export function canvasPro(ctx, basic) {
             )
             .join(
               "",
-            )}</select>${cardAssignee(t, `data-task="${esc(t.id)}"`)}</div>${t.source?`<small class="source-badge">${esc(sourceLabel(t))} · Source fields are read-only</small>`:""}${flags.overdue || flags.blocked ? `<div class="canvas-task-flags">${flags.overdue ? "<b>Overdue</b>" : ""}${flags.blocked ? "<b>Blocked</b>" : ""}</div>` : ""}<div class="canvas-markdown task-card-description" ${n.taskCollapsed ? "hidden" : ""}>${section ? (section.text ? markdown(section.text) : '<span class="is-placeholder">Add task notes…</span>') : "<p>Heading or block not found.</p>"}</div>${n.subpath ? `<small class="embed-label">${esc(n.subpath)}</small>` : ""}`;
+            )}</select>${cardEndDate(t, n, flags.overdue)}</div>${t.source?`<small class="source-badge">${esc(sourceLabel(t))} · Source fields are read-only</small>`:""}${flags.blocked ? '<div class="canvas-task-flags"><b>Blocked</b></div>' : ""}<div class="canvas-markdown task-card-description" ${n.taskCollapsed ? "hidden" : ""}>${section ? (section.text ? markdown(section.text) : '<span class="is-placeholder">Add task notes…</span>') : "<p>Heading or block not found.</p>"}</div>${n.subpath ? `<small class="embed-label">${esc(n.subpath)}</small>` : ""}`;
         }
       } else if (n.type === "file") {
         const attachment = localAttachment(n);
@@ -577,13 +607,12 @@ export function canvasPro(ctx, basic) {
           "beforeend",
           btn(
             "collapse",
-            n.collapsed ? "＋" : "−",
+            icon(n.collapsed ? "plus" : "minus"),
             `data-id="${esc(n.id)}" aria-label="${n.collapsed ? "Expand" : "Collapse"} frame"`,
           ),
         );
     }
     basic.selection();
-    requestAnimationFrame(() => markNodeOverflow());
   }
   function selection() {
     $$(".canvas-edge").forEach((el) =>
@@ -875,29 +904,99 @@ export function canvasPro(ctx, basic) {
     const existing = new Map(
       $$(".board-node").map((el) => [el.dataset.node, el]),
     );
-    const added = new Set(
-      nodes.filter((n) => !existing.has(n.id)).map((n) => n.id),
-    );
-    for (const [id, el] of existing) if (!ids.has(id)) el.remove();
+    const canvas = $("#canvas"), world = $("#canvas-world");
+    const view = viewportRect(state.camera, canvas.clientWidth, canvas.clientHeight);
+    const rank = n => selected.has(n.id) ? -Infinity :
+      (intersects(n, view) ? 0 : 1e20) +
+      (n.x + n.w / 2 - view.x - view.w / 2) ** 2 +
+      (n.y + n.h / 2 - view.y - view.h / 2) ** 2;
+    const pending = nodes.filter(n => !existing.has(n.id)).sort((a, b) => rank(a) - rank(b));
+    // Bound each frame's card creation. Unbuilt cards remain on the bitmap layer.
+    const batch = pending.slice(0, 4), added = new Set(), restored = [];
+    for (const [id, el] of existing) if (!ids.has(id)) {
+      el.remove();
+      parkedDetails.delete(id);
+      parkedDetails.set(id, el);
+      if (parkedDetails.size > 80) parkedDetails.delete(parkedDetails.keys().next().value);
+    }
+    for (const n of batch) {
+      const cached = parkedDetails.get(n.id);
+      if (cached) {
+        parkedDetails.delete(n.id);
+        restored.push(cached);
+      } else added.add(n.id);
+    }
+    world.append(...restored);
     if (added.size) {
-      $("#canvas-world").insertAdjacentHTML(
+      world.insertAdjacentHTML(
         "beforeend",
-        nodes
+        batch
           .filter((n) => added.has(n.id))
           .map(ctx.nodeHTML)
           .join(""),
       );
       basic.enhanceBase(added);
       enhance(added);
+    } else if (restored.length) basic.selection();
+    const rendered = new Set([...existing.keys()].filter(id => ids.has(id)));
+    for (const n of batch) rendered.add(n.id);
+    if (batch.length) {
+      // Hydrate visible cards first, but keep the board's original stacking.
+      const mounted = new Map($$(".board-node").map(el => [el.dataset.node, el]));
+      const batchIDs = new Set(batch.map(n => n.id));
+      let next = null;
+      for (let i = nodes.length - 1; i >= 0; i--) {
+        const el = mounted.get(nodes[i].id);
+        if (!el) continue;
+        if (batchIDs.has(nodes[i].id) && el.nextElementSibling !== next)
+          world.insertBefore(el, next);
+        next = el;
+      }
     }
     const svg = $("#canvas-lines");
-    if (svg) renderCanvasEdges(svg, edges());
+    if (svg) renderCanvasEdges(svg, edges(board(), false, true));
     paintMap();
     paintPresence();
-    paintOverview(ids);
-    const label = $("#canvas-performance");
-    if (label)
-      label.textContent = `${board().nodes.length.toLocaleString()} objects · ${nodes.length} detailed · ${(performance.now() - started).toFixed(0)} ms`;
+    paintOverview(rendered);
+    // Keep diagnostics available to benchmarks without displaying them on the board.
+    Object.assign($("#canvas").dataset, {
+      objectCount: String(board().nodes.length),
+      detailedCount: String(rendered.size),
+      renderMs: (performance.now() - started).toFixed(0),
+    });
+    if ((pending.length > batch.length || edgeDetailPending) && !cameraFrame)
+      cameraFrame = requestAnimationFrame(reconcile);
+  }
+  function hitOverviewEdge(p) {
+    if (!scene || !bitmapEdges.length) return null;
+    const tolerance = 8 / state.camera.z, canvas = $("#canvas-overview"), g = canvas?.getContext("2d");
+    if (!g) return null;
+    const simple = state.camera.z < 0.12 || bitmapEdges.length > 2000;
+    const candidates = scene.edges.search({ x: p.x - tolerance, y: p.y - tolerance, w: tolerance * 2, h: tolerance * 2 });
+    g.save(); g.setTransform(1,0,0,1,0,0); g.lineWidth = tolerance * 2;
+    let hit = null;
+    for (const entry of candidates.reverse()) {
+      if (detailedEdges.has(entry.id)) continue;
+      let path;
+      if (simple) {
+        path = new Path2D(); path.moveTo(entry.a.x + entry.a.w / 2, entry.a.y + entry.a.h / 2);
+        path.lineTo(entry.b.x + entry.b.w / 2, entry.b.y + entry.b.h / 2);
+      } else { const route = scene.route(entry, false); route.bitmap ||= new Path2D(route.d); path = route.bitmap; }
+      if (g.isPointInStroke(path, p.x, p.y)) { hit = entry.id; break; }
+    }
+    g.restore(); return hit;
+  }
+  function hitOverview(p) {
+    rebuild(board(), false);
+    const hits = scene.spatial.search({ x: p.x, y: p.y, w: 0, h: 0 })
+      .filter(n => !hidden.has(n.id) && !["frame", "grid"].includes(n.type));
+    const n = hits.sort((a,b) => scene.spatial.order(b) - scene.spatial.order(a))[0];
+    if (n && !$( `[data-node="${CSS.escape(n.id)}"]` )) {
+      selected.clear(); selected.add(n.id); state.selectedNode = n.id;
+      reconcile();
+      return $(`[data-node="${CSS.escape(n.id)}"]`);
+    }
+    return null;
   }
   function camera() {
     commentPanel.position();
@@ -914,12 +1013,14 @@ export function canvasPro(ctx, basic) {
     const c = $("#canvas-overview"),
       canvas = $("#canvas");
     if (!c || !canvas) return;
-    c.width = canvas.clientWidth;
-    c.height = canvas.clientHeight;
+    if (c.width !== canvas.clientWidth || c.height !== canvas.clientHeight) {
+      c.width = canvas.clientWidth; c.height = canvas.clientHeight;
+    }
     const g = c.getContext("2d");
-    const r = rect(),
-      cam = state.camera;
-    for (const n of board().nodes)
+    g.clearRect(0, 0, c.width, c.height);
+    const r = rect(), cam = state.camera;
+    paintOverviewEdges(g, bitmapEdges, scene, cam);
+    for (const n of scene.spatial.search(r))
       if (!rendered.has(n.id) && !hidden.has(n.id) && intersects(n, r)) {
         g.fillStyle = nodeFill(n, "#dce5d8");
         g.fillRect(
@@ -929,7 +1030,7 @@ export function canvasPro(ctx, basic) {
           Math.max(2, (n.collapsed ? 48 : n.h) * cam.z),
         );
         g.strokeStyle = "#78906f";
-        g.strokeRect(
+        if (n.w * cam.z > 5) g.strokeRect(
           n.x * cam.z + cam.x,
           n.y * cam.z + cam.y,
           n.w * cam.z,
@@ -940,23 +1041,20 @@ export function canvasPro(ctx, basic) {
   function paintMap() {
     const el = $("#canvas-minimap canvas");
     if (!el || !board()) return;
-    const g = el.getContext("2d"),
-      box = bounds(board().nodes),
+    const g = el.getContext("2d"), box = scene.box,
       scale = Math.min(190 / Math.max(1, box.w), 115 / Math.max(1, box.h));
     el._map = { box, scale };
-    g.clearRect(0, 0, 200, 125);
-    g.fillStyle = "#fafbf7";
-    g.fillRect(0, 0, 200, 125);
-    for (const n of board().nodes)
-      if (!hidden.has(n.id)) {
-        g.fillStyle = nodeFill(n, "#a4b69a");
-        g.fillRect(
-          5 + (n.x - box.x) * scale,
-          5 + (n.y - box.y) * scale,
-          Math.max(2, n.w * scale),
-          Math.max(2, (n.collapsed ? 48 : n.h) * scale),
-        );
+    if (!mapImage) {
+      mapImage = document.createElement("canvas"); mapImage.width = 200; mapImage.height = 125;
+      const m = mapImage.getContext("2d");
+      m.fillStyle = "#fafbf7"; m.fillRect(0, 0, 200, 125);
+      for (const n of board().nodes) if (!hidden.has(n.id)) {
+        m.fillStyle = nodeFill(n, "#a4b69a");
+        m.fillRect(5 + (n.x - box.x) * scale, 5 + (n.y - box.y) * scale,
+          Math.max(1, n.w * scale), Math.max(1, (n.collapsed ? 48 : n.h) * scale));
       }
+    }
+    g.clearRect(0, 0, 200, 125); g.drawImage(mapImage, 0, 0);
     const canvas = $("#canvas"),
       c = state.camera;
     g.strokeStyle = "#35553d";
@@ -1004,7 +1102,7 @@ export function canvasPro(ctx, basic) {
   );
   function searchResults() {
     const el = $("#canvas-find-results");
-    if (!el) return;
+    if (!el || !searchOpen) return;
     const entries=board().nodes.map(n=>{
       const availability=boardTaskState(n,task(n.task),state.taskAvailability),
         title=task(n.task)?.title || availability?.title || n.draft?.title || n.text || n.file || n.type;
@@ -1431,7 +1529,7 @@ export function canvasPro(ctx, basic) {
         if (seen.has(f.id)) continue;
         seen.add(f.id);
         rows.push(
-          `<div class="outline-row ${depth ? "nested-frame-row" : ""}" data-frame-row="${esc(f.id)}" draggable="${!depth}" style="padding-left:${depth * 14}px">${btn("collapse", f.collapsed ? "＋" : "−", `data-id="${esc(f.id)}" aria-label="${f.collapsed ? "Expand" : "Collapse"} frame" ${f.locked ? "disabled" : ""}`)}${btn("find-result", `${frameThumbnail(f, board().nodes, esc)}<span class="frame-row-title">${esc(f.text || "Untitled frame")}</span><small>${depth ? "Nested · " : `${slides.indexOf(f.id) + 1} · `}${frameContents(board().nodes, f, parents).length} objects · ${Math.round(f.w)} × ${Math.round(f.h)}</small>`, `data-id="${esc(f.id)}"`)}${!depth ? btn("frame-up", "↑", `data-id="${esc(f.id)}" aria-label="Move frame earlier" ${slides.indexOf(f.id) === 0 ? "disabled" : ""}`) + btn("frame-down", "↓", `data-id="${esc(f.id)}" aria-label="Move frame later" ${slides.indexOf(f.id) === slides.length - 1 ? "disabled" : ""}`) : ""}</div>`,
+          `<div class="outline-row ${depth ? "nested-frame-row" : ""}" data-frame-row="${esc(f.id)}" draggable="${!depth}" style="padding-left:${depth * 14}px">${btn("collapse", icon(f.collapsed ? "plus" : "minus"), `data-id="${esc(f.id)}" aria-label="${f.collapsed ? "Expand" : "Collapse"} frame" ${f.locked ? "disabled" : ""}`)}${btn("find-result", `${frameThumbnail(f, board().nodes, esc)}<span class="frame-row-title">${esc(f.text || "Untitled frame")}</span><small>${depth ? "Nested · " : `${slides.indexOf(f.id) + 1} · `}${frameContents(board().nodes, f, parents).length} objects · ${Math.round(f.w)} × ${Math.round(f.h)}</small>`, `data-id="${esc(f.id)}"`)}${!depth ? btn("frame-up", "↑", `data-id="${esc(f.id)}" aria-label="Move frame earlier" ${slides.indexOf(f.id) === 0 ? "disabled" : ""}`) + btn("frame-down", "↓", `data-id="${esc(f.id)}" aria-label="Move frame later" ${slides.indexOf(f.id) === slides.length - 1 ? "disabled" : ""}`) : ""}</div>`,
         );
         visit(f.id, depth + 1, seen);
       }
@@ -1823,6 +1921,9 @@ export function canvasPro(ctx, basic) {
       outlineOpen = !outlineOpen;
       $("#canvas-outline")?.classList.toggle("hidden", !outlineOpen);
       outline();
+    } else if (action === "task-dates" && n?.type === "task") {
+      const nodeId = n.id;
+      cardDates.open(n.task, () => $(`[data-node="${CSS.escape(nodeId)}"] .canvas-task-due`));
     } else if (action === "task-collapse" && n && !n.locked) {
       const card = el.closest("[data-node]");
       const collapsed = !n.taskCollapsed;
@@ -3101,14 +3202,20 @@ export function canvasPro(ctx, basic) {
     for (const c of m.client) h = (h * 31 + c.charCodeAt(0)) % 360;
     return `hsl(${h} 42% 40%)`;
   };
+  const presenceMarkup = new WeakMap();
+  function updatePresenceMarkup(element, markup) {
+    if (presenceMarkup.get(element) === markup) return;
+    element.innerHTML = markup;
+    presenceMarkup.set(element, markup);
+  }
   function paintPresence() {
     const el = $("#canvas-presence"),
       layer = $("#canvas-cursors");
     if (!el || !layer) return;
     const others = members.filter((m) => m.client !== sync.client);
-    el.innerHTML = `${btn("participant", esc(name()))}<span>${others.length ? `${others.length + 1} here` : "Just you"}</span>${others.map((m) => `<span class="participant-chip" style="border-color:${memberColor(m)}" title="${esc(m.name)}">${esc(m.name.slice(0, 16))}</span>`).join("")}`;
+    updatePresenceMarkup(el, `${btn("participant", esc(name()))}<span>${others.length ? `${others.length + 1} here` : "Just you"}</span>${others.map((m) => `<span class="participant-chip" style="border-color:${memberColor(m)}" title="${esc(m.name)}">${esc(m.name.slice(0, 16))}</span>`).join("")}`);
     const c = state.camera;
-    layer.innerHTML = others
+    updatePresenceMarkup(layer, others
       .map(
         (m) =>
           `<div class="participant-cursor" style="left:${m.x * c.z + c.x}px;top:${m.y * c.z + c.y}px;color:${memberColor(m)}"><span>↖</span><label>${esc(m.name)}</label></div>${m.selection
@@ -3120,7 +3227,7 @@ export function canvasPro(ctx, basic) {
             })
             .join("")}`,
       )
-      .join("");
+      .join(""));
   }
   async function heartbeat() {
     if (heartbeatBusy) return;
@@ -3194,6 +3301,10 @@ export function canvasPro(ctx, basic) {
   });
   window.addEventListener("resize", camera);
   function beforeRender() {
+    parkedDetails.clear();
+    detailedEdges.clear();
+    edgeDetailPending = false;
+    sceneBoard = null;
     clearTimeout(viewportCleanup);
     if (cameraFrame) cancelAnimationFrame(cameraFrame);
     cameraFrame = null;
@@ -3217,6 +3328,8 @@ export function canvasPro(ctx, basic) {
     beforeRender,
     selection,
     visible,
+    hitOverview,
+    hitOverviewEdge,
     edges,
     camera,
     enhance,

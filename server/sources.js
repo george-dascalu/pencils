@@ -52,7 +52,18 @@ export class Sources {
     this.env = options.env || process.env;
     this.states = new Map();
     this.running = new Set();
+    this.operations = new Map();
     this.timer = null;
+  }
+  // Provider I/O is serialized per project, independently of the vault writer.
+  run(project, operation) {
+    const previous = this.operations.get(project) || Promise.resolve();
+    const work = previous.catch(() => {}).then(operation);
+    this.operations.set(project, work);
+    work.finally(() => {
+      if (this.operations.get(project) === work) this.operations.delete(project);
+    }).catch(() => {});
+    return work;
   }
   file(project) {
     return path.join(
@@ -402,6 +413,9 @@ export class Sources {
           ? JSON.stringify(body)
           : new URLSearchParams(body).toString(),
     });
+    return this.run(pending.project, async () => {
+      const account = (await this.auth.accounts()).find(u => u.username === pending.user);
+      if (!account?.admin) throw new Problem(403, "Source owner access was revoked.");
     const data = await this.load(pending.project),
       s = data.sources.find((s) => s.id === pending.id);
     if (!s) throw new Problem(404, "Source was disconnected during sign-in.");
@@ -413,6 +427,7 @@ export class Sources {
     s.last_error = null;
     await this.save(pending.project, data);
     return pending.project;
+    });
   }
   async token(s) {
     if (!s.credentials) throw new Problem(401, "Connect this source first.");
@@ -593,14 +608,19 @@ export class Sources {
       throw new Problem(e.status || 400, s.last_error);
     }
   }
-  async sync(project, id) {
+  async sync(project, id, commit = fn => this.store.mutate(fn)) {
     const key = `${project}/${id}`;
     if (this.running.has(key))
       throw new Problem(409, "This source is already syncing.");
     this.running.add(key);
     try {
-      const preview = await this.preview(project, id),
-        data = await this.load(project),
+      const configBefore = JSON.stringify((await this.store.read(this.store.file(project, "project"))).data.schema);
+      const preview = await this.preview(project, id);
+      // Fetch and conversion finish before taking the short, revision-checked vault transaction.
+      return await commit(async () => {
+      if (JSON.stringify((await this.store.read(this.store.file(project, "project"))).data.schema) !== configBefore)
+        throw new Problem(409, "Project fields changed during sync. Preview and sync again.");
+      const data = await this.load(project),
         s = data.sources.find((s) => s.id === id);
       if (!s) throw new Problem(404, "Source not found.");
       const existing = (await this.store.children(project, "tasks")).items,
@@ -703,6 +723,7 @@ export class Sources {
       s.retry_at = null;
       await this.save(project, data);
       return this.public(s);
+      });
     } finally {
       this.running.delete(key);
     }
@@ -915,9 +936,13 @@ export class Sources {
           s.status === "Reconnect required"
         )
           continue;
-        await this.store
-          .mutate(() => this.sync(project.id, s.id))
-          .catch(() => {});
+        await this.run(project.id, () => this.sync(project.id, s.id, fn => this.store.mutate(async () => {
+          const active = (await this.auth.accounts()).find(u => u.username === owner.username);
+          const current = (await this.store.read(this.store.file(project.id, "project"))).data;
+          if (!active || !this.auth.allow(active, current.organisation, true) || !sourceAccess(active, current))
+            throw new Problem(403, "Source owner access was revoked.");
+          return fn();
+        }))).catch(() => {});
       }
     }
   }

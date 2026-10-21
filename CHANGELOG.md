@@ -4,6 +4,140 @@ User-facing additions, changes and fixes, newest first. Dates use Europe/London 
 
 ## Unreleased
 
+## 0.18.11 — 2026-10-21
+
+### Changed
+
+- Project navigation and New task are centred together in the header. Narrower windows with the sidebar open place navigation on a centred second row to keep the side controls accessible.
+
+### Fixed
+
+- Zooming between bitmap previews and detailed board objects creates cards and connectors in small batches, with previews kept visible until details are ready. Nearby zoom reversals reuse rendered cards, and separate entry/exit thresholds prevent repeated switching at the boundary.
+- Zoom-dependent grid sizes update only grids; desktop zooming no longer recalculates unused touch-target sizes across every card. Touch controls retain their screen-sized targets.
+
+## 0.18.10 — 2026-10-21
+
+### Fixed
+
+- Panning rich task boards at lower zoom levels no longer triggers page-wide style recalculations. Layout now follows explicit view state, while unchanged zoom and participant controls stay intact.
+- Expanded boards continue to restore normal page scrolling when navigating away.
+
+## 0.18.9 — 2026-10-21
+
+### Changed
+
+- Overdue board cards show their end date in red instead of a separate “Overdue” label. The date tooltip and accessible label still identify overdue dates; completed tasks keep the normal date color.
+
+## 0.18.8 — 2026-10-21
+
+### Changed
+
+- Board cards have more space between their type/ID and title, with the decorative bottom-right overflow dots removed.
+- Card scrollbars are slim, rounded and themed. Scrolling overflowing card content no longer zooms the board.
+- The capacity popup shows only the object count out of 80,000.
+- Comments place compact timestamps at the bottom right, with the full date and time on hover. Author names share assignee colors.
+- Replies are grouped in collapsible threads with a quoted preview that jumps to the original comment. Nested replies stay readable without progressively narrowing the conversation.
+
+## 0.18.7 — 2026-10-21
+
+### Changed
+
+- Task cards stack their ID beneath the card type and keep assignee, priority, status and end date together on one row.
+- Assignee avatars match the height of the other card controls, including touch targets.
+- End dates use the task's due date and open the shared date editor. Narrow cards use a calendar icon with the date available in its tooltip.
+
+## 0.18.6 — 2026-10-21
+
+### Changed
+
+- Relationship rows align assignee, priority and status in consistent columns. Priorities use icons with hover labels and accessible names.
+- Narrow relationship panels place metadata on a second aligned row; long names and statuses stay within their columns.
+
+## 0.18.5 — 2026-10-21
+
+### Changed
+
+- Expand board uses a compact icon button with matching expand/restore icons, tooltips and accessible labels.
+
+## 0.18.4 — 2026-10-21
+
+### Changed
+
+- Board comments can be resized with the bottom-right grip or its arrow-key controls. The size is remembered, drafts survive closing, and the redundant task-name row is removed.
+- Comment formatting uses smaller icons on a single row, including on narrow screens.
+- Expanded task cards display document-style headings, emphasis, highlights, checklists, tables, quotes and code.
+
+### Fixed
+
+- Pasting Markdown into a rich text editor keeps its formatting instead of escaping its syntax. Typed headings, quotes and inline formatting also become rich text; explicitly escaped text and code stay literal.
+- Rich clipboard content retains formatting after sanitization, and highlights survive Markdown round trips.
+
+## 0.18.3 — 2026-10-21
+
+### Changed
+
+- Removed the board's bottom-left shortcut hints and rendering statistics.
+- Added a circular object-capacity gauge beside zoom controls, showing usage against 80,000 objects. Clicking it shows the exact count and distinguishes the gauge target from the existing 100,000-object maximum.
+- The gauge includes objects inside collapsed frames, updates after edits and undo, and supports keyboard and touch input. The minimap stays above navigation controls on small screens.
+
+## 0.18.2 — 2026-10-21
+
+### Changed
+
+- Task editors are wider, with actions above the title, an assignee avatar and paired start/due dates beside priority and status. Dividers separate metadata and description; the formatting toolbar fits one row at desktop width.
+- Board task cards use a single-line title above ID, assignee avatar, priority and status.
+- Comments support rich text formatting and Markdown, with reply and emoji picker icons beside a red delete button. Existing plain-text comments keep their original text.
+- Task history names changed fields and shows highlighted “− Before” and “+ After” values, including comments and reactions, without decorative dividers.
+- The header shows the app version and an update indicator when a newer deployment is available, replacing the local-server connection message.
+
+### Fixed
+
+- Frame expand and collapse controls use matching icons and equal square sizes.
+
+## 0.18.1 — 2026-10-21
+
+### Changed
+
+- Live preview reveals Markdown around the selected or hovered inline span, keeping the rest of the line rendered.
+- Document formatting sits on the left; Outline, grouped view modes, page width and Search sit on the right. Insert options have categories and icons.
+- Document search uses a compact panel on the right, with icon controls, matching close-button sizing, optional replacement controls and search options. Reading search stays in Reading mode.
+- Page versions is an icon in the document header before Document tools. The footer is a small corner word and character count; save problems still appear when action is needed.
+
+## 0.18.0 — 2026-10-21
+
+### Added
+
+- Boards accept 100,000 objects and 200,000 connectors, with larger native Canvas imports and a wider coordinate range.
+
+### Changed
+
+- Board navigation reuses spatial indexes and connector geometry. Dense and zoomed-out views use a lightweight overview with editable detail for selected objects; Fit can show much larger boards.
+- Board saves send guarded field changes, retaining concurrent-edit conflict handling, undo and compact browser recovery drafts. The vault continues to store portable JSON Canvas files.
+- Large operation bodies remain in vault history while activity responses show their metadata. Local undo snapshots are bounded by board size.
+
+
+## 0.17.0 — 2026-10-20
+
+### Added
+
+- Edit callout titles and content, table cells, quotes and code directly in Live preview without opening their Markdown source. Tables support adding rows and columns; math and diagrams have inline formula/code fields. Edits retain autosave and undo.
+
+### Changed
+
+- The backend now uses Fastify with a TypeScript HTTP layer and separate task, document and board services. Existing Markdown vaults and canvas files keep their formats.
+- Search and table queries run in a worker thread and update their index incrementally. Shared project reads reuse recent data, and ordinary task edits avoid unnecessary full-project scans.
+
+### Fixed
+
+- Slow provider fetches no longer hold up unrelated task saves. Source changes are still applied transactionally after fetching.
+- Successful saves preserve unrelated parsed-file caches, reducing delays when many people save at once.
+
+## 0.16.13 — 2026-10-20
+
+### Fixed
+
+- Find in document stays in Reading mode, highlighting rendered text with a match count and Previous/Next controls. Ctrl/⌘ F opens Reading search; Enter/Shift+Enter navigate matches and Escape closes search without changing the document.
+
 ## 0.16.12 — 2026-10-20
 
 ### Fixed

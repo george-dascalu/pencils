@@ -10,7 +10,6 @@ export function boardTaskEditor(
   const docked = !onBoard && existing;
   dialog.classList.toggle("project-task-editor", docked);
   const draft = dialog.querySelector("#task-form")?.dataset.draftNode;
-  const taskKey = dialog.querySelector(".task-key")?.textContent;
   dialog.setAttribute(
     "aria-label",
     draft ? "Draft task" : existing ? "Edit project task" : "New project task",
@@ -20,17 +19,17 @@ export function boardTaskEditor(
   close.setAttribute("aria-label", existing ? "Close task" : "Close new task");
   const heading = document.createElement("header");
   heading.className = "board-task-editor-heading dialog-head task-editor-head";
-  heading.innerHTML = `<button type="button" class="icon-button" data-task-list-back aria-label="Back to project tasks">${icon("arrow")}</button><strong class="sr-only">New task</strong>`;
-  if (draft)
-    heading.querySelector("strong").textContent =
-      draft === "new" ? "New draft task" : "Draft task";
-  else if (existing)
-    heading.querySelector("strong").textContent = taskKey || "Task";
   const oldHead = dialog.querySelector(".task-editor-head");
-  heading.append(dialog.querySelector(".task-identity-row"));
-  const actions = dialog.querySelector(".task-editor-actions");
-  if (actions) heading.append(actions);
-  heading.append(close);
+  while (oldHead.firstChild) heading.append(oldHead.firstChild);
+  const backControl = document.createElement('button');
+  backControl.type = 'button'; backControl.className = 'icon-button';
+  backControl.dataset.taskListBack = ''; backControl.setAttribute('aria-label', 'Back to project tasks');
+  backControl.title = 'Back to project tasks'; backControl.innerHTML = icon('arrow');
+  heading.querySelector('.task-editor-header-row').prepend(backControl);
+  const actions = heading.querySelector('.task-editor-actions');
+  if (actions) for (const selector of ['[data-feature=task-comments]', '[data-feature=task-history]', '[data-feature=task-duplicate]', '[data-feature=task-archive]', '[data-action=task-delete]']) {
+    const button = actions.querySelector(selector); if (button) actions.append(button);
+  }
   dialog.querySelector("#task-form").prepend(heading);
   oldHead.remove();
   dialog.querySelector(".form-status")?.remove();
@@ -42,7 +41,7 @@ export function boardTaskEditor(
   };
   const backButton = heading.querySelector("[data-task-list-back]");
   if (onBoard) backButton.addEventListener("click", back);
-  else backButton.remove();
+  else backButton.addEventListener("click", () => closeDialog(false, { confirmDirty: false }));
   const panes = document.createElement("div");
   panes.className = "task-mobile-panes";
   panes.setAttribute("role", "group");
@@ -92,10 +91,11 @@ export function boardTaskEditor(
     if (!surface) return;
     const r = surface.getBoundingClientRect();
     const besideTools = onBoard && r.width > 600;
+    const auxiliary = innerWidth >= 1100 && dialog.matches('.with-task-history,.with-task-comments') ? 312 : 0;
     const width = Math.min(
-      400,
-      innerWidth - 24,
-      r.width - (besideTools ? 90 : 24),
+      680,
+      innerWidth - 24 - auxiliary,
+      r.width - (besideTools ? 90 : 24) - auxiliary,
     );
     const left = Math.max(
       12,

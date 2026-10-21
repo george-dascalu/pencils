@@ -16,6 +16,14 @@ export function createMarkdown({ state, esc }) {
   parser.use({
     extensions: [
       {
+        name: "highlight", level: "inline", start: src => src.indexOf("=="),
+        tokenizer(src) {
+          const match = /^==([^=\n](?:[^\n]*?[^=\n])?)==/.exec(src);
+          if (match) return { type: "highlight", raw: match[0], tokens: this.lexer.inlineTokens(match[1]) };
+        },
+        renderer(token) { return `<mark>${this.parser.parseInline(token.tokens)}</mark>`; },
+      },
+      {
         name: "wikilink",
         level: "inline",
         start: (src) => src.indexOf("[["),

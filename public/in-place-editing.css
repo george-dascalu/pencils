@@ -98,18 +98,35 @@
   font-style: italic;
   font-weight: 400;
 }
-.board-node.content-truncated::after {
-  content: "…";
-  position: absolute;
-  bottom: 2px;
-  right: 12px;
-  font-size: 16px;
-  line-height: 16px;
-  padding: 0 4px;
-  background: var(--surface);
-  color: var(--muted);
-  border-radius: 4px;
-  pointer-events: none;
+/* Keep card scrollbars quiet, rounded and legible on each card's own fill. */
+.board-node { --card-scroll-thumb: color-mix(in srgb, currentColor 60%, transparent); }
+.board-node:is(:hover, :focus-within) { --card-scroll-thumb: color-mix(in srgb, currentColor 78%, transparent); }
+:where(.board-node, .board-node *) {
+  scrollbar-width: thin;
+  scrollbar-color: var(--card-scroll-thumb) transparent;
+}
+.board-node .task-card-description { scrollbar-gutter: stable; }
+@supports not (scrollbar-width: thin) {
+  :where(.board-node, .board-node *)::-webkit-scrollbar { width: 8px; height: 8px; }
+  :where(.board-node, .board-node *)::-webkit-scrollbar-track,
+  :where(.board-node, .board-node *)::-webkit-scrollbar-corner { background: transparent; }
+  :where(.board-node, .board-node *)::-webkit-scrollbar-thumb {
+    min-width: 24px;
+    min-height: 24px;
+    border: 2px solid transparent;
+    border-radius: 999px;
+    background: var(--card-scroll-thumb);
+    background-clip: padding-box;
+  }
+  :where(.board-node, .board-node *)::-webkit-scrollbar-thumb:hover { background-color: currentColor; }
+  :where(.board-node, .board-node *)::-webkit-scrollbar-button { display: none; }
+  @media (pointer: coarse) {
+    :where(.board-node, .board-node *)::-webkit-scrollbar { width: 12px; height: 12px; }
+  }
+}
+@media (forced-colors: active) {
+  :where(.board-node, .board-node *) { scrollbar-color: auto; }
+  :where(.board-node, .board-node *)::-webkit-scrollbar-thumb { background-color: CanvasText; }
 }
 .board-node.inline-editing {
   min-width: 0;

@@ -1,132 +1,149 @@
 import fs from "node:fs/promises";
 import path from "node:path";
-import { DatabaseSync } from "node:sqlite";
-import { tablePreferences, tableResult } from "../public/table-model.js";
-import { Problem } from "./problem.js";
+import { Worker } from "node:worker_threads";
+
 export class RecordIndex {
   constructor(store) {
     this.store = store;
-    this.db = null;
+    this.worker = null;
+    this.opening = null;
+    this.closing = null;
+    this.pending = new Map();
+    this.sequence = 0;
     this.versions = new Map();
     this.queue = Promise.resolve();
     this.lastRebuild = null;
   }
   async open() {
-    if (this.db) return;
-    const file = path.join(this.store.root, ".pencils", "index.sqlite");
-    await this.store.safe(file);
-    await fs.mkdir(path.dirname(file), { recursive: true });
-    this.db = new DatabaseSync(file);
-    await fs.chmod(file, 0o600);
-    this.db.exec(
-      `PRAGMA journal_mode=DELETE; CREATE TABLE IF NOT EXISTS metadata(key TEXT PRIMARY KEY,value TEXT);CREATE TABLE IF NOT EXISTS tasks(project TEXT NOT NULL,id TEXT NOT NULL,title TEXT NOT NULL,status TEXT,due TEXT,record TEXT NOT NULL,PRIMARY KEY(project,id));CREATE INDEX IF NOT EXISTS task_status ON tasks(project,status);CREATE INDEX IF NOT EXISTS task_due ON tasks(project,due);CREATE VIRTUAL TABLE IF NOT EXISTS task_search USING fts5(project UNINDEXED,id UNINDEXED,content);`,
-    );
-    this.db
-      .prepare("INSERT OR REPLACE INTO metadata VALUES (?,?)")
-      .run("schema", "1");
+    if (this.opening) return this.opening;
+    this.opening = (async () => {
+      await this.closing;
+      const file = path.join(this.store.root, ".pencils", "index.sqlite");
+      await this.store.safe(file);
+      await fs.mkdir(path.dirname(file), { recursive: true });
+      const worker = (this.worker = new Worker(
+        new URL("./index-worker.js", import.meta.url),
+        { workerData: { file } },
+      ));
+      await new Promise((resolve, reject) => {
+        worker.on("message", (message) => {
+          if (message.ready) {
+            worker.unref();
+            resolve();
+            return;
+          }
+          const pending = this.pending.get(message.id);
+          if (!pending) return;
+          this.pending.delete(message.id);
+          message.error
+            ? pending.reject(new Error(message.error))
+            : pending.resolve(message.result);
+          if (!this.pending.size) worker.unref();
+        });
+        const failed = (error) => {
+          reject(error);
+          if (this.worker !== worker) return;
+          for (const pending of this.pending.values()) pending.reject(error);
+          this.pending.clear();
+          this.worker = null;
+          this.opening = null;
+          this.versions.clear();
+        };
+        worker.on("error", failed);
+        worker.on("exit", (code) => {
+          if (this.worker === worker)
+            failed(
+              new Error(`Search worker stopped (${code}). Retry the request.`),
+            );
+        });
+      });
+    })().catch((error) => {
+      this.opening = null;
+      throw error;
+    });
+    return this.opening;
+  }
+  async call(action, data) {
+    await this.open();
+    const id = ++this.sequence;
+    return new Promise((resolve, reject) => {
+      this.pending.set(id, { resolve, reject });
+      this.worker.ref();
+      this.worker.postMessage({ id, action, data });
+    });
   }
   async ensure(project, force = false) {
     const work = this.queue.then(async () => {
       await this.open();
-      if (!force && this.versions.get(project) === this.store.version) return;
-      const version = this.store.version,
-        snapshot = await this.store.snapshot(project),
-        started = performance.now();
-      this.db.exec("BEGIN");
-      try {
-        this.db.prepare("DELETE FROM tasks WHERE project=?").run(project);
-        this.db.prepare("DELETE FROM task_search WHERE project=?").run(project);
-        const insert = this.db.prepare(
-            "INSERT INTO tasks VALUES (?,?,?,?,?,?)",
-          ),
-          search = this.db.prepare("INSERT INTO task_search VALUES (?,?,?)");
-        for (const t of snapshot.tasks) {
-          insert.run(
-            project,
-            t.id,
-            t.title,
-            t.status,
-            t.due || null,
-            JSON.stringify(t),
-          );
-          search.run(
-            project,
-            t.id,
-            [
-              t.key,
-              t.title,
-              t.body,
-              t.assignee,
-              ...(t.tags || []),
-              ...(t.aliases || []),
-              t.source?.key,
-            ]
-              .filter(Boolean)
-              .join(" "),
-          );
+      const since = this.versions.get(project);
+      const version = this.store.version;
+      if (!force && since === version) return;
+      const history = this.store.changeLog;
+      const changes = history.filter((c) => c.version > since);
+      const full =
+        force ||
+        since === undefined ||
+        (history.length && since < history[0].version - 1) ||
+        changes.some(
+          (c) =>
+            !c.record ||
+            (c.record.project === project && c.record.kind === "project"),
+        );
+      const started = performance.now(),
+        tasks = [],
+        deleted = [];
+      if (full) {
+        // No board/document payloads are read just to index task text.
+        tasks.push(...(await this.store.children(project, "tasks")).items);
+      } else {
+        const ids = new Set(
+          changes
+            .filter(
+              (c) => c.record?.project === project && c.record.kind === "tasks",
+            )
+            .map((c) => c.record.id),
+        );
+        for (const id of ids) {
+          const file = this.store.file(project, "tasks", id);
+          try {
+            tasks.push(this.store.public(await this.store.read(file), file));
+          } catch (error) {
+            if (error.status !== 404 && error.code !== "ENOENT") throw error;
+            deleted.push(id);
+          }
         }
-        this.db.exec("COMMIT");
-      } catch (error) {
-        this.db.exec("ROLLBACK");
-        throw error;
+      }
+      if (full || tasks.length || deleted.length) {
+        await this.call("update", { project, full: !!full, tasks, deleted });
+        this.lastRebuild = {
+          project,
+          tasks: tasks.length,
+          deleted: deleted.length,
+          incremental: !full,
+          duration_ms: Math.round(performance.now() - started),
+          at: new Date().toISOString(),
+        };
       }
       this.versions.set(project, version);
-      this.lastRebuild = {
-        project,
-        tasks: snapshot.tasks.length,
-        duration_ms: Math.round(performance.now() - started),
-        at: new Date().toISOString(),
-      };
     });
     this.queue = work.catch(() => {});
     return work;
   }
   async search(project, text, limit = 60) {
     await this.ensure(project);
-    const tokens =
-      String(text || "")
-        .match(/[\p{L}\p{N}_-]+/gu)
-        ?.slice(0, 20) || [];
-    const rows = tokens.length
-      ? this.db
-          .prepare(
-            "SELECT t.record FROM task_search s JOIN tasks t ON s.project=t.project AND s.id=t.id WHERE task_search MATCH ? AND t.project=? ORDER BY rank LIMIT ?",
-          )
-          .all(tokens.map((t) => '"' + t + '"*').join(" AND "), project, limit)
-      : this.db
-          .prepare(
-            "SELECT record FROM tasks WHERE project=? ORDER BY title LIMIT ?",
-          )
-          .all(project, limit);
-    return rows.map((r) => JSON.parse(r.record));
+    return this.call("search", { project, text, limit });
   }
   async query(project, input, user) {
     await this.ensure(project);
-    const tasks = this.db
-        .prepare("SELECT record FROM tasks WHERE project=?")
-        .all(project)
-        .map((r) => JSON.parse(r.record)),
-      p = (await this.store.read(this.store.file(project, "project"))).data,
-      config = p.schema,
-      prefs = tablePreferences(input.preferences || {}, config),
-      result = tableResult(
-        input.archived ? tasks : tasks.filter((t) => !t.archived),
-        prefs,
-        config,
-        tasks,
-        { me: user.username },
-      ),
-      offset = Math.max(0, Math.floor(Number(input.offset) || 0)),
-      limit = Math.max(
-        1,
-        Math.min(200, Math.floor(Number(input.limit) || 100)),
-      );
+    const p = (await this.store.read(this.store.file(project, "project"))).data;
     return {
-      tasks: result.tasks.slice(offset, offset + limit),
-      total: result.tasks.length,
-      offset,
-      limit,
-      version: this.store.version,
+      ...(await this.call("query", {
+        project,
+        input,
+        config: p.schema,
+        username: user.username,
+      })),
+      version: this.versions.get(project),
     };
   }
   async rebuild() {
@@ -135,8 +152,14 @@ export class RecordIndex {
     return { projects: this.versions.size, last: this.lastRebuild };
   }
   close() {
-    this.db?.close();
-    this.db = null;
+    const worker = this.worker;
+    this.worker = null;
+    this.opening = null;
     this.versions.clear();
+    for (const p of this.pending.values())
+      p.reject(new Error("Search index closed."));
+    this.pending.clear();
+    this.closing = worker?.terminate();
+    return this.closing;
   }
 }

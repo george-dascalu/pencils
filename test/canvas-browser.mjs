@@ -102,7 +102,7 @@ async function saved() {
       page
         .locator("#board-save")
         .textContent()
-        .then((t) => /All (canvas )?changes saved/.test(t)),
+        .then((t) => t === "Saved automatically"),
     "save",
   );
 }
@@ -175,7 +175,7 @@ try {
   await page
     .locator('[data-edge-choice="routing"][data-value="elbow"]')
     .click();
-  await page.locator('[data-selection-menu="connection"] summary').click();
+  await page.locator('[data-selection-menu="dependency"] summary').click();
   await page.locator('[data-pro="edge-dependency"]').click();
   await until(
     async () =>
@@ -190,7 +190,7 @@ try {
   await page.locator("[data-node=note]").click();
   await clickControl(page.locator("#selection-tools [data-pro=comments]"));
   await page
-    .locator("#board-comment-form textarea")
+    .locator('#board-comment-form [contenteditable="true"]')
     .fill("Discuss this idea in the next planning session.");
   await page.locator("#board-comment-form button[type=submit]").click();
   await until(
@@ -209,6 +209,7 @@ try {
     .locator("[data-node=note]")
     .getByRole("button", { name: "Finalise task", exact: true })
     .click();
+  await page.locator("#draft-finalise-confirm").click();
   await until(
     async () =>
       (await current()).nodes.find((n) => n.id === "note").type === "task",
@@ -249,12 +250,15 @@ try {
   assert.ok((await current()).nodes.find((n) => n.id === frame.id).collapsed);
   await clickControl(pro("present"));
   await page.locator("#presentation-controls").waitFor();
+  await page.locator("#canvas").focus();
   await page.keyboard.press("ArrowRight");
+  await until(() => page.locator("#presentation-controls").textContent().then(text => /2 \/ 3/.test(text)), "next presentation frame");
   assert.match(
     await page.locator("#presentation-controls").textContent(),
     /2 \/ 3/,
   );
   await page.keyboard.press("Escape");
+  await page.locator('#canvas-outline [aria-label="Close outline"]').click();
   console.log(
     "PASS: reusable templates, frame outline, collapse and presentation",
   );

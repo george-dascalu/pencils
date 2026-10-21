@@ -1,3 +1,4 @@
+import { applyBoardDelta, boardDifference, equalValue } from "../public/board-delta.js";
 import fs from "node:fs/promises";
 import path from "node:path";
 import { createHash, randomUUID } from "node:crypto";
@@ -19,7 +20,7 @@ const canonical = (value) =>
         )
       : v,
   );
-const equal = (a, b) => canonical(a) === canonical(b);
+const equal = equalValue;
 const editable = (b) =>
   Object.fromEntries(
     [
@@ -36,56 +37,7 @@ const editable = (b) =>
       .map((k) => [k, b[k]]),
   );
 // A compact, reversible change set. Field-level guards let undo coexist with other writers.
-export function difference(before, after) {
-  const changes = [];
-  for (const kind of ["nodes", "edges"]) {
-    const a = new Map((before[kind] || []).map((v) => [v.id, v])),
-      b = new Map((after[kind] || []).map((v) => [v.id, v]));
-    if (
-      a.size === b.size &&
-      [...a.keys()].every((id) => b.has(id)) &&
-      !equal([...a.keys()], [...b.keys()])
-    )
-      changes.push({
-        kind: "order",
-        collection: kind,
-        before: [...a.keys()],
-        after: [...b.keys()],
-      });
-    for (const id of new Set([...a.keys(), ...b.keys()])) {
-      const old = a.get(id),
-        next = b.get(id);
-      if (!old || !next) {
-        if (!equal(old, next))
-          changes.push({ kind, id, before: old ?? null, after: next ?? null });
-      } else
-        for (const key of new Set([...Object.keys(old), ...Object.keys(next)]))
-          if (key !== "native" && !equal(old[key], next[key]))
-            changes.push({
-              kind,
-              id,
-              key,
-              before: old[key] ?? null,
-              after: next[key] ?? null,
-            });
-    }
-  }
-  for (const key of [
-    "title",
-    "archived",
-    "templates",
-    "presentation",
-    "settings",
-    "layers",
-  ])
-    if (!equal(before[key], after[key]))
-      changes.push({
-        key,
-        before: before[key] ?? null,
-        after: after[key] ?? null,
-      });
-  return changes;
-}
+export const difference = boardDifference;
 function inverse(current, changes) {
   const data = structuredClone(current);
   for (const c of changes) {
@@ -245,7 +197,11 @@ export function installCanvas(Store) {
       if (current.data.operations?.some((o) => o.id === operationId))
         return this.public(current, file);
       let data = { ...current.data, ...editable(input) };
-      if (input.base) {
+      if (input.changes !== undefined) {
+        if (!input.revision) throw new Problem(428, "A base revision is required.");
+        try { data = applyBoardDelta(current.data, input.changes); }
+        catch (error) { throw new Problem(error.status || 400, error.message); }
+      } else if (input.base) {
         if (!input.revision || input.base.revision !== input.revision)
           throw new Problem(428, "A matching base revision is required.");
         const result = merge(

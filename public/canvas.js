@@ -38,11 +38,12 @@ import {
   snapResize,
   paintAlignmentGuides,
 } from "./alignment-guides.js";
-import { markNodeOverflow, nodeFill, isTaskNote } from "./node-layout.js";
+import { nodeFill, isTaskNote } from "./node-layout.js";
 import { boardSettings } from "./board-background.js";
 import { selectionToolbar } from "./selection-toolbar.js";
 import { arrangeSelection, arrangementActions } from "./selection-arrange.js";
 import { canvasControls } from "./canvas-controls.js";
+import { BOARD_LIMITS } from "./board-limits.js";
 import { canvasPro } from "./canvas-pro.js";
 import { encodeCanvas, markdownSlice } from "./canvas-format.js";
 import { miroImport } from "./miro-import.js";
@@ -466,6 +467,11 @@ export function canvasFeatures(ctx) {
       )
         return;
       let el = event.target.closest("[data-node]");
+      if (!el && tool === "cursor" && !event.target.closest("[data-edge]")) el = pro.hitOverview(point(event));
+      if (!el && tool === "cursor" && !event.target.closest("[data-edge]")) {
+        const edge = pro.hitOverviewEdge(point(event));
+        if (edge) { event.preventDefault(); event.stopImmediatePropagation(); selectEdge(edge, event.shiftKey || event.ctrlKey || event.metaKey); return; }
+      }
       let frameInterior = false;
       if (
         el?.classList.contains("frame") &&
@@ -817,7 +823,6 @@ export function canvasFeatures(ctx) {
         moveDOM();
         if (drag.type === "resize")
           resizeDimensions(board().nodes.find((n) => n.id === drag.id));
-        markNodeOverflow();
       } else if (drag.type === "marquee" || drag.type === "frame") {
         const box = $(".marquee"),
           x = Math.min(p.x, drag.start.x),
@@ -1522,7 +1527,7 @@ export function canvasFeatures(ctx) {
     }
     if (action === "canvas-import") {
       chooseFile(".canvas,application/json", async (file) => {
-        if (file.size > 12000000) throw new Error("Use a canvas under 12 MB.");
+        if (file.size > BOARD_LIMITS.importBytes) throw new Error("Use a canvas under 64 MB.");
         const created = await api(route("boards"), {
           method: "POST",
           body: {

@@ -20,7 +20,7 @@ export function resizeTaskCard(board, node, collapsed, height) {
 export function taskCardHeight(element, collapsed) {
   const clone = element.cloneNode(true);
   clone.removeAttribute("data-node");
-  clone.classList.remove("selected", "content-truncated", "inline-editing");
+  clone.classList.remove("selected", "inline-editing");
   clone.classList.toggle("task-card-expanded", !collapsed);
   Object.assign(clone.style, {
     position: "absolute", left: "0", top: "0", height: "auto",

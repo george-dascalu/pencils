@@ -1,3 +1,4 @@
+import { taskHistoryHTML } from "./task-history.js";
 import { nextStatuses } from "./workflow-model.js";
 import { positionPopover } from "./popover-position.js";
 import { taskColorAttributes, refreshTaskControlColors } from "./task-colors.js";
@@ -35,6 +36,8 @@ export function taskModalControls(ctx, form, restoreVersion) {
     if (focus) trigger.focus();
   }
   function paintPickers() {
+    const avatar = form.querySelector('[data-assignee-avatar]');
+    if (avatar) avatar.innerHTML = ctx.assigneeHTML({ assignee: form.elements.assignee.value });
     refreshTaskControlColors(form, state);
     for (const picker of form.querySelectorAll("[data-task-picker]")) {
       const select = picker.querySelector("select"),
@@ -100,7 +103,7 @@ export function taskModalControls(ctx, form, restoreVersion) {
   };
   dialog.addEventListener("pointerdown", outside, true);
   form.addEventListener("change", (event) => {
-    if (event.target.closest("[data-task-picker]")) paintPickers();
+    if (event.target.closest("[data-task-picker]") || event.target.matches("[name=assignee]")) paintPickers();
   });
   form.addEventListener("input", (event) => {
     if (event.target.matches(".task-picker-popover input")) {
@@ -215,12 +218,7 @@ export function taskModalControls(ctx, form, restoreVersion) {
       );
       if (disposed || !panel.isConnected) return;
       panel.querySelector("[data-history-content]").innerHTML =
-        data.versions
-          .map(
-            (v) =>
-              `<details class="recovery-item"><summary><strong>${esc(new Date(v.updated).toLocaleString())}</strong><span>${esc(v.title)}</span></summary><p class="field-hint">${esc(ctx.label(v.data?.type || "task"))} · ${esc(v.data?.status || "")}</p><pre>${esc(v.body)}</pre><button type="button" class="button small" data-task-modal="history-restore" data-version="${esc(v.revision)}">Restore this version</button></details>`,
-          )
-          .join("") || "<p>No earlier versions yet.</p>";
+        taskHistoryHTML(data.versions, target, ctx);
     } catch (error) {
       if (!disposed)
         panel.querySelector("[data-history-content]").innerHTML =

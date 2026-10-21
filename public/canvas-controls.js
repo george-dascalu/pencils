@@ -1,3 +1,5 @@
+import { boardCapacity } from "./board-capacity.js";
+import { setBoardExpanded } from "./view-layout.js";
 import { newGrid, syncGrid, cellAt, GRID_DEFAULT_SIZE } from "./grid-model.js";
 import { routeEdge } from "./canvas-geometry.js";
 import { canvasToolDrag } from "./canvas-tool-drag.js";
@@ -28,6 +30,7 @@ export function canvasControls(ctx, basic) {
   function saveDisplay() {
     if (board()) storage.set(preferenceKey(), { minimap, grid, expanded });
   }
+  const capacity = boardCapacity();
   const placement = ["sticky", "text", "shape", "grid"];
   const editable = "input,textarea,select,[contenteditable],.inline-editing";
   const chrome = `${editable},.board-tools,#pen-tools,.inline-floating-tools,#selection-tools,button,a,.canvas-panel,.canvas-find,.canvas-filters,#canvas-presence,#presentation-controls`;
@@ -81,19 +84,23 @@ export function canvasControls(ctx, basic) {
     canvas.classList.toggle("grid-hidden", !grid);
     $("#canvas-minimap")?.classList.toggle("hidden", !minimap);
     canvas.classList.toggle("board-expanded", expanded);
+    setBoardExpanded(expanded);
     if (!$("#board-expand"))
       $(".board-controls")?.insertAdjacentHTML(
         "beforeend",
-        '<button id="board-expand" class="button small" data-board-display="expand">Expand board</button><button class="button small" data-board-display="fullscreen" aria-label="Full screen">⛶</button>',
+        '<button id="board-expand" type="button" class="icon-button" data-board-display="expand"></button><button class="button small" data-board-display="fullscreen" aria-label="Full screen">⛶</button>',
       );
     if (!$("#expanded-board-settings"))
       $(".board-controls")?.insertAdjacentHTML(
         "beforeend",
         `<button id="expanded-board-settings" type="button" class="button small" data-feature="board-settings" aria-label="Board settings" title="Board settings">${icon("settings")}</button>`,
       );
-    $("#board-expand").textContent = expanded
-      ? "Exit expanded view"
-      : "Expand board";
+    const expandButton = $("#board-expand");
+    const expandLabel = expanded ? "Exit expanded view" : "Expand board";
+    expandButton.innerHTML = icon(expanded ? "shrink" : "expand");
+    expandButton.setAttribute("aria-label", expandLabel);
+    expandButton.setAttribute("aria-pressed", String(expanded));
+    expandButton.title = expandLabel;
     position();
     const keys = {
       cursor: "V",
@@ -108,18 +115,8 @@ export function canvasControls(ctx, basic) {
       el.classList.toggle("active", el.dataset.tool === state.tool);
       el.title = `${el.getAttribute("aria-label") || el.dataset.tool}${keys[el.dataset.tool] ? ` (${keys[el.dataset.tool]})` : ""}`;
     }
-    const help = $(".board-help");
-    if (help)
-      help.textContent =
-        state.tool === "project-frame"
-          ? "Drag to draw a Project frame · Click for 16:9 · Esc to cancel"
-          : state.tool === "frame"
-            ? "Drag to draw a frame · Click for 16:9 · Esc to cancel"
-            : state.tool === "connect"
-              ? "Hover to show connection points · Drag or click two points · Esc to cancel"
-              : placement.includes(state.tool)
-                ? "Click to place · Esc to cancel"
-                : "V select · H hand · Scroll zoom · Shift-scroll pan · F1 shortcuts";
+    capacity.render(canvas, board().nodes.length);
+    position();
   }
   function tool(value) {
     state.tool = value;
@@ -128,10 +125,14 @@ export function canvasControls(ctx, basic) {
     $("#canvas")?.focus({ preventScroll: true });
   }
   function position() {
-    $("#canvas")?.style.setProperty(
-      "--grid-hit-size",
-      `${8 / state.camera.z}px`,
-    );
+    const navigationHeight = $(".board-controls")?.offsetHeight;
+    if (navigationHeight) $("#canvas")?.style.setProperty("--board-controls-height", `${navigationHeight}px`);
+    capacity.position();
+    // Grid handles need screen-sized targets; unrelated task cards do not.
+    const gridHitSize = `${8 / state.camera.z}px`;
+    for (const grid of $$(".board-node.grid"))
+      if (grid.style.getPropertyValue("--grid-hit-size") !== gridHitSize)
+        grid.style.setProperty("--grid-hit-size", gridHitSize);
     const toolbar = $("#selection-tools"),
       canvas = $("#canvas"),
       nodes = basic.pick();
@@ -252,6 +253,18 @@ export function canvasControls(ctx, basic) {
       if (e.target.closest(chrome)) {
         e.stopImmediatePropagation();
         return;
+      }
+      // Let overflowing card content consume ordinary scrolling, including at
+      // its edges. Pinch/Ctrl-wheel still belongs to board zoom.
+      if (!e.ctrlKey && !e.metaKey && e.target.closest('.board-node')) {
+        for (let el = e.target; el?.closest('.board-node'); el = el.parentElement) {
+          const style = getComputedStyle(el);
+          if ((/(auto|scroll)/.test(style.overflowY) && el.scrollHeight > el.clientHeight + 1) ||
+              (/(auto|scroll)/.test(style.overflowX) && el.scrollWidth > el.clientWidth + 1)) {
+            e.stopImmediatePropagation();
+            return;
+          }
+        }
       }
       stop(e);
       const line =

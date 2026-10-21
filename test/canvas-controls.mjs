@@ -92,7 +92,7 @@ async function saved() {
       page
         .locator("#board-save")
         .textContent()
-        .then((t) => /All (canvas )?changes saved/.test(t)),
+        .then((t) => t === "Saved automatically"),
     "save",
   );
 }
@@ -142,6 +142,24 @@ async function dragFrom(locator, button, modifier) {
 }
 try {
   await enter();
+  const pageOverflow = () => page.evaluate(() => ({
+    html: getComputedStyle(document.documentElement).overflowY,
+    body: getComputedStyle(document.body).overflowY,
+  }));
+  const normalOverflow = await pageOverflow();
+  await page.locator('#board-expand').click();
+  assert.deepEqual(await pageOverflow(), { html: "hidden", body: "hidden" });
+  assert.equal(await page.locator('#canvas').evaluate(el => el.classList.contains('board-expanded')), true);
+  // Navigating away must release the page scroll lock; returning restores the preference.
+  await page.evaluate(id => { location.hash = `project/${id}/overview`; }, project.id);
+  await page.waitForFunction(() => !document.querySelector('#canvas'));
+  assert.deepEqual(await pageOverflow(), normalOverflow);
+  await page.locator('[data-view=board]').click();
+  await page.waitForFunction(() => document.querySelector('#canvas')?.classList.contains('board-expanded'));
+  assert.deepEqual(await pageOverflow(), { html: "hidden", body: "hidden" });
+  await page.keyboard.press('Escape');
+  assert.deepEqual(await pageOverflow(), normalOverflow);
+  console.log('PASS: expanded-board scroll lock, navigation cleanup and saved preference');
   let before = await camera();
   await wheel(0, -50);
   let after = await camera();

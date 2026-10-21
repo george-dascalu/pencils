@@ -5,6 +5,7 @@ import path from "node:path";
 import { chromium, firefox } from "playwright";
 import { Store } from "../server/store.js";
 import { createServer } from "../server/index.js";
+import { taskFieldColor } from "../public/task-colors.js";
 const root = await fs.mkdtemp(path.join(os.tmpdir(), "pencils-popovers-"));
 const store = new Store(root);
 await store.init();
@@ -25,7 +26,7 @@ await store.updateBoard(project.id, b.id, {
   ],
   edges: [],
 });
-const server = createServer(store);
+const server = createServer(store, { productionAssets: process.env.PRODUCTION_ASSETS === '1' });
 await new Promise((r) => server.listen(0, "127.0.0.1", r));
 const browser = await (
   process.env.BROWSER === "firefox" ? firefox : chromium
@@ -62,19 +63,28 @@ try {
   };
   await open();
   const panel = page.locator(".board-comments"),
-    composer = panel.locator("textarea");
+    composer = panel.locator(".inline-rich");
   const comment = (id) => panel.locator(`[data-comment-id="${id}"]`);
   await composer.fill("First comment");
   await composer.press("Control+Enter");
   await until(async () => (await current()).nodes[0].comments?.length === 1);
   const first = (await current()).nodes[0].comments[0].id;
+  const firstRecord = (await current()).nodes[0].comments[0];
+  assert.equal(await comment(first).locator('.comment-author').evaluate(el => el.style.getPropertyValue('--task-field-color')), taskFieldColor({}, 'assignee', firstRecord.author));
+  const timestamp = comment(first).locator('.comment-footer time');
+  assert.equal(await timestamp.getAttribute('datetime'), firstRecord.created);
+  assert.ok((await timestamp.getAttribute('title')).length > (await timestamp.innerText()).length);
+  const timeBounds = await timestamp.boundingBox(), bodyBounds = await comment(first).locator('.comment-body').boundingBox(), articleBounds = await comment(first).boundingBox();
+  assert.ok(timeBounds.y >= bodyBounds.y + bodyBounds.height);
+  assert.ok(Math.abs(timeBounds.x + timeBounds.width - (articleBounds.x + articleBounds.width - 10)) < 2);
   assert.equal(
     await panel.getByRole("button", { name: /^(Resolve|Reopen)$/ }).count(),
     0,
   );
   assert.equal(await comment(first).locator(".comment-reaction").count(), 5);
   for (const emoji of ["👍", "❤️", "😂", "🎉", "👀"]) {
-    await comment(first).locator(`[data-emoji="${emoji}"]`).click();
+    await comment(first).getByLabel("Add reaction", { exact: true }).click();
+    await comment(first).locator(`.comment-emoji-picker [data-emoji="${emoji}"]`).click();
     await until(async () =>
       (await current()).nodes[0].comments[0].reactions?.some(
         (r) => r.emoji === emoji,
@@ -85,7 +95,7 @@ try {
   await composer.fill("Reply draft");
   await panel.locator("[data-comments-close]").click();
   await open();
-  assert.equal(await composer.inputValue(), "Reply draft");
+  assert.equal(await composer.innerText(), "Reply draft");
   assert.ok(await panel.locator(".comment-reply-context").isVisible());
   await composer.fill("A reply");
   await composer.press("Control+Enter");
@@ -103,11 +113,26 @@ try {
   await until(async () => (await current()).nodes[0].comments.length === 3);
   const nested = (await current()).nodes[0].comments[2];
   assert.equal(nested.replyTo, reply.id);
+  const thread = panel.locator(`[data-comment-thread="${first}"]`);
+  assert.equal(await thread.locator(':scope > summary').innerText(), '2 replies');
+  assert.match(await comment(nested.id).locator('.comment-reply-quote').innerText(), /A reply/);
+  await comment(nested.id).locator('.comment-reply-quote').click();
+  assert.ok(await comment(reply.id).evaluate(el => document.activeElement === el));
+  await thread.locator(':scope > summary').click();
+  assert.equal(await comment(reply.id).isVisible(), false);
+  // A reaction refresh preserves a collapsed thread instead of reopening it.
+  await comment(first).locator('.comment-reactions [data-emoji="👍"]').click();
+  await until(async () => (await current()).nodes[0].comments[0].reactions.length === 4);
+  assert.equal(await thread.evaluate(el => el.open), false);
+  await comment(first).getByLabel('Add reaction', { exact: true }).click();
+  await comment(first).locator('.comment-emoji-picker [data-emoji="👍"]').click();
+  await until(async () => (await current()).nodes[0].comments[0].reactions.length === 5);
+  await thread.locator(':scope > summary').click();
   await page.reload();
   await page.locator("#canvas").waitFor();
   await open();
-  assert.equal(await comment(first).locator("[aria-pressed=true]").count(), 5);
-  await comment(first).locator('[data-emoji="👍"]').click();
+  assert.equal(await comment(first).locator(".comment-reactions [aria-pressed=true]").count(), 5);
+  await comment(first).locator('.comment-reactions [data-emoji="👍"]').click();
   await until(
     async () => (await current()).nodes[0].comments[0].reactions.length === 4,
   );
@@ -122,9 +147,11 @@ try {
   await until(async () => !(await current()).nodes[0].comments[0].deleted);
   await open();
   assert.match(await comment(first).innerText(), /First comment/);
+  await panel.locator('.board-comments-list').evaluate(el => el.scrollTop = 0);
   await page.screenshot({ path: "/tmp/pencils-comment-replies.png" });
   await page.setViewportSize({ width: 390, height: 844 });
   await page.evaluate(() => window.PencilsAppearance.write({ theme: "dark" }));
+  await panel.locator('.board-comments-list').evaluate(el => el.scrollTop = 0);
   await page.screenshot({ path: "/tmp/pencils-comment-replies-mobile.png" });
   // Individual replies delete independently, with no orphaned visible placeholder.
   await comment(reply.id).locator("[data-comment-delete]").click();

@@ -59,3 +59,36 @@ test("project deltas include changed records without unrelated project content",
   store.changed();
   assert.equal((await store.delta(p.id, version)).full, true);
 });
+
+test("incremental search isolates unrelated changes and removes deleted tasks", async t => {
+  const root = await fs.mkdtemp(path.join(os.tmpdir(), "pencils-index-delta-"));
+  const store = new Store(root), index = new RecordIndex(store);
+  await store.init();
+  t.after(async () => { await index.close(); store.close(); await fs.rm(root, { recursive: true, force: true }); });
+  const project = await store.createProject({ title: "Indexed" });
+  const other = await store.createProject({ title: "Other" });
+  let task = await store.createTask(project.id, { title: "Initial searchable" });
+  await index.search(project.id, "Initial");
+  const initial = index.lastRebuild;
+  await store.createDocument(project.id, { title: "Document change" });
+  await store.createTask(other.id, { title: "Unrelated searchable" });
+  assert.equal((await index.search(project.id, "searchable")).length, 1);
+  assert.equal(index.lastRebuild, initial, "unrelated changes must not rebuild this project's task index");
+  task = await store.updateTask(project.id, task.id, { revision: task.revision, title: "Updated searchable" });
+  assert.equal((await index.search(project.id, "Updated"))[0].id, task.id);
+  assert.equal(index.lastRebuild.incremental, true);
+  assert.equal(index.lastRebuild.tasks, 1);
+  await store.mutate(() => store.deleteTask(project.id, task.id, task.revision));
+  assert.equal((await index.search(project.id, "Updated")).length, 0);
+  assert.equal(index.lastRebuild.deleted, 1);
+  // Watcher/fallback invalidation still discovers external Markdown changes.
+  const next = await store.createTask(project.id, { title: "External original" });
+  await index.search(project.id, "original");
+  const file = store.file(project.id, "tasks", next.id);
+  await fs.writeFile(file, (await fs.readFile(file, "utf8")).replace("External original", "External revised"));
+  store.changed(file);
+  assert.equal((await index.search(project.id, "revised"))[0].id, next.id);
+  store.changed();
+  assert.equal((await index.search(project.id, "revised"))[0].id, next.id);
+  assert.equal(index.lastRebuild.incremental, false);
+});

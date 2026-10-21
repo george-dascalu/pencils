@@ -217,6 +217,6 @@
   }
   #canvas .canvas-task-priority select { height: 100% !important; }
   #canvas .board-node.task .live-card-state {
-    grid-template-columns: minmax(34px, auto) var(--canvas-touch-target, 44px) repeat(2, minmax(0, 1fr));
+    grid-template-columns: repeat(2, var(--card-control-size)) minmax(0, 1fr) auto;
   }
 }

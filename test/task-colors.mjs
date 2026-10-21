@@ -225,7 +225,7 @@ try {
       root = page.locator('[data-node="task-card"]');
       assert.equal(await root.locator('[data-canvas-task-field="priority"] option[value="none"]').textContent(), "Lowest");
       for (const [selector, expected] of [
-        [".canvas-task-assignee", alexColor],
+        [".canvas-task-assignee .task-assignee", alexColor],
         [".canvas-task-priority", urgentColor],
         [".canvas-task-status", reviewColor],
       ])

@@ -1,3 +1,5 @@
+import { APP_VERSION, watchAppVersion } from "./app-version.js";
+import { updateViewLayout } from "./view-layout.js";
 import { taskFocus } from "./task-focus.js";
 import { randomUUID } from "./uuid.js";
 import { priorityOptions as priorities, priorityLabels, priorityLabel, defaultPriority } from "./task-priority.js";
@@ -49,6 +51,18 @@ const esc = (value) =>
       ],
   );
 const paths = {
+  "case-sensitive": "M3 18 8 5l5 13M5 13h6M16 10c5-3 6 2 6 4v4M22 12c-8-2-8 8 0 5",
+  "whole-word": "M3 7v12h18V7M7 14l2-6 2 6 2-6 2 6 2-6",
+  regexp: "M6 16h.01M16 4v10M11 6l10 6M11 12l10-6",
+  "select-all": "M3 8V3h5M16 3h5v5M21 16v5h-5M8 21H3v-5M7 7h10v10H7z",
+  replace: "M4 4h8v5H4zM12 14h8v6h-8zM8 10v7h3m-3-3 3 3-3 3",
+  "replace-all": "M3 3h7v5H3zM13 3h7v5h-7zM3 15h7v5H3zM13 15h7v5h-7zM6 9v5m-2-2 2 2 2-2M16 9v5m-2-2 2 2 2-2",
+  highlight: "m6 14 8-11 6 5-8 11zM6 14l6 5M6 17l-3 4h7",
+  codeblock: "M3 3h18v18H3zM9 9l-3 3 3 3M15 9l3 3-3 3",
+  math: "M19 4H5l7 8-7 8h14",
+  footnote: "M4 20 9 7l5 13M6 15h6M17 3h3v7M17 10h6",
+  attachment: "m8 12 7-7a3 3 0 0 1 4 4L9 19a5 5 0 0 1-7-7L13 1M6 14l9-9",
+
   "text-top": "M4 4h16M12 20V8m-5 5 5-5 5 5",
   "text-middle": "M4 12h16M12 2v6m-3-3 3 3 3-3M12 22v-6m-3 3 3-3 3 3",
   "text-bottom": "M4 20h16M12 4v12m-5-5 5 5 5-5",
@@ -115,6 +129,8 @@ const paths = {
   close: "m6 6 12 12M18 6 6 18",
   folder: "M3 6h7l2 3h9v11H3V6Z",
   more: "M5 12h.01M12 12h.01M19 12h.01",
+  reply: "M9 10 4 15l5 5M4 15h10a6 6 0 0 0 0-12h-2",
+  smile: "M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0ZM8 9h.01M16 9h.01M8 14c1 4 7 4 8 0",
   leaf: "M20 3C5 1 1 12 8 17c7 5 14-3 12-14ZM4 21 16 8",
   local: "M8 10V7a4 4 0 0 1 8 0v3M5 10h14v11H5z",
   settings: "M4 7h16M4 17h16M8 4v6M16 14v6",
@@ -140,6 +156,8 @@ const paths = {
   cursor: "m4 3 5 18 4-8 8-4L4 3Z",
   minus: "M5 12h14",
   fit: "M8 3H3v5M16 3h5v5M3 16v5h5M21 16v5h-5",
+  expand: "M15 3h6v6M21 3l-7 7M9 21H3v-6M3 21l7-7",
+  shrink: "M21 3l-7 7m0-6v6h6M3 21l7-7m-6 0h6v6",
   "width-full": "M3 4v16M21 4v16M4 12h16M8 8l-4 4 4 4M16 8l4 4-4 4",
   "width-page": "M7 3v18M17 3v18M10 7h4M10 12h4M10 17h4",
   trash: "M3 6h18M9 6V3h6v3M6 6l1 15h10l1-15M10 10v7M14 10v7",
@@ -536,6 +554,10 @@ function applySnapshot(snapshot) {
   state.warnings = snapshot.warnings;
   state.signature = signature(snapshot);
   for (const entry of sync.entries.values()) {
+    if (entry.packedBoard) {
+      const current = snapshot.boards.find(b => entry.url.endsWith(`/boards/${b.id}`));
+      if (current) sync.hydrate(entry, current); else continue;
+    }
     if (entry.url.startsWith(`/projects/${state.project.id}/documents/`))
       state.documents = state.documents.map(d => d.id === entry.local.id ? entry.local : d);
     if (entry.url.startsWith(`/projects/${state.project.id}/tasks/`))
@@ -683,13 +705,14 @@ function renderApp() {
       <button class="side-new" data-action="project-new">${icon("plus")}New project</button>
       ${state.organisation ? `<section class="sidebar-directory"><div class="side-label">TEAMS</div><nav class="directory-links" aria-label="Teams and people">${["teams", "people"].map((page) => `<button class="directory-link ${state.directoryPage === page ? "active" : ""}" data-action="directory-open" data-page="${page}" ${state.directoryPage === page ? 'aria-current="page"' : ""}>${icon(page === "teams" ? "group" : "people")}<span>${label(page)}</span><span class="directory-count">${state.organisation[page]?.length || 0}</span></button>`).join("")}</nav></section>` : ""}
       <div class="side-bottom">
-      <div class="side-footer"><span class="dot"></span>Local workspace<span class="version">v0.16.12</span></div></div>
+      <div class="side-footer"><span class="dot"></span>Local workspace<span class="version">v${APP_VERSION}</span></div></div>
     </aside>
     <main class="main">
-      <header class="topbar"><div class="breadcrumb"><button class="icon-button desktop-sidebar-toggle" data-personal="sidebar" aria-controls="workspace-sidebar" aria-expanded="true" aria-label="Collapse sidebar">${icon("menu")}</button><button class="icon-button mobile-menu" data-action="menu" aria-label="Toggle sidebar">${icon("menu")}</button><button class="organisation-crumb" data-action="home" title="${esc(state.organisation?.title)}">${esc(state.organisation?.title || "Organisations")}</button><span>/</span><strong ${p ? 'role="heading" aria-level="1"' : ""}>${esc(state.helpArticle ? "Help" : state.directoryPage ? label(state.directoryPage) : p?.title || "Projects")}</strong></div>${p ? projectNavigationHTML() : ""}<div class="top-actions"><span class="save-state ${!state.online || state.boardConflict ? "sync-problem" : ""}" id="save-state">${icon(state.online ? "check" : "clock")}${state.online ? "Connected to local server" : "Server unavailable"}</span>${p ? `<button class="icon-button" data-action="project-edit" aria-label="Project settings" title="Project settings">${icon("settings")}</button>` : ""}<button class="icon-button" data-action="help" aria-label="Help & keyboard shortcuts">${icon("help")}</button><button class="avatar" data-personal="settings" aria-label="Personal settings" title="Personal settings">WE</button></div></header>
+      <header class="topbar"><div class="breadcrumb"><button class="icon-button desktop-sidebar-toggle" data-personal="sidebar" aria-controls="workspace-sidebar" aria-expanded="true" aria-label="Collapse sidebar">${icon("menu")}</button><button class="icon-button mobile-menu" data-action="menu" aria-label="Toggle sidebar">${icon("menu")}</button><button class="organisation-crumb" data-action="home" title="${esc(state.organisation?.title)}">${esc(state.organisation?.title || "Organisations")}</button><span>/</span><strong ${p ? 'role="heading" aria-level="1"' : ""}>${esc(state.helpArticle ? "Help" : state.directoryPage ? label(state.directoryPage) : p?.title || "Projects")}</strong></div>${p ? projectNavigationHTML() : ""}<div class="top-actions"><span class="save-state ${!state.online || state.boardConflict ? "sync-problem" : ""}" id="save-state">${appStatusHTML()}</span>${p ? `<button class="icon-button" data-action="project-edit" aria-label="Project settings" title="Project settings">${icon("settings")}</button>` : ""}<button class="icon-button" data-action="help" aria-label="Help & keyboard shortcuts">${icon("help")}</button><button class="avatar" data-personal="settings" aria-label="Personal settings" title="Personal settings">WE</button></div></header>
       ${!state.online ? '<div class="connection-banner">Local server unavailable. Reconnect to its network to save changes.</div>' : ""}
       ${state.helpArticle ? helpPageHTML(state.helpArticle, { esc, icon }) : state.directoryPage ? directoryPageHTML() : p ? projectPage() : welcomePage()}
     </main></div>`;
+  updateViewLayout(state);
   if (p) renderView();
   if (state.directoryPage) {
     const form = $("#organisation-form");
@@ -820,6 +843,7 @@ function filteredTasks() {
 }
 function renderView(onlyContent = false) {
   navigation.schedule();
+  updateViewLayout(state);
   if (
     state.boardTaskEditor &&
     state.selectedBoard !== state.boardTaskEditor.board
@@ -1498,12 +1522,10 @@ function taskDialog(id = null, defaults = {}, replace = false) {
       true,
     )}</div>`,
     status: `<label class="field">Status<select name="status" aria-label="Status" ${taskColorAttributes(state, "status", t.status)}>${options(id ? nextStatuses(state.config, t.status) : statuses, t.status, statusNames)}</select></label>`,
-    assignee: `<label class="field">Assignee<select name="assignee" aria-label="Assignee" ${taskColorAttributes(state, "assignee", t.assignee)} ${assigneeHint(state) ? 'aria-describedby="task-assignee-help"' : ""}>${assigneeOptions(state, t.assignee, esc)}</select></label>`,
-    start: `<label class="field">Start date<input type="date" name="start" aria-label="Start date" value="${esc(t.start || "")}"></label>`,
-    due: `<label class="field">Due date<input type="date" name="due" aria-label="Due date" value="${esc(t.due)}"></label>`,
+    assignee: `<label class="field task-assignee-field"><span>Assignee</span><span class="task-assignee-choice"><span data-assignee-avatar>${assigneeHTML(t)}</span><select name="assignee" aria-label="Assignee" ${taskColorAttributes(state, "assignee", t.assignee)} ${assigneeHint(state) ? 'aria-describedby="task-assignee-help"' : ""}>${assigneeOptions(state, t.assignee, esc)}</select></span></label>`,
   };
   const html = `<dialog class="dialog task-dialog" aria-label="Task editor"><form id="task-form" class="${id ? "task-edit-form" : "task-create-form"}" data-board="${esc(!id && ["board", "drawing"].includes(state.view) ? state.selectedBoard : "")}" data-draft-node="${esc(t.draftNode || "")}" data-id="${esc(id || "")}" data-revision="${esc(t.revision || "")}">
-    <div class="dialog-head task-editor-head"><div class="task-identity-row">
+    <div class="dialog-head task-editor-head"><div class="task-editor-header-row"><div class="task-identity-row">
       ${picker(
         "type",
         "Task type",
@@ -1512,11 +1534,10 @@ function taskDialog(id = null, defaults = {}, replace = false) {
         true,
       )}
       <span class="task-id task-key" title="${esc(t.key || (isDraft ? "Draft" : "New task"))}">${esc(t.key || id || (isDraft ? "Draft" : "New"))}</span>
-      <input class="title-input" name="title" aria-label="Task title" value="${esc(t.title)}" placeholder="Task title" required maxlength="300" autofocus>
-    </div>${id ? `<div class="task-editor-actions" role="group" aria-label="Task actions"><button type="button" class="icon-button danger" data-action="task-delete" data-id="${esc(id)}" aria-label="Delete task" title="Delete task">${icon("trash")}</button><button type="button" class="icon-button" data-feature="task-duplicate" aria-label="Duplicate task" title="Duplicate task">${icon("duplicate")}</button><button type="button" class="icon-button" data-feature="task-archive" aria-label="${t.archived ? "Unarchive task" : "Archive task"}" title="${t.archived ? "Unarchive task" : "Archive task"}">${icon("folder")}</button><button type="button" class="icon-button" data-feature="task-history" aria-expanded="false" aria-label="Version history" title="Version history">${icon("clock")}</button><button type="button" class="icon-button" data-feature="task-comments" aria-expanded="false" aria-label="Task comments" title="Comments">${icon("comment")}</button></div>` : isDraft ? `<div class="task-editor-actions" role="group" aria-label="Draft actions"><button type="button" class="icon-button" data-feature="draft-finalise" aria-label="Finalise task" title="Finalise task">${icon("task")}</button></div>` : ""}<button type="button" class="icon-button" data-action="dialog-close" aria-label="Close dialog">${icon("close")}</button></div>
+    </div>${id ? `<div class="task-editor-actions" role="group" aria-label="Task actions"><button type="button" class="icon-button danger" data-action="task-delete" data-id="${esc(id)}" aria-label="Delete task" title="Delete task">${icon("trash")}</button><button type="button" class="icon-button" data-feature="task-duplicate" aria-label="Duplicate task" title="Duplicate task">${icon("duplicate")}</button><button type="button" class="icon-button" data-feature="task-archive" aria-label="${t.archived ? "Unarchive task" : "Archive task"}" title="${t.archived ? "Unarchive task" : "Archive task"}">${icon("folder")}</button><button type="button" class="icon-button" data-feature="task-history" aria-expanded="false" aria-label="Version history" title="Version history">${icon("clock")}</button><button type="button" class="icon-button" data-feature="task-comments" aria-expanded="false" aria-label="Task comments" title="Comments">${icon("comment")}</button></div>` : isDraft ? `<div class="task-editor-actions" role="group" aria-label="Draft actions"><button type="button" class="icon-button" data-feature="draft-finalise" aria-label="Finalise task" title="Finalise task">${icon("task")}</button></div>` : ""}<button type="button" class="icon-button" data-action="dialog-close" aria-label="Close dialog">${icon("close")}</button></div><div class="task-title-row"><input class="title-input" name="title" aria-label="Task title" value="${esc(t.title)}" placeholder="Task title" required maxlength="300" autofocus></div></div>
     <div class="task-editor-content"><div class="dialog-body"><div class="form-error hidden"></div>
-      <div class="task-metadata"><div class="task-metadata-main">${metadata.assignee}${metadata.priority}${metadata.status}<div class="task-dates">${metadata.start}${metadata.due}</div></div></div>
-      ${assigneeHint(state) ? `<p id="task-assignee-help" class="field-hint" role="status">${esc(assigneeHint(state))}</p>` : ""}
+      <div class="task-metadata"><div class="task-metadata-main">${metadata.assignee}${metadata.priority}${metadata.status}<div class="field task-dates"><span>Dates</span><div class="task-date-range" role="group" aria-label="Start and due dates"><input type="date" name="start" aria-label="Start date" title="Start date" value="${esc(t.start || "")}"><span aria-hidden="true">→</span><input type="date" name="due" aria-label="Due date" title="Due date" value="${esc(t.due || "")}"></div></div></div></div>
+      ${assigneeHint(state) ? `<p id="task-assignee-help" class="sr-only">${esc(assigneeHint(state))}</p>` : ""}
       ${taskDescriptionHTML(t.body, { esc, icon })}
       <input type="hidden" name="parent" value="${esc(t.parent || "")}">
       <select name="dependencies" multiple hidden>${[...new Set([...(t.dependencies || []), ...state.tasks.filter(task => task.id !== id).map(task => task.id)])].map(dependency => `<option value="${esc(dependency)}" ${(t.dependencies || []).includes(dependency) ? "selected" : ""}>${esc(dependency)}</option>`).join("")}</select>
@@ -1593,7 +1614,6 @@ function boardView() {
     <div class="canvas-world" id="canvas-world"><svg class="canvas-lines" id="canvas-lines">${edgesHTML(b)}</svg>${features.canvasNodes(b).map(nodeHTML).join("")}</div>
     ${boardToolsHTML()}
     ${boardTaskPanelHTML()}${selectionHTML()}<div class="board-controls"><button class="icon-button" data-action="zoom-out" aria-label="Zoom out">${icon("minus")}</button><span id="zoom-label">${Math.round(state.camera.z * 100)}%</span><button class="icon-button" data-action="zoom-in" aria-label="Zoom in">${icon("plus")}</button><button class="icon-button" data-action="board-fit" aria-label="Fit canvas to screen">${icon("fit")}</button></div>
-    <div class="board-footer"><div class="board-help">${state.tool === "connect" ? (state.connectFrom ? "Now choose the second object." : "Choose two objects to connect.") : "Drag to arrange · Double-click to edit · Space + drag to pan"}</div><div id="canvas-performance" aria-live="off"></div></div>
     ${!b.nodes.length ? '<div class="board-empty"><h3>Give your ideas a little room.</h3><p>Add notes, tasks, images or shapes.<br>Drop image files here to get started.</p></div>' : ""}</div>`;
 }
 function selectionHTML() {
@@ -1614,6 +1634,8 @@ function updateEdges() {
   if (!svg || !board()) return;
   renderCanvasEdges(svg, edgesHTML(board()));
 }
+const canvasTouchPointer = matchMedia("(pointer: coarse)");
+canvasTouchPointer.addEventListener("change", () => updateCamera());
 function updateCamera(animated = false) {
   if (!animated) cameraMotion.cancel();
   const world = $("#canvas-world"),
@@ -1621,9 +1643,14 @@ function updateCamera(animated = false) {
   if (!world) return;
   const { x, y, z } = state.camera;
   world.style.transform = `translate(${x}px,${y}px) scale(${z})`;
-  world.style.setProperty("--canvas-touch-target", `${44 / z}px`);
+  // Fine-pointer controls do not use this inherited variable. Updating it still
+  // invalidates styles on every card, so only size touch targets when needed.
+  if (canvasTouchPointer.matches)
+    world.style.setProperty("--canvas-touch-target", `${44 / z}px`);
+  else world.style.removeProperty("--canvas-touch-target");
   paintBoardBackground(canvas, board()?.settings?.background, state.camera);
-  $("#zoom-label").textContent = `${Math.round(z * 100)}%`;
+  const zoomLabel = $("#zoom-label"), zoomText = `${Math.round(z * 100)}%`;
+  if (zoomLabel.textContent !== zoomText) zoomLabel.textContent = zoomText;
   storage.set(`camera:${state.selectedBoard}`, state.camera);
   features.canvasCamera();
 }
@@ -1631,7 +1658,7 @@ function loadCamera() {
   const saved = storage.get(`camera:${state.selectedBoard}`, storage.get(`drawing-camera:${state.selectedBoard}`, { x: 15, y: 0, z: 0.85 }));
   state.camera =
     [saved.x, saved.y, saved.z].every(Number.isFinite) &&
-    saved.z >= 0.15 &&
+    saved.z >= 0.001 &&
     saved.z <= 3
       ? saved
       : { x: 15, y: 0, z: 0.85 };
@@ -1665,7 +1692,7 @@ function fitBoard() {
     maxX = Math.max(...b.nodes.map((n) => n.x + n.w)),
     maxY = Math.max(...b.nodes.map((n) => n.y + n.h));
   const z = Math.max(
-    0.15,
+    0.001,
     Math.min(
       1.25,
       (canvas.clientWidth - 160) / (maxX - minX),
@@ -1693,7 +1720,8 @@ function boardSnapshot() {
 }
 function remember(snapshot = boardSnapshot()) {
   state.history.push(snapshot);
-  if (state.history.length > 40) state.history.shift();
+  const historyLimit = Math.max(1, Math.min(40, Math.floor(300000 / Math.max(1, snapshot.nodes.length + snapshot.edges.length))));
+  while (state.history.length > historyLimit) state.history.shift();
   state.future = [];
 }
 function saveBoard() {
@@ -1702,19 +1730,25 @@ function saveBoard() {
   features.drawingCheckpoint(true, b, project);
   const base = state.boardBases?.[b.id] || b;
   boardQueue = sync
-    .enqueue(route("boards", b.id), base, boardSnapshot())
+    .enqueue(route("boards", b.id), base, boardSnapshot(), { snapshot: true })
     .then(() => {
       state.boardBases ||= {};
       state.boardBases[b.id] = structuredClone(b);
       features.drawingCheckpoint(sync.entries.has(`/projects/${project.id}/boards/${b.id}`), b, project);
     });
 }
+function appStatusHTML() {
+  const outdated = state.serverAppVersion && state.serverAppVersion !== APP_VERSION;
+  const title = outdated ? `Version ${state.serverAppVersion} is available. Refresh when your changes are saved.` : `Pencils ${APP_VERSION}${state.serverAppVersion ? ' · Up to date' : ''}`;
+  const problem = !state.online ? 'Server unavailable' : state.boardSaves || state.boardConflict ? saveState([...sync.entries.values()], { storageError: sync.storageError, online: state.online }) : '';
+  return `<span class="app-version" title="${esc(title)}" aria-label="${esc(title)}">v${APP_VERSION}${outdated ? `<span class="app-update-available">${icon('refresh')}<span class="app-update-label">Update available</span></span>` : ''}</span>${problem ? `<span class="app-sync-problem">${icon('clock')}${esc(problem)}</span>` : ''}`;
+}
 function updateSaveState() {
   const text=saveState([...sync.entries.values()],{storageError:sync.storageError,online:state.online});
   if ($("#board-save")) $("#board-save").textContent = text;
   if ($("#save-state"))
     $("#save-state").innerHTML =
-      `${icon(state.boardSaves ? "clock" : "check")}${state.boardSaves || state.boardConflict ? text : state.online ? "Connected to local server" : "Server unavailable"}`;
+      appStatusHTML();
 }
 function changeBoard(fn, { render = true } = {}) {
   if (!board()) return;
@@ -2817,3 +2851,5 @@ async function boot() {
 }
 features.start(boot);
 boot();
+
+watchAppVersion(version => { state.serverAppVersion = version; updateSaveState(); });

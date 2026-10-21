@@ -9,3 +9,5 @@ test
 artifacts
 README.md
 *.log
+
+.release-backups/

@@ -112,7 +112,7 @@ try {
   await openView("board");
   await page.locator('[data-node=card] [data-pro=comments]').click();
   await page.getByText("Legacy board comment", { exact: true }).waitFor();
-  await page.locator("#board-comment-text").fill("One shared task conversation");
+  await page.locator("#board-comment-form .inline-rich").fill("One shared task conversation");
   await page.locator("[data-comment-submit]").click();
   await until(async () => (await task()).comments?.length === 3);
   assert.equal((await task()).comments.find(c => c.text === "Legacy reply").replyTo, (await task()).comments.find(c => c.text === "Legacy board comment").id);
@@ -128,7 +128,7 @@ try {
   await page.locator(`[data-action=task-open][data-id="${tasks[0].id}"]`).first().click();
   await page.locator('[data-feature="task-comments"]').first().click();
   await page.getByText("One shared task conversation", { exact: true }).waitFor();
-  await page.locator("#board-comment-text").fill("Reply from the task editor");
+  await page.locator("#board-comment-form .inline-rich").fill("Reply from the task editor");
   await page.locator("[data-comment-submit]").click();
   await until(async () => (await task()).comments?.length === 4);
   await page.locator("[data-comments-close]").click();

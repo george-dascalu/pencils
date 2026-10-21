@@ -88,20 +88,3 @@ export function defaultText(node) {
     ].includes(node.text)
   );
 }
-export function markNodeOverflow(root = document) {
-  for (const el of root.querySelectorAll(".board-node:not(.inline-editing)")) {
-    const content = el.querySelector(".board-node-content");
-    if (!content) continue;
-    const clipped = [
-      content,
-      ...content.querySelectorAll(
-        ".canvas-markdown,.task-title,.node-text,.live-card-heading,.live-card-state",
-      ),
-    ].some(
-      (child) =>
-        child.scrollHeight > child.clientHeight + 2 ||
-        child.scrollWidth > child.clientWidth + 2,
-    );
-    el.classList.toggle("content-truncated", clipped);
-  }
-}

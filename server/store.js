@@ -1,92 +1,27 @@
-import {WriteJournal} from "./journal.js";
+import { boardsMethods } from "./services/boards.js";
+import { tasksMethods } from "./services/tasks.js";
+import { documentsMethods } from "./services/documents.js";
+import { WriteJournal } from "./journal.js";
 import { documentFolders, documentFolder } from "./document-folders.js";
-import { validDependencyStyle } from "../public/dependency-style.js";
-import { validDraftTask } from "../public/draft-task.js";
-import { defaultPriority } from "../public/task-priority.js";
-import { validTimelineRange } from "../public/timeline-dates.js";
-import { commentReactions } from "../public/comment-model.js";
 import { hierarchyError } from "../public/hierarchy-model.js";
-import { canTransition, initialStatus, transitionError } from "../public/workflow-model.js";
-import { directory, projectTeams, membersForProject } from "./teams.js";
-import { validObjectGeometry } from "../public/object-geometry.js";
-import { validConnectorGeometry } from "../public/connector-path.js";
-import { validTextStyle } from "../public/object-text.js";
+import { directory, projectTeams } from "./teams.js";
 import { installIdentity } from "./identity.js";
-import { validGrid } from "../public/grid-model.js";
 import fs from "node:fs/promises";
 import path from "node:path";
-import { createHash, randomUUID } from "node:crypto";
+import { randomUUID } from "node:crypto";
 import YAML from "yaml";
 import { EventEmitter } from "node:events";
 import { watch } from "node:fs";
 import { Problem } from "./problem.js";
-import {
-  schema,
-  validateExtras,
-  validateViews,
-  progress,
-  nextDate,
-} from "./model.js";
+import { schema, validateViews, progress } from "./model.js";
 import { installRecovery } from "./recovery.js";
 import { decodeCanvas, encodeCanvas } from "../public/canvas-format.js";
 import { installCanvas } from "./canvas.js";
 import { installWorkspace } from "./workspace.js";
+import { DEFAULT_ORGANISATION, idPattern, now, hash, validId, title, body, choice, tags, color } from "./values.js";
+export { STATUSES, TYPES, PRIORITIES, DEFAULT_ORGANISATION } from "./values.js";
 export { Problem } from "./problem.js";
 
-export const STATUSES = ["backlog", "todo", "in-progress", "review", "done"];
-export const TYPES = ["epic", "milestone", "story", "task", "bug"];
-export const PRIORITIES = ["none", "low", "medium", "high", "urgent"];
-export const DEFAULT_ORGANISATION = "o-default";
-const idPattern = /^[a-zA-Z0-9_-]{1,80}$/;
-const now = () => new Date().toISOString();
-const hash = (text) => createHash("sha256").update(text).digest("hex");
-function validId(id) {
-  if (typeof id !== "string" || !idPattern.test(id))
-    throw new Problem(400, "Invalid identifier.");
-  return id;
-}
-function title(value) {
-  if (typeof value !== "string" || !value.trim() || value.length > 300)
-    throw new Problem(400, "A title between 1 and 300 characters is required.");
-  return value.trim();
-}
-function body(value) {
-  if (typeof value !== "string" || value.length > 200_000)
-    throw new Problem(
-      400,
-      "Description must be text, up to 200,000 characters.",
-    );
-  return value;
-}
-function choice(value, choices, label) {
-  if (!choices.includes(value)) throw new Problem(400, `Invalid ${label}.`);
-  return value;
-}
-function date(value) {
-  if (value === "" || value === null) return null;
-  if (
-    typeof value !== "string" ||
-    !/^\d{4}-\d{2}-\d{2}$/.test(value) ||
-    Number.isNaN(Date.parse(value)) ||
-    new Date(value).toISOString().slice(0, 10) !== value
-  )
-    throw new Problem(400, "Use a valid YYYY-MM-DD date.");
-  return value;
-}
-function tags(value) {
-  if (
-    !Array.isArray(value) ||
-    value.length > 30 ||
-    value.some((t) => typeof t !== "string" || t.length > 80)
-  )
-    throw new Problem(400, "Tags must be a list of short strings.");
-  return [...new Set(value.map((t) => t.trim()).filter(Boolean))];
-}
-function color(value) {
-  if (typeof value !== "string" || !/^#[0-9a-f]{6}$/i.test(value))
-    throw new Problem(400, "Use a six-digit hex color.");
-  return value;
-}
 function parse(text, file) {
   if (file.endsWith(".canvas") || /^\s*\{/.test(text)) {
     try {
@@ -157,6 +92,9 @@ export class Store {
     this.queue = Promise.resolve();
     this.initialising = null;
     this.cache = new Map();
+    this.snapshots = new Map();
+    this.childrenCache = new Map();
+    this.childrenReads = new Map();
     this.events = new EventEmitter();
     this.events.setMaxListeners(0);
     this.version = 0;
@@ -240,12 +178,26 @@ export class Store {
     this.queue = next.catch(() => {});
     return next;
   }
-  changed(file=null) {
+  changed(file=null, value=null) {
     this.version++;
     const relative=file?path.relative(this.root,file).split(path.sep).join('/'):"";
     const match=/^Projects\/([\w-]+)\/(?:(tasks|boards|documents)\/([\w-]+)\.(md|canvas)|project\.md)$/.exec(relative);
     const identity=/^Projects\/([\w-]+)\/identity\.md$/.exec(relative);
     const record=match?{project:match[1],kind:match[2] || "project",id:match[3] || match[1]}:identity?{project:identity[1],kind:"identity",id:"identity"}:null;
+    if (!record) this.childrenCache.clear();
+    else if (record.kind === "project") {
+      for (const key of this.childrenCache.keys())
+        if (key.startsWith(record.project + "/")) this.childrenCache.delete(key);
+    } else {
+      const key = `${record.project}/${record.kind}`, cached = this.childrenCache.get(key);
+      if (value && cached && !cached.value.warnings.length) {
+        // Maintain the short-lived projection from our own confirmed writes.
+        const items = [...cached.value.items];
+        const index = items.findIndex(item => item.id === value.id);
+        if (index < 0) items.push(value); else items[index] = value;
+        cached.value = { items, warnings: [] };
+      } else this.childrenCache.delete(key);
+    }
     this.changeLog.push({version:this.version,record});if(this.changeLog.length>1000)this.changeLog.shift();
     if(!this.journal.active)this.events.emit("change",this.version,{project:record?.kind!=="project"?record?.project:null});
   }
@@ -371,6 +323,7 @@ export class Store {
   public(record, file) {
     return {
       ...record.data,
+      ...(record.data.kind === "board" && record.data.operations ? { operations: record.data.operations.map(({ changes, ...operation }) => changes.length > 1000 ? operation : { ...operation, changes }) } : {}),
       body: record.body,
       revision: record.revision,
       file: path.relative(this.root, file).split(path.sep).join("/"),
@@ -402,6 +355,7 @@ export class Store {
       : existing?.plain
         ? markdown
         : `---\n${doc.toString({ lineWidth: 0 })}---\n${markdown}`;
+    let written;
     const temporary = `${file}.${randomUUID()}.tmp`;
     try {
       const handle = await fs.open(temporary, "wx");
@@ -435,11 +389,12 @@ export class Store {
       const directory=await fs.open(path.dirname(file),"r");
       try{await directory.sync();}finally{await directory.close();}
       this.cache.delete(file);
-      this.changed(file);
+      written = parse(text, file);
+      this.changed(file, this.public(written, file));
     } finally {
       await fs.rm(temporary, { force: true });
     }
-    return this.public(parse(text, file), file);
+    return this.public(written, file);
   }
   checkRevision(record, expected) {
     if (!expected)
@@ -556,6 +511,26 @@ export class Store {
     return { projects, warnings };
   }
   async children(project, kind) {
+    const key = `${project}/${kind}`;
+    const cached = this.childrenCache.get(key);
+    // Watcher events invalidate external edits; the bounded TTL also covers
+    // missed platform events. Revision checks always read/stat the actual file.
+    if (this.watcher && cached && Date.now() - cached.at < 1000)
+      return structuredClone(cached.value);
+    const active = this.childrenReads.get(key);
+    if (active?.version === this.version) return structuredClone(await active.work);
+    const entry = { version: this.version, work: this.readChildren(project, kind) };
+    this.childrenReads.set(key, entry);
+    try {
+      const value = await entry.work;
+      if (entry.version === this.version && this.watcher) {
+        this.childrenCache.set(key, { value, at: Date.now() });
+        if (this.childrenCache.size > 100) this.childrenCache.delete(this.childrenCache.keys().next().value);
+      }
+      return structuredClone(value);
+    } finally { if (this.childrenReads.get(key) === entry) this.childrenReads.delete(key); }
+  }
+  async readChildren(project, kind) {
     if (kind === "boards") await this.migrateBoards(project);
     const dir = path.join(this.projectDir(project), kind);
     await this.safe(dir);
@@ -572,12 +547,10 @@ export class Store {
       kind === "tasks"
         ? schema((await this.read(this.file(project, "project"))).data.schema)
         : null;
-    for (const entry of entries) {
-      if (
-        !entry.isFile() ||
-        !entry.name.endsWith(kind === "boards" ? ".canvas" : ".md")
-      )
-        continue;
+    const files = entries.filter(entry => entry.isFile() && entry.name.endsWith(kind === "boards" ? ".canvas" : ".md"));
+    // Bounded parallel reads avoid serial stat/realpath round trips for every file.
+    for (let start = 0; start < files.length; start += 16) {
+      const results = await Promise.all(files.slice(start, start + 16).map(async entry => {
       try {
         const file = path.join(dir, entry.name),
           record = await this.read(file);
@@ -588,14 +561,33 @@ export class Store {
         if (kind === "tasks") this.validateTask(record.data, config);
         if (kind === "boards") this.validateBoard(record.data);
         if (kind === "documents") this.validateDocument(record.data);
-        items.push(this.public(record, file));
+        return { item: this.public(record, file) };
       } catch (error) {
-        warnings.push(`${kind}/${entry.name}: ${error.message}`);
+        return { warning: `${kind}/${entry.name}: ${error.message}` };
+      }
+      }));
+      for (const result of results) {
+        if (result.item) items.push(result.item);
+        else warnings.push(result.warning);
       }
     }
     return { items, warnings };
   }
   async snapshot(id) {
+    const requiredVersion = this.version;
+    const existing = this.snapshots.get(id);
+    if (existing) {
+      const value = await existing.work;
+      if (value.version >= requiredVersion) return structuredClone(value);
+      if (this.snapshots.get(id) === existing) this.snapshots.delete(id);
+      return this.snapshot(id);
+    }
+    const entry = { version: this.version, work: this.readSnapshot(id) };
+    this.snapshots.set(id, entry);
+    try { return structuredClone(await entry.work); }
+    finally { if (this.snapshots.get(id) === entry) this.snapshots.delete(id); }
+  }
+  async readSnapshot(id) {
     await this.init();
     await this.ensureTaskIdentities(id);
     const snapshotVersion=this.version;
@@ -662,47 +654,6 @@ export class Store {
       warnings,
       progress: progress(tasks.items, schema(project.schema)),
     };
-  }
-  validateDocument(data) {
-    validId(data.id);
-    validId(data.project);
-    if (data.kind !== "document") throw new Problem(422, "Expected a document.");
-    title(data.title);
-  }
-  async getDocument(project, id) {
-    const file = this.file(project, "documents", id);
-    const record = await this.read(file);
-    this.validateDocument(record.data);
-    if (record.data.id !== id || record.data.project !== project)
-      throw new Problem(422, "Document identity does not match its file.");
-    return this.public(record, file);
-  }
-  async createDocument(project, input) {
-    const parent = await this.read(this.file(project, "project"));
-    const id = `d-${randomUUID()}`;
-    return this.write(this.file(project, "documents", id), {
-      id, kind: "document", project,
-      title: title(input.title ?? "Untitled document"),
-      version: 1, folder: documentFolder(input.folder, parent.data.document_folders),
-      created: now(), updated: now(),
-    }, body(input.body ?? ""));
-  }
-  async updateDocument(project, id, input) {
-    await this.getDocument(project, id);
-    const file = this.file(project, "documents", id);
-    const current = await this.read(file);
-    this.checkRevision(current, input.revision);
-    const data = { ...current.data, updated: now() };
-    if ("title" in input) data.title = title(input.title);
-    if ("folder" in input) {
-      const parent = await this.read(this.file(project, "project"));
-      data.folder = documentFolder(input.folder, parent.data.document_folders);
-    }
-    const markdown = "body" in input ? body(input.body) : current.body;
-    if (data.title === current.data.title && markdown === current.body &&
-        (data.folder || null) === (current.data.folder || null)) return this.public(current, file);
-    data.version = (Number.isSafeInteger(current.data.version) && current.data.version > 0 ? current.data.version : 1) + 1;
-    return this.write(file, data, markdown, current);
   }
   async createProject(input) {
     const organisation = await this.getOrganisation(
@@ -821,634 +772,6 @@ export class Store {
     );
     if (data.key !== current.data.key) await this.ensureTaskIdentities(id);
     return saved;
-  }
-  validateTask(data, config = schema()) {
-    validId(data.id);
-    title(data.title);
-    choice(data.status, config.statuses, "status");
-    choice(data.type, config.types, "type");
-    validateExtras(data, config);
-    choice(data.priority, PRIORITIES, "priority");
-    date(data.due ?? null);
-    tags(data.tags ?? []);
-    if(data.related_records !== undefined && (!Array.isArray(data.related_records) || data.related_records.length>200 || data.related_records.some(id=>typeof id!=="string" || !idPattern.test(id)))) throw new Problem(400,"Related records must be up to 200 task IDs.");
-    if (data.parent) validId(data.parent);
-    if (data.milestone != null && typeof data.milestone !== "boolean")
-      throw new Problem(400, "Invalid milestone.");
-    if (
-      data.assignee != null &&
-      (typeof data.assignee !== "string" || data.assignee.length > 100)
-    )
-      throw new Problem(400, "Assignee must be text, up to 100 characters.");
-  }
-  async validateParent(project, taskId, parent) {
-    if (!parent) return;
-    validId(parent);
-    const { items } = await this.children(project, "tasks");
-    const map = new Map(items.map((t) => [t.id, t]));
-    const seen = new Set([taskId]);
-    let current = parent;
-    while (current) {
-      if (seen.has(current))
-        throw new Problem(400, "A task cannot be its own ancestor.");
-      if (!map.has(current))
-        throw new Problem(
-          400,
-          "The parent task does not exist in this project.",
-        );
-      seen.add(current);
-      current = map.get(current).parent;
-    }
-  }
-  async assignPerson(projectId, data, input, current = null) {
-    const project = (await this.read(this.file(projectId, "project"))).data;
-    const organisation = await this.getOrganisation(project.organisation);
-    const people = membersForProject(project, organisation);
-    const requestedId = input.assignee_id || null;
-    if (current && !current.assignee_id && !requestedId && input.assignee === current.assignee) { data.assignee_id = null; return; }
-    if (current && !Object.hasOwn(input, "assignee_id") && (!Object.hasOwn(input, "assignee") || input.assignee === current.assignee)) return;
-    if (!data.assignee && (!requestedId || requestedId === current?.assignee_id)) { data.assignee_id = null; return; }
-    const changedName = current && Object.hasOwn(input, "assignee") && input.assignee !== current.assignee && requestedId === current.assignee_id;
-    const person = people.find(p => requestedId && !changedName ? p.id === requestedId : p.name === data.assignee);
-    if (person) { data.assignee_id = person.id; data.assignee = person.name; return; }
-    // Preserve an unchanged former member while editing unrelated task fields.
-    const priorName = (organisation.people || []).find(p => p.id === current?.assignee_id)?.name || current?.assignee;
-    if (current?.assignee_id && requestedId === current.assignee_id && (!Object.hasOwn(input, "assignee") || [current.assignee, priorName].includes(input.assignee))) { data.assignee = priorName; return; }
-    if (requestedId || (organisation.teams || []).length)
-      throw new Problem(400, "Choose an assignee from a team assigned to this project.");
-    data.assignee_id = null;
-  }
-  async validateHierarchy(project, data, config, parentTask) {
-    const { items } = await this.children(project, "tasks");
-    const error = hierarchyError(config, data, parentTask || items.find(t => t.id === data.parent));
-    if (error) throw new Problem(400, error);
-    for (const child of items.filter(t => t.parent === data.id)) {
-      const error = hierarchyError(config, child, data);
-      if (error) throw new Problem(400, error);
-    }
-  }
-  async createTaskBundle(project, input) {
-    if (!Array.isArray(input.subtasks) || input.subtasks.length > 100)
-      throw new Problem(400, "Add up to 100 subtasks at a time.");
-    const parent = await this.createTask(project, { ...input, subtasks: undefined }, { prepare: true });
-    const children = [];
-    for (const child of input.subtasks) {
-      if (!child || typeof child !== "object" || Array.isArray(child)) throw new Problem(400, "Invalid subtask.");
-      children.push(await this.createTask(project, { title: child.title, type: child.type, body: child.body, parent: parent.data.id }, { prepare: true, parentTask: parent.data }));
-    }
-    const written = [];
-    try {
-      for (const prepared of [parent, ...children]) {
-        const data = prepared.data;
-        Object.assign(data, await this.ensureTaskIdentities(project, data.id));
-        data.aliases.unshift(data.key);
-        written.push(await this.write(this.file(project, "tasks", data.id), data, prepared.body));
-      }
-      return written[0];
-    } catch (error) {
-      // Validation happens before writing. Undo this bundle if an I/O failure interrupts it.
-      for (const task of written) await fs.rm(this.file(project, "tasks", task.id), { force: true });
-      this.changed();
-      throw error;
-    }
-  }
-  async createTask(project, input, internal = {}) {
-    if (!internal.prepare && input.creation_request) {
-      if (typeof input.creation_request !== "string" || !/^[\w-]{1,100}$/.test(input.creation_request)) throw new Problem(400, "Invalid creation request.");
-      const existing = (await this.children(project, "tasks")).items.find(t => t.creation_request === input.creation_request);
-      if (existing) return existing;
-    }
-    if (input.canvas_source) {
-      if (
-        typeof input.canvas_source !== "string" ||
-        !/^canvas:[\w-]+:[\w-]+$/.test(input.canvas_source) ||
-        input.canvas_source.length > 200
-      )
-        throw new Problem(400, "Invalid canvas source.");
-      const existing = (await this.children(project, "tasks")).items.find(
-        (t) => t.canvas_source === input.canvas_source,
-      );
-      if (existing) return existing;
-    }
-    if (!internal.prepare && input.subtasks !== undefined) return this.createTaskBundle(project, input);
-    const config = schema(
-      (await this.read(this.file(project, "project"))).data.schema,
-    );
-    const id = `t-${randomUUID().slice(0, 8)}`;
-    const data = {
-      id,
-      kind: "task",
-      ...(input.creation_request ? { creation_request: input.creation_request } : {}),
-      ...(input.canvas_source ? { canvas_source: input.canvas_source } : {}),
-      project,
-      title: title(input.title),
-      type:
-        input.type ??
-        (config.types.includes("task") ? "task" : config.types[0]),
-      status:
-        input.status ??
-        initialStatus(config),
-      priority: input.priority ?? defaultPriority,
-      parent: input.parent || null,
-      assignee: input.assignee ?? "",
-      due: input.due || null,
-      tags: input.tags ?? [],
-      created: now(),
-      updated: now(),
-    };
-    for (const key of [
-      "start",
-      "milestone",
-      "estimate",
-      "dependencies",
-      "recurrence",
-      "fields",
-      "comments",
-      "order",
-      "archived",
-    ])
-      if (key in input) data[key] = input[key];
-    data.aliases = [data.title];
-    if (internal.recurrenceSource)
-      data.recurrence_source = internal.recurrenceSource;
-    await this.assignPerson(project, data, input);
-    this.validateTask(data, config);
-    if (!internal.parentTask) await this.validateParent(project, id, data.parent);
-    await this.validateHierarchy(project, data, config, internal.parentTask);
-    await this.validateDependencies(project, id, data.dependencies);
-    const taskBody = body(input.body ?? "");
-    if (internal.prepare) return { data, body: taskBody };
-    Object.assign(data, await this.ensureTaskIdentities(project, id));
-    data.aliases.unshift(data.key);
-    return this.write(this.file(project, "tasks", id), data, taskBody);
-  }
-  async updateTask(project, id, input) {
-    const file = this.file(project, "tasks", id),
-      current = await this.read(file);
-    this.checkRevision(current, input.revision);
-    if(current.data.source) {
-      for(const key of ["title","type","status","priority","assignee","due"]) if(key in input && JSON.stringify(input[key] || null)!==JSON.stringify(current.data[key] || null)) throw new Problem(403,"This field belongs to a data source. Use Publish to source or edit it in the source, then sync.");
-    }
-    const data = { ...current.data, updated: now() };
-    for (const key of [
-      "title",
-      "type",
-      "status",
-      "priority",
-      "parent",
-      "assignee",
-      "due",
-      "tags",
-      "start",
-      "milestone",
-      "estimate",
-      "dependencies",
-      "related_records",
-      "recurrence",
-      "fields",
-      "comments",
-      "order",
-      "archived",
-    ])
-      if (key in input) data[key] = input[key];
-    data.title = title(data.title);
-    data.parent ||= null;
-    data.due ||= null;
-    const config = schema(
-      (await this.read(this.file(project, "project"))).data.schema,
-    );
-    if (!canTransition(config, current.data.status, data.status)) throw new Problem(400, transitionError(config, current.data.status, data.status));
-    await this.assignPerson(project, data, input, current.data);
-    this.validateTask(data, config);
-    await this.validateParent(project, id, data.parent);
-    await this.validateHierarchy(project, data, config);
-    await this.validateDependencies(project, id, data.dependencies);
-    if (data.title !== current.data.title)
-      data.aliases = [
-        ...new Set([
-          data.title,
-          ...(Array.isArray(data.aliases) ? data.aliases : []),
-        ]),
-      ].slice(0, 20);
-    // Completing a recurring task creates exactly one successor for this task ID.
-    if (
-      data.recurrence &&
-      config.done.includes(data.status) &&
-      !config.done.includes(current.data.status) &&
-      !data.recurrence_next
-    ) {
-      const { items } = await this.children(project, "tasks");
-      let successor = items.find((t) => t.recurrence_source === id);
-      if (!successor) {
-        const next = {
-          ...data,
-          status:
-            config.initial_status || config.statuses.find((s) => !config.done.includes(s)) || config.statuses[0],
-          due: nextDate(data.due, data.recurrence),
-          start: data.start ? nextDate(data.start, data.recurrence) : null,
-          comments: [],
-          body: current.body,
-        };
-        successor = await this.createTask(project, next, {
-          recurrenceSource: id,
-        });
-      }
-      data.recurrence_next = successor.id;
-    }
-    const saved=await this.write(
-      file,
-      data,
-      "body" in input ? body(input.body) : current.body,
-      current,
-    );
-    if(this.automations && current.data.status!==saved.status){await this.automations.onStatus(project,current.data,saved);return this.public(await this.read(file),file);}
-    return saved;
-  }
-  async deleteTask(project, id, revision) {
-    const file = this.file(project, "tasks", id),
-      current = await this.read(file);
-    this.checkRevision(current, revision);
-    const { items, warnings } = await this.children(project, "tasks");
-    if (warnings.length)
-      throw new Problem(
-        409,
-        "Repair unreadable task files before removing tasks.",
-      );
-    if (items.some((t) => t.parent === id))
-      throw new Problem(400, "Move or remove the subtasks first.");
-    const trash = path.join(this.root, ".trash", `${Date.now()}-${id}.md`);
-    await this.safe(trash);
-    await fs.mkdir(path.dirname(trash), { recursive: true });
-    if (items.some((t) => (t.dependencies || []).includes(id)))
-      throw new Problem(400, "Remove references to this dependency first.");
-    await this.journal.move(file, trash);
-    this.changed();
-    return { ok: true };
-  }
-  validateBoard(data) {
-    if (data.settings?.dependency_style !== undefined && !validDependencyStyle(data.settings.dependency_style))
-      throw new Problem(400, "Invalid dependency arrow style.");
-    title(data.title);
-    if (
-      data.settings !== undefined &&
-      (!data.settings ||
-        typeof data.settings !== "object" ||
-        Array.isArray(data.settings) ||
-        ["snap", "alignObjects"].some(
-          (key) =>
-            data.settings[key] !== undefined &&
-            typeof data.settings[key] !== "boolean",
-        ))
-    )
-      throw new Problem(
-        400,
-        "Board settings must be an object with boolean snapping options.",
-      );
-    if (
-      data.layers != null &&
-      (!Array.isArray(data.layers) ||
-        data.layers.length > 100 ||
-        data.layers.some(
-          (l) =>
-            !l ||
-            typeof l.id !== "string" ||
-            !/^[\w-]{1,100}$/.test(l.id) ||
-            typeof l.name !== "string" ||
-            l.name.length > 80 ||
-            (l.hidden != null && typeof l.hidden !== "boolean") ||
-            (l.locked != null && typeof l.locked !== "boolean"),
-        ))
-    )
-      throw new Problem(400, "Invalid layers.");
-    const session = data.settings?.session;
-    if (
-      session != null &&
-      (!session ||
-        typeof session !== "object" ||
-        Array.isArray(session) ||
-        (session.timerEnd != null &&
-          (!Number.isFinite(session.timerEnd) || session.timerEnd < 0)) ||
-        (session.voteLimit != null &&
-          (!Number.isInteger(session.voteLimit) ||
-            session.voteLimit < 1 ||
-            session.voteLimit > 20)) ||
-        (session.voting != null && typeof session.voting !== "boolean") ||
-        (session.votes != null &&
-          (!Array.isArray(session.votes) ||
-            session.votes.length > 100 ||
-            session.votes.some(
-              (v) =>
-                !v ||
-                typeof v.id !== "string" ||
-                v.id.length > 100 ||
-                !Array.isArray(v.nodes) ||
-                v.nodes.length > 20 ||
-                v.nodes.some((id) => typeof id !== "string"),
-            ))))
-    )
-      throw new Problem(400, "Invalid board session.");
-    const background = data.settings?.background;
-    if (
-      background !== undefined &&
-      (!background ||
-        typeof background !== "object" ||
-        Array.isArray(background) ||
-        !["plain", "dots", "grid", "fine-grid", "lines"].includes(background.pattern) ||
-        ![background.color, background.lineColor].every(
-          (value) => value === "auto" || /^#[\da-f]{6}$/i.test(value || ""),
-        ) ||
-        !Number.isInteger(background.spacing) ||
-        background.spacing < 8 ||
-        background.spacing > 160)
-    )
-      throw new Problem(400, "Invalid board background settings.");
-    if (
-      !Array.isArray(data.nodes) ||
-      data.nodes.length > 10000 ||
-      !Array.isArray(data.edges) ||
-      data.edges.length > 20000
-    )
-      throw new Problem(
-        400,
-        "A board supports up to 10,000 objects and 20,000 connectors.",
-      );
-    const ids = new Set();
-    for (const node of data.nodes) {
-      validId(node.id);
-      if(node.viewType!=null&&!['list','table','kanban','timeline'].includes(node.viewType))throw new Problem(400,'Invalid embedded task layout.');
-      if(node.visibleFields!=null&&(!Array.isArray(node.visibleFields)||node.visibleFields.length>7||node.visibleFields.some(f=>!['key','title','status','assignee','due','priority','type'].includes(f))))throw new Problem(400,'Invalid embedded task fields.');
-      if(node.timelineScale!=null&&!['day','week','month'].includes(node.timelineScale))throw new Problem(400,'Invalid timeline scale.');
-      if(node.timelineShowWeekends!=null&&typeof node.timelineShowWeekends!=="boolean")throw new Problem(400,'Invalid timeline weekend setting.');
-      if(node.timelineRange!=null&&!validTimelineRange(node.timelineRange))throw new Problem(400,'Use a valid timeline start/end range of ten years or less.');
-      if (!validObjectGeometry(node))
-        throw new Problem(400, "Invalid object geometry.");
-      if (ids.has(node.id))
-        throw new Problem(400, "Duplicate board object ID.");
-      ids.add(node.id);
-      choice(
-        node.type,
-        [
-          "task",
-          "sticky",
-          "draft",
-          "text",
-          "shape",
-          "grid",
-          "frame",
-          "image",
-          "draw",
-          "file",
-          "link",
-          "query",
-        ],
-        "board object",
-      );
-      for (const key of ["x", "y", "w", "h"])
-        if (!Number.isFinite(node[key]) || Math.abs(node[key]) > 100_000)
-          throw new Problem(400, "Invalid board position.");
-      if (node.w < 1 || node.h < 1)
-        throw new Problem(400, "Board objects are too small.");
-      if (
-        node.text != null &&
-        (typeof node.text !== "string" || node.text.length > 200000)
-      )
-        throw new Problem(400, "Board text is too long.");
-      if (node.projectFrame !== undefined && (typeof node.projectFrame !== "boolean" || node.type !== "frame"))
-        throw new Problem(400, "Invalid project frame.");
-      if (node.projectFrameOwner != null) validId(node.projectFrameOwner);
-      if (node.type === "draft" && !validDraftTask(node))
-        throw new Problem(400, "Invalid draft task.");
-      if (node.type === "grid" && !validGrid(node.grid))
-        throw new Problem(
-          400,
-          "Invalid grid: use 1–30 rows and columns, and at most 6,000 characters per cell.",
-        );
-      if (!validTextStyle(node))
-        throw new Problem(400, "Invalid object text style.");
-      if (node.color) color(node.color);
-      if (node.textAlign != null)
-        choice(
-          node.textAlign,
-          ["left", "center", "right", "justify"],
-          "text alignment",
-        );
-      if (node.type === "task") validId(node.task);
-      if (node.group) validId(node.group);
-      if (node.frame) validId(node.frame);
-      if (
-        node.subpath &&
-        (typeof node.subpath !== "string" ||
-          !node.subpath.startsWith("#") ||
-          node.subpath.length > 300)
-      )
-        throw new Problem(400, "Invalid embed heading or block.");
-      if (
-        node.type === "file" &&
-        (typeof node.file !== "string" || node.file.length > 1000)
-      )
-        throw new Problem(400, "Invalid file reference.");
-      if (
-        node.type === "link" &&
-        (typeof node.url !== "string" ||
-          !/^https?:\/\//i.test(node.url) ||
-          node.url.length > 2000)
-      )
-        throw new Problem(400, "Use an http or https link.");
-      if (
-        node.type === "query" &&
-        node.query != null &&
-        (typeof node.query !== "object" || Array.isArray(node.query))
-      )
-        throw new Problem(400, "Invalid task view.");
-      if (
-        node.comments &&
-        (!Array.isArray(node.comments) ||
-          node.comments.length > 1000 ||
-          node.comments.some(
-            (c) =>
-              typeof c.id !== "string" ||
-              typeof c.text !== "string" ||
-              c.text.length > 10000 ||
-              typeof c.author !== "string" ||
-              c.author.length > 100 ||
-              (c.replyTo != null && (typeof c.replyTo !== "string" || c.replyTo.length > 200)) ||
-              (c.deleted != null && typeof c.deleted !== "boolean") ||
-              (c.reactions != null && (!Array.isArray(c.reactions) || c.reactions.length > 5000 || c.reactions.some((r) =>
-                !r || typeof r.id !== "string" || r.id.length > 300 ||
-                typeof r.actor !== "string" || r.actor.length > 200 ||
-                typeof r.author !== "string" || r.author.length > 100 ||
-                !commentReactions.some(([emoji]) => emoji === r.emoji)
-              ))),
-          ))
-      )
-        throw new Problem(400, "Invalid board comments.");
-      if (
-        node.type === "image" &&
-        (typeof node.src !== "string" ||
-          !/^attachments\/[a-zA-Z0-9_-]+\.(png|jpg|jpeg|gif|webp)$/.test(
-            node.src,
-          ))
-      )
-        throw new Problem(400, "Use a local image attachment.");
-      if (
-        node.type === "draw" &&
-        (!Array.isArray(node.points) ||
-          node.points.length > 10000 ||
-          node.points.some(
-            (p) =>
-              !Array.isArray(p) ||
-              p.length !== 2 ||
-              p.some((v) => !Number.isFinite(v) || Math.abs(v) > 100000),
-          ))
-      )
-        throw new Problem(400, "Invalid drawing.");
-      if (node.type === "draw") {
-        if (
-          node.strokeWidth != null &&
-          (!Number.isFinite(node.strokeWidth) ||
-            node.strokeWidth < 1 ||
-            node.strokeWidth > 32)
-        )
-          throw new Problem(400, "Invalid pen thickness.");
-        if (
-          node.opacity != null &&
-          (!Number.isFinite(node.opacity) ||
-            node.opacity < 0.1 ||
-            node.opacity > 1)
-        )
-          throw new Problem(400, "Invalid pen opacity.");
-        if (node.brush != null)
-          choice(node.brush, ["pen", "highlighter"], "pen brush");
-        if (node.pressure != null && typeof node.pressure !== "boolean")
-          throw new Problem(400, "Invalid pen pressure setting.");
-        if (
-          node.pressures != null &&
-          (!Array.isArray(node.pressures) ||
-            node.pressures.length !== node.points.length ||
-            node.pressures.some((p) => !Number.isFinite(p) || p < 0 || p > 1))
-        )
-          throw new Problem(400, "Invalid pen pressure samples.");
-        if (node.sampleTimes != null && (!Array.isArray(node.sampleTimes) || node.sampleTimes.length !== node.points.length || node.sampleTimes.some((v,i)=>!Number.isFinite(v) || v<0 || v>86400000 || (i>0 && v<node.sampleTimes[i-1]))))
-          throw new Problem(400, "Invalid pen timing samples.");
-        if (node.tilts != null && (!Array.isArray(node.tilts) || node.tilts.length !== node.points.length || node.tilts.some(v=>!Array.isArray(v) || v.length!==2 || v.some(n=>!Number.isFinite(n) || n< -90 || n>90))))
-          throw new Problem(400, "Invalid pen tilt samples.");
-      }
-    }
-    if (data.nodes.filter((n) => n.type === "frame").length > 500)
-      throw new Problem(400, "A board supports up to 500 frames.");
-    const byId = new Map(data.nodes.map((n) => [n.id, n]));
-    for (const n of data.nodes) {
-      const parentNode = byId.get(n.frame);
-      if (parentNode?.type === "grid" || n.gridCell != null) {
-        const c = n.gridCell;
-        if (
-          parentNode?.type !== "grid" ||
-          !c ||
-          !Number.isInteger(c.row) ||
-          !Number.isInteger(c.column) ||
-          !parentNode.grid.cells[c.row]?.[c.column]
-        )
-          throw new Problem(400, "Invalid grid cell membership.");
-      }
-      const seen = new Set([n.id]);
-      let parent = n.frame;
-      while (parent) {
-        const frame = byId.get(parent);
-        if (
-          !frame ||
-          !["frame", "grid"].includes(frame.type) ||
-          seen.has(parent)
-        )
-          throw new Problem(400, "Invalid frame hierarchy.");
-        seen.add(parent);
-        parent = frame.frame;
-      }
-    }
-    const edges = new Set();
-    for (const edge of data.edges) {
-      validId(edge.id);
-      if (edge.projectFrameOwner != null) validId(edge.projectFrameOwner);
-      if (edge.planRelation != null) choice(edge.planRelation, ["dependency", "parent"], "project frame relationship");
-      if (!validConnectorGeometry(edge))
-        throw new Problem(400, "Invalid connector geometry.");
-      if (
-        edges.has(edge.id) ||
-        !ids.has(edge.from) ||
-        !ids.has(edge.to) ||
-        edge.from === edge.to
-      )
-        throw new Problem(400, "Invalid connector.");
-      if (
-        edge.label != null &&
-        (typeof edge.label !== "string" || edge.label.length > 500)
-      )
-        throw new Problem(400, "Connector labels must be short text.");
-      for (const key of ["fromSide", "toSide"])
-        if (edge[key] != null)
-          choice(
-            edge[key],
-            ["top", "right", "bottom", "left"],
-            "connector side",
-          );
-      for (const key of ["fromEnd", "toEnd"])
-        if (edge[key] != null)
-          choice(
-            edge[key],
-            [
-              "none",
-              "arrow",
-              "triangle",
-              "circle",
-              "circle-outline",
-              "diamond",
-              "diamond-outline",
-              "bar",
-            ],
-            "arrow style",
-          );
-      if (edge.width != null)
-        choice(edge.width, [1, 2, 3, 5], "line thickness");
-      if (edge.lineStyle != null)
-        choice(edge.lineStyle, ["solid", "dashed", "dotted"], "line style");
-      if (edge.routing)
-        choice(edge.routing, ["curve", "elbow", "straight"], "connector route");
-      if (edge.relationship)
-        choice(
-          edge.relationship,
-          ["relates", "blocks", "contains", "sequence"],
-          "relationship",
-        );
-      if (edge.color && !/^[1-6]$/.test(edge.color)) color(edge.color);
-      edges.add(edge.id);
-    }
-  }
-  async createBoard(project, input) {
-    await this.read(this.file(project, "project"));
-    const id = `b-${randomUUID().slice(0, 8)}`;
-    return this.write(
-      this.file(project, "boards", id),
-      {
-        id,
-        kind: "board",
-        project,
-        title: title(input.title),
-        nodes: [],
-        edges: [],
-        created: now(),
-        updated: now(),
-      },
-      "",
-    );
-  }
-  async updateBoard(project, id, input) {
-    const file = this.file(project, "boards", id),
-      current = await this.read(file);
-    this.checkRevision(current, input.revision);
-    const data = { ...current.data, updated: now() };
-    for (const key of ["title", "nodes", "edges", "archived"])
-      if (key in input) data[key] = input[key];
-    this.validateBoard(data);
-    return this.write(file, data, current.body, current);
   }
   async demo(input = {}) {
     const project = await this.createProject({
@@ -1575,6 +898,8 @@ export class Store {
     return project;
   }
 }
+
+Object.assign(Store.prototype, documentsMethods, tasksMethods, boardsMethods);
 
 installRecovery(Store);
 installWorkspace(Store);

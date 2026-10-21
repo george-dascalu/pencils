@@ -66,7 +66,7 @@ try {
   assert.match(await reading.textContent(), /Footnote details/);
   assert.match(await reading.textContent(), /Embedded text/);
   assert.match(await reading.locator(".document-transclusion").textContent(), /Embedded text/);
-  assert.doesNotMatch(await reading.textContent(), /Private comment/);
+  assert.doesNotMatch(await reading.innerText(), /Private comment/);
   assert.equal(await reading.locator("script,a[href^='javascript:']").count(), 0);
   assert.equal(await reading.locator("[data-document-action],[data-action]").count(), 0);
   assert.equal(await page.evaluate(() => window.documentAttack), undefined);

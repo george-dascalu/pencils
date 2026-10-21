@@ -37,7 +37,7 @@ try {
   await page.goto(`${base}/#project/${project.id}/documents/${document.id}`);
   await page.locator(".cm-content").waitFor();
   assert.equal(await page.locator("[data-document-mode]").allTextContents().then(t => t.join("")), "");
-  assert.equal(await page.locator(".document-controls > :first-child").getAttribute("data-document-action"), "outline");
+  assert.equal(await page.locator(".document-view-controls > :first-child").getAttribute("data-document-action"), "outline");
   const outlineButton = page.getByRole("button", { name: "Document outline", exact: true });
   await outlineButton.click();
   const outline = page.getByRole("dialog", { name: "Outline", exact: true });
@@ -94,7 +94,7 @@ try {
   await page.getByRole("button", { name: "Source", exact: true }).click();
   await page.locator(".cm-content").fill("# Revised notebook\n\nNew content.");
   await until(async () => (await current()).version === 3);
-  await page.getByRole("button", { name: "Version 3", exact: true }).click();
+  await page.getByRole("button", { name: "Page versions", exact: true }).click();
   const history = page.getByRole("dialog", { name: "Page versions", exact: true });
   await history.locator("[data-version-index]").filter({ hasText: "Version 1" }).click();
   assert.match(await history.locator("article").textContent(), /Final paragraph/);

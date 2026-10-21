@@ -102,6 +102,7 @@ async function find(id, text) {
   await openBoardSearch(page);
   await page.locator("#canvas-find").fill(text);
   await page.locator(`#canvas-find-results [data-id="${id}"]`).click();
+  await node(id).waitFor({ state: "visible" });
   await page.waitForTimeout(250);
 }
 const camera = () =>
@@ -435,12 +436,17 @@ try {
   await until(async () => (await current()).nodes.length === 4);
   await fixture();
   await find("outer", "Workshop");
-  await page.locator('#selection-tools [data-pro="collapse"]').click();
+  const toggle = node("outer").locator(':scope > [data-pro="collapse"]');
+  const toggleSize = () => toggle.evaluate(el => ({ width: el.offsetWidth, height: el.offsetHeight }));
+  const expandedSize = await toggleSize();
+  assert.equal(expandedSize.width, expandedSize.height, 'The frame toggle is square');
+  await toggle.click();
   await until(
     async () =>
       (await current()).nodes.find((n) => n.id === "outer").collapsed === true,
   );
   assert.equal(await node("note").count(), 0);
+  assert.deepEqual(await toggleSize(), expandedSize, 'Expand and collapse keep the same button size');
   await page.locator('#selection-tools [data-pro="frame-present"]').click();
   await page.locator("#presentation-controls").waitFor();
   assert.match(

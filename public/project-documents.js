@@ -1,4 +1,5 @@
 import { markdownDocumentEditor } from "./document-editor.js";
+import { documentReadingSearch } from "./document-reading-search.js";
 import { documentMarkdown } from "./document-markdown.js";
 import { documentHeadings, documentOutline, documentStats, documentReference, resolveDocument, obsidianDocumentURI } from "./document-model.js";
 import { positionPopover } from "./popover-position.js";
@@ -7,6 +8,7 @@ import { randomUUID } from "./uuid.js";
 export function projectDocuments(ctx) {
   const { state, api, sync, storage, esc, icon, renderView, toast } = ctx;
   let editor = null, form = null, current = null, project = null, renderer = null, panel = null, panelOpener = null;
+  let readingSearch = null;
   let mode = storage.get("document-mode", "live");
   let documentWidth = storage.get("document-width", "page") === "full" ? "full" : "page";
   let sidebarCollapsed = storage.get("document-sidebar-collapsed", false);
@@ -71,14 +73,16 @@ export function projectDocuments(ctx) {
     if (!form?.isConnected || state.project?.id !== project) return;
     const entry = sync.entries.get(endpoint(project, current.id));
     const problem = entry?.error || entry?.conflict || sync.storageError;
+    form.querySelector("[data-document-save-problem]").hidden = !problem;
     form.querySelector("[data-document-save]").textContent =
       sync.storageError ? "Browser storage is full. Keep this page open until saved."
       : entry?.conflict ? "This document changed elsewhere. Review your pending save."
-      : entry?.error ? "Changes kept in this browser. Waiting to save."
-      : entry ? "Saving…" : "Saved automatically";
+      : entry?.error ? "Changes kept in this browser. Waiting to save." : "";
     form.querySelector("[data-document-recovery]").hidden = !problem;
     const saved = all().find(d => d.id === current.id);
-    form.querySelector("[data-document-action=versions]").textContent = `Version ${saved?.version || 1}`;
+    const versions = form.querySelector("[data-document-action=versions]");
+    versions.title = `Page versions · Version ${saved?.version || 1}`;
+    versions.dataset.version = saved?.version || 1;
     updateExplorer();
   }
   async function flushDocument(id = current?.id) {
@@ -265,6 +269,8 @@ export function projectDocuments(ctx) {
     return panel;
   }
   function setMode(next, focus = true) {
+    readingSearch?.close();
+    if (next === "reading") editor.escape();
     mode = next; storage.set("document-mode", next);
     const reading = form.querySelector(".document-reading"), host = form.querySelector(".document-codemirror");
     host.hidden = mode === "reading";
@@ -328,6 +334,7 @@ export function projectDocuments(ctx) {
   function reset() {
     clearExplorerDrag();
     closePanel();
+    readingSearch?.destroy(); readingSearch = null;
     editor?.flush();
     editor?.destroy();
     editor = form = current = project = renderer = null;
@@ -354,24 +361,29 @@ export function projectDocuments(ctx) {
           <header class="document-heading"><button type="button" class="icon-button document-browse" data-document-action="browse" aria-label="Browse documents" title="Show Documents sidebar" aria-expanded="${!sidebarCollapsed}">${icon("menu")}</button>${icon("file")}
             <input name="title" aria-label="Document title" value="${esc(doc.title)}" placeholder="Untitled document" maxlength="300" autocomplete="off">
             <a class="icon-button" href="#" data-document-action="obsidian" aria-label="Open in Obsidian" title="Open in Obsidian">${icon("external")}</a>
+            <button type="button" class="icon-button" data-document-action="versions" aria-label="Page versions" title="Page versions · Version ${doc.version || 1}" data-version="${doc.version || 1}">${icon("clock")}</button>
             <button type="button" class="icon-button" data-document-action="tools" aria-label="Document tools" title="Document tools">${icon("more")}</button>
             <button type="button" class="icon-button" data-document-action="export" aria-label="Export Markdown" title="Export Markdown">${icon("download")}</button>
             <details class="board-menu document-delete"><summary aria-label="Delete document" title="Delete document">${icon("trash")}</summary><div class="board-menu-panel"><p>Move this document to Trash?</p><button type="button" class="button small danger" data-document-action="delete">Move to Trash</button></div></details>
           </header>
           <div class="document-controls">
-            <button type="button" class="icon-button" data-document-action="outline" aria-label="Document outline" title="Document outline" aria-expanded="false" aria-haspopup="dialog" popovertarget="document-outline-panel">${icon("tree")}</button>
-            <div class="document-modes" role="group" aria-label="Document view">${[["live", "Live preview", "pencil"], ["source", "Source", "code"], ["reading", "Reading", "preview"]].map(([key, label, glyph]) => `<button type="button" class="icon-button" data-document-mode="${key}" aria-label="${label}" title="${label}" aria-pressed="${mode === key}">${icon(glyph)}</button>`).join("")}</div>
-            <button type="button" class="icon-button" data-document-action="width" aria-label="Full width" aria-pressed="${documentWidth === "full"}" title="${documentWidth === "full" ? "Use page width" : "Use full width"}">${icon(documentWidth === "full" ? "width-page" : "width-full")}</button>
             <div class="document-formatting" role="toolbar" aria-label="Format document">
               <select data-document-format-select aria-label="Paragraph style"><option value="">Style</option><option value="paragraph">Paragraph</option>${[1, 2, 3, 4, 5, 6].map(n => `<option value="h${n}">Heading ${n}</option>`).join("")}</select>
               ${[["bold", "bold", "Bold"], ["italic", "italic", "Italic"], ["check", "check", "Checklist"], ["link", "link", "Link"]].map(([command, glyph, title]) => `<button type="button" class="icon-button" data-document-format="${command}" aria-label="${title}" title="${title}">${icon(glyph)}</button>`).join("")}
               <button type="button" class="button small" data-document-action="insert">${icon("plus")}Insert</button>
             </div>
+            <div class="document-view-controls" role="toolbar" aria-label="Document navigation">
+            <button type="button" class="icon-button" data-document-action="outline" aria-label="Document outline" title="Document outline" aria-expanded="false" aria-haspopup="dialog" popovertarget="document-outline-panel">${icon("tree")}</button>
+            <div class="document-modes" role="group" aria-label="Document view">${[["live", "Live preview", "pencil"], ["source", "Source", "code"], ["reading", "Reading", "preview"]].map(([key, label, glyph]) => `<button type="button" class="icon-button" data-document-mode="${key}" aria-label="${label}" title="${label}" aria-pressed="${mode === key}">${icon(glyph)}</button>`).join("")}</div>
+            <button type="button" class="icon-button" data-document-action="width" aria-label="Full width" aria-pressed="${documentWidth === "full"}" title="${documentWidth === "full" ? "Use page width" : "Use full width"}">${icon(documentWidth === "full" ? "width-page" : "width-full")}</button>
+
             <button type="button" class="icon-button" data-document-action="find" aria-label="Find in document" title="Find in document (Ctrl / ⌘ F)">${icon("search")}</button>
+            </div>
           </div>
+          <div class="document-save-problem" data-document-save-problem hidden><span data-document-save role="status" aria-live="polite"></span><button type="button" class="button small" data-feature="recovery" data-document-recovery hidden>Review pending save</button></div>
           <div class="document-writing"><div class="document-codemirror"></div><article class="document-reading" tabindex="0" aria-label="Document reading view" hidden></article><textarea name="body" hidden>${esc(doc.body || "")}</textarea></div>
           <input type="file" id="document-attachment" accept=".png,.jpg,.jpeg,.gif,.webp,.pdf,.txt,.md,.csv,.zip" multiple hidden>
-          <footer class="document-save"><span data-document-stats></span><span class="spacer"></span><button type="button" class="button small" data-document-action="versions" title="Page versions">Version ${doc.version || 1}</button><span data-document-save role="status" aria-live="polite">Saved automatically</span><button type="button" class="button small" data-feature="recovery" data-document-recovery hidden>Review pending save</button></footer>
+          <footer class="document-save"><span data-document-stats></span></footer>
         </form>` : `<div class="document-empty">${icon("file")}<h2>${state.selectedDocument ? "Document unavailable" : "A home for your project notes"}</h2><p>${state.selectedDocument ? "Choose another document from the explorer." : "Write briefs, meeting notes and reference documents."}</p><button type="button" class="button primary" data-document-action="create">${icon("plus")}New document</button></div>`}
       </section></div>`;
     if (!doc) return;
@@ -380,6 +392,7 @@ export function projectDocuments(ctx) {
     form = document.querySelector("#document-form");
     renderer = documentMarkdown({ documents: all, project: () => project, esc });
     editor = markdownDocumentEditor({
+      icon,
       parent: form.querySelector(".document-codemirror"), text: doc.body || "",
       mode: mode === "source" ? "source" : "live", renderer, documents: all,
       onChange(value) {
@@ -388,16 +401,20 @@ export function projectDocuments(ctx) {
       },
       onError: message => toast(message, true), onLink: followLink,
     });
+    readingSearch = documentReadingSearch({ form, content: form.querySelector(".document-reading"), icon });
     form.addEventListener("input", changed);
     form.addEventListener("submit", e => { e.preventDefault(); editor.flush(); });
     form.addEventListener("keydown", e => {
+      if (mode === "reading" && (e.ctrlKey || e.metaKey) && !e.altKey && e.key.toLowerCase() === "f") {
+        e.preventDefault(); e.stopPropagation(); closePanel(); readingSearch.open(); return;
+      }
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "s") {
         e.preventDefault(); editor.flush();
       }
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "e") {
         e.preventDefault(); setMode(mode === "source" ? "live" : "source");
       }
-      if (e.key === "Escape" && editor.escape()) {
+      if (e.key === "Escape" && (readingSearch.close(true) || editor.escape())) {
         e.preventDefault(); e.stopPropagation();
       }
     });
@@ -502,7 +519,11 @@ export function projectDocuments(ctx) {
         if (sync.entries.has(url)) throw Error("Finish saving this document before opening it in Obsidian.");
         if (project === pid && current?.id === id) window.location.href = button.href;
       } else if (action === "obsidian-settings") obsidianSettings(button);
-      else if (action === "find") { if (mode === "reading") setMode("source", false); editor.find(); }
+      else if (action === "find") {
+        closePanel();
+        if (mode === "reading") readingSearch.open();
+        else editor.find();
+      }
       else if (action === "outline") {
         if (panelOpener === button && panel?.matches(":popover-open")) { closePanel(true); return; }
         const headings = documentOutline(editor.value());
@@ -514,7 +535,14 @@ export function projectDocuments(ctx) {
         const backlinks = all().filter(d => d.id !== current.id && [...(d.body || "").matchAll(/\[\[([^\]\n]+)\]\]|\[[^\]]*\]\(([^)\s]+)\)/g)].some(m => resolveDocument(m[1] || m[2], all())?.id === current.id));
         showPanel(button, "Document tools", `<button type="button" class="document-panel-item" data-document-action="move">${icon("folder")}Move to folder</button><button type="button" class="document-panel-item" data-document-action="versions">${icon("clock")}Page versions</button><button type="button" class="document-panel-item" data-document-action="obsidian-settings">${icon("settings")}Obsidian settings</button><button type="button" class="document-panel-item" data-document-action="export">${icon("download")}Export Markdown</button><button type="button" class="document-panel-item" data-document-format="undo">${icon("undo")}Undo</button><button type="button" class="document-panel-item" data-document-format="redo">${icon("redo")}Redo</button><h3>Backlinks (${backlinks.length})</h3>${backlinks.map(d => `<button type="button" class="document-panel-item" data-document-open="${esc(d.id)}">${icon("file")}${esc(d.title)}</button>`).join("") || "<p>No documents link here yet.</p>"}`);
       } else if (action === "insert") {
-        showPanel(button, "Insert", `<div class="document-insert-options">${[["h1","Heading"],["bullet","Bullet list"],["number","Numbered list"],["check","Checklist"],["quote","Quote"],["strike","Strikethrough"],["highlight","Highlight"],["code","Inline code"],["codeblock","Code block"],["table","Table"],["callout","Callout"],["wiki","Document link"],["footnote","Footnote"],["math","Math"],["mermaid","Mermaid diagram"],["rule","Divider"]].map(([key,title])=>`<button type="button" class="document-panel-item" data-document-format="${key}">${title}</button>`).join("")}<button type="button" class="document-panel-item" data-document-action="attach">Attach file</button></div>`);
+        const categories = [
+          ["Structure", [["h1","Heading","heading"],["bullet","Bullet list","list"],["number","Numbered list","numbered"],["check","Checklist","check"],["quote","Quote","quote"],["rule","Divider","minus"]]],
+          ["Formatting", [["strike","Strikethrough","strike"],["highlight","Highlight","highlight"],["code","Inline code","code"]]],
+          ["Components", [["table","Table","table"],["callout","Callout","comment"],["codeblock","Code block","codeblock"],["math","Math","math"],["mermaid","Mermaid diagram","tree"]]],
+          ["References & files", [["wiki","Document link","link"],["footnote","Footnote","footnote"],["attach","Attach file","attachment"]]],
+        ];
+        showPanel(button, "Insert", `<div class="document-insert-options">${categories.map(([title, items]) => `<section aria-label="${title}"><h3>${title}</h3>${items.map(([key,label,glyph]) => `<button type="button" class="document-panel-item" ${key === "attach" ? 'data-document-action="attach"' : `data-document-format="${key}"`}>${icon(glyph)}${label}</button>`).join("")}</section>`).join("")}</div>`);
+
       } else if (action === "attach") { closePanel(); form.querySelector("#document-attachment").click(); }
       else if (action === "browse") {
         const mobile = matchMedia("(max-width: 780px)").matches;

@@ -1,3 +1,4 @@
+import DOMPurify from "/vendor/purify.js";
 import { alignmentButtons, textAlignments } from "./text-alignment.js";
 import { positionToolbarPopover } from "./selection-toolbar.js";
 import TurndownService from "/vendor/turndown.js";
@@ -18,7 +19,7 @@ export function canvasRichText(
   } = {},
 ) {
   const lifecycle = new AbortController();
-  const source = form.elements[sourceName];
+  const source = form.elements?.[sourceName] || form.querySelector(`[name="${sourceName}"]`);
   const formats = controls.querySelector(".rich-format-menu");
   const alignment = controls.querySelector(".rich-align-menu");
   const menus = [formats, alignment];
@@ -66,6 +67,7 @@ export function canvasRichText(
     bulletListMarker: "-",
   });
   converter.use(gfm);
+  converter.addRule("highlight", { filter: "mark", replacement: content => `==${content}==` });
   converter.addRule("vaultReference", {
     filter: (node) => node.hasAttribute("data-md-source"),
     replacement: (_, node) => node.getAttribute("data-md-source"),
@@ -206,32 +208,67 @@ export function canvasRichText(
     prefix.setStart(block, 0);
     // Only a marker at the beginning of this block, never a dash in prose.
     if (
-      !/^(?:[-*+]|1[.)])$/.test(prefix.toString()) ||
+      !/^(?:[-*+]|1[.)]|#{1,6}|>)$/.test(prefix.toString()) ||
       prefix.cloneContents().querySelector("br,img,[data-md-source]")
     )
       return;
-    const ordered = /^1[.)]$/.test(prefix.toString());
+    const marker = prefix.toString(), ordered = /^1[.)]$/.test(marker);
     event.preventDefault();
     caret.removeAllRanges();
     caret.addRange(prefix);
     // Native editing commands preserve the browser's text undo history.
     document.execCommand("delete");
-    document.execCommand(ordered ? "insertOrderedList" : "insertUnorderedList");
+    if (marker.startsWith('#')) document.execCommand("formatBlock", false, `h${marker.length}`);
+    else if (marker === '>') document.execCommand("formatBlock", false, 'blockquote');
+    else document.execCommand(ordered ? "insertOrderedList" : "insertUnorderedList");
     remember();
     flush();
     activeFormats();
   });
-  rich.addEventListener("input", flush);
+  let formattingInline = false;
+  rich.addEventListener("input", event => {
+    // Interpret completed Markdown only as it is typed; existing escaped text
+    // and code blocks keep their literal meaning, including after undo.
+    if (!plain && !formattingInline && !event.isComposing && event.inputType === 'insertText') {
+      const caret = window.getSelection(), anchor = caret?.anchorNode;
+      if (caret?.isCollapsed && anchor?.nodeType === Node.TEXT_NODE && rich.contains(anchor) && !anchor.parentElement.closest('code,pre,[contenteditable=false]')) {
+        const prefix = anchor.data.slice(0, caret.anchorOffset);
+        const patterns = [/(?<![\\*])\*\*\*[^*\n]+\*\*\*$/, /(?<![\\*])\*\*[^*\n]+\*\*$/, /(?<![\\*])\*[^*\n]+\*$/, /(?<![\\~])~~[^~\n]+~~$/, /(?<![\\=])==[^=\n]+==$/, /(?<![\\`])`[^`\n]+`$/];
+        const match = patterns.map(pattern => pattern.exec(prefix)).find(Boolean);
+        if (match) {
+          const parsed = document.createElement('div'); parsed.innerHTML = markdown(match[0]);
+          const range = document.createRange(); range.setStart(anchor, prefix.length - match[0].length); range.setEnd(anchor, caret.anchorOffset);
+          caret.removeAllRanges(); caret.addRange(range);
+          formattingInline = true;
+          try { document.execCommand('insertHTML', false, parsed.firstElementChild?.tagName === 'P' ? parsed.firstElementChild.innerHTML : parsed.innerHTML); }
+          finally { formattingInline = false; }
+          remember(); activeFormats();
+        }
+      }
+    }
+    flush();
+  });
   rich.addEventListener("keyup", remember);
   rich.addEventListener("mouseup", remember);
-  rich.addEventListener("paste", (e) => {
-    e.preventDefault();
-    document.execCommand(
-      "insertText",
-      false,
-      e.clipboardData.getData("text/plain"),
-    );
-    flush();
+  rich.addEventListener("paste", (event) => {
+    event.preventDefault();
+    const text = event.clipboardData?.getData("text/plain") || "";
+    const html = event.clipboardData?.getData("text/html") || "";
+    if (!text && !html) return;
+    const anchor = window.getSelection()?.anchorNode;
+    const element = anchor?.nodeType === Node.ELEMENT_NODE ? anchor : anchor?.parentElement;
+    if (plain || element?.closest('pre,code')) document.execCommand("insertText", false, text);
+    else {
+      const source = html ? converter.turndown(DOMPurify.sanitize(html, { FORBID_TAGS: ['style', 'form'], FORBID_ATTR: ['style'] })) : text;
+      const parsed = document.createElement('div'); parsed.innerHTML = markdown(source);
+      const inline = parsed.children.length === 1 && parsed.firstElementChild.tagName === 'P';
+      // Empty editable roots can retain the browser's previous heading style.
+      // Reset it before inserting document blocks so following paragraphs do not
+      // become children of an inherited heading.
+      if (!inline && !rich.textContent.trim()) document.execCommand("formatBlock", false, "p");
+      document.execCommand("insertHTML", false, inline ? parsed.firstElementChild.innerHTML : parsed.innerHTML);
+    }
+    remember(); flush(); activeFormats();
   });
   // Do not insert unsanitized dragged HTML or navigate away from an editor.
   rich.addEventListener("drop", (e) => e.preventDefault());

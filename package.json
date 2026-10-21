@@ -1,18 +1,18 @@
 {
   "name": "pencils",
-  "version": "0.16.12",
+  "version": "0.18.11",
   "private": true,
   "type": "module",
   "description": "An offline, Markdown-backed project workspace",
   "scripts": {
-    "postinstall": "node --input-type=module -e \"import fs from 'node:fs'; if (fs.existsSync('scripts/build-editor.mjs') && fs.existsSync('node_modules/esbuild')) await import('./scripts/build-editor.mjs');\"",
+    "postinstall": "node scripts/postinstall.mjs",
     "build:editor": "node scripts/build-editor.mjs",
-    "predev": "npm run build:editor",
+    "predev": "npm run build:editor && npm run build:server",
     "start": "node server/index.js",
     "dev": "node --watch server/index.js",
     "test": "node --test test/*.test.js",
     "test:browser": "node test/browser.mjs",
-    "check": "node test/check.mjs",
+    "check": "npm run typecheck && node test/check.mjs",
     "test:upgrade": "node test/upgrade-browser.mjs",
     "account": "node server/account.js",
     "test:canvas": "node test/canvas-browser.mjs",
@@ -106,7 +106,20 @@
     "test:miro-import": "node test/miro-import.mjs",
     "test:document-workspace": "node test/document-workspace.mjs",
     "test:document-width": "node test/document-width.mjs",
-    "test:document-folder-drag": "node test/document-folder-drag.mjs"
+    "test:document-folder-drag": "node test/document-folder-drag.mjs",
+    "test:document-reading-search": "node test/document-reading-search.mjs",
+    "build:server": "node scripts/build-server.mjs",
+    "typecheck": "tsc -p tsconfig.json",
+    "prestart": "npm run build:server",
+    "pretest": "npm run build:server",
+    "test:document-components": "node test/document-components.mjs",
+    "test:backend-capacity": "node test/backend-capacity.mjs",
+    "test:board-capacity": "node test/canvas-capacity.mjs",
+    "test:document-controls": "node test/document-controls.mjs",
+    "test:task-details": "node test/task-card-comments-history.mjs",
+    "test:board-capacity-gauge": "node test/board-capacity-gauge.mjs",
+    "test:comment-panels-markdown": "node test/comment-panels-markdown.mjs",
+    "test:board-zoom-transition": "node test/board-zoom-transition.mjs"
   },
   "engines": {
     "node": ">=22.12.0"
@@ -123,6 +136,7 @@
     "@lezer/highlight": "^1.2.5",
     "dompurify": "^3.4.17",
     "fast-xml-parser": "5.11.2",
+    "fastify": "^5.12.7",
     "fflate": "^0.8.3",
     "katex": "^0.19.0",
     "marked": "^18.1.1",
@@ -134,8 +148,10 @@
   },
   "devDependencies": {
     "@axe-core/playwright": "4.14.0",
+    "@types/node": "^22.20.5",
     "esbuild": "0.28.1",
     "playwright": "^1.61.1",
-    "prettier": "^3.9.10"
+    "prettier": "^3.9.10",
+    "typescript": "^7.0.2"
   }
 }

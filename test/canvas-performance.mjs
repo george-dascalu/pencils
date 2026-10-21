@@ -68,12 +68,7 @@ try {
   await page.goto(base);
   await page.locator(".project-link").click();
   await page.locator("[data-view=board]").click();
-  await page.locator("#canvas-performance").waitFor();
-  await page.waitForFunction(() =>
-    document
-      .querySelector("#canvas-performance")
-      ?.textContent.includes("5,000"),
-  );
+  await page.waitForFunction(() => document.querySelector('#canvas')?.dataset.objectCount === '5000');
   const load = performance.now() - start,
     count = await page.locator(".board-node").count();
   assert.ok(count < 700, `Expected culling, got ${count} DOM cards`);
@@ -97,8 +92,13 @@ try {
   await page.mouse.up();
   await page.keyboard.press("v");
   console.log("PASS: new cards preload during a held pan");
+  // Allow the first presence heartbeat to finish its initial snapshot refresh.
+  await page.waitForTimeout(1500);
+  await page.waitForFunction(() => document.querySelector('#canvas-presence button'));
   const timings = await page.evaluate(async () => {
     const canvas = document.querySelector("#canvas");
+    const zoomText = document.querySelector("#zoom-label").firstChild;
+    const participant = document.querySelector("#canvas-presence button");
     canvas.scrollIntoView({ block: "center" });
     const values = [];
     for (let i = 0; i < 40; i++) {
@@ -117,6 +117,8 @@ try {
       );
       values.push(performance.now() - start);
     }
+    if (!zoomText.isConnected || !participant.isConnected)
+      throw new Error("Panning must preserve unchanged zoom and participant controls");
     return values.sort((a, b) => a - b);
   });
   const p95 = timings[Math.floor(timings.length * 0.95)];
@@ -180,8 +182,8 @@ try {
   await page.waitForTimeout(150);
   const overviewCount = await page.locator(".board-node").count();
   assert.ok(
-    overviewCount > 100 && overviewCount < 700,
-    "Overview retains detail instead of dropping every card",
+    overviewCount <= 80,
+    "Fit uses lightweight overview with bounded editable detail",
   );
   console.log(
     "PASS: overview renders all objects as a bitmap with bounded detailed DOM",

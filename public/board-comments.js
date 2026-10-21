@@ -1,4 +1,6 @@
+import { canvasRichText, richToolbar } from "./canvas-rich-text.js";
 import { positionBoardObjectPanel } from "./board-object-panel.js";
+import { taskColorAttributes } from "./task-colors.js";
 import {
   commentReactions,
   commentThreads,
@@ -18,11 +20,48 @@ export function boardComments(ctx, author, uid, adapter = null) {
     ctx.renderView(true);
   };
   const embedded = !!adapter?.mount;
+  const savedSize = ctx.storage?.get('comments-panel-size', {}) || {};
+  let panelSize = {
+    width: Math.max(300, Math.min(1000, Number(savedSize.width) || 360)),
+    height: Math.max(300, Math.min(1200, Number(savedSize.height) || 480)),
+  };
+  function resizeComments(width, height) {
+    panelSize = { width: Math.max(Math.min(300, innerWidth - 24), Math.min(width, innerWidth - 24)), height: Math.max(Math.min(300, innerHeight - 24), Math.min(height, innerHeight - 24)) };
+    position();
+    composer?.positionMenus();
+  }
+  function bindResize() {
+    if (embedded) return;
+    const grip = panel.querySelector('[data-comments-resize]');
+    let drag = null;
+    grip.addEventListener('pointerdown', event => {
+      if (event.button !== 0) return;
+      event.preventDefault();
+      const rect = panel.getBoundingClientRect();
+      drag = { x: event.clientX, y: event.clientY, width: rect.width, height: rect.height };
+      grip.setPointerCapture(event.pointerId);
+    });
+    grip.addEventListener('pointermove', event => {
+      if (drag && grip.hasPointerCapture(event.pointerId)) resizeComments(drag.width + event.clientX - drag.x, drag.height + event.clientY - drag.y);
+    });
+    const finish = () => { if (drag) { drag = null; ctx.storage?.set('comments-panel-size', panelSize); } };
+    grip.addEventListener('pointerup', finish);
+    grip.addEventListener('pointercancel', finish);
+    grip.addEventListener('lostpointercapture', finish);
+    grip.addEventListener('keydown', event => {
+      if (!['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(event.key)) return;
+      event.preventDefault(); event.stopPropagation();
+      const step = event.shiftKey ? 80 : 20;
+      resizeComments(panelSize.width + (event.key === 'ArrowRight' ? step : event.key === 'ArrowLeft' ? -step : 0), panelSize.height + (event.key === 'ArrowDown' ? step : event.key === 'ArrowUp' ? -step : 0));
+      ctx.storage?.set('comments-panel-size', panelSize);
+    });
+  }
+
   let panel = null,
     target = null,
     boardId = null,
     projectId = null,
-    replyTo = null;
+    replyTo = null, composer = null;
   const drafts = new Map();
   const key = () => `${projectId}:${boardId}:${target}`;
   const object = () => board()?.nodes.find((n) => n.id === target);
@@ -38,6 +77,24 @@ export function boardComments(ctx, author, uid, adapter = null) {
     }
     return id;
   };
+  const focusComposer = () => panel?.querySelector('[data-editor-mode="source"] textarea, [data-editor-mode="rich"] .inline-rich')?.focus({ preventScroll: true });
+  const authorName = (name) => `<strong class="comment-author" ${taskColorAttributes(state, 'assignee', name)}>${esc(name || 'Workspace')}</strong>`;
+  function replyPreview(comment) {
+    if (comment.deleted) return 'Comment deleted';
+    if (comment.format !== 'markdown') return String(comment.text || '').replace(/\s+/g, ' ').slice(0, 160);
+    const template = document.createElement('template');
+    template.innerHTML = ctx.markdown(comment.text || '');
+    return template.content.textContent.replace(/\s+/g, ' ').trim().slice(0, 160);
+  }
+  function timestamp(created) {
+    const date = new Date(created);
+    if (!created || Number.isNaN(date.getTime())) return '';
+    const today = new Date();
+    const time = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    const short = date.toDateString() === today.toDateString() ? time : `${date.toLocaleDateString([], { day: 'numeric', month: 'short', ...(date.getFullYear() !== today.getFullYear() ? { year: 'numeric' } : {}) })} · ${time}`;
+    const full = date.toLocaleString([], { dateStyle: 'full', timeStyle: 'long' });
+    return `<time datetime="${esc(created)}" title="${esc(full)}" aria-label="${esc(full)}">${esc(short)}</time>`;
+  }
   function composerState() {
     const parent = node()?.comments?.find(
       (c) => c.id === replyTo && !c.deleted,
@@ -50,12 +107,14 @@ export function boardComments(ctx, author, uid, adapter = null) {
       : "";
     const field = panel.querySelector("textarea");
     field.placeholder = parent ? "Write a reply…" : "Write a comment…";
+    panel.querySelector(".inline-rich").dataset.placeholder = field.placeholder;
     panel.querySelector("[data-comment-submit]").textContent = parent
       ? "Reply"
       : "Add comment";
   }
   function close(focus = false) {
     if (!panel) return;
+    composer?.flush(); composer?.destroy(); composer = null;
     drafts.set(key(), { text: panel.querySelector("textarea").value, replyTo });
     panel.remove();
     panel = null;
@@ -80,9 +139,10 @@ export function boardComments(ctx, author, uid, adapter = null) {
       const anchor = adapter.anchor();
       if (!anchor?.isConnected || !node()) return close();
       const r = anchor.getBoundingClientRect(),
-        width = Math.min(300, innerWidth - 24);
+        width = Math.min(panelSize.width, innerWidth - 24);
       panel.style.width = `${width}px`;
-      panel.style.maxHeight = `${Math.min(520, innerHeight - 24)}px`;
+      panel.style.maxHeight = `${innerHeight - 24}px`;
+      panel.style.height = `${Math.min(panelSize.height, innerHeight - 24)}px`;
       panel.style.left = `${Math.max(12, Math.min(r.right + 12, innerWidth - width - 12))}px`;
       panel.style.top = `${Math.max(12, Math.min(r.top, innerHeight - panel.offsetHeight - 12))}px`;
       return;
@@ -97,43 +157,37 @@ export function boardComments(ctx, author, uid, adapter = null) {
     const canvas = $("#canvas"),
       n = object();
     if (!canvas) return close();
-    positionBoardObjectPanel(panel, n, canvas, state.camera);
+    positionBoardObjectPanel(panel, n, canvas, state.camera, panelSize);
   }
   function sync(scroll = false) {
     if (!panel) return;
     position();
     if (!panel) return;
     const n = node();
-    panel.querySelector(".board-comments-object").textContent =
-      adapter?.title?.() ||
-      n.title ||
-      task(n.task)?.title ||
-      n.draft?.title ||
-      n.text ||
-      n.file ||
-      n.type;
     const list = panel.querySelector(".board-comments-list");
     const actorId = actor();
-    const markup =
-      commentThreads(n.comments)
-        .map(({ comment: c, depth }) => {
-          const date =
-            c.created && !Number.isNaN(Date.parse(c.created))
-              ? new Date(c.created).toLocaleString()
-              : "";
-          const parent = depth && n.comments.find((p) => p.id === c.replyTo);
-          const reactions = commentReactions
-            .map(([emoji, label]) => {
-              const people = (c.reactions || []).filter(
-                (r) => r.emoji === emoji,
-              );
-              const active = people.some((r) => r.actor === actorId);
-              return `<button type="button" class="comment-reaction" data-comment-react="${esc(c.id)}" data-emoji="${emoji}" aria-label="${label}${people.length ? ` (${people.length})` : ""}" aria-pressed="${active}" title="${esc(label + (people.length ? ` · ${people.map((r) => r.author || "Workspace").join(", ")}` : ""))}"><span aria-hidden="true">${emoji}</span>${people.length ? `<span>${people.length}</span>` : ""}</button>`;
-            })
-            .join("");
-          return `<article class="board-comment ${depth ? "board-comment-reply" : ""}" data-comment-id="${esc(c.id)}">${c.deleted ? '<p class="comment-deleted">Comment deleted</p>' : `<header><div><strong>${esc(c.author || "Workspace")}</strong><button type="button" class="comment-delete" data-comment-delete="${esc(c.id)}" aria-label="Delete comment" title="Delete comment">${icon("trash")}</button></div><time datetime="${esc(c.created || "")}">${esc(date)}</time></header>${parent && !parent.deleted ? `<small class="comment-reply-label">Reply to ${esc(parent.author || "Workspace")}</small>` : ""}<p>${esc(c.text)}</p><div class="comment-actions"><button type="button" class="comment-reply" data-comment-reply="${esc(c.id)}">Reply</button><div class="comment-reactions" role="group" aria-label="Emoji reactions">${reactions}</div></div>`}</article>`;
-        })
-        .join("") ||
+    const byId = new Map((n.comments || []).map(c => [c.id, c]));
+    const openThreads = new Map([...list.querySelectorAll('[data-comment-thread]')].map(el => [el.dataset.commentThread, el.open]));
+    const groups = [];
+    for (const item of commentThreads(n.comments)) {
+      if (!item.depth || !groups.length) groups.push([]);
+      groups.at(-1).push(item);
+    }
+    const renderComment = ({ comment: c, depth }) => {
+          const parent = byId.get(c.replyTo);
+          const quote = parent ? `<button type="button" class="comment-reply-quote" data-comment-jump="${esc(parent.id)}" aria-label="${esc(parent.deleted ? 'Go to deleted comment' : `Go to comment by ${parent.author || 'Workspace'}: ${replyPreview(parent)}`)}">${icon('reply')}${parent.deleted ? '' : authorName(parent.author)}<span class="comment-quote-text">${esc(replyPreview(parent))}</span></button>` : c.replyTo ? '<span class="comment-reply-label">Original comment unavailable</span>' : '';
+          const reactionButton = ([emoji, label]) => {
+            const people = (c.reactions || []).filter(r => r.emoji === emoji);
+            const active = people.some(r => r.actor === actorId);
+            return `<button type="button" class="comment-reaction" data-comment-react="${esc(c.id)}" data-emoji="${emoji}" aria-label="${label}${people.length ? ` (${people.length})` : ""}" aria-pressed="${active}" title="${esc(label + (people.length ? ` · ${people.map(r => r.author || "Workspace").join(", ")}` : ""))}"><span aria-hidden="true">${emoji}</span>${people.length ? `<span>${people.length}</span>` : ""}</button>`;
+          };
+          const reactions = commentReactions.filter(([emoji]) => c.reactions?.some(r => r.emoji === emoji)).map(reactionButton).join("");
+          return `<article class="board-comment ${depth ? "board-comment-reply" : ""}" data-comment-id="${esc(c.id)}" tabindex="-1">${c.deleted ? '<p class="comment-deleted">Comment deleted</p>' : `${quote}<header><div>${authorName(c.author)}<div class="comment-actions"><button type="button" class="icon-button comment-reply" data-comment-reply="${esc(c.id)}" aria-label="Reply" title="Reply">${icon("reply")}</button><details class="comment-emoji-menu"><summary class="icon-button" aria-label="Add reaction" title="Add reaction">${icon("smile")}</summary><div class="comment-emoji-picker" role="group" aria-label="Choose an emoji reaction">${commentReactions.map(reactionButton).join("")}</div></details><button type="button" class="icon-button comment-delete" data-comment-delete="${esc(c.id)}" aria-label="Delete comment" title="Delete comment">${icon("trash")}</button></div></div></header><div class="comment-body canvas-markdown">${c.format === "markdown" ? ctx.markdown(c.text) : `<p>${esc(c.text)}</p>`}</div><footer class="comment-footer">${reactions ? `<div class="comment-reactions" role="group" aria-label="Emoji reactions">${reactions}</div>` : ""}${timestamp(c.created)}</footer>`}</article>`;
+    };
+    const markup = groups.map(([root, ...replies]) => {
+      const id = root.comment.id;
+      return `<section class="comment-thread">${renderComment(root)}${replies.length ? `<details class="comment-thread-replies" data-comment-thread="${esc(id)}" ${openThreads.get(id) !== false ? 'open' : ''}><summary>${icon('chevron')}<span>${replies.length} ${replies.length === 1 ? 'reply' : 'replies'}</span></summary><div class="comment-thread-messages">${replies.map(renderComment).join('')}</div></details>` : ''}</section>`;
+    }).join('') ||
       '<p class="field-hint">No comments yet. Start the conversation.</p>';
     if (list.innerHTML !== markup) list.innerHTML = markup;
     composerState();
@@ -143,7 +197,7 @@ export function boardComments(ctx, author, uid, adapter = null) {
   function open(n) {
     if (!n) return;
     if (panel && target === n.id && boardId === (adapter ? null : board().id))
-      return panel.querySelector("textarea").focus();
+      return focusComposer();
     close();
     target = n.id;
     boardId = adapter ? null : board().id;
@@ -167,21 +221,26 @@ export function boardComments(ctx, author, uid, adapter = null) {
     panel.setAttribute("aria-label", "Comments on this object");
     panel.setAttribute("aria-modal", "false");
     // An embedded composer must not participate in task-form validation.
-    panel.innerHTML = `<header class="board-comments-head"><strong>Comments</strong><button type="button" class="icon-button" data-comments-close aria-label="Close comments">${icon("close")}</button></header><div class="board-comments-object"></div><div class="board-comments-list" role="log" aria-label="Object comments" aria-live="polite"></div><${embedded ? "div" : "form"} id="board-comment-form"><div class="comment-reply-context" hidden><span></span><button type="button" class="icon-button" data-comment-reply-cancel aria-label="Cancel reply" title="Cancel reply">${icon("close")}</button></div><label class="sr-only" for="board-comment-text">Comment</label><textarea id="board-comment-text" name="text" ${embedded ? 'form="task-comment-composer"' : ""} rows="3" maxlength="10000" required placeholder="Write a comment…"></textarea><button class="button primary small" data-comment-submit type="${embedded ? "button" : "submit"}">Add comment</button></${embedded ? "div" : "form"}>`;
+    panel.innerHTML = `<header class="board-comments-head"><strong>Comments</strong><button type="button" class="icon-button" data-comments-close aria-label="Close comments">${icon("close")}</button></header><div class="board-comments-list" role="log" aria-label="Object comments" aria-live="polite"></div><${embedded ? "div" : "form"} id="board-comment-form"><div class="comment-reply-context" hidden><span></span><button type="button" class="icon-button" data-comment-reply-cancel aria-label="Cancel reply" title="Cancel reply">${icon("close")}</button></div><div class="comment-rich-tools task-rich-tools" role="toolbar" aria-label="Format comment">${richToolbar(icon, { alignment: null, previewAction: "data-rich-preview", idPrefix: "comment" })}</div><div class="inline-rich comment-input canvas-markdown" contenteditable="true" role="textbox" aria-label="Comment" aria-multiline="true" data-placeholder="Write a comment…" spellcheck="true"></div><textarea class="markdown-source hidden" id="board-comment-text" name="text" ${embedded ? 'form="task-comment-composer"' : ""} aria-label="Comment Markdown" rows="3" maxlength="10000" placeholder="Write a comment…"></textarea><div class="inline-preview canvas-markdown hidden"></div><p class="comment-compose-error" role="alert" hidden></p><button class="button primary small" data-comment-submit type="${embedded ? "button" : "submit"}">Add comment</button></${embedded ? "div" : "form"}>`;
+    if (!embedded) panel.insertAdjacentHTML('beforeend', '<button type="button" class="comment-panel-resize" data-comments-resize aria-label="Resize comments" title="Drag to resize comments, or use arrow keys"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="m9 20 11-11m-5 11 5-5"/></svg></button>');
+    bindResize();
     const draft = drafts.get(key());
     replyTo = draft?.replyTo || null;
     panel.querySelector("textarea").value = draft?.text || "";
     (adapter?.mount || adapter?.host || document.body).append(panel);
     if (!embedded) panel.showPopover();
+    composer = canvasRichText(panel.querySelector("#board-comment-form"), ctx.markdown, { controls: panel.querySelector(".comment-rich-tools") });
     adapter?.onOpen?.();
     if (!adapter) state.dialog = "board-comments";
     sync(true);
-    panel.querySelector("textarea").focus({ preventScroll: true });
+    focusComposer();
     panel.addEventListener("keydown", (e) => {
       e.stopPropagation();
       if (e.key === "Escape") {
         e.preventDefault();
-        close(true);
+        const menu = panel.querySelector('.comment-emoji-menu[open]');
+        if (menu) { menu.open = false; menu.querySelector('summary').focus(); }
+        else if (!composer.escape()) close(true);
       } else if ((e.ctrlKey || e.metaKey) && e.key === "Enter") {
         e.preventDefault();
         if (embedded) submitComment();
@@ -190,16 +249,27 @@ export function boardComments(ctx, author, uid, adapter = null) {
     });
     panel.addEventListener("click", (e) => {
       if (e.target.closest("[data-comments-close]")) return close(true);
+      const jump = e.target.closest('[data-comment-jump]');
+      if (jump) {
+        const original = panel.querySelector(`[data-comment-id="${CSS.escape(jump.dataset.commentJump)}"]`);
+        if (original) {
+          const thread = original.closest('.comment-thread-replies');
+          if (thread) thread.open = true;
+          original.scrollIntoView({ block: 'nearest' });
+          original.focus({ preventScroll: true });
+        }
+        return;
+      }
       if (e.target.closest("[data-comment-reply-cancel]")) {
         replyTo = null;
         composerState();
-        return panel.querySelector("textarea").focus();
+        return focusComposer();
       }
       const reply = e.target.closest("[data-comment-reply]");
       if (reply) {
         replyTo = reply.dataset.commentReply;
         composerState();
-        return panel.querySelector("textarea").focus();
+        return focusComposer();
       }
       const remove = e.target.closest("[data-comment-delete]");
       if (remove) {
@@ -210,7 +280,7 @@ export function boardComments(ctx, author, uid, adapter = null) {
           );
         });
         sync();
-        panel.querySelector("textarea").focus({ preventScroll: true });
+        focusComposer();
         return;
       }
       const reaction = e.target.closest("[data-comment-react]");
@@ -239,35 +309,40 @@ export function boardComments(ctx, author, uid, adapter = null) {
             });
         });
         sync();
-        panel
-          .querySelector(
-            `[data-comment-react="${CSS.escape(id)}"][data-emoji="${emoji}"]`,
-          )
-          ?.focus({ preventScroll: true });
+        panel.querySelector(`[data-comment-id="${CSS.escape(id)}"] .comment-emoji-menu summary`)?.focus({ preventScroll: true });
       }
     });
     function submitComment(e) {
       e?.preventDefault();
       e?.stopPropagation();
-      if (!panel.querySelector("textarea").reportValidity()) return;
+      composer.flush();
       const field = panel.querySelector("textarea"),
         text = field.value.trim();
-      if (!text || !node()) return;
+      const error = panel.querySelector('.comment-compose-error');
+      const empty = panel.querySelector('#board-comment-form').dataset.editorMode === 'rich' && !panel.querySelector('.inline-rich').textContent.trim();
+      error.textContent = text.length > 10000 ? 'Comments can contain up to 10,000 characters.' : !text || empty ? 'Write a comment before sending.' : '';
+      error.hidden = !error.textContent;
+      if (error.textContent || !node()) { focusComposer(); return; }
+      const replies = replyTo && panel.querySelector(`[data-comment-id="${CSS.escape(replyTo)}"]`)?.closest('.comment-thread')?.querySelector('.comment-thread-replies');
+      if (replies) replies.open = true;
+      const commentId = uid('comment');
       changeBoard(() => {
         node().comments ||= [];
         node().comments.push({
-          id: uid("comment"),
+          id: commentId,
           author: author(),
-          text,
+          text, format: "markdown",
           ...(replyTo ? { replyTo } : {}),
           created: new Date().toISOString(),
         });
       });
       field.value = "";
+      composer.reload();
       replyTo = null;
       drafts.delete(key());
-      sync(true);
-      field.focus({ preventScroll: true });
+      sync();
+      panel.querySelector(`[data-comment-id="${CSS.escape(commentId)}"]`)?.scrollIntoView({ block: 'nearest' });
+      focusComposer();
     }
     if (embedded) {
       panel

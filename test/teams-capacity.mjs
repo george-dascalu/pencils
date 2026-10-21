@@ -149,7 +149,7 @@ try {
       .all()) {
       const ring = await control.evaluate((el) => {
         el.focus();
-        const target = el.closest(".canvas-task-priority") || el;
+        const target = el.closest(".canvas-task-priority,.canvas-task-assignee") || el;
         const style = getComputedStyle(target);
         const bounds = target.getBoundingClientRect();
         const overflow = Math.max(

@@ -1,5 +1,5 @@
 // Shared placement for compact board-object panels such as comments and review.
-export function positionBoardObjectPanel(panel, node, canvas, camera) {
+export function positionBoardObjectPanel(panel, node, canvas, camera, size = {}) {
   const c = canvas.getBoundingClientRect();
   const viewport = window.visualViewport;
   const left = viewport?.offsetLeft || 0,
@@ -8,9 +8,10 @@ export function positionBoardObjectPanel(panel, node, canvas, camera) {
     height = viewport?.height || innerHeight;
   const right = c.left + camera.x + (node.x + node.w) * camera.z;
   const y = c.top + camera.y + node.y * camera.z;
-  const panelWidth = Math.min(300, width - 24);
+  const panelWidth = Math.min(size.width || 300, width - 24);
   panel.style.width = `${panelWidth}px`;
-  panel.style.maxHeight = `${Math.min(520, height - 24)}px`;
+  panel.style.maxHeight = `${Math.min(size.height || 520, height - 24)}px`;
+  if (size.height) panel.style.height = `${Math.min(size.height, height - 24)}px`;
   panel.style.left = `${Math.max(left + 12, Math.min(right + 12, left + width - panelWidth - 12))}px`;
   panel.style.top = `${Math.max(top + 12, Math.min(y, top + height - panel.offsetHeight - 12))}px`;
 }

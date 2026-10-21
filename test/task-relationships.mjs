@@ -120,7 +120,8 @@ try {
   const relatedOrder = () => relatedGroup.locator("[data-relationship-open]").evaluateAll(els => els.map(el => el.dataset.relationshipOpen));
   const beforeSort = (await store.snapshot(project.id)).tasks;
   const meta = section.locator(`[data-relationship-open="${related.id}"] .task-relationship-metadata`);
-  assert.match(await meta.textContent(), /George.*High.*In progress/);
+  assert.match(await meta.textContent(), /George.*In progress/);
+  assert.equal(await meta.getByRole("img", { name: "Priority: High" }).getAttribute("title"), "High");
   assert.equal(await meta.locator('[data-task-color="assignee"],[data-task-color="priority"],[data-task-color="status"]').count(), 3);
   await section.getByLabel("Sort relationships", { exact: true }).selectOption("assignee");
   assert.deepEqual(await relatedOrder(), [urgent.id, related.id, lowest.id]);

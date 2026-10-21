@@ -2,6 +2,7 @@ import { build } from "esbuild";
 import fs from "node:fs/promises";
 import path from "node:path";
 import "./build-editor.mjs";
+import "./build-server.mjs";
 
 const outdir = "dist/public/assets";
 await fs.mkdir(outdir, { recursive: true });

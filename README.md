@@ -140,7 +140,7 @@ The recent operation log retains up to 200 operations (approximately 2 MB, or on
 
 ## Markdown and Obsidian
 
-**Documents**, between Overview and Planning, provides a project document explorer and a Markdown-native editor. **Live preview** formats Markdown around the active line; click a rendered block to edit its Markdown. **Source** shows the complete Markdown with syntax highlighting and line numbers. **Reading** displays the formatted document. Switching views does not rewrite the source or clear undo history. Ctrl/⌘ E switches Live preview/Source, Ctrl/⌘ B and I format the selection, and Ctrl/⌘ F opens find/replace. Tab indents, lists continue on Enter, and the gutter folds headings and code.
+**Documents**, between Overview and Planning, provides a project document explorer and a Markdown-native editor. **Live preview** formats Markdown around the active line. Edit callout titles/content, table cells, quotes and code directly in their rendered components; tables also have Add row and Add column controls. Math and diagrams have inline formula/code fields. Component edits autosave to Markdown without exposing the section's Markdown syntax. **Source** shows the complete Markdown with syntax highlighting and line numbers. **Reading** displays the formatted document. Switching views does not rewrite the source or clear undo history. Ctrl/⌘ E switches Live preview/Source, Ctrl/⌘ B and I format the selection, and Ctrl/⌘ F opens search in the current view. Tab indents, lists continue on Enter, and the gutter folds headings and code.
 
 Use **Style**, the formatting buttons or **Insert** for headings, lists, checklists, quotes, code blocks, tables, callouts, footnotes, highlights, math and Mermaid diagrams. Live-preview checkboxes update their Markdown markers. Comments (`%%…%%`) stay in the source and are hidden in Reading. HTML is sanitised; executable scripts and remote image requests are excluded. Unknown plugin syntax stays intact in the source. **Document outline** jumps to headings; **Document tools** contains backlinks, undo/redo, export and Obsidian settings. Type `[[` to choose another project document: generated links use stable vault paths with readable labels. `![[…]]` embeds a document, heading or block, with bounded nesting. Duplicate document titles require a stable path. Attach local files through **Insert → Attach file**, or drop them onto the editor. Images render inline; other files open from their links.
 
@@ -174,7 +174,7 @@ The preview supports GFM Markdown, tables, fenced code, task lists, wiki links a
 
 Existing Markdown/YAML boards migrate automatically on startup. Their exact original files are retained under `.pencils/legacy-boards/`, and identifiers and task links stay stable. Take a vault backup before upgrading.
 
-Filesystem notifications refresh idle browsers when notes change externally. Only live project/organisation folders are watched; if the operating system runs out of watchers, the server falls back to five-second polling without stopping writes. A rebuildable in-memory parse index avoids reparsing unchanged notes; file timestamps and revisions are still checked before writes. Task views render pages of 100 items; timeline displays up to 200 dated tasks. The server still returns a project snapshot, so very large vaults may need more indexing/pagination work. Boards support 10,000 objects, 20,000 connectors and 500 frames, within a 16 MB API request limit. Canvas imports are limited to 12 MB. Attachments support PNG/JPEG/GIF/WebP, PDF, text, Markdown, CSV and ZIP up to 10 MB.
+Filesystem notifications refresh idle browsers when notes change externally. Only live project/organisation folders are watched; if the operating system runs out of watchers, the server falls back to five-second polling without stopping writes. A rebuildable in-memory parse index avoids reparsing unchanged notes; file timestamps and revisions are still checked before writes. Task views render pages of 100 items; timeline displays up to 200 dated tasks. The server still returns a project snapshot, so very large vaults may need more indexing/pagination work. Boards support 100,000 objects, 200,000 connectors and 500 frames, within a 128 MB board API request limit. Native Canvas file imports are limited to 64 MB. Dense/zoomed-out boards use a lightweight overview; selected objects retain editable detail. Single-object saves send guarded deltas, but initial loading and durable vault snapshots still scale with total board size. See [measured capacity and limitations](reports/2026-10-21-board-100k.md). Attachments support PNG/JPEG/GIF/WebP, PDF, text, Markdown, CSV and ZIP up to 10 MB.
 
 ## Recovery and concurrent editing
 
@@ -251,6 +251,14 @@ npm start
 `VAULT_PATH`, `HOST` and `PORT` configure the local server. Runtime dependencies are served locally from `node_modules`; no browser CDN is used.
 
 For a production Node installation, run `npm run build` before `NODE_ENV=production npm start`. Docker builds these assets automatically. Production uses content-hashed JavaScript chunks, one minified stylesheet and negotiated Brotli/gzip compression; the HTML is revalidated so updates pick up the new asset names. Board/drawing and Documents controllers load on first use. Keep the previous hashed assets when updating a running Node installation so already-open pages can finish loading their matching chunks. The separate prepared offline drawing shell remains locally available.
+
+## Backend structure and capacity
+
+The HTTP layer uses Fastify and TypeScript in `server/http/`, with routes grouped by domain. Task, document and board services remain JavaScript in `server/services/`; `server/store.js` owns vault access and transactional writes. `npm run build:server` compiles the HTTP modules, and `npm run typecheck` checks them. Normal installation, development, tests and production builds include the compilation step.
+
+Markdown and `.canvas` files remain authoritative. Search and table queries use a rebuildable SQLite index in a worker thread. Task edits update affected rows incrementally. Provider network requests run outside the vault writer queue; applying fetched changes remains transactional.
+
+See the [backend and board performance assessment](reports/2026-10-20-backend-board-performance.md) for the 100-session load test, board measurements, current limits and prioritized renderer improvements. The application uses one writer process per vault.
 
 ## Validation
 

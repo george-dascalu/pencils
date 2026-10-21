@@ -741,11 +741,11 @@
 .canvas-panel {
   z-index: 25;
 }
-html:has(.canvas.board-expanded),
-body:has(.canvas.board-expanded) {
+html.board-expanded-view,
+html.board-expanded-view body {
   overflow: hidden;
 }
-.shell:has(.canvas.board-expanded) {
+html.board-expanded-view .shell {
   height: 100dvh;
   overflow: hidden;
 }
@@ -879,4 +879,17 @@ body:has(.canvas.board-expanded) {
 [data-theme="dark"] .canvas-lines .connector-selection {
   stroke: #8fbbec;
   stroke-opacity: 0.4;
+}
+
+/* Object capacity lives with navigation, leaving the board surface clear. */
+.board-capacity { display: flex; align-items: center; }
+.board-controls .board-capacity-toggle { position: relative; color: var(--ink); }
+.board-controls .board-capacity-toggle svg { position: absolute; width: 34px; height: 34px; inset: 50% auto auto 50%; transform: translate(-50%, -50%); fill: none; stroke-width: 2; }
+.capacity-track { stroke: var(--line); }
+.capacity-progress { stroke: var(--green); transform: rotate(-90deg); transform-origin: 18px 18px; }
+.board-controls .capacity-percent { position: relative; min-width: 0; font-size: 9px; font-weight: 600; font-variant-numeric: tabular-nums; line-height: 1; }
+.board-controls .board-capacity-info { position: fixed; inset: auto; margin: 0; padding: 12px; width: 220px; max-width: calc(100vw - 32px); height: auto; overflow: auto; border: 1px solid var(--line); border-radius: 7px; background: var(--surface); color: var(--ink); box-shadow: 0 6px 20px #0002; text-align: left; white-space: normal; font-size: 12px; line-height: 1.5; }
+@media (max-width: 600px) {
+  .board-controls { max-width: calc(100% - 16px); flex-wrap: wrap; justify-content: flex-end; }
+  #canvas-minimap { bottom: calc(var(--board-controls-height, 54px) + 25px); }
 }

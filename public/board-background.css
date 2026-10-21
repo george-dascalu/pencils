@@ -199,7 +199,7 @@
 .board-expanded #expanded-board-settings {
   display: inline-flex;
 }
-body:has(.board-expanded) .board-toolbar .board-settings-button {
+html.board-expanded-view .board-toolbar .board-settings-button {
   visibility: hidden;
 }
 @media (max-width: 600px) {

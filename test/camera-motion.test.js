@@ -52,7 +52,7 @@ test("zoom respects bounds, cancellation and reduced motion", () => {
   assert.equal(f.camera().z, 3);
   f.control.zoom(0.0001, 100, 100);
   f.finish();
-  assert.equal(f.camera().z, 0.15);
+  assert.equal(f.camera().z, 0.001);
   f.control.zoom(2, 100, 100);
   f.tick();
   f.control.cancel();
