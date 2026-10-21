@@ -864,24 +864,20 @@ html.board-expanded-view .shell {
   background: var(--accent);
 }
 
-/* A separate halo keeps selected lines visible without changing their style. */
+/* One shared halo keeps selected lines visible without per-arrow overlays. */
 .canvas-lines .connector-selection {
   stroke: #4276a5;
   stroke-opacity: 0.3;
   stroke-linecap: round;
   stroke-linejoin: round;
   pointer-events: none;
-  opacity: 0;
-}
-.canvas-lines g:has(> .canvas-edge.selected) > .connector-selection {
-  opacity: 1;
 }
 [data-theme="dark"] .canvas-lines .connector-selection {
   stroke: #8fbbec;
   stroke-opacity: 0.4;
 }
 
-/* Object capacity lives with navigation, leaving the board surface clear. */
+/* Board capacity lives with navigation, leaving the board surface clear. */
 .board-capacity { display: flex; align-items: center; }
 .board-controls .board-capacity-toggle { position: relative; color: var(--ink); }
 .board-controls .board-capacity-toggle svg { position: absolute; width: 34px; height: 34px; inset: 50% auto auto 50%; transform: translate(-50%, -50%); fill: none; stroke-width: 2; }
@@ -889,6 +885,8 @@ html.board-expanded-view .shell {
 .capacity-progress { stroke: var(--green); transform: rotate(-90deg); transform-origin: 18px 18px; }
 .board-controls .capacity-percent { position: relative; min-width: 0; font-size: 9px; font-weight: 600; font-variant-numeric: tabular-nums; line-height: 1; }
 .board-controls .board-capacity-info { position: fixed; inset: auto; margin: 0; padding: 12px; width: 220px; max-width: calc(100vw - 32px); height: auto; overflow: auto; border: 1px solid var(--line); border-radius: 7px; background: var(--surface); color: var(--ink); box-shadow: 0 6px 20px #0002; text-align: left; white-space: normal; font-size: 12px; line-height: 1.5; }
+.board-capacity-info > strong { display: block; font-variant-numeric: tabular-nums; }
+.board-capacity-info > strong + strong { margin-top: 4px; }
 @media (max-width: 600px) {
   .board-controls { max-width: calc(100% - 16px); flex-wrap: wrap; justify-content: flex-end; }
   #canvas-minimap { bottom: calc(var(--board-controls-height, 54px) + 25px); }

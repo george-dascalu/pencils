@@ -23,6 +23,17 @@ const fixture = () => [
   { id: "n", type: "sticky", x: 110, y: 130, w: 200, h: 120, text: "Keep me" },
   { id: "f", type: "frame", x: 0, y: 0, w: 1500, h: 1500 },
 ];
+test("pasted frame containers keep copied children without dropping into overlapping grid cells", () => {
+  const nodes=fixture();nodes[1].frame='f';
+  const before=structuredClone(nodes);
+  nodes.push({id:'copy',type:'frame',x:120,y:150,w:100,h:80});
+  nodes.push({id:'copied-child',type:'sticky',frame:'copy',x:130,y:170,w:20,h:20});
+  updateFrameMembership(nodes,new Set(['copy','copied-child']),before,{adoptNewFrames:false});
+  assert.equal(nodes.find(n=>n.id==='copy').frame,'f');
+  assert.equal(nodes.find(n=>n.id==='copy').gridCell,undefined);
+  assert.equal(nodes.find(n=>n.id==='copied-child').frame,'copy');
+  assert.equal(nodes.find(n=>n.id==='n').frame,'f');
+});
 test("Dropping objects expands the cell, carries existing contents and preserves nested frame ownership", () => {
   const nodes = fixture(),
     before = structuredClone(nodes),

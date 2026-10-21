@@ -82,6 +82,15 @@ async function until(fn) {
   throw Error("Save did not settle");
 }
 async function fixture(nodes = fixtures) {
+  // The fixture is an external edit. Wait for the browser's durable save and
+  // checkpoint acknowledgement before replacing its board on disk.
+  await until(() => page.evaluate(async () => {
+    const pending = Object.keys(localStorage).filter(key => key.startsWith('pencils:pending:') && !key.endsWith(':lease'));
+    if (pending.some(key => JSON.parse(localStorage.getItem(key) || '[]').length)) return false;
+    const { localDrawings } = await import('/drawing-store.js');
+    const session = await (await fetch('/api/session')).json();
+    return (await localDrawings(session.user?.username || 'shared')).every(d => !d.pending);
+  }));
   const b = await current();
   await store.updateBoard(project.id, b.id, {
     revision: b.revision,

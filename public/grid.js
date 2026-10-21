@@ -445,6 +445,7 @@ export function grid(ctx) {
     if (
       state.view !== "table" ||
       state.dialog ||
+      (event.key === "Tab" && (event.ctrlKey || event.metaKey || event.altKey)) ||
       !event.target.closest(".spreadsheet")
     )
       return;

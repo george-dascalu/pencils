@@ -94,7 +94,8 @@ export function drawingInput(ctx, basic) {
       if (e.pointerType !== "touch") return;
       lastTouch = e.timeStamp;
       touches.set(e.pointerId, { x: e.clientX, y: e.clientY });
-      const node = e.target.closest("[data-node],[data-edge]");
+      const node = e.target.closest("[data-node],[data-edge]") ||
+        (canvasPointerTool(state.tool, e.pointerType) === "cursor" ? basic.hitTest?.(e) : null);
       const placeOnTap = ["sticky", "text", "shape", "grid"].includes(
         state.tool,
       );
@@ -102,7 +103,7 @@ export function drawingInput(ctx, basic) {
         state.tool,
       );
       if (placing) taps.reset();
-      else taps.down(e, node?.dataset.node || node?.dataset.edge || "canvas");
+      else taps.down(e, node?.dataset?.node || node?.dataset?.edge || node?.id || "canvas");
       if (touches.size >= 2) {
         stop(e);
         multi = true;

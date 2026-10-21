@@ -1,4 +1,5 @@
 import { applyBoardDelta, boardDifference, equalValue } from "../public/board-delta.js";
+import { BOARD_LIMITS } from "../public/board-limits.js";
 import fs from "node:fs/promises";
 import path from "node:path";
 import { createHash, randomUUID } from "node:crypto";
@@ -235,13 +236,12 @@ export function installCanvas(Store) {
           ))
       )
         throw new Problem(400, "Invalid board templates.");
+      const frameIds = new Set(data.nodes.filter(n => n.type === "frame").map(n => n.id));
       if (
         data.presentation &&
         (!Array.isArray(data.presentation) ||
-          data.presentation.length > 500 ||
-          data.presentation.some(
-            (id) => !data.nodes.some((n) => n.id === id && n.type === "frame"),
-          ))
+          data.presentation.length > BOARD_LIMITS.frames ||
+          data.presentation.some(id => !frameIds.has(id)))
       )
         throw new Problem(400, "Presentation must contain frame IDs.");
       // Log the persisted representation of both cards and connectors so
@@ -262,15 +262,20 @@ export function installCanvas(Store) {
           ? String(input.summary).slice(0, 100)
           : describe(changes),
       };
-      // The log and the content commit in the same atomic rename. Older entries remain in file history.
-      data.operations = [...(current.data.operations || []), operation].slice(
-        -200,
-      );
-      while (
-        data.operations.length > 1 &&
-        JSON.stringify(data.operations).length > 2000000
-      )
-        data.operations.shift();
+      // Keep large paste + move + undo sequences together. The old 2 MB cap
+      // could discard the paste after just one group move. History remains
+      // bounded, and older entries remain available in file history.
+      const recent = [...(current.data.operations || []), operation].slice(-200);
+      let first = recent.length - 1;
+      let historyBytes = Buffer.byteLength(JSON.stringify(recent[first])) + 2;
+      while (first > 0) {
+        const size = Buffer.byteLength(JSON.stringify(recent[first - 1])) + 1;
+        if (historyBytes + size > 16_000_000) break;
+        historyBytes += size;
+        first--;
+      }
+      // Always retain the latest operation, even if it alone exceeds the cap.
+      data.operations = recent.slice(first);
       data.updated = operation.time;
       return this.write(file, data, current.body, current);
     },

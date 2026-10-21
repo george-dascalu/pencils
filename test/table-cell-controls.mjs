@@ -5,6 +5,7 @@ import path from "node:path";
 import { chromium, webkit } from "playwright";
 import { Store } from "../server/store.js";
 import { createServer } from "../server/index.js";
+import { browserTabShortcuts } from './browser-tab-shortcuts.mjs';
 
 const root = await fs.mkdtemp(path.join(os.tmpdir(), "pencils-table-cells-"));
 const store = new Store(root);
@@ -71,6 +72,7 @@ try {
     }
     await page.goto(`${base}/#project/${project.id}/table`);
     await row().waitFor();
+    await browserTabShortcuts(cell('assignee'));
     if (width === 390) await page.waitForFunction(() =>
       document.querySelector(".sidebar").getBoundingClientRect().right <= 1);
     for (const theme of ["light", "dark"]) {

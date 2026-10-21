@@ -332,11 +332,14 @@ export const boardsMethods = {
           throw new Problem(400, "Invalid pen tilt samples.");
       }
     }
-    if (data.nodes.filter((n) => n.type === "frame").length > 500)
-      throw new Problem(400, "A board supports up to 500 frames.");
+    if (data.nodes.filter((n) => n.type === "frame").length > BOARD_LIMITS.frames)
+      throw new Problem(400, `A board supports up to ${BOARD_LIMITS.frames.toLocaleString("en-GB")} frames.`);
     const byId = new Map(data.nodes.map((n) => [n.id, n]));
+    const checkedParents = new Set();
     for (const n of data.nodes) {
       const parentNode = byId.get(n.frame);
+      if (n.frame && (!parentNode || !["frame", "grid"].includes(parentNode.type)))
+        throw new Problem(400, "Invalid frame hierarchy.");
       if (parentNode?.type === "grid" || n.gridCell != null) {
         const c = n.gridCell;
         if (
@@ -350,7 +353,7 @@ export const boardsMethods = {
       }
       const seen = new Set([n.id]);
       let parent = n.frame;
-      while (parent) {
+      while (parent && !checkedParents.has(parent)) {
         const frame = byId.get(parent);
         if (
           !frame ||
@@ -361,6 +364,7 @@ export const boardsMethods = {
         seen.add(parent);
         parent = frame.frame;
       }
+      for (const id of seen) checkedParents.add(id);
     }
     const edges = new Set();
     for (const edge of data.edges) {

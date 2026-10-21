@@ -616,7 +616,8 @@ export function boardGrid(ctx, basic) {
       }
       const cell = e.target.closest(".grid-cell,[data-grid-axis]"),
         n = current();
-      if (!cell || !n || state.canvasEditing || n.locked) return;
+      if (!cell || !n || state.canvasEditing || n.locked ||
+          (e.key === "Tab" && (e.ctrlKey || e.metaKey || e.altKey))) return;
       const axisLabel = e.target.closest("[data-grid-axis]");
       if (axisLabel && ["Enter", " "].includes(e.key)) {
         consume(e);

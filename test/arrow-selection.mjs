@@ -67,6 +67,7 @@ async function until(fn) {
 }
 
 async function selectArrow(id, modifier) {
+  await page.locator(`path.canvas-edge[data-edge="${id}"]`).waitFor({ state: 'attached' });
   const p = await page.evaluate((id) => {
     const el = document.querySelector(`path.canvas-edge[data-edge="${id}"]`);
     const q = el.getPointAtLength(el.getTotalLength() * 0.35);
@@ -82,12 +83,14 @@ const edges = () =>
     .locator("path.canvas-edge.selected")
     .evaluateAll((els) => els.map((e) => e.dataset.edge).sort());
 const highlightedEdges = () =>
-  page.locator(".connector-selection").evaluateAll((els) =>
-    els
-      .filter((el) => getComputedStyle(el).opacity === "1")
-      .map((el) => el.parentElement.dataset.edge)
-      .sort(),
-  );
+  page.locator("#canvas-lines").evaluate(svg => {
+    const halos = svg.querySelectorAll(".connector-selection");
+    if (halos.length > 1) throw new Error("Connector highlights must share one overlay");
+    const path = halos[0]?.getAttribute("d") || "";
+    return [...svg.querySelectorAll(".canvas-edge.selected")]
+      .filter(el => path.includes(el.getAttribute("d")))
+      .map(el => el.dataset.edge).sort();
+  });
 const nodes = () =>
   page
     .locator(".board-node.selected")

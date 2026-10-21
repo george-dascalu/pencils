@@ -40,7 +40,11 @@ try {
   await page.waitForTimeout(1600);
   await count(0);
   await page.evaluate(() => {
-    window.detailFrames = []; window.edgeFrames = []; window.detailRecording = true;
+    window.detailFrames = []; window.edgeFrames = []; window.detailRecording = true; window.motionStates = new Set();
+    window.motionObserver = new MutationObserver(records => {
+      for (const r of records) if (r.target.dataset?.detailTransition) window.motionStates.add(r.target.dataset.detailTransition);
+    });
+    window.motionObserver.observe(document.querySelector('#canvas-world'), {subtree:true,attributes:true,attributeFilter:['data-detail-transition']});
     let changed = new Set(), changedEdges = new Set();
     const world = document.querySelector('#canvas-world');
     window.detailObserver = new MutationObserver(records => {
@@ -62,6 +66,7 @@ try {
   assert.deepEqual(order, nodes.filter(n => order.includes(n.id)).map(n => n.id), 'Incremental rendering preserves stacking order');
   await page.evaluate(() => { window.retainedCard = document.querySelector('.board-node.task'); window.retainedBody = window.retainedCard.querySelector('.board-node-content'); });
   await zoomTo(.1); await count(0);
+  assert.deepEqual(await page.evaluate(()=>[...window.motionStates].sort()),['in','out'],'Detail crossfades in both directions');
   assert.equal(await page.evaluate(() => window.retainedCard.isConnected), false);
   await zoomTo(.24); await count(80);
   assert.equal(await page.evaluate(() => window.retainedCard.isConnected && window.retainedBody === window.retainedCard.querySelector('.board-node-content')), true, 'Zoom reversal reuses rendered cards');
@@ -87,6 +92,12 @@ try {
   await page.locator('[data-node="card-0"].selected').waitFor();
   assert.equal(await page.locator('[data-node="card-0"] .task-title').textContent(), 'Updated while zoomed out');
   console.log('PASS: remote edits invalidate cached cards, grid sizing is retained and bitmap objects remain selectable');
+  await page.keyboard.press('Escape');
+  await page.emulateMedia({reducedMotion:'reduce'});
+  await page.evaluate(()=>window.motionStates.clear());
+  await zoomTo(.24);await count(80);await zoomTo(.1);await count(0);
+  assert.deepEqual(await page.evaluate(()=>[...window.motionStates]),[],'Reduced motion changes detail without animation');
+  console.log('PASS: detail transitions honour reduced motion');
   assert.deepEqual(errors, []);
 } finally {
   await browser.close(); server.closeAllConnections(); await new Promise(r => server.close(r)); store.close(); await fs.rm(root, { recursive: true, force: true });

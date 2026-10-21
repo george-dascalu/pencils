@@ -6,6 +6,7 @@ import { chromium, webkit } from "playwright";
 import AxeBuilder from "@axe-core/playwright";
 import { Store } from "../server/store.js";
 import { createServer } from "../server/index.js";
+import { browserTabShortcuts } from './browser-tab-shortcuts.mjs';
 
 const root = await fs.mkdtemp(path.join(os.tmpdir(), "pencils-inline-components-"));
 const store = new Store(root); await store.init();
@@ -57,6 +58,7 @@ try {
   assert.match((await current()).body, /%%Private comment%%/);
   await remainsLive();
   const cell = page.getByRole("textbox", { name: "Row 1, column 2", exact: true });
+  await browserTabShortcuts(cell);
   await cell.fill("In progress");
   await page.keyboard.type(" now");
   await until(async () => (await current()).body.includes("| Editor | In progress now |"));

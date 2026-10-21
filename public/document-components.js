@@ -79,6 +79,7 @@ export function editableDocumentComponent({ element, raw, from, kind, editor, re
       commit(node);
     });
     node.addEventListener("keydown", event => {
+      if (event.key === "Tab" && (event.ctrlKey || event.metaKey || event.altKey)) return;
       if ((event.ctrlKey || event.metaKey) && ["s", "e"].includes(event.key.toLowerCase())) return;
       if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "z") {
         event.preventDefault();

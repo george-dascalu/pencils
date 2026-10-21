@@ -25,13 +25,17 @@ try {
     await page.goto(`http://127.0.0.1:${server.address().port}/#project/${project.id}/board/${board.id}`);
     const gauge=page.locator('#board-capacity-toggle'),info=page.locator('#board-capacity-info');
     await gauge.waitFor();
+    await page.waitForTimeout(1500); // Let the initial presence refresh settle.
     assert.equal(await page.locator('.board-footer,.board-help,#canvas-performance').count(),0);
     assert.match(await gauge.getAttribute('aria-label'),/3 \/ 80,000 objects/);
+    assert.match(await gauge.getAttribute('aria-label'),/1 \/ 10,000 frames/);
     assert.equal(await gauge.textContent(),'<1%');
     assert.equal(await page.locator('[data-node=note]').count(),0,'Hidden frame children still count');
     const before=await page.locator('#canvas-world').getAttribute('style');
     await gauge.click();await page.waitForFunction(()=>document.querySelector('#board-capacity-toggle').getAttribute('aria-expanded')==='true');
-    assert.ok(await info.isVisible());assert.equal(await info.textContent(),'3 / 80,000 objects');
+    assert.ok(await info.isVisible());
+    assert.equal(await info.locator('.capacity-count').textContent(),'3 / 80,000 objects');
+    assert.equal(await info.locator('.capacity-frame-count').textContent(),'1 / 10,000 frames');
     const anchor=await gauge.boundingBox(),popup=await info.boundingBox();
     assert.ok(popup.y+popup.height<=anchor.y,'Explanation appears above the gauge');
     assert.ok(popup.x>=0 && popup.x+popup.width <= (mobile?390:1500));
@@ -64,6 +68,13 @@ try {
       await page.waitForFunction(()=>document.querySelector('#board-save').textContent==='Saved automatically');
       await page.keyboard.press('Control+z');
       await page.waitForFunction(()=>document.querySelector('.board-capacity')?.dataset.count==='3');
+      await page.locator('[data-node=frame] .frame-title').click();
+      await page.keyboard.press('Delete');
+      await page.waitForFunction(()=>document.querySelector('.board-capacity')?.dataset.frameCount==='0');
+      assert.match(await gauge.getAttribute('aria-label'),/0 \/ 10,000 frames/);
+      await page.keyboard.press('Control+z');
+      await page.waitForFunction(()=>document.querySelector('.board-capacity')?.dataset.frameCount==='1');
+      assert.equal(await info.locator('.capacity-frame-count').textContent(),'1 / 10,000 frames');
       await page.locator('#board-expand').click();
       await page.locator('.board-expanded').waitFor();await gauge.click();await info.waitFor();
       assert.ok((await info.boundingBox()).y<(await gauge.boundingBox()).y);
@@ -71,5 +82,5 @@ try {
     await context.close();
   }
   assert.deepEqual(errors,[]);
-  console.log('PASS: gauge percentages, hidden objects, live delete/undo count, click/keyboard dismissal, expanded board, mobile sizing and light/dark accessibility');
+  console.log('PASS: gauge percentages, collapsed frame count, live object/frame delete/undo counts, click/keyboard dismissal, expanded board, mobile sizing and light/dark accessibility');
 } finally {await browser.close();server.closeAllConnections();await new Promise(r=>server.close(r));await store.close();await fs.rm(root,{recursive:true,force:true});}

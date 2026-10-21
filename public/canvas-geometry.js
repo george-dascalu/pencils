@@ -185,18 +185,18 @@ export function frameParents(nodes) {
 }
 export function hiddenByFrame(nodes, parents) {
   const byId = new Map(nodes.map((n) => [n.id, n])),
-    hidden = new Set();
+    hidden = new Set(), checked = new Set();
   for (const n of nodes) {
-    if (n.layerHidden) hidden.add(n.id);
-    let p = parents.get(n.id);
-    const seen = new Set([n.id]);
-    while (p && !seen.has(p)) {
-      seen.add(p);
-      if (byId.get(p)?.collapsed || byId.get(p)?.layerHidden) {
-        hidden.add(n.id);
-        break;
-      }
-      p = parents.get(p);
+    const chain = [], seen = new Set();
+    let id = n.id;
+    while (byId.has(id) && !checked.has(id) && !seen.has(id)) {
+      chain.push(id); seen.add(id); id = parents.get(id);
+    }
+    for (let i = chain.length - 1; i >= 0; i--) {
+      const current = chain[i], parent = parents.get(current);
+      if (byId.get(current).layerHidden || hidden.has(parent) || byId.get(parent)?.collapsed || byId.get(parent)?.layerHidden)
+        hidden.add(current);
+      checked.add(current);
     }
   }
   return hidden;

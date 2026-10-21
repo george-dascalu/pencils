@@ -29,15 +29,19 @@ export function boardLayoutTools(ctx, basic) {
     basic.focusSelection();
   };
   function render() {
-    $(".multi-resize-box")?.remove();
+    const outline = $(".multi-resize-box");
     const nodes = basic.pick();
-    if (nodes.length < 2 || nodes.some((n) => n.locked) || !$("#canvas-world"))
+    if (nodes.length < 2 || nodes.some((n) => n.locked) || !$("#canvas-world")) {
+      outline?.remove();
       return;
+    }
     const box = bounds(nodes);
-    $("#canvas-world").insertAdjacentHTML(
+    if (!outline) $("#canvas-world").insertAdjacentHTML(
       "beforeend",
       `<div class="multi-resize-box" style="left:${box.x}px;top:${box.y}px;width:${box.w}px;height:${box.h}px">${["nw", "ne", "sw", "se"].map((c) => `<span class="resize-handle" data-group-resize="${c}" data-resize-corner="${c}" aria-label="Resize selection from ${c}"></span>`).join("")}</div>`,
     );
+    else for (const [property, value] of Object.entries({ left: box.x, top: box.y, width: box.w, height: box.h }))
+      if (outline.style[property] !== `${value}px`) outline.style[property] = `${value}px`;
   }
   function layers() {
     const b = board();
@@ -262,6 +266,7 @@ export function boardLayoutTools(ctx, basic) {
       if (
         !["board", "drawing"].includes(state.view) ||
         state.dialog ||
+        (e.key === "Tab" && (e.ctrlKey || e.metaKey || e.altKey)) ||
         e.target.closest('input,textarea,select,[contenteditable="true"]')
       )
         return;

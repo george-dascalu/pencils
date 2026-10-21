@@ -5,7 +5,7 @@ import { taskColorAttributes } from "./task-colors.js";
 import { canvasPointerTool } from "./drawing-input.js";
 import {hierarchyError} from "./hierarchy-model.js";
 import {sourceLabel} from "./source-model.js";
-import { renderCanvasEdges } from "./canvas-lines.js";
+import { renderCanvasEdges, renderConnectorSelection } from "./canvas-lines.js";
 import {
   boardTaskState,
   taskStateBadge,
@@ -29,6 +29,9 @@ import { boardSession } from "./board-session.js";
 import { paintObjectGeometry } from "./object-geometry.js";
 import { timelineHTML } from "./task-timeline.js";
 import { frameThumbnail } from "./frame-export.js";
+import { frameOutline } from "./frame-outline.js";
+import { boardDetailTransition } from "./board-detail-transition.js";
+import { BOARD_LIMITS } from "./board-limits.js";
 import { lineJumps } from "./connector-path.js";
 import { paintTextStyle, textStyleControls } from "./object-text.js";
 import { penActive } from "./pen-tools.js";
@@ -114,6 +117,7 @@ export function canvasPro(ctx, basic) {
   let identity = "",
     frameSignature = "",
     outlineOpen = false,
+    outlinePage = 0,
     searchOpen = false,
     search = "",
     searchLimit=50, previousViewport=null,
@@ -147,10 +151,22 @@ export function canvasPro(ctx, basic) {
   let scene = null, sceneBoard = null, sceneNodes = null, sceneEdges = null,
     scenePresenting = null, mapImage = null, bitmapEdges = [], detailedEdges = new Set(), edgeDetailPending = false;
   const zoomDetail = detailLevel(), parkedDetails = new Map();
+  function parkDetail(el) {
+    const id = el.dataset.node;
+    el.remove();
+    parkedDetails.delete(id);
+    parkedDetails.set(id, el);
+    if (parkedDetails.size > 80) parkedDetails.delete(parkedDetails.keys().next().value);
+  }
+  const detailTransition = boardDetailTransition({ park: parkDetail, changed: () => {
+    if (!cameraFrame) cameraFrame = requestAnimationFrame(reconcile);
+  } });
+  let overviewSelection = "";
   const detail = () => zoomDetail(`${state.project?.id}:${board()?.id}`, state.camera.z);
   function rebuild(b = board(), force = true) {
     if (!b) return;
     if (!force && sceneBoard === b && sceneNodes === b.nodes && sceneEdges === b.edges && scenePresenting === presenting) return;
+    detailTransition.clear();
     parkedDetails.clear();
     scene = boardScene(b, presenting >= 0);
     sceneBoard = b; sceneNodes = b.nodes; sceneEdges = b.edges; scenePresenting = presenting;
@@ -182,7 +198,9 @@ export function canvasPro(ctx, basic) {
       selected,
       hidden,
       spatial: scene.spatial,
-      detailBudget: detail() === 0 ? Math.min(24, selected.size) : detail() === 1 ? 80 : 240,
+      // A bulk selection stays in the overview. Only a single active object
+      // needs editing controls while zoomed out.
+      detailBudget: detail() === 0 ? (selected.size === 1 ? 1 : 0) : detail() === 1 ? 80 : 240,
       now: performance.now(),
     });
   }
@@ -202,17 +220,17 @@ export function canvasPro(ctx, basic) {
     if (!exporting) {
       const selectedIDs = new Set([...basic.selectedEdges, state.selectedEdge].filter(Boolean));
       const connected = entry => selected.has(entry.a.id) || selected.has(entry.b.id);
-      const budget = detail() === 0 ? selectedIDs.size : 240;
+      const budget = detail() === 0 ? (state.selectedEdge ? 1 : 0) : 240;
       const cx = (r.x + r.w / 2), cy = (r.y + r.h / 2);
       const rank = e => selectedIDs.has(e.id) ? -2e20 : connected(e) ? -1e20 : (e.a.x - cx) ** 2 + (e.a.y - cy) ** 2;
-      detailed = budget === 0 ? [] : candidates.length > budget ? [...candidates].sort((a,b) => rank(a) - rank(b)).slice(0, Math.max(budget, selectedIDs.size)) : candidates;
+      detailed = budget === 0 ? [] : candidates.length > budget ? [...candidates].sort((a,b) => rank(a) - rank(b)).slice(0, budget) : candidates;
       edgeDetailPending = false;
       if (cameraOnly) {
         // Exact connector routing and SVG labels can be as costly as new cards.
         // Keep the remaining connectors visible in the bitmap until their turn.
         const pending = detailed.filter(entry => !detailedEdges.has(entry.id)).sort((a, b) => rank(a) - rank(b));
         const promote = new Set(pending.slice(0, 8).map(entry => entry.id));
-        const ready = detailed.filter(entry => detailedEdges.has(entry.id) || promote.has(entry.id) || selectedIDs.has(entry.id));
+        const ready = detailed.filter(entry => detailedEdges.has(entry.id) || promote.has(entry.id) || entry.id === state.selectedEdge);
         edgeDetailPending = ready.length < detailed.length;
         detailed = ready;
       }
@@ -251,7 +269,7 @@ export function canvasPro(ctx, basic) {
               ? ""
               : e.relationship || "");
       const style = connectorStyle(appearance, color, esc);
-      content += `<g data-edge="${esc(e.id)}"${dependency.active ? ' data-task-dependency="true"' : ""}><defs>${style.defs}</defs>${exporting ? "" : `<path class="connector-selection" d="${p.d}" fill="none" stroke-width="${style.width + 8 / state.camera.z}" aria-hidden="true"/><path class="connector-hit" d="${p.d}" fill="none" stroke="transparent" stroke-width="${Math.max(12 / state.camera.z, appearance.width || 2)}"/>`}<path class="canvas-edge ${basic.selectedEdges.has(e.id) || e.id === state.selectedEdge ? "selected" : ""}" data-edge="${esc(e.id)}" d="${p.d}" fill="none" stroke="${esc(color)}" ${style.attrs}/>${edgeLabel ? `<text class="edge-label" data-edge="${esc(e.id)}" data-edge-label="main" x="${p.x + (e.labelOffset?.x || 0)}" y="${p.y - 9 + (e.labelOffset?.y || 0)}">${esc(edgeLabel)}</text>` : ""}${(e.labels || []).map((label, i) => `<text class="edge-label" data-edge="${esc(e.id)}" data-edge-label="${i}" x="${p.x + label.x}" y="${p.y + label.y}">${esc(label.text)}</text>`).join("")}</g>`;
+      content += `<g data-edge="${esc(e.id)}"${dependency.active ? ' data-task-dependency="true"' : ""}><defs>${style.defs}</defs>${exporting ? "" : `<path class="connector-hit" d="${p.d}" fill="none" stroke="transparent" stroke-width="${Math.max(12 / state.camera.z, appearance.width || 2)}"/>`}<path class="canvas-edge ${basic.selectedEdges.has(e.id) || e.id === state.selectedEdge ? "selected" : ""}" data-edge="${esc(e.id)}" d="${p.d}" fill="none" stroke="${esc(color)}" ${style.attrs}/>${edgeLabel ? `<text class="edge-label" data-edge="${esc(e.id)}" data-edge-label="main" x="${p.x + (e.labelOffset?.x || 0)}" y="${p.y - 9 + (e.labelOffset?.y || 0)}">${esc(edgeLabel)}</text>` : ""}${(e.labels || []).map((label, i) => `<text class="edge-label" data-edge="${esc(e.id)}" data-edge-label="${i}" x="${p.x + label.x}" y="${p.y + label.y}">${esc(label.text)}</text>`).join("")}</g>`;
     }
     return content + (exporting ? "" : endpointHandles(b));
   }
@@ -450,7 +468,7 @@ export function canvasPro(ctx, basic) {
       el.style.height = `${n.collapsed && presenting < 0 ? 48 : n.h}px`;
       el.classList.toggle("collapsed-frame", !!n.collapsed && presenting < 0);
       if (["frame", "grid"].includes(n.type)) {
-        el.style.zIndex = String(frameDepth(n.id, parents) - 501);
+        el.style.zIndex = String(frameDepth(n.id, parents) - BOARD_LIMITS.nodes - 1);
         if (/^#[0-9a-f]{6}$/i.test(n.color || "")) {
           const rgb = n.color
             .slice(1)
@@ -622,12 +640,21 @@ export function canvasPro(ctx, basic) {
           el.dataset.edge === state.selectedEdge,
       ),
     );
+    renderConnectorSelection($("#canvas-lines"), state.camera.z);
     if (!state.selectedEdge)
       $$(".connector-endpoint, .connector-bend").forEach((el) => el.remove());
-    $$(".connection-port").forEach((el) => el.remove());
-    for (const n of pick()) {
-      const el = $(`[data-node="${CSS.escape(n.id)}"]`);
-      if (!el || n.locked || editor?.id === n.id) continue;
+    // Group selection uses its shared outline. Individual editing controls are
+    // useful only for a single selected card, not every visible group member.
+    const singleNode = selected.size === 1 && !basic.selectedEdges.size
+      ? index.get(selected.values().next().value) : null;
+    const single = singleNode && !singleNode.locked && editor?.id !== singleNode.id;
+    for (const port of $$(".connection-port"))
+      if (!single || !selected.has(port.dataset.source)) port.remove();
+    for (const el of single ? $$(".board-node.selected") : []) {
+      const n = index.get(el.dataset.node);
+      if (!n || n.locked || editor?.id === n.id) continue;
+      detailTransition.finish(el);
+      if (el.querySelector(".connection-port")) continue;
       for (const side of sides)
         el.insertAdjacentHTML(
           "beforeend",
@@ -638,6 +665,11 @@ export function canvasPro(ctx, basic) {
       hoverConnectionPorts({
         target: document.elementFromPoint(hoverPointer.x, hoverPointer.y),
       });
+    const selectionKey = JSON.stringify([[...selected], [...basic.selectedEdges], state.selectedEdge]);
+    if (overviewSelection !== selectionKey) {
+      overviewSelection = selectionKey;
+      paintOverviewDOM();
+    }
   }
 
   function availableUndo(operations, redo = false) {
@@ -859,6 +891,7 @@ export function canvasPro(ctx, basic) {
     if (!b || !$("#canvas")) return;
     if (identity !== b.id) {
       identity = b.id;
+      outlinePage = 0;
       search = "";
       searchOpen = false;
       previousViewport=null;searchLimit=50;
@@ -913,12 +946,7 @@ export function canvasPro(ctx, basic) {
     const pending = nodes.filter(n => !existing.has(n.id)).sort((a, b) => rank(a) - rank(b));
     // Bound each frame's card creation. Unbuilt cards remain on the bitmap layer.
     const batch = pending.slice(0, 4), added = new Set(), restored = [];
-    for (const [id, el] of existing) if (!ids.has(id)) {
-      el.remove();
-      parkedDetails.delete(id);
-      parkedDetails.set(id, el);
-      if (parkedDetails.size > 80) parkedDetails.delete(parkedDetails.keys().next().value);
-    }
+    for (const [id, el] of existing) detailTransition.show(el, ids.has(id));
     for (const n of batch) {
       const cached = parkedDetails.get(n.id);
       if (cached) {
@@ -938,6 +966,7 @@ export function canvasPro(ctx, basic) {
       basic.enhanceBase(added);
       enhance(added);
     } else if (restored.length) basic.selection();
+    for (const n of batch) detailTransition.show($(`[data-node="${CSS.escape(n.id)}"]`), true, true);
     const rendered = new Set([...existing.keys()].filter(id => ids.has(id)));
     for (const n of batch) rendered.add(n.id);
     if (batch.length) {
@@ -954,7 +983,7 @@ export function canvasPro(ctx, basic) {
       }
     }
     const svg = $("#canvas-lines");
-    if (svg) renderCanvasEdges(svg, edges(board(), false, true));
+    if (svg) renderCanvasEdges(svg, edges(board(), false, true), state.camera.z);
     paintMap();
     paintPresence();
     paintOverview(rendered);
@@ -986,17 +1015,40 @@ export function canvasPro(ctx, basic) {
     }
     g.restore(); return hit;
   }
-  function hitOverview(p) {
+  function overviewNode(p) {
     rebuild(board(), false);
     const hits = scene.spatial.search({ x: p.x, y: p.y, w: 0, h: 0 })
-      .filter(n => !hidden.has(n.id) && !["frame", "grid"].includes(n.type));
-    const n = hits.sort((a,b) => scene.spatial.order(b) - scene.spatial.order(a))[0];
-    if (n && !$( `[data-node="${CSS.escape(n.id)}"]` )) {
-      selected.clear(); selected.add(n.id); state.selectedNode = n.id;
-      reconcile();
-      return $(`[data-node="${CSS.escape(n.id)}"]`);
+      .filter(n => !hidden.has(n.id) && (!n.collapsed || p.y <= n.y + 48));
+    const layer = n => ["frame", "grid"].includes(n.type) ? frameDepth(n.id, parents) : Number.MAX_SAFE_INTEGER;
+    return hits.sort((a,b) => layer(b) - layer(a) || scene.spatial.order(b) - scene.spatial.order(a))[0] || null;
+  }
+  function nodesWithin(rect) {
+    rebuild(board(), false);
+    return scene.nodesWithin(rect);
+  }
+  function hitOverview(p) {
+    const n = overviewNode(p);
+    if (!n) return null;
+    const current = $(`[data-node="${CSS.escape(n.id)}"]`);
+    if (current) { detailTransition.finish(current); return current; }
+    // Materialise only the hit object. Selection/modifiers and dragging follow
+    // the normal handler, without clearing an existing multi-selection here.
+    const world = $("#canvas-world"), cached = parkedDetails.get(n.id);
+    if (cached) { parkedDetails.delete(n.id); world.append(cached); }
+    else world.insertAdjacentHTML("beforeend", ctx.nodeHTML(n));
+    const el = $(`[data-node="${CSS.escape(n.id)}"]`);
+    const next = $$(".board-node").find(other => scene.spatial.order(index.get(other.dataset.node)) > scene.spatial.order(n));
+    if (next) world.insertBefore(el, next);
+    if (!cached) {
+      const added = new Set([n.id]);
+      basic.enhanceBase(added);
+      enhance(added);
     }
-    return null;
+    paintOverviewDOM();
+    return el;
+  }
+  function paintOverviewDOM() {
+    if (scene) paintOverview(new Set($$(".board-node").map(el => el.dataset.node)));
   }
   function camera() {
     commentPanel.position();
@@ -1019,9 +1071,11 @@ export function canvasPro(ctx, basic) {
     const g = c.getContext("2d");
     g.clearRect(0, 0, c.width, c.height);
     const r = rect(), cam = state.camera;
-    paintOverviewEdges(g, bitmapEdges, scene, cam);
+    paintOverviewEdges(g, bitmapEdges, scene, cam, basic.selectedEdges,
+      document.documentElement.dataset.theme === "dark" ? "#8fbbec" : "#4276a5");
+    const fading = detailTransition.bitmap();
     for (const n of scene.spatial.search(r))
-      if (!rendered.has(n.id) && !hidden.has(n.id) && intersects(n, r)) {
+      if ((!rendered.has(n.id) || fading.has(n.id)) && !hidden.has(n.id) && intersects(n, r)) {
         g.fillStyle = nodeFill(n, "#dce5d8");
         g.fillRect(
           n.x * cam.z + cam.x,
@@ -1029,12 +1083,13 @@ export function canvasPro(ctx, basic) {
           Math.max(2, n.w * cam.z),
           Math.max(2, (n.collapsed ? 48 : n.h) * cam.z),
         );
-        g.strokeStyle = "#78906f";
+        g.strokeStyle = selected.has(n.id) ? "#4d6c55" : "#78906f";
+        g.lineWidth = selected.has(n.id) ? 2 : 1;
         if (n.w * cam.z > 5) g.strokeRect(
           n.x * cam.z + cam.x,
           n.y * cam.z + cam.y,
           n.w * cam.z,
-          n.h * cam.z,
+          (n.collapsed ? 48 : n.h) * cam.z,
         );
       }
   }
@@ -1519,23 +1574,18 @@ export function canvasPro(ctx, basic) {
     const el = $("#canvas-outline");
     if (!el || !outlineOpen) return;
     const slides = slideIds();
-    const frames = board().nodes.filter((n) => n.type === "frame"),
-      order = [...slides, ...frames.map((f) => f.id)];
+    const slideOrder = new Map(slides.map((id, i) => [id, i]));
+    const tree = frameOutline(board(), parents), pageSize = 50;
+    outlinePage = Math.max(0, Math.min(outlinePage, Math.ceil(tree.rows.length / pageSize) - 1));
+    const start = outlinePage * pageSize;
     const rows = [];
-    const visit = (parent, depth = 0, seen = new Set()) => {
-      for (const f of frames
-        .filter((f) => (parents.get(f.id) || null) === parent)
-        .sort((a, b) => order.indexOf(a.id) - order.indexOf(b.id))) {
-        if (seen.has(f.id)) continue;
-        seen.add(f.id);
+    for (const {node:f, depth} of tree.rows.slice(start, start + pageSize)) {
         rows.push(
-          `<div class="outline-row ${depth ? "nested-frame-row" : ""}" data-frame-row="${esc(f.id)}" draggable="${!depth}" style="padding-left:${depth * 14}px">${btn("collapse", icon(f.collapsed ? "plus" : "minus"), `data-id="${esc(f.id)}" aria-label="${f.collapsed ? "Expand" : "Collapse"} frame" ${f.locked ? "disabled" : ""}`)}${btn("find-result", `${frameThumbnail(f, board().nodes, esc)}<span class="frame-row-title">${esc(f.text || "Untitled frame")}</span><small>${depth ? "Nested · " : `${slides.indexOf(f.id) + 1} · `}${frameContents(board().nodes, f, parents).length} objects · ${Math.round(f.w)} × ${Math.round(f.h)}</small>`, `data-id="${esc(f.id)}"`)}${!depth ? btn("frame-up", "↑", `data-id="${esc(f.id)}" aria-label="Move frame earlier" ${slides.indexOf(f.id) === 0 ? "disabled" : ""}`) + btn("frame-down", "↓", `data-id="${esc(f.id)}" aria-label="Move frame later" ${slides.indexOf(f.id) === slides.length - 1 ? "disabled" : ""}`) : ""}</div>`,
+          `<div class="outline-row ${depth ? "nested-frame-row" : ""}" data-frame-row="${esc(f.id)}" draggable="${!depth}" style="padding-left:${Math.min(depth, 5) * 14}px">${btn("collapse", icon(f.collapsed ? "plus" : "minus"), `data-id="${esc(f.id)}" aria-label="${f.collapsed ? "Expand" : "Collapse"} frame" ${f.locked ? "disabled" : ""}`)}${btn("find-result", `${frameThumbnail(f, scene.spatial.search(f), esc)}<span class="frame-row-title">${esc(f.text || "Untitled frame")}</span><small>${depth ? `Nested level ${depth} · ` : `${slideOrder.get(f.id) + 1} · `}${tree.counts.get(f.id) || 0} objects · ${Math.round(f.w)} × ${Math.round(f.h)}</small>`, `data-id="${esc(f.id)}"`)}${!depth ? btn("frame-up", "↑", `data-id="${esc(f.id)}" aria-label="Move frame earlier" ${slideOrder.get(f.id) === 0 ? "disabled" : ""}`) + btn("frame-down", "↓", `data-id="${esc(f.id)}" aria-label="Move frame later" ${slideOrder.get(f.id) === slides.length - 1 ? "disabled" : ""}`) : ""}</div>`,
         );
-        visit(f.id, depth + 1, seen);
-      }
-    };
-    visit(null);
-    el.innerHTML = `<strong>Frames & presentation</strong>${btn("outline", "×", 'aria-label="Close outline"')}<p>Drag rows or use ↑ / ↓ to reorder slides. Nested frames move with their parent and are not separate slides.</p><div class="frame-panel-actions">${btn("frames-organize", "Order by position")}${btn("present", "Present")}</div>${rows.join("") || "<p>Press F and drag to draw a frame.</p>"}`;
+    }
+    const pagination = tree.rows.length > pageSize ? `<nav class="frame-panel-actions" aria-label="Frame pages">${btn("frames-previous", icon("arrow-left"), `aria-label="Previous frames" ${outlinePage === 0 ? "disabled" : ""}`)}<span>${start + 1}–${Math.min(start + pageSize, tree.rows.length)} / ${tree.rows.length.toLocaleString("en-GB")}</span>${btn("frames-next", icon("arrow"), `aria-label="Next frames" ${start + pageSize >= tree.rows.length ? "disabled" : ""}`)}</nav>` : "";
+    el.innerHTML = `<strong>Frames & presentation</strong>${btn("outline", "×", 'aria-label="Close outline"')}<p>Drag rows or use ↑ / ↓ to reorder slides. Nested frames move with their parent and are not separate slides.</p><div class="frame-panel-actions">${btn("frames-organize", "Order by position")}${btn("present", "Present")}</div>${pagination}${rows.join("") || "<p>Press F and drag to draw a frame.</p>"}`;
   }
   let draggedFrame = null;
   document.addEventListener("dragstart", (event) => {
@@ -1825,7 +1875,7 @@ export function canvasPro(ctx, basic) {
     changeBoard((b) => {
       b.nodes.push(...nodes);
       b.edges.push(...edges);
-    });
+    }, { adoptNewFrames: false });
     if (id !== "clipboard") {
       closeDialog(true);
       focus(nodes);
@@ -1921,6 +1971,11 @@ export function canvasPro(ctx, basic) {
       outlineOpen = !outlineOpen;
       $("#canvas-outline")?.classList.toggle("hidden", !outlineOpen);
       outline();
+    } else if (action === "frames-previous" || action === "frames-next") {
+      outlinePage += action === "frames-next" ? 1 : -1;
+      outline();
+      $("#canvas-outline").scrollTop = 0;
+      $(`#canvas-outline [data-pro="${action}"]`)?.focus({preventScroll:true});
     } else if (action === "task-dates" && n?.type === "task") {
       const nodeId = n.id;
       cardDates.open(n.task, () => $(`[data-node="${CSS.escape(nodeId)}"] .canvas-task-due`));
@@ -2436,6 +2491,7 @@ export function canvasPro(ctx, basic) {
       if (
         !["board", "drawing"].includes(state.view) ||
         state.dialog ||
+        (event.key === "Tab" && (event.ctrlKey || event.metaKey || event.altKey)) ||
         event.target.closest(".board-task-editor")
       )
         return;
@@ -2962,30 +3018,8 @@ export function canvasPro(ctx, basic) {
         });
         return;
       }
-      if (
-        !event.target.closest("[data-node],button,input,select,[data-edge]") &&
-        state.tool === "cursor" &&
-        !event.shiftKey &&
-        $$(".board-node").length < board().nodes.length
-      ) {
-        const p = point(event),
-          hit = [...board().nodes]
-            .reverse()
-            .find(
-              (n) =>
-                !hidden.has(n.id) &&
-                n.type !== "frame" &&
-                p.x >= n.x &&
-                p.x <= n.x + n.w &&
-                p.y >= n.y &&
-                p.y <= n.y + n.h,
-            );
-        if (hit) {
-          event.preventDefault();
-          event.stopImmediatePropagation();
-          reveal(hit);
-        }
-      }
+      // Bitmap hits continue to the shared select/move handler. Revealing them
+      // here used to consume pointerdown and unexpectedly zoom into the object.
     },
     true,
   );
@@ -3329,6 +3363,9 @@ export function canvasPro(ctx, basic) {
     selection,
     visible,
     hitOverview,
+    overviewNode,
+    nodesWithin,
+    paintOverviewDOM,
     hitOverviewEdge,
     edges,
     camera,

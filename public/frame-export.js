@@ -85,7 +85,7 @@ export function frameThumbnail(frame, nodes, esc) {
         n.x + n.w > frame.x &&
         n.y + n.h > frame.y,
     )
-    .slice(0, 200)
+    .slice(0, 32)
     .map(
       (n) =>
         `<rect x="${n.x}" y="${n.y}" width="${n.w}" height="${n.h}" fill="${esc(/^#[a-f0-9]{6}$/i.test(n.color || "") ? n.color : "#c4d1bf")}" stroke="#809078" stroke-width="2"/>`,

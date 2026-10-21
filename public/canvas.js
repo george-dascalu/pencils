@@ -99,6 +99,7 @@ export function canvasFeatures(ctx) {
     space = false;
   const drawing = drawingInput(ctx, {
     clearSelection,
+    hitTest: event => pro.overviewNode(point(event)),
     place: (event) => controls.place(event),
     cancel: () => { gridControls.cancel(); lasso.cancel(); pro.cancelPointer(); end(null, true, true); },
     action: (action) => {
@@ -284,8 +285,10 @@ export function canvasFeatures(ctx) {
       selectedEdges.clear();
       selectedEdges.add(state.selectedEdge);
     }
+    const edgeIds = new Set(board()?.edges.map(e => e.id));
+    const nodeIds = new Set(board()?.nodes.map(n => n.id));
     for (const id of selectedEdges)
-      if (!board()?.edges.some((e) => e.id === id)) selectedEdges.delete(id);
+      if (!edgeIds.has(id)) selectedEdges.delete(id);
     state.selectedEdge =
       !pick().length && selectedEdges.size === 1 ? [...selectedEdges][0] : null;
     if (state.selectedNode && !selected.has(state.selectedNode)) {
@@ -293,18 +296,16 @@ export function canvasFeatures(ctx) {
       selected.add(state.selectedNode);
     }
     for (const id of selected)
-      if (!board()?.nodes.some((n) => n.id === id)) selected.delete(id);
+      if (!nodeIds.has(id)) selected.delete(id);
     $$(".board-node").forEach((el) => {
       el.classList.toggle("selected", selected.has(el.dataset.node));
-      el.querySelectorAll(".resize-handle").forEach((handle) =>
-        handle.remove(),
-      );
-      if (
+      const resize = selected.size === 1 && !selectedEdges.size &&
         selected.has(el.dataset.node) &&
         !el.classList.contains("locked") &&
         !el.classList.contains("collapsed-frame") &&
-        !el.classList.contains("inline-editing")
-      )
+        !el.classList.contains("inline-editing");
+      if (!resize) el.querySelectorAll(".resize-handle").forEach(handle => handle.remove());
+      else if (!el.querySelector(".resize-handle"))
         el.insertAdjacentHTML(
           "beforeend",
           [
@@ -401,6 +402,8 @@ export function canvasFeatures(ctx) {
       }
     }
     updateEdges();
+    pro.paintOverviewDOM();
+    layoutTools.render();
     controls.position();
   }
   function drawingSamples() {
@@ -467,7 +470,13 @@ export function canvasFeatures(ctx) {
       )
         return;
       let el = event.target.closest("[data-node]");
-      if (!el && tool === "cursor" && !event.target.closest("[data-edge]")) el = pro.hitOverview(point(event));
+      let bitmapHit = false;
+      if (tool === "cursor" && (!el || el.matches(".frame,.grid")) &&
+          !event.target.closest("[data-edge],.frame-title,.grid-title,.resize-handle,.connection-port")) {
+        const hit = pro.overviewNode(point(event));
+        bitmapHit = !!hit && !$(`[data-node="${CSS.escape(hit.id)}"]`);
+        el = pro.hitOverview(point(event)) || el;
+      }
       if (!el && tool === "cursor" && !event.target.closest("[data-edge]")) {
         const edge = pro.hitOverviewEdge(point(event));
         if (edge) { event.preventDefault(); event.stopImmediatePropagation(); selectEdge(edge, event.shiftKey || event.ctrlKey || event.metaKey); return; }
@@ -475,6 +484,7 @@ export function canvasFeatures(ctx) {
       let frameInterior = false;
       if (
         el?.classList.contains("frame") &&
+        !bitmapHit &&
         !el.classList.contains("collapsed-frame") &&
         !event.target.closest(".frame-title,.resize-handle,.connection-port")
       ) {
@@ -732,14 +742,15 @@ export function canvasFeatures(ctx) {
           drag.locks = translation.locks;
           paintAlignmentGuides($("#canvas"), translation.guides, state.camera);
         }
+        const origins = drag.originIndex ||= new Map(
+          (drag.origins || drag.before.nodes).map(n => [n.id, n]),
+        );
         for (const n of board().nodes.filter(
           (n) =>
             drag.ids.has(n.id) &&
             (!n.locked || drag.duplicated || !selected.has(n.id)),
         )) {
-          const old = (drag.origins || drag.before.nodes).find(
-            (x) => x.id === n.id,
-          );
+          const old = origins.get(n.id);
           if (drag.type === "resize" && n.id === drag.id) {
             if (!event.shiftKey) drag.axis = null;
             else if (!drag.axis && Math.max(Math.abs(dx), Math.abs(dy)) >= 3)
@@ -858,19 +869,15 @@ export function canvasFeatures(ctx) {
         $$("path.canvas-edge").forEach((el) =>
           el.classList.toggle("selected", selectedEdges.has(el.dataset.edge)),
         );
-        for (const n of board().nodes)
-          if (
-            $(`[data-node="${CSS.escape(n.id)}"]`) &&
-            n.x >= x &&
-            n.y >= y &&
-            n.x + n.w <= x + w &&
-            n.y + n.h <= y + h
-          )
-            selected.add(n.id);
+        for (const n of pro.nodesWithin({ x, y, w, h })) selected.add(n.id);
         state.selectedNode = [...selected][0] || null;
         $$(".board-node").forEach((el) =>
           el.classList.toggle("selected", selected.has(el.dataset.node)),
         );
+        if (!drag.paintFrame) drag.paintFrame = requestAnimationFrame(() => {
+          drag.paintFrame = null;
+          pro.paintOverviewDOM();
+        });
       } else if (drag.type === "draw") {
         const events = event.getCoalescedEvents?.();
         for (const sample of events?.length ? events : [event]) {
@@ -1325,7 +1332,7 @@ export function canvasFeatures(ctx) {
           state.selectedNode = frameId;
           state.selectedEdge = null;
         }
-      });
+      }, { adoptNewFrames: action !== "duplicate" });
       if (action === "duplicate") focusSelection();
       return true;
     }

@@ -1,5 +1,6 @@
 import { cellAt, cellBounds, gridTracks } from "./grid-model.js";
 import { bounds, frameParents, hiddenByFrame } from "./canvas-geometry.js";
+import { SpatialIndex } from "./spatial-index.js";
 
 export const framePresets = [
   { id: "wide", label: "Presentation · 16:9", w: 960, h: 540 },
@@ -71,9 +72,13 @@ export function updateFrameMembership(
   nodes,
   movingIds,
   previousNodes,
-  { adopt = true } = {},
+  { adopt = true, adoptNewFrames = true } = {},
 ) {
   const parents = frameParents(previousNodes);
+  const byId = new Map(nodes.map(n => [n.id, n]));
+  const previous = new Map(previousNodes.map(n => [n.id, n]));
+  const frames = new SpatialIndex(nodes.filter(n => n.type === "frame"));
+  const hasGrids = nodes.some(n => n.type === "grid");
   for (const n of nodes.filter((n) => movingIds.has(n.id))) {
     let parent = n.frame || parents.get(n.id),
       carried = false;
@@ -84,22 +89,22 @@ export function updateFrameMembership(
         break;
       }
       seen.add(parent);
-      parent = nodes.find((n) => n.id === parent)?.frame || parents.get(parent);
+      parent = byId.get(parent)?.frame || parents.get(parent);
     }
     if (carried) continue;
     const placedCell =
-      !previousNodes.some((old) => old.id === n.id) &&
+      !previous.has(n.id) &&
       n.gridCell &&
-      nodes.find((g) => g.id === n.frame && g.type === "grid");
+      (byId.get(n.frame)?.type === "grid" ? byId.get(n.frame) : null);
     const explicitTarget = placedCell
       ? { grid: placedCell, cell: n.gridCell }
       : null;
     delete n.frame;
     delete n.gridCell;
-    // A newly duplicated grid overlaps its source. Do not treat that as a
-    // deliberate drop into the source grid; explicit drags can nest grids.
+    // Copied containers keep their copied children. Overlapping their source
+    // is not a deliberate drop into a grid; explicit drags can still nest them.
     const cellTarget =
-      n.type === "grid" && !previousNodes.some((old) => old.id === n.id)
+      !hasGrids || (!previous.has(n.id) && (n.type === "grid" || (n.type === "frame" && !adoptNewFrames)))
         ? null
         : explicitTarget || gridDropTarget(nodes, n, movingIds);
     if (
@@ -119,7 +124,7 @@ export function updateFrameMembership(
       reflowGridContents(nodes, cellTarget.grid, structuredClone(nodes));
       continue;
     }
-    const target = nodes
+    const target = frames.search(n)
       .filter(
         (f) =>
           f.type === "frame" &&
@@ -129,7 +134,7 @@ export function updateFrameMembership(
       )
       .sort((a, b) => a.w * a.h - b.w * b.h)[0];
     if (target) n.frame = target.id;
-    if (adopt && n.type === "frame") adoptFrameContents(nodes, n);
+    if (adopt && n.type === "frame" && (adoptNewFrames || previous.has(n.id))) adoptFrameContents(nodes, n);
   }
 }
 export function frameSlides(board) {
@@ -172,24 +177,24 @@ export function framePaintOrder(nodes) {
   const parents = frameParents(nodes);
   return [...nodes].sort(
     (a, b) =>
-      (["frame", "grid"].includes(a.type) ? frameDepth(a.id, parents) : 1000) -
-      (["frame", "grid"].includes(b.type) ? frameDepth(b.id, parents) : 1000),
+      (["frame", "grid"].includes(a.type) ? frameDepth(a.id, parents) : Number.MAX_SAFE_INTEGER) -
+      (["frame", "grid"].includes(b.type) ? frameDepth(b.id, parents) : Number.MAX_SAFE_INTEGER),
   );
 }
 
 // Grid cells use the same parent chain as frames so movement, duplication and
 // collapse work through arbitrarily nested containers.
 export function gridDropTarget(nodes, node, movingIds = new Set([node.id])) {
+  const x = node.x + node.w / 2, y = node.y + node.h / 2;
+  // Most pasted roots are nowhere near a grid. Avoid rebuilding the entire
+  // parent/visibility graph for every one of those objects.
+  const candidates = nodes.filter(g => g.type === "grid" && !g.locked &&
+    !movingIds.has(g.id) && x >= g.x && x <= g.x + g.w && y >= g.y && y <= g.y + g.h);
+  if (!candidates.length) return null;
   const parents = frameParents(nodes),
     hidden = hiddenByFrame(nodes, parents);
-  return nodes
-    .filter(
-      (g) =>
-        g.type === "grid" &&
-        !g.locked &&
-        !movingIds.has(g.id) &&
-        !hidden.has(g.id),
-    )
+  return candidates
+    .filter(g => !hidden.has(g.id))
     .sort((a, b) => a.w * a.h - b.w * b.h)
     .map((grid) => {
       let p = grid.id;

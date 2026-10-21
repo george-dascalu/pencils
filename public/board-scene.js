@@ -9,6 +9,15 @@ export function boardScene(board, presenting = false) {
   const spatial = new SpatialIndex(board.nodes, objectBounds);
   const parents = frameParents(board.nodes);
   const hidden = presenting ? new Set() : hiddenByFrame(board.nodes, parents);
+  function nodesWithin(rect) {
+    // Selection uses the whole scene, independently of the DOM detail budget.
+    return spatial.search(rect).filter(n => {
+      if (hidden.has(n.id)) return false;
+      const box = objectBounds(n.collapsed && !presenting ? { ...n, h: 48 } : n);
+      return box.x >= rect.x && box.y >= rect.y &&
+        box.x + box.w <= rect.x + rect.w && box.y + box.h <= rect.y + rect.h;
+    });
+  }
   const effective = id => {
     let n = nodes.get(id); const seen = new Set();
     while (n && hidden.has(n.id) && !seen.has(n.id)) {
@@ -35,18 +44,19 @@ export function boardScene(board, presenting = false) {
     }
     return routes.get(key);
   }
-  return { nodes, spatial, parents, hidden, effective, edges, route, box: bounds(board.nodes) };
+  return { nodes, spatial, parents, hidden, nodesWithin, effective, edges, route, box: bounds(board.nodes) };
 }
 
 // Low-detail connectors share paths by colour/width; no per-edge DOM or marker
-// trees. Selected connectors always use the complete SVG editor above this layer.
-export function paintOverviewEdges(g, entries, scene, camera) {
+// trees. Bulk selection stays batched; a single active connector uses SVG editing.
+export function paintOverviewEdges(g, entries, scene, camera, selected = new Set(), selectionColor = '#4276a5') {
   const groups = new Map();
   const simple = camera.z < 0.12 || entries.length > 2000;
   for (const entry of entries) {
-    const e = entry.edge, color = palette[e.color] || e.color || '#78906f';
-    const key = `${color}:${e.width || 2}:${e.lineStyle || ''}`;
-    if (!groups.has(key)) groups.set(key, { color, width: e.width || 2, dash: e.lineStyle, path: new Path2D() });
+    const e = entry.edge, highlighted = selected.has(e.id),
+      color = highlighted ? selectionColor : palette[e.color] || e.color || '#78906f';
+    const key = `${color}:${e.width || 2}:${e.lineStyle || ''}:${highlighted}`;
+    if (!groups.has(key)) groups.set(key, { color, highlighted, width: e.width || 2, dash: e.lineStyle, path: new Path2D() });
     const group = groups.get(key);
     if (simple) {
       group.path.moveTo(entry.a.x + entry.a.w / 2, entry.a.y + entry.a.h / 2);
@@ -58,8 +68,8 @@ export function paintOverviewEdges(g, entries, scene, camera) {
     }
   }
   g.save(); g.translate(camera.x, camera.y); g.scale(camera.z, camera.z);
-  for (const { color, width, dash, path } of groups.values()) {
-    g.strokeStyle = color; g.lineWidth = Math.max(width, 0.5 / camera.z);
+  for (const { color, highlighted, width, dash, path } of groups.values()) {
+    g.strokeStyle = color; g.lineWidth = Math.max(width, (highlighted ? 2 : 0.5) / camera.z);
     g.setLineDash(dash === 'dashed' ? [8, 5] : dash === 'dotted' ? [1, 5] : []);
     g.stroke(path);
   }

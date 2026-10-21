@@ -1,7 +1,7 @@
 import { boardCapacity } from "./board-capacity.js";
 import { setBoardExpanded } from "./view-layout.js";
 import { newGrid, syncGrid, cellAt, GRID_DEFAULT_SIZE } from "./grid-model.js";
-import { routeEdge } from "./canvas-geometry.js";
+import { routeEdge, bounds } from "./canvas-geometry.js";
 import { canvasToolDrag } from "./canvas-tool-drag.js";
 // Navigation preferences belong to the browser, never to the shared board.
 export function canvasControls(ctx, basic) {
@@ -115,7 +115,7 @@ export function canvasControls(ctx, basic) {
       el.classList.toggle("active", el.dataset.tool === state.tool);
       el.title = `${el.getAttribute("aria-label") || el.dataset.tool}${keys[el.dataset.tool] ? ` (${keys[el.dataset.tool]})` : ""}`;
     }
-    capacity.render(canvas, board().nodes.length);
+    capacity.render(canvas, board().nodes.length, board().nodes.reduce((count, node) => count + (node.type === "frame" ? 1 : 0), 0));
     position();
   }
   function tool(value) {
@@ -136,18 +136,25 @@ export function canvasControls(ctx, basic) {
     const toolbar = $("#selection-tools"),
       canvas = $("#canvas"),
       nodes = basic.pick();
-    for (const edge of basic.pickEdges()) {
-      const a = board().nodes.find((n) => n.id === edge.from),
-        b = board().nodes.find((n) => n.id === edge.to);
+    if (!toolbar || !canvas) return;
+    const edges = basic.pickEdges(), selected = new Set(nodes.map(n => n.id));
+    const byId = edges.length ? new Map(board().nodes.map(n => [n.id, n])) : null;
+    const paths = new Map($$("path.canvas-edge").map(el => [el.dataset.edge, el]));
+    for (const edge of edges) {
+      // Their endpoint cards already bound these connectors. Preserve distant
+      // bends without querying thousands of SVG paths during group selection.
+      if (selected.has(edge.from) && selected.has(edge.to)) {
+        for (const p of edge.bends || []) nodes.push({ ...p, w: 0, h: 0 });
+        continue;
+      }
+      const a = byId.get(edge.from), b = byId.get(edge.to);
       if (a && b) {
         const p = routeEdge(
           edge,
           a.collapsed ? { ...a, h: 48 } : a,
           b.collapsed ? { ...b, h: 48 } : b,
         );
-        const box = $(
-          `path.canvas-edge[data-edge="${CSS.escape(edge.id)}"]`,
-        )?.getBBox();
+        const box = paths.get(edge.id)?.getBBox();
         const points = [p.p, p.q, ...(edge.bends || [])];
         nodes.push(
           box
@@ -165,23 +172,13 @@ export function canvasControls(ctx, basic) {
         );
       }
     }
-    if (!toolbar || !canvas || !nodes.length) return;
-    const left =
-      Math.min(...nodes.map((n) => n.x)) * state.camera.z + state.camera.x;
-    const right =
-      Math.max(...nodes.map((n) => n.x + n.w)) * state.camera.z +
-      state.camera.x;
-    const top =
-      Math.min(
-        ...nodes.map(
-          (n) =>
-            n.y * state.camera.z +
-            (n.type === "grid" ? Math.min(0, 24 * state.camera.z - 24) : 0),
-        ),
-      ) + state.camera.y;
-    const bottom =
-      Math.max(...nodes.map((n) => n.y + n.h)) * state.camera.z +
-      state.camera.y;
+    if (!nodes.length) return;
+    const box = bounds(nodes), left = box.x * state.camera.z + state.camera.x,
+      right = (box.x + box.w) * state.camera.z + state.camera.x,
+      bottom = (box.y + box.h) * state.camera.z + state.camera.y;
+    let top = box.y * state.camera.z + state.camera.y;
+    for (const n of nodes) if (n.type === "grid")
+      top = Math.min(top, n.y * state.camera.z + state.camera.y + Math.min(0, 24 * state.camera.z - 24));
     const width = toolbar.offsetWidth,
       height = toolbar.offsetHeight,
       handleGap = Math.max(

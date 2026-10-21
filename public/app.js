@@ -6,7 +6,8 @@ import { priorityOptions as priorities, priorityLabels, priorityLabel, defaultPr
 import { browserNavigation } from "./navigation.js";
 import { helpPageHTML } from "./help.js";
 import { helpArticle } from "./help-content.js";
-import {saveState} from "./save-state.js";
+import { saveState, saveIssue } from "./save-state.js";
+import { appStatus } from "./app-status.js";
 import {sourceLabel} from "./source-model.js";
 import { pageOf, treePage, visibilitySummary } from "./task-visibility.js";
 import { renderCanvasEdges } from "./canvas-lines.js";
@@ -51,6 +52,7 @@ const esc = (value) =>
       ],
   );
 const paths = {
+  warning: "M12 3 2 21h20L12 3zM12 9v5M12 17v.01",
   "case-sensitive": "M3 18 8 5l5 13M5 13h6M16 10c5-3 6 2 6 4v4M22 12c-8-2-8 8 0 5",
   "whole-word": "M3 7v12h18V7M7 14l2-6 2 6 2-6 2 6 2-6",
   regexp: "M6 16h.01M16 4v10M11 6l10 6M11 12l10-6",
@@ -318,6 +320,7 @@ const sync = new SaveQueue({
     }
   },
 });
+const headerStatus = appStatus({ state, sync, version: APP_VERSION, icon, esc });
 const markdown = createMarkdown({ state, esc });
 let boardQueue = Promise.resolve(),
   pollBusy = false,
@@ -708,7 +711,7 @@ function renderApp() {
       <div class="side-footer"><span class="dot"></span>Local workspace<span class="version">v${APP_VERSION}</span></div></div>
     </aside>
     <main class="main">
-      <header class="topbar"><div class="breadcrumb"><button class="icon-button desktop-sidebar-toggle" data-personal="sidebar" aria-controls="workspace-sidebar" aria-expanded="true" aria-label="Collapse sidebar">${icon("menu")}</button><button class="icon-button mobile-menu" data-action="menu" aria-label="Toggle sidebar">${icon("menu")}</button><button class="organisation-crumb" data-action="home" title="${esc(state.organisation?.title)}">${esc(state.organisation?.title || "Organisations")}</button><span>/</span><strong ${p ? 'role="heading" aria-level="1"' : ""}>${esc(state.helpArticle ? "Help" : state.directoryPage ? label(state.directoryPage) : p?.title || "Projects")}</strong></div>${p ? projectNavigationHTML() : ""}<div class="top-actions"><span class="save-state ${!state.online || state.boardConflict ? "sync-problem" : ""}" id="save-state">${appStatusHTML()}</span>${p ? `<button class="icon-button" data-action="project-edit" aria-label="Project settings" title="Project settings">${icon("settings")}</button>` : ""}<button class="icon-button" data-action="help" aria-label="Help & keyboard shortcuts">${icon("help")}</button><button class="avatar" data-personal="settings" aria-label="Personal settings" title="Personal settings">WE</button></div></header>
+      <header class="topbar"><div class="breadcrumb"><button class="icon-button desktop-sidebar-toggle" data-personal="sidebar" aria-controls="workspace-sidebar" aria-expanded="true" aria-label="Collapse sidebar">${icon("menu")}</button><button class="icon-button mobile-menu" data-action="menu" aria-label="Toggle sidebar">${icon("menu")}</button><button class="organisation-crumb" data-action="home" title="${esc(state.organisation?.title)}">${esc(state.organisation?.title || "Organisations")}</button><span>/</span><strong ${p ? 'role="heading" aria-level="1"' : ""}>${esc(state.helpArticle ? "Help" : state.directoryPage ? label(state.directoryPage) : p?.title || "Projects")}</strong></div>${p ? projectNavigationHTML() : ""}<div class="top-actions"><div class="save-state" id="save-state">${appStatusHTML()}</div>${p ? `<button class="icon-button" data-action="project-edit" aria-label="Project settings" title="Project settings">${icon("settings")}</button>` : ""}<button class="icon-button" data-action="help" aria-label="Help & keyboard shortcuts">${icon("help")}</button><button class="avatar" data-personal="settings" aria-label="Personal settings" title="Personal settings">WE</button></div></header>
       ${!state.online ? '<div class="connection-banner">Local server unavailable. Reconnect to its network to save changes.</div>' : ""}
       ${state.helpArticle ? helpPageHTML(state.helpArticle, { esc, icon }) : state.directoryPage ? directoryPageHTML() : p ? projectPage() : welcomePage()}
     </main></div>`;
@@ -1592,7 +1595,7 @@ async function patchTask(id, changes, rerender = true) {
 }
 
 function boardToolbar() {
-  return `<div class="board-toolbar"><select id="board-select" aria-label="Select canvas">${state.boards.filter(b=>!b.archived).map((b) => `<option value="${esc(b.id)}" ${b.id === state.selectedBoard ? "selected" : ""}>${esc(b.title)}</option>`).join("")}</select><button class="button small" data-action="board-new">${icon("plus")}New canvas</button><span class="spacer"></span><button type="button" class="button small board-settings-button" data-feature="board-settings">${icon("settings")}Board settings</button><span class="board-save" id="board-save">${esc(saveState([...sync.entries.values()],{storageError:sync.storageError,online:state.online}))}</span>${state.boardConflict ? '<button class="button small" data-feature="recovery">Resolve</button>' : ""}</div>`;
+  return `<div class="board-toolbar"><select id="board-select" aria-label="Select canvas">${state.boards.filter(b=>!b.archived).map((b) => `<option value="${esc(b.id)}" ${b.id === state.selectedBoard ? "selected" : ""}>${esc(b.title)}</option>`).join("")}</select><button class="button small" data-action="board-new">${icon("plus")}New canvas</button><span class="spacer"></span><button type="button" class="button small board-settings-button" data-feature="board-settings">${icon("settings")}Board settings</button><span class="board-save" id="board-save">${esc(saveIssue([...sync.entries.values()], {storageError:sync.storageError,online:state.online}) ? "" : saveState([...sync.entries.values()],{storageError:sync.storageError,online:state.online}))}</span>${state.boardConflict ? '<button class="button small" data-feature="recovery">Resolve</button>' : ""}</div>`;
 }
 function boardToolsHTML() {
   const tool = (name, title, action = "board-add", glyph = name) =>
@@ -1632,7 +1635,7 @@ function edgesHTML(b) {
 function updateEdges() {
   const svg = $("#canvas-lines");
   if (!svg || !board()) return;
-  renderCanvasEdges(svg, edgesHTML(board()));
+  renderCanvasEdges(svg, edgesHTML(board()), state.camera.z);
 }
 const canvasTouchPointer = matchMedia("(pointer: coarse)");
 canvasTouchPointer.addEventListener("change", () => updateCamera());
@@ -1738,19 +1741,14 @@ function saveBoard() {
     });
 }
 function appStatusHTML() {
-  const outdated = state.serverAppVersion && state.serverAppVersion !== APP_VERSION;
-  const title = outdated ? `Version ${state.serverAppVersion} is available. Refresh when your changes are saved.` : `Pencils ${APP_VERSION}${state.serverAppVersion ? ' · Up to date' : ''}`;
-  const problem = !state.online ? 'Server unavailable' : state.boardSaves || state.boardConflict ? saveState([...sync.entries.values()], { storageError: sync.storageError, online: state.online }) : '';
-  return `<span class="app-version" title="${esc(title)}" aria-label="${esc(title)}">v${APP_VERSION}${outdated ? `<span class="app-update-available">${icon('refresh')}<span class="app-update-label">Update available</span></span>` : ''}</span>${problem ? `<span class="app-sync-problem">${icon('clock')}${esc(problem)}</span>` : ''}`;
+  return headerStatus.html();
 }
 function updateSaveState() {
   const text=saveState([...sync.entries.values()],{storageError:sync.storageError,online:state.online});
-  if ($("#board-save")) $("#board-save").textContent = text;
-  if ($("#save-state"))
-    $("#save-state").innerHTML =
-      appStatusHTML();
+  if ($("#board-save")) $("#board-save").textContent = saveIssue([...sync.entries.values()], { storageError: sync.storageError, online: state.online }) ? "" : text;
+  headerStatus.update();
 }
-function changeBoard(fn, { render = true } = {}) {
+function changeBoard(fn, { render = true, adoptNewFrames = true } = {}) {
   if (!board()) return;
   const before = structuredClone(board().nodes);
   remember();
@@ -1764,7 +1762,7 @@ function changeBoard(fn, { render = true } = {}) {
       )
       .map((n) => n.id),
   );
-  if (moved.size) updateFrameMembership(board().nodes, moved, before);
+  if (moved.size) updateFrameMembership(board().nodes, moved, before, { adoptNewFrames });
   saveBoard();
   if (render) renderView();
   else {
@@ -2812,13 +2810,7 @@ setInterval(async () => {
       }
     } else if (listChanged || !wasOnline) renderApp();
   } catch {
-    if (!$("#save-state")?.classList.contains("sync-problem")) {
-      const el = $("#save-state");
-      if (el) {
-        el.textContent = "Local server unavailable";
-        el.classList.add("sync-problem");
-      }
-    }
+    updateSaveState();
   } finally {
     pollBusy = false;
   }

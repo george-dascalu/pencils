@@ -5,6 +5,7 @@ import path from "node:path";
 import { chromium, firefox } from "playwright";
 import { Store } from "../server/store.js";
 import { createServer } from "../server/index.js";
+import { browserTabShortcuts } from './browser-tab-shortcuts.mjs';
 const root = await fs.mkdtemp(path.join(os.tmpdir(), "pencils-grid-")),
   store = new Store(root);
 await store.init();
@@ -163,8 +164,11 @@ try {
     "center",
   );
   // Tab commits one cell and keeps editing the next; clicking another cell also commits.
+  await browserTabShortcuts(cell(0, 0));
   await cell(0, 0).dblclick();
   await page.locator(".inline-rich").fill("First heading");
+  await browserTabShortcuts(page.locator('.inline-rich'));
+  assert.equal(await page.locator('.inline-rich').textContent(), 'First heading');
   await page.keyboard.press("Tab");
   await page.locator(".inline-rich").fill("Second heading");
   await cell(0, 2).click();

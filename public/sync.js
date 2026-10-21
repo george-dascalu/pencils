@@ -1,4 +1,5 @@
 import { boardDifference, applyBoardDelta } from "./board-delta.js";
+import { BOARD_LIMITS } from "./board-limits.js";
 const equal = (a, b) => JSON.stringify(a) === JSON.stringify(b);
 const clone = (value) =>
   value === undefined ? undefined : structuredClone(value);
@@ -160,6 +161,16 @@ export class SaveQueue {
     } catch {
       /* Storage failures leave the server files untouched. */
     }
+    for (const entry of this.entries.values()) {
+      const oldLimit = entry.error?.match(/supports up to ([\d,]+) frames/i)?.[1];
+      if (entry.url.includes("/boards/") && entry.blocked && !entry.conflict && oldLimit && Number(oldLimit.replaceAll(",", "")) < BOARD_LIMITS.frames) {
+        // A newer release can accept a draft rejected only by the old cap.
+        // The server still validates the complete draft on this fresh attempt.
+        entry.blocked = false;
+        entry.error = null;
+        delete entry.delivery;
+      }
+    }
     this.changed();
     this.retry();
   }
@@ -197,6 +208,9 @@ export class SaveQueue {
       this.entries.set(url, entry);
     }
     Object.assign(entry.local, snapshot ? changes : clone(changes));
+    // Known rejected operations (including drafts from earlier app versions)
+    // can be replaced. Never replace an operation with an uncertain delivery.
+    if (entry.blocked) delete entry.delivery;
     entry.generation++;
     entry.error = null;
     entry.blocked = false;
@@ -295,8 +309,18 @@ export class SaveQueue {
         } catch (readError) {
           entry.error = readError.message;
         }
-      } else if (error.status && error.status < 500 && error.status !== 429)
+      } else if (error.status && error.status < 500 && error.status !== 429) {
         entry.blocked = true;
+        // A rejected validation did not commit. Rebuild its operation from the
+        // corrected draft; uncertain/lost acknowledgements must retain theirs.
+        if ([400, 413, 422].includes(error.status)) {
+          delete entry.delivery;
+          if (generation !== entry.generation) {
+            entry.blocked = false;
+            entry.error = null;
+          }
+        }
+      }
     } finally {
       entry.running = false;
       this.persist();

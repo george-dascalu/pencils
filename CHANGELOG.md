@@ -4,6 +4,63 @@ User-facing additions, changes and fixes, newest first. Dates use Europe/London 
 
 ## Unreleased
 
+## 0.18.17 — 2026-10-21
+
+### Fixed
+
+- Large board selections use one set of group resize handles. Individual connection and resize handles appear only when editing a single object, avoiding hundreds of redundant controls as selected cards become detailed during zoom.
+- Selected detailed arrows share one highlight path; their hit targets, styles and individual editing controls remain available. Group outlines and single-object handles are reused instead of being recreated during detail updates.
+- Cards in a group selection can finish their transitions back to bitmap previews without repeated selection updates cancelling the fade.
+
+## 0.18.16 — 2026-10-21
+
+### Fixed
+
+- Pasting large selections at low zoom keeps cards, grids and connectors in bitmap form. Selecting thousands of connectors no longer bypasses the rendering budget or displays oversized grid controls; a single active object still opens its editing controls.
+- Selected bitmap connectors are highlighted, and detailed connectors retain a fixed rendering budget as you zoom in.
+- Large mixed selections position their toolbar using indexed objects instead of repeated board scans and SVG queries. Grid drop detection skips hierarchy calculations when an object is outside every candidate grid.
+- Recent undo history has a larger, bounded allowance so a large paste followed by group movement does not immediately lose its undo entry.
+
+## 0.18.15 — 2026-10-21
+
+### Fixed
+
+- Dragging a selection box includes bitmap board objects at low zoom. Selected groups move together without changing zoom or rendering every object in detail; Shift-drag adds to the selection.
+- Selection respects collapsed frames and hidden layers. The group outline follows movement, and large drags reuse indexed original positions.
+- Ctrl+Tab and Ctrl+Shift+Tab remain available to the browser on boards, in grid editors and in document/task tables. Plain Tab still navigates objects and cells.
+
+## 0.18.14 — 2026-10-21
+
+### Changed
+
+- Boards now allow 10,000 frames, with the capacity gauge showing the updated limit. Presentation ordering supports the same frame count.
+- Detailed board objects briefly crossfade into bitmap previews and back as zoom changes. Reversing zoom interrupts the transition smoothly; reduced motion skips the animation.
+
+### Fixed
+
+- Large frame outlines render 50 rows at a time with smaller previews and indexed descendant counts, keeping every frame reachable through page controls.
+- Large selections use indexed membership checks and update only mounted controls. Frame visibility and server hierarchy validation reuse resolved parent chains.
+- Deeply nested frames stay behind their contained cards.
+
+## 0.18.13 — 2026-10-21
+
+### Added
+
+- The board capacity gauge now shows a frame counter out of 500 alongside the object counter. Collapsed frames are included, and both counts update as the board changes.
+
+## 0.18.12 — 2026-10-21
+
+### Changed
+
+- Save errors appear as a compact warning icon beside the app version. Hover, focus or tap to see the cause, recovery steps and a direct link to Recovery & backups; warnings stay available on small screens.
+- Bitmap board objects can be selected and dragged at the current zoom, including frames and grids. Shift/Ctrl/Cmd selection, moving multiple objects and touch dragging use the normal board controls.
+
+### Fixed
+
+- Correcting a rejected board save, including exceeding 500 frames, sends the corrected draft instead of repeating the invalid operation. Uncertain deliveries still retain their operation identity for safe retries.
+- Browser drafts remain exportable from Recovery & backups when server backups cannot be loaded.
+- Selecting bitmap objects no longer unexpectedly zooms into them or clears an additive selection. Moving containers also updates their bitmap contents during the drag.
+
 ## 0.18.11 — 2026-10-21
 
 ### Changed
