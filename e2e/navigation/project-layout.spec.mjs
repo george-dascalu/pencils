@@ -150,7 +150,7 @@ async function everyViewSharesTheHeader(page, size) {
       await page.locator("#filter-assignee").press("Tab");
       await page.waitForFunction((rows) => !document.querySelector(rows), rows);
       await expect(page.locator(".view-footnote,.table-result-summary")).toHaveCount(0);
-      await expect(page.locator("[data-board-menu=filters] > summary")).toHaveText(/Filters \(1\)/);
+      await expect(page.locator("[data-board-menu=filters] > summary")).toHaveAttribute("aria-label", "Filters (1 active)");
       await page.keyboard.press("Escape");
       await (await reveal(page.locator("#filter-assignee"))).fill("");
       await page.locator("#filter-assignee").press("Tab");

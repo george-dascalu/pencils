@@ -171,7 +171,7 @@ test("sliders use the shared range styling with a live value", async ({ page }) 
 
 test("popovers share padding and radius tokens", async ({ page }) => {
   await open(page, "list", ".task-row");
-  await page.locator("#sort").click();
+  await page.locator("[data-sort-menu]").click();
   await menu(page).waitFor();
   const select = await menu(page).evaluate((el) => [getComputedStyle(el).paddingTop, getComputedStyle(el).borderTopLeftRadius]);
   await page.keyboard.press("Escape");

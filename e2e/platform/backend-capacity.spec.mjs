@@ -55,7 +55,7 @@ const app = useCustomApp({
   server: (store, app) => ({ auth: app.auth }),
 });
 
-test("100 signed-in members with live updates open, save, query and search at once without a failed request", async () => {
+test("100 signed-in members with live updates open, save, query and search at once without a failed request", { tag: "@heavy" }, async () => {
   test.setTimeout(paced ? 300000 : 180000);
   const { projects, users, cookies } = app;
   const controllers = [], timings = {}, errors = [];

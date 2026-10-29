@@ -1,12 +1,14 @@
 // One-step release of the working tree to the running Pencils container (AGENTS.md › Deployment):
-// syntax/type/unit checks, version and changelog date, an image build that keeps a rollback
-// image, and a health check for the new version. Browser suites run separately (npm run e2e).
+// syntax/type/unit checks, the browser tests the change needs (scripts/affected.mjs), version and
+// changelog date, an image build that keeps a rollback image, and a health check for the new
+// version. The full suite runs once per batch (npm run test:release).
 // Usage: npm run release -- patch|minor|<x.y.z>
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { command, deploy, projectRoot } from "./deploy.mjs";
+import { affected, changedFiles, describe, runAffected } from "./affected.mjs";
 
 const SEMVER = /^(\d+)\.(\d+)\.(\d+)$/;
 
@@ -56,6 +58,9 @@ async function main() {
   };
   try {
     await step("Checks (syntax, types, unit tests)", async () => { await run("npm", ["run", "check"]); await run("npm", ["test"]); });
+    const plan = affected(changedFiles(projectRoot));
+    log.write(`Browser test selection:\n${plan.reasons.join("\n")}\n`);
+    await step(`Browser tests (${describe(plan)})`, () => runAffected(plan, { log }));
     await step(`Version ${current} → ${version}`, async () => {
       bumped = true;
       await run("npm", ["version", version, "--no-git-tag-version"]);

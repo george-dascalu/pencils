@@ -2,6 +2,17 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.19.35 — 2026-10-29
+
+### Changed
+
+- **Filters** and **Sort** are icon buttons on every screen. A badge on the Filters icon counts the active filters; hover or a screen reader gives the current sort.
+- The Filters popup names every field above it (Status, Type, Assignee, Tag, Deadline, Completion and, in List, Group by), lines them up at one width, and puts **Clear filters** in its own footer as a proper button.
+
+### Fixed
+
+- Dragging a Kanban card on iPad no longer shows a black box: the preview is now a plain copy of the card, without the tilt and shadow that Safari draws wrongly.
+
 ## 0.19.34 — 2026-10-29
 
 ### Changed

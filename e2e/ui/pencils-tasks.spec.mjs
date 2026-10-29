@@ -153,7 +153,7 @@ onDevices(["phone"], () => test("PEN-1 the phone drawer is compact: close beside
 // ----- PEN-9: filters and sort on phones -----
 onDevices(["phone"], () => test("PEN-9 phone view options list the filters directly and sort is its own icon button", async ({ page }) => {
   await open(page, "list", ".task-row");
-  const sort = page.locator(".toolbar [data-phone-sort]");
+  const sort = page.locator(".toolbar-left > [data-sort-menu]");
   await expect(sort, "sort icon button in the toolbar").toBeVisible();
   await expect(sort.locator(".icon")).toHaveCount(1);
   await sort.click();

@@ -66,7 +66,7 @@ test("metadata saves from the compact editor without changing the Markdown descr
   await pick(page, "priority", "urgent");
   expect(await icon(page, "priority"), "Priority has a distinct icon").not.toBe(priorityIcon);
   await page.getByLabel("Status", { exact: true }).selectOption("review");
-  await page.getByLabel("Assignee", { exact: true }).selectOption("George");
+  await page.locator("#task-form").getByLabel("Assignee", { exact: true }).selectOption("George");
   await page.getByLabel("Due date", { exact: true }).fill("2026-11-01");
   await expect(page.locator('[name="tags"]')).toBeHidden();
   await expect(rich(page)).toBeVisible();

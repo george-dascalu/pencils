@@ -19,14 +19,35 @@ export function projectLayout(ctx) {
     moved = [];
     compact?.remove();
     compact = null;
-    $("[data-phone-sort]")?.remove();
+    $("[data-sort-menu]")?.remove();
   }
   function compactToolbar() {
     restoreToolbar();
     phoneBoard.sync();
     const toolbar = $(".toolbar-left") || $(".board-toolbar");
     if (!toolbar) return;
-    if (!narrow.matches) return;
+    // Sorting is an icon button that opens the (hidden) select's options: beside the view's
+    // other controls, or beside View options on phones.
+    const sort = $("#sort"), sortButton = toolbar.classList.contains("toolbar-left") && taskViews.includes(state.view) && sort && !sort.closest("[hidden]") ? document.createElement("button") : null;
+    if (sortButton) {
+      const name = `Sort: ${sort.selectedOptions[0]?.text || ""}`;
+      sortButton.type = "button";
+      sortButton.id = "sort-button"; // keeps focus here when choosing a sort rebuilds the toolbar
+      sortButton.className = "icon-button";
+      sortButton.setAttribute("data-sort-menu", "");
+      sortButton.setAttribute("aria-label", name);
+      sortButton.title = name;
+      sortButton.setAttribute("aria-haspopup", "listbox");
+      sortButton.innerHTML = icon("sort");
+      sortButton.addEventListener("click", () => {
+        const select = $("#sort");
+        if (select && !select.hidden) openSelectMenu?.(select, sortButton);
+      });
+    }
+    if (!narrow.matches) {
+      if (sortButton) sort.after(sortButton);
+      return;
+    }
     compact = document.createElement("details");
     compact.className = "mobile-view-options";
     compact.open = !!state.mobileViewOptions;
@@ -46,23 +67,7 @@ export function projectLayout(ctx) {
       details.open = true;
       details.dataset.expanded = "true";
     }
-    // Sorting is its own icon button beside the view options; the (hidden) select
-    // stays as the data source and may render after this toolbar is composed.
-    if (toolbar.classList.contains("toolbar-left") && taskViews.includes(state.view)) {
-      const button = document.createElement("button");
-      button.type = "button";
-      button.className = "icon-button";
-      button.setAttribute("data-phone-sort", "");
-      button.setAttribute("aria-label", "Sort");
-      button.title = "Sort";
-      button.setAttribute("aria-haspopup", "listbox");
-      button.innerHTML = icon("sort");
-      button.addEventListener("click", () => {
-        const sort = $("#sort");
-        if (sort && !sort.hidden) openSelectMenu?.(sort, button);
-      });
-      toolbar.append(button);
-    }
+    if (sortButton) toolbar.append(sortButton);
     toolbar.append(compact);
     compact.addEventListener("toggle", event => {
       if (event.target !== compact) return;
@@ -139,7 +144,7 @@ export function projectLayout(ctx) {
     const toolbar = $(".toolbar-left");
     const advanced = $(".advanced-filters");
     if (toolbar && advanced) {
-      const panel = menu(toolbar, "filters", "Filters");
+      const panel = menu(toolbar, "filters", "");
       const primaryFilters = ["filter-type", "filter-status"].map(id => document.getElementById(id)).filter(Boolean);
       panel.replaceChildren(...advanced.children);
       advanced.remove();
@@ -162,8 +167,12 @@ export function projectLayout(ctx) {
         f.archived,
         f.completion,
       ].filter(Boolean).length;
-      panel.parentElement.querySelector("summary").innerHTML =
-        `Filters${count ? ` (${count})` : ""}<svg class="icon menu-caret" viewBox="0 0 24 24" aria-hidden="true"><path d="m8 10 4 4 4-4"/></svg>`;
+      // An icon with a badge counting the active filters.
+      const summary = panel.parentElement.querySelector("summary"), name = `Filters${count ? ` (${count} active)` : ""}`;
+      summary.className = "icon-summary";
+      summary.setAttribute("aria-label", name);
+      summary.title = name;
+      summary.innerHTML = `${icon("filter")}${count ? `<span class="filter-count" aria-hidden="true">${count}</span>` : ""}`;
     }
     restoreMenus();
     compactToolbar();
@@ -222,7 +231,7 @@ export function projectLayout(ctx) {
             ? Math.max(anchor.bottom, toolbar.bottom)
             : anchor.bottom,
         },
-        { width: details.classList.contains("table-header-menu") ? 240 : 320, maxHeight: 560 },
+        { width: details.classList.contains("table-header-menu") ? 240 : 320, maxHeight: 640 },
       );
     }
   }
@@ -292,11 +301,11 @@ export function projectLayout(ctx) {
         });
       }
       const summary = event.target.matches(".board-menu > summary");
-      const actions = menu ? [...menu.querySelectorAll(":scope > .board-menu-panel > button:not(:disabled)")].filter((el) => !el.hidden && el.getClientRects().length) : [];
+      const actions = menu ? [...menu.querySelectorAll(":scope > .board-menu-panel > button:not(:disabled), :scope > .board-menu-panel > .menu-footer > button:not(:disabled)")].filter((el) => !el.hidden && el.getClientRects().length) : [];
       // Arrow keys navigate action rows, while form fields keep their native keys.
       if (menu && (summary || actions.includes(event.target)) &&
           ["ArrowDown", "ArrowUp", "Home", "End"].includes(event.key)) {
-        const buttons = menu.querySelectorAll(":scope > .board-menu-panel > button:not(:disabled):not([hidden])");
+        const buttons = menu.querySelectorAll(":scope > .board-menu-panel > button:not(:disabled):not([hidden]), :scope > .board-menu-panel > .menu-footer > button:not(:disabled):not([hidden])");
         if (buttons.length && (menu.open || ["ArrowDown", "ArrowUp"].includes(event.key))) {
           event.preventDefault();
           event.stopImmediatePropagation();

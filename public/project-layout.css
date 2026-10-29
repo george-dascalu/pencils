@@ -28,7 +28,6 @@
 @media (max-width: 600px) {
   .toolbar:has(.mobile-view-options) { padding-block: 6px; }
   .toolbar-left:has(.mobile-view-options) { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; gap: 6px; width: 100%; }
-  .toolbar-left:has(.mobile-view-options) #sort, .mobile-view-options-panel #sort { display: none; }
   .toolbar-left > .view-layout-switcher { grid-column: 1 / -1; width: 100%; }
   .toolbar-left > .search { min-width: 0; width: 100%; max-width: none; }
   .toolbar-left .view-layout-switcher button { flex: 1; }
@@ -282,7 +281,8 @@
 @media (prefers-reduced-motion: reduce) {
   .board-menu-panel > button { transition: none; }
 }
-.board-menu-panel > label {
+.board-menu-panel > .filter-checks { display: flex; flex-wrap: wrap; }
+.board-menu-panel > label, .filter-checks > label {
   padding: 8px 10px;
   display: flex;
   align-items: center;
@@ -913,9 +913,16 @@ html.table-viewport-view body {
 /* Menu carets are icons like every other glyph; they turn when a menu is open. */
 .board-menu > summary > .menu-caret { width: 12px; height: 12px; margin-inline-start: 2px; flex-shrink: 0; transition: transform 0.15s; }
 .board-menu[open] > summary > .menu-caret { transform: rotate(180deg); }
-.table-menu-footer, .table-columns-footer { margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--line); display: flex; gap: 6px; }
-/* The sort control keeps its full label at tablet widths. */
-#sort { min-width: 150px; }
+.table-menu-footer, .table-columns-footer, .menu-footer { margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--line); display: flex; gap: 6px; }
+.board-menu-panel > .menu-footer { padding-inline: 10px; }
+/* The sort select only holds the options; its icon button ([data-sort-menu]) opens them. */
+#sort { display: none; }
+/* Icon-only menu triggers, such as Filters, count active values in a badge. */
+.board-menu > summary.icon-summary { position: relative; justify-content: center; }
+.icon-summary > .filter-count {
+  position: absolute; top: 2px; right: 2px; min-width: 14px; height: 14px; padding: 0 3px; box-sizing: border-box;
+  border-radius: 7px; background: var(--green); color: var(--surface); font-size: 9px; font-weight: 600; line-height: 14px; text-align: center;
+}
 
 /* Anchored confirmation for destructive actions. */
 .selection-popover.confirm-popover {

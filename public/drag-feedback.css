@@ -48,14 +48,15 @@
   overflow: hidden;
   pointer-events: none;
 }
+/* The drag preview is a plain, opaque copy of the card: Safari draws drag images of
+   transformed elements wrongly (WebKit bug 246734), which showed as black boxes on iPad. */
 .kanban-drag-image {
   position: fixed;
   top: 0;
   left: 0;
   z-index: 1000;
   pointer-events: none;
-  transform: rotate(1.5deg);
-  box-shadow: var(--shadow-popover);
+  box-shadow: none;
   background: var(--surface);
   color: var(--ink);
   border-color: var(--green);

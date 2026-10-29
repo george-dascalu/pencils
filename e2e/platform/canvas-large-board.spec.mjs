@@ -45,7 +45,7 @@ async function edit(page, text) {
 }
 const saved = (page) => expect(saveLabel(page)).toHaveText("Saved automatically", { timeout: 60000 });
 
-test("a 100,000-object native import beyond the old request-size ceiling is accepted", async () => {
+test("a 100,000-object native import beyond the old request-size ceiling is accepted", { tag: "@heavy" }, async () => {
   test.setTimeout(180000);
   const nodes = Array.from({ length: 100000 }, (_, i) => ({ id: `n-${i}`, type: "sticky", text: `Idea ${i}`, x: 80 + (i % 400) * 320, y: 150 + Math.floor(i / 400) * 320, w: 240, h: 200 }));
   const edges = Array.from({ length: 200000 }, (_, i) => ({ id: `e-${i}`, from: `n-${i % 100000}`, to: `n-${(i + 1 + Math.floor(i / 100000)) % 100000}`, routing: "curve" }));
@@ -57,7 +57,7 @@ test("a 100,000-object native import beyond the old request-size ceiling is acce
   console.log(`native import ${Math.round(body.length / 1048576)} MiB`);
 });
 
-test("a card edit on the 100,000-object board saves as a small delta, and server undo reverts it", async ({ page }) => {
+test("a card edit on the 100,000-object board saves as a small delta, and server undo reverts it", { tag: "@heavy" }, async ({ page }) => {
   test.setTimeout(240000);
   const deliveries = await open(page);
   expect(await page.locator(".board-node").count()).toBeLessThanOrEqual(240);
@@ -74,7 +74,7 @@ test("a card edit on the 100,000-object board saves as a small delta, and server
   await expect.poll(async () => (await current()).nodes[0].text, { timeout: 60000 }).toBe("Idea 0");
 });
 
-test("an edit made while saves fail is kept as a compact draft that saves after reload, keeping the complete native file", async ({ page }) => {
+test("an edit made while saves fail is kept as a compact draft that saves after reload, keeping the complete native file", { tag: "@heavy" }, async ({ page }) => {
   test.setTimeout(240000);
   let block = true;
   await open(page, { blocked: () => block });
@@ -98,7 +98,7 @@ test("an edit made while saves fail is kept as a compact draft that saves after 
   console.log(`offline draft survives reload (${bytes} bytes)`);
 });
 
-test("the fit overview stays bounded and its bitmap cards stay selectable", async ({ page }) => {
+test("the fit overview stays bounded and its bitmap cards stay selectable", { tag: "@heavy" }, async ({ page }) => {
   test.setTimeout(240000);
   await open(page);
   await fs.mkdir("artifacts", { recursive: true });

@@ -248,13 +248,11 @@ test.describe("Group 4: vocabulary and controls (findings 17–22)", { tag: "@au
   test("planning views hide the task sort and group controls", async ({ page }) => {
     for (const [view, wait] of [["calendar", ".calendar, .calendar-agenda"], ["timeline", ".task-timeline"], ["capacity", ".capacity-view"]]) {
       await open(page, view, wait);
-      await expect(page.locator("#sort:visible"), `${view} sort select`).toHaveCount(0);
+      await expect(page.locator("[data-sort-menu]:visible"), `${view} sort button`).toHaveCount(0);
       await expect(page.locator("#group-by"), `${view} group select`).toHaveCount(0);
     }
     await open(page, "list", ".task-row");
-    await expect(page.locator("#sort:visible"), "list keeps sort").toHaveCount(1);
-    const width = await rect(page, "#sort");
-    expect(width.width, `sort select width ${width.width}`).toBeGreaterThanOrEqual(140);
+    await expect(page.locator("[data-sort-menu]:visible"), "list keeps sort").toHaveCount(1);
   });
   test("table keeps advanced filters and export inside menus", async ({ page }) => {
     await open(page, "table", ".spreadsheet");

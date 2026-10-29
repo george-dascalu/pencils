@@ -89,7 +89,7 @@ async function selectAll(page) {
   await page.keyboard.press("Control+a");
 }
 
-test("5,040 copied objects paste in place with frames, connectors and bends remapped, and the pasted group drags, undoes and redoes as one", async ({ page }) => {
+test("5,040 copied objects paste in place with frames, connectors and bends remapped, and the pasted group drags, undoes and redoes as one", { tag: "@heavy" }, async ({ page }) => {
   test.setTimeout(240000);
   const board = app.board;
   await open(page, 3456);
@@ -160,7 +160,7 @@ test("5,040 copied objects paste in place with frames, connectors and bends rema
   await savedCount(page, 6912);
 });
 
-test("after reload, zooming a selected group through the detail boundary mounts one shared outline and handles", async ({ page }) => {
+test("after reload, zooming a selected group through the detail boundary mounts one shared outline and handles", { tag: "@heavy" }, async ({ page }) => {
   test.setTimeout(180000);
   await open(page, 6912);
   await overviewOnly(page);
@@ -211,7 +211,7 @@ test("after reload, zooming a selected group through the detail boundary mounts 
   await overviewOnly(page);
 });
 
-test("with thousands of objects selected, the selection toolbar fits a phone width", async ({ page }) => {
+test("with thousands of objects selected, the selection toolbar fits a phone width", { tag: "@heavy" }, async ({ page }) => {
   test.setTimeout(120000);
   await open(page, 6912);
   await selectAll(page);

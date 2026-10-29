@@ -160,7 +160,7 @@ textarea,
 .task-table td :is(input, select):not([type="checkbox"], [type="radio"]) { font-size: var(--type-table) !important; }
 .task-table td input[data-task-field="title"] { font-size: var(--type-table-title) !important; }
 :is(.icon-button, .side-label button, .organisation-actions button[aria-label],
-    .board-tools button,
+    .board-tools button, .board-menu > summary.icon-summary,
     .task-reorder-handle, .tree-toggle, .tree-toggle-spacer) {
   width: var(--control-height) !important;
   min-width: var(--control-height) !important;

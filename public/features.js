@@ -212,22 +212,19 @@ export function installFeatures(ctx) {
         )
         .join(
           "",
-        )}</select>${button("view-save", "Save view")}${state.savedView ? button("view-save-as", "Save as…") : ""}${state.savedView ? button("view-delete", "Delete view") : ""}</div>` : ""}${["board", "drawing", "overview"].includes(state.view) ? "" : `<div class="advanced-filters"><input id="filter-assignee" aria-label="Filter assignee" placeholder="Assignee" value="${esc(f.assignee || "")}"><input id="filter-tag" aria-label="Filter tag" placeholder="Tag" value="${esc(f.tag || "")}"><select id="filter-due" aria-label="Filter deadline">${options(["", "overdue", "week", "none"], f.due || "", { "": "Any deadline", overdue: "Overdue", week: "Next 7 days", none: "No deadline" })}</select><select id="group-by" aria-label="Group tasks">${options(["status", "type", "assignee", "priority", "none"], state.groupBy || "status", { status: "Group: status", type: "Group: type", assignee: "Group: assignee", priority: "Group: priority", none: "No grouping" })}</select><label>Completion<select id="filter-completion">${options(["", "open", "done"], f.completion || "", { "": "Any completion", open: "Open", done: "Completed" })}</select></label><label><input type="checkbox" id="filter-blocked" ${f.blocked ? "checked" : ""}> Blocked</label><label><input type="checkbox" id="filter-archived" ${f.archived ? "checked" : ""}> Include archived</label><button type="button" class="button small" data-action="filters-reset">Clear filters</button></div>`}`,
+        )}</select>${button("view-save", "Save view")}${state.savedView ? button("view-save-as", "Save as…") : ""}${state.savedView ? button("view-delete", "Delete view") : ""}</div>` : ""}${["board", "drawing", "overview"].includes(state.view) ? "" : `<div class="advanced-filters"><label class="field">Assignee<input id="filter-assignee" placeholder="Anyone" value="${esc(f.assignee || "")}"></label><label class="field">Tag<input id="filter-tag" placeholder="Any tag" value="${esc(f.tag || "")}"></label><label class="field">Deadline<select id="filter-due">${options(["", "overdue", "week", "none"], f.due || "", { "": "Any deadline", overdue: "Overdue", week: "Next 7 days", none: "No deadline" })}</select></label><label class="field">Completion<select id="filter-completion">${options(["", "open", "done"], f.completion || "", { "": "Any completion", open: "Open", done: "Completed" })}</select></label>${state.view === "list" ? `<label class="field">Group by<select id="group-by">${options(["status", "type", "assignee", "priority", "none"], state.groupBy || "status", { status: "Status", type: "Type", assignee: "Assignee", priority: "Priority", none: "No grouping" })}</select></label>` : ""}<div class="filter-checks"><label><input type="checkbox" id="filter-blocked" ${f.blocked ? "checked" : ""}> Blocked</label><label><input type="checkbox" id="filter-archived" ${f.archived ? "checked" : ""}> Include archived</label></div><div class="menu-footer"><button type="button" class="button" data-action="filters-reset">Clear filters</button></div></div>`}`,
     );
     if (state.view === "table") {
-      $("#group-by")?.remove();
       $(".toolbar-right")?.setAttribute("hidden", "");
     } else $(".toolbar-right")?.removeAttribute("hidden");
     if (["calendar", "timeline", "capacity"].includes(state.view)) {
-      // Planning views have their own ordering; task sort and grouping do not apply.
-      $("#group-by")?.remove();
+      // Planning views have their own ordering; task sort does not apply.
       $("#sort")?.setAttribute("hidden", "");
       $(".toolbar-right")?.setAttribute("hidden", "");
     }
     $(".kanban-group-control")?.remove();
     $(".kanban-id-control")?.remove();
     if (state.view === "kanban") {
-      $("#group-by")?.remove();
       $(".toolbar-right")?.insertAdjacentHTML("afterbegin", `<label class="kanban-group-control">Swimlanes<select id="kanban-group" class="filter" aria-label="Kanban swimlanes">${options(kanbanGroups, kanbanGroup(state.kanbanGroupBy), { none: "None", assignee: "Assignee", priority: "Priority", type: "Task type" })}</select></label><label class="kanban-group-control kanban-id-control"><input type="checkbox" id="kanban-show-ids" ${storage.get(`kanban-show-ids:${state.project.id}`, false) === true ? "checked" : ""}>Show card IDs</label>`);
     }
     layout.projectHeader();

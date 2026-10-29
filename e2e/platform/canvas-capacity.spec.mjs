@@ -53,7 +53,7 @@ test.afterAll(async () => {
 });
 
 for (const scenario of cases.filter((s) => !selectedCases || selectedCases.includes(s.name))) {
-  test(`${scenario.name}: ${scenario.count} objects with ${scenario.edges} connectors load, pan, fit and save a move as a delta`, async ({ page, browser }, testInfo) => {
+  test(`${scenario.name}: ${scenario.count} objects with ${scenario.edges} connectors load, pan, fit and save a move as a delta`, { tag: scenario.count >= 100000 ? "@heavy" : [] }, async ({ page, browser }, testInfo) => {
     test.setTimeout(scenario.count >= 100000 ? 300000 : 120000);
     browserVersion = browser.version();
     const { store, project, tasks } = app;

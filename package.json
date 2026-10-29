@@ -1,6 +1,6 @@
 {
   "name": "pencils",
-  "version": "0.19.34",
+  "version": "0.19.35",
   "private": true,
   "type": "module",
   "description": "An offline, Markdown-backed project workspace",
@@ -12,6 +12,7 @@
     "dev": "node --watch server/index.js",
     "test": "node --test test/*.test.js",
     "e2e": "playwright test --project=chromium",
+    "e2e:affected": "node scripts/affected.mjs --run",
     "check": "npm run typecheck && node test/check.mjs",
     "account": "node server/account.js",
     "test:release": "npm run check && npm test && RELEASE=1 playwright test && playwright test --project=docker",

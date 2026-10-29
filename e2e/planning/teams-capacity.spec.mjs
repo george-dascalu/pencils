@@ -83,7 +83,7 @@ test("adding a member to the project's team makes them assignable on a new card"
   await expect(page.locator("#task-assignee-help")).toHaveCount(0);
   await page.locator("#task-form [name=title]").fill("Planned work");
   await expect(page.locator("#task-form [name=assignee] option")).toHaveText(["Unassigned", "Alice"]);
-  await page.getByLabel("Assignee", { exact: true }).selectOption("Alice");
+  await page.locator("#task-form").getByLabel("Assignee", { exact: true }).selectOption("Alice");
   await page.getByLabel("Due date", { exact: true }).fill(today);
   await page.getByRole("button", { name: "Create card", exact: true }).click();
   await page.locator("dialog").waitFor({ state: "detached" });

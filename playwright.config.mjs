@@ -1,5 +1,6 @@
 // Browser tests (see e2e/fixtures.mjs).
-//   npm run e2e [-- <file or title filter>]   every test in Chromium, except audits
+//   npm run e2e [-- <file or title filter>]   every test in Chromium, except audits and @heavy scale tests
+//   npm run e2e:affected                      the areas the uncommitted changes need (scripts/affected.mjs)
 //   npm run test:release                      the same plus the @gate tests in Firefox and WebKit (RELEASE=1;
 //                                             GATE_BROWSERS=firefox picks the engines installed), then the Docker check
 //   npx playwright test --project=audit       audits, which report findings rather than guard a change
@@ -21,7 +22,9 @@ export default defineConfig({
   reporter: [["list"], ["html", { open: "never", outputFolder: "playwright-report" }]],
   use: { trace: "retain-on-failure", screenshot: "only-on-failure" },
   projects: [
-    { name: "chromium", use: chromium, grepInvert: /@audit/, testIgnore: "**/offline.spec.mjs" },
+    // The @heavy scale tests (100,000-object boards, 100 members) run in the batch check
+    // (RELEASE=1) or with HEAVY=1, which scripts/affected.mjs sets when board data or storage changes.
+    { name: "chromium", use: chromium, grepInvert: process.env.RELEASE === "1" || process.env.HEAVY === "1" ? /@audit/ : /@audit|@heavy/, testIgnore: "**/offline.spec.mjs" },
     ...(process.env.RELEASE ? [] : [
       { name: "docker", use: chromium, testMatch: "**/offline.spec.mjs" },
       { name: "audit", use: chromium, grep: /@audit/ },

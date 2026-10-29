@@ -36,7 +36,10 @@ Keep the interface consistent across all project views: Overview, Documents, Lis
 
 ## Testing
 
-- `npm run check` (syntax, types) and `npm test` (unit) take seconds; run them on every change. Browser tests are Playwright Test specs in `e2e/<area>/` (`npm run e2e`, or a folder, file or `-g` title filter); run the areas you changed, and every test before deploying a change to shared UI.
+- `npm run check` (syntax, types) and `npm test` (unit) take seconds; run them on every change. Browser tests are Playwright Test specs in `e2e/<area>/` (`npm run e2e`, or a folder, file or `-g` title filter).
+- `npm run release` runs the browser tests a change needs: `scripts/affected.mjs` maps the files changed since the last release commit to areas (a module counts for every area whose code imports it), adding `e2e/ui` (sizing, visual rules, accessibility) for any change to `public/`. Shared code and shared styling (`controls.css`, `styles.css`, `appearance.css`, `enhancements.css`, `project-layout.*`, `app.js`, `features.js`, `server/`) run every test, and so does a file the map doesn't know. `npm run e2e:affected` runs the same selection while you work. Add new source files to the map. The map works by file, so a component stylesheet edit that changes `:root` tokens or element-wide selectors needs `npm run e2e` instead.
+- The `@heavy` scale tests (100,000-object boards, thousands of pasted objects, 100 members) run in the batch check, or with `HEAVY=1`; the map adds them when board data, selection or server code changes.
+- Judge a run by Playwright's summary (its failed and flaky counts) or the test command's own exit status, never by the exit status of a pipeline that ends in `tail` or `grep`.
 - Keep every test passing. When a change in intended behaviour breaks a test, update it in the same change. Never leave a test failing; a known bug may be marked `test.fail()` with its reason until fixed.
 - Write tests with `e2e/fixtures.mjs` (`useApp`, `onDevices`, device presets) as described in `e2e/README.md`. Wait for page state with web-first assertions instead of fixed delays.
 - Audits, which report findings instead of guarding a change (such as `ui-assessment`), are tagged `@audit` and run only with `--project=audit`.
@@ -45,6 +48,7 @@ Keep the interface consistent across all project views: Overview, Documents, Lis
 
 - Deploy each completed new feature as soon as its relevant checks pass, within the same task.
 - This is standing authorization to deploy to the existing Pencils environment; do not wait for a separate deployment request or confirmation unless the user explicitly asks to hold deployment.
-- Write the user-visible changes under `## Unreleased` in `CHANGELOG.md`, then release with `npm run release -- patch`. It runs the checks and unit tests, sets the version everywhere, dates the changelog, keeps the vault and container settings, tags `pencils:rollback-before-<version>`, waits for `/api/health` to report the new version (restoring the previous image if it doesn't) and tags `pencils:release-<version>`.
+- Write the user-visible changes under `## Unreleased` in `CHANGELOG.md`, then release with `npm run release -- patch`. It runs the checks, unit tests and the browser tests the change needs, sets the version everywhere, dates the changelog, keeps the vault and container settings, tags `pencils:rollback-before-<version>`, waits for `/api/health` to report the new version (restoring the previous image if it doesn't) and tags `pencils:release-<version>`.
+- When the queue of requested changes is empty, run the batch check before the final report: `GATE_BROWSERS=<installed engines> npm run test:release` (every test including `@heavy`, the `@gate` tests in Firefox/WebKit and the Docker check). Fix any failure with a patch release.
 - Verify the running version and application health after deployment. Report any blocker clearly and distinguish local changes from changes that are live.
 - When a new version is released, commit it and push it to the remote (`origin`).
