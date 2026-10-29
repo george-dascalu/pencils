@@ -10,6 +10,8 @@ import { parseTaskQuery, runTaskQuery } from "./document-task-query.js";
 import { plainMentions, linkMentions, unlinkedMentions } from "./document-mentions.js";
 import { expandTemplate, templatePrompts, templateDocuments, inTemplatesFolder, formatDate } from "./document-templates.js";
 import { documentProperties, checkTags, matchesDocument, frontmatterTags } from "./document-properties.js";
+import { makeAnchor, documentThreads, threadRoots, validComment } from "./document-comments.js";
+import { boardComments } from "./board-comments.js";
 import { taskColorAttributes } from "./task-colors.js";
 import { positionPopover } from "./popover-position.js";
 import { richToolbar } from "./canvas-rich-text.js";
@@ -95,6 +97,7 @@ export function projectDocuments(ctx) {
     versions.title = `Page versions · Version ${saved?.version || 1}`;
     versions.dataset.version = saved?.version || 1;
     renderTaskQueries(form);
+    refreshComments();
     updateExplorer();
   }
   async function flushDocument(id = current?.id) {
@@ -265,7 +268,9 @@ export function projectDocuments(ctx) {
     const latest = await api(endpoint(pid, id));
     const result = await api(`/history?${new URLSearchParams({ file: latest.file })}`);
     if (project !== pid || current?.id !== id) return;
-    const versions = [{ ...latest, data: latest, current: true }, ...result.versions];
+    // Saving a comment keeps a copy without making a version; show each version once.
+    const seen = new Set();
+    const versions = [{ ...latest, data: latest, current: true }, ...result.versions].filter(v => !v.data.version || !seen.has(v.data.version) && seen.add(v.data.version));
     const label = v => v.data.version ? `Version ${v.data.version}` : v.current ? "Version 1" : "Earlier save";
     const box = showPanel(button, "Page versions", `<div class="document-version-list">${versions.map((v,i) => `<button type="button" class="document-panel-item" data-version-index="${i}"><span>${esc(label(v))}${v.current ? " · Current" : ""}</span><time>${esc(v.updated ? new Date(v.updated).toLocaleString() : "")}</time></button>`).join("")}</div><section class="document-version-detail" hidden></section>`, 520);
     box.querySelector(".document-version-list").addEventListener("click", event => {
@@ -404,6 +409,75 @@ export function projectDocuments(ctx) {
   // becomes a card linked to this document, and the text becomes a mention of it.
   // "```tasks" blocks: the project's matching cards as rows (type, key, title, assignee, status,
   // priority), with a box that completes the card. Blocks re-render whenever saves change.
+  // Comments on the text (document-comments.js): threads in the shared comments panel, anchored to
+  // their quote and saved with the record through the save queue, as card comments are.
+  const docComments = (doc) => doc?.comments == null ? [] : Array.isArray(doc.comments) && doc.comments.every(validComment) ? doc.comments : null;
+  // The latest copy (saves, and pending edits from the save queue, land in state.documents).
+  const commented = () => all().find(d => d.id === current?.id) || current;
+  let commentPanel = null, thread = null; // thread: { id, anchor (until its first comment), comments }
+  const threadComments = (id) => { const list = docComments(commented()) || [], roots = threadRoots(list); return list.filter(c => roots.get(c.id) === id); };
+  const threadsNow = () => documentThreads(form.elements.body.value, docComments(commented()) || []);
+  function refreshComments() {
+    if (!editor || !current) return;
+    editor.setComments(threadsNow().filter(t => t.range).map(t => ({ ...t.range, id: t.id })));
+    if (thread && !thread.anchor) {
+      // A thread deleted elsewhere starts again at the same words.
+      const anchor = thread.comments.find(c => c.id === thread.id)?.anchor;
+      thread.comments = threadComments(thread.id);
+      if (!thread.comments.length) thread.anchor = anchor;
+      commentPanel?.sync();
+    }
+  }
+  function openThread(id, anchor = null) {
+    if (docComments(commented()) === null) { toast("This document's comments property holds something else; change it in Obsidian.", true); return; }
+    commentPanel ||= boardComments(ctx, () => state.session?.user?.username || "Workspace", prefix => `${prefix}-${randomUUID()}`, {
+      host: document.querySelector(".documents-workspace"),
+      trigger: "[data-comment-thread]",
+      anchor: () => form?.querySelector(".document-writing"),
+      item: () => thread,
+      title: () => current?.title || "Document",
+      context: () => {
+        const quote = thread?.anchor?.quote ?? threadComments(thread?.id).find(c => c.anchor)?.anchor.quote ?? "";
+        const detached = !thread?.anchor && !threadsNow().find(t => t.id === thread?.id)?.range;
+        return `<blockquote class="document-comment-quote">${esc(quote)}</blockquote>${detached ? '<p class="field-hint">Detached: this text is no longer in the document.</p>' : ""}`;
+      },
+      onClose: (focus) => { if (focus && editor) focusOnOpen(editor.view.contentDOM); },
+      change: (mutate) => {
+        // The panel edits comments in place, so the save queue's base is a copy taken first.
+        const base = structuredClone(commented()), previous = docComments(base), before = { id: thread.id, anchor: thread.anchor }, words = thread.anchor ?? thread.comments.find(c => c.id === thread.id)?.anchor;
+        if (!previous) { toast("This document's comments property holds something else; change it in Obsidian.", true); return; }
+        mutate();
+        // A new thread's first comment carries the anchor; later ones answer it. A thread whose
+        // comments are all deleted starts again at the same words.
+        const first = thread.comments.find(c => !c.replyTo);
+        if (thread.anchor && first) { first.anchor = thread.anchor; thread.id = first.id; delete thread.anchor; }
+        for (const c of thread.comments) if (!c.replyTo && c.id !== thread.id) c.replyTo = thread.id;
+        if (!thread.comments.length) thread.anchor = words;
+        // The thread's comments keep their places, so saves from two people merge.
+        const roots = threadRoots(previous), mine = new Map(thread.comments.map(c => [c.id, c]));
+        const comments = previous.flatMap(c => roots.get(c.id) !== thread.id ? [c] : mine.has(c.id) ? [mine.get(c.id)] : []);
+        comments.push(...thread.comments.filter(c => !roots.has(c.id)));
+        // The server keeps up to 500, as for cards; one more would hold back the document's text too.
+        if (comments.length > 500) {
+          Object.assign(thread, before, { comments: threadComments(before.id) });
+          toast("A document holds up to 500 comments. Delete some before adding more.", true);
+          return;
+        }
+        current = { ...commented(), comments };
+        state.documents = all().map(d => d.id === current.id ? current : d);
+        void sync.enqueue(endpoint(project, current.id), base, { comments });
+        refreshComments();
+      },
+    });
+    commentPanel.close();
+    thread = { id: id || `thread-${randomUUID()}`, anchor, comments: id ? threadComments(id) : [] };
+    commentPanel.open(thread);
+  }
+  function commentOnText() {
+    const { from, to } = selectedRange();
+    if (from >= to) { toast("Select text, or write a line, to comment on it.", true); return; }
+    openThread(null, makeAnchor(editor.view.state.doc.toString(), from, to));
+  }
   // Properties and tags (document-properties.js): frontmatter Obsidian reads, edited at the top of
   // the document. Each change saves on its own, after any pending text, naming only what it changes.
   const splitList = (text) => text.split(",").map(t => t.trim()).filter(Boolean);
@@ -561,15 +635,16 @@ export function projectDocuments(ctx) {
     return `${start ? "…" : ""}${body.slice(start, end).replace(/\s+/g, " ").trim()}${end < body.length ? "…" : ""}`;
   };
   let makingCard = false;
+  // The selection, or the current line without its list, quote or heading marker.
+  function selectedRange() {
+    const view = editor.view, range = view.state.selection.main;
+    if (!range.empty) return { from: range.from, to: range.to };
+    const line = view.state.doc.lineAt(range.from);
+    return { from: line.from + /^\s*(?:[-*+]\s+(?:\[[ xX]\]\s+)?|\d+[.)]\s+|>\s*|#{1,6}\s+)?/.exec(line.text)[0].length, to: line.to };
+  }
   async function makeCard() {
     if (makingCard) return;
-    const view = editor.view, range = view.state.selection.main;
-    let { from, to } = range;
-    if (range.empty) {
-      const line = view.state.doc.lineAt(from);
-      from = line.from + /^\s*(?:[-*+]\s+(?:\[[ xX]\]\s+)?|\d+[.)]\s+|>\s*|#{1,6}\s+)?/.exec(line.text)[0].length;
-      to = line.to;
-    }
+    const view = editor.view, { from, to } = selectedRange();
     const text = view.state.sliceDoc(from, to), [first = "", ...rest] = text.trim().split("\n");
     // Titles hold 300 characters; the rest of a long first line starts the description.
     const title = first.slice(0, 300), body = [first.slice(300), ...rest].join("\n").trim();
@@ -630,6 +705,7 @@ export function projectDocuments(ctx) {
     clearExplorerDrag();
     closePanel();
     readingSearch?.destroy(); readingSearch = null;
+    commentPanel?.destroy(); commentPanel = null; thread = null;
     editor?.flush();
     editor?.destroy();
     editor = form = current = project = renderer = null;
@@ -711,13 +787,15 @@ export function projectDocuments(ctx) {
         form.elements.body.value = value;
         form.elements.body.dispatchEvent(new Event("input", { bubbles: true }));
       },
-      onError: message => toast(message, true), onLink: followLink,
+      onError: message => toast(message, true), onLink: followLink, onComment: id => openThread(id),
       onInsert(command) {
         if (command === "attach") form.querySelector("#document-attachment").click();
         if (command === "card") makeCard().catch((error) => toast(error.message, true));
+        if (command === "comment") commentOnText();
       },
     });
     if (pendingCaret?.id === doc.id) { editor.jump(pendingCaret.at); pendingCaret = null; }
+    refreshComments();
     if (state.project.personal) loadEverywhere().catch(error => toast(error.message, true));
     readingSearch = documentReadingSearch({ form, content: form.querySelector(".document-reading"), icon });
     // The Properties section is replaced when it refreshes, so its events are handled here.
@@ -903,17 +981,22 @@ export function projectDocuments(ctx) {
       } else if (action === "tools") {
         const unlinked = unlinkedMentions(all(), current.title, current.id);
         const backlinks = all().filter(d => d.id !== current.id && [...(d.body || "").matchAll(/\[\[([^\]\n]+)\]\]|\[[^\]]*\]\(([^)\s]+)\)/g)].some(m => resolveDocument(m[1] || m[2], all())?.id === current.id));
-        showPanel(button, "Document tools", `<button type="button" class="document-panel-item" data-document-action="rename">${icon("pencil")}Rename</button>${!form.querySelector('.document-heading [data-document-action="width"]').getClientRects().length ? `<button type="button" class="document-panel-item" data-document-action="outline">${icon("tree")}Document outline</button><button type="button" class="document-panel-item" data-document-action="width" aria-pressed="${documentWidth === "full"}">${icon("width-full")}${documentWidth === "full" ? "Use page width" : "Use full width"}</button>` : ""}<button type="button" class="document-panel-item" data-document-action="obsidian">${icon("external")}Open in Obsidian</button><button type="button" class="document-panel-item" data-document-action="move">${icon("folder")}Move to folder</button><button type="button" class="document-panel-item" data-document-action="versions">${icon("clock")}Page versions</button><button type="button" class="document-panel-item" data-document-action="obsidian-settings">${icon("settings")}Obsidian settings</button><button type="button" class="document-panel-item" data-document-action="export">${icon("download")}Export Markdown</button><button type="button" class="document-panel-item" data-document-format="undo">${icon("undo")}Undo</button><button type="button" class="document-panel-item" data-document-format="redo">${icon("redo")}Redo</button>${!form.querySelector(".document-delete").getClientRects().length ? `<button type="button" class="document-panel-item danger" data-document-action="confirm-delete">${icon("trash")}Delete document</button>` : ""}<h3>Backlinks (${backlinks.length})</h3>${backlinks.map(d => `<button type="button" class="document-panel-item" data-document-open="${esc(d.id)}">${icon("file")}${esc(d.title)}</button>`).join("") || "<p>No documents link here yet.</p>"}<h3>Unlinked mentions (${unlinked.length})</h3>${unlinked.map(({ document: d, mentions }) => `<div class="document-mention-row"><button type="button" class="document-panel-item" data-document-open="${esc(d.id)}" title="${mentions.length} mention${mentions.length === 1 ? "" : "s"}">${icon("file")}<span>${esc(d.title)}<span class="field-hint document-mention-context">${esc(mentionContext(d.body || "", mentions[0]))}</span></span></button><button type="button" class="button small" data-document-action="link-mentions" data-document-id="${esc(d.id)}" aria-label="Link mentions in ${esc(d.title)}">Link</button></div>`).join("") || "<p>No other document names this one without a link.</p>"}`);
+        showPanel(button, "Document tools", `<button type="button" class="document-panel-item" data-document-action="rename">${icon("pencil")}Rename</button>${!form.querySelector('.document-heading [data-document-action="width"]').getClientRects().length ? `<button type="button" class="document-panel-item" data-document-action="outline">${icon("tree")}Document outline</button><button type="button" class="document-panel-item" data-document-action="width" aria-pressed="${documentWidth === "full"}">${icon("width-full")}${documentWidth === "full" ? "Use page width" : "Use full width"}</button>` : ""}<button type="button" class="document-panel-item" data-document-action="obsidian">${icon("external")}Open in Obsidian</button><button type="button" class="document-panel-item" data-document-action="move">${icon("folder")}Move to folder</button><button type="button" class="document-panel-item" data-document-action="versions">${icon("clock")}Page versions</button><button type="button" class="document-panel-item" data-document-action="obsidian-settings">${icon("settings")}Obsidian settings</button><button type="button" class="document-panel-item" data-document-action="export">${icon("download")}Export Markdown</button><button type="button" class="document-panel-item" data-document-format="undo">${icon("undo")}Undo</button><button type="button" class="document-panel-item" data-document-format="redo">${icon("redo")}Redo</button>${!form.querySelector(".document-delete").getClientRects().length ? `<button type="button" class="document-panel-item danger" data-document-action="confirm-delete">${icon("trash")}Delete document</button>` : ""}<h3>Backlinks (${backlinks.length})</h3>${backlinks.map(d => `<button type="button" class="document-panel-item" data-document-open="${esc(d.id)}">${icon("file")}${esc(d.title)}</button>`).join("") || "<p>No documents link here yet.</p>"}<h3>Unlinked mentions (${unlinked.length})</h3>${unlinked.map(({ document: d, mentions }) => `<div class="document-mention-row"><button type="button" class="document-panel-item" data-document-open="${esc(d.id)}" title="${mentions.length} mention${mentions.length === 1 ? "" : "s"}">${icon("file")}<span>${esc(d.title)}<span class="field-hint document-mention-context">${esc(mentionContext(d.body || "", mentions[0]))}</span></span></button><button type="button" class="button small" data-document-action="link-mentions" data-document-id="${esc(d.id)}" aria-label="Link mentions in ${esc(d.title)}">Link</button></div>`).join("") || "<p>No other document names this one without a link.</p>"}${(() => {
+          const threads = threadsNow();
+          return `<h3>Comments (${threads.length})</h3>${threads.map(t => `<button type="button" class="document-panel-item" data-document-action="comment-open" data-comment-id="${esc(t.id)}">${icon("comment")}<span>${esc(t.root.anchor.quote.slice(0, 80))}<span class="field-hint document-mention-context">${t.range ? "" : "Detached · "}${t.comments.length} comment${t.comments.length === 1 ? "" : "s"}</span></span></button>`).join("") || "<p>No comments yet. Select text, then Insert → Comment on text.</p>"}`;
+        })()}`);
       } else if (action === "rename") {
         renamePanel(form.querySelector('[data-document-action="tools"]'));
       } else if (action === "confirm-delete") {
         showPanel(button, "Delete document", '<p>Move this document to Trash?</p><button type="button" class="button danger" data-document-action="delete">Move to Trash</button>');
       } else if (action === "insert") {
         const categories = panelCategories(state.project.personal ? ["card"] : []);
-        showPanel(button, "Insert", `<div class="document-insert-options">${categories.map(([title, items]) => `<section aria-label="${title}"><h3>${title}</h3>${items.map(([key,label,glyph]) => `<button type="button" class="document-panel-item" ${["attach", "card"].includes(key) ? `data-document-action="${key}"` : `data-document-format="${key}"`}>${icon(glyph)}${label}</button>`).join("")}</section>`).join("")}</div>`);
+        showPanel(button, "Insert", `<div class="document-insert-options">${categories.map(([title, items]) => `<section aria-label="${title}"><h3>${title}</h3>${items.map(([key,label,glyph]) => `<button type="button" class="document-panel-item" ${["attach", "card", "comment"].includes(key) ? `data-document-action="${key}"` : `data-document-format="${key}"`}>${icon(glyph)}${label}</button>`).join("")}</section>`).join("")}</div>`);
 
       } else if (action === "attach") { closePanel(); form.querySelector("#document-attachment").click(); }
       else if (action === "card") { closePanel(); await makeCard(); }
+      else if (action === "comment") { closePanel(); commentOnText(); }
+      else if (action === "comment-open") { closePanel(); openThread(button.dataset.commentId); }
       else if (action === "link-mentions") {
         // Turns every plain mention of this document in the other one into a link, saved
         // against that document's latest version.

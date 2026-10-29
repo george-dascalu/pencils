@@ -119,8 +119,8 @@ export function boardComments(ctx, author, uid, adapter = null) {
     drafts.set(key(), { text: panel.querySelector("textarea").value, replyTo });
     panel.remove();
     panel = null;
-    if (!adapter && state.dialog === "board-comments") state.dialog = null;
-    adapter?.onClose?.();
+    if (!embedded && state.dialog === "board-comments") state.dialog = null;
+    adapter?.onClose?.(focus);
     if (adapter && focus)
       adapter.host
         .querySelector(adapter.trigger)
@@ -166,6 +166,8 @@ export function boardComments(ctx, author, uid, adapter = null) {
     if (!panel) return;
     const n = node();
     const list = panel.querySelector(".board-comments-list");
+    const context = panel.querySelector(".board-comments-context"), contextHTML = adapter?.context?.() || "";
+    if (context && context.innerHTML !== contextHTML) context.innerHTML = contextHTML;
     const actorId = actor();
     const byId = new Map((n.comments || []).map(c => [c.id, c]));
     const openThreads = new Map([...list.querySelectorAll('[data-comment-thread]')].map(el => [el.dataset.commentThread, el.open]));
@@ -222,7 +224,8 @@ export function boardComments(ctx, author, uid, adapter = null) {
     panel.setAttribute("aria-label", "Comments on this object");
     panel.setAttribute("aria-modal", "false");
     // An embedded composer must not participate in task-form validation.
-    panel.innerHTML = `<header class="board-comments-head"><strong>Comments</strong><button type="button" class="icon-button" data-comments-close aria-label="Close comments">${icon("close")}</button></header><div class="board-comments-list" role="log" aria-label="Object comments" aria-live="polite"></div><${embedded ? "div" : "form"} id="board-comment-form"><div class="comment-reply-context" hidden><span></span><button type="button" class="icon-button" data-comment-reply-cancel aria-label="Cancel reply" title="Cancel reply">${icon("close")}</button></div><div class="comment-rich-tools task-rich-tools" role="toolbar" aria-label="Format comment">${richToolbar(icon, { alignment: null, previewAction: "data-rich-preview", idPrefix: "comment", responsive: true })}</div><div class="inline-rich comment-input canvas-markdown" contenteditable="true" role="textbox" aria-label="Comment" aria-multiline="true" data-placeholder="Write a comment…" spellcheck="true"></div><textarea class="markdown-source hidden" id="board-comment-text" name="text" ${embedded ? 'form="task-comment-composer"' : ""} aria-label="Comment Markdown" rows="3" maxlength="10000" placeholder="Write a comment…"></textarea><div class="inline-preview canvas-markdown hidden"></div><p class="comment-compose-error" role="alert" hidden></p><button class="button primary small comment-send" data-comment-submit type="${embedded ? "button" : "submit"}" aria-label="Add comment" title="Add comment">${icon("send")}</button></${embedded ? "div" : "form"}>`;
+    // `adapter.context()` may add a line under the heading, such as the text a thread is about.
+    panel.innerHTML = `<header class="board-comments-head"><strong>Comments</strong><button type="button" class="icon-button" data-comments-close aria-label="Close comments">${icon("close")}</button></header>${adapter?.context ? '<div class="board-comments-context"></div>' : ""}<div class="board-comments-list" role="log" aria-label="Object comments" aria-live="polite"></div><${embedded ? "div" : "form"} id="board-comment-form"><div class="comment-reply-context" hidden><span></span><button type="button" class="icon-button" data-comment-reply-cancel aria-label="Cancel reply" title="Cancel reply">${icon("close")}</button></div><div class="comment-rich-tools task-rich-tools" role="toolbar" aria-label="Format comment">${richToolbar(icon, { alignment: null, previewAction: "data-rich-preview", idPrefix: "comment", responsive: true })}</div><div class="inline-rich comment-input canvas-markdown" contenteditable="true" role="textbox" aria-label="Comment" aria-multiline="true" data-placeholder="Write a comment…" spellcheck="true"></div><textarea class="markdown-source hidden" id="board-comment-text" name="text" ${embedded ? 'form="task-comment-composer"' : ""} aria-label="Comment Markdown" rows="3" maxlength="10000" placeholder="Write a comment…"></textarea><div class="inline-preview canvas-markdown hidden"></div><p class="comment-compose-error" role="alert" hidden></p><button class="button primary small comment-send" data-comment-submit type="${embedded ? "button" : "submit"}" aria-label="Add comment" title="Add comment">${icon("send")}</button></${embedded ? "div" : "form"}>`;
     if (!embedded) panel.insertAdjacentHTML('beforeend', '<button type="button" class="comment-panel-resize" data-comments-resize aria-label="Resize comments" title="Drag to resize comments, or use arrow keys"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="m9 20 11-11m-5 11 5-5"/></svg></button>');
     bindResize();
     const draft = drafts.get(key());
@@ -232,7 +235,7 @@ export function boardComments(ctx, author, uid, adapter = null) {
     if (!embedded) panel.showPopover();
     composer = canvasRichText(panel.querySelector("#board-comment-form"), ctx.markdown, { controls: panel.querySelector(".comment-rich-tools") });
     adapter?.onOpen?.();
-    if (!adapter) state.dialog = "board-comments";
+    if (!embedded) state.dialog = "board-comments";
     sync(true);
     focusComposer();
     panel.addEventListener("keydown", (e) => {
@@ -362,7 +365,7 @@ export function boardComments(ctx, author, uid, adapter = null) {
           panel &&
           !panel.contains(e.target) &&
           !e.target.closest(adapter?.trigger || '[data-pro="comments"]') &&
-          !(adapter && adapter.host.contains(e.target))
+          !(embedded && adapter.host.contains(e.target))
         )
           close();
       },

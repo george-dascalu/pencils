@@ -14,11 +14,24 @@ import { insertCategories } from "./document-insert.js";
 import { highlightCodeBlocks } from "./document-code.js";
 import { listCallouts, listCalloutAfterMarker, setListCallout, listCalloutLabel } from "./document-list-callouts.js";
 
-export function markdownDocumentEditor({ parent, text, mode = "live", renderer, documents, cards = () => [], hidden = [], taskQueries, onChange, onError, onLink, onInsert, icon }) {
+export function markdownDocumentEditor({ parent, text, mode = "live", renderer, documents, cards = () => [], hidden = [], taskQueries, onChange, onError, onLink, onInsert, onComment, icon }) {
   const presentation = new Compartment();
   let view, alive = true, focusedComponent = null;
   const hoverEffect = StateEffect.define();
   const focusEffect = StateEffect.define();
+  // Commented text (document-comments.js), highlighted in every mode and moved along with edits.
+  const commentsEffect = StateEffect.define();
+  const commentField = StateField.define({
+    create: () => Decoration.none,
+    update(value, tr) {
+      value = value.map(tr.changes);
+      for (const effect of tr.effects) if (effect.is(commentsEffect))
+        value = Decoration.set(effect.value.filter(r => r.from < r.to && r.to <= tr.state.doc.length).map(({ from, to, id }) =>
+          Decoration.mark({ class: "document-comment-mark", attributes: { "data-comment-thread": id } }).range(from, to)), true);
+      return value;
+    },
+    provide: field => EditorView.decorations.from(field),
+  });
   const revealField = StateField.define({
     create: () => ({ hover: null, focused: false }),
     update(value, tr) {
@@ -247,7 +260,7 @@ export function markdownDocumentEditor({ parent, text, mode = "live", renderer, 
     boost: 50 - index,
     apply(editor, _completion, from, to) {
       editor.dispatch({ changes: { from: from - 1, to }, selection: { anchor: from - 1 } });
-      if (["attach", "card"].includes(command)) onInsert?.(command);
+      if (["attach", "card", "comment"].includes(command)) onInsert?.(command);
       else format(command);
     },
   })));
@@ -328,8 +341,11 @@ export function markdownDocumentEditor({ parent, text, mode = "live", renderer, 
           click(event) {
             const link = event.target.closest("[data-document-ref]");
             if (link) { event.preventDefault(); onLink(link.dataset.documentRef); return true; }
+            const comment = event.target.closest("[data-comment-thread]");
+            if (comment) onComment?.(comment.dataset.commentThread);
           },
         }),
+        commentField,
         presentation.of(liveExtensions()),
       ],
     }),
@@ -393,6 +409,7 @@ export function markdownDocumentEditor({ parent, text, mode = "live", renderer, 
     view, format, hydrate,
     value: () => view.state.doc.toString(),
     focus: () => view.focus(),
+    setComments: (ranges) => view.dispatch({ effects: commentsEffect.of(ranges) }),
     find: () => { openSearchPanel(view); },
     escape: () => closeSearchPanel(view),
     setMode(next) {

@@ -477,3 +477,8 @@ span.document-list-callout { display: block; }
 .document-property-name { overflow: hidden; color: var(--muted); text-overflow: ellipsis; white-space: nowrap; }
 .document-property > input:not([type="checkbox"]) { width: 100%; min-width: 0; }
 .document-properties > [data-property-add] { margin: 0 10px 10px; }
+
+/* Comments on document text (document-comments.js). */
+.document-comment-mark { background: color-mix(in srgb, #dab63c 22%, transparent); border-bottom: 2px solid color-mix(in srgb, #dab63c 70%, var(--surface)); cursor: pointer; }
+.board-comments-context { padding: 0 12px 8px; }
+.document-comment-quote { margin: 0; padding: 2px 0 2px 10px; border-left: 3px solid color-mix(in srgb, #dab63c 70%, var(--surface)); color: var(--muted); overflow-wrap: anywhere; }

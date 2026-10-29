@@ -2,6 +2,12 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.20.6 — 2026-10-29
+
+### Added
+
+- Comments on document text: select words, then **Insert → Comment on text** (or type `/comment`), to start a thread in the comments panel used for cards, with replies and reactions. The words stay highlighted in Live preview and Source, and clicking them opens the thread. Comments are kept in the document's frontmatter with the quoted words, so the text itself never changes and the quote is found again after edits. **Document tools** lists every thread, and marks one as detached when its words are gone. Adding a comment doesn't make a new page version.
+
 ## 0.20.5 — 2026-10-29
 
 ### Added

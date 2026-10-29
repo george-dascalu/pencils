@@ -3,7 +3,15 @@ import { randomUUID } from "node:crypto";
 import { Problem } from "../problem.js";
 import { now, validId, title, body } from "../values.js";
 import { checkProperties, checkTags, documentProperties } from "../../public/document-properties.js";
+import { validComment } from "../../public/document-comments.js";
 
+// Comments on the document's text (public/document-comments.js): the same limits as card comments,
+// plus each thread's anchor.
+function documentComments(comments) {
+  if (!Array.isArray(comments) || comments.length > 500 || !comments.every(validComment))
+    throw new Problem(400, "Invalid comments.");
+  return comments.length ? comments : undefined;
+}
 // Property and tag problems are the caller's to fix.
 const checked = (check, value) => {
   try {
@@ -80,19 +88,24 @@ export const documentsMethods = {
         data.tags = list.length ? list : undefined;
       }
     }
+    // Every save of the record sends its comments back; only a changed list is checked and written.
+    if ("comments" in input && JSON.stringify(input.comments) !== JSON.stringify(current.data.comments))
+      data.comments = documentComments(input.comments);
     const markdown = "body" in input ? body(input.body) : current.body;
     const meta = (record) => JSON.stringify([documentProperties(record), record.tags ?? []]);
-    if (
-      data.title === current.data.title &&
-      markdown === current.body &&
-      (data.folder || null) === (current.data.folder || null) &&
-      meta(data) === meta(current.data)
-    )
+    const edited =
+      data.title !== current.data.title ||
+      markdown !== current.body ||
+      (data.folder || null) !== (current.data.folder || null) ||
+      meta(data) !== meta(current.data);
+    if (!edited && JSON.stringify(data.comments) === JSON.stringify(current.data.comments))
       return this.public(current, file);
-    data.version =
-      (Number.isSafeInteger(current.data.version) && current.data.version > 0
-        ? current.data.version
-        : 1) + 1;
+    // A comment isn't a new version of the page.
+    if (edited)
+      data.version =
+        (Number.isSafeInteger(current.data.version) && current.data.version > 0
+          ? current.data.version
+          : 1) + 1;
     return this.write(file, data, markdown, current);
   },
 };
