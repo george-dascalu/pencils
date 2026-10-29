@@ -28,9 +28,7 @@
 @media (max-width: 600px) {
   .toolbar:has(.mobile-view-options) { padding-block: 6px; }
   .toolbar-left:has(.mobile-view-options) { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; gap: 6px; width: 100%; }
-  .toolbar-left > .view-layout-switcher { grid-column: 1 / -1; width: 100%; }
   .toolbar-left > .search { min-width: 0; width: 100%; max-width: none; }
-  .toolbar-left .view-layout-switcher button { flex: 1; }
 }
 .main.project-main {
   min-height: 100dvh;
@@ -147,6 +145,33 @@
   .topbar .tabs .tab.active { background: var(--surface-soft); color: var(--green); }
   .main:has(:is(input:not([type="checkbox"], [type="radio"], [type="range"], [type="color"], [type="button"], [type="submit"]), textarea, [contenteditable]:not([contenteditable="false"])):focus) .topbar .tabs { display: none; }
   :root:has(.main.project-main) #toasts { bottom: calc(var(--tabbar-space) + env(safe-area-inset-bottom) + 8px); }
+  /* Tapping the open Tasks or Planning tab again shows its layouts in a tray that rises above the
+     bar; a small chevron on the tab turns over while it is open. */
+  .layout-tray {
+    position: absolute; inset: auto 0 calc(100% + 8px); padding: 4px;
+    border: 1px solid var(--line); border-radius: 16px; background: var(--surface); box-shadow: 0 6px 20px rgb(0 0 0 / 0.12);
+    transform-origin: 50% 100%; opacity: 0; transform: translateY(8px) scale(0.97); visibility: hidden;
+    transition: opacity 160ms ease, transform 160ms ease, visibility 0s 160ms;
+  }
+  .layout-tray[data-open] { opacity: 1; transform: none; visibility: visible; transition: opacity 160ms ease, transform 220ms cubic-bezier(0.2, 0.9, 0.3, 1.15); }
+  .layout-tray .view-layout-switcher { display: flex; width: 100%; box-shadow: none; }
+  .layout-tray .view-layout-switcher button { flex: 1; border-radius: 12px; }
+  .layout-tray .view-layout-switcher button[aria-pressed="true"] { border-color: transparent; color: var(--green); }
+  .layout-tray[data-open] .view-layout-switcher button { animation: layout-tray-item 220ms ease-out both; }
+  .layout-tray[data-open] .view-layout-switcher button:nth-child(2) { animation-delay: 30ms; }
+  .layout-tray[data-open] .view-layout-switcher button:nth-child(3) { animation-delay: 60ms; }
+  .layout-tray[data-open] .view-layout-switcher button:nth-child(4) { animation-delay: 90ms; }
+  .topbar .tabs .tab[aria-controls="layout-tray"] { position: relative; }
+  .topbar .tabs .tab[aria-controls="layout-tray"]::before {
+    content: ""; position: absolute; top: 6px; left: 50%; width: 5px; height: 5px;
+    border-top: 1.5px solid currentColor; border-left: 1.5px solid currentColor; opacity: 0.7;
+    transform: translateX(-50%) rotate(45deg); transition: transform 200ms ease;
+  }
+  .topbar .tabs .tab[aria-expanded="true"]::before { transform: translateX(-50%) translateY(-2px) rotate(225deg); }
+}
+@keyframes layout-tray-item { from { opacity: 0; transform: translateY(6px); } }
+@media (prefers-reduced-motion: reduce) {
+  .layout-tray, .layout-tray .view-layout-switcher button, .topbar .tabs .tab::before { transition: none !important; animation: none !important; }
 }
 @media (min-width: 601px) {
   .topbar .mobile-view-switcher { display: none; }

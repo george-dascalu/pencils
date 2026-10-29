@@ -20,6 +20,10 @@ export function projectLayout(ctx) {
     compact?.remove();
     compact = null;
     $("[data-sort-menu]")?.remove();
+    $(".layout-tray")?.remove();
+    const tab = $('.tabs .tab[aria-controls="layout-tray"]');
+    tab?.removeAttribute("aria-controls");
+    tab?.removeAttribute("aria-expanded");
   }
   function compactToolbar() {
     restoreToolbar();
@@ -46,6 +50,7 @@ export function projectLayout(ctx) {
     }
     if (!narrow.matches) {
       if (sortButton) sort.after(sortButton);
+      state.layoutTray = null;
       return;
     }
     compact = document.createElement("details");
@@ -62,6 +67,21 @@ export function projectLayout(ctx) {
       moved.push([element, slot]);
       panel.append(element);
     }
+    // Tasks and Planning layouts move to a tray above the bottom bar, opened by tapping the
+    // open tab again.
+    const switcher = $(".toolbar-left > .view-layout-switcher"), tab = $(".tabs .tab.active");
+    if (switcher && tab) {
+      const tray = document.createElement("div"), slot = document.createComment("view control position");
+      tray.className = "layout-tray";
+      tray.id = "layout-tray";
+      tray.toggleAttribute("data-open", trayOpen());
+      switcher.before(slot);
+      moved.push([switcher, slot]);
+      tray.append(switcher);
+      tab.closest(".view-tab-group").after(tray);
+      tab.setAttribute("aria-controls", tray.id);
+      tab.setAttribute("aria-expanded", String(trayOpen()));
+    }
     // Phones list the filters directly instead of behind a Filters dropdown (PEN-9).
     for (const details of panel.querySelectorAll('details.board-menu[data-board-menu="filters"]')) {
       details.open = true;
@@ -77,6 +97,26 @@ export function projectLayout(ctx) {
     panel.querySelector("header button").onclick = closeCompact;
     positionCompact();
   }
+  // The tray belongs to the view it was opened on, so leaving that view (or going Back) closes it.
+  const trayOpen = () => !!state.layoutTray && state.layoutTray === state.view;
+  function setLayoutTray(open) {
+    state.layoutTray = open ? state.view : null;
+    $(".layout-tray")?.toggleAttribute("data-open", open);
+    $('.tabs .tab[aria-controls="layout-tray"]')?.setAttribute("aria-expanded", String(open));
+  }
+  // Tapping the open tab toggles the tray (app.js leaves the open view as it is); choosing a
+  // layout or tapping anywhere else closes it.
+  document.addEventListener("click", (event) => {
+    if (event.target.closest('.tabs .tab[aria-controls="layout-tray"]')) setLayoutTray(!trayOpen());
+    else if (trayOpen() && (event.target.closest(".layout-tray [data-view]") || !event.target.closest(".layout-tray"))) setLayoutTray(false);
+  }, true);
+  document.addEventListener("keydown", (event) => {
+    if (event.key !== "Escape" || state.dialog || !$(".layout-tray[data-open]")) return;
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    setLayoutTray(false);
+    $('.tabs .tab[aria-controls="layout-tray"]')?.focus({ preventScroll: true });
+  }, true);
   function closeCompact() {
     if (!compact?.open) return;
     compact.open = state.mobileViewOptions = false;

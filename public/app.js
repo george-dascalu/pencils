@@ -2175,15 +2175,16 @@ document.addEventListener("click", async (event) => {
         }
         break;
       case "view": {
-        const fromLayout = el.closest(".view-layout-switcher");
+        const fromLayout = el.closest(".view-layout-switcher"), fromTray = el.closest(".layout-tray");
         // On phones, tapping Documents again opens the document list (the drawer's Documents level).
         if (el.dataset.view === "documents" && state.view === "documents" && el.closest(".tabs") && matchMedia("(max-width: 600px)").matches) {
           setSidebarOpen(true);
           break;
         }
+        // The phone layout tray closes with the new view, so focus returns to its tab.
         if (openView(el.dataset.view))
           document
-            .querySelector(`${fromLayout ? ".view-layout-switcher" : ".tabs"} [data-view="${el.dataset.view}"]`)
+            .querySelector(fromTray ? ".tabs .tab.active" : `${fromLayout ? ".view-layout-switcher" : ".tabs"} [data-view="${el.dataset.view}"]`)
             ?.focus({ preventScroll: true });
         break;
       }

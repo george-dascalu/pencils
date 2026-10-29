@@ -1,7 +1,8 @@
 // Owner request, 29 October 2026 (mobile sidebar research, option A): phones switch views from a
-// bottom tab bar, the top bar's view tabs in a floating, rounded bar; icons since 0.19.34. Tasks and Planning
-// reopen their last layout, chosen with the toolbar's layout switcher. The drawer keeps the
-// organisation, projects, teams, the document list, Settings and Help, without view tiles.
+// bottom tab bar, the top bar's view tabs in a floating, rounded bar; icons since 0.19.34. Tasks and
+// Planning reopen their last layout; since 0.19.37 tapping the open tab again shows the layouts in
+// a tray above the bar. The drawer keeps the organisation, projects, teams, the document list,
+// Settings and Help, without view tiles.
 import { test, expect, onDevices, useApp } from "../fixtures.mjs";
 
 const app = useApp(async (store) => {
@@ -42,16 +43,61 @@ onDevices(["phone", "small"], () => test("five icon tabs float at the bottom in 
   }
 }));
 
-onDevices(["phone"], () => test("Tasks reopens the layout chosen with the toolbar switcher", async ({ page }) => {
+onDevices(["phone", "small"], () => test("tapping the open Tasks or Planning tab shows its layouts in a tray above the bar", async ({ page, device }) => {
   await open(page);
-  const switcher = page.locator(".toolbar-left > .view-layout-switcher");
-  await expect(switcher).toBeVisible();
-  await switcher.locator('[data-view="kanban"]').click();
+  const tray = page.locator(".layout-tray");
+  await expect(page.locator(".toolbar .view-layout-switcher"), "no layout row in the toolbar").toHaveCount(0);
+  await expect(tray).toBeHidden();
+  await expect(tab(page, "tasks")).toHaveAttribute("aria-expanded", "false");
+  await tab(page, "tasks").click();
+  await expect(tray).toBeVisible();
+  await expect(tab(page, "tasks")).toHaveAttribute("aria-expanded", "true");
+  const [trayBox, barBox] = [await tray.boundingBox(), await bar(page).boundingBox()];
+  expect(trayBox.y + trayBox.height, `${device}: the tray sits above the bar`).toBeLessThanOrEqual(barBox.y);
+  expect(trayBox.x >= barBox.x - 1 && trayBox.x + trayBox.width <= barBox.x + barBox.width + 1, `${device}: as wide as the bar`).toBe(true);
+  await expect(tray.locator("button")).toHaveText(["List", "Tree", "Table", "Kanban"]);
+  for (const b of await tray.locator("button").all()) expect((await b.boundingBox()).height).toBeGreaterThanOrEqual(44);
+  await expect(tray.locator('[aria-pressed="true"]')).toHaveAttribute("data-view", "list");
+  expect(await tray.evaluate((el) => el.previousElementSibling.contains(document.querySelector('.tabs [data-view="tasks"]'))), "right after its tab, for keyboard order").toBe(true);
+  // Choosing the open layout just closes the tray; choosing another opens it and closes the tray.
+  await tray.locator('[data-view="list"]').click();
+  await expect(tray).toBeHidden();
+  await tab(page, "tasks").click();
+  await tray.locator('[data-view="kanban"]').click();
   await page.locator('.main[data-layout-view="kanban"]').waitFor();
+  await expect(tray).toBeHidden();
+  // Tapping the tab again, Escape and tapping outside all close it.
+  await tab(page, "tasks").click();
+  await expect(tray).toBeVisible();
+  await tab(page, "tasks").click();
+  await expect(tray).toBeHidden();
+  await tab(page, "tasks").click();
+  await page.keyboard.press("Escape");
+  await expect(tray).toBeHidden();
+  await tab(page, "tasks").click();
+  await page.locator("#view-content").click({ position: { x: 5, y: 5 } });
+  await expect(tray).toBeHidden();
+  await expect(page.locator('.main[data-layout-view="kanban"]'), "tapping outside doesn't change the view").toHaveCount(1);
+  // Back to List closes a tray opened on Kanban.
+  await tab(page, "tasks").click();
+  await page.goBack();
+  await page.locator('.main[data-layout-view="list"]').waitFor();
+  await expect(tray).toBeHidden();
+  await tab(page, "tasks").click();
+  await tray.locator('[data-view="kanban"]').click();
+  await page.locator('.main[data-layout-view="kanban"]').waitFor();
+  // Tasks reopens the chosen layout; Planning has its own three.
   await tab(page, "overview").click();
   await page.locator('.main[data-layout-view="overview"]').waitFor();
+  await expect(page.locator(".layout-tray"), "no tray outside Tasks and Planning").toHaveCount(0);
   await tab(page, "tasks").click();
   await page.locator('.main[data-layout-view="kanban"]').waitFor();
+  await tab(page, "planning").click();
+  await page.locator('.main[data-layout-view="calendar"]').waitFor();
+  await tab(page, "planning").click();
+  await expect(tray.locator("button")).toHaveText(["Calendar", "Timeline", "Capacity"]);
+  await tray.locator('[data-view="timeline"]').click();
+  await page.locator('.main[data-layout-view="timeline"]').waitFor();
 }));
 
 onDevices(["phone"], () => test("the bar steps aside while typing", async ({ page }) => {

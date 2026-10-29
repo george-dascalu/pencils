@@ -28,11 +28,17 @@ async function rendered(page, view) {
   await nextFrame(page);
 }
 const inert = (page, selector) => page.locator(selector).evaluate((el) => el.inert);
-// Views open from the bottom tab bar; Tasks and Planning layouts from the toolbar switcher (0.19.33).
+// Views open from the bottom tab bar; Tasks and Planning layouts from its tray (0.19.37).
 async function navigate(page, view) {
   const area = ["list", "tree", "table", "kanban"].includes(view) ? "tasks" : ["calendar", "timeline", "capacity"].includes(view) ? "planning" : view;
-  await page.locator(`.topbar .tabs [data-view="${area}"]`).click();
-  if (area !== view) await page.locator(`.view-layout-switcher [data-view="${view}"]`).click();
+  const tab = page.locator(`.topbar .tabs [data-view="${area}"]`);
+  if ((await tab.getAttribute("aria-current")) !== "page") await tab.click();
+  if (area !== view) {
+    const option = page.locator(`.layout-tray [data-view="${view}"]`);
+    await option.waitFor({ state: "attached" });
+    if (!(await option.isVisible())) await tab.click();
+    await option.click();
+  }
   await page.locator(`.main[data-layout-view="${view}"]`).waitFor();
   await expect.poll(() => inert(page, ".main")).toBe(false);
 }

@@ -27,8 +27,13 @@ export async function selectProjectView(page, view) {
     const button = page.locator(`.tabs [data-view="${tab}"]`);
     if ((await button.getAttribute("aria-current")) !== "page") await button.click();
   }
-  if (taskLayout || planningLayout)
-    await page.locator(`.view-layout-switcher [data-view="${view}"]`).click();
+  if (taskLayout || planningLayout) {
+    const option = page.locator(`.view-layout-switcher [data-view="${view}"]`);
+    // Phones show the layouts in a tray above the bottom bar, opened by tapping the open tab again.
+    await option.waitFor({ state: "attached" });
+    if (!(await option.isVisible())) await page.locator(`.tabs [data-view="${tab}"]`).click();
+    await option.click();
+  }
 }
 
 export async function openBoardSearch(page) {

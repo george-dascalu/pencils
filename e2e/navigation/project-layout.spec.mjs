@@ -106,7 +106,7 @@ async function everyViewSharesTheHeader(page, size) {
       if (size.width > 600) {
         const switcher = await boxOf(page, ".view-layout-switcher");
         expect(switcher.x >= 0 && switcher.x + switcher.width <= size.width).toBe(true);
-      } else await expect(page.locator(".view-layout-switcher"), "phones switch layouts in the toolbar (0.19.33)").toBeVisible();
+      } else await expect(page.locator(".layout-tray .view-layout-switcher"), "phones switch layouts from the bottom bar's tray (0.19.37)").toHaveCount(1);
     }
     await page.evaluate(() => window.scrollTo(0, 0));
     const box = await boxOf(page, ".topbar");

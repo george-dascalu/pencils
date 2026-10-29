@@ -2,6 +2,12 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.19.37 — 2026-10-29
+
+### Changed
+
+- On phones, Tasks and Planning layouts open from the bottom bar: tap the open **Tasks** or **Planning** tab again and its layouts (List, Tree, Table, Kanban, or Calendar, Timeline, Capacity) rise in a tray just above the bar. Choosing one, tapping the tab again, tapping elsewhere or pressing Escape closes it. A small chevron on the tab shows the tray is there and turns over while it is open. The toolbar loses its layout row, leaving more room for the view.
+
 ## 0.19.36 — 2026-10-29
 
 ### Fixed
