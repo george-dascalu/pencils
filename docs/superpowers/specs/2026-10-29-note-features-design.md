@@ -29,9 +29,9 @@ Decisions (owner, 29 Oct): captures land in a chosen project tagged `inbox`; Tod
 - Slash item **Task query** inserts a starter block.
 
 ### 5. Templates
-- Document templates: documents in a folder named "Templates" (project or personal space). **New from template** in the New menu and document explorer.
+- Document templates: documents in a folder named "Templates" (project or personal space). **From template** in the New menu (available on every width, so the explorer needs no second entry). New documents go to the open folder unless that is a Templates folder.
 - Variables: `{{title}}`, `{{date}}`, `{{time}}`, `{{date:FORMAT}}` / `{{time:FORMAT}}` (YYYY, MM, DD, HH, mm tokens), `{{project}}`, `{{cursor}}` (caret position), `{{prompt:Label}}` (asked in a small panel before creating). No script execution.
-- Restore **Save as template** in the card editor for card templates (the dialog promises it; the code is missing).
+- Dropped (my call, reported to the owner): **Save as template** for cards. A fourth button would overflow the card editor header on phones. The card templates dialog still mentions saving from the editor (open question).
 
 ### 6. Personal space and Today note
 - Personal space: one private space per account, shown in the sidebar above organisations as "Personal". It holds documents only (with folders, templates, links, attachments). Internally a project record with `personal: <username>`, stored at `Projects/<id>/`, excluded from organisation project lists and readable/writable only by its owner.

@@ -1179,6 +1179,10 @@ export function installFeatures(ctx) {
       await documentFeature.load();
       return documents.openDocument(id);
     },
+    documentTemplate: async (anchor) => {
+      await documentFeature.load();
+      return documents.templatePanel(anchor);
+    },
     taskSyncChanged: () => {
       autosave?.syncChanged();
       relationships?.refresh();

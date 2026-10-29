@@ -887,7 +887,7 @@ function newMenuHTML(kind = "button") {
   const summary = kind === "icon"
     ? `<summary class="icon-button" aria-label="New" title="New card or document">${icon("plus")}</summary>`
     : `<summary class="button primary" title="New card or document">${icon("plus")}New</summary>`;
-  return `<details class="board-menu new-menu${kind === "icon" ? " phone-new-task" : ""}" data-new-menu data-board-menu="new-${kind}">${summary}<div class="board-menu-panel new-menu-panel"><button type="button" data-action="task-new">${icon("task")}Card</button><button type="button" data-action="document-new">${icon("file")}Document</button></div></details>`;
+  return `<details class="board-menu new-menu${kind === "icon" ? " phone-new-task" : ""}" data-new-menu data-board-menu="new-${kind}">${summary}<div class="board-menu-panel new-menu-panel"><button type="button" data-action="task-new">${icon("task")}Card</button><button type="button" data-action="document-new">${icon("file")}Document</button><button type="button" data-action="document-template">${icon("file")}From template</button></div></details>`;
 }
 // Phones: the drawer lists the organisation, projects and teams, with Settings and Help at the
 // bottom; in Documents it opens on its document list level, with a way back.
@@ -2149,6 +2149,12 @@ document.addEventListener("click", async (event) => {
         if (record) {
           await features.openDocument(record.id);
         }
+        break;
+      }
+      case "document-template": {
+        const menu = el.closest("details");
+        menu?.removeAttribute("open");
+        await features.documentTemplate(menu?.querySelector("summary") || el);
         break;
       }
       case "task-new":

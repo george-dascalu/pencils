@@ -8,6 +8,7 @@ import { statusLabel, canTransition, initialStatus, transitionError } from "./wo
 import { priorityLabel } from "./task-priority.js";
 import { parseTaskQuery, runTaskQuery } from "./document-task-query.js";
 import { plainMentions, linkMentions, unlinkedMentions } from "./document-mentions.js";
+import { expandTemplate, templatePrompts, templateDocuments, inTemplatesFolder } from "./document-templates.js";
 import { taskColorAttributes } from "./task-colors.js";
 import { positionPopover } from "./popover-position.js";
 import { richToolbar } from "./canvas-rich-text.js";
@@ -159,12 +160,48 @@ export function projectDocuments(ctx) {
   function renamePanel(button) {
     const box = showPanel(button, "Rename document", `<form><label class="field">Document name<input name="title" required maxlength="300" value="${esc(current.title)}" autocomplete="off"></label><div class="document-panel-actions"><button type="submit" class="button primary">Rename</button></div></form>`);
     const field = box.querySelector("input");
-    if (focusOnOpen(field, button)) field.select();
+    if (focusOnOpen(field, box.querySelector("button"))) field.select();
     box.querySelector("form").addEventListener("submit", (event) => {
       event.preventDefault();
       form.elements.title.value = field.value.trim() || "Untitled document";
       form.elements.title.dispatchEvent(new Event("input", { bubbles: true }));
       closePanel(true);
+    });
+  }
+  // New → From template: pick a document from a "Templates" folder, answer its {{prompt:…}}
+  // questions, and open the new document with the caret at {{cursor}}.
+  function templatePanel(button) {
+    const templates = templateDocuments(all(), folders()).sort((a, b) => a.title.localeCompare(b.title, undefined, { numeric: true, sensitivity: "base" }));
+    const box = showPanel(button, "New from template", templates.length
+      ? `<div class="document-template-list">${templates.map(t => `<button type="button" class="document-panel-item" data-template="${esc(t.id)}">${icon("file")}<span>${esc(t.title)}</span></button>`).join("")}</div>`
+      : `<p class="field-hint">Put documents in a folder named Templates to start new documents from them. Templates can use {{title}}, {{date}}, {{time}}, {{project}}, {{cursor}} and {{prompt:Question}}.</p>`);
+    box.addEventListener("click", event => {
+      const template = templates.find(t => t.id === event.target.closest("[data-template]")?.dataset.template);
+      if (template) templateForm(button, template);
+    });
+  }
+  function templateForm(button, template) {
+    const prompts = templatePrompts(template.body || "");
+    const box = showPanel(button, template.title, `<form><label class="field">Document name<input name="title" required maxlength="300" value="${esc(template.title)}" autocomplete="off"></label>${prompts.map((label, i) => `<label class="field">${esc(label)}<input name="prompt-${i}" maxlength="500" autocomplete="off"></label>`).join("")}<p class="form-error" role="alert" hidden></p><div class="document-panel-actions"><button type="submit" class="button primary">Create document</button></div></form>`);
+    const field = box.querySelector("input");
+    if (focusOnOpen(field, box.querySelector("button"))) field.select();
+    box.querySelector("form").addEventListener("submit", async (event) => {
+      event.preventDefault();
+      const data = new FormData(event.target);
+      const title = data.get("title").trim() || template.title;
+      const answers = Object.fromEntries(prompts.map((label, i) => [label, data.get(`prompt-${i}`)]));
+      const { body, cursor } = expandTemplate(template.body || "", { title, project: state.project.title, answers });
+      const submit = event.target.querySelector('[type="submit"]');
+      submit.disabled = true;
+      try {
+        const record = await create(title, body, { folder: inTemplatesFolder(activeFolder, folders()) ? null : activeFolder, caret: cursor });
+        closePanel();
+        if (record && state.view !== "documents") openDocument(record.id);
+      } catch (error) {
+        const problem = box.querySelector(".form-error");
+        problem.textContent = error.message; problem.hidden = false;
+        submit.disabled = false;
+      }
     });
   }
   function folderPanel(button, id = null) {
@@ -473,6 +510,7 @@ export function projectDocuments(ctx) {
     editor = form = current = project = renderer = null;
   }
   let scrolled = null; // { id, scroll: { selector: scrollTop } } for the open document
+  let pendingCaret = null; // { id, at }: where a document made from a template starts its caret
   // The document list sits in the main sidebar, so it has no pane of its own
   // to open, close or make inert.
   function syncExplorer() {}
@@ -553,6 +591,7 @@ export function projectDocuments(ctx) {
         if (command === "card") makeCard().catch((error) => toast(error.message, true));
       },
     });
+    if (pendingCaret?.id === doc.id) { editor.jump(pendingCaret.at); pendingCaret = null; }
     readingSearch = documentReadingSearch({ form, content: form.querySelector(".document-reading"), icon });
     installToolbarScroll(form.querySelector(".document-formatting .rich-toolbar-shell"));
     form.addEventListener("input", changed);
@@ -610,15 +649,17 @@ export function projectDocuments(ctx) {
     storage.set(listKey(), id);
     renderView();
   }
-  async function create(title = "Untitled document", body = "") {
+  // `caret` places the caret in the new document (a template's {{cursor}}) instead of asking for a name.
+  async function create(title = "Untitled document", body = "", { folder = activeFolder, caret } = {}) {
     const pid = state.project.id;
-    const record = await api(endpoint(pid), { method: "POST", body: { title, body, folder: activeFolder } });
+    const record = await api(endpoint(pid), { method: "POST", body: { title, body, folder } });
     if (state.project?.id !== pid) return;
     state.documents = [...all(), record];
     state.documentSearch = "";
+    if (caret !== undefined) pendingCaret = { id: record.id, at: caret ?? body.length };
     if (state.view === "documents" && document.querySelector(".documents-workspace")) {
       open(record.id);
-      renamePanel(form.querySelector('[data-document-action="tools"]'));
+      if (caret === undefined) renamePanel(form.querySelector('[data-document-action="tools"]'));
     } else {
       storage.set(listKey(), record.id);
       state.selectedDocument = record.id;
@@ -894,5 +935,5 @@ export function projectDocuments(ctx) {
       event.preventDefault(); event.returnValue = "";
     }
   });
-  return { render, reset, syncChanged, create, openDocument };
+  return { render, reset, syncChanged, create, openDocument, templatePanel };
 }

@@ -2,6 +2,12 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.20.2 — 2026-10-29
+
+### Added
+
+- Document templates: put documents in a folder named Templates, then choose **New → From template**. Templates can use `{{title}}`, `{{date}}`, `{{time}}`, `{{date:D MMMM YYYY}}`-style formats, `{{project}}`, `{{prompt:Question}}` (asked before the document is made) and `{{cursor}}`, where the caret starts in the new document.
+
 ## 0.20.1 — 2026-10-29
 
 ### Added

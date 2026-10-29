@@ -180,7 +180,7 @@ test("PEN-6 the header New control offers a card or a document", async ({ page }
   await expect(summary).toHaveText("New");
   await summary.click();
   const items = page.locator(".topbar .new-menu:not(.phone-new-task) .new-menu-panel button");
-  expect((await items.allInnerTexts()).map((t) => t.trim())).toEqual(["Card", "Document"]);
+  expect((await items.allInnerTexts()).map((t) => t.trim())).toEqual(["Card", "Document", "From template"]);
   await items.nth(1).click();
   const title = page.locator(".documents-workspace #document-form [name=title]");
   await expect(title).toHaveValue("Untitled document");
