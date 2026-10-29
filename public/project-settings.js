@@ -150,7 +150,10 @@ export function projectSettings(ctx, { sources, automations, personal, organisat
     refresh,
     toast,
   } = ctx;
-  let sequence = 0;
+  let sequence = 0,
+    railScroll = 0,
+    pageScroll = 0,
+    shown = "";
   const page = () => settingsPage(state.settingsSection);
   const showing = () => (state.project ? state.view === "settings" : state.directoryPage === "settings");
   const current = (section) => showing() && page()[0] === section;
@@ -308,6 +311,10 @@ export function projectSettings(ctx, { sources, automations, personal, organisat
     const [section, title, , , description] = pages.find(([id]) => id === state.settingsSection) || pages[0];
     state.settingsSection = section;
     const detail = state.settingsDetail || "";
+    // A new section starts at the top; saves and refreshes of the same one keep its scroll.
+    const key = `${state.project?.id || ""}/${section}/${detail}`;
+    if (key !== shown) pageScroll = 0;
+    shown = key;
     const valid = () =>
       serial === sequence &&
       state.project?.id === projectId &&
@@ -329,6 +336,11 @@ export function projectSettings(ctx, { sources, automations, personal, organisat
       .join(
         "",
       )}</nav><label class="field settings-mobile-nav">Settings section<select id="settings-section-select">${pages.map(([id, name]) => `<option value="${id}" ${id === section ? "selected" : ""}>${name}</option>`).join("")}</select></label><button type="button" class="button settings-return" data-action="settings-close">${icon("arrow-left")}${state.project ? "Back to project" : "Back"}</button></aside><section class="settings-content"><header class="settings-section-heading">${detail ? `${link(section, "← Back to " + title)}` : ""}<h2 id="settings-page-title" tabindex="-1">${esc(title)}</h2><p>${description}</p></header><div id="settings-panel" aria-live="polite"><p class="settings-loading" role="status">Loading ${esc(title.toLowerCase())}…</p></div></section>`;
+    // The rail is rebuilt with the page: keep where it was scrolled to, with the open section in view.
+    const rail = content.querySelector(".settings-navigation");
+    rail.scrollTop = railScroll;
+    rail.querySelector('[aria-current="page"]')?.scrollIntoView({ block: "nearest" });
+    const pane = content.querySelector(".settings-content");
     const host = document.querySelector("#settings-panel");
     host.addEventListener("input", markDirty);
     host.addEventListener("change", markDirty);
@@ -476,6 +488,8 @@ export function projectSettings(ctx, { sources, automations, personal, organisat
     } catch (e) {
       if (valid())
         host.innerHTML = `<div class="settings-page-body"><p class="form-error" role="alert">${esc(e.message)}</p><button class="button" data-settings-retry>Try again</button></div>`;
+    } finally {
+      if (pane.isConnected) pane.scrollTop = pageScroll;
     }
   }
   document.addEventListener("click", async (event) => {
@@ -537,6 +551,10 @@ export function projectSettings(ctx, { sources, automations, personal, organisat
       }
     }
   });
+  document.addEventListener("scroll", (event) => {
+    if (event.target.classList?.contains("settings-navigation")) railScroll = event.target.scrollTop;
+    if (event.target.classList?.contains("settings-content")) pageScroll = event.target.scrollTop;
+  }, true);
   document.addEventListener("input", (event) => {
     if (!event.target.closest(".project-settings-layout")) return;
     if (event.target.name === "key")

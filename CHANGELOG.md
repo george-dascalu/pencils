@@ -2,6 +2,12 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.19.36 — 2026-10-29
+
+### Fixed
+
+- On the Settings page, the list of sections and the page beside it scroll on their own: scrolling one no longer moves the other, and picking a section keeps the list where it was. Settings opened without a project use the same layout, with the sections beside the page instead of above it.
+
 ## 0.19.35 — 2026-10-29
 
 ### Changed

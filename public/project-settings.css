@@ -1,16 +1,28 @@
-/* Project settings share one navigation rail and one page surface. */
-.main.project-main > #view-content.project-settings-layout {
+/* Project settings share one navigation rail and one page surface. The rail and the page
+   scroll on their own, so neither moves the other (the rail is taller than an iPad screen);
+   narrow screens stack them and scroll the window instead. */
+.main:not(.project-warning):has(> #view-content.project-settings-layout) {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: auto auto minmax(0, 1fr);
+  height: 100dvh;
+}
+.main > #view-content.project-settings-layout.project-settings-page {
+  --settings-pad: 28px;
   display: grid;
   grid-template-columns: 228px minmax(0, 1fr);
-  align-items: start;
   gap: 32px;
   max-width: 1400px;
   margin: 0 auto;
-  padding: 28px;
+  padding: 0 var(--settings-pad);
+  overflow: hidden;
+}
+.project-settings-layout > :is(.settings-navigation, .settings-content) {
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding-block: var(--settings-pad);
 }
 .settings-navigation {
-  position: sticky;
-  top: 20px;
   min-width: 0;
 }
 .settings-navigation h1 {
@@ -231,10 +243,10 @@
   display: none;
 }
 @media (max-width: 1050px) {
-  .main.project-main > #view-content.project-settings-layout {
+  .main > #view-content.project-settings-layout.project-settings-page {
     grid-template-columns: 200px minmax(0, 1fr);
     gap: 20px;
-    padding: 20px;
+    --settings-pad: 20px;
   }
   .settings-action-row {
     align-items: flex-start;
@@ -243,10 +255,10 @@
   }
 }
 @media (min-width: 1051px) and (max-width: 1150px) {
-  :where(:root:not([data-sidebar="collapsed"])) .main.project-main > #view-content.project-settings-layout {
+  :where(:root:not([data-sidebar="collapsed"])) .main > #view-content.project-settings-layout.project-settings-page {
     grid-template-columns: 200px minmax(0, 1fr);
     gap: 20px;
-    padding: 20px;
+    --settings-pad: 20px;
   }
   :where(:root:not([data-sidebar="collapsed"])) .settings-action-row {
     align-items: flex-start;
@@ -255,10 +267,10 @@
   }
 }
 @media (min-width: 1151px) and (max-width: 1286px) {
-  :where(:root:not([data-sidebar="collapsed"])) .main.project-main > #view-content.project-settings-layout {
+  :where(:root:not([data-sidebar="collapsed"])) .main > #view-content.project-settings-layout.project-settings-page {
     grid-template-columns: 200px minmax(0, 1fr);
     gap: 20px;
-    padding: 20px;
+    --settings-pad: 20px;
   }
   :where(:root:not([data-sidebar="collapsed"])) .settings-action-row {
     align-items: flex-start;
@@ -267,12 +279,17 @@
   }
 }
 @media (max-width: 780px) {
-  .main.project-main > #view-content.project-settings-layout {
+  /* Phones keep the shell's fixed height and scroll the stacked page inside it. */
+  .main > #view-content.project-settings-layout.project-settings-page {
     display: block;
     padding: 16px;
+    overflow: auto;
+  }
+  .project-settings-layout > :is(.settings-navigation, .settings-content) {
+    overflow: visible;
+    padding-block: 0;
   }
   .settings-navigation {
-    position: static;
     margin-bottom: 24px;
   }
   .settings-navigation nav {
@@ -304,12 +321,19 @@
   }
 }
 @media (min-width: 781px) and (max-width: 990px) {
-  :where(:root:not([data-sidebar="collapsed"])) .main.project-main > #view-content.project-settings-layout {
+  :where(:root:not([data-sidebar="collapsed"])) .main:not(.project-warning):has(> #view-content.project-settings-layout) {
+    height: auto;
+  }
+  :where(:root:not([data-sidebar="collapsed"])) .main > #view-content.project-settings-layout.project-settings-page {
     display: block;
     padding: 16px;
+    overflow: visible;
+  }
+  :where(:root:not([data-sidebar="collapsed"])) .project-settings-layout > :is(.settings-navigation, .settings-content) {
+    overflow: visible;
+    padding-block: 0;
   }
   :where(:root:not([data-sidebar="collapsed"])) .settings-navigation {
-    position: static;
     margin-bottom: 24px;
   }
   :where(:root:not([data-sidebar="collapsed"])) .settings-navigation nav {
