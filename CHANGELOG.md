@@ -2,6 +2,12 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.20.11 — 2026-10-29
+
+### Added
+
+- Document tabs and split view on iPad and desktop: documents you open stay as tabs above the editor, and **Document tools → Split side by side** or **Split top and bottom** shows a second document with its own Live preview, Source or Reading view. Pick the second document from the list at the top of its pane; **Swap documents** exchanges the two, and opening the second document from a tab or link swaps them too. Tabs and the split are remembered per project in this browser. Phones keep one document at a time.
+
 ## 0.20.10 — 2026-10-29
 
 ### Added

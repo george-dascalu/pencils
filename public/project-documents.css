@@ -97,7 +97,33 @@
 .document-explorer-empty { padding: 15px 8px; color: var(--muted); }
 .document-explorer > footer { padding: 12px; }
 .document-editor { min-width: 0; min-height: 0; overflow: hidden; container: document-editor / inline-size; }
-#document-form {
+.document-pane { min-width: 0; min-height: 0; overflow: hidden; border-left: 1px solid var(--line); }
+.document-pane .document-heading { justify-content: flex-end; }
+.document-pane [data-document-pane-select] { flex: 0 1 260px; min-width: 0; margin-inline-end: auto; }
+/* Open documents as tabs, and a second document beside or below (project-documents.js). Phones
+   keep one document, also when a wider window narrows before the view next renders. */
+@media (min-width: 601px) and (min-height: 501px) {
+  .documents-workspace:has(> .document-tabs) { grid-template-rows: auto minmax(0, 1fr); }
+  .documents-workspace[data-split="columns"] { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .documents-workspace[data-split] > .document-tabs { grid-column: 1 / -1; }
+  .documents-workspace[data-split="rows"]:has(> .document-tabs) { grid-template-rows: auto repeat(2, minmax(0, 1fr)); }
+  .documents-workspace[data-split="rows"] > .document-pane { border-left: 0; border-top: 1px solid var(--line); }
+}
+@media (max-width: 600px), (max-height: 500px) {
+  .document-tabs, .document-pane { display: none; }
+}
+.document-tabs { display: flex; gap: 2px; padding: 4px 8px 0; overflow-x: auto; border-bottom: 1px solid var(--line); background: var(--surface-soft); scrollbar-width: thin; }
+.document-tab { display: flex; flex: 0 1 220px; min-width: 120px; align-items: center; border: 1px solid transparent; border-bottom: 0; border-radius: var(--radius-md) var(--radius-md) 0 0; }
+.document-tab:has([aria-current="page"]) { background: var(--surface); border-color: var(--line); }
+.document-tab-open { display: flex; flex: 1; min-width: 0; min-height: var(--control-height); align-items: center; gap: 6px; padding: 0 8px; border: 0; background: none; color: var(--muted); font: inherit; font-size: var(--type-body); cursor: pointer; }
+.document-tab-open[aria-current="page"] { color: var(--ink); }
+.document-tab-open span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.document-tab-open .icon { width: 14px; height: 14px; flex-shrink: 0; }
+.document-tab .icon-button { flex-shrink: 0; }
+@media (pointer: coarse) {
+  .document-tab-open, .document-tab .icon-button, .document-pane .document-heading :is(button, select) { min-width: 44px; min-height: 44px; }
+}
+#document-form, .document-pane {
   /* Style settings (public/appearance.js) may change the page width, text size, line height and font. */
   --document-page-width: var(--style-line-width, 78ch);
   --document-page-padding: 24px;
@@ -108,7 +134,7 @@
   display: flex; flex-direction: column; height: 100%; min-height: 0;
 }
 #document-form[data-document-width="full"] { --document-page-width: 100%; }
-#document-form :is(.document-codemirror, .document-reading) { font-family: var(--style-document-font, var(--theme-document-font, var(--app-font))); }
+#document-form :is(.document-codemirror, .document-reading), .document-pane :is(.document-codemirror, .document-reading) { font-family: var(--style-document-font, var(--theme-document-font, var(--app-font))); }
 .document-heading {
   display: flex;
   align-items: center;
@@ -372,7 +398,7 @@ span.document-list-callout { display: block; }
 @media (max-width: 600px) {
   .document-modes { flex: 0 0 auto; }
   .document-modes .button { padding-inline: 8px; }
-  #document-form { --document-page-top: 16px; --document-page-padding: 12px; }
+  #document-form, .document-pane { --document-page-top: 16px; --document-page-padding: 12px; }
   .document-save { inset-inline-end: 4px; bottom: 2px; padding: 1px 4px; }
 }
 .document-empty { display: grid; place-content: center; justify-items: center; height: 100%; padding: 24px; text-align: center; }
@@ -559,5 +585,5 @@ img[data-document-sketch] {
 }
 @media (pointer: coarse) {
   /* Touch screens keep editable text at 16px or more (controls.css); the document's own size may be larger. */
-  #document-form .document-codemirror .cm-content { font-size: max(var(--touch-text-font-size, 16px), var(--document-font-size)) !important; }
+  :is(#document-form, .document-pane) .document-codemirror .cm-content { font-size: max(var(--touch-text-font-size, 16px), var(--document-font-size)) !important; }
 }

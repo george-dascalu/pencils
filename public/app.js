@@ -184,6 +184,9 @@ const paths = {
   shrink: "M21 3l-7 7m0-6v6h6M3 21l7-7m-6 0h6v6",
   "width-full": "M3 4v16M21 4v16M4 12h16M8 8l-4 4 4 4M16 8l4 4-4 4",
   "width-page": "M7 3v18M17 3v18M10 7h4M10 12h4M10 17h4",
+  "split-columns": "M3 4h18v16H3zM12 4v16",
+  "split-rows": "M3 4h18v16H3zM3 12h18",
+  swap: "M7 4 3 8l4 4M3 8h14M17 12l4 4-4 4M21 16H7",
   trash: "M3 6h18M9 6V3h6v3M6 6l1 15h10l1-15M10 10v7M14 10v7",
   undo: "M3 10h10a7 7 0 0 1 0 14M3 10l5-5M3 10l5 5",
   redo: "M21 10H11a7 7 0 0 0 0 14m10-14-5-5m5 5-5 5",
@@ -2908,7 +2911,7 @@ setInterval(async () => {
       document.querySelector("#shared-select-menu") ||
       state.settingsDirty ||
       state.settingsSaving ||
-      document.activeElement?.closest("#document-form") ||
+      document.activeElement?.closest(".documents-workspace") ||
       state.kanbanDragging ||
       state.timelineSelecting ||
       state.taskReordering ||
@@ -2943,7 +2946,7 @@ setInterval(async () => {
         document.querySelector("#shared-select-menu") ||
         state.settingsDirty ||
         state.settingsSaving ||
-        document.activeElement?.closest("#document-form") ||
+        document.activeElement?.closest(".documents-workspace") ||
         state.kanbanDragging ||
         state.timelineSelecting ||
         state.taskReordering ||
