@@ -347,6 +347,7 @@ export function createServer(
     [
       "/api/projects/:project/attachments",
       "/api/projects/:project/attachments/:id",
+      "/api/projects/:project/sketches",
     ],
     attachmentsRoutes,
     false,

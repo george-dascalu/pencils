@@ -148,6 +148,8 @@ A ```` ```tasks ```` block (Insert → Task query) lists the project's matching 
 
 Documents in a folder named **Templates** start new documents from **New → From template**, as in Obsidian's Templates plugin: `{{title}}`, `{{date}}`, `{{time}}` (also with a format, such as `{{date:D MMMM YYYY}}`), `{{project}}`, `{{prompt:Question}}` (asked when you create the document) and `{{cursor}}` (where the caret starts) are filled in. Templates are plain text; nothing in them runs.
 
+Choose **Insert → Sketch** (or `/sketch`) to draw with a pen, a finger or the mouse in a pad over the document, full screen on phones. Saving adds `![[attachments/s-….svg]]`, an SVG that Obsidian shows, beside a `.json` file with the strokes; tapping the sketch reopens it, and each save makes a new pair. The pad keeps an unsaved sketch until you save it or reload.
+
 Select words and choose **Insert → Comment on text** (or `/comment`) to discuss them in the shared comments panel; the words stay highlighted in Live preview and Source, and **Document tools** lists every thread, including detached ones whose words were removed. Threads live in the document's `comments` frontmatter with the quote and a little context, so the Markdown body is untouched.
 
 **Properties**, at the top of a document, edits its frontmatter as Obsidian does: tags, plus text, number, date, checkbox and list properties. Pencils' own keys (`id`, `title`, `folder`, `version` and the like) are reserved, and values of other kinds, such as nested ones, are kept but not shown. `#tag` in **Find a document** matches tags from properties or from the text.

@@ -2,6 +2,12 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.20.8 — 2026-10-29
+
+### Added
+
+- Sketches in documents: **Insert → Sketch** (or `/sketch`) opens a pen pad over the document, full screen on phones, where a pen, a finger or the mouse draws. Saving embeds the drawing as an SVG that Obsidian shows too, and tapping it opens the pad again to add to it. An unsaved sketch stays in the pad if you close it.
+
 ## 0.20.7 — 2026-10-29
 
 ### Added

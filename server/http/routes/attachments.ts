@@ -16,6 +16,10 @@ export async function attachmentsRoutes(ctx: RequestContext): Promise<unknown> {
     bytes,
     mutate,
   } = ctx;
+  if (kind === "sketches" && method === "POST" && !id) {
+    const data = await input(req);
+    return json(201, await mutate(() => store.sketch(project, data)));
+  }
   if (kind === "attachments") {
     if (method === "GET" && id) {
       const data = await store.attachment(project, id);
@@ -29,6 +33,9 @@ export async function attachmentsRoutes(ctx: RequestContext): Promise<unknown> {
         mime[data.ext],
         [".png", ".jpg", ".jpeg", ".gif", ".webp"].includes(data.ext)
           ? cache
+          : data.ext === ".svg"
+            ? // A sketch's SVG, drawn by the server; shown as an image, never run as a page.
+              { ...cache, "Content-Security-Policy": "default-src 'none'; style-src 'unsafe-inline'; sandbox" }
           : previewPDF
             ? {
                 ...cache,

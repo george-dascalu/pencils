@@ -12,6 +12,7 @@ import { expandTemplate, templatePrompts, templateDocuments, inTemplatesFolder, 
 import { documentProperties, checkTags, matchesDocument, frontmatterTags } from "./document-properties.js";
 import { makeAnchor, documentThreads, threadRoots, validComment } from "./document-comments.js";
 import { boardComments } from "./board-comments.js";
+import { sketchPad } from "./sketch-pad.js";
 import { taskColorAttributes } from "./task-colors.js";
 import { positionPopover } from "./popover-position.js";
 import { richToolbar } from "./canvas-rich-text.js";
@@ -473,6 +474,27 @@ export function projectDocuments(ctx) {
     thread = { id: id || `thread-${randomUUID()}`, anchor, comments: id ? threadComments(id) : [] };
     commentPanel.open(thread);
   }
+  // Sketches (sketch-pad.js): saving writes a new SVG and strokes pair, and the document embeds the
+  // SVG ("![[attachments/s-….svg]]", which Obsidian shows). A saved sketch reopens from its strokes.
+  const pad = sketchPad(ctx);
+  function sketch(file = null) {
+    // Only a sketch's own attachment name reaches the API (the attribute can come from raw HTML).
+    if (file !== null && !/^attachments\/s-[\w-]+\.svg$/.test(file)) return;
+    const pid = project, id = current.id;
+    pad.open({
+      id: `${pid}:${id}:${file || "new"}`,
+      load: file && (() => api(`/projects/${pid}/${file.replace(/\.svg$/, ".json")}`)),
+      async save(strokes) {
+        const saved = await api(`/projects/${pid}/sketches`, { method: "POST", body: { strokes } });
+        if (project !== pid || current?.id !== id) throw new Error("Open the document again to add this sketch; it waits in the pad.");
+        if (mode === "reading") setMode("live", false);
+        const view = editor.view, text = view.state.doc.toString(), changes = [];
+        for (let at = file ? text.indexOf(file) : -1; at >= 0; at = text.indexOf(file, at + file.length)) changes.push({ from: at, to: at + file.length, insert: saved.path });
+        if (changes.length) view.dispatch({ changes });
+        else editor.insert(`![[${saved.path}]]\n`);
+      },
+    }).catch(error => toast(error.message, true));
+  }
   function commentOnText() {
     const { from, to } = selectedRange();
     if (from >= to) { toast("Select text, or write a line, to comment on it.", true); return; }
@@ -706,6 +728,7 @@ export function projectDocuments(ctx) {
     closePanel();
     readingSearch?.destroy(); readingSearch = null;
     commentPanel?.destroy(); commentPanel = null; thread = null;
+    pad.close();
     editor?.flush();
     editor?.destroy();
     editor = form = current = project = renderer = null;
@@ -787,11 +810,12 @@ export function projectDocuments(ctx) {
         form.elements.body.value = value;
         form.elements.body.dispatchEvent(new Event("input", { bubbles: true }));
       },
-      onError: message => toast(message, true), onLink: followLink, onComment: id => openThread(id),
+      onError: message => toast(message, true), onLink: followLink, onComment: id => openThread(id), onSketch: file => sketch(file),
       onInsert(command) {
         if (command === "attach") form.querySelector("#document-attachment").click();
         if (command === "card") makeCard().catch((error) => toast(error.message, true));
         if (command === "comment") commentOnText();
+        if (command === "sketch") sketch();
       },
     });
     if (pendingCaret?.id === doc.id) { editor.jump(pendingCaret.at); pendingCaret = null; }
@@ -927,6 +951,8 @@ export function projectDocuments(ctx) {
     }
     const jump = event.target.closest("[data-document-jump]");
     if (jump && editor) { closePanel(); setMode("live", false); editor.jump(Number(jump.dataset.documentJump)); return; }
+    const drawing = event.target.closest(".document-reading img[data-document-sketch]");
+    if (drawing && editor) { sketch(drawing.dataset.documentSketch); return; }
     const link = event.target.closest(".document-reading [data-document-ref]");
     if (link && editor) { event.preventDefault(); followLink(link.dataset.documentRef); return; }
     const anchor = event.target.closest('.document-reading a[href^="#"]');
@@ -991,11 +1017,12 @@ export function projectDocuments(ctx) {
         showPanel(button, "Delete document", '<p>Move this document to Trash?</p><button type="button" class="button danger" data-document-action="delete">Move to Trash</button>');
       } else if (action === "insert") {
         const categories = panelCategories(state.project.personal ? ["card"] : []);
-        showPanel(button, "Insert", `<div class="document-insert-options">${categories.map(([title, items]) => `<section aria-label="${title}"><h3>${title}</h3>${items.map(([key,label,glyph]) => `<button type="button" class="document-panel-item" ${["attach", "card", "comment"].includes(key) ? `data-document-action="${key}"` : `data-document-format="${key}"`}>${icon(glyph)}${label}</button>`).join("")}</section>`).join("")}</div>`);
+        showPanel(button, "Insert", `<div class="document-insert-options">${categories.map(([title, items]) => `<section aria-label="${title}"><h3>${title}</h3>${items.map(([key,label,glyph]) => `<button type="button" class="document-panel-item" ${["attach", "card", "comment", "sketch"].includes(key) ? `data-document-action="${key}"` : `data-document-format="${key}"`}>${icon(glyph)}${label}</button>`).join("")}</section>`).join("")}</div>`);
 
       } else if (action === "attach") { closePanel(); form.querySelector("#document-attachment").click(); }
       else if (action === "card") { closePanel(); await makeCard(); }
       else if (action === "comment") { closePanel(); commentOnText(); }
+      else if (action === "sketch") { closePanel(); sketch(); }
       else if (action === "comment-open") { closePanel(); openThread(button.dataset.commentId); }
       else if (action === "link-mentions") {
         // Turns every plain mention of this document in the other one into a link, saved

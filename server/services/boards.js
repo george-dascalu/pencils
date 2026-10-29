@@ -8,6 +8,7 @@ import { validConnectorGeometry } from "../../public/connector-path.js";
 import { validTextStyle } from "../../public/object-text.js";
 import { validGrid } from "../../public/grid-model.js";
 import { randomUUID } from "node:crypto";
+import { checkStroke } from "../strokes.js";
 import { Problem } from "../problem.js";
 import { now, validId, title, body, choice, color } from "../values.js";
 
@@ -267,70 +268,7 @@ export const boardsMethods = {
           ))
       )
         throw new Problem(400, "Use a local image attachment.");
-      if (
-        node.type === "draw" &&
-        (!Array.isArray(node.points) ||
-          node.points.length > 10000 ||
-          node.points.some(
-            (p) =>
-              !Array.isArray(p) ||
-              p.length !== 2 ||
-              p.some((v) => !Number.isFinite(v) || Math.abs(v) > BOARD_LIMITS.coordinate),
-          ))
-      )
-        throw new Problem(400, "Invalid drawing.");
-      if (node.type === "draw") {
-        if (
-          node.strokeWidth != null &&
-          (!Number.isFinite(node.strokeWidth) ||
-            node.strokeWidth < 1 ||
-            node.strokeWidth > 32)
-        )
-          throw new Problem(400, "Invalid pen thickness.");
-        if (
-          node.opacity != null &&
-          (!Number.isFinite(node.opacity) ||
-            node.opacity < 0.1 ||
-            node.opacity > 1)
-        )
-          throw new Problem(400, "Invalid pen opacity.");
-        if (node.brush != null)
-          choice(node.brush, ["pen", "highlighter"], "pen brush");
-        if (node.pressure != null && typeof node.pressure !== "boolean")
-          throw new Problem(400, "Invalid pen pressure setting.");
-        if (
-          node.pressures != null &&
-          (!Array.isArray(node.pressures) ||
-            node.pressures.length !== node.points.length ||
-            node.pressures.some((p) => !Number.isFinite(p) || p < 0 || p > 1))
-        )
-          throw new Problem(400, "Invalid pen pressure samples.");
-        if (
-          node.sampleTimes != null &&
-          (!Array.isArray(node.sampleTimes) ||
-            node.sampleTimes.length !== node.points.length ||
-            node.sampleTimes.some(
-              (v, i) =>
-                !Number.isFinite(v) ||
-                v < 0 ||
-                v > 86400000 ||
-                (i > 0 && v < node.sampleTimes[i - 1]),
-            ))
-        )
-          throw new Problem(400, "Invalid pen timing samples.");
-        if (
-          node.tilts != null &&
-          (!Array.isArray(node.tilts) ||
-            node.tilts.length !== node.points.length ||
-            node.tilts.some(
-              (v) =>
-                !Array.isArray(v) ||
-                v.length !== 2 ||
-                v.some((n) => !Number.isFinite(n) || n < -90 || n > 90),
-            ))
-        )
-          throw new Problem(400, "Invalid pen tilt samples.");
-      }
+      if (node.type === "draw") checkStroke(node);
     }
     if (data.nodes.filter((n) => n.type === "frame").length > BOARD_LIMITS.frames)
       throw new Problem(400, `A board supports up to ${BOARD_LIMITS.frames.toLocaleString("en-GB")} frames.`);

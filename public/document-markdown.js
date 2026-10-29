@@ -113,8 +113,11 @@ export function documentMarkdown({ documents, project, esc, icon, cards = () => 
           // A card mention ("[[WEB-12]]") becomes a chip once the HTML is sanitised.
           const card = !record && resolveCard(ref, cards());
           if (card) return `<a href="#" data-document-source="${esc(token.raw)}" data-document-ref="${esc(ref)}" data-document-card="${esc(card.id)}" class="document-card-mention">${esc(alias || card.title)}</a>`;
-          if (token.embed && /^(?:\.\.\/)?attachments\/a-[\w-]+\.(?:png|jpe?g|webp|gif)$/i.test(ref))
-            return `<img data-document-source="${esc(token.raw)}" src="/api/projects/${esc(project())}/${esc(ref.replace(/^\.\.\//, ""))}" alt="${esc(label)}"${/^\d{1,4}$/.test(alias || "") ? ` width="${alias}"` : ""}>`;
+          // Images and sketches (attachments/s-….svg, which reopen in the sketch pad).
+          if (token.embed && /^(?:\.\.\/)?attachments\/(?:a-[\w-]+\.(?:png|jpe?g|webp|gif)|s-[\w-]+\.svg)$/i.test(ref)) {
+            const file = ref.replace(/^\.\.\//, ""), sketch = /\/s-/.test(file);
+            return `<img data-document-source="${esc(token.raw)}" src="/api/projects/${esc(project())}/${esc(file)}" alt="${esc(sketch && label === ref ? "Sketch" : label)}"${sketch ? ` data-document-sketch="${esc(file)}"` : ""}${/^\d{1,4}$/.test(alias || "") ? ` width="${alias}"` : ""}>`;
+          }
           return `<a href="#" data-document-source="${esc(token.raw)}" class="${record ? "" : "unresolved-link"}" data-document-ref="${esc(ref)}">${esc(label)}</a>`;
         },
       },
@@ -127,7 +130,7 @@ export function documentMarkdown({ documents, project, esc, icon, cards = () => 
     const fragment = DOMPurify.sanitize(makeParser().parse(text), {
       RETURN_DOM_FRAGMENT: true,
       ALLOW_DATA_ATTR: false,
-      ADD_ATTR: ["data-document-ref", "data-document-diagram", "data-document-source", "data-document-callout", "data-document-card", "data-document-task-query"],
+      ADD_ATTR: ["data-document-sketch", "data-document-ref", "data-document-diagram", "data-document-source", "data-document-callout", "data-document-card", "data-document-task-query"],
       FORBID_TAGS: ["style", "form", "button", "textarea", "select", "option", "iframe", "object", "embed"],
       FORBID_ATTR: ["style"],
     });
@@ -158,9 +161,9 @@ export function documentMarkdown({ documents, project, esc, icon, cards = () => 
     for (const img of fragment.querySelectorAll("img")) {
       const src = img.getAttribute("src") || "";
       img.dataset.documentSrc = src;
-      if (/^(?:\.\.\/)?attachments\/a-[\w-]+\.(?:png|jpe?g|webp|gif)$/i.test(src))
+      if (/^(?:\.\.\/)?attachments\/(?:a-[\w-]+\.(?:png|jpe?g|webp|gif)|s-[\w-]+\.svg)$/i.test(src))
         img.src = `/api/projects/${project()}/${src.replace(/^\.\.\//, "")}`;
-      else if (!/^\/api\/projects\/[\w-]+\/attachments\/a-[\w-]+\.(?:png|jpe?g|webp|gif)$/i.test(src))
+      else if (!/^\/api\/projects\/[\w-]+\/attachments\/(?:a-[\w-]+\.(?:png|jpe?g|webp|gif)|s-[\w-]+\.svg)$/i.test(src))
         img.replaceWith(document.createTextNode(`[Image: ${img.alt || src}]`));
     }
     // List callouts ("- ! item"): the item's own line is tinted and its character shows as an icon.

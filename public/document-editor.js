@@ -14,7 +14,7 @@ import { insertCategories } from "./document-insert.js";
 import { highlightCodeBlocks } from "./document-code.js";
 import { listCallouts, listCalloutAfterMarker, setListCallout, listCalloutLabel } from "./document-list-callouts.js";
 
-export function markdownDocumentEditor({ parent, text, mode = "live", renderer, documents, cards = () => [], hidden = [], taskQueries, onChange, onError, onLink, onInsert, onComment, icon }) {
+export function markdownDocumentEditor({ parent, text, mode = "live", renderer, documents, cards = () => [], hidden = [], taskQueries, onChange, onError, onLink, onInsert, onComment, onSketch, icon }) {
   const presentation = new Compartment();
   let view, alive = true, focusedComponent = null;
   const hoverEffect = StateEffect.define();
@@ -86,6 +86,9 @@ export function markdownDocumentEditor({ parent, text, mode = "live", renderer, 
         if (link) { event.preventDefault(); onLink(link.dataset.documentRef); }
       });
       element.addEventListener("mousedown", e => {
+        // A sketch opens in the sketch pad instead of revealing its Markdown.
+        const sketch = e.target.closest("img[data-document-sketch]");
+        if (sketch) { e.preventDefault(); onSketch?.(sketch.dataset.documentSketch); return; }
         if (e.target.closest("a,button,input,summary")) return;
         e.preventDefault();
         editor.dispatch({ selection: { anchor: this.from }, scrollIntoView: true });
@@ -95,7 +98,7 @@ export function markdownDocumentEditor({ parent, text, mode = "live", renderer, 
       hydrate(element);
       return element;
     }
-    ignoreEvent(event) { return this.block || !!event.target?.closest?.("a"); }
+    ignoreEvent(event) { return this.block || !!event.target?.closest?.("a, img[data-document-sketch]"); }
   }
   class Checkbox extends WidgetType {
     constructor(checked, from) { super(); this.checked = checked; this.from = from; }
@@ -260,7 +263,7 @@ export function markdownDocumentEditor({ parent, text, mode = "live", renderer, 
     boost: 50 - index,
     apply(editor, _completion, from, to) {
       editor.dispatch({ changes: { from: from - 1, to }, selection: { anchor: from - 1 } });
-      if (["attach", "card", "comment"].includes(command)) onInsert?.(command);
+      if (["attach", "card", "comment", "sketch"].includes(command)) onInsert?.(command);
       else format(command);
     },
   })));

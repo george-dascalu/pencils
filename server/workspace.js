@@ -6,6 +6,7 @@ import { randomUUID } from "node:crypto";
 import YAML from "yaml";
 import { Problem } from "./problem.js";
 import { schema, progress } from "./model.js";
+import { sketchStrokes, sketchSVG } from "./strokes.js";
 
 export function installWorkspace(Store) {
   Object.assign(Store.prototype, {
@@ -204,10 +205,26 @@ export function installWorkspace(Store) {
         url: `/api/projects/${project}/attachments/${name}`,
       };
     },
+    // Document sketches (public/sketch-pad.js): the checked strokes and the SVG drawn from them,
+    // as a pair of attachments. Each save makes a new pair, so attachments never change.
+    async sketch(project, input) {
+      await this.read(this.file(project, "project"));
+      const strokes = sketchStrokes(input?.strokes), svg = sketchSVG(strokes), json = JSON.stringify({ strokes });
+      if (svg.length + json.length > 10_000_000) throw new Problem(400, "This sketch is too big to save. Undo a few strokes.");
+      const name = `s-${randomUUID()}`,
+        folder = path.join(this.projectDir(project), "attachments");
+      await this.safe(path.join(folder, `${name}.svg`));
+      await fs.mkdir(folder, { recursive: true });
+      await fs.writeFile(path.join(folder, `${name}.json`), json, { flag: "wx" });
+      await fs.writeFile(path.join(folder, `${name}.svg`), svg, { flag: "wx" });
+      this.changed();
+      return { path: `attachments/${name}.svg`, strokes: `attachments/${name}.json` };
+    },
     async attachment(project, name) {
       await this.read(this.file(project, "project"));
       if (
-        !/^a-[a-f0-9-]+\.(png|jpg|jpeg|gif|webp|pdf|txt|md|csv|zip)$/.test(name)
+        !/^a-[a-f0-9-]+\.(png|jpg|jpeg|gif|webp|pdf|txt|md|csv|zip)$/.test(name) &&
+        !/^s-[a-f0-9-]+\.(svg|json)$/.test(name)
       )
         throw new Problem(400, "Invalid attachment.");
       const file = path.join(this.projectDir(project), "attachments", name);
