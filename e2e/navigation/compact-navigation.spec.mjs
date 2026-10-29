@@ -48,7 +48,7 @@ for (const [device, width] of sizes) {
           const tabs = page.locator(".topbar .tabs .tab");
           await expect(tabs).toHaveCount(5);
           for (const tab of await tabs.all()) {
-            await expect(tab.locator(".tab-label"), "Navigation is icon-only (labels show in the phone tab bar)").toBeHidden();
+            expect((await tab.textContent()).trim(), "Navigation is icon-only").toBe("");
             expect(await tab.getAttribute("aria-label")).toBeTruthy();
             expect(await tab.getAttribute("title")).toBeTruthy();
             await expect(tab.locator("svg")).toHaveCount(1);

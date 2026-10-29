@@ -938,7 +938,7 @@ function projectNavigationHTML() {
         ([name, group]) =>
           `<div class="view-tab-group" role="group" aria-label="${name}">${group.map((view) => {
             const active = view === "tasks" ? taskViews.includes(state.view) : view === "planning" ? planningViews.includes(state.view) : state.view === view;
-            return `<button class="tab ${active ? "active" : ""}" data-action="view" data-view="${view}" aria-label="${viewLabel(view)}" title="${viewLabel(view)}${view === "tasks" ? ` · ${total} tasks` : ""}" ${active ? 'aria-current="page"' : ""}>${icon(view === "tasks" ? "list" : view === "planning" ? "calendar" : view)}<span class="tab-label">${viewLabel(view)}</span></button>`;
+            return `<button class="tab ${active ? "active" : ""}" data-action="view" data-view="${view}" aria-label="${viewLabel(view)}" title="${viewLabel(view)}${view === "tasks" ? ` · ${total} tasks` : ""}" ${active ? 'aria-current="page"' : ""}>${icon(view === "tasks" ? "list" : view === "planning" ? "calendar" : view)}</button>`;
           }).join("")}</div>`,
       )
       .join("")}</nav>

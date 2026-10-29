@@ -1,5 +1,5 @@
 // Owner request, 29 October 2026 (mobile sidebar research, option A): phones switch views from a
-// bottom tab bar, the top bar's view tabs as text labels in a floating, rounded bar. Tasks and Planning
+// bottom tab bar, the top bar's view tabs in a floating, rounded bar; icons since 0.19.34. Tasks and Planning
 // reopen their last layout, chosen with the toolbar's layout switcher. The drawer keeps the
 // organisation, projects, teams, the document list, Settings and Help, without view tiles.
 import { test, expect, onDevices, useApp } from "../fixtures.mjs";
@@ -17,7 +17,7 @@ const open = async (page, view = "list") => {
   await page.locator(`.main[data-layout-view="${view}"]`).waitFor();
 };
 
-onDevices(["phone", "small"], () => test("five text tabs float at the bottom in a rounded bar and open each area", async ({ page, device }) => {
+onDevices(["phone", "small"], () => test("five icon tabs float at the bottom in a rounded bar and open each area", async ({ page, device }) => {
   await open(page);
   const box = await bar(page).boundingBox();
   const { width, height } = page.viewportSize();
@@ -25,11 +25,11 @@ onDevices(["phone", "small"], () => test("five text tabs float at the bottom in 
   expect(box.y + box.height, `${device}: detached from the bottom edge`).toBeLessThan(height);
   expect(box.x > 0 && box.x + box.width < width, `${device}: detached from the sides`).toBe(true);
   expect(parseFloat(await bar(page).evaluate((el) => getComputedStyle(el).borderTopLeftRadius))).toBeGreaterThan(8);
-  await expect(bar(page).locator(".tab")).toHaveText(["Overview", "Documents", "Planning", "Tasks", "Boards"]);
-  await expect(bar(page).locator(".tab .icon").first(), "text only").toBeHidden();
+  expect(await bar(page).locator(".tab").evaluateAll((els) => els.map((el) => el.getAttribute("aria-label")))).toEqual(["Overview", "Documents", "Planning", "Tasks", "Boards"]);
   for (const t of await bar(page).locator(".tab").all()) {
     expect((await t.boundingBox()).height).toBeGreaterThanOrEqual(44);
-    await expect(t.locator(".tab-label"), "labels fit").toHaveJSProperty("scrollWidth", await t.locator(".tab-label").evaluate((el) => el.clientWidth));
+    await expect(t.locator(".icon"), "icons only").toBeVisible();
+    expect((await t.textContent()).trim(), "no text labels").toBe("");
   }
   await expect(tab(page, "tasks")).toHaveAttribute("aria-current", "page");
   // The content ends above the bar instead of under it.
@@ -87,5 +87,4 @@ onDevices(["ipad", "desktop"], () => test("wider screens keep the view tabs in t
   await open(page);
   const box = await bar(page).boundingBox();
   expect(box.y).toBeLessThan(80);
-  await expect(bar(page).locator(".tab-label").first()).toBeHidden();
 }));

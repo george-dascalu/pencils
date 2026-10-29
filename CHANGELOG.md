@@ -2,6 +2,12 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.19.34 — 2026-10-29
+
+### Changed
+
+- The phone's bottom bar shows icons instead of text; each tab keeps its name as a tooltip and for screen readers.
+
 ## 0.19.33 — 2026-10-29
 
 ### Changed
