@@ -14,7 +14,7 @@ import { insertCategories } from "./document-insert.js";
 import { highlightCodeBlocks } from "./document-code.js";
 import { listCallouts, listCalloutAfterMarker, setListCallout, listCalloutLabel } from "./document-list-callouts.js";
 
-export function markdownDocumentEditor({ parent, text, mode = "live", renderer, documents, cards = () => [], onChange, onError, onLink, onInsert, icon }) {
+export function markdownDocumentEditor({ parent, text, mode = "live", renderer, documents, cards = () => [], taskQueries, onChange, onError, onLink, onInsert, icon }) {
   const presentation = new Compartment();
   let view, alive = true, focusedComponent = null;
   const hoverEffect = StateEffect.define();
@@ -39,6 +39,7 @@ export function markdownDocumentEditor({ parent, text, mode = "live", renderer, 
   };
   function hydrate(element) {
     highlightCodeBlocks(element);
+    if (element.querySelector("[data-document-task-query]")) taskQueries?.(element);
     if (element.querySelector("[data-document-diagram]"))
       import("/vendor/editor/diagrams.js").then(m => alive && m.renderDiagrams(element)).catch(() => {});
   }
@@ -362,6 +363,7 @@ export function markdownDocumentEditor({ parent, text, mode = "live", renderer, 
         table: "| Column | Column |\n| --- | --- |\n| Value | Value |",
         codeblock: "```text\nCode\n```",
         mermaid: "```mermaid\nflowchart LR\n  Start --> Finish\n```",
+        taskquery: "```tasks\nnot done\nsort by due\n```",
         callout: "> [!note] Note\n> Write your note.",
         footnote: "Text[^note]\n\n[^note]: Footnote text.",
         rule: "---",

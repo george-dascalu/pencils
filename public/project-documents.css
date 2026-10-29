@@ -314,6 +314,15 @@ span.document-list-callout { display: block; }
 .document-card-key { flex: none; color: var(--muted); font-size: var(--type-small); }
 .document-card-title { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .document-card-mention > .field-chip-status { display: inline-flex; flex: none; width: auto; margin: 2px 0; }
+/* Task queries ("```tasks"): card rows in the shared field order. */
+.document-task-query { display: grid; gap: 2px; margin: 12px 0; padding: 6px 8px; border: 1px solid var(--line); border-radius: 6px; background: var(--surface); }
+.document-task-query > p { margin: 4px 0; }
+.document-task-row { display: flex; align-items: center; gap: 8px; min-height: var(--control-height); min-width: 0; }
+.document-task-open { display: flex; flex: 1; align-items: center; gap: 6px; min-width: 0; min-height: var(--control-height); padding: 0; border: 0; background: transparent; color: var(--ink); text-align: start; cursor: pointer; }
+.document-task-open > .icon { flex: none; width: 16px; height: 16px; }
+.document-task-title { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.document-task-fields { display: flex; flex: none; align-items: center; gap: 4px; }
+.document-task-fields > .field-chip-status { width: auto; }
 [data-list-callout="important"] { --list-callout-color: #d64545; }
 [data-list-callout="question"] { --list-callout-color: #e07b24; }
 [data-list-callout="bookmark"] { --list-callout-color: #b08900; }

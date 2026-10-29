@@ -2,6 +2,12 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.20.1 — 2026-10-29
+
+### Added
+
+- Live task queries in documents: a ```` ```tasks ```` block lists the project's matching cards, using instructions from the Obsidian Tasks plugin, one per line: `done` or `not done`, `due today`, `due before|after|on <date>` (a date, `today`, `tomorrow` or `yesterday`), `overdue`, `has due date`, `no due date`, `assignee is me|<name>`, `no assignee`, `status is`, `priority is`, `type is`, `tag includes`, `title includes`, `description includes`, `sort by <field> [reverse]` and `limit <n>`. Rows show the card's type, key, title, assignee, status and priority; ticking a row completes the card, and clicking it opens the card. Lines the block doesn't understand are listed in it. Add one with **Insert → Task query** or `/task query`.
+
 ## 0.20.0 — 2026-10-29
 
 ### Added

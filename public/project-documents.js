@@ -4,7 +4,9 @@ import { markdownDocumentEditor } from "./document-editor.js";
 import { documentReadingSearch } from "./document-reading-search.js";
 import { documentMarkdown } from "./document-markdown.js";
 import { documentHeadings, documentOutline, documentStats, documentReference, resolveDocument, resolveCard, obsidianDocumentURI } from "./document-model.js";
-import { statusLabel } from "./workflow-model.js";
+import { statusLabel, canTransition, initialStatus, transitionError } from "./workflow-model.js";
+import { priorityLabel } from "./task-priority.js";
+import { parseTaskQuery, runTaskQuery } from "./document-task-query.js";
 import { plainMentions, linkMentions, unlinkedMentions } from "./document-mentions.js";
 import { taskColorAttributes } from "./task-colors.js";
 import { positionPopover } from "./popover-position.js";
@@ -90,6 +92,7 @@ export function projectDocuments(ctx) {
     const versions = form.querySelector("[data-document-action=versions]");
     versions.title = `Page versions · Version ${saved?.version || 1}`;
     versions.dataset.version = saved?.version || 1;
+    renderTaskQueries(form);
     updateExplorer();
   }
   async function flushDocument(id = current?.id) {
@@ -208,6 +211,7 @@ export function projectDocuments(ctx) {
       box.querySelectorAll("[data-version-index]").forEach(b => b.setAttribute("aria-pressed", String(b === item)));
       const detail = box.querySelector(".document-version-detail"); detail.hidden = false;
       detail.innerHTML = `<h3>${esc(version.title)}</h3><article class="document-prose">${renderer.render(version.body)}</article>${version.current ? "" : '<div class="document-panel-actions"><button type="button" class="button primary" data-restore-document-version>Restore this version</button></div>'}`;
+      renderTaskQueries(detail);
       detail.querySelector("[data-restore-document-version]")?.addEventListener("click", async event => {
         event.currentTarget.disabled = true;
         try {
@@ -335,6 +339,60 @@ export function projectDocuments(ctx) {
   }
   // "Card from text": the selection, or the current line without its list or heading marker,
   // becomes a card linked to this document, and the text becomes a mention of it.
+  // "```tasks" blocks: the project's matching cards as rows (type, key, title, assignee, status,
+  // priority), with a box that completes the card. Blocks re-render whenever saves change.
+  function taskRow(t) {
+    const done = (state.config.done || []).includes(t.status);
+    return `<div class="document-task-row"><input type="checkbox" class="document-checkbox" ${done ? "checked" : ""} data-task-query-done="${esc(t.id)}" aria-label="Done: ${esc(t.title)}"><button type="button" class="document-task-open" data-task-query-open="${esc(t.id)}" aria-label="Open ${esc(t.key || t.id)}: ${esc(t.title)}">${icon(t.type || "task")}<span class="document-card-key">${esc(t.key || t.id)}</span><span class="document-task-title">${esc(t.title)}</span></button><span class="document-task-fields">${ctx.assigneeHTML(t)}<span class="field-chip field-chip-status" ${taskColorAttributes(state, "status", t.status)}>${esc(statusLabel(state.config, t.status))}</span><span class="field-chip field-chip-priority" role="img" aria-label="Priority: ${esc(priorityLabel(t.priority || "none"))}" ${taskColorAttributes(state, "priority", t.priority)}>${icon(`priority-${t.priority || "none"}`)}</span></span></div>`;
+  }
+  function renderTaskQueries(root) {
+    for (const block of root?.querySelectorAll("[data-document-task-query]") || []) {
+      if (block.dataset.query == null) block.dataset.query = block.textContent;
+      const query = parseTaskQuery(block.dataset.query);
+      const { tasks, total } = runTaskQuery(state.tasks || [], query, { config: state.config, me: state.session?.user?.username || "" });
+      block.dataset.rendered = "true";
+      const html = `${query.errors.length ? `<p class="form-error">Not understood: ${query.errors.map(esc).join(", ")}</p>` : ""}${tasks.map(taskRow).join("") || '<p class="field-hint">No matching cards.</p>'}${total > tasks.length ? `<p class="field-hint">${total - tasks.length} more not shown.</p>` : ""}`;
+      // Every save calls this, so unchanged rows stay as they are, and focus stays on the same card.
+      if (renderedQueries.get(block) !== html) {
+        const focused = block.contains(document.activeElement) && document.activeElement.dataset.taskQueryDone;
+        block.innerHTML = html;
+        renderedQueries.set(block, html);
+        if (focused) block.querySelector(`[data-task-query-done="${CSS.escape(focused)}"]`)?.focus();
+      }
+      // Bound on the block: editable components stop clicks from reaching the form.
+      block.onchange = event => { if (event.target.dataset.taskQueryDone) completeCard(event.target); };
+      block.onclick = event => {
+        const open = event.target.closest("[data-task-query-open]");
+        if (open) { event.preventDefault(); ctx.taskDialog(open.dataset.taskQueryOpen); }
+      };
+      // A tap ticks the box without focusing the editor, which would open the iPhone keyboard.
+      let tap = null;
+      block.ontouchstart = event => {
+        tap = event.touches.length === 1 && event.target.closest("[data-task-query-done]") ? { x: event.touches[0].clientX, y: event.touches[0].clientY, input: event.target.closest("[data-task-query-done]") } : null;
+      };
+      block.ontouchmove = event => { const t = event.touches[0]; if (tap && (!t || Math.hypot(t.clientX - tap.x, t.clientY - tap.y) > 10)) tap = null; };
+      block.ontouchend = event => {
+        if (!tap) return;
+        const { input } = tap;
+        tap = null;
+        event.preventDefault();
+        input.checked = !input.checked;
+        completeCard(input);
+      };
+    }
+  }
+  const renderedQueries = new WeakMap();
+  async function completeCard(input) {
+    const task = (state.tasks || []).find(t => t.id === input.dataset.taskQueryDone), config = state.config, doneStatuses = config.done || [];
+    const wanted = input.checked ? doneStatuses : [initialStatus(config), ...config.statuses].filter(s => !doneStatuses.includes(s));
+    const target = task && wanted.find(s => canTransition(config, task.status, s));
+    try {
+      if (!task) throw new Error("This card no longer exists.");
+      if (!target) throw new Error(transitionError(config, task.status, wanted[0]));
+      await ctx.patchTask(task.id, { status: target }, false);
+    } catch (error) { toast(error.message, true); }
+    renderTaskQueries(form);
+  }
   // A few words either side of a mention, to show what Link will change.
   const mentionContext = (body, { index, length }) => {
     const start = Math.max(0, index - 30), end = Math.min(body.length, index + length + 30);
@@ -484,7 +542,7 @@ export function projectDocuments(ctx) {
     editor = markdownDocumentEditor({
       icon,
       parent: form.querySelector(".document-codemirror"), text: doc.body || "",
-      mode: mode === "source" ? "source" : "live", renderer, documents: all, cards: () => (state.tasks || []).filter((t) => !t.archived),
+      mode: mode === "source" ? "source" : "live", renderer, documents: all, cards: () => (state.tasks || []).filter((t) => !t.archived), taskQueries: renderTaskQueries,
       onChange(value) {
         form.elements.body.value = value;
         form.elements.body.dispatchEvent(new Event("input", { bubbles: true }));

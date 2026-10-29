@@ -296,13 +296,15 @@ export function editableDocumentComponent({ element, raw, from, kind, editor, re
       serialize = () => toMarkdown(quote).split("\n").map(line => `> ${line}`).join("\n");
     }
   } else if (kind === "code") {
-    const diagram = token.lang?.split(/\s/)[0] === "mermaid";
+    const lang = token.lang?.split(/\s/)[0];
+    // Diagrams and task queries show their result, with their source edited below it.
+    const query = lang === "tasks", diagram = lang === "mermaid" || query;
     let code = element.querySelector("pre code");
     if (diagram) {
       const pre = document.createElement("pre"); code = document.createElement("code");
       code.textContent = token.text; pre.append(code); element.append(pre);
     }
-    field(code, diagram ? "Diagram code" : "Code block", { plain: true });
+    field(code, query ? "Task query" : diagram ? "Diagram code" : "Code block", { plain: true });
     // The fence's info string; its first word is the language.
     let info = token.lang || "";
     serialize = () => {
@@ -337,8 +339,10 @@ export function editableDocumentComponent({ element, raw, from, kind, editor, re
       });
     }
     if (diagram) code.addEventListener("blur", () => {
-      const preview = element.querySelector("[data-document-diagram]");
-      preview.textContent = code.innerText; delete preview.dataset.rendered; hydrate(element);
+      const preview = element.querySelector("[data-document-diagram], [data-document-task-query]");
+      // Unchanged source keeps the rendered result (and any focused control in it).
+      if (preview.dataset.query === code.innerText || (!query && preview.textContent === code.innerText && preview.dataset.rendered)) return;
+      preview.textContent = code.innerText; delete preview.dataset.rendered; delete preview.dataset.query; hydrate(element);
     });
   } else if (kind === "documentMathBlock") {
     const formula = document.createElement("div"); formula.textContent = token.text;

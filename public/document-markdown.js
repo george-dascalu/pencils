@@ -40,6 +40,9 @@ export function documentMarkdown({ documents, project, esc, icon, cards = () => 
     parser.use({
     renderer: {
       code(token) {
+        // A task query lists cards; the documents view fills it in (see renderTaskQueries).
+        if (token.lang?.split(/\s/)[0] === "tasks")
+          return `<div class="document-task-query" data-document-task-query data-document-source="${esc(token.raw)}">${esc(token.text)}</div>`;
         if (token.lang?.split(/\s/)[0] === "mermaid")
           return `<pre data-document-diagram data-document-source="${esc(token.raw)}" role="img" aria-label="Mermaid diagram">${esc(token.text)}</pre>`;
         return `<pre><code${token.lang ? ` class="language-${esc(token.lang.split(/\s/)[0])}"` : ""}>${esc(token.text)}</code></pre>`;
@@ -124,7 +127,7 @@ export function documentMarkdown({ documents, project, esc, icon, cards = () => 
     const fragment = DOMPurify.sanitize(makeParser().parse(text), {
       RETURN_DOM_FRAGMENT: true,
       ALLOW_DATA_ATTR: false,
-      ADD_ATTR: ["data-document-ref", "data-document-diagram", "data-document-source", "data-document-callout", "data-document-card"],
+      ADD_ATTR: ["data-document-ref", "data-document-diagram", "data-document-source", "data-document-callout", "data-document-card", "data-document-task-query"],
       FORBID_TAGS: ["style", "form", "button", "textarea", "select", "option", "iframe", "object", "embed"],
       FORBID_ATTR: ["style"],
     });
