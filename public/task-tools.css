@@ -618,11 +618,6 @@ body.task-reordering, body.task-reordering * { cursor: grabbing !important; user
 .task-dialog .task-metadata {
   display: block;
 }
-.task-dialog .task-metadata-main {
-  display: grid;
-  grid-template-columns: 52px minmax(0, 1fr) minmax(0, 1fr);
-  gap: 10px;
-}
 .task-dialog .task-metadata-secondary {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
@@ -700,7 +695,7 @@ body.task-reordering, body.task-reordering * { cursor: grabbing !important; user
   display: flex;
   flex-shrink: 0;
   align-items: center;
-  gap: 3px;
+  gap: 10px;
 }
 .task-editor-actions .icon-button {
   width: 28px;
@@ -750,13 +745,6 @@ body.task-reordering, body.task-reordering * { cursor: grabbing !important; user
   }
   .board-task-editor .task-edit-form .task-editor-head {
     flex-wrap: nowrap;
-  }
-  .board-task-editor .task-editor-actions {
-    gap: 1px;
-  }
-  .board-task-editor .task-editor-actions .icon-button {
-    width: 24px;
-    padding: 4px;
   }
 }
 
@@ -1236,9 +1224,6 @@ html.task-page-open,
   flex-basis: 100%;
   justify-content: flex-end;
 }
-.task-dialog .task-metadata-main {
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) 52px;
-}
 .task-dialog .task-metadata-main > .task-dates {
   grid-column: 1 / -1;
 }
@@ -1264,9 +1249,6 @@ html.task-page-open,
   .task-dialog.board-task-editor .task-editor-actions {
     order: 0;
     flex-basis: auto;
-  }
-  .task-dialog .task-metadata-main {
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) 52px minmax(0, 2fr);
   }
   .task-dialog .task-metadata-main > .task-dates {
     grid-column: auto;
@@ -1352,7 +1334,8 @@ html.task-page-open,
 
 /* Task editor: actions, title, metadata and description have distinct rows. */
 .task-dialog.board-task-editor .task-editor-head { display: flex; flex-direction: column; align-items: stretch; gap: 8px; padding: 12px; }
-.task-editor-header-row { display: flex; align-items: center; gap: 6px; min-width: 0; }
+/* Header groups and Close keep the editor's 10px spacing, as the rows below do. */
+.task-editor-header-row { display: flex; align-items: center; gap: 10px; min-width: 0; }
 .task-dialog.board-task-editor .task-editor-header-row .task-identity-row { display: flex; flex: 0 1 auto; align-items: center; gap: 8px; width: auto; }
 .task-dialog.board-task-editor .task-editor-header-row .task-key { max-width: 90px; overflow: hidden; text-overflow: ellipsis; }
 .task-dialog.board-task-editor .task-editor-header-row .task-editor-actions { order: 0; flex: 1 1 auto; flex-basis: auto; min-width: 0; justify-content: flex-end; flex-wrap: nowrap; overflow-x: auto; }
@@ -1360,7 +1343,8 @@ html.task-page-open,
 .task-dialog .task-title-row { width: 100%; }
 .task-dialog.board-task-editor .task-title-row .title-input { display: block; width: 100%; font-size: var(--type-title) !important; line-height: 1.4; padding: 5px 4px; }
 .task-dialog .task-metadata { padding-bottom: 16px; border-bottom: 1px solid var(--line); }
-.task-dialog .task-metadata-main { display: grid; grid-template-columns: 48px minmax(90px, 1fr) 52px; gap: 10px; }
+/* Assignee and priority columns are exactly their square controls, so Status ends where the header's action group does. */
+.task-dialog .task-metadata-main { display: grid; grid-template-columns: var(--control-height) minmax(90px, 1fr) var(--control-height); gap: 10px; }
 .task-dialog .task-metadata-main > .task-dates { display: flex; flex-direction: column; gap: 5px; grid-column: 1 / -1; margin: 0; }
 .task-assignee-choice { position: relative; display: grid; place-items: center; width: var(--control-height); height: var(--control-height); }
 .task-assignee-choice .task-assignee { width: var(--control-height); height: var(--control-height); font-size: 11px; }
@@ -1373,14 +1357,13 @@ html.task-page-open,
 .task-dialog .task-description { margin: 0; padding-block: 20px; border-bottom: 1px solid var(--line); }
 .task-dialog .task-relationships { margin-top: 20px; }
 @container task-editor (min-width: 580px) {
-  .task-dialog .task-metadata-main { grid-template-columns: 48px minmax(110px, 1fr) 52px minmax(260px, 1.8fr); }
+  .task-dialog .task-metadata-main { grid-template-columns: var(--control-height) minmax(110px, 1fr) var(--control-height) minmax(260px, 1.8fr); }
   .task-dialog .task-metadata-main > .task-dates { grid-column: auto; }
   .task-dialog .task-description > .task-rich-tools, .task-dialog .task-description .rich-toolbar { flex-wrap: nowrap; }
 }
 @container task-editor (max-width: 440px) {
   .task-dialog.board-task-editor .task-editor-header-row .task-key { max-width: 50px; font-size: var(--type-meta); }
   .task-dialog.board-task-editor .task-editor-header-row .task-editor-actions { justify-content: flex-start; }
-  .task-editor-header-row { gap: 3px; }
 }
 .topbar #save-state { flex-shrink: 0; white-space: nowrap; }
 .app-version { flex-wrap: nowrap; }
@@ -1399,7 +1382,7 @@ html.task-page-open,
   .task-relationship-metadata { flex: 0 0 calc(100% - 24px); margin-inline-start: 24px; }
 }
 @media (max-width: 600px) {
-  .task-dialog.board-task-editor .task-editor-header-row .task-editor-actions { justify-content: flex-end; overflow: visible; gap: 6px; }
+  .task-dialog.board-task-editor .task-editor-header-row .task-editor-actions { justify-content: flex-end; overflow: visible; }
   .task-dialog .task-title-row { display: flex; align-items: center; gap: 10px; }
   .task-dialog.board-task-editor .task-title-row .task-identity-row { display: flex; flex-direction: column; flex: none; gap: 2px; width: calc(var(--control-height) + 12px); }
   .task-dialog.board-task-editor .task-title-row .task-key { flex: none; max-width: 96px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: var(--type-meta); }
@@ -1472,8 +1455,7 @@ html.task-page-open,
 .task-editor-header-row > [data-action="dialog-close"] { margin-inline-start: auto; }
 .task-editor-header-row > .task-editor-actions + [data-action="dialog-close"] { margin-inline-start: 0; }
 .task-editor-header-row > [data-action="dialog-close"] { color: var(--danger, #b64132); }
-/* The type button is a square like the pane buttons above it and the assignee below it. */
-.task-identity-row .task-picker.icon-only .task-picker-trigger { width: var(--control-height); }
+
 
 /* Phone card page: the pane switcher is icon-only and its first icon lines up
    with the card type icon below (the group border is pulled back by 1px). */

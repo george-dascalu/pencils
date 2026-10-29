@@ -239,6 +239,11 @@ onDevices(["phone"], () => test("phone card page: icon-only pane switcher aligne
       closeColor: getComputedStyle(document.querySelector('#task-form [data-action="dialog-close"]')).color,
       deleteColor: getComputedStyle(document.querySelector('#task-form [data-action="task-delete"]')).color,
       typeBox: (() => { const r = type.getBoundingClientRect(), d = details.getBoundingClientRect(); return { width: Math.round(r.width), detailsWidth: Math.round(d.width), left: Math.round(r.left), detailsLeft: Math.round(d.left) }; })(),
+      // 29 Oct: priority is a square like the assignee; the metadata row's gap is the editor's spacing.
+      priorityWidth: Math.round(document.querySelector('#task-form [data-task-picker="priority"] .task-picker-trigger').getBoundingClientRect().width),
+      assigneeWidth: Math.round(document.querySelector("#task-form .task-assignee-choice").getBoundingClientRect().width),
+      spacing: parseFloat(getComputedStyle(document.querySelector("#task-form .task-metadata-main")).columnGap),
+      statusRight: document.querySelector('#task-form select[name="status"]').getBoundingClientRect().right,
     };
   });
   expect(Math.abs(geometry.detailsCentre - geometry.typeCentre), `Details icon lines up with the type icon: ${JSON.stringify(geometry)}`).toBeLessThanOrEqual(2);
@@ -249,7 +254,9 @@ onDevices(["phone"], () => test("phone card page: icon-only pane switcher aligne
   expect(geometry.group.border, "the actions form a bordered group").toBe("solid");
   expect(geometry.group.labels).toEqual(["Duplicate task", "Archive task", "Delete task"]);
   expect(geometry.group.beforeClose, "the group sits right before Close").toBe("dialog-close");
-  expect(geometry.group.groupRight).toBeLessThanOrEqual(geometry.group.closeLeft);
+  expect(Math.abs(geometry.group.closeLeft - geometry.group.groupRight - geometry.spacing), `Close keeps the editor's spacing from the group: ${JSON.stringify(geometry.group)}`).toBeLessThanOrEqual(1);
+  expect(geometry.priorityWidth, "priority is as wide as the assignee").toBe(geometry.assigneeWidth);
+  expect(Math.abs(geometry.group.groupRight - geometry.statusRight), `the action group ends where Status ends: ${geometry.group.groupRight} vs ${geometry.statusRight}`).toBeLessThanOrEqual(1);
   expect(geometry.closeColor, "Close is red, like Delete").toBe(geometry.deleteColor);
   expect(Math.abs(geometry.typeBox.width - geometry.typeBox.detailsWidth), `the type button is as wide as the pane buttons: ${JSON.stringify(geometry.typeBox)}`).toBeLessThanOrEqual(2);
   expect(Math.abs(geometry.typeBox.left - geometry.typeBox.detailsLeft), "and lines up with them").toBeLessThanOrEqual(2);

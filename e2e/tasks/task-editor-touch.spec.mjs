@@ -71,6 +71,8 @@ const reviewTests = (device, phone) => {
       // Both header groups and Close fit the screen, Close last.
       const [group, close] = [await form(page).locator(".task-secondary-actions").boundingBox(), await form(page).locator('[data-action="dialog-close"]').boundingBox()];
       expect(group.x + group.width <= close.x && close.x + close.width <= page.viewportSize().width, "header fits").toBe(true);
+      const panes = await form(page).locator(".task-pane-switcher").boundingBox();
+      expect(group.x - panes.x - panes.width, "the two groups keep at least the editor's 10px spacing").toBeGreaterThanOrEqual(10);
       // Escape closes Delete's confirmation, not the card.
       await del.tap();
       await page.locator(".confirm-popover").waitFor();

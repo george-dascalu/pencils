@@ -177,8 +177,9 @@ textarea,
   height: var(--control-icon-size);
   flex-shrink: 0;
 }
+/* Icon-only pickers (card type, priority) are squares like the assignee beside them. */
 .task-picker.icon-only .task-picker-trigger {
-  width: calc(var(--control-height) + 12px);
+  width: var(--control-height);
   padding-inline: 6px !important;
 }
 .view-layout-switcher {

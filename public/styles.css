@@ -2348,7 +2348,6 @@ input[type="search"]:not(.search input) {
   height: 16px;
 }
 .task-picker.icon-only .task-picker-trigger {
-  width: 48px;
   justify-content: center;
   gap: 4px;
 }

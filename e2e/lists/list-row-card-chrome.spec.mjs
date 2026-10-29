@@ -153,4 +153,7 @@ onDevices(["ipad"], () => test("iPad keeps the card's secondary actions in the h
   }
   const actions = await form.locator(".task-editor-actions").evaluate((el) => ({ scroll: el.scrollWidth, client: el.clientWidth }));
   expect(actions.scroll, `actions fit the header: ${JSON.stringify(actions)}`).toBeLessThanOrEqual(actions.client + 1);
+  // The groups and Close keep the 10px spacing of the rows below (29 Oct).
+  const group = await form.locator(".task-secondary-actions").boundingBox();
+  expect(Math.round(close.x - group.x - group.width), "spacing before Close").toBe(10);
 }));

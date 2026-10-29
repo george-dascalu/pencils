@@ -2,6 +2,12 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.19.40 — 2026-10-29
+
+### Changed
+
+- In the card editor, the priority button is a square like the assignee beside it, and the header's button groups and **Close** keep the same 10px spacing as the rows below. On phones the Duplicate/Archive/Delete group ends exactly where the Status field below it ends.
+
 ## 0.19.39 — 2026-10-29
 
 ### Changed

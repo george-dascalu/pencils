@@ -125,7 +125,8 @@ onDevices(["desktop", "phone"], () => test("assignee avatars are rounded squares
 onDevices(["desktop", "ipad"], () => test("card editor keeps its full-size fields", async ({ page, device }) => {
   const ref = await reference(page);
   const control = device === "desktop" ? 32 : 44;
-  expect([ref.assignee.h, ref.status.h, ref.priority.h, ref.priority.w]).toEqual([control, control, control, control + 12]);
+  // Priority is a square like the assignee (29 Oct; it used to keep 12px for a dropdown arrow it no longer has).
+  expect([ref.assignee.h, ref.status.h, ref.priority.h, ref.priority.w]).toEqual([control, control, control, control]);
 }));
 
 onDevices(["desktop", "ipad", "phone"], () => test("relationship rows use the list chips, with one status width and room around them", async ({ page, device }) => {
