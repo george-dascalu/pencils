@@ -37,6 +37,7 @@ async function fits(page) {
     return {
       bottom: rect.bottom,
       viewport: innerHeight,
+      usableBottom: (() => { const bar = document.querySelector(".topbar .tabs"); return bar && getComputedStyle(bar).position === "fixed" ? innerHeight - parseFloat(getComputedStyle(document.querySelector(".main")).paddingBottom) : innerHeight; })(),
       width: el.clientWidth,
       sheet: sheet.offsetWidth,
       rowWidths: rows.map((row) => row.getBoundingClientRect().width),
@@ -47,7 +48,8 @@ async function fits(page) {
       overflowY: style.overflowY,
     };
   });
-  expect(size.bottom >= size.viewport - 20 && size.bottom <= size.viewport, `Timeline reaches the component bottom ${JSON.stringify(size)}`).toBe(true);
+  // On phones the views end at the bottom tab bar (0.19.33), elsewhere at the window bottom.
+  expect(size.bottom >= size.usableBottom - 20 && size.bottom <= size.usableBottom, `Timeline reaches the component bottom ${JSON.stringify(size)}`).toBe(true);
   expect(size.sheet >= size.width && size.rowWidths.every((width) => Math.abs(width - size.sheet) <= 1), `Every row fills the sheet and available width ${JSON.stringify(size)}`).toBe(true);
   expect(size.pageWidth <= size.limit && size.pageHeight <= size.viewport + 1, `Scrolling stays inside the timeline ${JSON.stringify(size)}`).toBe(true);
   expect(size.overflowX).toBe("auto");

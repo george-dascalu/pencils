@@ -1,5 +1,5 @@
-// Phone layout (AGENTS.md: one sidebar, the phone drawer, 44px touch targets): the drawer makes
-// the page inert and closes with Escape or a tap outside; task rows stay compact with full tap
+// Phone layout (AGENTS.md: one sidebar, the phone drawer and bottom tab bar, 44px touch targets):
+// the drawer makes the page inert and closes with Escape or a tap outside; task rows stay compact with full tap
 // targets; tree branches toggle; the document list is the drawer's Documents level (0.19.27);
 // every shipped view fits a phone in both themes with an accessible document header; and
 // documents, List and Tree fit from 360px to desktop. The phone document toolbar checks
@@ -28,14 +28,13 @@ async function rendered(page, view) {
   await nextFrame(page);
 }
 const inert = (page, selector) => page.locator(selector).evaluate((el) => el.inert);
+// Views open from the bottom tab bar; Tasks and Planning layouts from the toolbar switcher (0.19.33).
 async function navigate(page, view) {
-  await page.locator(".mobile-menu").click();
-  await page.locator(`.phone-project-navigation [data-view="${view}"]`).click();
+  const area = ["list", "tree", "table", "kanban"].includes(view) ? "tasks" : ["calendar", "timeline", "capacity"].includes(view) ? "planning" : view;
+  await page.locator(`.topbar .tabs [data-view="${area}"]`).click();
+  if (area !== view) await page.locator(`.view-layout-switcher [data-view="${view}"]`).click();
   await page.locator(`.main[data-layout-view="${view}"]`).waitFor();
-  // Documents drills the drawer down to the document list (0.19.27); close it.
-  if (view === "documents") await page.locator(".phone-drawer-close").click();
   await expect.poll(() => inert(page, ".main")).toBe(false);
-  await expect.poll(() => inert(page, ".sidebar")).toBe(true);
 }
 
 onDevices(["phone"], () => {
@@ -43,7 +42,7 @@ onDevices(["phone"], () => {
     await goto(page, "list");
     await page.locator(".mobile-menu").click();
     await expect.poll(() => inert(page, ".main")).toBe(true);
-    await expect(page.locator(".phone-project-navigation [data-view]")).toHaveCount(10);
+    await expect(page.locator(".sidebar .project-link").first()).toBeVisible();
     await page.keyboard.press("Escape");
     await expect(page.locator(".mobile-menu")).toBeFocused();
     await page.locator(".mobile-menu").click();
@@ -58,7 +57,7 @@ onDevices(["phone"], () => {
     await page.locator('[data-action="dialog-close"]').first().click();
   });
 
-  test("views opened from the drawer leave it inert, and tree branches toggle", async ({ page }) => {
+  test("views open from the tab bar, and tree branches toggle", async ({ page }) => {
     await goto(page, "list");
     await navigate(page, "tree");
     const branch = page.locator(".task-row .tree-toggle:not(:disabled)").first();

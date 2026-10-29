@@ -64,22 +64,21 @@ onDevices(["phone"], () => {
     await page.locator(".sidebar.open").waitFor();
     await expect(page.locator(".sidebar")).toHaveAttribute("data-drawer-level", "documents");
     await expect.poll(() => shown(page, ".sidebar .sidebar-documents [data-document-open]"), "the document list shows").toBeGreaterThanOrEqual(2);
-    expect(await shown(page, ".sidebar .phone-project-navigation"), "the view tiles wait on the first level").toBe(0);
+    expect(await shown(page, ".sidebar .project-links"), "projects wait on the first level").toBe(0);
     // Back returns to the menu.
     await page.locator(".sidebar [data-drawer-back]").click();
     await expect(page.locator(".sidebar")).toHaveAttribute("data-drawer-level", "menu");
-    await expect.poll(() => shown(page, ".sidebar .phone-project-navigation")).toBeGreaterThan(0);
+    await expect.poll(() => shown(page, ".sidebar .project-links")).toBeGreaterThan(0);
     await expect.poll(() => shown(page, ".sidebar .sidebar-documents")).toBe(0);
   });
 
-  test("from another view, the Documents tile drills down and a document opens", async ({ page }) => {
+  test("from another view, the Documents tab opens Documents and a second tap lists them", async ({ page }) => {
     await page.goto(`${base()}/list`);
     await page.locator(".task-row").first().waitFor();
-    await page.locator(".mobile-menu").click();
-    await page.locator(".sidebar.open").waitFor();
-    const tile = page.locator('.sidebar .phone-project-navigation [data-view="documents"]');
-    await expect(tile.locator(".drawer-tile-more svg"), "the tile shows it leads somewhere").toHaveCount(1);
-    await tile.click();
+    const tab = page.locator('.topbar .tabs [data-view="documents"]');
+    await tab.click();
+    await page.locator('.main[data-layout-view="documents"]').waitFor();
+    await tab.click();
     await page.locator(".sidebar .sidebar-documents [data-document-open]").first().waitFor();
     await expect(page.locator(".sidebar.open"), "the drawer stays open on the document list").toHaveCount(1);
     await page.locator(".sidebar .sidebar-documents [data-document-open]", { hasText: "Project brief" }).click();

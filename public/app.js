@@ -778,10 +778,9 @@ function renderAppNow() {
   document.title = `${state.helpArticle ? helpArticle(state.helpArticle).title + " · Help" : state.directoryPage ? label(state.directoryPage) + " · " + state.organisation?.title : p ? `${viewLabel(state.view)} · ${p.title}` : state.organisation?.title || "Workspace"} · Pencils`;
   app.innerHTML = `<div class="shell">
     <button class="sidebar-overlay ${state.menu ? "visible" : ""}" data-action="menu" aria-label="Close sidebar"></button>
-    <aside id="workspace-sidebar" class="sidebar ${state.menu ? "open" : ""}" data-switcher="${!p || state.drawerSwitcher ? "open" : "closed"}" data-drawer-level="${p && state.drawerLevel === "documents" ? "documents" : "menu"}">
+    <aside id="workspace-sidebar" class="sidebar ${state.menu ? "open" : ""}" data-drawer-level="${p && state.drawerLevel === "documents" ? "documents" : "menu"}">
       <button class="brand" data-action="home" aria-label="Pencils home"><img src="/icon.svg" alt=""><span class="wordmark">pencils<span style="color:#b9d18c">.</span></span></button>
       <button class="icon-button phone-drawer-close" data-action="menu" aria-label="Close navigation">${icon("close")}</button>
-      ${drawerSwitcherHTML()}
       <div class="organisation-switch"><div class="organisation-switch-row"><span class="workspace-icon" style="color:${safeColor(state.organisation?.color)}">${icon("folder")}</span><label class="organisation-choice"><span>ORGANISATION</span><select id="organisation-select" aria-label="Switch organisation">${state.organisations.map((o) => `<option value="${esc(o.id)}" ${o.id === state.organisation?.id ? "selected" : ""}>${esc(o.title)}</option>`).join("")}</select></label></div><div class="organisation-actions"><button data-action="organisation-new">${icon("plus")}New organisation</button><button data-action="organisation-edit" aria-label="Organisation settings" ${state.organisation ? "" : "disabled"}>${icon("settings")}</button></div></div>
       <div class="side-label">PROJECTS<button data-action="project-new" aria-label="Create project">${icon("plus")}</button></div>
       <nav class="project-links" aria-label="Projects">${organisationProjects()
@@ -793,7 +792,6 @@ function renderAppNow() {
       <button class="side-new" data-action="project-new">${icon("plus")}New project</button>
       ${p ? '<section id="sidebar-documents" class="sidebar-documents" aria-label="Documents"></section>' : ""}
       ${state.organisation ? `<section class="sidebar-directory"><div class="side-label">TEAMS</div><nav class="directory-links" aria-label="Teams and people">${["teams", "people"].map((page) => `<button class="directory-link ${state.directoryPage === page ? "active" : ""}" data-action="directory-open" data-page="${page}" ${state.directoryPage === page ? 'aria-current="page"' : ""}>${icon(page === "teams" ? "group" : "people")}<span>${label(page)}</span><span class="directory-count">${state.organisation[page]?.length || 0}</span></button>`).join("")}</nav></section>` : ""}
-      ${p ? phoneNavigationHTML() : ""}
       <div class="phone-drawer-utilities" role="group" aria-label="Settings and help" style="--tiles:2"><button class="button" data-action="settings" aria-label="Settings">${icon("settings")}<span>Settings</span></button><button class="button" data-action="help" aria-label="Help & guides">${icon("help")}<span>Help</span></button></div>
       <div class="side-bottom">
       <div class="side-footer"><span class="dot"></span>Local workspace<span class="version">v${APP_VERSION}</span></div></div>
@@ -883,50 +881,22 @@ function newMenuHTML(kind = "button") {
     : `<summary class="button primary" title="New card or document">${icon("plus")}New</summary>`;
   return `<details class="board-menu new-menu${kind === "icon" ? " phone-new-task" : ""}" data-new-menu data-board-menu="new-${kind}">${summary}<div class="board-menu-panel new-menu-panel"><button type="button" data-action="task-new">${icon("task")}Card</button><button type="button" data-action="document-new">${icon("file")}Document</button></div></details>`;
 }
-// Phones: the drawer opens on a switcher naming the project and organisation;
-// organisation, projects and teams appear beneath it when it is opened. Views
-// follow as compact tiles, and settings sit in one row at the bottom.
-function drawerSwitcherHTML() {
-  const p = state.project, open = !p || state.drawerSwitcher;
-  return `<button type="button" class="drawer-switcher" data-drawer-switcher aria-expanded="${open}" aria-label="${esc(p ? `${p.title}, ${state.organisation?.title || ""}. Switch project or organisation` : "Projects and organisations")}">${p ? `<span class="project-mark" style="background:${safeColor(p.color)}"></span>` : icon("folder")}<span class="drawer-switcher-text"><strong>${esc(p?.title || "Projects")}</strong><small>${esc(state.organisation?.title || "Organisations")}</small></span>${icon("chevron")}</button>`;
-}
-function phoneNavigationHTML() {
-  return `<nav class="phone-project-navigation" aria-label="Project navigation">${newMenuHTML()}${[
-    ["Workspace", ["overview", "documents", "board"]], ["Tasks", taskViews], ["Planning", planningViews],
-  ].map(([name, views]) => `<div class="phone-navigation-group" style="--tiles:${views.length}"><span>${name}</span>${views.map(view => view === "documents"
-    // Documents drills down to the document list inside the drawer.
-    ? `<button class="button ${state.view === view ? "active" : ""}" data-drawer-documents data-view="${view}" aria-label="${viewLabel(view)}: show documents" ${state.view === view ? 'aria-current="page"' : ""}>${icon(view)}<span>${viewLabel(view)}</span><span class="drawer-tile-more" aria-hidden="true">${icon("chevron")}</span></button>`
-    : `<button class="button ${state.view === view ? "active" : ""}" data-action="view" data-view="${view}" ${state.view === view ? 'aria-current="page"' : ""}>${icon(view)}<span>${viewLabel(view)}</span></button>`).join("")}</div>`).join("")}</nav>`;
-}
+// Phones: the drawer lists the organisation, projects and teams, with Settings and Help at the
+// bottom; in Documents it opens on its document list level, with a way back.
 function setDrawerLevel(level) {
   state.drawerLevel = level;
   const sidebar = $(".sidebar");
   sidebar?.setAttribute("data-drawer-level", level);
-  if (state.menu) (level === "documents" ? sidebar?.querySelector("[data-drawer-back]") : sidebar?.querySelector('[data-drawer-documents]'))?.focus({ preventScroll: true });
+  if (state.menu) sidebar?.querySelector(level === "documents" ? "[data-drawer-back]" : ".phone-drawer-close")?.focus({ preventScroll: true });
 }
 document.addEventListener("click", event => {
-  if (event.target.closest("[data-drawer-documents]")) {
-    state.drawerLevel = "documents";
-    if (state.view !== "documents") openView("documents");
-    setSidebarOpen(true, false);
-    return;
-  }
-  if (event.target.closest("[data-drawer-back]")) { setDrawerLevel("menu"); return; }
-  const switcher = event.target.closest("[data-drawer-switcher]");
-  if (!switcher || !state.project) return;
-  state.drawerSwitcher = !state.drawerSwitcher;
-  switcher.setAttribute("aria-expanded", String(state.drawerSwitcher));
-  switcher.closest(".sidebar")?.setAttribute("data-switcher", state.drawerSwitcher ? "open" : "closed");
+  if (event.target.closest("[data-drawer-back]")) setDrawerLevel("menu");
 });
 function setSidebarOpen(open, focus = true) {
   state.menu = open;
   const sidebar = $(".sidebar"), mobile = matchMedia("(max-width: 780px)").matches;
-  // Each opening starts with the switcher closed: on the document list in
-  // Documents, on the project's views elsewhere.
+  // In Documents each opening starts on the document list.
   if (open && state.project) {
-    state.drawerSwitcher = false;
-    sidebar?.setAttribute("data-switcher", "closed");
-    sidebar?.querySelector("[data-drawer-switcher]")?.setAttribute("aria-expanded", "false");
     state.drawerLevel = state.view === "documents" ? "documents" : "menu";
     sidebar?.setAttribute("data-drawer-level", state.drawerLevel);
   }
@@ -968,7 +938,7 @@ function projectNavigationHTML() {
         ([name, group]) =>
           `<div class="view-tab-group" role="group" aria-label="${name}">${group.map((view) => {
             const active = view === "tasks" ? taskViews.includes(state.view) : view === "planning" ? planningViews.includes(state.view) : state.view === view;
-            return `<button class="tab ${active ? "active" : ""}" data-action="view" data-view="${view}" aria-label="${viewLabel(view)}" title="${viewLabel(view)}${view === "tasks" ? ` · ${total} tasks` : ""}" ${active ? 'aria-current="page"' : ""}>${icon(view === "tasks" ? "list" : view === "planning" ? "calendar" : view)}</button>`;
+            return `<button class="tab ${active ? "active" : ""}" data-action="view" data-view="${view}" aria-label="${viewLabel(view)}" title="${viewLabel(view)}${view === "tasks" ? ` · ${total} tasks` : ""}" ${active ? 'aria-current="page"' : ""}>${icon(view === "tasks" ? "list" : view === "planning" ? "calendar" : view)}<span class="tab-label">${viewLabel(view)}</span></button>`;
           }).join("")}</div>`,
       )
       .join("")}</nav>
@@ -2205,11 +2175,15 @@ document.addEventListener("click", async (event) => {
         }
         break;
       case "view": {
-        const fromDrawer = el.closest(".phone-project-navigation");
         const fromLayout = el.closest(".view-layout-switcher");
+        // On phones, tapping Documents again opens the document list (the drawer's Documents level).
+        if (el.dataset.view === "documents" && state.view === "documents" && el.closest(".tabs") && matchMedia("(max-width: 600px)").matches) {
+          setSidebarOpen(true);
+          break;
+        }
         if (openView(el.dataset.view))
           document
-            .querySelector(fromDrawer ? ".mobile-menu" : `${fromLayout ? ".view-layout-switcher" : ".tabs"} [data-view="${el.dataset.view}"]`)
+            .querySelector(`${fromLayout ? ".view-layout-switcher" : ".tabs"} [data-view="${el.dataset.view}"]`)
             ?.focus({ preventScroll: true });
         break;
       }

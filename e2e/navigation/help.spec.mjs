@@ -117,11 +117,7 @@ for (const width of [1600, 1180, 390]) {
       await openHelp();
       expect(await page.locator(".topbar").boundingBox()).toEqual(settingsHeader);
       const switcher = page.locator("#project-view-switcher");
-      if (phone) {
-        await page.locator(".mobile-menu").click();
-        await page.locator('.phone-project-navigation [data-view="documents"]').click();
-        if (await page.locator(".sidebar.open").count()) await page.locator(".phone-drawer-close").click();
-      } else if (await switcher.isVisible()) {
+      if (!phone && await switcher.isVisible()) {
         await expect(switcher).toHaveValue("help");
         await switcher.selectOption("documents");
       } else await page.locator('.tabs [data-view="documents"]').click();

@@ -131,27 +131,21 @@ test("PEN-4 a new card can be given relationships before it is saved", async ({ 
 });
 
 // ----- PEN-1: phone drawer -----
-onDevices(["phone"], () => test("PEN-1 the phone drawer is compact: close beside the brand, one label style, New near the top", async ({ page }) => {
+onDevices(["phone"], () => test("PEN-1 the phone drawer is compact: close beside the brand, one label style, settings at the bottom", async ({ page }) => {
   await open(page, "list", ".task-row");
   await page.locator(".mobile-menu").click();
   await page.locator(".sidebar.open").waitFor();
   const [brand, close] = await Promise.all([rect(page.locator(".sidebar .brand")), rect(page.locator(".sidebar .phone-drawer-close"))]);
   expect(close.top < brand.bottom && close.bottom > brand.top, `close button shares the brand row: ${JSON.stringify({ brand, close })}`).toBe(true);
-  const labels = await page.evaluate(() => [...document.querySelectorAll(".sidebar .phone-navigation-group > span, .sidebar .side-label, .sidebar .organisation-choice > span")]
+  const labels = await page.evaluate(() => [...document.querySelectorAll(".sidebar .side-label, .sidebar .organisation-choice > span")]
     .map((el) => `${getComputedStyle(el).textTransform}/${getComputedStyle(el).fontSize}`));
-  expect(labels.length, "labels found").toBeGreaterThanOrEqual(4);
+  expect(labels.length, "labels found").toBeGreaterThanOrEqual(3);
   expect(new Set(labels).size, `section labels share one style: ${labels.join(", ")}`).toBe(1);
-  const [newButton, firstGroup, switcher] = await Promise.all([
-    rect(page.locator(".sidebar .phone-project-navigation [data-new-menu], .sidebar .phone-project-navigation [data-action='task-new']").first()),
-    rect(page.locator(".sidebar .phone-navigation-group").first()),
-    rect(page.locator(".sidebar [data-drawer-switcher]")),
-  ]);
-  expect(newButton.bottom, "New sits under the project name, above the navigation groups").toBeLessThanOrEqual(firstGroup.top + 1);
-  // Since 0.19.26 the organisation lives in the project switcher at the top and
-  // opens only on request, so project navigation is what the drawer shows.
-  expect(switcher.bottom, "the project switcher leads, then New").toBeLessThanOrEqual(newButton.top + 1);
-  expect(await page.locator(".sidebar .organisation-switch").evaluate((el) => el.getClientRects().length), "the organisation block waits behind the switcher").toBe(0);
-  const tall = await page.evaluate(() => [...document.querySelectorAll(".sidebar .phone-project-navigation .button, .sidebar .project-link, .sidebar .directory-link, .sidebar .phone-drawer-utilities .button")]
+  // Since 0.19.33 views live in the bottom tab bar; the drawer lists projects and teams, with
+  // Settings and Help at the bottom.
+  const [teams, settings] = await Promise.all([rect(page.locator(".sidebar .sidebar-directory")), rect(page.locator(".sidebar .phone-drawer-utilities"))]);
+  expect(settings.top, "settings sit below the teams").toBeGreaterThanOrEqual(teams.bottom);
+  const tall = await page.evaluate(() => [...document.querySelectorAll(".sidebar .project-link, .sidebar .directory-link, .sidebar .phone-drawer-utilities .button")]
     .filter((el) => el.getBoundingClientRect().height > 48).length);
   expect(tall, "drawer rows are at most 48px tall").toBe(0);
 }));
@@ -191,16 +185,11 @@ test("PEN-6 the header New control offers a card or a document", async ({ page }
   await page.locator("#task-form.task-create-form").waitFor();
 });
 
-onDevices(["phone"], () => test("PEN-6 the phone header plus and the drawer open the same New menu", async ({ page }) => {
+onDevices(["phone"], () => test("PEN-6 the phone header plus opens the New menu", async ({ page }) => {
   await open(page, "list", ".task-row");
   await page.locator(".top-actions .phone-new-task > summary").click();
   await page.locator('.new-menu-panel:visible [data-action="task-new"]').waitFor();
   await expect(page.locator('.new-menu-panel:visible [data-action="document-new"]')).toHaveCount(1);
-  await page.keyboard.press("Escape");
-  await page.locator(".mobile-menu").click();
-  await page.locator(".sidebar.open").waitFor();
-  await page.locator(".sidebar .phone-project-navigation .new-menu > summary").click();
-  await page.locator('.sidebar .new-menu-panel:visible [data-action="document-new"]').waitFor();
 }));
 
 // ----- PEN-7: documents linked to cards -----

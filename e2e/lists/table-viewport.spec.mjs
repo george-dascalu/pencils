@@ -40,11 +40,13 @@ async function fits(page) {
       documentHeight: document.documentElement.scrollHeight,
       viewportWidth: innerWidth,
       viewportHeight: innerHeight,
+      usableBottom: (() => { const bar = document.querySelector(".topbar .tabs"); return bar && getComputedStyle(bar).position === "fixed" ? innerHeight - parseFloat(getComputedStyle(document.querySelector(".main")).paddingBottom) : innerHeight; })(),
     };
   });
   const facts = JSON.stringify(actual);
   expect(Math.abs(actual.width - actual.availableWidth), `Scroll area spans component width ${facts}`).toBeLessThan(2);
-  expect(Math.abs(actual.parentBottom - actual.viewportHeight), `Component fills remaining viewport height ${facts}`).toBeLessThan(2);
+  // On phones the views end at the bottom tab bar (0.19.33), elsewhere at the window bottom.
+  expect(Math.abs(actual.parentBottom - actual.usableBottom), `Component fills remaining viewport height ${facts}`).toBeLessThan(2);
   // Since 0.19.31 the Table has no "+ New card" row below it (cards are created from New),
   // so the scroll area reaches the component's bottom padding.
   expect(actual.parentBottom - actual.bottom, `Scrollbar stays at the bottom ${facts}`).toBeLessThan(40);

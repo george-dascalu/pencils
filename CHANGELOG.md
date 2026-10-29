@@ -2,6 +2,13 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.19.33 — 2026-10-29
+
+### Changed
+
+- On phones, views switch from a floating, rounded bar of text tabs at the bottom of the screen: **Overview**, **Documents**, **Planning**, **Tasks** and **Boards**, each one tap away. Tasks and Planning reopen the layout you used last; choose List, Tree, Table or Kanban (or Calendar, Timeline, Capacity) at the top of the view. Tap **Documents** again to list your documents. The bar steps aside while you type.
+- The phone menu now lists the organisation, projects and teams straight away, with **Settings** and **Help** at the bottom within thumb reach, instead of view tiles and a New button (New stays as **+** in the top bar).
+
 ## 0.19.32 — 2026-10-29
 
 ### Changed

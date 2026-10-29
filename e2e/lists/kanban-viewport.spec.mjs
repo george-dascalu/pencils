@@ -49,11 +49,13 @@ async function fits(page) {
       documentHeight: document.documentElement.scrollHeight,
       viewportWidth: innerWidth,
       viewportHeight: innerHeight,
+      usableBottom: (() => { const bar = document.querySelector(".topbar .tabs"); return bar && getComputedStyle(bar).position === "fixed" ? innerHeight - parseFloat(getComputedStyle(document.querySelector(".main")).paddingBottom) : innerHeight; })(),
     };
   });
   const facts = JSON.stringify(actual);
   expect(Math.abs(actual.width - actual.availableWidth), `Kanban fills component width ${facts}`).toBeLessThan(2);
-  expect(Math.abs(actual.parentBottom - actual.viewportHeight), `Component fills remaining viewport ${facts}`).toBeLessThan(2);
+  // On phones the views end at the bottom tab bar (0.19.33), elsewhere at the window bottom.
+  expect(Math.abs(actual.parentBottom - actual.usableBottom), `Component fills remaining viewport ${facts}`).toBeLessThan(2);
   expect(actual.parentBottom - actual.bottom, `Horizontal scrollbar sits at the component bottom ${facts}`).toBeLessThan(20);
   expect(actual.columns.every((h) => Math.abs(h - actual.height) < 2), `Every column fills the viewport, even empty columns ${facts}`).toBe(true);
   await expect(page.locator(".view-footnote")).toHaveCount(0);

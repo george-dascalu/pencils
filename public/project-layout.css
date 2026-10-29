@@ -131,9 +131,27 @@
   }
   :root:not([data-sidebar="collapsed"]) .topbar .tabs .tab { padding-block: 12px; }
 }
+.tab-label { display: none; }
+/* Phones switch views from a bottom tab bar: the top bar's view tabs as text labels in a floating,
+   rounded bar at the bottom, at the shared control height. It steps aside while typing, when the
+   keyboard covers the bottom of the screen; its space stays so nothing moves under a tap that
+   ends typing. */
 @media (max-width: 600px) {
-  .topbar .tabs { display: none; }
-  .board-project-tools { padding-block: 6px; }
+  /* The bar (control height, 4px padding, 1px border) floats 8px above the bottom, with 8px above it. */
+  :root { --tabbar-space: calc(var(--control-height) + 26px); }
+  .main.project-main { padding-bottom: calc(var(--tabbar-space) + env(safe-area-inset-bottom)); }
+  .topbar .board-project-tools { display: contents; }
+  .topbar .board-project-tools > :not(.tabs) { display: none; }
+  .topbar .tabs { position: fixed; inset: auto 12px calc(8px + env(safe-area-inset-bottom)); z-index: 10; display: flex; gap: 2px; padding: 4px; border: 1px solid var(--line); border-radius: 16px; background: var(--surface); box-shadow: 0 6px 20px rgb(0 0 0 / 0.12); }
+  /* Each tab takes its label's width plus an equal share of the rest, so long labels fit. */
+  .topbar .tabs .view-tab-group { display: flex; flex: 1 1 auto; min-width: 0; padding: 0; margin: 0; }
+  .topbar .tabs .view-tab-group::after { display: none; }
+  .topbar .tabs .tab { flex: 1 1 auto; width: auto; min-width: 0; margin: 0; padding: 0 4px !important; border: 0; border-radius: 12px; font-size: var(--type-meta); }
+  .topbar .tabs .tab > .icon { display: none; }
+  .topbar .tabs .tab.active { background: var(--surface-soft); color: var(--green); }
+  .topbar .tabs .tab-label { display: block; max-width: 100%; overflow: hidden; text-overflow: ellipsis; }
+  .main:has(:is(input:not([type="checkbox"], [type="radio"], [type="range"], [type="color"], [type="button"], [type="submit"]), textarea, [contenteditable]:not([contenteditable="false"])):focus) .topbar .tabs { display: none; }
+  :root:has(.main.project-main) #toasts { bottom: calc(var(--tabbar-space) + env(safe-area-inset-bottom) + 8px); }
 }
 @media (min-width: 601px) {
   .topbar .mobile-view-switcher { display: none; }
@@ -790,31 +808,20 @@ html.table-viewport-view body {
 #quick-capture.dialog-body > button { align-self: flex-end; }
 #view-toolbar > .shared-query-controls { padding: 7px 16px; }
 
-/* Phones navigate from one drawer; the active view stays in the header. */
-.phone-project-navigation, .phone-drawer-utilities, .phone-drawer-close,
-.phone-current-view, .phone-new-task, .drawer-switcher { display: none; }
+/* Phones keep projects, teams, Settings and Help in one drawer; the active view stays in the header. */
+.phone-drawer-utilities, .phone-drawer-close,
+.phone-current-view, .phone-new-task { display: none; }
 @media (max-width: 780px) {
   .sidebar { overflow-y: auto; overscroll-behavior: contain; padding: 8px 12px 16px; }
   .sidebar .brand { padding: 4px 8px 8px; margin-right: 52px; }
   .phone-drawer-close { display: inline-flex; position: absolute; top: 12px; right: 12px; flex-shrink: 0; }
 }
 @media (max-width: 600px) {
-  /* The drawer fits one screen: a project and organisation switcher, New,
-     the views as tiles and one row of settings. Rows share one left edge and
-     the shared touch type sizes. */
+  /* The drawer: organisation, projects, teams and one row of settings. Rows share one left
+     edge and the shared touch type sizes. */
   .sidebar { width: min(320px, calc(100vw - 36px)); z-index: 120; padding: 8px 12px 12px; }
   .sidebar-overlay.visible { z-index: 119; }
   .sidebar .brand { padding: 4px 4px 10px; }
-  .drawer-switcher { display: flex; align-items: center; gap: 12px; width: 100%; min-height: 56px; padding: 6px 12px; border: 1px solid #ffffff24; border-radius: 8px; background: #ffffff0d; color: inherit; text-align: left; }
-  .drawer-switcher .project-mark { width: 12px; height: 12px; }
-  .drawer-switcher-text { display: grid; flex: 1; min-width: 0; }
-  .drawer-switcher-text :is(strong, small) { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .drawer-switcher-text strong { font-size: var(--type-body); font-weight: 600; }
-  .drawer-switcher-text small { font-size: var(--type-small); color: #a6b7ac; }
-  .drawer-switcher > .icon:last-child { transition: transform 0.15s; }
-  .drawer-switcher[aria-expanded="true"] > .icon:last-child { transform: rotate(180deg); }
-  .sidebar[data-switcher="closed"] > :is(.organisation-switch, .side-label, .project-links, .side-new, .sidebar-directory) { display: none; }
-  /* Organisation, projects and teams under the switcher. */
   .sidebar .organisation-switch { margin: 8px 0 0; padding: 0; border: 0; }
   .sidebar .organisation-switch .workspace-icon { display: none; }
   .sidebar .organisation-choice select { padding-inline: 12px 28px; font-size: var(--type-body); background-position: right 12px center; min-height: 44px; }
@@ -826,26 +833,21 @@ html.table-viewport-view body {
   .sidebar .project-links, .sidebar .directory-links { gap: 0; }
   .sidebar .sidebar-directory { margin-top: 0; }
   /* Every drawer section label shares one small-caps style and left edge. */
-  .sidebar .phone-navigation-group > span, .sidebar .side-label, .sidebar .organisation-choice > span {
+  .sidebar .side-label, .sidebar .organisation-choice > span {
     font-size: var(--type-meta); font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: #a1b1a4;
   }
   .sidebar .organisation-choice > span { margin: 0; padding: 12px 12px 0; }
-  .phone-project-navigation { display: flex; flex-direction: column; gap: 4px; padding-top: 8px; }
-  .phone-project-navigation > .new-menu > summary { width: 100%; justify-content: center; font-size: var(--type-body) !important; }
-  .phone-navigation-group { display: grid; grid-template-columns: repeat(var(--tiles, 4), minmax(0, 1fr)); gap: 4px; }
-  .phone-navigation-group > span { grid-column: 1 / -1; padding: 8px 12px 0; }
-  .sidebar :is(.phone-navigation-group, .phone-drawer-utilities) .button {
+  .sidebar .phone-drawer-utilities .button {
     /* 48px tiles (PEN-1: drawer rows stay compact), still 44px+ targets. */
     flex-direction: column; justify-content: center; gap: 2px; min-width: 0; height: 48px !important; min-height: 48px;
     padding: 2px !important; font-size: var(--type-small) !important; line-height: 1.15; background: transparent; border-color: transparent; color: inherit;
   }
-  .sidebar :is(.phone-navigation-group, .phone-drawer-utilities) .button > span { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .sidebar :is(.phone-navigation-group, .phone-drawer-utilities) .button > .icon { width: 18px; height: 18px; flex-shrink: 0; }
-  .phone-project-navigation .active { background: #ffffff16; border-color: #ffffff24; }
-  .phone-project-navigation .primary { background: var(--green); }
+  .sidebar .phone-drawer-utilities .button > span { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .sidebar .phone-drawer-utilities .button > .icon { width: 18px; height: 18px; flex-shrink: 0; }
+  /* Settings and Help sit at the bottom, within thumb reach. */
+  .phone-drawer-utilities { margin-top: auto !important; }
+  .sidebar .side-bottom { margin-top: 0; }
   .phone-drawer-utilities { display: grid; grid-template-columns: repeat(var(--tiles, 4), minmax(0, 1fr)); gap: 4px; margin-top: 8px; padding-top: 8px; border-top: 1px solid #ffffff24; }
-  /* An open switcher works like a submenu: the views wait until it closes. */
-  .sidebar[data-switcher="open"] > .phone-project-navigation { display: none; }
   /* The Documents level: the document list replaces the menu, with a way back. */
   .sidebar:not([data-drawer-level="documents"]) > .sidebar-documents { display: none !important; }
   .sidebar[data-drawer-level="documents"] > :not(.brand, .phone-drawer-close, .sidebar-documents) { display: none !important; }
@@ -857,9 +859,6 @@ html.table-viewport-view body {
   .sidebar .sidebar-documents .document-link { min-height: 44px; padding-inline: 12px; font-size: var(--type-body); }
   .sidebar .sidebar-documents .document-search input { font-size: var(--type-body); }
   .document-empty-browse { display: inline-flex; }
-  .phone-navigation-group [data-drawer-documents] { position: relative; }
-  .phone-navigation-group .drawer-tile-more { position: absolute; top: 4px; right: 4px; display: flex; color: #a1b1a4; }
-  .phone-navigation-group .button > .drawer-tile-more > .icon { width: 14px; height: 14px; transform: rotate(-90deg); }
   .sidebar .side-bottom { padding: 8px 12px 0; }
   .sidebar .side-footer { margin: 0; font-size: var(--type-meta); }
   .main > .topbar, .main.project-main > .topbar,
@@ -871,11 +870,10 @@ html.table-viewport-view body {
   .topbar .breadcrumb .mobile-menu { grid-row: 1 / 3; }
   .topbar .breadcrumb strong { grid-area: 1 / 2; font-size: 13px; align-self: end; line-height: 1.35; }
   .phone-current-view { display: block; grid-area: 2 / 2; color: var(--muted); font-size: 11px; align-self: start; }
-  .topbar .board-project-tools, .topbar .top-actions > :is([data-action="settings"], [data-action="help"]) { display: none; }
+  .topbar .top-actions > :is([data-action="settings"], [data-action="help"]) { display: none; }
   .topbar .top-actions { gap: 2px; flex: 0 0 auto; }
   .topbar .phone-new-task { display: inline-flex; }
   .topbar .app-version { display: none; }
-  .toolbar-left > .view-layout-switcher { display: none; }
   .toolbar-left:has(.mobile-view-options) { grid-template-columns: minmax(0, 1fr) var(--control-height) var(--control-height); }
   .mobile-view-options > summary { justify-content: center; width: var(--control-height); }
   .list-group > .section-title, #view-content[data-layout-view="tree"] > .section-title { min-height: var(--control-height); margin-block: 6px; font-size: 13px; }

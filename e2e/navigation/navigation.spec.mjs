@@ -200,8 +200,11 @@ test.describe("phone width", () => {
     await page.evaluate(() => (document.documentElement.dataset.theme = "dark"));
     await view(page, "kanban");
     await view(page, "capacity");
+    // Phones reach a layout with the Planning tab (Calendar) and then the layout switcher (0.19.33).
+    await back(page, projectRoute("calendar"));
     await back(page, projectRoute("kanban"));
     await expect(page.locator("#project-view-switcher")).toHaveValue("tasks");
+    await forward(page, projectRoute("calendar"));
     await forward(page, projectRoute("capacity"));
     await expect(page.locator("#project-view-switcher")).toHaveValue("planning");
     // Hash links opened within the app use the same router, including legacy drawings.

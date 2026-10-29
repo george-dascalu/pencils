@@ -15,24 +15,18 @@ export async function clickControl(locator) {
   await (await reveal(locator)).click();
 }
 
+// Phones use the same view tabs as a bottom bar (0.19.33), where tapping the open Documents
+// tab lists documents instead, so an open tab is left alone.
 export async function selectProjectView(page, view) {
-  if (await page.locator('.phone-new-task').isVisible()) {
-    await page.locator('.mobile-menu').click();
-    const target = view === 'tasks' ? 'list' : view === 'planning' ? 'calendar' : view;
-    await page.locator(`.phone-project-navigation [data-view="${target}"]`).click();
-    // Documents drills down to the document list in the drawer (0.19.27); close it.
-    if (target === "documents" && (await page.locator(".sidebar.open").count())) {
-      await page.locator(".sidebar-documents .document-explorer").waitFor().catch(() => {});
-      await page.locator(".phone-drawer-close").click();
-    }
-    return;
-  }
   const taskLayout = ["list", "tree", "table", "kanban"].includes(view);
   const planningLayout = ["calendar", "timeline", "capacity"].includes(view);
   const tab = taskLayout ? "tasks" : planningLayout ? "planning" : view;
   const mobile = page.locator("#project-view-switcher");
   if (await mobile.isVisible()) await mobile.selectOption(tab);
-  else await page.locator(`.tabs [data-view="${tab}"]`).click();
+  else {
+    const button = page.locator(`.tabs [data-view="${tab}"]`);
+    if ((await button.getAttribute("aria-current")) !== "page") await button.click();
+  }
   if (taskLayout || planningLayout)
     await page.locator(`.view-layout-switcher [data-view="${view}"]`).click();
 }

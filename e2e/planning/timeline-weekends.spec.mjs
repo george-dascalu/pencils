@@ -75,8 +75,10 @@ for (const width of [1600, 390]) {
             bottom: el.querySelector(".timeline-scroll").getBoundingClientRect().bottom,
             width: innerWidth,
             height: innerHeight,
+            usableBottom: (() => { const bar = document.querySelector(".topbar .tabs"); return bar && getComputedStyle(bar).position === "fixed" ? innerHeight - parseFloat(getComputedStyle(document.querySelector(".main")).paddingBottom) : innerHeight; })(),
           }));
-          expect(fit.pageWidth <= fit.width && fit.pageHeight <= fit.height + 1 && fit.bottom > fit.height - 20, `${theme}, weekends ${show}: ${JSON.stringify(fit)}`).toBe(true);
+          // On phones the timeline ends at the bottom tab bar (0.19.33).
+          expect(fit.pageWidth <= fit.width && fit.pageHeight <= fit.height + 1 && fit.bottom > fit.usableBottom - 20, `${theme}, weekends ${show}: ${JSON.stringify(fit)}`).toBe(true);
         }
       }
     });

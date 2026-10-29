@@ -59,6 +59,7 @@ async function fits(page) {
       parentBottom: parent.bottom,
       lastBottom: el.parentElement.lastElementChild.getBoundingClientRect().bottom,
       height: innerHeight,
+      usableBottom: (() => { const bar = document.querySelector(".topbar .tabs"); return bar && getComputedStyle(bar).position === "fixed" ? innerHeight - parseFloat(getComputedStyle(document.querySelector(".main")).paddingBottom) : innerHeight; })(),
       widthLimit: innerWidth,
       documentHeight: document.documentElement.scrollHeight,
       documentWidth: document.documentElement.scrollWidth,
@@ -68,7 +69,8 @@ async function fits(page) {
   });
   const facts = JSON.stringify(actual);
   expect(Math.abs(actual.width - actual.availableWidth), `Tree fills component width ${facts}`).toBeLessThan(2);
-  expect(Math.abs(actual.parentBottom - actual.height), `Tree component fills the page ${facts}`).toBeLessThan(2);
+  // On phones the views end at the bottom tab bar (0.19.33), elsewhere at the window bottom.
+  expect(Math.abs(actual.parentBottom - actual.usableBottom), `Tree component fills the page ${facts}`).toBeLessThan(2);
   expect(actual.nextTop - actual.bottom >= -1 && actual.nextTop - actual.bottom < 30, `Scroll track stays at the bottom or above pagination ${facts}`).toBe(true);
   expect(actual.lastBottom, `Bottom controls remain visible ${facts}`).toBeLessThanOrEqual(actual.height + 1);
   await expect(page.locator(".view-footnote")).toHaveCount(0);
