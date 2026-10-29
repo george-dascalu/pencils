@@ -50,7 +50,9 @@ const room = (page, chip, holder) => page.evaluate(([chip, holder]) => {
   const h = c.closest(holder).getBoundingClientRect(), r = c.getBoundingClientRect();
   return { top: Math.round(r.top - h.top), bottom: Math.round(h.bottom - r.bottom), holder: Math.round(h.height) };
 }, [chip, holder]);
-function listChips(ref, list, chips, label) {
+// Since 29 Oct (item 15) fields that appear together sit in one box that carries the fill and the
+// border; Table cells, which hold one field each, keep their own.
+function listChips(ref, list, chips, label, boxed = true) {
   expect(chips.assignee.h, `${label} assignee ${JSON.stringify(chips.assignee)}`).toBe(list.size);
   expect(chips.assignee.w, `${label} assignee width`).toBe(list.size);
   expect(chips.assignee.radius, `${label} assignee is a rounded square like the status`).toBe(ref.status.radius);
@@ -58,46 +60,50 @@ function listChips(ref, list, chips, label) {
     expect(chips.status.h, `${label} status ${JSON.stringify(chips.status)}`).toBe(list.size);
     expect(chips.status.radius, `${label} status radius`).toBe(ref.status.radius);
     expect(chips.status.border).toBe("1px");
-    expect(chips.status.tinted, `${label} status tint`).toBe(true);
+    expect(chips.status.tinted, `${label} status fill`).toBe(!boxed);
   }
   expect(chips.priority.h, `${label} priority ${JSON.stringify(chips.priority)}`).toBe(list.size);
   expect(chips.priority.w, `${label} priority width`).toBe(list.priority);
   expect(chips.priority.radius, `${label} priority radius`).toBe(ref.priority.radius);
-  expect(chips.priority.tinted, `${label} priority tint`).toBe(true);
+  expect(chips.priority.tinted, `${label} priority fill`).toBe(!boxed);
   expect(list.size, "lists are smaller than the card editor").toBeLessThan(ref.assignee.h);
 }
 
-// Owner feedback, 28 October 2026: values differ by border and text colour only;
-// the fill stays the neutral surface in every view and theme.
+// Owner feedback, 28 October 2026: values differ by border and text colour only; the fill stays
+// the neutral surface in every view and theme. Since 29 Oct (item 15) assignee, status and priority
+// share one box: the box carries the fill and a border in the priority's colour, and each field
+// keeps its value's text colour.
 test("fields colour only their border and text", async ({ page }) => {
   await reference(page);
-  const paint = (selector) => page.evaluate((selector) => [...document.querySelectorAll(selector)].filter((el) => el.getClientRects().length).map((el) => { const cs = getComputedStyle(el); return { bg: cs.backgroundColor, border: cs.borderTopColor, ink: cs.color }; }), selector);
+  const paint = (selector, pseudo = null) => page.evaluate(([selector, pseudo]) => [...document.querySelectorAll(selector)].filter((el) => el.getClientRects().length).map((el) => { const cs = getComputedStyle(el, pseudo); return { bg: cs.backgroundColor, border: cs.borderTopColor, ink: getComputedStyle(el).color }; }), [selector, pseudo]);
+  const clear = "rgba(0, 0, 0, 0)";
   for (const theme of ["light", "dark"]) {
     await page.evaluate((theme) => window.PencilsAppearance.write({ theme }), theme);
     // Colours may ease between themes; read them once no transition is running.
     await page.waitForFunction(() => !document.getAnimations().some((a) => a instanceof CSSTransition && a.playState === "running"));
     const surface = await surfaceColor(page);
-    const neutral = (items, label) => {
-      expect(items.length, `${label}: at least two values`).toBeGreaterThanOrEqual(2);
-      for (const item of items) expect(item.bg, `${theme} ${label} fill is neutral ${JSON.stringify(items)}`).toBe(surface);
-      expect(new Set(items.map((i) => i.border)).size, `${theme} ${label} borders vary ${JSON.stringify(items)}`).toBeGreaterThan(1);
-      expect(new Set(items.map((i) => i.ink)).size, `${theme} ${label} text colours vary ${JSON.stringify(items)}`).toBeGreaterThan(1);
-    };
-    neutral(await paint(".task-relationship-status"), "relationship status");
-    neutral(await paint(".task-relationship-priority"), "relationship priority");
-    expect((await paint('#task-form select[name="status"]'))[0].bg, `${theme} card status fill`).toBe(surface);
-    expect((await paint('#task-form [data-task-picker="priority"] .task-picker-trigger'))[0].bg, `${theme} card priority fill`).toBe(surface);
+    const boxes = await paint(".task-relationship-metadata.field-box");
+    expect(boxes.length, `${theme}: relationship boxes`).toBeGreaterThanOrEqual(2);
+    for (const box of boxes) expect(box.bg, `${theme} relationship box fill is neutral`).toBe(surface);
+    expect(new Set(boxes.map((b) => b.border)).size, `${theme} relationship box borders follow the priority ${JSON.stringify(boxes)}`).toBeGreaterThan(1);
+    for (const field of [".task-relationship-status", ".task-relationship-priority"]) {
+      const items = await paint(field);
+      for (const item of items) expect([item.bg, item.border], `${theme} ${field} leaves fill and border to the box`).toEqual([clear, clear]);
+      expect(new Set(items.map((i) => i.ink)).size, `${theme} ${field} text colours vary ${JSON.stringify(items)}`).toBeGreaterThan(1);
+    }
+    expect((await paint("#task-form .task-fields"))[0].bg, `${theme} card field box fill`).toBe(surface);
+    expect((await paint('#task-form select[name="status"]'))[0].bg, `${theme} card status leaves the fill to the box`).toBe(clear);
   }
   await page.evaluate(() => window.PencilsAppearance.write({ theme: "light" }));
   await openView(page, "list", ".task-row");
-  const rows = await page.evaluate(() => {
-    const surface = (() => { const el = document.createElement("span"); el.style.background = "var(--surface)"; document.body.append(el); const c = getComputedStyle(el).backgroundColor; el.remove(); return c; })();
-    const read = (s) => [...document.querySelectorAll(s)].filter((el) => el.getClientRects().length).map((el) => { const cs = getComputedStyle(el); return { bg: cs.backgroundColor, border: cs.borderTopColor }; });
-    return { surface, status: read(".task-row .row-status .field-chip"), priority: read(".task-row .row-priority .field-chip"), assignee: read(".task-row .row-assignee .task-assignee:not(.unassigned)") };
-  });
-  for (const key of ["status", "priority", "assignee"]) {
-    expect(rows[key].every((r) => r.bg === rows.surface), `row ${key} fill is neutral ${JSON.stringify(rows[key])}`).toBe(true);
-    expect(new Set(rows[key].map((r) => r.border)).size, `row ${key} borders vary`).toBeGreaterThan(1);
+  const surface = await surfaceColor(page);
+  const boxes = await paint(".task-row .row-fields", "::before"), borders = await paint(".task-row .row-fields", "::after");
+  for (const box of boxes) expect(box.bg, "row box fill is neutral").toBe(surface);
+  expect(new Set(borders.map((b) => b.border)).size, `row box borders follow the priority ${JSON.stringify(borders)}`).toBeGreaterThan(1);
+  for (const field of [".task-row .row-status .field-chip", ".task-row .row-priority .field-chip", ".task-row .row-assignee .task-assignee:not(.unassigned)"]) {
+    const items = await paint(field);
+    for (const item of items) expect([item.bg, item.border], `${field} leaves fill and border to the box`).toEqual([clear, clear]);
+    expect(new Set(items.map((i) => i.ink)).size, `${field} text colours vary`).toBeGreaterThan(1);
   }
 });
 
@@ -170,16 +176,16 @@ onDevices(["desktop", "ipad"], () => test("List and Tree rows use the list chips
       status: await look(page, `${row} .row-status .field-chip`),
       priority: await look(page, `${row} .row-priority .field-chip`),
     }, view);
-    const widths = await page.locator(".task-row > .row-status .field-chip").evaluateAll((els) => [...new Set(els.filter((el) => el.getClientRects().length).map((el) => Math.round(el.getBoundingClientRect().width)))]);
+    const widths = await page.locator(".task-row .row-fields > .row-status .field-chip").evaluateAll((els) => [...new Set(els.filter((el) => el.getClientRects().length).map((el) => Math.round(el.getBoundingClientRect().width)))]);
     expect(widths, `${view} status widths`).toEqual([list.status]);
     for (const part of ["row-status", "row-priority"]) {
-      const space = await room(page, `${row} > .${part} .field-chip`, `.${part}`);
+      const space = await room(page, `${row} .row-fields > .${part} .field-chip`, `.${part}`);
       expect(space.top >= 4 && space.bottom >= 4, `${view} ${part} has room above and below ${JSON.stringify(space)}`).toBe(true);
       if (device !== "desktop") expect(space.holder, `${view} ${part} keeps a 44px target ${JSON.stringify(space)}`).toBeGreaterThanOrEqual(44);
     }
     const order = await page.locator(row).evaluate((el) => {
       const box = (s) => el.querySelector(`:scope > ${s}`).getBoundingClientRect();
-      return { id: box(".task-id"), title: box(".row-title"), assignee: box(".row-assignee") };
+      return { id: box(".task-id"), title: box(".row-title"), assignee: box(".row-fields") };
     });
     expect(Math.abs(order.id.top - order.title.top) < 4 && order.title.left > order.id.left, `${view}: title follows the ID ${JSON.stringify(order)}`).toBe(true);
   }
@@ -199,7 +205,7 @@ onDevices(["phone"], () => test("phone List and Tree summaries use the list chip
     };
     listChips(ref, LIST.phone, chips, `${view} phone summary`);
     const surface = await surfaceColor(page);
-    await expect(page.locator(`${meta} .phone-task-status`), "neutral fill like the other lists").toHaveCSS("background-color", surface);
+    await expect(page.locator(`${meta} .field-box`), "neutral fill like the other lists").toHaveCSS("background-color", surface);
     await expect(page.locator(`.task-row[data-task-order-row="${app.children[0].id}"] .phone-task-meta .task-assignee`), "unassigned cards show the empty avatar like other lists").toHaveCount(1);
     const row = await page.locator(`.task-row[data-task-order-row="${app.children[1].id}"]`).boundingBox();
     expect(row.height, `rows stay compact: ${row.height}`).toBeLessThanOrEqual(76);
@@ -215,7 +221,7 @@ onDevices(["desktop", "ipad"], () => test("Table cells use the list chips with r
     assignee: await look(page, `${row} td[data-column-key="assignee"] .task-assignee`),
     status: await look(page, `${row} td[data-column-key="status"] .table-cell-value`),
     priority: await look(page, `${row} td[data-column-key="priority"] .table-cell-value`),
-  }, "table");
+  }, "table", false);
   for (const key of ["status", "priority"]) {
     const space = await room(page, `${row} td[data-column-key="${key}"] .table-cell-value`, "td");
     expect(space.top >= 4 && space.bottom >= 4, `${key} cell has room ${JSON.stringify(space)}`).toBe(true);

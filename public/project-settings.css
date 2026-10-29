@@ -228,6 +228,10 @@
   border: 0;
   min-width: 0;
 }
+#settings-panel .priority-colors { min-width: 0; margin: 24px 0 0; padding: 0; border: 0; }
+#settings-panel .priority-colors > legend { padding: 0; font-weight: 600; }
+.priority-color-list { display: flex; flex-wrap: wrap; gap: 12px 24px; }
+.priority-color-list > .field { display: flex; align-items: center; gap: 8px; margin: 0; }
 #settings-panel .hierarchy-editor {
   border: 0;
   padding-top: 0;

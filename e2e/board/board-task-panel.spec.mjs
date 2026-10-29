@@ -141,24 +141,26 @@ onDevices(["desktop", "phone"], () => test("the new card panel fits the screen w
   }
 }));
 
-test("linked card fields follow the shared order, and status colours only the border and text", async ({ page }) => {
+test("linked card fields follow the shared order in one box coloured by priority, and status colours its text", async ({ page }) => {
   const { project, task } = await seedCard();
   await openBoard(page, project);
   await expect(card(page).locator(".live-card-heading")).toContainText("Compact task");
-  expect(await card(page).locator(".live-card-state").evaluate((el) => [...el.children].map((x) => x.className))).toEqual([
+  expect(await card(page).locator(".live-card-state").evaluate((el) => [...el.querySelectorAll(":scope > *, :scope > .field-box > *")].map((x) => x.className))).toEqual([
+    "field-box",
     "canvas-task-assignee",
     "canvas-task-status",
     "canvas-task-priority priority high",
     "button small canvas-task-due",
   ]);
-  // Status values differ by border and text colour; the fill stays neutral (0.19.12).
-  const status = card(page).locator(".canvas-task-status");
-  const color = await status.evaluate((el) => getComputedStyle(el).borderTopColor);
+  // Status values differ by text colour; the shared box takes the priority's colour (29 Oct, item 15).
+  const status = card(page).locator(".canvas-task-status"), box = card(page).locator(".live-card-state > .field-box");
+  const ink = await status.evaluate((el) => getComputedStyle(el).color), border = await box.evaluate((el) => getComputedStyle(el).borderTopColor);
   await card(page).locator("[data-canvas-status]").selectOption("done");
   await expect.poll(async () => (await savedTask(project, task.id)).status).toBe("done");
-  await expect(status).not.toHaveCSS("border-top-color", color);
+  await expect(status).not.toHaveCSS("color", ink);
   await card(page).locator("[data-canvas-task-field=priority]").selectOption("urgent");
   await expect.poll(async () => (await savedTask(project, task.id)).priority).toBe("urgent");
+  await expect(box).not.toHaveCSS("border-top-color", border);
 });
 
 test("Details opens the card in the side panel without moving the board, and History restores a version beside it", async ({ page }) => {

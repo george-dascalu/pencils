@@ -2,6 +2,7 @@ export { nextDate } from "../public/recurrence-model.js";
 import { validTablePreferences } from "../public/table-model.js";
 import { Problem } from "./problem.js";
 import { DEFAULT_TASK_TYPES } from "../public/task-types.js";
+import { PRIORITIES } from "./values.js";
 
 export const DEFAULT_SCHEMA = {
   statuses: ["backlog", "todo", "in-progress", "review", "done"],
@@ -94,6 +95,15 @@ export function schema(value = DEFAULT_SCHEMA) {
           "Each status needs a list of unique allowed destinations; use an empty list for no outgoing moves.",
         );
     }
+  }
+  if (result.priority_colors != null) {
+    const colors = result.priority_colors;
+    if (
+      typeof colors !== "object" ||
+      Array.isArray(colors) ||
+      Object.entries(colors).some(([priority, color]) => !PRIORITIES.includes(priority) || typeof color !== "string" || !/^#[0-9a-f]{6}$/i.test(color))
+    )
+      fail("Priority colours must be #rrggbb colours for known priorities.");
   }
   if (result.hierarchy != null) {
     const h = result.hierarchy;

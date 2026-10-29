@@ -48,7 +48,10 @@ async function contrast(locator) {
       return rgb[0] * 0.2126 + rgb[1] * 0.7152 + rgb[2] * 0.0722;
     };
     const a = luminance(css.color);
-    const b = luminance(css.backgroundColor);
+    // Fields inside the shared box are transparent; the text sits on the nearest painted surface.
+    let surface = el;
+    while (surface.parentElement && getComputedStyle(surface).backgroundColor === "rgba(0, 0, 0, 0)") surface = surface.parentElement;
+    const b = luminance(getComputedStyle(surface).backgroundColor);
     return (Math.max(a, b) + 0.05) / (Math.min(a, b) + 0.05);
   });
   expect(ratio, "Metadata text contrast").toBeGreaterThanOrEqual(4.5);

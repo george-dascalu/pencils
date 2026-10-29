@@ -243,7 +243,8 @@ onDevices(["phone"], () => test("phone card page: icon-only pane switcher aligne
       priorityWidth: Math.round(document.querySelector('#task-form [data-task-picker="priority"] .task-picker-trigger').getBoundingClientRect().width),
       assigneeWidth: Math.round(document.querySelector("#task-form .task-assignee-choice").getBoundingClientRect().width),
       spacing: parseFloat(getComputedStyle(document.querySelector("#task-form .task-metadata-main")).columnGap),
-      statusRight: document.querySelector('#task-form select[name="status"]').getBoundingClientRect().right,
+      fieldsRight: document.querySelector("#task-form .task-fields").getBoundingClientRect().right,
+      closeRight: document.querySelector('#task-form [data-action="dialog-close"]').getBoundingClientRect().right,
     };
   });
   expect(Math.abs(geometry.detailsCentre - geometry.typeCentre), `Details icon lines up with the type icon: ${JSON.stringify(geometry)}`).toBeLessThanOrEqual(2);
@@ -256,7 +257,8 @@ onDevices(["phone"], () => test("phone card page: icon-only pane switcher aligne
   expect(geometry.group.beforeClose, "the group sits right before Close").toBe("dialog-close");
   expect(Math.abs(geometry.group.closeLeft - geometry.group.groupRight - geometry.spacing), `Close keeps the editor's spacing from the group: ${JSON.stringify(geometry.group)}`).toBeLessThanOrEqual(1);
   expect(geometry.priorityWidth, "priority is as wide as the assignee").toBe(geometry.assigneeWidth);
-  expect(Math.abs(geometry.group.groupRight - geometry.statusRight), `the action group ends where Status ends: ${geometry.group.groupRight} vs ${geometry.statusRight}`).toBeLessThanOrEqual(1);
+  // 29 Oct (item 15): assignee, status and priority share one box, which ends where Close does.
+  expect(Math.abs(geometry.closeRight - geometry.fieldsRight), `the field box ends where Close ends: ${geometry.closeRight} vs ${geometry.fieldsRight}`).toBeLessThanOrEqual(1);
   expect(geometry.closeColor, "Close is red, like Delete").toBe(geometry.deleteColor);
   expect(Math.abs(geometry.typeBox.width - geometry.typeBox.detailsWidth), `the type button is as wide as the pane buttons: ${JSON.stringify(geometry.typeBox)}`).toBeLessThanOrEqual(2);
   expect(Math.abs(geometry.typeBox.left - geometry.typeBox.detailsLeft), "and lines up with them").toBeLessThanOrEqual(2);

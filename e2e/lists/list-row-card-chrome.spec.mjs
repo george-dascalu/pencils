@@ -47,7 +47,7 @@ for (const view of ["list", "tree"]) {
 const lead = (page, id) => taskRow(page, id).evaluate((row) => {
   const r = row.getBoundingClientRect();
   const box = (s) => { const el = row.querySelector(`:scope > ${s}`); if (!el || !el.getClientRects().length) return null; const b = el.getBoundingClientRect(); return { left: Math.round(b.left - r.left), top: Math.round(b.top - r.top), width: Math.round(b.width), height: Math.round(b.height) }; };
-  return { toggle: box(":is(.tree-toggle, .tree-toggle-spacer)"), handle: box(".task-reorder-handle"), type: box(".task-type"), assignee: box(".row-assignee"), pad: parseFloat(getComputedStyle(row).paddingLeft) };
+  return { toggle: box(":is(.tree-toggle, .tree-toggle-spacer)"), handle: box(".task-reorder-handle"), type: box(".task-type"), assignee: box(".row-fields"), pad: parseFloat(getComputedStyle(row).paddingLeft) };
 });
 
 test("List rows have no toggle column and a narrow drag handle", async ({ page }) => {
@@ -83,9 +83,9 @@ onDevices(["ipad"], () => test("two-line rows start the second line flush left a
 onDevices(["narrow"], () => test("in a narrow window the two-line row keeps every control visible without overlap", async ({ page }) => {
   await open(page, "list");
   const row = taskRow(page, app.tasks[1].id);
-  const boxes = await row.evaluate((el) => [...el.children].filter((c) => c.getClientRects().length && getComputedStyle(c).display !== "none").map((c) => ({ name: ["task-reorder-handle", "tree-toggle", "tree-toggle-spacer", "check-button", "row-open", "task-type", "task-id", "row-title", "row-assignee", "row-priority", "row-status", "row-due", "phone-task-open"].find((n) => c.classList.contains(n)) || c.className, ...c.getBoundingClientRect().toJSON() })));
+  const boxes = await row.evaluate((el) => [...el.children].filter((c) => c.getClientRects().length && getComputedStyle(c).display !== "none").map((c) => ({ name: ["task-reorder-handle", "tree-toggle", "tree-toggle-spacer", "check-button", "row-open", "task-type", "task-id", "row-title", "row-fields", "row-due", "phone-task-open"].find((n) => c.classList.contains(n)) || c.className, ...c.getBoundingClientRect().toJSON() })));
   const names = boxes.map((b) => b.name);
-  for (const name of ["task-reorder-handle", "task-type", "task-id", "row-title", "row-assignee", "row-priority", "row-status", "row-due"]) expect(names, `${name} visible`).toContain(name);
+  for (const name of ["task-reorder-handle", "task-type", "task-id", "row-title", "row-fields", "row-due"]) expect(names, `${name} visible`).toContain(name);
   expect(!names.includes("check-button") && !names.includes("row-open"), `removed controls stay hidden: ${names}`).toBe(true);
   for (let i = 0; i < boxes.length; i++) for (let j = i + 1; j < boxes.length; j++) {
     const a = boxes[i], b = boxes[j];

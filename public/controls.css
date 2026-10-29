@@ -267,7 +267,7 @@ textarea,
 @media (pointer: coarse) {
 }
 .task-table.spreadsheet .task-row-actions { gap: 2px; }
-.task-row > :is(.row-assignee, .row-priority, .task-type) {
+.task-row > .task-type, .row-fields > :is(.row-assignee, .row-priority) {
   flex-basis: var(--control-height);
 }
 /* Inputs inside an outlined field share its height, rather than stacking
@@ -320,8 +320,8 @@ textarea,
     height: var(--control-height) !important;
   }
   #canvas .canvas-task-priority select { height: 100% !important; }
-  #canvas .board-node.task .live-card-state {
-    grid-template-columns: var(--card-control-size) minmax(0, 1fr) calc(var(--card-control-size) + 12px) auto;
+  #canvas .board-node.task .live-card-state > .field-box {
+    grid-template-columns: var(--card-control-size) minmax(0, 1fr) calc(var(--card-control-size) + 12px);
   }
 }
 
@@ -372,7 +372,7 @@ textarea,
 @media not (pointer: coarse) {
   :root[data-density="compact"] { --list-field-height: 20px; }
 }
-:is(.row-assignee, .task-relationship-assignee, .kanban-assignee, .phone-task-meta, .spreadsheet td[data-column-key="assignee"] .table-cell-value) > .task-assignee {
+:is(.row-assignee, .task-relationship-assignee, .kanban-assignee, .phone-task-meta > .field-box, .spreadsheet td[data-column-key="assignee"] .table-cell-value) > .task-assignee {
   box-sizing: border-box;
   flex: none;
   width: var(--list-field-height) !important;
@@ -418,12 +418,41 @@ textarea,
   height: var(--list-field-icon);
 }
 /* The phone summary line sizes its status to the text so the line fits. */
-.phone-task-meta > .field-chip-status { flex: 0 1 auto; width: auto; max-width: 50%; }
+.phone-task-meta > .field-box { flex: 0 1 auto; min-width: 0; max-width: 65%; }
+.phone-task-meta > .field-box > .field-chip-status { flex: 0 1 auto; width: auto; min-width: 0; }
 /* The targets around the chips stay transparent and full height. */
-.task-row > :is(.row-status, .row-priority) { padding: 0 !important; background: transparent !important; border: 0 !important; }
-.task-row > .row-priority { flex: 0 0 max(var(--control-height), var(--list-field-priority-width)) !important; width: max(var(--control-height), var(--list-field-priority-width)) !important; }
+.row-fields > :is(.row-status, .row-priority) { padding: 0 !important; background: transparent !important; border: 0 !important; }
+.row-fields > .row-priority { flex: 0 0 max(var(--control-height), var(--list-field-priority-width)) !important; width: max(var(--control-height), var(--list-field-priority-width)) !important; }
 .spreadsheet td:is([data-column-key="status"], [data-column-key="priority"], [data-column-key="assignee"]) .table-cell-select { padding: 0 6px; background: transparent !important; border: 0 !important; }
 .spreadsheet td:is([data-column-key="status"], [data-column-key="priority"], [data-column-key="assignee"]) .table-cell-chevron { display: none; }
+/* Assignee, status and priority share one box wherever they appear together: a neutral fill and
+   a 1px border in the priority's colour (a project setting), with the shared corners. The fields
+   inside drop their own borders and fills and keep their value's text colour. */
+.field-box {
+  --field-box-border: color-mix(in srgb, var(--field-box-color, var(--line)) 70%, var(--line));
+  gap: 0 !important;
+  border: 1px solid var(--field-box-border);
+  border-radius: var(--field-radius);
+  background: var(--surface);
+}
+/* Components that lay the fields out in a grid say so with their own class. */
+:where(.field-box) { display: flex; flex: none; align-items: center; }
+.field-box :is(.field-chip, .task-assignee, select, .task-picker-trigger, .canvas-task-priority) { border-color: transparent !important; background-color: transparent !important; }
+/* List and Tree targets are taller than the fields, so their box is drawn at list-chip height behind them. */
+.row-fields.field-box { position: relative; isolation: isolate; border: 0; background: none; }
+.row-fields.field-box::before,
+.row-fields.field-box::after {
+  content: "";
+  position: absolute;
+  inset: calc(50% - var(--list-field-height) / 2) 0;
+  border-radius: var(--field-radius);
+  pointer-events: none;
+}
+.row-fields.field-box::before { z-index: -1; background: var(--surface); }
+.row-fields.field-box::after { z-index: 1; border: 1px solid var(--field-box-border); }
+/* Row targets are taller than the box, so hover shades the field inside it. */
+.field-box > .row-choice:hover { background-color: transparent !important; }
+.field-box > .row-choice:has(select:enabled):hover > :is(.field-chip, .task-assignee) { background-color: var(--surface-soft) !important; }
 /* Board cards keep their document-scale sizes with the same shape. */
 #canvas .board-node.task :is(.canvas-task-status, .canvas-task-priority) { border-radius: var(--field-radius) !important; }
 #canvas .board-node.task .canvas-task-status { padding-inline: 10px !important; background-image: none !important; }

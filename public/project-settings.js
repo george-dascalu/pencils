@@ -1,6 +1,8 @@
 import { randomUUID } from "./uuid.js";
 import { workflowEditor } from "./workflow-editor.js";
 import { projectTeamControls, projectPeople } from "./teams.js";
+import { priorityOptions, priorityLabel } from "./task-priority.js";
+import { taskFieldColor, priorityColors } from "./task-colors.js";
 
 export const settingsPages = [
   [
@@ -401,6 +403,9 @@ export function projectSettings(ctx, { sources, automations, personal, organisat
       }
       if (["workflow", "hierarchy"].includes(section))
         workflowEditor(f, schema, state.tasks, ctx, { section });
+      // Assignee, status and priority share one box whose border takes the priority's colour.
+      if (section === "workflow")
+        f.querySelector(".dialog-body").insertAdjacentHTML("beforeend", `<fieldset class="priority-colors"><legend>Priority colours</legend><p class="field-hint">A card's assignee, status and priority share one box with a border in its priority's colour.</p><div class="priority-color-list">${priorityOptions.map((priority) => `<div class="field">${esc(priorityLabel(priority))}${colorPicker({ label: `${priorityLabel(priority)} priority colour`, value: taskFieldColor(state, "priority", priority), name: `priority-color-${priority}` })}</div>`).join("")}</div></fieldset>`);
       f.addEventListener("submit", async (event) => {
         event.preventDefault();
         event.stopPropagation();
@@ -420,6 +425,11 @@ export function projectSettings(ctx, { sources, automations, personal, organisat
             };
           if (["workflow", "hierarchy"].includes(section))
             changes = { schema: JSON.parse(data.get("workflowSchema")) };
+          if (section === "workflow") {
+            // Only colours that differ from the defaults are kept, so the defaults can change later.
+            const colors = Object.fromEntries(priorityOptions.map((priority) => [priority, data.get(`priority-color-${priority}`)]).filter(([priority, color]) => color && color !== priorityColors[priority]));
+            changes.schema.priority_colors = Object.keys(colors).length ? colors : undefined;
+          }
           if (section === "fields")
             changes = {
               schema: {

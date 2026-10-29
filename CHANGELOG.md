@@ -2,6 +2,12 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.20.12 — 2026-10-29
+
+### Changed
+
+- A card's assignee, status and priority now sit together in one box whose border takes the priority's colour, in List and Tree rows, phone summaries, relationship rows, the card editor, Kanban and board cards, and task queries in documents. Each project can choose its priority colours in **Settings → Workflow → Priority colours**.
+
 ## 0.20.11 — 2026-10-29
 
 ### Added

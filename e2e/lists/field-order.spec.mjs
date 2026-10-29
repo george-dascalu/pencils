@@ -52,7 +52,7 @@ onDevices(["desktop", "narrow", "ipad"], () => test("list and tree rows read typ
     const row = page.locator(`.task-row[data-task-order-row="${app.tasks[1].id}"]`);
     await row.waitFor();
     const names = ["type", "ID", "assignee", "status", "priority"];
-    const values = await lefts(row, [":scope > .task-type", ":scope > .task-id", ":scope > .row-assignee", ":scope > .row-status", ":scope > .row-priority"]);
+    const values = await lefts(row, [":scope > .task-type", ":scope > .task-id", ":scope > .row-fields > .row-assignee", ":scope > .row-fields > .row-status", ":scope > .row-fields > .row-priority"]);
     // On narrow rows assignee, status and priority share the second line.
     // Narrow rows wrap onto two lines (grid until 0.19.11, wrapping flex lines since 0.19.12).
     if (await row.evaluate((el) => { const cs = getComputedStyle(el); return cs.display === "grid" || cs.flexWrap === "wrap"; })) assertIncreasing(values.slice(2), names.slice(2), `${view} second line`);
@@ -64,7 +64,7 @@ onDevices(["phone"], () => test("phone list summary reads type, ID, assignee, st
   await page.goto(url("list"));
   const meta = page.locator(`.task-row[data-task-order-row="${app.tasks[1].id}"] .phone-task-meta`);
   await meta.waitFor();
-  assertIncreasing(await lefts(meta, [":scope > .icon", ":scope > span:not([class])", ":scope > .task-assignee", ":scope > .phone-task-status", ":scope > .phone-task-priority"]), ["type", "ID", "assignee", "status", "priority"], "phone summary");
+  assertIncreasing(await lefts(meta, [":scope > .icon", ":scope > span:not([class])", ":scope > .field-box > .task-assignee", ":scope > .field-box > .phone-task-status", ":scope > .field-box > .phone-task-priority"]), ["type", "ID", "assignee", "status", "priority"], "phone summary");
 }));
 
 onDevices(["desktop", "ipad", "phone"], () => {

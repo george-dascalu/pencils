@@ -104,7 +104,7 @@ test("on the board, create another keeps the shared fields and clears the rest, 
   expect(await boardTaskCount()).toBe(boardBefore + 2);
 });
 
-test("the board's new card keeps assignee, status and priority in one row with the dates below, on desktop and phone", async ({ page }) => {
+test("the board's new card keeps assignee, status and priority in one row with the dates after them, on desktop and phone", async ({ page }) => {
   await page.goto(`${app.base}/#project/${app.project.id}/board`);
   const form = await newBoardCard(page);
   // The open panel is resized from desktop to phone.
@@ -118,7 +118,9 @@ test("the board's new card keeps assignee, status and priority in one row with t
     // Field order is assignee, status, priority (0.19.9).
     expect(assignee.x < status.x && status.x < priority.x, `${width}px: order`).toBe(true);
     expect(Math.abs(priority.y - status.y) < 2 && Math.abs(status.y - assignee.y) < 2, JSON.stringify({ width, priority, status, assignee })).toBe(true);
-    expect(start.y > status.y && Math.abs(start.y - due.y) < 2 && start.x < due.x, `${width}px: dates below, side by side`).toBe(true);
+    // Wide panels put the dates beside the fields, narrow ones below them (this used to pass on a sub-pixel).
+    const after = width > 600 ? start.x > priority.x + priority.width - 1 : start.y > status.y + status.height - 1;
+    expect(after && Math.abs(start.y - due.y) < 2 && start.x < due.x, `${width}px: dates ${width > 600 ? "beside" : "below"}, side by side`).toBe(true);
     expect(await form.evaluate((el) => el.scrollWidth <= el.clientWidth + 1), `${width}px: no overflow`).toBe(true);
   }
 });

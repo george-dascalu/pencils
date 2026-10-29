@@ -100,7 +100,8 @@ body.task-reordering, body.task-reordering * { cursor: grabbing !important; user
   color: var(--muted);
 }
 
-.task-row > .row-priority { display: flex; align-items: center; justify-content: center; }
+.task-row > .row-fields { flex: 0 1 auto; }
+.row-fields > .row-priority { display: flex; align-items: center; justify-content: center; }
 .row-due { flex: 0 0 68px; }
 .task-row .due { font-size: 11px; }
 .task-row > .row-title {
@@ -170,7 +171,7 @@ body.task-reordering, body.task-reordering * { cursor: grabbing !important; user
   .list-group { min-width: 884px; }
   .task-row { min-width: 884px; min-height: 46px; }
   .task-row.tree-row { min-width: calc(884px + var(--depth) * 27px); }
-  .task-row > :is(.task-reorder-handle, .tree-toggle, .tree-toggle-spacer, .row-priority, .row-assignee, .task-type) {
+  .task-row > :is(.task-reorder-handle, .tree-toggle, .tree-toggle-spacer, .task-type), .row-fields > :is(.row-priority, .row-assignee) {
     flex-basis: 44px;
     width: 44px;
     height: 44px;
@@ -197,10 +198,10 @@ body.task-reordering, body.task-reordering * { cursor: grabbing !important; user
   /* Toggle, handle, type, ID and title fill the first line; the fields wrap
      onto a second line that starts at the same left edge. */
   .task-row::after { content: ""; order: 1; flex: 0 0 100%; height: 0; }
-  .task-row > :is(.row-assignee, .row-status, .row-priority, .row-due) { order: 2; }
+  .task-row > :is(.row-fields, .row-due) { order: 2; }
   .task-row > .task-id { flex: 0 0 auto; width: auto; min-width: 56px; }
   .task-row > .row-title { flex: 1 1 0; width: auto; min-width: 0; }
-  .task-row > :is(.row-status, .row-due) { min-width: 0; }
+  .task-row > :is(.row-fields, .row-due), .row-fields > .row-status { min-width: 0; }
   .task-row .task-title { font-size: 16px; }
   .task-row .due,
   .task-row .row-status { font-size: 13px; }
@@ -221,10 +222,10 @@ body.task-reordering, body.task-reordering * { cursor: grabbing !important; user
   /* Toggle, handle, type, ID and title fill the first line; the fields wrap
      onto a second line that starts at the same left edge. */
   :where(:root:not([data-sidebar="collapsed"])) .task-row::after { content: ""; order: 1; flex: 0 0 100%; height: 0; }
-  :where(:root:not([data-sidebar="collapsed"])) .task-row > :is(.row-assignee, .row-status, .row-priority, .row-due) { order: 2; }
+  :where(:root:not([data-sidebar="collapsed"])) .task-row > :is(.row-fields, .row-due) { order: 2; }
   :where(:root:not([data-sidebar="collapsed"])) .task-row > .task-id { flex: 0 0 auto; width: auto; min-width: 56px; }
   :where(:root:not([data-sidebar="collapsed"])) .task-row > .row-title { flex: 1 1 0; width: auto; min-width: 0; }
-  :where(:root:not([data-sidebar="collapsed"])) .task-row > :is(.row-status, .row-due) { min-width: 0; }
+  :where(:root:not([data-sidebar="collapsed"])) .task-row > :is(.row-fields, .row-due), :where(:root:not([data-sidebar="collapsed"])) .row-fields > .row-status { min-width: 0; }
   :where(:root:not([data-sidebar="collapsed"])) .task-row .task-title { font-size: 16px; }
   :where(:root:not([data-sidebar="collapsed"])) .task-row .due,
   :where(:root:not([data-sidebar="collapsed"])) .task-row .row-status { font-size: 13px; }
@@ -493,12 +494,19 @@ body.task-reordering, body.task-reordering * { cursor: grabbing !important; user
 }
 .board-node.task .live-card-state {
   display: grid;
-  grid-template-columns: var(--card-control-size) minmax(0, 1fr) calc(var(--card-control-size) + 12px) auto;
+  grid-template-columns: minmax(0, 1fr) auto;
   container-type: inline-size;
   container-name: task-card-fields;
   align-items: center;
   gap: 6px;
   width: 100%;
+}
+.board-node.task .live-card-state > .field-box {
+  overflow: visible;
+  display: grid;
+  grid-template-columns: var(--card-control-size) minmax(0, 1fr) calc(var(--card-control-size) + 12px);
+  align-items: center;
+  min-width: 0;
 }
 .board-node.task .canvas-task-key {
   max-width: 100px;
@@ -1343,7 +1351,8 @@ html.task-page-open,
 .task-dialog.board-task-editor .task-title-row .title-input { display: block; width: 100%; font-size: var(--type-title) !important; line-height: 1.4; padding: 5px 4px; }
 .task-dialog .task-metadata { padding-bottom: 16px; border-bottom: 1px solid var(--line); }
 /* Assignee and priority columns are exactly their square controls, so Status ends where the header's action group does. */
-.task-dialog .task-metadata-main { display: grid; grid-template-columns: var(--control-height) minmax(90px, 1fr) var(--control-height); gap: 10px; }
+.task-dialog .task-metadata-main { display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; }
+.task-dialog .task-fields { display: grid; grid-template-columns: var(--control-height) minmax(90px, 1fr) var(--control-height); }
 .task-dialog .task-metadata-main > .task-dates { display: flex; flex-direction: column; gap: 5px; grid-column: 1 / -1; margin: 0; }
 .task-assignee-choice { position: relative; display: grid; place-items: center; width: var(--control-height); height: var(--control-height); }
 .task-assignee-choice .task-assignee { width: var(--control-height); height: var(--control-height); font-size: 11px; }
@@ -1356,7 +1365,8 @@ html.task-page-open,
 .task-dialog .task-description { margin: 0; padding-block: 20px; border-bottom: 1px solid var(--line); }
 .task-dialog .task-relationships { margin-top: 20px; }
 @container task-editor (min-width: 580px) {
-  .task-dialog .task-metadata-main { grid-template-columns: var(--control-height) minmax(110px, 1fr) var(--control-height) minmax(260px, 1.8fr); }
+  .task-dialog .task-metadata-main { grid-template-columns: minmax(170px, 1fr) minmax(260px, 1.8fr); }
+  .task-dialog .task-fields { grid-template-columns: var(--control-height) minmax(110px, 1fr) var(--control-height); }
   .task-dialog .task-metadata-main > .task-dates { grid-column: auto; }
   .task-dialog .task-description > .task-rich-tools, .task-dialog .task-description .rich-toolbar { flex-wrap: nowrap; }
 }
@@ -1424,7 +1434,7 @@ html.task-page-open,
   }
   .task-row::after { content: none; }
   .task-row.tree-row { grid-template-columns: var(--control-height) minmax(0, 1fr) var(--control-height); padding-inline-start: calc(2px + min(var(--depth, 0), 4) * 8px); }
-  .task-row > :is(.task-type, .task-id, .row-title, .row-assignee, .row-priority, .row-status, .row-due, .tree-toggle-spacer) { display: none; }
+  .task-row > :is(.task-type, .task-id, .row-title, .row-fields, .row-due, .tree-toggle-spacer) { display: none; }
   .task-row > .task-reorder-handle { grid-area: 1 / 2; align-self: center; opacity: .65; }
   .task-row > .phone-task-open { display: flex; grid-area: 1 / 1; flex-direction: column; align-items: stretch; justify-content: center; text-align: left; min-width: 0; min-height: calc(var(--control-height) + 16px); gap: 3px; padding: 4px 6px; border-radius: 4px; }
   .task-row.tree-row > .tree-toggle { grid-area: 1 / 1; align-self: center; }

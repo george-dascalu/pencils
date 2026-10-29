@@ -2,7 +2,7 @@ import { taskHistoryHTML } from "./task-history.js";
 import { nextStatuses } from "./workflow-model.js";
 import { positionPopover } from "./popover-position.js";
 import { focusOnOpen } from "./open-focus.js";
-import { taskColorAttributes, refreshTaskControlColors } from "./task-colors.js";
+import { taskColorAttributes, refreshTaskControlColors, taskFieldColor } from "./task-colors.js";
 export function taskPickerHTML(
   { name, title, value, choices, iconOnly },
   { esc, icon, state },
@@ -40,6 +40,7 @@ export function taskModalControls(ctx, form, restoreVersion) {
     const avatar = form.querySelector('[data-assignee-avatar]');
     if (avatar) avatar.innerHTML = ctx.assigneeHTML({ assignee: form.elements.assignee.value });
     refreshTaskControlColors(form, state);
+    form.querySelector(".task-fields")?.style.setProperty("--field-box-color", taskFieldColor(state, "priority", form.elements.priority?.value));
     for (const picker of form.querySelectorAll("[data-task-picker]")) {
       const select = picker.querySelector("select"),
         option = select.selectedOptions[0];

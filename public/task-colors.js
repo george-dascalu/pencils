@@ -18,8 +18,13 @@ const peopleColors = [
   "#b7754b",
 ];
 
+// A project may choose its own priority colours (Settings → Workflow); these are the defaults.
 export function taskFieldColor(state, field, value) {
-  if (field === "priority") return priorityColors[value] || priorityColors.none;
+  if (field === "priority") {
+    const priority = priorityColors[value] ? value : "none", chosen = state.config?.priority_colors?.[priority];
+    // The server accepts only #rrggbb; checking again keeps anything else out of style attributes.
+    return /^#[0-9a-f]{6}$/i.test(chosen) ? chosen : priorityColors[priority];
+  }
   if (field === "status")
     return statusColor(state.config || { done: [] }, value || "backlog");
   if (field !== "assignee") return "";
@@ -40,6 +45,10 @@ export function taskColorAttributes(state, field, value) {
     ? `data-task-color="${field}" style="--task-field-color:${color}"`
     : "";
 }
+
+// Assignee, status and priority share one box whose border takes the priority's colour.
+export const fieldBoxStyle = (state, priority) =>
+  `style="--field-box-color:${taskFieldColor(state, "priority", priority)}"`;
 
 export function taskColorDot(state, field, value) {
   return `<span class="task-color-dot" ${taskColorAttributes(state, field, value)} aria-hidden="true"></span>`;
