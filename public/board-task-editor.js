@@ -1,4 +1,3 @@
-import { positionPopover } from "./popover-position.js";
 import { containPanelScroll } from "./scroll-gestures.js";
 // One task panel for every project view; the board anchors it beside its tools.
 let panelWidth = 720;
@@ -40,14 +39,13 @@ export function boardTaskEditor(
     }
     actions.prepend(panes);
   }
-  const more = document.createElement("details");
-  more.className = "selection-menu task-secondary-actions";
-  more.innerHTML = `<summary class="icon-button" aria-label="More task actions" title="More task actions">${icon("more")}</summary><div class="selection-popover" role="group" aria-label="More task actions"></div>`;
+  // Duplicate, archive and delete form one group before the close button.
+  const more = document.createElement("div");
+  more.className = "task-secondary-actions";
+  more.setAttribute("role", "group");
+  more.setAttribute("aria-label", "Manage task");
   if (existing) {
-    for (const button of [actions.querySelector('[data-feature="task-duplicate"]'), actions.querySelector('[data-feature="task-archive"]'), actions.querySelector('[data-action="task-delete"]')]) {
-      const label = document.createElement("span"); label.className = "selection-action-label"; label.textContent = button.getAttribute("aria-label"); button.append(label);
-      more.lastElementChild.append(button);
-    }
+    more.append(actions.querySelector('[data-feature="task-duplicate"]'), actions.querySelector('[data-feature="task-archive"]'), actions.querySelector('[data-action="task-delete"]'));
     actions.append(more);
   }
   const phone = () => innerWidth <= 600;
@@ -83,13 +81,6 @@ export function boardTaskEditor(
       window.scrollTo(x, y);
     };
   }
-  const positionMore = () => {
-    if (existing && phone() && more.open) positionPopover(more.lastElementChild, more.firstElementChild.getBoundingClientRect(), { width: 180, bounds: dialog.getBoundingClientRect() });
-  };
-  more.addEventListener("toggle", positionMore);
-  more.addEventListener("click", event => { if (phone() && event.target.closest("button")) more.open = false; });
-  const outsideMore = event => { if (phone() && !more.contains(event.target)) more.open = false; };
-  document.addEventListener("pointerdown", outsideMore, true);
   const identity = heading.querySelector(".task-identity-row");
   const titleRow = heading.querySelector(".task-title-row");
   let wasPhone;
@@ -106,12 +97,9 @@ export function boardTaskEditor(
     updatePanes();
     if (wasPhone !== phone()) {
       wasPhone = phone();
-      more.open = !wasPhone;
-      if (!wasPhone) more.lastElementChild.removeAttribute("style");
       if (wasPhone) titleRow.prepend(identity);
       else heading.querySelector(".task-editor-header-row").prepend(identity);
     }
-    positionMore();
     if (phone()) {
       // iOS keeps the layout viewport tall when the software keyboard opens.
       // Fit both existing and new task panels to the part that is visible.
@@ -235,13 +223,10 @@ export function boardTaskEditor(
   window.visualViewport?.addEventListener("scroll", position);
   // The phone page scrolls natively. Repositioning the entire editor on each
   // content scroll fights Safari's viewport/keyboard scrolling.
-  const scrolled = () => phone() ? positionMore() : position();
+  const scrolled = () => { if (!phone()) position(); };
   document.addEventListener("scroll", scrolled, true);
   const keydown = (event) => {
     if (event.defaultPrevented) return;
-    if (event.key === "Escape" && phone() && more.open) {
-      event.preventDefault(); event.stopPropagation(); more.open = false; more.firstElementChild.focus(); return;
-    }
     if ((event.ctrlKey || event.metaKey) && event.key === "Enter") {
       event.preventDefault();
       dialog.querySelector("form").requestSubmit();
@@ -264,7 +249,6 @@ export function boardTaskEditor(
       window.visualViewport?.removeEventListener("resize", viewportResized);
       window.visualViewport?.removeEventListener("scroll", position);
       document.removeEventListener("scroll", scrolled, true);
-      document.removeEventListener("pointerdown", outsideMore, true);
       releasePage?.();
     },
   };

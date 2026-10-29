@@ -141,7 +141,7 @@ test("the card view shows no field captions but keeps accessible names", async (
 onDevices(["ipad"], () => test("iPad keeps the card's secondary actions in the header row without the More button", async ({ page }) => {
   const form = await openCard(page);
   await expect(form.locator('[data-action="dialog-close"]')).toBeVisible();
-  await expect(form.locator(".task-secondary-actions > summary"), "More button hidden on iPad like desktop").toBeHidden();
+  await expect(form.locator(".task-secondary-actions button"), "duplicate, archive and delete show in one group").toHaveCount(3);
   const close = await form.locator('[data-action="dialog-close"]').boundingBox();
   const centre = (b) => b.y + b.height / 2;
   for (const selector of ['[data-feature="task-duplicate"]', '[data-feature="task-archive"]', '[data-action="task-delete"]', '[data-editor-pane="details"]']) {

@@ -345,7 +345,7 @@ textarea,
   #dialogs label:has(> input[type="checkbox"]), #dialogs label:has(> input[type="radio"]) {
     min-height: var(--control-height); display: inline-flex; align-items: center; gap: 8px;
   }
-  .main details > summary, #dialogs details:not(.task-secondary-actions) > summary { min-height: var(--control-height); display: flex; align-items: center; gap: 6px; }
+  .main details > summary, #dialogs details > summary { min-height: var(--control-height); display: flex; align-items: center; gap: 6px; }
   .milestone-toggle { top: 50%; width: var(--control-height); height: var(--control-height); display: grid; place-items: center; transform: translateY(-50%); }
 }
 

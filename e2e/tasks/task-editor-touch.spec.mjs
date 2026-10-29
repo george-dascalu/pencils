@@ -66,9 +66,16 @@ const reviewTests = (device, phone) => {
       await expect(form(page).locator('[name="title"]')).toHaveCSS("font-size", "18px");
       expect(await tools.evaluate((el) => el.scrollWidth <= el.clientWidth && el.offsetHeight <= 54), "Toolbar fits one row").toBe(true);
       for (const control of await tools.locator("button:visible,summary:visible").all()) expect((await control.boundingBox()).height).toBeGreaterThanOrEqual(44);
-      await form(page).locator(".task-secondary-actions > summary").tap();
-      await expect(form(page).getByRole("button", { name: "Delete task", exact: true })).toBeVisible();
+      const del = form(page).locator(".task-secondary-actions").getByRole("button", { name: "Delete task", exact: true });
+      await expect(del, "Delete shows without a More menu").toBeVisible();
+      // Both header groups and Close fit the screen, Close last.
+      const [group, close] = [await form(page).locator(".task-secondary-actions").boundingBox(), await form(page).locator('[data-action="dialog-close"]').boundingBox()];
+      expect(group.x + group.width <= close.x && close.x + close.width <= page.viewportSize().width, "header fits").toBe(true);
+      // Escape closes Delete's confirmation, not the card.
+      await del.tap();
+      await page.locator(".confirm-popover").waitFor();
       await page.keyboard.press("Escape");
+      await expect(page.locator(".confirm-popover")).toHaveCount(0);
       await expect(form(page)).toBeVisible();
       // The toolbar scrolls sideways (0.19.6): the mode controls sit past the end indicator.
       await tools.locator(".rich-format-menu > summary").tap();

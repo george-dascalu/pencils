@@ -291,8 +291,6 @@ test.describe("Group 5: dialog contract (findings 23–26)", { tag: "@audit" }, 
     await page.evaluate(() => { window.confirm = () => { throw new Error("native confirm used"); }; });
     await page.locator('.task-row [data-action="task-open"]:visible').first().click();
     await page.locator("#task-form").waitFor();
-    const more = page.locator(".task-secondary-actions > summary");
-    if (await more.isVisible()) await more.click();
     await page.locator('[data-action="task-delete"]:visible').first().click();
     await page.locator(".confirm-popover").waitFor();
     await page.locator(".confirm-popover [data-confirm-cancel]").click();

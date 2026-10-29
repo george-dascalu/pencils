@@ -167,6 +167,12 @@ onDevices(["phone"], () => test("PEN-9 phone view options list the filters direc
   await expect(page.locator(".mobile-view-options-panel #sort:visible"), "sort is not duplicated inside the panel").toHaveCount(0);
 }));
 
+onDevices(["phone"], () => test("the phone top bar's + button centres its icon", async ({ page }) => {
+  await open(page, "list", ".task-row");
+  const [box, glyph] = await page.locator(".topbar .phone-new-task > summary").evaluate((s) => [s.getBoundingClientRect(), s.querySelector(".icon").getBoundingClientRect()].map((r) => r.left + r.width / 2));
+  expect(Math.abs(box - glyph)).toBeLessThanOrEqual(1);
+}));
+
 // ----- PEN-6: New offers card or document -----
 test("PEN-6 the header New control offers a card or a document", async ({ page }) => {
   await open(page, "list", ".task-row");
@@ -214,7 +220,8 @@ test("PEN-7 a card links to documents and the document lists its cards", async (
 });
 
 // ----- Owner feedback on the phone card page (27 Oct, after 0.19.3) -----
-onDevices(["phone"], () => test("phone card page: icon-only pane switcher aligned with the type icon, a distinct Details icon, no status caret, visible More", async ({ page }) => {
+// 29 Oct: the More menu became a group of icons before a red Close, and the type button a square.
+onDevices(["phone"], () => test("phone card page: icon-only pane switcher aligned with the type icon, a distinct Details icon, no status caret, actions grouped before a red Close", async ({ page }) => {
   await open(page, "list", ".task-row");
   await openTask(page, app.tasks[0].id);
   await expect(page.locator(".task-pane-switcher .pane-label:visible"), "pane buttons carry no text").toHaveCount(0);
@@ -228,8 +235,10 @@ onDevices(["phone"], () => test("phone card page: icon-only pane switcher aligne
       widths: [...document.querySelectorAll(".task-pane-switcher > .icon-button")].map((el) => Math.round(el.getBoundingClientRect().width)),
       statusCarets: document.querySelectorAll('[data-task-picker="status"] .task-picker-trigger > .icon, .task-picker-trigger > .icon').length,
       statusBackground: [...document.querySelectorAll(".task-dialog select[data-task-color]")].map((el) => getComputedStyle(el).backgroundImage).filter((v) => v !== "none").length,
-      more: (() => { const s = document.querySelector(".task-secondary-actions > summary"); const i = s.querySelector(".icon"); return { color: getComputedStyle(s).color, icon: Math.round(i.getBoundingClientRect().width), path: i.querySelector("path").getAttribute("d") }; })(),
-      ink: getComputedStyle(document.documentElement).getPropertyValue("--ink").trim(),
+      group: (() => { const g = document.querySelector(".task-secondary-actions"); return { border: getComputedStyle(g).borderTopStyle, labels: [...g.querySelectorAll("button")].map((b) => b.getAttribute("aria-label")), beforeClose: g.closest(".task-editor-actions").nextElementSibling?.dataset.action, groupRight: g.getBoundingClientRect().right, closeLeft: document.querySelector('#task-form [data-action="dialog-close"]').getBoundingClientRect().left }; })(),
+      closeColor: getComputedStyle(document.querySelector('#task-form [data-action="dialog-close"]')).color,
+      deleteColor: getComputedStyle(document.querySelector('#task-form [data-action="task-delete"]')).color,
+      typeBox: (() => { const r = type.getBoundingClientRect(), d = details.getBoundingClientRect(); return { width: Math.round(r.width), detailsWidth: Math.round(d.width), left: Math.round(r.left), detailsLeft: Math.round(d.left) }; })(),
     };
   });
   expect(Math.abs(geometry.detailsCentre - geometry.typeCentre), `Details icon lines up with the type icon: ${JSON.stringify(geometry)}`).toBeLessThanOrEqual(2);
@@ -237,10 +246,13 @@ onDevices(["phone"], () => test("phone card page: icon-only pane switcher aligne
   expect(geometry.widths.every((w) => w <= 48), `pane buttons are icon-sized: ${geometry.widths}`).toBe(true);
   expect(geometry.statusCarets, "status control shows no dropdown arrow").toBe(0);
   expect(geometry.statusBackground, "tinted selects draw no arrow").toBe(0);
-  expect(geometry.more.icon).toBe(16);
-  expect(geometry.more.path, "More uses solid dots, not hairline points").not.toMatch(/h\.01/);
-  const probe = await page.evaluate((ink) => { const el = document.createElement("span"); el.style.color = ink; document.body.append(el); const c = getComputedStyle(el).color; el.remove(); return c; }, geometry.ink);
-  expect(geometry.more.color, "More is drawn in the ink colour").toBe(probe);
+  expect(geometry.group.border, "the actions form a bordered group").toBe("solid");
+  expect(geometry.group.labels).toEqual(["Duplicate task", "Archive task", "Delete task"]);
+  expect(geometry.group.beforeClose, "the group sits right before Close").toBe("dialog-close");
+  expect(geometry.group.groupRight).toBeLessThanOrEqual(geometry.group.closeLeft);
+  expect(geometry.closeColor, "Close is red, like Delete").toBe(geometry.deleteColor);
+  expect(Math.abs(geometry.typeBox.width - geometry.typeBox.detailsWidth), `the type button is as wide as the pane buttons: ${JSON.stringify(geometry.typeBox)}`).toBeLessThanOrEqual(2);
+  expect(Math.abs(geometry.typeBox.left - geometry.typeBox.detailsLeft), "and lines up with them").toBeLessThanOrEqual(2);
 }));
 
 onDevices(["ipad"], () => test("double-tapping a dropdown never focuses the select or lets a double-click through", async ({ page }) => {

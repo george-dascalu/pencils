@@ -2,6 +2,17 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.19.39 — 2026-10-29
+
+### Changed
+
+- The card editor shows **Duplicate**, **Archive** and **Delete** as a group of icons right before **Close**, on phones too, instead of behind a **…** menu. **Close** is red.
+- The card type button in the editor is a square that lines up with the buttons above and below it.
+
+### Fixed
+
+- The phone top bar's **+** button centres its icon.
+
 ## 0.19.38 — 2026-10-29
 
 ### Added

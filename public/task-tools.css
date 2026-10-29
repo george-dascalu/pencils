@@ -1105,7 +1105,8 @@ button.dependency-row:hover {
 }
 
 /* Shared task panel: all views use the board's field order and compact controls. */
-.task-pane-switcher { display: flex; flex: none; align-items: center; border: 1px solid var(--line); border-radius: 6px; }
+/* The pane switcher and the duplicate/archive/delete actions are two groups of icon buttons. */
+.task-pane-switcher, .task-secondary-actions { display: flex; flex: none; align-items: center; border: 1px solid var(--line); border-radius: 6px; }
 .task-pane-switcher [aria-pressed="true"] { color: var(--green); background: var(--surface-soft); box-shadow: inset 0 0 0 1px var(--green); }
 @media (max-width: 1099px) {
   .board-task-editor:is(.with-task-comments, .with-task-history) .task-editor-content { display: flex; min-height: 0; }
@@ -1386,14 +1387,9 @@ html.task-page-open,
 .app-update-available { white-space: nowrap; }
 .task-dialog.board-task-editor .task-editor-head { flex-wrap: nowrap; }
 .task-editor-header-row { width: 100%; max-width: 100%; }
-.task-secondary-actions > summary { display: none; }
-.task-secondary-actions > .selection-popover { position: static; display: flex; flex-direction: row; width: auto; min-width: 0; padding: 0; gap: 3px; border: 0; box-shadow: none; background: none; --control-height: inherit; }
-.task-relationship-sort > summary, .task-secondary-actions > summary { align-items: center; justify-content: center; cursor: pointer; }
-.task-relationship-sort > summary { display: inline-flex; }
-.task-secondary-actions .selection-action-label { display: none; }
+.task-relationship-sort > summary { display: inline-flex; align-items: center; justify-content: center; cursor: pointer; }
 .task-dialog .task-description > .task-rich-tools,
 .task-dialog .task-description .rich-toolbar { flex-wrap: nowrap; gap: 0; }
-.task-secondary-actions .selection-popover .icon-button { display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
 @container (max-width: 640px) {
   .task-relationship-key { max-width: 58px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: var(--type-meta); }
 }
@@ -1404,11 +1400,6 @@ html.task-page-open,
 }
 @media (max-width: 600px) {
   .task-dialog.board-task-editor .task-editor-header-row .task-editor-actions { justify-content: flex-end; overflow: visible; gap: 6px; }
-  .task-secondary-actions > summary { display: flex; }
-  .task-secondary-actions > .selection-popover { position: fixed; display: grid; width: 180px; padding: var(--menu-panel-padding); border: 1px solid var(--line); border-radius: 8px; background: var(--surface); box-shadow: 0 8px 24px #263c3426; }
-  .task-secondary-actions:not([open]) > .selection-popover { display: none; }
-  .task-secondary-actions .selection-popover .icon-button { width: 100% !important; flex: auto !important; justify-content: flex-start; padding-inline: var(--control-padding) !important; }
-  .task-secondary-actions .selection-action-label { display: inline; font-size: var(--control-font-size); }
   .task-dialog .task-title-row { display: flex; align-items: center; gap: 10px; }
   .task-dialog.board-task-editor .task-title-row .task-identity-row { display: flex; flex-direction: column; flex: none; gap: 2px; width: calc(var(--control-height) + 12px); }
   .task-dialog.board-task-editor .task-title-row .task-key { flex: none; max-width: 96px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: var(--type-meta); }
@@ -1480,6 +1471,9 @@ html.task-page-open,
 /* New and existing task headers keep the close button in the top-right corner. */
 .task-editor-header-row > [data-action="dialog-close"] { margin-inline-start: auto; }
 .task-editor-header-row > .task-editor-actions + [data-action="dialog-close"] { margin-inline-start: 0; }
+.task-editor-header-row > [data-action="dialog-close"] { color: var(--danger, #b64132); }
+/* The type button is a square like the pane buttons above it and the assignee below it. */
+.task-identity-row .task-picker.icon-only .task-picker-trigger { width: var(--control-height); }
 
 /* Phone card page: the pane switcher is icon-only and its first icon lines up
    with the card type icon below (the group border is pulled back by 1px). */
@@ -1487,7 +1481,6 @@ html.task-page-open,
 .task-dialog.task-editor-page .task-editor-header-row .task-editor-actions { justify-content: flex-start; }
 .task-dialog.task-editor-page .task-editor-header-row .task-secondary-actions { margin-inline-start: auto; }
 .task-dialog.task-editor-page .task-title-row .task-identity-row { width: var(--control-height); }
-.task-dialog.task-editor-page .task-secondary-actions > summary { color: var(--ink); }
 
 /* Popover titles share one size; the dates editor header keeps its actions on the right. */
 .popover-title { margin: 0 auto 0 0; font-size: 14px; font-weight: 600; }

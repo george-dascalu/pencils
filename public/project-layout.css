@@ -894,6 +894,7 @@ html.table-viewport-view body {
   .topbar .top-actions > :is([data-action="settings"], [data-action="help"]) { display: none; }
   .topbar .top-actions { gap: 2px; flex: 0 0 auto; }
   .topbar .phone-new-task { display: inline-flex; }
+  .topbar .phone-new-task > summary { justify-content: center; }
   .topbar .app-version { display: none; }
   .toolbar-left:has(.mobile-view-options) { grid-template-columns: minmax(0, 1fr) var(--control-height) var(--control-height); }
   .mobile-view-options > summary { justify-content: center; width: var(--control-height); }
