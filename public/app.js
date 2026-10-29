@@ -1078,7 +1078,7 @@ function renderViewNow(onlyContent) {
         ? boardToolbar()
         : state.view === "overview"
           ? ""
-          : `<div class="toolbar"><div class="toolbar-left"><label class="search">${icon("search")}<input id="search" type="search" aria-label="Search tasks" placeholder="Find a task…" value="${esc(state.search)}"></label><select id="filter-status" class="filter" aria-label="Filter by status"><option value="all">All statuses</option>${options(statuses, state.status, statusNames)}</select><select id="filter-type" class="filter" aria-label="Filter by task type"><option value="all">All types</option>${options(types, state.type)}</select></div><div class="toolbar-right"><span class="caption">A place for every little detail</span><select id="sort" class="filter" aria-label="Sort tasks">${options(["created", "order", "title", "priority", "due", "status"], state.sort, { created: "Date created", order: "Manual order", title: "Title A–Z", priority: "Priority", due: "Due date", status: "Status" })}</select></div></div>`;
+          : `<div class="toolbar"><div class="toolbar-left"><label class="search">${icon("search")}<input id="search" type="search" aria-label="Search tasks" placeholder="Find a task…" value="${esc(state.search)}"></label><select id="filter-status" class="filter" aria-label="Filter by status"><option value="all">All statuses</option>${options(statuses, state.status, statusNames)}</select><select id="filter-type" class="filter" aria-label="Filter by task type"><option value="all">All types</option>${options(types, state.type)}</select></div><div class="toolbar-right"><span class="caption">A place for every little detail</span><select id="sort" class="filter" aria-label="Sort tasks">${options(["created", "order", "title", "priority", "due", "status"], state.sort, { created: "Date created", order: "Manual order", title: "Title A–Z", priority: "Priority", due: "Due date", status: "Status" })}</select></div><div class="view-controls"></div></div>`;
   }
   const content = $("#view-content");
   const previousKanban = onlyContent && state.view === "kanban" ? content.querySelector(".kanban") : null;
@@ -1123,11 +1123,15 @@ function renderViewNow(onlyContent) {
     timeline: features.timeline,
     capacity: features.capacity,
   };
-  content.innerHTML =
+  // Views with their own controls return { controls, html }; the controls go in the toolbar row.
+  const view =
     !tasks.length &&
     !["kanban", "overview", "capacity", "table", "timeline", "calendar"].includes(state.view)
       ? `<div class="empty">${icon("leaf")}<h2>${state.tasks.length ? "No matching tasks" : "Create your first card"}</h2><p>${state.tasks.length ? "No tasks match the current filters. Archived tasks are hidden unless Include archived is selected." : ["list", "tree"].includes(state.view) ? "Use New card above to add your first card." : "Add your first card, then make the plan your own."}</p>${state.tasks.length ? '<button class="button soft" data-action="filters-reset">Clear filters</button>' : ["list", "tree"].includes(state.view) ? "" : '<button class="button soft" data-action="task-new">${icon("plus")}Add a card</button>'}</div>`
       : renderers[state.view](tasks);
+  content.innerHTML = view.html ?? view;
+  const controls = $(".view-controls");
+  if (controls) controls.innerHTML = view.controls || "";
   // Safari needs a local listener on non-button cards to send taps to the
   // shared click handler, including taps on their padding and metadata.
   if (state.view === "kanban")

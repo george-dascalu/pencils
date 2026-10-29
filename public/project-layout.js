@@ -5,57 +5,28 @@ export function projectLayout(ctx) {
   const { $, state, icon, label, viewLabel, taskViews, planningViews, openView, openSelectMenu } = ctx;
   const narrow = matchMedia("(max-width: 600px)");
   const phoneBoard = phoneBoardTools({ icon, state });
-  let moved = [], compact = null, dock = null, moving = false;
-  // Moving a focused field makes the browser fire change/input on it, which would start another
-  // render in the middle of this one; the value was already handled, so those events are dropped.
-  for (const type of ["change", "input"])
-    document.addEventListener(type, (event) => { if (moving) event.stopImmediatePropagation(); }, true);
-  const whileMoving = (fn) => { moving = true; try { fn(); } finally { moving = false; } };
+  let moved = [], compact = null;
   function restoreToolbar() {
     if (compact?.isConnected) state.mobileViewOptions = compact.open;
-    whileMoving(() => {
-      for (const [element, slot] of moved) {
-        if (element.matches("details[data-expanded]")) {
-          element.removeAttribute("data-expanded");
-          element.open = false;
-        }
-        if (slot.isConnected) slot.replaceWith(element);
-        else element.remove();
+    for (const [element, slot] of moved) {
+      if (element.matches("details[data-expanded]")) {
+        element.removeAttribute("data-expanded");
+        element.open = false;
       }
-    });
+      if (slot.isConnected) slot.replaceWith(element);
+      else element.remove();
+    }
     moved = [];
     compact?.remove();
     compact = null;
-    dock?.remove();
-    dock = null;
     $("[data-phone-sort]")?.remove();
-  }
-  // Wider screens keep one toolbar row: switcher, search and filters on the left, the view's
-  // own controls (planning period and options, table tools) on the right.
-  function dockViewControls() {
-    const row = $("#view-toolbar > .toolbar");
-    const controls = planningViews.includes(state.view)
-      ? [$("#view-content .planning-head")]
-      : state.view === "table" ? [...document.querySelectorAll("#view-content .table-view-tools, #view-content .grid-tools")] : [];
-    if (!row || !controls.filter(Boolean).length) return;
-    dock = document.createElement("div");
-    dock.className = "view-controls";
-    whileMoving(() => {
-      for (const element of controls.filter(Boolean)) {
-        const slot = document.createComment("view control position");
-        element.before(slot);
-        moved.push([element, slot]);
-        dock.append(element);
-      }
-      row.append(dock);
-    });
   }
   function compactToolbar() {
     restoreToolbar();
     phoneBoard.sync();
     const toolbar = $(".toolbar-left") || $(".board-toolbar");
     if (!toolbar) return;
-    if (!narrow.matches) return dockViewControls();
+    if (!narrow.matches) return;
     compact = document.createElement("details");
     compact.className = "mobile-view-options";
     compact.open = !!state.mobileViewOptions;
@@ -63,15 +34,13 @@ export function projectLayout(ctx) {
     const panel = compact.lastElementChild;
     const selectors = toolbar.classList.contains("board-toolbar")
       ? ".board-toolbar > .board-menu, .board-toolbar > .board-settings-button, .board-toolbar > .board-save, .board-toolbar > [data-feature=recovery]"
-      : ".shared-query-controls, .toolbar-left > .filter:not(#sort), .toolbar-left > .board-menu, .toolbar-right, .table-view-tools, .grid-tools, #view-content [data-phone-options]";
-    whileMoving(() => {
-      for (const element of document.querySelectorAll(selectors)) {
-        const slot = document.createComment("view control position");
-        element.before(slot);
-        moved.push([element, slot]);
-        panel.append(element);
-      }
-    });
+      : ".shared-query-controls, .toolbar-left > .filter:not(#sort), .toolbar-left > .board-menu, .toolbar-right, .table-view-tools, .grid-tools, #view-toolbar [data-phone-options], #view-content [data-phone-options]";
+    for (const element of document.querySelectorAll(selectors)) {
+      const slot = document.createComment("view control position");
+      element.before(slot);
+      moved.push([element, slot]);
+      panel.append(element);
+    }
     // Phones list the filters directly instead of behind a Filters dropdown (PEN-9).
     for (const details of panel.querySelectorAll('details.board-menu[data-board-menu="filters"]')) {
       details.open = true;
@@ -112,12 +81,6 @@ export function projectLayout(ctx) {
     if (compact?.open) positionPopover(compact.lastElementChild, compact.querySelector("summary").getBoundingClientRect(), { width: 360, maxHeight: 600 });
   }
   narrow.addEventListener("change", compactToolbar);
-  // Some views draw their controls later (Capacity loads first, Timeline redraws on resize):
-  // dock them whenever new ones appear.
-  new MutationObserver(() => {
-    if (narrow.matches || ![...planningViews, "table"].includes(state.view)) return;
-    if (document.querySelector("#view-content .planning-head, #view-content .table-view-tools")) compactToolbar();
-  }).observe(document.body, { childList: true, subtree: true });
   window.addEventListener("resize", positionCompact);
   document.addEventListener("click", event => {
     const inside = event.composedPath().some(el => el.classList?.contains("mobile-view-options"));

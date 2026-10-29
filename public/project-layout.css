@@ -1021,6 +1021,7 @@ html.table-viewport-view body {
 /* The view's own controls share the toolbar row, on the right (planning period and options,
    table tools). Phones keep them in View options. */
 .toolbar { flex-wrap: wrap; }
+.toolbar .view-controls:empty { display: none; }
 .toolbar .view-controls { display: flex; align-items: center; flex-wrap: wrap; justify-content: flex-end; gap: var(--control-bar-gap, 8px); margin-inline-start: auto; }
 .view-controls :is(.planning-head, .table-view-tools, .grid-tools) { display: flex; align-items: center; gap: var(--control-bar-gap, 8px); margin: 0; padding: 0; }
 .view-controls .planning-period h2 { margin: 0; font-size: var(--type-section, 16px); white-space: nowrap; }

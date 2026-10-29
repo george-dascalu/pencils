@@ -2573,22 +2573,6 @@ input[type="search"]:not(.search input) {
 .team-members input {
   width: auto;
 }
-.capacity-view .planning-head {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 12px;
-}
-.capacity-view .planning-head h2 {
-  margin: 0;
-  font-size: 18px;
-}
-.capacity-view .planning-head label {
-  margin-left: auto;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
 .capacity-summary {
   display: flex;
   gap: 24px;

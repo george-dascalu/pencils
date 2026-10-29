@@ -2,6 +2,12 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.19.32 — 2026-10-29
+
+### Changed
+
+- Calendar, Timeline, Capacity and Table draw their controls straight into the toolbar row instead of moving them there after the view appears. On phones, Calendar and Capacity keep their period arrows in the toolbar row; their other options stay in **View options**.
+
 ## 0.19.31 — 2026-10-29
 
 ### Changed
