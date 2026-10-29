@@ -360,7 +360,7 @@ textarea,
    its 32px (44px on touch) target, leaving room above and below. Extend these
    selector lists instead of styling the fields per view. */
 :root {
-  --field-radius: 7px;
+  --field-radius: calc(7px * var(--style-roundness, 1));
   --list-field-height: 24px;
   --list-field-status-width: 104px;
   --list-field-priority-width: calc(var(--list-field-height) + 8px);

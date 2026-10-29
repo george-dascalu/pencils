@@ -160,6 +160,36 @@ body {
   align-items: center;
   gap: 12px;
 }
+.style-option {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 4px 12px;
+  margin-bottom: 12px;
+}
+.style-option > .field {
+  flex: 0 1 360px;
+  margin-bottom: 0;
+}
+.style-option .color-picker {
+  width: max-content;
+}
+@media (max-width: 780px) {
+  .style-option > .field {
+    flex-basis: 100%;
+  }
+}
+.style-option > .field-hint {
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+}
+.style-list-callouts > summary {
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+}
 .capture-make,
 .capture-token,
 .capture-tokens li {
@@ -274,7 +304,7 @@ body {
   --ink: #e2e9e3;
   --muted: #abb9ae;
   --line: #3b4b42;
-  --green: #a7cf9b;
+  --green: var(--style-accent, #a7cf9b);
   --accent: #bdd990;
   --paper: #151e1a;
   --side: #101a15;

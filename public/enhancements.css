@@ -60,7 +60,7 @@ summary:focus-visible,
 .canvas-extra-tools select {
   min-height: 34px;
   border: 1px solid #c7d0bf;
-  border-radius: 6px;
+  border-radius: calc(6px * var(--style-roundness, 1));
   background: #fff;
   padding: 5px 8px;
   color: #263c34;
@@ -86,7 +86,7 @@ summary:focus-visible,
 #quick-capture input {
   min-height: 34px;
   border: 1px solid #c7d0bf;
-  border-radius: 6px;
+  border-radius: calc(6px * var(--style-roundness, 1));
   padding: 6px 10px;
   width: 165px;
 }
@@ -184,7 +184,7 @@ summary:focus-visible,
 .task-extra {
   border: 1px solid #d9dfd2;
   padding: 14px;
-  border-radius: 8px;
+  border-radius: calc(8px * var(--style-roundness, 1));
   margin-top: 18px;
 }
 .task-extra summary {
@@ -220,7 +220,7 @@ summary:focus-visible,
   padding: 12px;
   background: #f4f6ed;
   margin: 8px 0;
-  border-radius: 6px;
+  border-radius: calc(6px * var(--style-roundness, 1));
 }
 .comment small {
   margin-left: 10px;
@@ -232,7 +232,7 @@ summary:focus-visible,
 .draft-notice {
   padding: 12px;
   background: #f5eac1;
-  border-radius: 6px;
+  border-radius: calc(6px * var(--style-roundness, 1));
   margin-bottom: 16px;
   font-size: 13px;
 }
@@ -582,7 +582,7 @@ summary:focus-visible,
   pointer-events: auto;
   background: #ffffffeb;
   border: 1px solid #c5d1b6;
-  border-radius: 8px;
+  border-radius: calc(8px * var(--style-roundness, 1));
   padding: 8px;
   width: max-content;
   max-width: calc(100% - 110px);
@@ -641,7 +641,7 @@ summary:focus-visible,
   background: #fae8db;
   color: #823d22;
   margin: 12px 0;
-  border-radius: 6px;
+  border-radius: calc(6px * var(--style-roundness, 1));
 }
 @media (max-width: 780px) {
   .hero-right > .icon-button {

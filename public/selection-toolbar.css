@@ -42,7 +42,7 @@
   height: 34px;
   padding: 7px;
   border: 0;
-  border-radius: 6px;
+  border-radius: calc(6px * var(--style-roundness, 1));
   color: var(--ink);
   background: transparent;
   cursor: pointer;
@@ -226,7 +226,7 @@
   align-items: center;
   gap: 4px;
   min-height: 38px;
-  border-radius: 6px;
+  border-radius: calc(6px * var(--style-roundness, 1));
 }
 .selection-filter-row:hover {
   background: var(--surface-soft);
@@ -322,7 +322,7 @@
   padding: 0 6px;
   height: 32px;
   border: 1px solid var(--line);
-  border-radius: 6px;
+  border-radius: calc(6px * var(--style-roundness, 1));
   color: var(--muted);
   font-size: 12px;
 }
@@ -424,7 +424,7 @@
   font-size: 10px;
   background: transparent;
   border: 1px solid transparent;
-  border-radius: 6px;
+  border-radius: calc(6px * var(--style-roundness, 1));
 }
 #selection-tools .note-style-picker button[aria-pressed="true"] {
   background: var(--surface-soft);
@@ -476,7 +476,7 @@
    under them and showing one cannot shift the scroll position in a loop. */
 .rich-scroll {
   flex: 0 0 auto; width: 22px; display: flex; align-items: center; justify-content: center;
-  padding: 0; border: 0; border-radius: 6px; color: var(--ink); background: transparent; cursor: pointer;
+  padding: 0; border: 0; border-radius: calc(6px * var(--style-roundness, 1)); color: var(--ink); background: transparent; cursor: pointer;
 }
 .rich-scroll:hover { background: var(--surface-soft); }
 .rich-scroll[hidden] { display: none; }

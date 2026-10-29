@@ -2,6 +2,12 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.20.9 — 2026-10-29
+
+### Added
+
+- Style settings, as in Obsidian: **Settings → You → Style** sets the accent colour, document text size, readable line width, line height, document and code fonts, corner roundness, and the colours of headings, callouts and each list callout. Each option shows its default and has a Reset, and **Reset all** restores every default. Your choices apply in light and dark themes and are kept in this browser.
+
 ## 0.20.8 — 2026-10-29
 
 ### Added
