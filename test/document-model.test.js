@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { documentHeadings, documentSection, documentReference, resolveDocument, obsidianDocumentURI } from "../public/document-model.js";
+import { documentHeadings, documentSection, documentReference, resolveDocument, resolveCard, obsidianDocumentURI } from "../public/document-model.js";
 
 test("document references resolve stable vault paths and avoid ambiguous titles", () => {
   const a = { id: "d-a", file: "Projects/p-a/documents/d-a.md", title: "Brief" };
@@ -36,4 +36,16 @@ test("outline groups headings under their nearest ancestor, including skipped le
   assert.deepEqual(tree.map(h => h.title), ["Root", "Next"]);
   assert.deepEqual(tree[0].children.map(h => h.title), ["Child", "Sibling"]);
   assert.equal(tree[0].children[0].children[0].title, "Deep");
+});
+
+test("card mentions resolve by key, an older key, id or alias", () => {
+  const card = { id: "t-1", key: "WEB-12", aliases: ["WEB-12", "Fix login", "OLD-3"], title: "Fix login" };
+  const tasks = [card, { id: "t-2", key: "WEB-13", aliases: ["WEB-13", "Other"], title: "Other" }];
+  assert.equal(resolveCard("WEB-12", tasks), card);
+  assert.equal(resolveCard("web-12|the login fix", tasks), card);
+  assert.equal(resolveCard("OLD-3", tasks), card);
+  assert.equal(resolveCard("Projects/p-a/tasks/t-1.md", tasks), card);
+  assert.equal(resolveCard("fix login", tasks), card, "titles resolve through aliases, as in Obsidian");
+  assert.equal(resolveCard("Missing", tasks), null);
+  assert.equal(resolveCard("", tasks), null);
 });

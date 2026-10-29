@@ -13,6 +13,15 @@ export function resolveDocument(reference, documents) {
   return matches.length === 1 ? matches[0] : null;
 }
 
+// A card named by its key, id or an alias: "[[WEB-12]]" in a document. Aliases hold older keys and
+// titles, so "[[Card title]]" also names the card, as in Obsidian; callers check documents first.
+export function resolveCard(reference, tasks) {
+  const name = reference.split("|")[0].split("#")[0].split("/").pop().replace(/\.md$/i, "").trim().toLocaleLowerCase();
+  if (!name) return null;
+  return tasks.find(t => t.id.toLocaleLowerCase() === name || (t.key || "").toLocaleLowerCase() === name ||
+    (t.aliases || []).some(a => a.toLocaleLowerCase() === name)) || null;
+}
+
 export function documentHeadings(text) {
   const headings = [];
   let position = 0, fence = null;

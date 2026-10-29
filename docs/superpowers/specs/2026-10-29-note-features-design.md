@@ -74,6 +74,9 @@ Decisions (owner, 29 Oct): captures land in a chosen project tagged `inbox`; Tod
 - Links and accents are darkened where needed to keep 4.5:1 text contrast (the source themes' light links measure 2.3–3.9:1).
 - Typewriter scrolling / focus mode is not part of the themes (the Typewriter theme does not include it either).
 
+### 14. Document tabs and split view (owner request, 29 Oct; desktop and iPad)
+- Open documents as tabs in the Documents view and show two side by side, split vertically or horizontally, each with its own editor and mode; phones keep one document at a time.
+
 ## Out of scope (for later)
 Natural-language dates, Day Planner time blocks, weekly notes, `.base` export, client-side search index, arbitrary template scripts.
 

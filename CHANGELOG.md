@@ -2,6 +2,16 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.19.44 — 2026-10-29
+
+### Added
+
+- Card mentions in documents: `[[WEB-12]]` shows the card as a chip with its type, key, title and status, and clicking it opens the card. Typing `[[` offers the project's cards after its documents. **Card from text** (in **Insert** and the `/` menu) turns the selected text, or the current line, into a card linked to the document and replaces the text with a mention. Obsidian opens the same links through the cards' aliases.
+
+### Fixed
+
+- `[[…]]` links in Live preview show as links instead of their Markdown, and clicking a link there follows it instead of revealing the Markdown.
+
 ## 0.19.43 — 2026-10-29
 
 ### Added

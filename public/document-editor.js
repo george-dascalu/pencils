@@ -14,7 +14,7 @@ import { insertCategories } from "./document-insert.js";
 import { highlightCodeBlocks } from "./document-code.js";
 import { listCallouts, listCalloutAfterMarker, setListCallout, listCalloutLabel } from "./document-list-callouts.js";
 
-export function markdownDocumentEditor({ parent, text, mode = "live", renderer, documents, onChange, onError, onLink, onInsert, icon }) {
+export function markdownDocumentEditor({ parent, text, mode = "live", renderer, documents, cards = () => [], onChange, onError, onLink, onInsert, icon }) {
   const presentation = new Compartment();
   let view, alive = true, focusedComponent = null;
   const hoverEffect = StateEffect.define();
@@ -66,6 +66,11 @@ export function markdownDocumentEditor({ parent, text, mode = "live", renderer, 
           if (link) { event.preventDefault(); onLink(link.dataset.documentRef); }
         });
       } else {
+      // A link in the text opens on click instead of placing the caret (which would reveal its Markdown).
+      element.addEventListener("click", event => {
+        const link = event.target.closest("[data-document-ref]");
+        if (link) { event.preventDefault(); onLink(link.dataset.documentRef); }
+      });
       element.addEventListener("mousedown", e => {
         if (e.target.closest("a,button,input,summary")) return;
         e.preventDefault();
@@ -76,7 +81,7 @@ export function markdownDocumentEditor({ parent, text, mode = "live", renderer, 
       hydrate(element);
       return element;
     }
-    ignoreEvent() { return this.block; }
+    ignoreEvent(event) { return this.block || !!event.target?.closest?.("a"); }
   }
   class Checkbox extends WidgetType {
     constructor(checked, from) { super(); this.checked = checked; this.from = from; }
@@ -186,6 +191,8 @@ export function markdownDocumentEditor({ parent, text, mode = "live", renderer, 
           return false;
         }
         if (["Link", "Image", "Autolink"].includes(name)) {
+          // The parser reads the inside of a "[[…]]" wiki link as a link; the wiki link is handled below.
+          if (/^\[\[[^\]\n]+\]\]$/.test(source.slice(node.from - 1, node.to + 1)) || /^!\[\[[^\]\n]+\]\]/.test(source.slice(node.from, node.to + 1))) return false;
           ranges.push(Decoration.replace({ widget: new Preview(source.slice(node.from, node.to), node.from) }).range(node.from, node.to));
           blocked.push([node.from, node.to]);
           return false;
@@ -209,16 +216,25 @@ export function markdownDocumentEditor({ parent, text, mode = "live", renderer, 
   const completion = context => {
     const before = context.matchBefore(/\[\[[^\]\n]*/);
     if (!before) return null;
+    // Cards follow documents; a card is linked by its key, which Obsidian resolves through its aliases.
+    const cardOptions = cards().map(t => ({
+      label: `${t.key || t.id} ${t.title}`, detail: "Card", glyph: t.type || "task", boost: -1,
+      apply(editor, _completion, from, to) {
+        const suffix = editor.state.doc.sliceString(to, to + 2) === "]]" ? 2 : 0;
+        const insert = `${t.key || t.id}]]`;
+        editor.dispatch({ changes: { from, to: to + suffix, insert }, selection: { anchor: from + insert.length } });
+      },
+    }));
     return {
       from: before.from + 2,
-      options: documents().map(d => ({
+      options: [...documents().map(d => ({
         label: d.title, detail: "Document", glyph: "file",
         apply(editor, _completion, from, to) {
           const suffix = editor.state.doc.sliceString(to, to + 2) === "]]" ? 2 : 0;
           const insert = `${documentReference(d)}|${d.title}]]`;
           editor.dispatch({ changes: { from, to: to + suffix, insert }, selection: { anchor: from + insert.length } });
         },
-      })),
+      })), ...cardOptions],
       validFor: /^[^\]\n]*$/,
     };
   };
@@ -230,7 +246,7 @@ export function markdownDocumentEditor({ parent, text, mode = "live", renderer, 
     boost: 50 - index,
     apply(editor, _completion, from, to) {
       editor.dispatch({ changes: { from: from - 1, to }, selection: { anchor: from - 1 } });
-      if (command === "attach") onInsert?.(command);
+      if (["attach", "card"].includes(command)) onInsert?.(command);
       else format(command);
     },
   })));

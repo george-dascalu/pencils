@@ -307,6 +307,13 @@
 span.document-list-callout { display: block; }
 :is(span, p).document-list-callout { padding-inline: 4px; }
 .document-list-callout-char { display: none; }
+/* Card mentions ("[[WEB-12]]"): type, key, title and the shared status chip, inline in the text. */
+.document-card-mention { display: inline-flex; align-items: center; gap: 4px; max-width: 100%; padding: 0 2px 0 6px; border: 1px solid var(--line); border-radius: var(--field-radius); background: var(--surface-soft); color: var(--ink); text-decoration: none; vertical-align: middle; line-height: 1.5; }
+.document-card-mention:hover { border-color: var(--green); }
+.document-card-mention > .icon { flex: none; width: 14px; height: 14px; }
+.document-card-key { flex: none; color: var(--muted); font-size: var(--type-small); }
+.document-card-title { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.document-card-mention > .field-chip-status { display: inline-flex; flex: none; width: auto; margin: 2px 0; }
 [data-list-callout="important"] { --list-callout-color: #d64545; }
 [data-list-callout="question"] { --list-callout-color: #e07b24; }
 [data-list-callout="bookmark"] { --list-callout-color: #b08900; }

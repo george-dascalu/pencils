@@ -3,7 +3,9 @@ import { panelCategories } from "./document-insert.js";
 import { markdownDocumentEditor } from "./document-editor.js";
 import { documentReadingSearch } from "./document-reading-search.js";
 import { documentMarkdown } from "./document-markdown.js";
-import { documentHeadings, documentOutline, documentStats, documentReference, resolveDocument, obsidianDocumentURI } from "./document-model.js";
+import { documentHeadings, documentOutline, documentStats, documentReference, resolveDocument, resolveCard, obsidianDocumentURI } from "./document-model.js";
+import { statusLabel } from "./workflow-model.js";
+import { taskColorAttributes } from "./task-colors.js";
 import { positionPopover } from "./popover-position.js";
 import { richToolbar } from "./canvas-rich-text.js";
 import { installToolbarScroll, floatMenuPanel } from "./rich-toolbar-scroll.js";
@@ -326,9 +328,42 @@ export function projectDocuments(ctx) {
     }
     editor?.view.requestMeasure();
   }
+  // A card mention's chip: type, key, title (or the link's label) and status, in the shared field order.
+  function cardHTML(task, label) {
+    return `${icon(task.type || "task")}<span class="document-card-key">${esc(task.key || task.id)}</span><span class="document-card-title">${esc(label || task.title)}</span><span class="field-chip field-chip-status" ${task.archived ? "" : taskColorAttributes(state, "status", task.status)}>${esc(task.archived ? "Archived" : statusLabel(state.config, task.status))}</span>`;
+  }
+  // "Card from text": the selection, or the current line without its list or heading marker,
+  // becomes a card linked to this document, and the text becomes a mention of it.
+  let makingCard = false;
+  async function makeCard() {
+    if (makingCard) return;
+    const view = editor.view, range = view.state.selection.main;
+    let { from, to } = range;
+    if (range.empty) {
+      const line = view.state.doc.lineAt(from);
+      from = line.from + /^\s*(?:[-*+]\s+(?:\[[ xX]\]\s+)?|\d+[.)]\s+|>\s*|#{1,6}\s+)?/.exec(line.text)[0].length;
+      to = line.to;
+    }
+    const text = view.state.sliceDoc(from, to), [first = "", ...rest] = text.trim().split("\n");
+    // Titles hold 300 characters; the rest of a long first line starts the description.
+    const title = first.slice(0, 300), body = [first.slice(300), ...rest].join("\n").trim();
+    if (!title) { toast("Select text, or write a line, to make a card from it.", true); return; }
+    const pid = project, docId = current.id, before = view.state.doc;
+    makingCard = true;
+    let task;
+    try { task = await api(`/projects/${pid}/tasks`, { method: "POST", body: { title, body, documents: [docId] } }); }
+    finally { makingCard = false; }
+    if (state.project?.id === pid && !state.tasks.some((t) => t.id === task.id)) state.tasks = [...state.tasks, task];
+    // Replace the text only if the document has not changed meanwhile; otherwise just report the card.
+    if (editor?.view === view && current?.id === docId && view.state.doc.eq(before))
+      view.dispatch({ changes: { from, to, insert: `${text.match(/^\s*/)[0]}[[${task.key || task.id}]]${text.match(/\s*$/)[0]}` } });
+    else toast(`Card ${task.key || task.id} created.`);
+  }
   function followLink(reference) {
     const target = resolveDocument(reference, all());
-    if (!target) { toast("No matching document in this project. Use [[ to choose a document.", true); return; }
+    const card = !target && resolveCard(reference, state.tasks || []);
+    if (card) { ctx.taskDialog(card.id); return; }
+    if (!target) { toast("No matching document or card in this project. Use [[ to choose one.", true); return; }
     const fragment = reference.includes("#") ? reference.slice(reference.indexOf("#") + 1) : "";
     if (target.id !== current.id) open(target.id);
     if (fragment) requestAnimationFrame(() => {
@@ -439,17 +474,20 @@ export function projectDocuments(ctx) {
     current = doc;
     project = state.project.id;
     form = document.querySelector("#document-form");
-    renderer = documentMarkdown({ documents: all, project: () => project, esc, icon });
+    renderer = documentMarkdown({ documents: all, project: () => project, esc, icon, cards: () => state.tasks || [], cardHTML });
     editor = markdownDocumentEditor({
       icon,
       parent: form.querySelector(".document-codemirror"), text: doc.body || "",
-      mode: mode === "source" ? "source" : "live", renderer, documents: all,
+      mode: mode === "source" ? "source" : "live", renderer, documents: all, cards: () => (state.tasks || []).filter((t) => !t.archived),
       onChange(value) {
         form.elements.body.value = value;
         form.elements.body.dispatchEvent(new Event("input", { bubbles: true }));
       },
       onError: message => toast(message, true), onLink: followLink,
-      onInsert(command) { if (command === "attach") form.querySelector("#document-attachment").click(); },
+      onInsert(command) {
+        if (command === "attach") form.querySelector("#document-attachment").click();
+        if (command === "card") makeCard().catch((error) => toast(error.message, true));
+      },
     });
     readingSearch = documentReadingSearch({ form, content: form.querySelector(".document-reading"), icon });
     installToolbarScroll(form.querySelector(".document-formatting .rich-toolbar-shell"));
@@ -626,9 +664,10 @@ export function projectDocuments(ctx) {
         showPanel(button, "Delete document", '<p>Move this document to Trash?</p><button type="button" class="button danger" data-document-action="delete">Move to Trash</button>');
       } else if (action === "insert") {
         const categories = panelCategories();
-        showPanel(button, "Insert", `<div class="document-insert-options">${categories.map(([title, items]) => `<section aria-label="${title}"><h3>${title}</h3>${items.map(([key,label,glyph]) => `<button type="button" class="document-panel-item" ${key === "attach" ? 'data-document-action="attach"' : `data-document-format="${key}"`}>${icon(glyph)}${label}</button>`).join("")}</section>`).join("")}</div>`);
+        showPanel(button, "Insert", `<div class="document-insert-options">${categories.map(([title, items]) => `<section aria-label="${title}"><h3>${title}</h3>${items.map(([key,label,glyph]) => `<button type="button" class="document-panel-item" ${["attach", "card"].includes(key) ? `data-document-action="${key}"` : `data-document-format="${key}"`}>${icon(glyph)}${label}</button>`).join("")}</section>`).join("")}</div>`);
 
       } else if (action === "attach") { closePanel(); form.querySelector("#document-attachment").click(); }
+      else if (action === "card") { closePanel(); await makeCard(); }
       else if (action === "browse") {
         // The document list is in the main sidebar: open the phone drawer on it,
         // or show a collapsed desktop sidebar, then offer the search field.

@@ -1,7 +1,7 @@
 import { Marked } from "/vendor/marked.js";
 import DOMPurify from "/vendor/purify.js";
 import { katex, markedFootnote } from "/vendor/editor/deps.js";
-import { resolveDocument, documentSection } from "./document-model.js";
+import { resolveDocument, resolveCard, documentSection } from "./document-model.js";
 import { listCallouts, listCalloutLabel } from "./document-list-callouts.js";
 
 // A table may keep its columns and scroll sideways instead of fitting the page.
@@ -18,7 +18,7 @@ const tableLayout = {
   renderer(token) { return `<div class="document-table-scroll">${this.parser.parse(token.tokens)}</div>`; },
 };
 
-export function documentMarkdown({ documents, project, esc, icon }) {
+export function documentMarkdown({ documents, project, esc, icon, cards = () => [], cardHTML }) {
   let depth = 0, sequence = 0;
   const inlineParser = new Marked({ gfm: true, breaks: false });
   // Preview range discovery must not mutate the footnote renderer's state.
@@ -107,6 +107,9 @@ export function documentMarkdown({ documents, project, esc, icon }) {
               return `<div class="document-transclusion" data-document-source="${esc(token.raw)}"><a href="#" data-document-ref="${esc(ref)}">${esc(label)}</a>${makeParser().parse(documentSection(record.body || "", fragment))}</div>`;
             } finally { depth--; }
           }
+          // A card mention ("[[WEB-12]]") becomes a chip once the HTML is sanitised.
+          const card = !record && resolveCard(ref, cards());
+          if (card) return `<a href="#" data-document-source="${esc(token.raw)}" data-document-ref="${esc(ref)}" data-document-card="${esc(card.id)}" class="document-card-mention">${esc(alias || card.title)}</a>`;
           if (token.embed && /^(?:\.\.\/)?attachments\/a-[\w-]+\.(?:png|jpe?g|webp|gif)$/i.test(ref))
             return `<img data-document-source="${esc(token.raw)}" src="/api/projects/${esc(project())}/${esc(ref.replace(/^\.\.\//, ""))}" alt="${esc(label)}"${/^\d{1,4}$/.test(alias || "") ? ` width="${alias}"` : ""}>`;
           return `<a href="#" data-document-source="${esc(token.raw)}" class="${record ? "" : "unresolved-link"}" data-document-ref="${esc(ref)}">${esc(label)}</a>`;
@@ -121,10 +124,16 @@ export function documentMarkdown({ documents, project, esc, icon }) {
     const fragment = DOMPurify.sanitize(makeParser().parse(text), {
       RETURN_DOM_FRAGMENT: true,
       ALLOW_DATA_ATTR: false,
-      ADD_ATTR: ["data-document-ref", "data-document-diagram", "data-document-source", "data-document-callout"],
+      ADD_ATTR: ["data-document-ref", "data-document-diagram", "data-document-source", "data-document-callout", "data-document-card"],
       FORBID_TAGS: ["style", "form", "button", "textarea", "select", "option", "iframe", "object", "embed"],
       FORBID_ATTR: ["style"],
     });
+    for (const link of fragment.querySelectorAll("a[data-document-card]")) {
+      const card = cards().find((t) => t.id === link.dataset.documentCard);
+      if (!card || !cardHTML) continue;
+      link.setAttribute("aria-label", `Card ${card.key || card.id}: ${link.textContent}`);
+      link.innerHTML = cardHTML(card, link.textContent);
+    }
     for (const link of fragment.querySelectorAll("a")) {
       const href = link.getAttribute("href") || "";
       link.dataset.documentHref = href;

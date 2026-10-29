@@ -4,7 +4,7 @@
 // the keyboard. Cancelling mousedown on such controls keeps focus and the
 // selection where they are; the click still runs. Desktop browsers behave the
 // same way, so focus no longer jumps into the editor there either.
-const CONTROL = 'button, summary, [role="button"], input[type="checkbox"], input[type="radio"]';
+const CONTROL = 'button, summary, [role="button"], input[type="checkbox"], input[type="radio"], a[data-document-ref]';
 const EDITABLE = '[contenteditable="true"], [contenteditable="plaintext-only"]';
 
 export function installEditableControlGuard(target = document) {
