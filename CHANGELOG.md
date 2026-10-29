@@ -2,6 +2,16 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.19.43 — 2026-10-29
+
+### Added
+
+- List callouts in documents, as in Obsidian's List Callouts plugin: start a list item with `!`, `?`, `&`, `~`, `@`, `$` or `%` and a space (`- ! Ship on Friday`) and the item is tinted, with an icon for Important, Question, Bookmark, Idea, Person, Cost or Aside. Type `/` and a name (`/important`) to add one. The character stays in the Markdown, so the file reads as a plain list in Obsidian.
+
+### Fixed
+
+- Callout titles in documents show as typed instead of capitalising every word.
+
 ## 0.19.42 — 2026-10-29
 
 ### Added

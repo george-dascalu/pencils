@@ -2,6 +2,7 @@ import { Marked } from "/vendor/marked.js";
 import DOMPurify from "/vendor/purify.js";
 import { katex, markedFootnote } from "/vendor/editor/deps.js";
 import { resolveDocument, documentSection } from "./document-model.js";
+import { listCallouts, listCalloutLabel } from "./document-list-callouts.js";
 
 // A table may keep its columns and scroll sideways instead of fitting the page.
 // The choice is an HTML comment on the line before it, invisible elsewhere.
@@ -17,7 +18,7 @@ const tableLayout = {
   renderer(token) { return `<div class="document-table-scroll">${this.parser.parse(token.tokens)}</div>`; },
 };
 
-export function documentMarkdown({ documents, project, esc }) {
+export function documentMarkdown({ documents, project, esc, icon }) {
   let depth = 0, sequence = 0;
   const inlineParser = new Marked({ gfm: true, breaks: false });
   // Preview range discovery must not mutate the footnote renderer's state.
@@ -150,10 +151,38 @@ export function documentMarkdown({ documents, project, esc }) {
       else if (!/^\/api\/projects\/[\w-]+\/attachments\/a-[\w-]+\.(?:png|jpe?g|webp|gif)$/i.test(src))
         img.replaceWith(document.createTextNode(`[Image: ${img.alt || src}]`));
     }
+    // List callouts ("- ! item"): the item's own line is tinted and its character shows as an icon.
+    // The character stays in the mark as hidden text, so editable quotes and callouts that turn
+    // this HTML back into Markdown keep it.
+    for (const item of fragment.querySelectorAll("li")) {
+      const holder = item.firstElementChild?.tagName === "P" ? item.firstElementChild : item;
+      let text = holder.firstChild;
+      if (text?.nodeName === "INPUT") text = text.nextSibling;
+      const match = text?.nodeType === Node.TEXT_NODE && /^\s*([!?&~@$%])\s/.exec(text.data);
+      const callout = match && listCallouts.find((c) => c.char === match[1]);
+      if (!callout) continue;
+      const checkbox = text.previousSibling?.nodeName === "INPUT" ? text.previousSibling : null;
+      if (checkbox) checkbox.setAttribute("aria-label", listCalloutLabel(`${match[1]} ${item.textContent.slice(item.textContent.indexOf(match[1]) + 1).trim()}`));
+      text.data = text.data.slice(match[0].length - 1);
+      item.dataset.listCallout = callout.name;
+      let line = holder;
+      if (holder === item) {
+        line = document.createElement("span");
+        while (item.firstChild && !/^(UL|OL)$/.test(item.firstChild.nodeName)) line.append(item.firstChild);
+        item.prepend(line);
+      }
+      line.classList.add("document-list-callout");
+      const mark = document.createElement("span");
+      mark.className = "document-list-callout-mark";
+      mark.setAttribute("role", "img");
+      mark.setAttribute("aria-label", callout.label);
+      mark.innerHTML = `${icon ? icon(callout.icon) : ""}<span class="document-list-callout-char">${esc(callout.char)}</span>`;
+      text.before(mark);
+    }
     for (const input of fragment.querySelectorAll("input")) {
       if (input.type !== "checkbox") { input.remove(); continue; }
       input.disabled = true; input.removeAttribute("name"); input.removeAttribute("id");
-      input.setAttribute("aria-label", input.closest("li")?.textContent?.trim() || "Checklist item");
+      if (!input.hasAttribute("aria-label")) input.setAttribute("aria-label", input.closest("li")?.textContent?.trim() || "Checklist item");
     }
     const element = document.createElement("div"); element.append(fragment);
     if (inline && element.firstElementChild?.tagName === "P" && element.children.length === 1)

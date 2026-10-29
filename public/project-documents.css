@@ -300,7 +300,22 @@
 .document-prose img { max-width: 100%; height: auto; }
 .document-prose mark, .document-inline-preview mark { background: color-mix(in srgb, #dab63c 30%, var(--surface)); color: var(--ink); padding: 1px 2px; }
 .document-callout { border: 1px solid var(--line); border-radius: 6px; padding: 12px 16px; background: var(--surface-soft); margin: 12px 0; }
-.document-callout > strong, .document-callout > summary { text-transform: capitalize; font-weight: 600; }
+/* Titles show as typed, as in Obsidian. */
+.document-callout > strong, .document-callout > summary { font-weight: 600; }
+/* List callouts ("- ! item", Obsidian's List Callouts): the item's own line is tinted in its colour. */
+.document-list-callout { background: color-mix(in srgb, var(--list-callout-color, var(--muted)) 14%, transparent); border-radius: 4px; }
+span.document-list-callout { display: block; }
+:is(span, p).document-list-callout { padding-inline: 4px; }
+.document-list-callout-char { display: none; }
+[data-list-callout="important"] { --list-callout-color: #d64545; }
+[data-list-callout="question"] { --list-callout-color: #e07b24; }
+[data-list-callout="bookmark"] { --list-callout-color: #b08900; }
+[data-list-callout="idea"] { --list-callout-color: #8b5cf6; }
+[data-list-callout="person"] { --list-callout-color: #0891b2; }
+[data-list-callout="cost"] { --list-callout-color: var(--green); }
+[data-list-callout="aside"] { --list-callout-color: var(--muted); }
+.document-list-callout-mark { display: inline-flex; vertical-align: -0.15em; color: var(--list-callout-color, var(--muted)); }
+.document-list-callout-mark .icon { width: 1em; height: 1em; }
 .document-callout > summary { cursor: pointer; }
 .document-transclusion { display: block; margin: 8px 0; padding: 12px; border: 1px solid var(--line); border-radius: 6px; }
 .document-math { overflow-x: auto; padding: 12px 0; }

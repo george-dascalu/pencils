@@ -439,7 +439,7 @@ export function projectDocuments(ctx) {
     current = doc;
     project = state.project.id;
     form = document.querySelector("#document-form");
-    renderer = documentMarkdown({ documents: all, project: () => project, esc });
+    renderer = documentMarkdown({ documents: all, project: () => project, esc, icon });
     editor = markdownDocumentEditor({
       icon,
       parent: form.querySelector(".document-codemirror"), text: doc.body || "",

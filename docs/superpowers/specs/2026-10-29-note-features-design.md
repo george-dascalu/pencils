@@ -64,6 +64,16 @@ Decisions (owner, 29 Oct): captures land in a chosen project tagged `inbox`; Tod
 - Settings → You → Appearance gains a **Style** group of fixed options, each a CSS custom property applied on the root element by `public/appearance.js` and kept with the other appearance choices in this browser: accent colour (shared colour picker), document text size, readable line width, line height, document and code fonts, corner roundness, heading colours, block callout and list callout colours. Every option shows its default and has a reset; **Reset all** restores defaults.
 - Options only change tokens the shared styles already use; light and dark themes keep working, and Compact mode and 44px touch targets are unaffected.
 
+### 13. Themes adapted from Obsidian (owner request, 29 Oct)
+- Settings → You → Appearance offers themes beside Light/Dark/System: each theme sets the shared colour, font, radius and shadow tokens for light and dark; Style settings (item 12) still apply on top.
+- Our own CSS, using design facts only (research 29 Oct, theme repos at their latest commits):
+  - **Minimal** (kepano, MIT): neutral greys, slate accent #6a8695 / #889eaa, small headings, round checkboxes, outlined tags, almost no shadows.
+  - **Paper** (inspired by Primary, whose licence is unclear, so no copied code and not named "Primary"): warm cream/brown palette, gold links, the editor as a floating card, pill tags.
+  - **Catppuccin** (palette from github.com/catppuccin/palette, MIT, as AnuPpuccin uses; AnuPpuccin itself is GPL-3.0 and not copied): Latte light, Mocha dark, rosewater accent, optional rainbow headings.
+  - **Typewriter** (crashmoney, GPL-3.0, not copied): warm paper #fcf5e4, green accent, iA Writer Quattro S / Mono V (SIL OFL, bundled unmodified from github.com/iaolo/iA-Fonts with the licence), faded Markdown symbols, highlighted active line.
+- Links and accents are darkened where needed to keep 4.5:1 text contrast (the source themes' light links measure 2.3–3.9:1).
+- Typewriter scrolling / focus mode is not part of the themes (the Typewriter theme does not include it either).
+
 ## Out of scope (for later)
 Natural-language dates, Day Planner time blocks, weekly notes, `.base` export, client-side search index, arbitrary template scripts.
 

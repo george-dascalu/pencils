@@ -12,6 +12,7 @@ import { editableDocumentComponent } from "./document-components.js";
 import { focusOnOpen } from "./open-focus.js";
 import { insertCategories } from "./document-insert.js";
 import { highlightCodeBlocks } from "./document-code.js";
+import { listCallouts, listCalloutAfterMarker, setListCallout, listCalloutLabel } from "./document-list-callouts.js";
 
 export function markdownDocumentEditor({ parent, text, mode = "live", renderer, documents, onChange, onError, onLink, onInsert, icon }) {
   const presentation = new Compartment();
@@ -83,7 +84,7 @@ export function markdownDocumentEditor({ parent, text, mode = "live", renderer, 
     toDOM(editor) {
       const input = document.createElement("input");
       input.type = "checkbox"; input.checked = this.checked; input.className = "document-checkbox";
-      input.setAttribute("aria-label", editor.state.doc.lineAt(this.from).text.replace(/^\s*[-*+]\s+\[[ xX]\]\s*/, "") || "Checklist item");
+      input.setAttribute("aria-label", listCalloutLabel(editor.state.doc.lineAt(this.from).text.replace(/^\s*[-*+]\s+\[[ xX]\]\s*/, "")) || "Checklist item");
       input.addEventListener("mousedown", e => e.stopPropagation());
       const save = () => editor.dispatch({ changes: { from: this.from, to: this.from + 3, insert: input.checked ? "[x]" : "[ ]" } });
       input.addEventListener("change", save);
@@ -109,6 +110,19 @@ export function markdownDocumentEditor({ parent, text, mode = "live", renderer, 
       return input;
     }
     ignoreEvent() { return true; }
+  }
+  // A list callout's character shows as its icon, even with the caret on the line (as in Obsidian).
+  class ListCalloutMark extends WidgetType {
+    constructor(callout) { super(); this.callout = callout; }
+    eq(other) { return this.callout === other.callout; }
+    toDOM() {
+      const mark = document.createElement("span");
+      mark.className = "document-list-callout-mark";
+      mark.setAttribute("role", "img");
+      mark.setAttribute("aria-label", this.callout.label);
+      mark.innerHTML = icon(this.callout.icon);
+      return mark;
+    }
   }
   const previewField = StateField.define({
     create: state => decorate(state),
@@ -145,6 +159,14 @@ export function markdownDocumentEditor({ parent, text, mode = "live", renderer, 
         if (/^(ATXHeading|SetextHeading)/.test(name)) {
           const level = Number(name.slice(-1)) || 1;
           ranges.push(Decoration.line({ class: `document-heading-${level}` }).range(state.doc.lineAt(node.from).from));
+        }
+        if (name === "ListMark") {
+          const line = state.doc.lineAt(node.from), found = listCalloutAfterMarker(source.slice(node.to, line.to));
+          if (found) {
+            const at = node.to + found.offset;
+            ranges.push(Decoration.line({ class: "document-list-callout", attributes: { "data-list-callout": found.callout.name } }).range(line.from));
+            ranges.push(Decoration.replace({ widget: new ListCalloutMark(found.callout) }).range(at, at + 1));
+          }
         }
         // Reveal delimiters for this inline span only. A caret elsewhere in the
         // same paragraph leaves checkboxes, links and other formatting rendered.
@@ -301,6 +323,20 @@ export function markdownDocumentEditor({ parent, text, mode = "live", renderer, 
     if (focusedComponent?.element.isConnected && focusedComponent.format(command)) return;
     const range = view.state.selection.main;
     const selected = view.state.sliceDoc(range.from, range.to);
+    const listCallout = listCallouts.find((callout) => command === `list-${callout.name}`);
+    if (listCallout) {
+      const start = view.state.doc.lineAt(range.from).number, end = view.state.doc.lineAt(range.to).number;
+      const changes = [];
+      let caret = null;
+      for (let n = start; n <= end; n++) {
+        const line = view.state.doc.line(n), change = setListCallout(line.text, listCallout.char);
+        changes.push({ from: line.from + change.from, to: line.from + change.to, insert: change.insert });
+        if (range.empty) caret = line.from + change.insert.length + Math.max(0, range.from - line.from - change.to);
+      }
+      view.dispatch(caret === null ? { changes } : { changes, selection: { anchor: caret } });
+      view.focus();
+      return;
+    }
     const wraps = { bold: ["**", "**"], italic: ["*", "*"], strike: ["~~", "~~"], highlight: ["==", "=="], code: ["`", "`"], link: ["[", "](https://)"], wiki: ["[[", "]]"], math: ["$", "$"] };
     if (wraps[command]) {
       const [before, after] = wraps[command], inside = selected || (command === "wiki" ? "" : "text");
