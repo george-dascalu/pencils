@@ -44,6 +44,7 @@ export function installWorkspace(Store) {
           );
         summaries.push({
           ...project,
+          schema: config,
           progress: progress(active, config),
           blocked: active.filter(
             (t) => !config.done.includes(t.status) && blocked(t),

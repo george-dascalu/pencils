@@ -38,3 +38,13 @@ test("unknown lines are reported and notes are ignored", () => {
   assert.match(parseTaskQuery(Array(41).fill("overdue").join("\n"), { today }).errors[0], /first 39 filters/);
   assert.deepEqual(parseTaskQuery(`title includes ${"x".repeat(501)}`, { today }).errors, ["title value is too long"]);
 });
+
+test("cards from several projects follow their own project's workflow (the personal space)", () => {
+  const other = { statuses: ["open", "closed"], done: ["closed"], status_labels: { closed: "Shipped" } };
+  const mixed = [...tasks, { id: "x", key: "O-1", title: "Other open", status: "open", project: "p-other" }, { id: "y", key: "O-2", title: "Other shipped", status: "closed", project: "p-other" }];
+  const configFor = (t) => t.project === "p-other" ? other : config;
+  const find = (text) => runTaskQuery(mixed, parseTaskQuery(text, { today }), { config, configFor, today }).tasks.map((t) => t.key);
+  assert.deepEqual(find("not done\nsort by key"), ["O-1", "Q-1", "Q-2", "Q-5"]);
+  assert.deepEqual(find("done"), ["Q-3", "O-2"]);
+  assert.deepEqual(find("status is Shipped"), ["O-2"], "a status by its label in the card's own project");
+});

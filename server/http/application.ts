@@ -288,6 +288,7 @@ export function createServer(
       "/api/changes",
       "/api/events",
       "/api/overview",
+      "/api/personal",
       "/api/history",
       "/api/trash",
       "/api/organisations",

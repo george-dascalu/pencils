@@ -1,4 +1,4 @@
-export const APP_VERSION = '0.20.2';
+export const APP_VERSION = '0.20.3';
 
 export function watchAppVersion(onVersion) {
   let checking = false;

@@ -12,5 +12,5 @@ export const insertCategories = [
   ["List callouts", listCallouts.map((callout) => [`list-${callout.name}`, callout.label, callout.icon, true])],
 ];
 
-// The Insert panel's items (without the "/"-only extras).
-export const panelCategories = () => insertCategories.map(([title, items]) => [title, items.filter((item) => !item[3])]).filter(([, items]) => items.length);
+// The Insert panel's items (without the "/"-only extras), leaving out `hidden` commands.
+export const panelCategories = (hidden = []) => insertCategories.map(([title, items]) => [title, items.filter((item) => !item[3] && !hidden.includes(item[0]))]).filter(([, items]) => items.length);

@@ -7,6 +7,10 @@ export const DEFAULT_ORGANISATION = "o-default";
 export const idPattern = /^[a-zA-Z0-9_-]{1,80}$/;
 export const now = () => new Date().toISOString();
 export const hash = (text) => createHash("sha256").update(text).digest("hex");
+// Each account's personal space is an organisation whose ID comes from the username,
+// so access checks can tell whose it is without reading the record.
+export const personalOrganisation = (username) => `o-personal-${hash(`personal:${username}`).slice(0, 16)}`;
+export const isPersonalOrganisation = (id) => typeof id === "string" && id.startsWith("o-personal-");
 export function validId(id) {
   if (typeof id !== "string" || !idPattern.test(id))
     throw new Problem(400, "Invalid identifier.");

@@ -18,7 +18,7 @@ import { installRecovery } from "./recovery.js";
 import { decodeCanvas, encodeCanvas } from "../public/canvas-format.js";
 import { installCanvas } from "./canvas.js";
 import { installWorkspace } from "./workspace.js";
-import { DEFAULT_ORGANISATION, idPattern, now, hash, validId, title, body, choice, tags, color } from "./values.js";
+import { DEFAULT_ORGANISATION, idPattern, now, hash, validId, title, body, choice, tags, color, personalOrganisation, isPersonalOrganisation } from "./values.js";
 export { STATUSES, TYPES, PRIORITIES, DEFAULT_ORGANISATION } from "./values.js";
 export { Problem } from "./problem.js";
 
@@ -689,10 +689,13 @@ export class Store {
       progress: progress(tasks.items, schema(project.schema)),
     };
   }
-  async createProject(input) {
+  // `personal` (only from personalSpace) makes the account's documents-only space.
+  async createProject(input, { personal } = {}) {
     const organisation = await this.getOrganisation(
       input.organisation ?? DEFAULT_ORGANISATION,
     );
+    if (isPersonalOrganisation(organisation.id) !== !!personal)
+      throw new Problem(400, "Projects can't be created in a personal space.");
     const id = `p-${randomUUID().slice(0, 8)}`;
     const project = await this.write(
       this.file(id, "project"),
@@ -706,15 +709,25 @@ export class Store {
         color: color(input.color || "#587563"),
         created: now(),
         updated: now(),
-        default_view: "list",
+        default_view: personal ? "documents" : "list",
         schema: schema(input.schema),
         views: [],
         templates: [],
+        ...(personal ? { personal } : {}),
       },
       body(input.body ?? ""),
     );
-    await this.createBoard(id, { title: "Project canvas" });
+    if (!personal) await this.createBoard(id, { title: "Project canvas" });
     return project;
+  }
+  // The account's personal space (an organisation from personalOrganisation and one
+  // documents-only project in it), made on first use.
+  async personalSpace(username) {
+    const id = personalOrganisation(username), file = this.organisationFile(id);
+    if (!(await fs.stat(file).catch(() => null)))
+      await this.write(file, { id, kind: "organisation", personal: username, ...directory([], []), title: "Personal", color: "#66856f", created: now(), updated: now() }, "");
+    const existing = (await this.list(id)).projects.find((p) => p.personal === username);
+    return { project: existing || (await this.createProject({ organisation: id, title: "Personal" }, { personal: username })) };
   }
   async updateProject(id, input) {
     const file = this.file(id, "project"),
@@ -756,8 +769,11 @@ export class Store {
         ],
         "view",
       );
-    if ("organisation" in input)
+    if ("organisation" in input) {
       data.organisation = (await this.getOrganisation(input.organisation)).id;
+      if (data.organisation !== current.data.organisation && (current.data.personal || isPersonalOrganisation(data.organisation)))
+        throw new Problem(400, "Projects can't move into or out of a personal space.");
+    }
     if ("teams" in input || data.organisation !== current.data.organisation) {
       const organisation = await this.getOrganisation(data.organisation);
       data.teams = projectTeams(input.teams ?? (data.organisation === current.data.organisation ? data.teams : []), organisation);

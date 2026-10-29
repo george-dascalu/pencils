@@ -4,6 +4,7 @@ import { randomBytes, scrypt as derive, timingSafeEqual } from "node:crypto";
 import { promisify } from "node:util";
 import { isIP } from "node:net";
 import { Problem } from "./problem.js";
+import { isPersonalOrganisation, personalOrganisation } from "./values.js";
 
 const scrypt = promisify(derive);
 const localAddress = (address = "") => {
@@ -180,6 +181,9 @@ export class Auth {
     return user ? this.public(user) : null;
   }
   allow(user, organisation, write = false) {
+    // A personal space opens only for its owner, administrators included.
+    if (isPersonalOrganisation(organisation))
+      return !!user && organisation === personalOrganisation(user.username);
     return (
       !!user &&
       (user.admin ||

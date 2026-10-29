@@ -618,7 +618,8 @@ export function installFeatures(ctx) {
   }
   function commands() {
     return [
-      ...(state.project
+      { id: "today", title: "Today's note", run: () => document.querySelector('.sidebar [data-action="today"]')?.click() },
+      ...(state.project && !state.project.personal
         ? [
             { id: "new-task", title: "New card", run: () => taskDialog(null) },
             ...[["workflow", "Statuses & workflow"], ["import", "Import notes"], ["templates", "Task templates"], ["quick-capture", "Quick capture"]].map(([id, title]) => ({ id, title, run: () => click(id) })),
@@ -1178,6 +1179,10 @@ export function installFeatures(ctx) {
     openDocument: async (id) => {
       await documentFeature.load();
       return documents.openDocument(id);
+    },
+    today: async () => {
+      await documentFeature.load();
+      return documents.today();
     },
     documentTemplate: async (anchor) => {
       await documentFeature.load();

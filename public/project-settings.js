@@ -90,7 +90,8 @@ export const settingsPages = [
 ];
 // Without an open project, Settings shows only your own and the organisation's sections.
 const workspaceSections = new Set(["personal", "organisation"]);
-const pagesFor = (project) => (project ? settingsPages : settingsPages.filter(([id]) => workspaceSections.has(id)));
+// A personal space has no project or organisation settings, only yours.
+const pagesFor = (project) => (project?.personal ? settingsPages.filter(([id]) => id === "personal") : project ? settingsPages : settingsPages.filter(([id]) => workspaceSections.has(id)));
 export const settingsPage = (id) =>
   settingsPages.find((p) => p[0] === id) || settingsPages[0];
 
@@ -182,7 +183,7 @@ export function projectSettings(ctx, { sources, automations, personal, organisat
   // One Settings page: the project's sections when a project is open, plus You and Organisation.
   function open(section, detail = "", { force = false } = {}) {
     if (!force && !ctx.canNavigate()) return false;
-    section ||= state.project ? (state.view === "settings" ? state.settingsSection : "general") : "personal";
+    section ||= state.project && !state.project.personal ? (state.view === "settings" ? state.settingsSection : "general") : "personal";
     if (!state.project) {
       if (!state.organisation) return false;
       clean();
@@ -199,7 +200,7 @@ export function projectSettings(ctx, { sources, automations, personal, organisat
     state.helpArticle = null;
     clean();
     state.view = "settings";
-    state.settingsSection = settingsPage(section)[0];
+    state.settingsSection = state.project.personal ? "personal" : settingsPage(section)[0];
     state.settingsDetail = detail;
     renderApp();
     document

@@ -2,6 +2,13 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.20.3 — 2026-10-29
+
+### Added
+
+- A personal space: **Personal** in the sidebar, above the organisation, holds your own documents (with folders, templates and links) outside every project. Only your account can open it; administrators can't open it in Pencils either, though anyone with access to the server's files or backups can still read them.
+- **Today** (in the sidebar and in Ctrl/⌘ K) opens today's note, named `YYYY-MM-DD`, in the personal space's Daily folder, and makes it if needed. It uses a template named "Daily" from your Templates folder when there is one. Otherwise the note starts with a task query listing your unfinished cards that are due today or overdue. Task queries in the personal space list cards from every project you can open, and ticking or opening a card works there too.
+
 ## 0.20.2 — 2026-10-29
 
 ### Added

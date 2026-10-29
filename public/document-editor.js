@@ -14,7 +14,7 @@ import { insertCategories } from "./document-insert.js";
 import { highlightCodeBlocks } from "./document-code.js";
 import { listCallouts, listCalloutAfterMarker, setListCallout, listCalloutLabel } from "./document-list-callouts.js";
 
-export function markdownDocumentEditor({ parent, text, mode = "live", renderer, documents, cards = () => [], taskQueries, onChange, onError, onLink, onInsert, icon }) {
+export function markdownDocumentEditor({ parent, text, mode = "live", renderer, documents, cards = () => [], hidden = [], taskQueries, onChange, onError, onLink, onInsert, icon }) {
   const presentation = new Compartment();
   let view, alive = true, focusedComponent = null;
   const hoverEffect = StateEffect.define();
@@ -241,7 +241,7 @@ export function markdownDocumentEditor({ parent, text, mode = "live", renderer, 
   };
   // "/" at the start of a line or after a space offers the Insert panel's
   // elements, as in Obsidian. Typing filters; choosing one replaces "/query".
-  const slashOptions = insertCategories.flatMap(([section, items], rank) => items.map(([command, label, glyph], index) => ({
+  const slashOptions = insertCategories.flatMap(([section, items], rank) => items.filter(([command]) => !hidden.includes(command)).map(([command, label, glyph], index) => ({
     label, glyph, section: { name: section, rank },
     // Keep the Insert panel's order while nothing is typed.
     boost: 50 - index,

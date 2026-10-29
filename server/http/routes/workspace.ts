@@ -224,11 +224,27 @@ export async function workspaceRoutes(ctx: RequestContext): Promise<unknown> {
   }
   if (resource === "trash") {
     auth.admin(user);
-    if (method === "GET") return json(200, { items: await store.trash() });
+    // Administrators manage the trash, except what came from someone else's personal space.
+    const items = [];
+    for (const item of await store.trash()) {
+      const organisation =
+        item.kind === "project"
+          ? item.organisation
+          : (await store.read(store.file(item.project, "project")).catch(() => null))?.data.organisation;
+      if (auth.allow(user, organisation)) items.push(item);
+    }
+    if (method === "GET") return json(200, { items });
     if (method === "POST") {
       const data = await input(req);
+      if (!items.some((item: Input) => item.key === data.key))
+        throw new Problem(403, "You do not have access to this item.");
       return json(200, await mutate(() => store.restoreTrash(data.key)));
     }
+  }
+  // The signed-in account's personal space, made on first use.
+  if (resource === "personal" && method === "POST") {
+    await input(req);
+    return json(200, await mutate(() => store.personalSpace(user.username)));
   }
   if (resource === "organisations" && parts.length === 2) {
     if (method === "GET") {

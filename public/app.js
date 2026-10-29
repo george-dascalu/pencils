@@ -478,7 +478,8 @@ async function fetchWorkspace() {
 }
 function applyWorkspace(data) {
   state.projects = data.projects;
-  state.organisations = data.organisations;
+  // Personal spaces open from the sidebar's Personal section, not the organisation switcher.
+  state.organisations = data.organisations.filter((o) => !o.personal);
   state.globalWarnings = data.warnings;
   state.organisation =
     state.organisations.find((o) => o.id === state.organisation?.id) ||
@@ -541,7 +542,7 @@ function preferredAreaView(area, layouts, fallback) {
 function openView(view) {
   if (!state.project || !canNavigate()) return false;
   const next = view === "tasks" ? preferredAreaView("task", taskViews, "list") : view === "planning" ? preferredAreaView("planning", planningViews, "calendar") : view === "drawing" ? "board" : view;
-  if (!views.includes(next)) return false;
+  if (!views.includes(next) || (state.project.personal && next !== "documents")) return false;
   if (state.view === next) return true;
   state.helpArticle = null;
   features.drawingReset();
@@ -689,10 +690,12 @@ function activateProject(snapshot) {
   );
   if (state.view === "drawing") state.view = "board";
   if (![...views, "settings"].includes(state.view)) state.view = "list";
+  if (snapshot.project.personal) state.view = "documents";
   state.selectedBoard = storage.get(`board:${id}`, state.boards[0]?.id);
   if (!board()) state.selectedBoard = state.boards[0]?.id;
   loadCamera();
   storage.set("project", id);
+  if (snapshot.project.personal) return;
   storage.set(`project:${snapshot.project.organisation}`, id);
   storage.set("organisation", snapshot.project.organisation);
 }
@@ -704,7 +707,7 @@ async function openProject(id) {
     const snapshot = await api(`/projects/${id}`);
     // A project just created (or an organisation just joined) is not in the sidebar yet.
     if (
-      !state.organisations.some((o) => o.id === snapshot.project.organisation) ||
+      (!snapshot.project.personal && !state.organisations.some((o) => o.id === snapshot.project.organisation)) ||
       !state.projects.some((p) => p.id === id)
     )
       applyWorkspace(await fetchWorkspace());
@@ -789,6 +792,7 @@ function renderAppNow() {
     <aside id="workspace-sidebar" class="sidebar ${state.menu ? "open" : ""}" data-drawer-level="${p && state.drawerLevel === "documents" ? "documents" : "menu"}">
       <button class="brand" data-action="home" aria-label="Pencils home"><img src="/icon.svg" alt=""><span class="wordmark">pencils<span style="color:#b9d18c">.</span></span></button>
       <button class="icon-button phone-drawer-close" data-action="menu" aria-label="Close navigation">${icon("close")}</button>
+      <nav class="personal-links" aria-label="Personal"><button class="directory-link ${p?.personal ? "active" : ""}" data-action="personal-open" ${p?.personal ? 'aria-current="page"' : ""}>${icon("person")}<span>Personal</span></button><button class="directory-link" data-action="today">${icon("calendar")}<span>Today</span></button></nav>
       <div class="organisation-switch"><div class="organisation-switch-row"><span class="workspace-icon" style="color:${safeColor(state.organisation?.color)}">${icon("folder")}</span><label class="organisation-choice"><span>ORGANISATION</span><select id="organisation-select" aria-label="Switch organisation">${state.organisations.map((o) => `<option value="${esc(o.id)}" ${o.id === state.organisation?.id ? "selected" : ""}>${esc(o.title)}</option>`).join("")}</select></label></div><div class="organisation-actions"><button data-action="organisation-new">${icon("plus")}New organisation</button><button data-action="organisation-edit" aria-label="Organisation settings" ${state.organisation ? "" : "disabled"}>${icon("settings")}</button></div></div>
       <div class="side-label">PROJECTS<button data-action="project-new" aria-label="Create project">${icon("plus")}</button></div>
       <nav class="project-links" aria-label="Projects">${organisationProjects()
@@ -883,11 +887,14 @@ function warningsHTML(warnings) {
     : "";
 }
 // One New control everywhere: it offers a card or a document (PEN-6).
+let personalOpening = null;
 function newMenuHTML(kind = "button") {
   const summary = kind === "icon"
     ? `<summary class="icon-button" aria-label="New" title="New card or document">${icon("plus")}</summary>`
     : `<summary class="button primary" title="New card or document">${icon("plus")}New</summary>`;
-  return `<details class="board-menu new-menu${kind === "icon" ? " phone-new-task" : ""}" data-new-menu data-board-menu="new-${kind}">${summary}<div class="board-menu-panel new-menu-panel"><button type="button" data-action="task-new">${icon("task")}Card</button><button type="button" data-action="document-new">${icon("file")}Document</button><button type="button" data-action="document-template">${icon("file")}From template</button></div></details>`;
+  // A personal space holds documents only.
+  const card = state.project?.personal ? "" : `<button type="button" data-action="task-new">${icon("task")}Card</button>`;
+  return `<details class="board-menu new-menu${kind === "icon" ? " phone-new-task" : ""}" data-new-menu data-board-menu="new-${kind}">${summary}<div class="board-menu-panel new-menu-panel">${card}<button type="button" data-action="document-new">${icon("file")}Document</button><button type="button" data-action="document-template">${icon("file")}From template</button></div></details>`;
 }
 // Phones: the drawer lists the organisation, projects and teams, with Settings and Help at the
 // bottom; in Documents it opens on its document list level, with a way back.
@@ -934,14 +941,16 @@ document.addEventListener("keydown", event => {
 function projectNavigationHTML() {
   const total = state.tasks.filter((task) => !task.archived).length;
   const area = state.helpArticle ? "help" : taskViews.includes(state.view) ? "tasks" : planningViews.includes(state.view) ? "planning" : state.view;
+  // A personal space holds documents only.
+  const groups = [
+    ["Overview", ["overview"]],
+    ["Documents", ["documents"]],
+    ["Planning views", ["planning"]],
+    ["Task views", ["tasks"]],
+    ["Visual views", ["board"]],
+  ].filter(([name]) => !state.project.personal || name === "Documents");
   return `<div id="board-project-tools" class="board-project-tools">
-    <nav class="tabs" aria-label="Project views">${[
-      ["Overview", ["overview"]],
-      ["Documents", ["documents"]],
-      ["Planning views", ["planning"]],
-      ["Task views", ["tasks"]],
-      ["Visual views", ["board"]],
-    ]
+    <nav class="tabs" aria-label="Project views">${groups
       .map(
         ([name, group]) =>
           `<div class="view-tab-group" role="group" aria-label="${name}">${group.map((view) => {
@@ -950,7 +959,7 @@ function projectNavigationHTML() {
           }).join("")}</div>`,
       )
       .join("")}<span class="tabs-divider" aria-hidden="true"></span><button type="button" class="tab tab-search" data-feature="global-search" aria-label="Search" title="Search tasks, documents and boards">${icon("search")}</button></nav>
-    <label class="mobile-view-switcher">View <select id="project-view-switcher" aria-label="Project view">${["settings", "help"].includes(area) ? `<option value="${area}" selected disabled>${label(area)}</option>` : ""}${["overview", "documents", "planning", "tasks", "board"].map((view) => `<option value="${view}" ${view === area ? "selected" : ""}>${viewLabel(view)}</option>`).join("")}</select></label>
+    <label class="mobile-view-switcher">View <select id="project-view-switcher" aria-label="Project view">${["settings", "help"].includes(area) ? `<option value="${area}" selected disabled>${label(area)}</option>` : ""}${(state.project.personal ? ["documents"] : ["overview", "documents", "planning", "tasks", "board"]).map((view) => `<option value="${view}" ${view === area ? "selected" : ""}>${viewLabel(view)}</option>`).join("")}</select></label>
     ${newMenuHTML()}
   </div>`;
 }
@@ -2151,6 +2160,17 @@ document.addEventListener("click", async (event) => {
         }
         break;
       }
+      // The account's personal space (made on first use), and Today's note in it.
+      // One at a time, so a double click doesn't make two notes for the day.
+      case "personal-open":
+      case "today":
+        personalOpening ||= (async () => {
+          const { project } = await api("/personal", { method: "POST", body: {} });
+          if (state.project?.id !== project.id && !(await openProject(project.id))) return;
+          if (action === "today") await features.today();
+        })().finally(() => { personalOpening = null; });
+        await personalOpening;
+        break;
       case "document-template": {
         const menu = el.closest("details");
         menu?.removeAttribute("open");

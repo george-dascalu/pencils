@@ -52,15 +52,24 @@ export function parseTaskQuery(text, { today = localDate() } = {}) {
 }
 
 // Matching cards in order, at most `limit` of them, and how many matched in all.
-export function runTaskQuery(tasks, query, { config, me = "", today = localDate() }) {
-  const doneStatuses = config.done || [];
+// `configFor` gives each card its own project's workflow when cards come from several projects.
+export function runTaskQuery(tasks, query, { config, configFor = () => config, me = "", today = localDate() }) {
   // A status or priority may be named by its label ("In progress", "Lowest") as well as its key.
   const named = (keys, label, value) => keys.find((key) => [key, label(key)].some((name) => name.toLowerCase() === value.toLowerCase())) || value;
-  const rules = query.rules.map((rule) => rule.field === "status" ? { ...rule, value: named(config.statuses, (s) => statusLabel(config, s), rule.value) }
-    : rule.field === "priority" ? { ...rule, value: named(priorityOptions, priorityLabel, rule.value) } : rule);
-  const match = rules.length ? compileQuery({ match: "all", rules }, tableFields(config), { today, me, done: doneStatuses }) : () => true;
-  const found = tasks.filter((t) => !t.archived && match(t) && (query.done == null || doneStatuses.includes(t.status) === query.done));
-  const rank = { priority: (t) => priorityOptions.indexOf(t.priority || "none"), status: (t) => config.statuses.indexOf(t.status) };
+  const matchers = new Map();
+  const matcher = (c) => {
+    if (!matchers.has(c)) {
+      const rules = query.rules.map((rule) => rule.field === "status" ? { ...rule, value: named(c.statuses, (s) => statusLabel(c, s), rule.value) }
+        : rule.field === "priority" ? { ...rule, value: named(priorityOptions, priorityLabel, rule.value) } : rule);
+      matchers.set(c, rules.length ? compileQuery({ match: "all", rules }, tableFields(c), { today, me, done: c.done || [] }) : () => true);
+    }
+    return matchers.get(c);
+  };
+  const found = tasks.filter((t) => {
+    const c = configFor(t);
+    return !t.archived && matcher(c)(t) && (query.done == null || (c.done || []).includes(t.status) === query.done);
+  });
+  const rank = { priority: (t) => priorityOptions.indexOf(t.priority || "none"), status: (t) => configFor(t).statuses.indexOf(t.status) };
   const compare = (a, b) => {
     for (const { key, reverse } of query.sort) {
       const x = rank[key] ? rank[key](a) : a[key] || "", y = rank[key] ? rank[key](b) : b[key] || "";

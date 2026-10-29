@@ -2849,6 +2849,15 @@ input[type="search"]:not(.search input) {
 .sidebar-directory {
   margin-top: 22px;
 }
+/* Personal and Today share one row, leaving the document explorer its room. */
+.personal-links {
+  display: flex;
+  gap: 5px;
+}
+.personal-links > .directory-link {
+  flex: 1;
+  min-width: 0;
+}
 .directory-links {
   display: flex;
   flex-direction: column;

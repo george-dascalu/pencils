@@ -8,7 +8,7 @@ import { statusLabel, canTransition, initialStatus, transitionError } from "./wo
 import { priorityLabel } from "./task-priority.js";
 import { parseTaskQuery, runTaskQuery } from "./document-task-query.js";
 import { plainMentions, linkMentions, unlinkedMentions } from "./document-mentions.js";
-import { expandTemplate, templatePrompts, templateDocuments, inTemplatesFolder } from "./document-templates.js";
+import { expandTemplate, templatePrompts, templateDocuments, inTemplatesFolder, formatDate } from "./document-templates.js";
 import { taskColorAttributes } from "./task-colors.js";
 import { positionPopover } from "./popover-position.js";
 import { richToolbar } from "./canvas-rich-text.js";
@@ -204,23 +204,48 @@ export function projectDocuments(ctx) {
       }
     });
   }
+  // Changes the folder list against the project's latest revision; false if the project changed meanwhile.
+  async function updateFolders(change) {
+    const pid = state.project.id, snapshot = await api(`/projects/${pid}`);
+    const record = await api(`/projects/${pid}`, { method: "PATCH", body: { revision: snapshot.project.revision, document_folders: change([...(snapshot.project.document_folders || [])], snapshot) } });
+    if (state.project?.id !== pid) return false;
+    state.project = record;
+    return true;
+  }
+  // Today: this day's note (YYYY-MM-DD) in the Daily folder, made from a "Daily" template when there is one.
+  const DAILY = "# {{date:dddd D MMMM YYYY}}\n\n## Cards due\n\n```tasks\nnot done\nassignee is me\ndue before tomorrow\nsort by due\n```\n\n## Notes\n\n{{cursor}}\n";
+  async function today() {
+    const date = formatDate(new Date(), "YYYY-MM-DD");
+    let daily = folders().find(f => !f.parent && f.title.trim().toLowerCase() === "daily");
+    if (!daily) {
+      const isDaily = f => !f.parent && f.title.trim().toLowerCase() === "daily";
+      daily = { id: `folder-${randomUUID()}`, title: "Daily", parent: null };
+      if (!(await updateFolders(list => list.some(isDaily) ? list : [...list, daily]))) return;
+      daily = folders().find(isDaily);
+    }
+    const existing = all().find(d => d.folder === daily.id && d.title === date);
+    if (existing) return openDocument(existing.id);
+    const template = templateDocuments(all(), folders()).find(t => t.title.trim().toLowerCase() === "daily");
+    const { body, cursor } = expandTemplate(template?.body ?? DAILY, { title: date, project: state.project.title });
+    const record = await create(date, body, { folder: daily.id, caret: cursor });
+    if (record && state.view !== "documents") openDocument(record.id);
+  }
   function folderPanel(button, id = null) {
     const folder = folders().find(f => f.id === id);
     const box = showPanel(button, folder ? "Edit folder" : "New folder", `<form><label class="field">Folder name<input name="title" required maxlength="100" value="${esc(folder?.title || "")}" autocomplete="off"></label><label class="field">Parent folder<select name="parent">${folderOptions(folder ? folder.parent : activeFolder, id)}</select></label><p class="form-error" role="alert" hidden></p><div class="document-panel-actions">${folder ? '<button type="button" class="button danger" data-delete-folder>Delete folder</button>' : ""}<button type="submit" class="button primary">${folder ? "Save" : "Create folder"}</button></div></form>`);
     const save = async (remove = false) => {
-      const pid = state.project.id, values = new FormData(box.querySelector("form"));
+      const values = new FormData(box.querySelector("form"));
       const buttons = box.querySelectorAll("button"); buttons.forEach(b => b.disabled = true);
       try {
-        const snapshot = await api(`/projects/${pid}`);
-        const list = [...(snapshot.project.document_folders || [])];
         const folderId = id || `folder-${randomUUID()}`;
-        const next = list.filter(f => f.id !== folderId);
-        if (!remove) next.push({ id: folderId, title: values.get("title"), parent: values.get("parent") || null });
-        else if (snapshot.documents.some(d => d.folder === id) || list.some(f => f.parent === id))
-          throw Error("Move this folder's documents and subfolders before deleting it.");
-        const record = await api(`/projects/${pid}`, { method: "PATCH", body: { revision: snapshot.project.revision, document_folders: next } });
-        if (state.project?.id !== pid) return;
-        state.project = record;
+        const changed = await updateFolders((list, snapshot) => {
+          const next = list.filter(f => f.id !== folderId);
+          if (!remove) next.push({ id: folderId, title: values.get("title"), parent: values.get("parent") || null });
+          else if (snapshot.documents.some(d => d.folder === id) || list.some(f => f.parent === id))
+            throw Error("Move this folder's documents and subfolders before deleting it.");
+          return next;
+        });
+        if (!changed) return;
         activeFolder = remove ? null : folderId;
         closedFolders.delete(folderId);
         closePanel(true); updateExplorer();
@@ -378,15 +403,28 @@ export function projectDocuments(ctx) {
   // becomes a card linked to this document, and the text becomes a mention of it.
   // "```tasks" blocks: the project's matching cards as rows (type, key, title, assignee, status,
   // priority), with a box that completes the card. Blocks re-render whenever saves change.
-  function taskRow(t) {
-    const done = (state.config.done || []).includes(t.status);
-    return `<div class="document-task-row"><input type="checkbox" class="document-checkbox" ${done ? "checked" : ""} data-task-query-done="${esc(t.id)}" aria-label="Done: ${esc(t.title)}"><button type="button" class="document-task-open" data-task-query-open="${esc(t.id)}" aria-label="Open ${esc(t.key || t.id)}: ${esc(t.title)}">${icon(t.type || "task")}<span class="document-card-key">${esc(t.key || t.id)}</span><span class="document-task-title">${esc(t.title)}</span></button><span class="document-task-fields">${ctx.assigneeHTML(t)}<span class="field-chip field-chip-status" ${taskColorAttributes(state, "status", t.status)}>${esc(statusLabel(state.config, t.status))}</span><span class="field-chip field-chip-priority" role="img" aria-label="Priority: ${esc(priorityLabel(t.priority || "none"))}" ${taskColorAttributes(state, "priority", t.priority)}>${icon(`priority-${t.priority || "none"}`)}</span></span></div>`;
+  // In the personal space, queries read the cards of every project you can open (loaded with each document).
+  let everywhere = null, everywhereRequest = 0; // { tasks, configs: Map(project ID → workflow config) }
+  async function loadEverywhere() {
+    const request = ++everywhereRequest, data = await api("/overview");
+    if (request !== everywhereRequest) return;
+    everywhere = { tasks: data.tasks, configs: new Map(data.projects.map(p => [p.id, p.schema])) };
+    if (form?.isConnected) renderTaskQueries(form);
   }
+  // Cards from several projects may share an ID, so rows name their project too.
+  const queryTask = (element) => queryTasks().find(t => t.id === (element.dataset.taskQueryDone || element.dataset.taskQueryOpen) && (t.project || "") === (element.dataset.taskQueryProject || t.project || ""));
+  const queryConfig = (t) => (state.project?.personal && everywhere?.configs.get(t.project)) || state.config;
+  function taskRow(t) {
+    const config = queryConfig(t), colors = { ...state, config };
+    const done = (config.done || []).includes(t.status);
+    return `<div class="document-task-row"><input type="checkbox" class="document-checkbox" ${done ? "checked" : ""} data-task-query-done="${esc(t.id)}" data-task-query-project="${esc(t.project || "")}" aria-label="Done: ${esc(t.title)}"><button type="button" class="document-task-open" data-task-query-open="${esc(t.id)}" data-task-query-project="${esc(t.project || "")}" aria-label="Open ${esc(t.key || t.id)}: ${esc(t.title)}">${icon(t.type || "task")}<span class="document-card-key">${esc(t.key || t.id)}</span><span class="document-task-title">${esc(t.title)}</span></button><span class="document-task-fields">${ctx.assigneeHTML(t)}<span class="field-chip field-chip-status" ${taskColorAttributes(colors, "status", t.status)}>${esc(statusLabel(config, t.status))}</span><span class="field-chip field-chip-priority" role="img" aria-label="Priority: ${esc(priorityLabel(t.priority || "none"))}" ${taskColorAttributes(colors, "priority", t.priority)}>${icon(`priority-${t.priority || "none"}`)}</span></span></div>`;
+  }
+  const queryTasks = () => state.project?.personal ? everywhere?.tasks || [] : state.tasks || [];
   function renderTaskQueries(root) {
     for (const block of root?.querySelectorAll("[data-document-task-query]") || []) {
       if (block.dataset.query == null) block.dataset.query = block.textContent;
       const query = parseTaskQuery(block.dataset.query);
-      const { tasks, total } = runTaskQuery(state.tasks || [], query, { config: state.config, me: state.session?.user?.username || "" });
+      const { tasks, total } = runTaskQuery(queryTasks(), query, { config: state.config, configFor: queryConfig, me: state.session?.user?.username || "" });
       block.dataset.rendered = "true";
       const html = `${query.errors.length ? `<p class="form-error">Not understood: ${query.errors.map(esc).join(", ")}</p>` : ""}${tasks.map(taskRow).join("") || '<p class="field-hint">No matching cards.</p>'}${total > tasks.length ? `<p class="field-hint">${total - tasks.length} more not shown.</p>` : ""}`;
       // Every save calls this, so unchanged rows stay as they are, and focus stays on the same card.
@@ -400,7 +438,11 @@ export function projectDocuments(ctx) {
       block.onchange = event => { if (event.target.dataset.taskQueryDone) completeCard(event.target); };
       block.onclick = event => {
         const open = event.target.closest("[data-task-query-open]");
-        if (open) { event.preventDefault(); ctx.taskDialog(open.dataset.taskQueryOpen); }
+        if (!open) return;
+        event.preventDefault();
+        const task = queryTask(open);
+        if (task?.project && task.project !== state.project.id) ctx.openProject(task.project).then(opened => opened && ctx.taskDialog(task.id));
+        else ctx.taskDialog(open.dataset.taskQueryOpen);
       };
       // A tap ticks the box without focusing the editor, which would open the iPhone keyboard.
       let tap = null;
@@ -420,13 +462,15 @@ export function projectDocuments(ctx) {
   }
   const renderedQueries = new WeakMap();
   async function completeCard(input) {
-    const task = (state.tasks || []).find(t => t.id === input.dataset.taskQueryDone), config = state.config, doneStatuses = config.done || [];
+    const task = queryTask(input), config = task ? queryConfig(task) : state.config, doneStatuses = config.done || [];
     const wanted = input.checked ? doneStatuses : [initialStatus(config), ...config.statuses].filter(s => !doneStatuses.includes(s));
     const target = task && wanted.find(s => canTransition(config, task.status, s));
     try {
       if (!task) throw new Error("This card no longer exists.");
       if (!target) throw new Error(transitionError(config, task.status, wanted[0]));
-      await ctx.patchTask(task.id, { status: target }, false);
+      if (task.project && task.project !== state.project.id)
+        await api(`/projects/${task.project}/tasks/${task.id}`, { method: "PATCH", body: { status: target, revision: task.revision } }).finally(() => loadEverywhere().catch(() => {}));
+      else await ctx.patchTask(task.id, { status: target }, false);
     } catch (error) { toast(error.message, true); }
     renderTaskQueries(form);
   }
@@ -580,7 +624,7 @@ export function projectDocuments(ctx) {
     editor = markdownDocumentEditor({
       icon,
       parent: form.querySelector(".document-codemirror"), text: doc.body || "",
-      mode: mode === "source" ? "source" : "live", renderer, documents: all, cards: () => (state.tasks || []).filter((t) => !t.archived), taskQueries: renderTaskQueries,
+      mode: mode === "source" ? "source" : "live", renderer, documents: all, hidden: state.project.personal ? ["card"] : [], cards: () => (state.tasks || []).filter((t) => !t.archived), taskQueries: renderTaskQueries,
       onChange(value) {
         form.elements.body.value = value;
         form.elements.body.dispatchEvent(new Event("input", { bubbles: true }));
@@ -592,6 +636,7 @@ export function projectDocuments(ctx) {
       },
     });
     if (pendingCaret?.id === doc.id) { editor.jump(pendingCaret.at); pendingCaret = null; }
+    if (state.project.personal) loadEverywhere().catch(error => toast(error.message, true));
     readingSearch = documentReadingSearch({ form, content: form.querySelector(".document-reading"), icon });
     installToolbarScroll(form.querySelector(".document-formatting .rich-toolbar-shell"));
     form.addEventListener("input", changed);
@@ -769,7 +814,7 @@ export function projectDocuments(ctx) {
       } else if (action === "confirm-delete") {
         showPanel(button, "Delete document", '<p>Move this document to Trash?</p><button type="button" class="button danger" data-document-action="delete">Move to Trash</button>');
       } else if (action === "insert") {
-        const categories = panelCategories();
+        const categories = panelCategories(state.project.personal ? ["card"] : []);
         showPanel(button, "Insert", `<div class="document-insert-options">${categories.map(([title, items]) => `<section aria-label="${title}"><h3>${title}</h3>${items.map(([key,label,glyph]) => `<button type="button" class="document-panel-item" ${["attach", "card"].includes(key) ? `data-document-action="${key}"` : `data-document-format="${key}"`}>${icon(glyph)}${label}</button>`).join("")}</section>`).join("")}</div>`);
 
       } else if (action === "attach") { closePanel(); form.querySelector("#document-attachment").click(); }
@@ -935,5 +980,5 @@ export function projectDocuments(ctx) {
       event.preventDefault(); event.returnValue = "";
     }
   });
-  return { render, reset, syncChanged, create, openDocument, templatePanel };
+  return { render, reset, syncChanged, create, openDocument, templatePanel, today };
 }
