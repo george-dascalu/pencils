@@ -64,7 +64,3 @@ export function treePage(matches, allTasks, page = 0, size = PAGE_SIZE, compare 
     context: items.filter((t) => t.contextOnly).length,
   };
 }
-export function visibilitySummary(all, matches, visible, context = 0) {
-  const archived = all.filter((t) => t.archived).length;
-  return `${matches.length} matching of ${all.length} total tasks · ${archived} archived${visible == null ? "" : ` · ${visible} on this page`}${context ? ` · ${context} ancestor context rows` : ""}`;
-}

@@ -27,10 +27,10 @@ export function readGestures() {
     return { ...gestureDefaults };
   }
 }
-export function gestureSettingsHTML() {
+export function gestureSettingsHTML({ compact = false } = {}) {
   const prefs = readGestures();
   return `<fieldset class="appearance-group drawing-gesture-settings"><legend>Board gestures</legend>
-    <p class="field-hint">Pencil draws. Drag empty space with one finger to pan; tap or drag an object to select or move it. Pinch with two fingers to zoom.</p>
+    ${compact ? "" : '<p class="field-hint">Pencil draws. Drag empty space with one finger to pan; tap or drag an object to select or move it. Pinch with two fingers to zoom.</p>'}
     ${[
       ["doubleTap", "Double-tap canvas"],
       ["twoFingerTap", "Two-finger tap"],
@@ -48,8 +48,8 @@ export function gestureSettingsHTML() {
             .join("")}</select></label>`,
       )
       .join("")}
-    <p class="field-hint">Apple Pencil barrel taps are unavailable in this browser app. The side-button shortcut works only with pens that send a button event. Use a canvas gesture or the pen/eraser buttons with Apple Pencil.</p>
-    <small data-gesture-save role="status">Changes apply immediately on this browser.</small>
+    ${compact ? "" : '<p class="field-hint">Apple Pencil barrel taps are unavailable in this browser app. The side-button shortcut works only with pens that send a button event. Use a canvas gesture or the pen/eraser buttons with Apple Pencil.</p>'}
+    <small data-gesture-save role="status" ${compact ? 'class="sr-only"' : ""}>${compact ? "" : "Changes apply immediately on this browser."}</small>
   </fieldset>`;
 }
 export function installGestureSettings() {

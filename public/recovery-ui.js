@@ -1,3 +1,4 @@
+import { confirmAction } from "./confirm-popover.js";
 import { BACKUP_BYTES } from "./backup-limits.js";
 export function recoveryUI(ctx) {
   const {
@@ -42,7 +43,7 @@ export function recoveryUI(ctx) {
                 "",
               )}<h3>Trash</h3>${trash.items.map((t) => `<div class="recovery-item"><strong>${esc(t.title)}</strong> · ${esc(t.kind)}<button class="button small" data-feature="trash-restore" data-key="${esc(t.key)}">Restore</button></div>`).join("") || "<p>Trash is empty.</p>"}`
           : ""
-      }</div><div class="dialog-foot"><button class="button primary" data-action="dialog-close">Close</button></div></dialog>`,
+      }</div><div class="dialog-foot"><button class="button" data-action="dialog-close">Close</button></div></dialog>`,
       "recovery",
     );
   }
@@ -109,9 +110,7 @@ export function recoveryUI(ctx) {
     }
     if (action === "backup-restore") {
       if (
-        confirm(
-          "Replace all projects and organisations with this backup? A backup of the current vault will be created first.",
-        )
+        await confirmAction({ anchor: el, title: "Restore this backup?", message: "All projects and organisations are replaced. A backup of the current vault is created first.", confirmLabel: "Restore backup", danger: true })
       ) {
         await api(`/backups/${el.dataset.id}`, { method: "POST", body: {} });
         closeDialog(true);
@@ -128,7 +127,7 @@ export function recoveryUI(ctx) {
       return true;
     }
     if (action === "version-restore") {
-      if (confirm(`Restore this version of ${record.title}?`)) {
+      if (await confirmAction({ anchor: el, title: "Restore this version?", message: `${record.title} returns to this version.`, confirmLabel: "Restore" })) {
         await api("/history", {
           method: "POST",
           body: {
@@ -168,9 +167,7 @@ export function recoveryUI(ctx) {
     }
     if (action === "draft-discard") {
       if (
-        confirm(
-          "Discard these unsaved changes? Export the draft first if you want a copy.",
-        )
+        await confirmAction({ anchor: el, title: "Discard these unsaved changes?", message: "Export the draft first if you want a copy.", confirmLabel: "Discard", danger: true })
       ) {
         sync.discard(el.dataset.url);
         await refresh(false);

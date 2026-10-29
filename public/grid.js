@@ -1,3 +1,4 @@
+import { confirmAction } from "./confirm-popover.js";
 import { priorityOptions, priorityLabels, priorityLabel } from "./task-priority.js";
 import {sourceFields,sourceLabel} from "./source-model.js";
 import { tableResult, activeTableFilter } from "./table-model.js";
@@ -30,15 +31,22 @@ export function grid(ctx) {
     toast,
   } = ctx;
   const tools = tableTools(ctx);
+  const phone = matchMedia("(max-width: 600px)");
+  phone.addEventListener("change", () => {
+    if (state.view !== "table") return;
+    const editing = document.activeElement?.closest(".spreadsheet input, .spreadsheet select");
+    if (editing) editing.addEventListener("blur", () => requestAnimationFrame(() => state.view === "table" && renderView(true)), { once: true });
+    else renderView(true);
+  });
   const standard = [
     "key",
     "title",
     "body",
     "type",
+    "assignee",
     "status",
     "priority",
     "parent",
-    "assignee",
     "start",
     "due",
     "estimate",
@@ -75,7 +83,9 @@ export function grid(ctx) {
       ? `<span class="task-type ${esc(value)}">${ctx.icon(value)}</span>`
       : key === "assignee"
         ? ctx.assigneeHTML({ assignee: value })
-        : esc(text);
+        : key === "priority"
+          ? ctx.icon(`priority-${value || "none"}`)
+          : esc(text);
   function refreshSelect(select) {
     const wrapper = select.closest(".table-cell-select");
     if (!wrapper || !select.matches("select")) return;
@@ -121,9 +131,9 @@ export function grid(ctx) {
     return template.content.textContent.replace(/\s+/g, " ").trim();
   }
   const tableWidth = () =>
-    `calc(var(--table-selection-width, 94px) + ${columns.reduce((sum, column) => sum + (column.width || 160), 0)}px)`;
+    `calc(var(--table-selection-width, 94px) + ${columns.map(column => phone.matches && column.key === "title" ? "var(--table-phone-title-width)" : `${column.width || 160}px`).join(" + ") || "0px"})`;
   function columnsMenu() {
-    return `<details class="board-menu table-columns-menu" data-board-menu="table-columns" ${state.headerMenu === "table-columns" ? "open" : ""}><summary>Columns<span aria-hidden="true">⌄</span></summary><div class="board-menu-panel table-columns-panel" data-menu-keep-open><header><strong>Table columns</strong><button type="button" class="icon-button" data-feature="columns-close" aria-label="Close table columns">${ctx.icon("close")}</button></header><div id="column-list">${state.tableColumns.map((c, i) => `<div class="column-setting" data-column-setting="${esc(c.key)}"><label><input type="checkbox" data-column-visible="${esc(c.key)}" ${c.visible !== false ? "checked" : ""}><span>${esc(fieldName(c.key))}</span></label><button type="button" class="icon-button" data-feature="column-up" data-index="${i}" aria-label="Move ${esc(fieldName(c.key))} up" title="Move up" ${i === 0 ? "disabled" : ""}>${ctx.icon("priority-high")}</button><button type="button" class="icon-button" data-feature="column-down" data-index="${i}" aria-label="Move ${esc(fieldName(c.key))} down" title="Move down" ${i === state.tableColumns.length - 1 ? "disabled" : ""}>${ctx.icon("down")}</button></div>`).join("")}</div><small>Changes apply immediately. Save a view to keep this layout. Drag headers to reorder, or their edges to resize. Alt + ← / → moves a focused header.</small></div></details>`;
+    return `<details class="board-menu table-columns-menu" data-board-menu="table-columns" ${state.headerMenu === "table-columns" ? "open" : ""}><summary>Columns<svg class="icon menu-caret" viewBox="0 0 24 24" aria-hidden="true"><path d="m8 10 4 4 4-4"/></svg></summary><div class="board-menu-panel table-columns-panel" data-menu-keep-open><header><strong>Table columns</strong><button type="button" class="icon-button" data-feature="columns-close" aria-label="Close table columns">${ctx.icon("close")}</button></header><div id="column-list">${state.tableColumns.map((c, i) => `<div class="column-setting" data-column-setting="${esc(c.key)}"><label><input type="checkbox" data-column-visible="${esc(c.key)}" ${c.visible !== false ? "checked" : ""}><span>${esc(fieldName(c.key))}</span></label><button type="button" class="icon-button" data-feature="column-up" data-index="${i}" aria-label="Move ${esc(fieldName(c.key))} up" title="Move up" ${i === 0 ? "disabled" : ""}>${ctx.icon("priority-high")}</button><button type="button" class="icon-button" data-feature="column-down" data-index="${i}" aria-label="Move ${esc(fieldName(c.key))} down" title="Move down" ${i === state.tableColumns.length - 1 ? "disabled" : ""}>${ctx.icon("down")}</button></div>`).join("")}</div><small>Changes apply immediately. Drag headers to reorder, or their edges to resize. Alt + ← / → moves a focused header.</small><footer class="table-columns-footer"><button type="button" class="button small" data-feature="table-export">${ctx.icon("download")}Export matching CSV</button></footer></div></details>`;
   }
   function redrawColumns(key, action) {
     const top = $("#column-list")?.scrollTop || 0;
@@ -149,7 +159,9 @@ export function grid(ctx) {
     state.page = Math.min(state.page || 0, pages - 1);
     const tasks = result.tasks.slice(state.page * 100, (state.page + 1) * 100);
     state.tableColumns = config();
-    columns = state.tableColumns.filter((c) => c.visible !== false);
+    columns = state.tableColumns.filter((c) => c.visible !== false).map(c => ({ ...c }));
+    // Phone identity comes first without rewriting the saved desktop layout.
+    if (phone.matches) columns.sort((a, b) => Number(b.key === "title") - Number(a.key === "title"));
     let pinOffset = 0;
     for (const col of columns) {
       col.pinOffset = pinOffset;
@@ -229,17 +241,17 @@ export function grid(ctx) {
       if (hidden) continue;
       const r = rowIds.length;
       rowIds.push(t.id);
-      body += `<tr data-table-task="${esc(t.id)}" data-task-order-row="${esc(t.id)}" data-task-order-group="${esc(JSON.stringify(path))}"><td class="task-row-controls"><div class="task-row-actions">${taskReorderHandle(t, esc)}<label class="task-checkbox"><input type="checkbox" data-row-select="${t.id}" ${selected.has(t.id) ? "checked" : ""} aria-label="Select ${esc(t.title)}"></label><button class="table-open" data-action="task-open" data-id="${t.id}" aria-label="Open ${esc(t.title)}">↗</button></div></td>${columns.map((c, k) => `<td role="gridcell" tabindex="${r === 0 && k === 0 ? 0 : -1}" data-cell="${r},${k}" data-column-key="${esc(c.key)}" style="--pin-offset:${c.pinOffset}px">${preferences.outline && c.key === "title" && t.parent ? `<small class="table-parent-context" style="padding-left:${Math.min(12,result.depths.get(t.id)||0)*12}px">↳ ${esc(parents.get(t.parent)?.key || t.parent)}${!result.depths.get(t.id)?" · parent outside this group or filter":""}</small>`:""}${cell(t, c.key)}</td>`).join("")}</tr>`;
+      body += `<tr data-table-task="${esc(t.id)}" data-task-order-row="${esc(t.id)}" data-task-order-group="${esc(JSON.stringify(path))}"><td class="task-row-controls"><div class="task-row-actions">${taskReorderHandle(t, esc)}<label class="task-checkbox"><input type="checkbox" data-row-select="${t.id}" ${selected.has(t.id) ? "checked" : ""} aria-label="Select ${esc(t.title)}"></label><button class="table-open" data-action="task-open" data-id="${t.id}" aria-label="Open ${esc(t.title)}" title="Open task details">${ctx.icon("external")}</button></div></td>${columns.map((c, k) => `<td role="gridcell" tabindex="${r === 0 && k === 0 ? 0 : -1}" data-cell="${r},${k}" data-column-key="${esc(c.key)}" style="--pin-offset:${c.pinOffset}px">${preferences.outline && c.key === "title" && t.parent ? `<small class="table-parent-context" style="padding-left:${Math.min(12,result.depths.get(t.id)||0)*12}px">↳ ${esc(parents.get(t.parent)?.key || t.parent)}${!result.depths.get(t.id)?" · parent outside this group or filter":""}</small>`:""}${c.key === "title" ? `<div class="table-title-line">${cell(t, c.key)}<button type="button" class="phone-table-key" tabindex="-1" data-action="task-open" data-id="${esc(t.id)}" aria-label="Open ${esc(t.key || t.id)}: ${esc(t.title)}" title="Open card">${esc(t.key || "")}</button></div>` : cell(t, c.key)}</td>`).join("")}</tr>`;
     }
     // Bulk actions and clipboard ranges must never target filtered or collapsed rows.
     for (const id of selected) if (!rowIds.includes(id)) selected.delete(id);
-    return `${tools.html()}<div class="grid-tools">${columnsMenu()}<span id="grid-selection-count" class="sr-only" role="status">${selected.size} selected on this page</span><span id="grid-bulk" ${selected.size ? "" : "hidden"}><label>Apply to <select id="bulk-scope"><option value="selected">Selected rows</option><option value="page">Visible rows on this page (${rowIds.length})</option><option value="matching">All matching tasks (${matchingRows.length})</option></select></label><label>Bulk status <select id="bulk-status"><option value="">Choose…</option>${options(state.config.statuses, "")}</select></label><button class="button small" data-feature="bulk-archive">Archive tasks</button></span><button class="button small" data-feature="table-export">Export matching CSV</button></div><div class="table-scroll"><table class="task-table spreadsheet" style="width:${tableWidth()}" role="grid" aria-label="Tasks spreadsheet"><colgroup><col style="width:var(--table-selection-width)">${columns.map((c) => `<col style="width:${c.width || 160}px">`).join("")}</colgroup><thead><tr><th><label class="task-checkbox"><input type="checkbox" id="grid-all" aria-label="Select all visible rows" ${rowIds.length && rowIds.every((id) => selected.has(id)) ? "checked" : ""}></label></th>${columns
+    return `${tools.html()}<div class="grid-tools">${columnsMenu()}<span id="grid-selection-count" class="sr-only" role="status">${selected.size} selected on this page</span><span id="grid-bulk" ${selected.size ? "" : "hidden"}><label>Apply to <select id="bulk-scope"><option value="selected">Selected rows</option><option value="page">Visible rows on this page (${rowIds.length})</option><option value="matching">All matching tasks (${matchingRows.length})</option></select></label><label>Bulk status <select id="bulk-status"><option value="">Choose…</option>${options(state.config.statuses, "")}</select></label><button class="button small" data-feature="bulk-archive">Archive tasks</button></span></div><div class="table-scroll"><table class="task-table spreadsheet" style="width:${tableWidth()}" role="grid" aria-label="Tasks spreadsheet"><colgroup><col style="width:var(--table-selection-width)">${columns.map((c) => `<col data-table-col="${esc(c.key)}" style="width:${phone.matches && c.key === "title" ? "var(--table-phone-title-width)" : `${c.width || 160}px`}">`).join("")}</colgroup><thead><tr><th><label class="task-checkbox"><input type="checkbox" id="grid-all" aria-label="Select all visible rows" ${rowIds.length && rowIds.every((id) => selected.has(id)) ? "checked" : ""}></label></th>${columns
       .map((c) => {
         const sort = preferences.sorts.findIndex((s) => s.field === c.key),
           active = preferences.filters.some(
             (f) => f.field === c.key && activeTableFilter(f),
           );
-        return `<th data-column-key="${esc(c.key)}" style="--pin-offset:${c.pinOffset}px" aria-sort="${sort === 0 ? (preferences.sorts[sort].dir === 1 ? "ascending" : "descending") : sort > 0 ? "other" : "none"}"><div class="table-column-heading ${(c.width || 160) <= 128 ? "table-column-compact" : ""}"><button type="button" class="table-column-grip" data-column-drag="${esc(c.key)}" aria-label="Move ${esc(fieldName(c.key))} column" aria-keyshortcuts="Alt+ArrowLeft Alt+ArrowRight" title="Drag to move ${esc(fieldName(c.key))}. Alt + Left/Right moves this column."><span aria-hidden="true">⠿</span></button><button type="button" data-table-sort-column="${esc(c.key)}" aria-keyshortcuts="Alt+ArrowLeft Alt+ArrowRight" title="Sort ${esc(fieldName(c.key))}: ascending, descending, then clear. Shift-click to add a sort." aria-label="Sort by ${esc(fieldName(c.key))}"><span class="table-column-name">${esc(fieldName(c.key))}</span>${sort >= 0 ? `<span class="table-sort-indicator">${preferences.sorts[sort].dir === 1 ? "↑" : "↓"}${preferences.sorts.length > 1 ? sort + 1 : ""}</span>` : ""}</button><details class="board-menu table-header-menu ${active ? "has-active-filter" : ""}"><summary aria-label="${esc(fieldName(c.key))} column actions${active ? ", filter active" : ""}">⋯</summary><div class="board-menu-panel"><header><strong>${esc(fieldName(c.key))}</strong><small>${esc(c.key.startsWith("fields.") ? custom(c.key)?.type || "text" : ["due", "start"].includes(c.key) ? "Date" : c.key === "estimate" ? "Number of hours" : "Task field")}</small></header>${[
+        return `<th data-column-key="${esc(c.key)}" style="--pin-offset:${c.pinOffset}px" aria-sort="${sort === 0 ? (preferences.sorts[sort].dir === 1 ? "ascending" : "descending") : sort > 0 ? "other" : "none"}"><div class="table-column-heading ${(c.width || 160) <= 128 ? "table-column-compact" : ""}"><button type="button" class="table-column-grip" data-column-drag="${esc(c.key)}" aria-label="Move ${esc(fieldName(c.key))} column" aria-keyshortcuts="Alt+ArrowLeft Alt+ArrowRight" title="Drag to move ${esc(fieldName(c.key))}. Alt + Left/Right moves this column.">${ctx.icon("drag")}</button><button type="button" data-table-sort-column="${esc(c.key)}" aria-keyshortcuts="Alt+ArrowLeft Alt+ArrowRight" title="Sort ${esc(fieldName(c.key))}: ascending, descending, then clear. Shift-click to add a sort." aria-label="Sort by ${esc(fieldName(c.key))}"><span class="table-column-name">${esc(fieldName(c.key))}</span>${sort >= 0 ? `<span class="table-sort-indicator">${preferences.sorts[sort].dir === 1 ? "↑" : "↓"}${preferences.sorts.length > 1 ? sort + 1 : ""}</span>` : ""}</button><details class="board-menu table-header-menu ${active ? "has-active-filter" : ""}"><summary aria-label="${esc(fieldName(c.key))} column actions${active ? ", filter active" : ""}">${ctx.icon("more")}</summary><div class="board-menu-panel"><header><strong>${esc(fieldName(c.key))}</strong><small>${esc(c.key.startsWith("fields.") ? custom(c.key)?.type || "text" : ["due", "start"].includes(c.key) ? "Date" : c.key === "estimate" ? "Number of hours" : "Task field")}</small></header>${[
           ["asc", "Sort ascending", "priority-high"],
           ["desc", "Sort descending", "down"],
           ["filter", "Filter column", "filter"],
@@ -259,7 +271,7 @@ export function grid(ctx) {
       })
       .join(
         "",
-      )}</tr></thead><tbody>${body || `<tr><td colspan="${columns.length + 1}"><div class="table-no-results">No tasks match these filters. <button class="button small" data-table-action="clear-filters">Clear column filters</button><button class="button small" data-action="filters-reset">Clear all filters</button></div></td></tr>`}</tbody></table></div><span class="sr-only" data-table-reorder-status role="status" aria-live="polite"></span>${pages > 1 ? `<div class="pagination"><button class="button small" data-feature="page-prev" ${!state.page ? "disabled" : ""}>← Previous</button><span>Page ${state.page + 1} of ${pages}</span><button class="button small" data-feature="page-next" ${state.page + 1 >= pages ? "disabled" : ""}>Next →</button></div>` : ""}<button class="add-row" data-action="task-new">+ New row</button>`;
+      )}</tr></thead><tbody>${body || `<tr><td colspan="${columns.length + 1}"><div class="table-no-results">No tasks match these filters. <button class="button soft" data-table-action="clear-filters">Clear column filters</button><button class="button small" data-action="filters-reset">Clear all filters</button></div></td></tr>`}</tbody></table></div><span class="sr-only" data-table-reorder-status role="status" aria-live="polite"></span>${pages > 1 ? `<div class="pagination"><button class="button small" data-feature="page-prev" ${!state.page ? "disabled" : ""}>← Previous</button><span>Page ${state.page + 1} of ${pages}</span><button class="button small" data-feature="page-next" ${state.page + 1 >= pages ? "disabled" : ""}>Next →</button></div>` : ""}<button class="add-row" data-action="task-new">${ctx.icon("plus")}New card</button>`;
   }
   function paint() {
     if (!anchor || !focus) return;
@@ -549,6 +561,7 @@ export function grid(ctx) {
     cols.find((c) => c.key === resize.key).width = width;
     state.tableColumns = cols;
     const index = columns.findIndex((c) => c.key === resize.key);
+    if (index >= 0) columns[index].width = width;
     const col = $$(".spreadsheet col")[index + 1];
     if (col) col.style.width = `${width}px`;
     const table = $(".spreadsheet");
@@ -590,9 +603,7 @@ export function grid(ctx) {
         return;
       }
       if (
-        !confirm(
-          `Change status to ${ctx.statusNames[el.value] || el.value} for ${ids.length} tasks (${scopeName()})?`,
-        )
+        !(await confirmAction({ anchor: el, title: "Change status?", message: `Change status to ${ctx.statusNames[el.value] || el.value} for ${ids.length} tasks (${scopeName()}).`, confirmLabel: "Change status" }))
       ) {
         el.value = "";
         return;
@@ -650,7 +661,7 @@ export function grid(ctx) {
     if (action === "bulk-archive") {
       const ids=bulkIds();
       if(!bulkAllowed(ids)) return true;
-      if(confirm(`Archive ${ids.length} tasks (${scopeName()})? They remain recoverable with Include archived.`)) {
+      if(await confirmAction({ title: "Archive these tasks?", message: `Archive ${ids.length} tasks (${scopeName()}). They remain recoverable with Include archived.`, confirmLabel: "Archive" })) {
         for(const id of ids) if(task(id)) await patchTask(id,{archived:true},false);
         selected.clear();renderView(true);
       }

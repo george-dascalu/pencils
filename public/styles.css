@@ -11,13 +11,53 @@
   font-synthesis: none;
   font-size: 14px;
   --ink: #303b35;
-  --muted: #7b8178;
+  --muted: #626b5e;
   --line: #e5e7df;
   --green: #4d6c55;
   --focus-ring: 1px solid var(--green);
   --accent: #d2e3a4;
   --paper: #f9f9f5;
   --side: #263c34;
+  /* Shared tokens: borders, danger text, popover shadows and radii. */
+  --border: var(--line);
+  --danger: #b34438;
+  --shadow-popover: 0 12px 36px #0003;
+  --shadow-raised: 0 3px 12px #0002;
+  --shadow-drawer: 8px 0 24px #0002;
+  --shadow-drawer-end: -8px 0 24px #0002;
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-popover: 10px;
+  --popover-padding: 8px;
+  --control-border: #dce0d5;
+  --control-radius: 7px;
+  --placeholder: var(--muted);
+  --field-gap: 6px;
+  --field-margin: 16px;
+  --icon-gap: 6px;
+  --dialog-pad: 16px 20px;
+}
+/* Form controls share one accent, placeholder and invalid treatment. */
+input[type="checkbox"],
+input[type="radio"],
+input[type="range"] {
+  accent-color: var(--green);
+}
+::placeholder {
+  color: var(--placeholder);
+  opacity: 1;
+}
+:is(input, select, textarea)[aria-invalid="true"] {
+  border-color: var(--danger);
+}
+input[type="range"] {
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  height: 24px;
 }
 * {
   box-sizing: border-box;
@@ -48,7 +88,7 @@ button {
 }
 button:disabled {
   opacity: 0.45;
-  cursor: wait;
+  cursor: not-allowed;
 }
 input,
 textarea,
@@ -59,15 +99,18 @@ input,
 textarea,
 select {
   background: #fff;
-  border: 1px solid #dce0d5;
-  border-radius: 7px;
+  border: 1px solid var(--control-border);
+  border-radius: var(--control-radius);
   padding: 10px 12px;
   outline: none;
 }
 input:focus,
-textarea:focus,
 select:focus {
   border-color: var(--green);
+  box-shadow: none;
+}
+textarea:focus {
+  border-color: var(--text-focus-color);
   box-shadow: none;
 }
 button:focus-visible,
@@ -108,7 +151,7 @@ button svg {
 }
 .shell {
   display: flex;
-  min-height: 100vh;
+  min-height: 100dvh;
 }
 .sidebar {
   width: 236px;
@@ -340,7 +383,7 @@ button svg {
   font-size: 10px;
   letter-spacing: 0.14em;
   font-weight: 600;
-  color: #8a927c;
+  color: #66705f;
 }
 .project-kicker {
   display: flex;
@@ -356,7 +399,7 @@ button svg {
   line-height: 1.2;
 }
 .hero p {
-  color: #8a8f82;
+  color: var(--muted);
   font-size: 12px;
   margin-top: 12px;
   max-width: 620px;
@@ -404,10 +447,6 @@ button svg {
 .button.danger {
   color: #a2473c;
   border-color: #ebd6d2;
-}
-.button.small {
-  padding: 6px 10px;
-  font-size: 11px;
 }
 .stats-strip {
   display: flex;
@@ -481,7 +520,7 @@ button svg {
   border-radius: 4px;
   background: #e8eddf;
   padding: 1px 5px;
-  font-size: 9px;
+  font-size: 11px;
 }
 .toolbar {
   display: flex;
@@ -541,8 +580,8 @@ button svg {
 }
 .section-title .count {
   background: #edf0e7;
-  color: #8b9681;
-  font-size: 10px;
+  color: var(--muted);
+  font-size: 11px;
   padding: 2px 6px;
   border-radius: 4px;
 }
@@ -601,26 +640,6 @@ button svg {
 .task-row:hover {
   background: #fdfdf9;
 }
-.check-button {
-  width: 17px;
-  height: 17px;
-  border: 1px solid #d1d8c7;
-  border-radius: 5px;
-  flex-shrink: 0;
-  padding: 0;
-  display: grid;
-  place-items: center;
-  background: white;
-}
-.check-button.done {
-  background: #e7efdd;
-  border-color: #b6ca9f;
-  color: #6e8c55;
-}
-.check-button svg {
-  width: 12px;
-  height: 12px;
-}
 .task-title {
   padding: 0;
   text-align: left;
@@ -676,8 +695,8 @@ button svg {
   border: 1px solid #e2e9d7;
   background: #f3f6ec;
   color: #83956a;
-  border-radius: 4px;
-  font-size: 9px;
+  border-radius: 5px;
+  font-size: 11px;
   white-space: nowrap;
 }
 .tag.design {
@@ -715,14 +734,15 @@ button svg {
   height: 12px;
 }
 .task-assignee {
-  border-radius: 50%;
+  /* Rounded square like the status box. */
+  border-radius: var(--field-radius, 7px);
   width: 24px;
   height: 24px;
   display: grid;
   place-items: center;
   background: #eceee4;
   color: #858d77;
-  font-size: 9px;
+  font-size: var(--type-initials);
   flex-shrink: 0;
 }
 .task-assignee.unassigned {
@@ -760,7 +780,7 @@ button svg {
   align-items: center;
   gap: 7px;
   color: var(--muted);
-  font-size: 11px;
+  font-size: var(--control-font-size);
   padding: 13px 11px;
   width: 100%;
   text-align: left;
@@ -799,18 +819,6 @@ button svg {
   line-height: 1.8;
   margin: 10px auto 20px;
   max-width: 400px;
-}
-.view-footnote {
-  display: flex;
-  align-items: center;
-  gap: 7px;
-  font-size: 10px;
-  color: #a6ad9c;
-  padding: 25px 0 0;
-}
-.view-footnote svg {
-  width: 12px;
-  height: 12px;
 }
 .tree-row {
   padding-left: calc(12px + var(--depth) * 27px);
@@ -857,7 +865,7 @@ button svg {
 .task-table {
   border-collapse: collapse;
   width: 100%;
-  font-size: 11px;
+  font-size: var(--type-table);
   white-space: nowrap;
 }
 .task-table th {
@@ -865,7 +873,7 @@ button svg {
   padding: 13px 10px;
   background: #f2f4ec;
   color: var(--muted);
-  font-size: 10px;
+  font-size: var(--type-small);
   font-weight: 500;
   border-bottom: 1px solid var(--line);
 }
@@ -899,7 +907,7 @@ button svg {
   background: transparent;
   width: 100%;
   padding: 13px 10px;
-  font-size: 11px;
+  font-size: var(--type-table);
   border-radius: 0;
   min-width: 90px;
   max-width: 300px;
@@ -925,8 +933,10 @@ button svg {
   height: 13px;
 }
 .kanban {
+  --kanban-min-column-width: 225px;
+  --kanban-gap: 17px;
   display: flex;
-  gap: 17px;
+  gap: var(--kanban-gap);
   overflow-x: auto;
   padding-bottom: 18px;
   min-height: 380px;
@@ -953,8 +963,8 @@ button svg {
   padding: 4px 2px 13px;
 }
 .column-header .count {
-  color: #99a58b;
-  font-size: 10px;
+  color: #5f6a5a;
+  font-size: 11px;
 }
 .column-header button {
   margin-left: auto;
@@ -1081,7 +1091,7 @@ button svg {
 }
 .welcome-feature p {
   font-size: 11px;
-  color: #969e8b;
+  color: var(--muted);
   line-height: 1.8;
   margin-top: 7px;
 }
@@ -1109,7 +1119,7 @@ button svg {
   border-radius: 12px;
   padding: 0;
   width: min(540px, calc(100vw - 32px));
-  max-height: 90vh;
+  max-height: 90dvh;
   background: #fcfcf8;
   color: var(--ink);
   box-shadow: 0 25px 100px #1e382730;
@@ -1141,10 +1151,10 @@ button svg {
   margin-bottom: 14px;
 }
 .dialog-foot {
-  padding: 17px 25px;
+  padding: var(--dialog-pad);
   border-top: 1px solid var(--line);
   display: flex;
-  gap: 9px;
+  gap: 8px;
   justify-content: flex-end;
 }
 .dialog-foot .danger {
@@ -1153,15 +1163,15 @@ button svg {
 .field {
   display: flex;
   flex-direction: column;
-  gap: 7px;
-  margin-bottom: 17px;
+  gap: var(--field-gap);
+  margin-bottom: var(--field-margin);
   font-size: 11px;
   color: var(--muted);
 }
 .field input,
 .field textarea,
 .field select {
-  font-size: 12px;
+  font-size: 13px;
   color: var(--ink);
   width: 100%;
 }
@@ -1179,7 +1189,7 @@ button svg {
   width: min(660px, calc(100vw - 28px));
 }
 .task-dialog .dialog-body {
-  max-height: calc(90vh - 150px);
+  max-height: calc(90dvh - 150px);
   overflow-y: auto;
 }
 .title-input {
@@ -1187,20 +1197,6 @@ button svg {
   font-size: 26px !important;
   font-weight: 400 !important;
   letter-spacing: -0.5px;
-}
-.md-tabs {
-  display: flex;
-  gap: 13px;
-  margin: 10px 0 8px;
-}
-.md-tabs button {
-  font-size: 11px;
-  padding: 5px 0;
-  color: #93a183;
-}
-.md-tabs button.active {
-  color: #4c6941;
-  border-bottom: 1px solid #728d59;
 }
 .markdown-source {
   font-family: ui-monospace, SFMono-Regular, monospace;
@@ -1300,9 +1296,12 @@ button svg {
   max-width: calc(100vw - 32px);
 }
 .toast {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
   background: #304a37;
   color: #edf3e7;
-  padding: 13px 21px;
+  padding: 12px 12px 12px 16px;
   border-radius: 8px;
   box-shadow: 0 7px 30px #233c3425;
   font-size: 12px;
@@ -1310,6 +1309,33 @@ button svg {
 }
 .toast.error {
   background: #884d3f;
+}
+.toast .toast-text { flex: 1; }
+.toast .toast-close {
+  flex-shrink: 0;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  display: grid;
+  place-items: center;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: inherit;
+  opacity: 0.8;
+}
+.toast .toast-close:hover { opacity: 1; background: #ffffff1f; }
+.toast .toast-close .icon { width: 14px; height: 14px; }
+/* Search fields outside the header carry the same magnifier. */
+input[type="search"] { -webkit-appearance: none; appearance: none; }
+input[type="search"]::-webkit-search-decoration,
+input[type="search"]::-webkit-search-cancel-button { -webkit-appearance: none; }
+input[type="search"]:not(.search input) {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23a1a899' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='11' cy='11' r='7'/%3E%3Cpath d='m20 20-3.5-3.5'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: 10px center;
+  background-size: 14px;
+  padding-left: 30px;
 }
 .settings-copy {
   line-height: 1.8;
@@ -1363,7 +1389,7 @@ button svg {
   color: var(--muted);
 }
 .canvas {
-  height: calc(100vh - 353px);
+  height: calc(100dvh - 353px);
   min-height: 410px;
   overflow: hidden;
   position: relative;
@@ -1670,7 +1696,7 @@ button svg {
     padding-top: 45px;
   }
   .canvas {
-    height: calc(100vh - 363px);
+    height: calc(100dvh - 363px);
   }
 }
 @media (max-width: 1150px) {
@@ -1719,6 +1745,13 @@ button svg {
   }
 }
 @media (max-width: 780px) {
+  /* The shell never scrolls on phones: lists and panels scroll inside the view. */
+  html, body { height: 100%; overflow: hidden; overscroll-behavior: none; }
+  .shell { height: 100dvh; min-height: 0; }
+  .main { height: 100dvh; min-height: 0; overflow: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; }
+  .main.project-main { overflow: hidden; }
+  /* Any page body under the header (view content, help, settings) scrolls on its own, so header rows keep their height. */
+  .main.project-main > :not(.topbar, #view-toolbar, .hero, .stats-strip) { min-height: 0; overflow: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; }
   .sidebar {
     transform: translateX(-100%);
     transition: transform 0.2s;
@@ -2023,7 +2056,7 @@ button svg {
 }
 .project-card > span:last-child {
   font-size: 11px;
-  color: #8b9680;
+  color: var(--muted);
   line-height: 1.8;
   display: -webkit-box;
   -webkit-line-clamp: 3;
@@ -2075,21 +2108,25 @@ button svg {
 .task-dialog .title-input {
   min-width: 0;
   font-family: var(--app-font) !important;
-  font-size: 20px !important;
+  font-size: var(--type-title) !important;
 }
 .task-identity-row {
   display: grid;
-  grid-template-columns: auto 48px minmax(0, 1fr);
+  grid-template-columns: auto;
   align-items: center;
   gap: 10px;
   margin-bottom: 16px;
 }
-.task-identity-row .task-key {
+.task-title-row { display: flex; align-items: center; gap: 10px; }
+.task-title-row .task-key {
+  flex: none;
   margin: 0;
   max-width: 140px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  font-size: var(--type-meta);
+  color: var(--muted);
 }
 .task-type-control,
 .task-priority-control {
@@ -2185,7 +2222,7 @@ button svg {
 }
 .task-rich-tools .rich-toolbar {
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
 }
 .task-rich-tools .rich-toolbar > .selection-group:first-child {
   border-left: 0;
@@ -2236,14 +2273,14 @@ button svg {
   font-family: monospace;
   resize: vertical;
 }
-@media (max-width: 800px) {
+@media (max-width: 780px) {
   .task-metadata {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 }
 @media (max-width: 600px) {
   .task-identity-row {
-    grid-template-columns: auto 48px minmax(0, 1fr);
+    grid-template-columns: auto;
     gap: 8px;
   }
   .task-identity-row .title-input {
@@ -2268,10 +2305,10 @@ button svg {
 
 /* Task editor: title, compact pickers, subtasks and an attached history pane. */
 .task-editor-head .task-identity-row {
-  flex: 1;
+  flex: none;
   min-width: 0;
   margin: 0;
-  grid-template-columns: auto 48px minmax(0, 1fr);
+  grid-template-columns: auto;
 }
 .task-editor-head .title-input {
   width: 100%;
@@ -2332,11 +2369,6 @@ button svg {
   white-space: nowrap;
   flex: 1;
 }
-.task-picker-trigger > .icon:last-child {
-  width: 12px;
-  flex-shrink: 0;
-  margin-left: auto;
-}
 .task-picker-trigger [data-picker-symbol] {
   display: flex;
   flex-shrink: 0;
@@ -2386,6 +2418,8 @@ button svg {
 }
 .task-picker-popover [role="option"] .icon {
   flex-shrink: 0;
+  width: 16px;
+  height: 16px;
 }
 .task-picker-popover [role="option"] .icon:last-child {
   visibility: hidden;
@@ -2419,7 +2453,7 @@ button svg {
 .task-subtasks h3,
 .task-history-panel h3 {
   margin: 0 0 10px;
-  font-size: 13px;
+  font-size: var(--type-section);
   font-weight: 600;
 }
 .task-subtasks h3 span {
@@ -2473,7 +2507,7 @@ button svg {
   max-height: calc(90dvh - 120px);
   overflow: auto;
   background: var(--surface, #fff);
-  font-size: 12px;
+  font-size: var(--type-small);
 }
 .task-history-head {
   display: flex;
@@ -2495,9 +2529,9 @@ button svg {
   overflow: auto;
   font-size: 11px;
 }
-@media (max-width: 800px) {
+@media (max-width: 780px) {
   .task-editor-head .task-identity-row {
-    grid-template-columns: auto 48px minmax(0, 1fr);
+    grid-template-columns: auto;
   }
   .task-editor-head .title-input {
     grid-column: 1 / -1;
@@ -2511,7 +2545,7 @@ button svg {
     width: min(360px, 100%);
     max-height: none;
     z-index: 60;
-    box-shadow: -8px 0 25px #0002;
+    box-shadow: var(--shadow-drawer-end);
   }
   .task-editor-foot {
     gap: 10px;
@@ -2666,7 +2700,7 @@ button svg {
   text-align: left;
   align-items: flex-start;
 }
-@media (min-width: 801px) {
+@media (min-width: 781px) {
   .task-metadata {
     grid-template-columns: 1fr 66px 1.3fr 1.1fr 1fr;
   }
@@ -2938,7 +2972,8 @@ button svg {
 }
 .task-comments-panel .board-comments-head strong {
   margin: 0 0 10px;
-  font-size: 13px;
+  font-size: var(--type-section);
+  font-weight: 600;
 }
 .task-comments-panel .board-comments-object {
   display: none;
@@ -2949,14 +2984,6 @@ button svg {
 .task-comments-panel #board-comment-form {
   flex: 0 0 auto;
   padding: 12px 0 0;
-}
-@media (max-width: 800px) {
-  .task-dialog .task-comments-panel {
-    position: absolute;
-    inset: 0 0 0 auto;
-    width: min(360px, 100%);
-    box-shadow: -8px 0 25px #0002;
-  }
 }
 
 .sidebar .text-link {color:#d3dfcd}

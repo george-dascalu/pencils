@@ -36,12 +36,12 @@
   position: fixed;
   width: 310px;
   max-width: calc(100vw - 16px);
-  padding: 12px;
+  padding: var(--popover-padding, 8px);
   border: 1px solid var(--line);
-  border-radius: 10px;
+  border-radius: var(--radius-popover, 10px);
   background: var(--surface);
   color: var(--ink);
-  box-shadow: 0 8px 30px #0003;
+  box-shadow: var(--shadow-popover);
   overflow: auto;
   font: 13px var(--app-font, sans-serif);
 }
@@ -51,10 +51,7 @@
   gap: 4px;
   margin-bottom: 12px;
 }
-.date-picker-head button {
-  padding: 4px 8px;
-  font-size: 24px;
-}
+.date-picker-head button { flex-shrink: 0; }
 .date-picker-head select,
 .date-picker-head input {
   min-width: 0;

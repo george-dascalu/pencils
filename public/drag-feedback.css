@@ -5,7 +5,7 @@
   background: #f5e7a2;
   border: 2px solid #8b9e65;
   border-radius: 5px;
-  box-shadow: 0 12px 28px #0003;
+  box-shadow: var(--shadow-popover);
   opacity: 0.85;
   display: flex;
   align-items: center;
@@ -55,7 +55,7 @@
   z-index: 1000;
   pointer-events: none;
   transform: rotate(1.5deg);
-  box-shadow: 0 16px 36px #0003;
+  box-shadow: var(--shadow-popover);
   background: var(--surface);
   color: var(--ink);
   border-color: var(--green);
@@ -93,7 +93,7 @@
   border-radius: 9px;
   background: var(--surface);
   color: var(--ink);
-  box-shadow: 0 12px 28px #0003;
+  box-shadow: var(--shadow-popover);
   opacity: 0.9;
 }
 .task-drop-preview.invalid {
@@ -154,7 +154,7 @@
   color: var(--ink);
   outline: 1px solid var(--green);
   border-radius: 6px;
-  box-shadow: 0 12px 28px #0003;
+  box-shadow: var(--shadow-popover);
   opacity: 0.85;
   overflow: hidden;
 }

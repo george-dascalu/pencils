@@ -13,7 +13,7 @@ import {
   miroBoardId,
 } from "../server/miro-convert.js";
 import { encodeCanvas, decodeCanvas } from "../public/canvas-format.js";
-import { miroFixture, miroFetch, miroBoard } from "./miro-fixture.js";
+import { miroFixture, miroFetch, miroBoard } from "../e2e/helpers/miro-fixture.js";
 const config = {
   types: ["task"],
   statuses: ["backlog", "done"],

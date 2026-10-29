@@ -1,6 +1,12 @@
 import { positionPopover } from "./popover-position.js";
 import { validTimelineRange, dateKey } from "./timeline-dates.js";
 
+export function timelineRoot(trigger) {
+  const host = trigger.closest("[data-timeline-options], [data-timeline]");
+  const scope = host?.dataset.timelineOptions || host?.dataset.timeline;
+  return scope && document.querySelector(`.task-timeline[data-timeline="${CSS.escape(scope)}"]`);
+}
+
 // The view range changes the displayed dates, never the tasks' own schedules.
 export function timelineRangeEditor(ctx, onOption) {
   let active = null, frame;
@@ -22,8 +28,8 @@ export function timelineRangeEditor(ctx, onOption) {
   }
   function open(trigger) {
     close();
-    const root = trigger.closest("[data-timeline]"), scope = root.dataset.timeline;
-    const anchor = () => document.querySelector(`[data-timeline="${CSS.escape(scope)}"] [data-timeline-range]`);
+    const root = timelineRoot(trigger), scope = root.dataset.timeline;
+    const anchor = () => document.querySelector(`[data-timeline-options="${CSS.escape(scope)}"] [data-timeline-range]`);
     const panel = document.createElement("div");
     panel.id = "timeline-range-popover";
     panel.className = "selection-popover task-dates-popover";

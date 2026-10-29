@@ -75,7 +75,7 @@ export function timelineSelection(ctx, closeEditors) {
     track.append(el); track.classList.add("timeline-picking");
     selection = { track, root, hint, originalHint: hint.textContent, start: null, cursor: axes(root).dateAt(0), preview: el, project: state.project.id };
     state.timelineSelecting = true;
-    message("Click the start date, then the end date. Escape cancels.");
+    message("Choose the start date, then the end date. Escape cancels.");
     track.focus({ preventScroll: true });
   }
   document.addEventListener("pointerdown", e => {

@@ -100,6 +100,16 @@ export function canvasFeatures(ctx) {
   const drawing = drawingInput(ctx, {
     clearSelection,
     hitTest: event => pro.overviewNode(point(event)),
+    startMarquee: event => {
+      const canvas = $("#canvas");
+      const previousSelection = { nodes: [...selected], edges: [...selectedEdges] };
+      clearSelection();
+      drag = { type: "marquee", start: point(event), nodes: [], edges: [],
+        previousSelection, pointerId: event.pointerId, touch: true, capture: canvas };
+      canvas.insertAdjacentHTML("beforeend", '<div class="marquee"></div>');
+      canvas.setPointerCapture(event.pointerId);
+      canvas.focus({ preventScroll: true });
+    },
     place: (event) => controls.place(event),
     cancel: () => { gridControls.cancel(); lasso.cancel(); pro.cancelPointer(); end(null, true, true); },
     action: (action) => {
@@ -340,7 +350,7 @@ export function canvasFeatures(ctx) {
         )
         .join(
           "",
-        )}</select><button class="button small" data-feature="canvas-svg">Export SVG</button><button class="button small" data-feature="canvas-png">Export PNG</button><button class="button small" data-feature="canvas-json">Obsidian .canvas</button><button class="button small" data-feature="canvas-import">Import .canvas</button><button class="button small" data-feature="canvas-history">History</button><button class="button small danger" data-feature="canvas-delete">Delete canvas</button></div>`,
+        )}</select><button class="button small" data-feature="canvas-svg">Export SVG</button><button class="button small" data-feature="canvas-png">Export PNG</button><button class="button small" data-feature="canvas-json">Obsidian .canvas</button><button class="button small" data-feature="canvas-import">Import .canvas</button><button class="button small" data-feature="canvas-history">History</button><button class="button small danger" data-feature="canvas-delete">Delete board</button></div>`,
     );
     enhanceBase();
     selection();
@@ -911,6 +921,14 @@ export function canvasFeatures(ctx) {
     if (event?.type === "lostpointercapture" && event.target !== drag.capture)
       return;
     event?.stopImmediatePropagation();
+    if (cancel && drag.previousSelection) {
+      selected.clear();
+      selectedEdges.clear();
+      drag.previousSelection.nodes.forEach(id => selected.add(id));
+      drag.previousSelection.edges.forEach(id => selectedEdges.add(id));
+      state.selectedNode = [...selected][0] || null;
+      state.selectedEdge = !selected.size && selectedEdges.size === 1 ? [...selectedEdges][0] : null;
+    }
     if (cancel && drag.before) Object.assign(board(), drag.before);
     else if (!cancel && drag.type === "frame-select") {
       const node = board().nodes.find((n) => n.id === drag.id);
@@ -1410,10 +1428,9 @@ export function canvasFeatures(ctx) {
           // A contextual panel can be dismissed while the refresh is pending.
           // Never apply its plan to a different board or close a newer panel.
           if (!isCurrent()) return;
-          if (
-            JSON.stringify(current.tasks.map((t) => [t.id, t.revision])) !==
-            JSON.stringify(snapshot.tasks.map((t) => [t.id, t.revision]))
-          )
+          // The server may list the same tasks in another order; only a change counts.
+          const revisions = (tasks) => JSON.stringify(tasks.map((t) => [t.id, t.revision]).sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0)));
+          if (revisions(current.tasks) !== revisions(snapshot.tasks))
             throw Error("Tasks changed. Close and preview the update again.");
           if (signature(board()) !== base)
             throw Error("The board changed. Preview again.");

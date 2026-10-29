@@ -1,10 +1,11 @@
+import { formatDateTime, formatMonth } from "./format-date.js";
 import { priorityLabel } from './task-priority.js';
 import { statusLabel } from './workflow-model.js';
 
 const fields = {
   title: 'Title', type: 'Card type', assignee: 'Assignee', priority: 'Priority', status: 'Status',
   start: 'Start date', due: 'Due date', body: 'Description', parent: 'Parent task',
-  dependencies: 'Blocked by', related_records: 'Related tasks', tags: 'Tags',
+  dependencies: 'Blocked by', related_records: 'Related tasks', documents: 'Documents', tags: 'Tags',
   estimate: 'Estimate', archived: 'Archived', recurrence: 'Recurrence',
 };
 const same = (a, b) => JSON.stringify(a ?? null) === JSON.stringify(b ?? null);
@@ -41,6 +42,7 @@ export function taskHistoryHTML(versions, current, { esc, icon, state, label, ta
     if (key === 'type') return label(value);
     if (key === 'parent') return task(value)?.title || value;
     if (['dependencies', 'related_records'].includes(key)) return value.map(id => task(id)?.title || id).join('\n');
+    if (key === 'documents') return value.map(id => (state.documents || []).find(d => d.id === id)?.title || id).join('\n');
     if (Array.isArray(value)) return value.join('\n');
     if (typeof value === 'boolean') return value ? 'Yes' : 'No';
     if (typeof value === 'object') return JSON.stringify(value, null, 2);
@@ -54,11 +56,14 @@ export function taskHistoryHTML(versions, current, { esc, icon, state, label, ta
     while (suffix < Math.min(value.length, other.length) - prefix && value[value.length - suffix - 1] === other[other.length - suffix - 1]) suffix++;
     return esc(value.slice(0, prefix).join('')) + `<mark>${esc(value.slice(prefix, value.length - suffix).join(''))}</mark>` + esc(suffix ? value.slice(-suffix).join('') : '');
   };
+  const monthOf = (version) => String(version.updated || "").slice(0, 7);
   return rows.map((version, index) => {
     const prior = rows[index + 1], changes = prior ? taskChanges(prior, version) : [];
+    // Versions are listed newest first and grouped under one heading per month.
+    const month = index === 0 || monthOf(rows[index - 1]) !== monthOf(version) ? `<h4 class="task-history-month">${esc(formatMonth(version.updated) || "Undated")}</h4>` : "";
     const summaries = changes.map(change => change.key.startsWith('field:') ? state.config.fields?.find(f => f.id === change.key.slice(6))?.name || change.label : change.label);
-    const date = version.updated ? new Date(version.updated).toLocaleString() : 'Date unavailable';
-    return `<details class="task-history-version recovery-item" ${index === 0 ? 'open' : ''}><summary><span class="task-history-date">${icon('clock')}<strong>${version.current ? 'Current version' : esc(date)}</strong>${version.current ? `<time>${esc(date)}</time>` : ''}</span><span class="task-history-summary">${changes.length ? `${changes.length} ${changes.length === 1 ? 'change' : 'changes'} · ${esc(summaries.join(', '))}` : prior ? 'No field changes' : 'Earliest saved version'}</span></summary><div class="task-history-changes">${changes.map((change, i) => {
+    const date = formatDateTime(version.updated);
+    return `${month}<details class="task-history-version recovery-item" ${index === 0 ? 'open' : ''}><summary><span class="task-history-date">${icon('clock')}<strong>${version.current ? 'Current version' : esc(date)}</strong>${version.current ? `<time>${esc(date)}</time>` : ''}</span><span class="task-history-summary">${changes.length ? `${changes.length} ${changes.length === 1 ? 'change' : 'changes'} · ${esc(summaries.join(', '))}` : prior ? 'No field changes' : 'Earliest saved version'}</span></summary><div class="task-history-changes">${changes.map((change, i) => {
       const before = format(change.key, change.before), after = format(change.key, change.after);
       return `<section class="task-history-change"><h4>${esc(summaries[i])}</h4><div class="task-history-before"><strong><span aria-hidden="true">−</span> Before</strong><div>${valueHTML(before, after)}</div></div><div class="task-history-after"><strong><span aria-hidden="true">+</span> After</strong><div>${valueHTML(after, before)}</div></div></section>`;
     }).join('') || `<p class="field-hint">${prior ? 'Only file metadata changed.' : 'There is no earlier snapshot to compare.'}</p>`}</div>${!prior ? `<p>${esc(version.title || record(version).title || '')}</p>` : ''}${version.current ? '' : `<button type="button" class="button small" data-task-modal="history-restore" data-version="${esc(version.revision)}">Restore this version</button>`}</details>`;

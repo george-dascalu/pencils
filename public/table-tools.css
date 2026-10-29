@@ -35,7 +35,7 @@
 }
 .spreadsheet .table-description.is-empty { color: var(--muted); }
 .spreadsheet .table-description:hover { background: var(--surface-soft); }
-.spreadsheet .table-description:focus-visible { outline: 2px solid var(--green); outline-offset: -2px; }
+.spreadsheet .table-description:focus-visible { outline: var(--focus-ring); outline-offset: -2px; }
 /* Every dropdown cell shares its value layout and chevron; native controls keep
    keyboard navigation, accessible names and the existing table edit behaviour. */
 .spreadsheet .table-cell-select,
@@ -76,7 +76,7 @@
 .table-cell-chevron > .icon { width: 16px; height: 16px; }
 .spreadsheet :is(.table-cell-value, .table-cell-readonly) .task-assignee { width: 24px; height: 24px; margin: 0; }
 .spreadsheet :is(.table-cell-value, .table-cell-readonly) .task-type > .icon { width: 16px; height: 16px; }
-.spreadsheet .table-cell-select:focus-within { outline: 2px solid var(--green); outline-offset: -2px; }
+.spreadsheet .table-cell-select:focus-within { outline: var(--focus-ring); outline-offset: -2px; }
 .table-columns-panel {
   gap: 8px;
 }
@@ -138,7 +138,7 @@
 .table-view-tools .table-menu-panel {
   width: 360px;
   max-width: calc(100vw - 32px);
-  max-height: min(65vh, 620px);
+  max-height: min(65dvh, 620px);
   overflow: auto;
   padding: 12px;
   z-index: 40;
@@ -281,7 +281,7 @@
   .spreadsheet .table-header-menu > summary { opacity: 1; }
 }
 .spreadsheet .table-column-grip:focus-visible {
-  outline: 2px solid var(--green);
+  outline: var(--focus-ring);
   outline-offset: -2px;
 }
 .spreadsheet.table-reordering :is([data-column-key="key"], [data-column-key="title"]) {
@@ -311,7 +311,7 @@
   background: var(--surface);
   color: var(--ink);
   font-size: 12px;
-  box-shadow: 0 8px 24px #0003;
+  box-shadow: var(--shadow-popover);
 }
 .table-column-drag-ghost > strong,
 .table-column-drag-ghost > small {
@@ -560,4 +560,7 @@
   outline: 1px solid var(--accent);
   outline-offset: -1px;
 }
-.table-parent-context { display: block; font-size: 10px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; }
+.table-parent-context { display: block; font-size: var(--type-meta); color: var(--muted); overflow: hidden; text-overflow: ellipsis; }
+
+/* Identity column follows the small step: 12px with a mouse, 14px on touch. */
+.spreadsheet td > .task-id { display: block; padding-inline: 8px; font-size: var(--type-small); }

@@ -259,8 +259,19 @@ body {
   --side: #101a15;
   --surface: #202c25;
   --surface-soft: #29382e;
+  --danger: #f0a199;
+  --shadow-popover: 0 12px 36px #000a;
+  --shadow-raised: 0 3px 12px #0008;
+  --shadow-drawer: 8px 0 24px #0009;
+  --shadow-drawer-end: -8px 0 24px #0009;
   color: var(--ink);
   background: var(--paper);
+}
+/* Status, priority and assignee tints need a larger share of colour on dark surfaces. */
+[data-theme="dark"] [data-task-color] {
+  --task-color-wash: color-mix(in srgb, var(--task-field-color) 24%, var(--surface));
+  --task-color-border: color-mix(in srgb, var(--task-field-color) 70%, var(--line));
+  --task-color-ink: color-mix(in srgb, var(--task-field-color) 40%, var(--ink));
 }
 [data-theme="dark"]
   :is(
@@ -301,7 +312,6 @@ body {
     .dashboard-deadlines > button,
     .calendar-day,
     .calendar > strong,
-    .calendar-task,
     .search-result,
     .recovery-item,
     .comment,
@@ -329,8 +339,6 @@ body {
     .button,
     .icon-button,
     .avatar,
-    .md-tabs,
-    .md-tabs button,
     .board-tools,
     .board-tools button,
     .board-controls,
@@ -350,7 +358,12 @@ body {
   color: #a0afa4;
   opacity: 1;
 }
-[data-theme="dark"] :is(.button.primary, .calendar-task, .timeline-bar) {
+[data-theme="dark"] .button.primary {
+  background: #436a50;
+  color: #f2f8ed;
+  border-color: #6a9674;
+}
+[data-theme="dark"] :is(.calendar-task, .timeline-bar):not([data-task-color]) {
   background: #436a50;
   color: #f2f8ed;
   border-color: #6a9674;
@@ -366,7 +379,6 @@ body {
     .tab:hover,
     .board-tools button.active,
     .board-tools button:hover,
-    .md-tabs button.active,
     .spreadsheet .range-selected,
     .calendar-day.today,
     .search-result:hover
@@ -401,7 +413,6 @@ body {
     .hero p,
     .caption,
     .field-hint,
-    .view-footnote,
     .task-id,
     .tree-parent,
     .save-state,
@@ -479,6 +490,10 @@ body {
   color: var(--ink);
   border-color: var(--line);
 }
+[data-theme="dark"] .toast.error {
+  background: #6e3a2f;
+  color: #f8e4dd;
+}
 
 .board-node.sticky,
 .board-node.text,
@@ -511,7 +526,6 @@ body {
 }
 [data-theme="dark"]
   :is(
-    .check-button,
     .task-assignee,
     .tab-count,
     .section-title .count,
@@ -562,8 +576,6 @@ body {
 .top-actions .avatar {
   display: grid;
   flex-shrink: 0;
-  width: 34px;
-  height: 34px;
 }
 .breadcrumb {
   min-width: 0;

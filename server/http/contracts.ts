@@ -20,6 +20,7 @@ export interface Services {
   automations: LegacyService;
   index: LegacyService;
   diagnostics: LegacyService;
+  requests: LegacyService;
   rooms: Map<string, Map<string, any>>;
 }
 export interface RequestContext extends Services {

@@ -12,32 +12,83 @@ export function drawingInput(ctx, basic) {
   const { state, $, board, updateCamera } = ctx;
   const touches = new Map(),
     blocked = new Set(),
+    offBoard = new Set(),
     taps = tapGestures();
   let pen = null,
     pan = null,
     multi = false,
     identity = null,
     lastTouch = -Infinity,
-    buttonHeld = false;
+    buttonHeld = false,
+    hold = null,
+    cameraFrame = null,
+    cameraDirty = false;
   const active = () => state.view === "board" && !!$("#canvas");
   const stop = (e) => {
     e.preventDefault();
     e.stopImmediatePropagation();
   };
+  function cancelHold() {
+    if (hold) clearTimeout(hold.timer);
+    hold = null;
+  }
+  function selectAfterHold(e) {
+    const origin = { pointerId: e.pointerId, clientX: e.clientX, clientY: e.clientY };
+    const key = identity;
+    hold = { ...origin, timer: setTimeout(() => {
+      hold = null;
+      if (!active() || state.dialog || state.canvasEditing || key !== `${state.project.id}:${board().id}` ||
+          state.tool !== "cursor" || touches.size !== 1 || !touches.has(origin.pointerId)) return;
+      basic.cancel();
+      pan = null;
+      taps.reset();
+      basic.startMarquee(origin);
+    }, 450) };
+  }
   const reset = () => {
+    cancelHold();
+    if (cameraFrame !== null) cancelAnimationFrame(cameraFrame);
+    cameraFrame = null;
+    cameraDirty = false;
     touches.clear();
     blocked.clear();
+    offBoard.clear();
     taps.reset();
     pen = pan = null;
     multi = buttonHeld = false;
   };
+  // Fingers already on the board stop steering it: they are ignored until lifted.
+  function abandonTouches() {
+    cancelHold();
+    for (const id of touches.keys()) blocked.add(id);
+    if (touches.size) basic.cancel();
+    if (cameraDirty) paintCamera(true);
+    touches.clear();
+    taps.reset();
+    pan = null;
+    multi = false;
+  }
   function rebase() {
     pan = touches.size
       ? {
           points: [...touches.values()].map((p) => ({ ...p })),
           camera: { ...state.camera },
+          rect: $("#canvas").getBoundingClientRect(),
         }
       : null;
+  }
+  // Pointer events from both fingers may arrive several times per display
+  // frame. Apply only the latest camera and persist once contact ends.
+  function paintCamera(persist = false) {
+    if (cameraFrame !== null) cancelAnimationFrame(cameraFrame);
+    cameraFrame = null;
+    updateCamera(false, { persist, navigating: !persist });
+    if (persist) cameraDirty = false;
+  }
+  function scheduleCamera() {
+    cameraDirty = true;
+    if (cameraFrame === null)
+      cameraFrame = requestAnimationFrame(() => paintCamera());
   }
   function capture(e) {
     const canvas = $("#canvas");
@@ -56,7 +107,24 @@ export function drawingInput(ctx, basic) {
   window.addEventListener(
     "pointerdown",
     (e) => {
-      if (!active() || !e.target.closest("#canvas") || state.dialog) return;
+      if (!active()) return;
+      // The board pans and zooms only while every finger is on it. A finger on
+      // a dialog, a panel or other page chrome ends the board's touch gesture,
+      // and board fingers landing meanwhile are ignored until lifted.
+      if (e.pointerType === "touch") {
+        if (e.isPrimary) offBoard.clear();
+        if (!e.target.closest("#canvas") || state.dialog) {
+          offBoard.add(e.pointerId);
+          if (touches.size) abandonTouches();
+          return;
+        }
+        if (offBoard.size) {
+          blocked.add(e.pointerId);
+          stop(e);
+          return;
+        }
+      }
+      if (!e.target.closest("#canvas") || state.dialog) return;
       const current = `${state.project.id}:${board().id}`;
       if (identity !== current) {
         reset();
@@ -68,10 +136,12 @@ export function drawingInput(ctx, basic) {
         return;
       }
       if (e.target.closest(chrome)) {
+        cancelHold();
         taps.reset();
         return;
       }
       if (e.pointerType === "pen") {
+        cancelHold();
         if (e.buttons & 2 || e.button === 2) {
           stop(e);
           taps.reset();
@@ -82,20 +152,16 @@ export function drawingInput(ctx, basic) {
           return;
         }
         if (e.button !== 0 || pen !== null) return;
-        for (const id of touches.keys()) blocked.add(id);
-        if (touches.size) basic.cancel();
-        touches.clear();
-        taps.reset();
-        pan = null;
-        multi = false;
+        abandonTouches();
         pen = e.pointerId;
         return;
       }
       if (e.pointerType !== "touch") return;
       lastTouch = e.timeStamp;
       touches.set(e.pointerId, { x: e.clientX, y: e.clientY });
-      const node = e.target.closest("[data-node],[data-edge]") ||
-        (canvasPointerTool(state.tool, e.pointerType) === "cursor" ? basic.hitTest?.(e) : null);
+      let node = e.target.closest("[data-node],[data-edge]");
+      if ((!node || node.matches(".frame")) && canvasPointerTool(state.tool, e.pointerType) === "cursor")
+        node = basic.hitTest?.(e) || node;
       const placeOnTap = ["sticky", "text", "shape", "grid"].includes(
         state.tool,
       );
@@ -105,6 +171,7 @@ export function drawingInput(ctx, basic) {
       if (placing) taps.reset();
       else taps.down(e, node?.dataset?.node || node?.dataset?.edge || node?.id || "canvas");
       if (touches.size >= 2) {
+        cancelHold();
         stop(e);
         multi = true;
         basic.cancel();
@@ -116,6 +183,12 @@ export function drawingInput(ctx, basic) {
         if (placeOnTap) pan.place = state.tool;
         capture(e);
       }
+      // Quick swipes still pan. Holding empty canvas (including a frame's
+      // interior) starts the same marquee used by mouse and bitmap selection.
+      const frame = node?.type === "frame" ? node : node?.matches?.(".frame") ? board().nodes.find(n => n.id === node.dataset.node) : null;
+      if (touches.size === 1 && state.tool === "cursor" &&
+          (!node || (frame && !frame.collapsed && !e.target.closest(".frame-title,.resize-handle,.connection-port"))))
+        selectAfterHold(e);
       // Touch on an object continues to the shared select/move/resize handlers.
     },
     true,
@@ -141,6 +214,7 @@ export function drawingInput(ctx, basic) {
         } else buttonHeld = false;
       }
       if (!touches.has(e.pointerId)) return;
+      if (hold && Math.hypot(e.clientX - hold.clientX, e.clientY - hold.clientY) > 6) cancelHold();
       lastTouch = e.timeStamp;
       taps.move(e);
       touches.set(e.pointerId, { x: e.clientX, y: e.clientY });
@@ -165,9 +239,9 @@ export function drawingInput(ctx, basic) {
         });
         const a = mid(old),
           b = mid(p),
-          r = $("#canvas").getBoundingClientRect();
+          r = pan.rect;
         const z = Math.max(
-          0.08,
+          0.001,
           Math.min(
             3,
             (pan.camera.z * distance(p)) / Math.max(1, distance(old)),
@@ -184,11 +258,13 @@ export function drawingInput(ctx, basic) {
           x: pan.camera.x + p[0].x - old[0].x,
           y: pan.camera.y + p[0].y - old[0].y,
         };
-      updateCamera();
+      scheduleCamera();
     },
     true,
   );
   function end(e, cancel = false) {
+    offBoard.delete(e.pointerId);
+    if (hold?.pointerId === e.pointerId) cancelHold();
     if (blocked.delete(e.pointerId)) {
       stop(e);
       return;
@@ -221,7 +297,7 @@ export function drawingInput(ctx, basic) {
         if (place && state.tool === place) basic.place(e);
         else basic.clearSelection();
       }
-      if (navigated) updateCamera();
+      if (navigated) paintCamera(true);
     }
     if (gesture && !cancel) {
       // Let a normal object tap finish selecting before applying its shortcut.
@@ -259,6 +335,16 @@ export function drawingInput(ctx, basic) {
     },
     true,
   );
-  window.addEventListener("blur", reset);
+  const settle = () => {
+    if (cameraDirty && active()) paintCamera(true);
+    reset();
+  };
+  window.addEventListener("blur", settle);
+  window.addEventListener("pagehide", settle);
+  // iPad must not turn a canvas hold into native text selection. Editors retain
+  // the browser's selection and copy/paste behaviour.
+  window.addEventListener("selectstart", e => {
+    if (active() && e.target.closest?.("#canvas") && !e.target.closest(chrome)) e.preventDefault();
+  }, true);
   return { busy: () => active() && (pen !== null || touches.size > 0), reset };
 }

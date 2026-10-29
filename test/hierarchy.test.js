@@ -12,6 +12,7 @@ const rules = {
     epic: ["story"],
     story: ["task", "bug"],
     task: [],
+    activity: [],
     bug: [],
     milestone: [],
   },

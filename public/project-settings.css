@@ -242,6 +242,30 @@
     gap: 14px;
   }
 }
+@media (min-width: 1051px) and (max-width: 1150px) {
+  :where(:root:not([data-sidebar="collapsed"])) .main.project-main > #view-content.project-settings-layout {
+    grid-template-columns: 200px minmax(0, 1fr);
+    gap: 20px;
+    padding: 20px;
+  }
+  :where(:root:not([data-sidebar="collapsed"])) .settings-action-row {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 14px;
+  }
+}
+@media (min-width: 1151px) and (max-width: 1286px) {
+  :where(:root:not([data-sidebar="collapsed"])) .main.project-main > #view-content.project-settings-layout {
+    grid-template-columns: 200px minmax(0, 1fr);
+    gap: 20px;
+    padding: 20px;
+  }
+  :where(:root:not([data-sidebar="collapsed"])) .settings-action-row {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 14px;
+  }
+}
 @media (max-width: 780px) {
   .main.project-main > #view-content.project-settings-layout {
     display: block;
@@ -279,3 +303,42 @@
     white-space: normal;
   }
 }
+@media (min-width: 781px) and (max-width: 990px) {
+  :where(:root:not([data-sidebar="collapsed"])) .main.project-main > #view-content.project-settings-layout {
+    display: block;
+    padding: 16px;
+  }
+  :where(:root:not([data-sidebar="collapsed"])) .settings-navigation {
+    position: static;
+    margin-bottom: 24px;
+  }
+  :where(:root:not([data-sidebar="collapsed"])) .settings-navigation nav {
+    display: none;
+  }
+  :where(:root:not([data-sidebar="collapsed"])) .settings-mobile-nav {
+    display: flex;
+    margin-top: 16px;
+  }
+  :where(:root:not([data-sidebar="collapsed"])) .settings-navigation .settings-return {
+    margin-top: 12px;
+  }
+  :where(:root:not([data-sidebar="collapsed"])) #settings-panel :is(.dialog-body, .settings-page-body) {
+    padding: 16px;
+  }
+  :where(:root:not([data-sidebar="collapsed"])) #settings-panel .dialog-foot {
+    padding: 12px 16px;
+  }
+  :where(:root:not([data-sidebar="collapsed"])) #settings-panel .field-row,
+  :where(:root:not([data-sidebar="collapsed"])) .settings-health-summary {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  :where(:root:not([data-sidebar="collapsed"])) .settings-save-bar > [role="status"] {
+    flex-basis: 100%;
+  }
+  :where(:root:not([data-sidebar="collapsed"])) #settings-panel .dialog-foot button {
+    flex: 1;
+    white-space: normal;
+  }
+}
+
+

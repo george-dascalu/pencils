@@ -9,8 +9,11 @@ import {
 } from "/vendor/editor/deps.js";
 import { documentReference } from "./document-model.js";
 import { editableDocumentComponent } from "./document-components.js";
+import { focusOnOpen } from "./open-focus.js";
+import { insertCategories } from "./document-insert.js";
+import { highlightCodeBlocks } from "./document-code.js";
 
-export function markdownDocumentEditor({ parent, text, mode = "live", renderer, documents, onChange, onError, onLink, icon }) {
+export function markdownDocumentEditor({ parent, text, mode = "live", renderer, documents, onChange, onError, onLink, onInsert, icon }) {
   const presentation = new Compartment();
   let view, alive = true, focusedComponent = null;
   const hoverEffect = StateEffect.define();
@@ -34,6 +37,7 @@ export function markdownDocumentEditor({ parent, text, mode = "live", renderer, 
       (hover && hover.from < to && hover.to > from);
   };
   function hydrate(element) {
+    highlightCodeBlocks(element);
     if (element.querySelector("[data-document-diagram]"))
       import("/vendor/editor/diagrams.js").then(m => alive && m.renderDiagrams(element)).catch(() => {});
   }
@@ -81,7 +85,27 @@ export function markdownDocumentEditor({ parent, text, mode = "live", renderer, 
       input.type = "checkbox"; input.checked = this.checked; input.className = "document-checkbox";
       input.setAttribute("aria-label", editor.state.doc.lineAt(this.from).text.replace(/^\s*[-*+]\s+\[[ xX]\]\s*/, "") || "Checklist item");
       input.addEventListener("mousedown", e => e.stopPropagation());
-      input.addEventListener("change", () => editor.dispatch({ changes: { from: this.from, to: this.from + 3, insert: input.checked ? "[x]" : "[ ]" } }));
+      const save = () => editor.dispatch({ changes: { from: this.from, to: this.from + 3, insert: input.checked ? "[x]" : "[ ]" } });
+      input.addEventListener("change", save);
+      // A tap toggles the box without focusing the editor: iOS places a caret
+      // and opens the keyboard when the tap completes. Cancelling touchend
+      // stops that (and the click); a touch that moves stays a scroll.
+      let tap = null;
+      input.addEventListener("touchstart", e => {
+        tap = e.touches.length === 1 ? { x: e.touches[0].clientX, y: e.touches[0].clientY } : null;
+      }, { passive: true });
+      input.addEventListener("touchmove", e => {
+        const t = e.touches[0];
+        if (tap && (!t || Math.hypot(t.clientX - tap.x, t.clientY - tap.y) > 10)) tap = null;
+      }, { passive: true });
+      input.addEventListener("touchcancel", () => { tap = null; });
+      input.addEventListener("touchend", e => {
+        if (!tap) return;
+        tap = null;
+        e.preventDefault();
+        input.checked = !input.checked;
+        save();
+      });
       return input;
     }
     ignoreEvent() { return true; }
@@ -99,13 +123,15 @@ export function markdownDocumentEditor({ parent, text, mode = "live", renderer, 
     for (const token of renderer.tokens(source)) {
       const from = offset, to = offset + token.raw.length;
       offset = to;
-      if (["code", "table", "blockquote", "documentMathBlock", "html", "hr"].includes(token.type) ||
+      if (["code", "table", "documentTableLayout", "blockquote", "documentMathBlock", "html", "hr"].includes(token.type) ||
           token.type === "paragraph" && /^!\[\[[^\]\n]+\]\]\s*$/.test(token.raw)) {
         {
           let end = to;
           while (end > from && source[end - 1] === "\n") end--;
           if (end > from) {
-            ranges.push(Decoration.replace({ widget: new Preview(token.raw, from, true, token.type), block: true }).range(from, end));
+            // A table with its layout comment is edited as a table.
+            const kind = token.type === "documentTableLayout" ? "table" : token.type;
+            ranges.push(Decoration.replace({ widget: new Preview(token.raw, from, true, kind), block: true }).range(from, end));
             blocked.push([from, to]);
           }
         }
@@ -126,8 +152,13 @@ export function markdownDocumentEditor({ parent, text, mode = "live", renderer, 
         if (active(state, span.from, span.to)) return;
         if (name === "Escape" && source[node.from] === "\\")
           ranges.push(Decoration.replace({}).range(node.from, node.from + 1));
-        if (["HeaderMark", "EmphasisMark", "StrikethroughMark", "CodeMark"].includes(name))
-          ranges.push(Decoration.replace({}).range(node.from, node.to));
+        if (["HeaderMark", "EmphasisMark", "StrikethroughMark", "CodeMark"].includes(name)) {
+          // A heading's opening "#" hides with the space after it, so heading
+          // text starts at the same edge as paragraphs.
+          const opening = name === "HeaderMark" && /^\s*$/.test(source.slice(state.doc.lineAt(node.from).from, node.from));
+          const end = opening && /[ \t]/.test(source[node.to] || "") ? node.to + 1 : node.to;
+          ranges.push(Decoration.replace({}).range(node.from, end));
+        }
         if (name === "TaskMarker") {
           ranges.push(Decoration.replace({ widget: new Checkbox(source[node.from + 1].toLowerCase() === "x", node.from) }).range(node.from, node.to));
           return false;
@@ -159,7 +190,7 @@ export function markdownDocumentEditor({ parent, text, mode = "live", renderer, 
     return {
       from: before.from + 2,
       options: documents().map(d => ({
-        label: d.title, detail: "Document", type: "text",
+        label: d.title, detail: "Document", glyph: "file",
         apply(editor, _completion, from, to) {
           const suffix = editor.state.doc.sliceString(to, to + 2) === "]]" ? 2 : 0;
           const insert = `${documentReference(d)}|${d.title}]]`;
@@ -168,6 +199,27 @@ export function markdownDocumentEditor({ parent, text, mode = "live", renderer, 
       })),
       validFor: /^[^\]\n]*$/,
     };
+  };
+  // "/" at the start of a line or after a space offers the Insert panel's
+  // elements, as in Obsidian. Typing filters; choosing one replaces "/query".
+  const slashOptions = insertCategories.flatMap(([section, items], rank) => items.map(([command, label, glyph], index) => ({
+    label, glyph, section: { name: section, rank },
+    // Keep the Insert panel's order while nothing is typed.
+    boost: 50 - index,
+    apply(editor, _completion, from, to) {
+      editor.dispatch({ changes: { from: from - 1, to }, selection: { anchor: from - 1 } });
+      if (command === "attach") onInsert?.(command);
+      else format(command);
+    },
+  })));
+  const slash = context => {
+    const line = context.state.doc.lineAt(context.pos);
+    const match = /(?:^|\s)\/([A-Za-z0-9 ]{0,24})$/.exec(line.text.slice(0, context.pos - line.from));
+    if (!match) return null;
+    const from = context.pos - match[1].length;
+    for (let node = syntaxTree(context.state).resolveInner(from - 1, -1); node; node = node.parent)
+      if (/Code|HTML|Link|URL/.test(node.name)) return null;
+    return { from, options: slashOptions, validFor: /^[A-Za-z0-9 ]*$/ };
   };
   const liveExtensions = () => mode === "source"
     ? [lineNumbers(), highlightActiveLine()]
@@ -189,7 +241,16 @@ export function markdownDocumentEditor({ parent, text, mode = "live", renderer, 
           { tag: [tags.keyword, tags.tagName, tags.attributeName], color: "var(--green)" },
           { tag: [tags.comment, tags.processingInstruction, tags.meta], color: "var(--muted)" },
         ])),
-        foldGutter(), autocompletion({ override: [completion] }),
+        foldGutter(), autocompletion({
+          override: [completion, slash], icons: false,
+          // The app's icons instead of CodeMirror's type glyphs.
+          addToOptions: [{ position: 20, render: option => {
+            const glyph = document.createElement("span");
+            glyph.className = "document-completion-icon";
+            glyph.innerHTML = option.glyph ? icon(option.glyph) : "";
+            return glyph;
+          } }],
+        }),
         search({ top: true, createPanel: editor => documentSearchPanel(editor, icon) }),
         keymap.of([
           shortcut("Mod-b", "bold"), shortcut("Mod-i", "italic"), shortcut("Mod-k", "link"),
@@ -197,7 +258,7 @@ export function markdownDocumentEditor({ parent, text, mode = "live", renderer, 
           ...searchKeymap, ...foldKeymap, indentWithTab,
         ]),
         placeholder("Start writing…"),
-        EditorView.contentAttributes.of({ "aria-label": "Document content", spellcheck: "true" }),
+        EditorView.contentAttributes.of({ "aria-label": "Document content", spellcheck: "true", tabindex: "0" }),
         EditorState.transactionFilter.of(tr => {
           if (tr.newDoc.length <= 200000) return tr;
           onError("Documents can contain up to 200,000 characters.");
@@ -260,12 +321,16 @@ export function markdownDocumentEditor({ parent, text, mode = "live", renderer, 
         const prefix = command === "bullet" ? "- " : command === "number" ? "1. " : command === "check" ? "- [ ] " : command === "quote" ? "> " : /^h[1-6]$/.test(command) ? "#".repeat(Number(command[1])) + " " : "";
         const start = view.state.doc.lineAt(range.from).number, end = view.state.doc.lineAt(range.to).number;
         const changes = [];
+        let caret = null;
         for (let n = start; n <= end; n++) {
           const line = view.state.doc.line(n);
           const existing = /^(?:#{1,6}\s+|[-*+]\s+(?:\[[ xX]\]\s+)?|\d+\.\s+|>\s*)/.exec(line.text);
-          changes.push({ from: line.from, to: line.from + (existing?.[0].length || 0), insert: prefix });
+          const old = existing?.[0].length || 0;
+          changes.push({ from: line.from, to: line.from + old, insert: prefix });
+          // A caret keeps its place in the text, after the new prefix.
+          if (range.empty) caret = line.from + prefix.length + Math.max(0, range.from - line.from - old);
         }
-        view.dispatch({ changes });
+        view.dispatch(caret === null ? { changes } : { changes, selection: { anchor: caret } });
       }
     }
     view.focus();
@@ -285,7 +350,8 @@ export function markdownDocumentEditor({ parent, text, mode = "live", renderer, 
     },
     jump(from) {
       const anchor = Math.max(0, Math.min(from, view.state.doc.length));
-      view.dispatch({ selection: EditorSelection.cursor(anchor), scrollIntoView: true }); view.focus();
+      view.dispatch({ selection: EditorSelection.cursor(anchor), scrollIntoView: true });
+      focusOnOpen(view.contentDOM, parent.closest("form")?.querySelector('[data-document-action="outline"]'));
     },
     insert(value) {
       if (focusedComponent?.element.isConnected && focusedComponent.insert(value)) return;

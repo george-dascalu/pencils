@@ -77,6 +77,50 @@ export const settingsPages = [
 export const settingsPage = (id) =>
   settingsPages.find((p) => p[0] === id) || settingsPages[0];
 
+
+// Task types are edited as chips over a hidden comma-separated field, so the
+// save flow and dirty tracking stay unchanged.
+const escapeType = (value) => String(value).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
+const closeIcon = '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg>';
+function typeChipsHTML(types) {
+  return `<ul class="type-chips" data-type-chips aria-labelledby="type-list-label">${types.map((t) => `<li class="type-chip"><span>${escapeType(t)}</span><button type="button" class="icon-button" data-type-remove="${escapeType(t)}" aria-label="Remove ${escapeType(t)}" title="Remove">${closeIcon}</button></li>`).join("")}</ul>`;
+}
+function typeList(field) {
+  return field.value.split(",").map((t) => t.trim()).filter(Boolean);
+}
+function updateTypes(field, types) {
+  field.value = types.join(", ");
+  field.closest(".type-list-field").querySelector("[data-type-chips]").outerHTML = typeChipsHTML(types);
+  field.dispatchEvent(new Event("input", { bubbles: true }));
+  field.dispatchEvent(new Event("change", { bubbles: true }));
+}
+function addType(host) {
+  const input = host.querySelector("[data-type-input]"), field = host.querySelector('input[name="types"]');
+  const value = input.value.trim().toLowerCase().replace(/\s+/g, "-");
+  if (!value) return input.focus();
+  const types = typeList(field);
+  if (!types.includes(value)) updateTypes(field, [...types, value]);
+  input.value = "";
+  input.focus();
+}
+if (typeof document !== "undefined") document.addEventListener("click", (event) => {
+  const host = event.target.closest(".type-list-field");
+  if (!host) return;
+  if (event.target.closest("[data-type-add]")) addType(host);
+  const remove = event.target.closest("[data-type-remove]");
+  if (remove) {
+    const field = host.querySelector('input[name="types"]');
+    updateTypes(field, typeList(field).filter((t) => t !== remove.dataset.typeRemove));
+    host.querySelector("[data-type-input]")?.focus();
+  }
+});
+if (typeof document !== "undefined") document.addEventListener("keydown", (event) => {
+  if (event.key === "Enter" && event.target.matches("[data-type-input]")) {
+    event.preventDefault();
+    addType(event.target.closest(".type-list-field"));
+  }
+});
+
 export function projectSettings(ctx, { sources, automations }) {
   const {
     state,
@@ -115,7 +159,9 @@ export function projectSettings(ctx, { sources, automations }) {
   }
   function open(section = "general", detail = "", { force = false } = {}) {
     if (!state.project || (!force && !ctx.canNavigate())) return false;
-    if (state.view !== "settings") state.settingsReturn = state.view;
+    if (state.view !== "settings") state.settingsReturn = state.helpArticle
+      ? ctx.storage.get(`view:${state.project.id}`, "list") : state.view;
+    state.helpArticle = null;
     clean();
     state.view = "settings";
     state.settingsSection = settingsPage(section)[0];
@@ -174,7 +220,7 @@ export function projectSettings(ctx, { sources, automations }) {
       );
     const types =
       section === "hierarchy"
-        ? `<label class="field">Task types<input name="types" value="${esc(state.config.types.join(", "))}" required><span class="field-hint">Use short names separated by commas. Types in use cannot be removed.</span></label>`
+        ? `<div class="field type-list-field"><span id="type-list-label">Task types</span><input type="hidden" name="types" value="${esc(state.config.types.join(", "))}" required>${typeChipsHTML(state.config.types)}<div class="type-add"><input data-type-input aria-label="New type name" placeholder="New type…" maxlength="30"><button type="button" class="button small" data-type-add>${icon("plus")}Add type</button></div><span class="field-hint">Types in use cannot be removed.</span></div>`
         : "";
     return form(types, "workflow-form");
   }

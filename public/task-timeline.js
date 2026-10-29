@@ -1,6 +1,6 @@
 import { taskFieldColor, taskColorDot } from "./task-colors.js";
 import { taskDateEditor } from "./task-date-editor.js";
-import { timelineRangeEditor } from "./timeline-range.js";
+import { timelineRangeEditor, timelineRoot } from "./timeline-range.js";
 import { timelineSelection } from "./timeline-select.js";
 import { pageOf, localDate } from "./task-visibility.js";
 import {
@@ -45,19 +45,6 @@ export function timelineHTML(
   const width = range ? Math.max(unit, axis.end(max)) : Math.max(700, axis.end(max) + 4 * unit);
   const step = scale === "day" ? 1 : showWeekends ? 7 : 5;
   const x = axis.x;
-  const positions = new Map(dated.map((t, i) => [t.id, i]));
-  const lines = dated
-    .flatMap((t, i) =>
-      (t.dependencies || []).map((id) => {
-        const from = positions.get(id);
-        if (from == null) return "";
-        const a = dated[from],
-          sx = axis.end(a.due || a.start),
-          tx = x(t.start || t.due);
-        return `<path d="M${sx},${from * 44 + 22} H${sx + 10} V${i * 44 + 22} H${tx}"/>`;
-      }),
-    )
-    .join("");
   const taskLabel = (t, unplanned = false) =>
     `<div class="timeline-task-label"><button class="timeline-task-open" data-action="task-open" data-id="${esc(t.id)}" title="${esc(t.key || "")} ${esc(t.title)}" ${unplanned ? `draggable="${!t.source}" data-unscheduled="${esc(t.id)}"` : ""}>${taskColorDot(ctx.state, "status", t.status)}${esc(t.key || "")} ${esc(t.title)}</button><button type="button" class="icon-button timeline-date-action ${unplanned ? "timeline-schedule" : ""}" data-task-dates="${esc(t.id)}" aria-label="${unplanned ? "Set" : "Edit"} dates for ${esc(t.title)}" title="${unplanned ? "Set" : "Edit"} dates" aria-haspopup="dialog" aria-expanded="false">${ctx.icon("calendar")}</button></div>`;
   const pager =
@@ -65,13 +52,13 @@ export function timelineHTML(
       ? `<div class="timeline-page-summary" role="status">Page ${page.page + 1} of ${page.pages} · ${tasks.length} tasks<button class="button small" data-timeline-page="${page.page - 1}" ${!page.page ? "disabled" : ""}>Previous tasks</button><button class="button small" data-timeline-page="${page.page + 1}" ${page.page + 1 >= page.pages ? "disabled" : ""}>Next tasks</button></div>`
       : "";
   return `<section class="task-timeline" data-timeline="${esc(scope)}" data-min="${min}" data-unit="${unit}" data-scale="${scale}" data-weekends="${showWeekends}" data-range-start="${range?.start || ""}" data-range-end="${range?.end || ""}" data-auto-end="${axis.dateAt(width - 1)}" style="--timeline-unit:${unit}px;--timeline-step:${step * unit}px;--timeline-week:${7 * unit}px;--timeline-work:${5 * unit}px">
-    <div class="planning-head"><div class="timeline-options"><label>Scale <select data-timeline-scale aria-label="Timeline scale">${["day", "week", "month"].map((s) => `<option ${scale === s ? "selected" : ""}>${s}</option>`).join("")}</select></label><label class="timeline-weekends"><input type="checkbox" data-timeline-weekends ${showWeekends ? "checked" : ""}>Show weekends</label><button type="button" class="button small" data-timeline-range aria-haspopup="dialog" aria-expanded="false" title="${range ? `${range.start} to ${range.end}` : "Fit dates automatically"}">${ctx.icon("calendar")}Timeline range${range ? " · Custom" : ""}</button></div><span class="timeline-hint" role="status">${range && axis.end(max) === 0 ? "No weekdays in this range. Show weekends or change the range." : "Click a row to choose start and end dates. Drag bars to move or resize."}</span><button type="button" class="button small" data-feature="schedule-preview">Review schedule</button></div>${pager}
+    <div class="planning-head" data-timeline-options="${esc(scope)}" ${scope === "project" ? "data-phone-options" : ""}><div class="timeline-options"><label>Scale <select data-timeline-scale aria-label="Timeline scale">${["day", "week", "month"].map((s) => `<option ${scale === s ? "selected" : ""}>${s}</option>`).join("")}</select></label><button type="button" class="button small" data-timeline-weekends data-weekends-toggle aria-pressed="${showWeekends}" title="${showWeekends ? "Hide" : "Show"} weekends">${ctx.icon("calendar")}<span>${showWeekends ? "Hide" : "Show"} weekends</span></button><button type="button" class="button small" data-timeline-range aria-haspopup="dialog" aria-expanded="false" title="${range ? `${range.start} to ${range.end}` : "Fit dates automatically"}">${ctx.icon("calendar")}Timeline range${range ? " · Custom" : ""}</button></div><span class="timeline-hint" role="status">${range && axis.end(max) === 0 ? "No weekdays in this range. Show weekends or change the range." : "Choose a row to set its start and end dates. Drag bars to move or resize."}</span><button type="button" class="button small" data-feature="schedule-preview">Review schedule</button></div>${pager}
     <div class="timeline-scroll" tabindex="0" role="region" aria-label="Project timeline"><div class="timeline-sheet" style="width:${width + 240}px">
       <div class="timeline-header"><span class="timeline-task-label">Task</span><div class="timeline-ruler"></div></div>
-      <svg class="timeline-dependencies" height="${dated.length * 44}" style="left:240px;top:60px" aria-label="Task dependencies">${lines}</svg>
-      ${dated.map((t) => `<div class="timeline-row" data-timeline-row="${esc(t.id)}">${taskLabel(t)}<div class="timeline-track" data-schedule-target tabindex="0" role="group" aria-label="Choose start and end dates for ${esc(t.title)}" title="Click to choose start, then click again to choose end" ${t.source ? 'aria-disabled="true"' : ""}><div tabindex="0" role="slider" aria-label="Schedule ${esc(t.title)}" aria-valuetext="${esc(t.start || t.due)} to ${esc(t.due || t.start)}" class="timeline-bar ${t.milestone ? "milestone" : ""} ${!showWeekends && axis.end(t.due || t.start) === x(t.start || t.due) ? "weekend-only" : ""}" data-timeline-task="${esc(t.id)}" title="${esc(t.start || t.due)} to ${esc(t.due || t.start)} · Click to edit dates · Alt+arrows moves by a ${showWeekends ? "day" : "weekday"}" data-task-color="status" style="--task-field-color:${taskFieldColor(ctx.state, "status", t.status)};left:${x(t.start || t.due)}px;width:${Math.max(12, axis.end(t.due || t.start) - x(t.start || t.due))}px"><span data-date-end="start" role="separator" aria-label="Resize start date"></span>${esc(t.title)}<span data-date-end="due" role="separator" aria-label="Resize due date"></span></div><span class="timeline-outside" hidden>Outside range</span><button class="milestone-toggle" data-milestone="${esc(t.id)}" aria-pressed="${!!t.milestone}" title="Toggle milestone">◇</button></div></div>`).join("")}
-      ${undated.length ? `<div class="timeline-section-label">Unplanned (${allUndated.length})</div>${undated.map((t) => `<div class="timeline-row timeline-unplanned" data-timeline-row="${esc(t.id)}">${taskLabel(t, true)}<div class="timeline-track" data-schedule-target tabindex="0" role="group" aria-label="Choose start and end dates for ${esc(t.title)}" title="Click to choose start, then click again to choose end" ${t.source ? 'aria-disabled="true"' : ""}><span class="timeline-schedule-hint" aria-hidden="true">Click start, then end</span></div></div>`).join("")}` : ""}
-      ${!tasks.length ? `<div class="empty"><h2>${ctx.state?.tasks?.length ? "No matching tasks" : "No tasks yet"}</h2><button class="button soft" data-action="${ctx.state?.tasks?.length ? "filters-reset" : "task-new"}">${ctx.state?.tasks?.length ? "Clear filters" : "Add a task"}</button></div>` : ""}
+      <svg class="timeline-dependencies" height="${dated.length * 44}" style="left:240px;top:60px" role="img" aria-label="Task dependencies"></svg>
+      ${dated.map((t) => `<div class="timeline-row" data-timeline-row="${esc(t.id)}">${taskLabel(t)}<div class="timeline-track" data-schedule-target tabindex="0" role="group" aria-label="Choose start and end dates for ${esc(t.title)}" title="Choose a start, then an end" ${t.source ? 'aria-disabled="true"' : ""}><div tabindex="0" role="slider" aria-label="Schedule ${esc(t.title)}" aria-valuetext="${esc(t.start || t.due)} to ${esc(t.due || t.start)}" class="timeline-bar ${t.milestone ? "milestone" : ""} ${!showWeekends && axis.end(t.due || t.start) === x(t.start || t.due) ? "weekend-only" : ""}" data-timeline-task="${esc(t.id)}" title="${esc(t.start || t.due)} to ${esc(t.due || t.start)} · Select to edit dates · Alt+arrows moves by a ${showWeekends ? "day" : "weekday"}" data-task-color="status" style="--task-field-color:${taskFieldColor(ctx.state, "status", t.status)};left:${x(t.start || t.due)}px;width:${Math.max(12, axis.end(t.due || t.start) - x(t.start || t.due))}px"><span data-date-end="start" role="separator" aria-label="Resize start date"></span>${esc(t.title)}<span data-date-end="due" role="separator" aria-label="Resize due date"></span></div><span class="timeline-outside" hidden>Outside range</span><button class="milestone-toggle" data-milestone="${esc(t.id)}" aria-pressed="${!!t.milestone}" title="Toggle milestone">◇</button></div></div>`).join("")}
+      ${undated.length ? `<div class="timeline-section-label">Unplanned (${allUndated.length})</div>${undated.map((t) => `<div class="timeline-row timeline-unplanned" data-timeline-row="${esc(t.id)}">${taskLabel(t, true)}<div class="timeline-track" data-schedule-target tabindex="0" role="group" aria-label="Choose start and end dates for ${esc(t.title)}" title="Choose a start, then an end" ${t.source ? 'aria-disabled="true"' : ""}><span class="timeline-schedule-hint" aria-hidden="true">Set start, then end</span></div></div>`).join("")}` : ""}
+      ${!tasks.length ? `<div class="empty">${ctx.icon("leaf")}<h2>${ctx.state?.tasks?.length ? "No matching cards" : "No cards yet"}</h2><button class="button soft" data-action="${ctx.state?.tasks?.length ? "filters-reset" : "task-new"}">${ctx.state?.tasks?.length ? "Clear filters" : "Add a card"}</button></div>` : ""}
     </div></div></section>`;
 }
 export function timelineInteractions(ctx, onOption) {
@@ -92,6 +79,41 @@ export function timelineInteractions(ctx, onOption) {
         `[data-timeline="${CSS.escape(scope)}"] [data-timeline-row="${CSS.escape(id)}"] [data-schedule-target]`,
       )) },
     );
+  }
+  function drawDependencies(root) {
+    const svg = root.querySelector(".timeline-dependencies");
+    if (!svg) return;
+    const origin = svg.getBoundingClientRect(), scale = origin.width / svg.clientWidth || 1;
+    const bars = new Map([...root.querySelectorAll("[data-timeline-task]:not([hidden])")].map(bar => {
+      const rect = bar.getBoundingClientRect();
+      return [bar.dataset.timelineTask, { left: (rect.left - origin.left) / scale, right: (rect.right - origin.left) / scale,
+        top: (rect.top - origin.top) / scale, center: (rect.top + rect.height / 2 - origin.top) / scale }];
+    }));
+    const marker = `timeline-arrow-${encodeURIComponent(root.dataset.timeline)}`;
+    const paths = [];
+    for (const [id, target] of bars) {
+      const t = task(id);
+      for (const predecessor of t?.dependencies || []) {
+        const source = bars.get(predecessor);
+        if (!source || predecessor === id) continue;
+        const sx = source.right + 1, sy = source.center, tx = target.left - 2, ty = target.center;
+        let path;
+        if (tx < 10) {
+          // At the left edge, enter above the bar so the arrowhead stays visible.
+          const endX = target.left + Math.min(12, (target.right - target.left) / 2), endY = target.top - 2;
+          path = `M${sx},${sy} H${sx + 10} V${endY - 6} H${endX} V${endY}`;
+        } else if (tx >= sx + 20) {
+          const middle = sx + Math.min(24, (tx - sx) / 2);
+          path = `M${sx},${sy} H${middle} V${ty} H${tx}`;
+        } else {
+          // Route backwards dependencies through the space between rows.
+          const lane = sy + (ty > sy ? 22 : -22);
+          path = `M${sx},${sy} H${sx + 10} V${lane} H${tx - 10} V${ty} H${tx}`;
+        }
+        paths.push(`<path class="timeline-dependency-path" data-from="${ctx.esc(predecessor)}" data-to="${ctx.esc(id)}" d="${path}" marker-end="url(#${marker})"><title>${ctx.esc(t.title)} depends on ${ctx.esc(task(predecessor)?.title || predecessor)}</title></path>`);
+      }
+    }
+    svg.innerHTML = `<defs><marker id="${marker}" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="8" markerHeight="8" orient="auto" markerUnits="userSpaceOnUse"><path d="M0 0 L8 4 L0 8 Z" fill="currentColor" stroke="none"/></marker></defs>${paths.join("")}`;
   }
   const resize = new ResizeObserver((entries) => {
     for (const { target: ruler } of entries) {
@@ -121,19 +143,9 @@ export function timelineInteractions(ctx, onOption) {
           outside.hidden = !box.outside;
           outside.textContent = days ? "Outside range" : "No weekdays in range";
         }
-        const bars = [...root.querySelectorAll("[data-timeline-task]")];
-        const positions = new Map(bars.map((bar, i) => [bar.dataset.timelineTask, i]));
-        root.querySelector(".timeline-dependencies").innerHTML = bars.flatMap((bar, i) => {
-          if (bar.hidden) return [];
-          const t = task(bar.dataset.timelineTask);
-          return (t.dependencies || []).flatMap(id => {
-            const from = positions.get(id);
-            if (from == null || bars[from].hidden) return [];
-            const a = task(id), sx = Math.min(ruler.clientWidth, Math.max(0, axis.end(a.due || a.start))), tx = Math.max(0, axis.x(t.start || t.due));
-            return `<path d="M${sx},${from * 44 + 22} H${Math.min(ruler.clientWidth, sx + 10)} V${i * 44 + 22} H${tx}"/>`;
-          });
-        }).join("");
+
       }
+      drawDependencies(root);
       const { months, ticks } = timelineHeader(
         +root.dataset.min,
         unit,
@@ -263,6 +275,7 @@ export function timelineInteractions(ctx, onOption) {
       const bounds = timelineBarBounds(d.axis, d.next.start, d.next.due, d.width, d.range);
       d.el.style.left = `${bounds.left}px`;
       d.el.style.width = `${bounds.width}px`;
+      drawDependencies(d.capture);
     },
     true,
   );
@@ -357,6 +370,13 @@ export function timelineInteractions(ctx, onOption) {
         renderView(true);
         return;
       }
+      const weekendsToggle = e.target.closest("button[data-timeline-weekends]");
+      if (weekendsToggle) {
+        stop(e);
+        const root = timelineRoot(weekendsToggle);
+        onOption(root.dataset.timeline, "weekends", root.dataset.weekends === "false");
+        return;
+      }
       const id = e.target.closest("[data-milestone]")?.dataset.milestone;
       if (id) {
         stop(e);
@@ -370,13 +390,13 @@ export function timelineInteractions(ctx, onOption) {
   document.addEventListener("change", (e) => {
     if (e.target.matches("[data-timeline-scale]"))
       onOption(
-        e.target.closest("[data-timeline]").dataset.timeline,
+        timelineRoot(e.target).dataset.timeline,
         "scale",
         e.target.value,
       );
-    if (e.target.matches("[data-timeline-weekends]"))
+    if (e.target.matches("[data-timeline-weekends]") && e.target.type === "checkbox")
       onOption(
-        e.target.closest("[data-timeline]").dataset.timeline,
+        timelineRoot(e.target).dataset.timeline,
         "weekends",
         e.target.checked,
       );

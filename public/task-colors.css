@@ -7,7 +7,7 @@
   );
   --task-color-border: color-mix(
     in srgb,
-    var(--task-field-color) 50%,
+    var(--task-field-color) 70%,
     var(--line)
   );
   --task-color-ink: color-mix(in srgb, var(--task-field-color) 45%, var(--ink));
@@ -18,7 +18,8 @@
 .task-table .table-cell-select[data-task-color],
 #canvas .board-node :is(select, .canvas-task-priority)[data-task-color],
 .task-color-badge[data-task-color] {
-  background-color: var(--task-color-wash);
+  /* Values differ by border and text colour only; the fill stays neutral. */
+  background-color: var(--surface);
   border-color: var(--task-color-border);
   color: var(--task-color-ink);
 }
@@ -34,14 +35,19 @@
   background-size: 0.85em 0.85em;
   background-repeat: no-repeat;
 }
+/* The card editor's status control shows no arrow; the app menu opens on tap. */
+.task-dialog select[data-task-color] {
+  background-image: none;
+  padding-inline-end: 12px;
+}
 .task-dialog select[data-task-color]:focus-visible,
 .task-picker[data-task-color] .task-picker-trigger:focus-visible,
 .task-table select[data-task-color]:focus-visible {
-  outline: 2px solid var(--green);
+  outline: var(--focus-ring);
   outline-offset: 1px;
 }
 .task-assignee[data-task-color] {
-  background: var(--task-color-wash);
+  background: var(--surface);
   color: var(--task-color-ink);
   border: 1px solid var(--task-color-border);
 }

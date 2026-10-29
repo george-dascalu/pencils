@@ -1,6 +1,7 @@
 import { canvasRichText, richToolbar } from "./canvas-rich-text.js";
 import { positionBoardObjectPanel } from "./board-object-panel.js";
 import { taskColorAttributes } from "./task-colors.js";
+import { focusOnOpen } from "./open-focus.js";
 import {
   commentReactions,
   commentThreads,
@@ -77,7 +78,7 @@ export function boardComments(ctx, author, uid, adapter = null) {
     }
     return id;
   };
-  const focusComposer = () => panel?.querySelector('[data-editor-mode="source"] textarea, [data-editor-mode="rich"] .inline-rich')?.focus({ preventScroll: true });
+  const focusComposer = () => focusOnOpen(panel?.querySelector('[data-editor-mode="source"] textarea, [data-editor-mode="rich"] .inline-rich'), panel?.querySelector('[data-comments-close]'));
   const authorName = (name) => `<strong class="comment-author" ${taskColorAttributes(state, 'assignee', name)}>${esc(name || 'Workspace')}</strong>`;
   function replyPreview(comment) {
     if (comment.deleted) return 'Comment deleted';
@@ -108,9 +109,9 @@ export function boardComments(ctx, author, uid, adapter = null) {
     const field = panel.querySelector("textarea");
     field.placeholder = parent ? "Write a reply…" : "Write a comment…";
     panel.querySelector(".inline-rich").dataset.placeholder = field.placeholder;
-    panel.querySelector("[data-comment-submit]").textContent = parent
-      ? "Reply"
-      : "Add comment";
+    const submit = panel.querySelector("[data-comment-submit]"), action = parent ? "Send reply" : "Add comment";
+    submit.setAttribute("aria-label", action);
+    submit.title = action;
   }
   function close(focus = false) {
     if (!panel) return;
@@ -221,7 +222,7 @@ export function boardComments(ctx, author, uid, adapter = null) {
     panel.setAttribute("aria-label", "Comments on this object");
     panel.setAttribute("aria-modal", "false");
     // An embedded composer must not participate in task-form validation.
-    panel.innerHTML = `<header class="board-comments-head"><strong>Comments</strong><button type="button" class="icon-button" data-comments-close aria-label="Close comments">${icon("close")}</button></header><div class="board-comments-list" role="log" aria-label="Object comments" aria-live="polite"></div><${embedded ? "div" : "form"} id="board-comment-form"><div class="comment-reply-context" hidden><span></span><button type="button" class="icon-button" data-comment-reply-cancel aria-label="Cancel reply" title="Cancel reply">${icon("close")}</button></div><div class="comment-rich-tools task-rich-tools" role="toolbar" aria-label="Format comment">${richToolbar(icon, { alignment: null, previewAction: "data-rich-preview", idPrefix: "comment" })}</div><div class="inline-rich comment-input canvas-markdown" contenteditable="true" role="textbox" aria-label="Comment" aria-multiline="true" data-placeholder="Write a comment…" spellcheck="true"></div><textarea class="markdown-source hidden" id="board-comment-text" name="text" ${embedded ? 'form="task-comment-composer"' : ""} aria-label="Comment Markdown" rows="3" maxlength="10000" placeholder="Write a comment…"></textarea><div class="inline-preview canvas-markdown hidden"></div><p class="comment-compose-error" role="alert" hidden></p><button class="button primary small" data-comment-submit type="${embedded ? "button" : "submit"}">Add comment</button></${embedded ? "div" : "form"}>`;
+    panel.innerHTML = `<header class="board-comments-head"><strong>Comments</strong><button type="button" class="icon-button" data-comments-close aria-label="Close comments">${icon("close")}</button></header><div class="board-comments-list" role="log" aria-label="Object comments" aria-live="polite"></div><${embedded ? "div" : "form"} id="board-comment-form"><div class="comment-reply-context" hidden><span></span><button type="button" class="icon-button" data-comment-reply-cancel aria-label="Cancel reply" title="Cancel reply">${icon("close")}</button></div><div class="comment-rich-tools task-rich-tools" role="toolbar" aria-label="Format comment">${richToolbar(icon, { alignment: null, previewAction: "data-rich-preview", idPrefix: "comment", responsive: true })}</div><div class="inline-rich comment-input canvas-markdown" contenteditable="true" role="textbox" aria-label="Comment" aria-multiline="true" data-placeholder="Write a comment…" spellcheck="true"></div><textarea class="markdown-source hidden" id="board-comment-text" name="text" ${embedded ? 'form="task-comment-composer"' : ""} aria-label="Comment Markdown" rows="3" maxlength="10000" placeholder="Write a comment…"></textarea><div class="inline-preview canvas-markdown hidden"></div><p class="comment-compose-error" role="alert" hidden></p><button class="button primary small comment-send" data-comment-submit type="${embedded ? "button" : "submit"}" aria-label="Add comment" title="Add comment">${icon("send")}</button></${embedded ? "div" : "form"}>`;
     if (!embedded) panel.insertAdjacentHTML('beforeend', '<button type="button" class="comment-panel-resize" data-comments-resize aria-label="Resize comments" title="Drag to resize comments, or use arrow keys"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="m9 20 11-11m-5 11 5-5"/></svg></button>');
     bindResize();
     const draft = drafts.get(key());

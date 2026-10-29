@@ -59,7 +59,7 @@ export function taskRowEditor(ctx) {
     const current = document.querySelector(
       `[data-task-order-row="${CSS.escape(id)}"]`,
     );
-    const next = current?.querySelector(
+    const next = [...(current?.querySelectorAll(
       field
         ? `[data-row-field="${field}"]`
         : active.matches("[data-row-dates]")
@@ -68,15 +68,14 @@ export function taskRowEditor(ctx) {
             ? "[data-task-reorder]"
             : active.dataset.action
               ? `[data-action="${CSS.escape(active.dataset.action)}"]`
-              : ".row-open",
-    );
+              : ".phone-task-open, .task-id",
+    ) || [])].find(el => el.getClientRects().length && !el.closest("[inert]"));
     if (next) {
       next.focus({ preventScroll: true });
       if (selection) next.setSelectionRange(...selection);
     } else
-      document
-        .querySelector("#view-content .row-open, [data-action=task-new]")
-        ?.focus({ preventScroll: true });
+      [...document.querySelectorAll("#view-content .phone-task-open, #view-content .task-row > .task-id, [data-action=task-new]")]
+        .find(el => el.getClientRects().length && !el.closest("[inert]"))?.focus({ preventScroll: true });
   }
   function schedulePaint(project, view) {
     clearTimeout(paintTimer);

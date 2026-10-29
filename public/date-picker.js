@@ -1,3 +1,4 @@
+import { positionPopover } from "./popover-position.js";
 // One Monday-first calendar for all date fields; retain native ISO values and validation.
 const key = (d) =>
   `${String(d.getFullYear()).padStart(4, "0")}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
@@ -25,15 +26,13 @@ export function installDatePickers({ icon, esc }) {
     if (!popup) return;
     if (!input.isConnected) return close();
     const r = input.closest(".date-field").getBoundingClientRect();
-    popup.style.maxHeight = `${innerHeight - 16}px`;
-    popup.style.left = `${Math.max(8, Math.min(r.left, innerWidth - popup.offsetWidth - 8))}px`;
-    popup.style.top = `${Math.max(8, r.bottom + popup.offsetHeight + 8 <= innerHeight ? r.bottom + 6 : r.top - popup.offsetHeight - 6)}px`;
+    positionPopover(popup, r, { width: popup.getBoundingClientRect().width || 320, maxHeight: innerHeight - 16, gap: 6 });
   }
   function paint(focus = true) {
     const start = new Date(month);
     start.setDate(1 - ((start.getDay() + 6) % 7));
     const today = key(new Date());
-    popup.innerHTML = `<div class="date-picker-head"><button type="button" data-date-month="-1" aria-label="Previous month">‹</button><label class="sr-only" for="date-picker-month">Calendar month</label><select id="date-picker-month">${Array.from({ length: 12 }, (_, i) => `<option value="${i}" ${i === month.getMonth() ? "selected" : ""}>${new Date(2026, i, 1).toLocaleDateString(undefined, { month: "long" })}</option>`).join("")}</select><input aria-label="Calendar year" type="number" min="1" max="9999" value="${month.getFullYear()}"><button type="button" data-date-month="1" aria-label="Next month">›</button></div><table role="grid" aria-label="${esc(month.toLocaleDateString(undefined, { month: "long", year: "numeric" }))}"><thead><tr>${["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map((d, i) => `<th scope="col" class="${i > 4 ? "weekend" : ""}">${d}</th>`).join("")}</tr></thead><tbody>${Array.from(
+    popup.innerHTML = `<div class="date-picker-head"><button type="button" class="icon-button" data-date-month="-1" aria-label="Previous month" title="Previous month"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg></button><label class="sr-only" for="date-picker-month">Calendar month</label><select id="date-picker-month">${Array.from({ length: 12 }, (_, i) => `<option value="${i}" ${i === month.getMonth() ? "selected" : ""}>${new Date(2026, i, 1).toLocaleDateString(undefined, { month: "long" })}</option>`).join("")}</select><input aria-label="Calendar year" type="number" min="1" max="9999" value="${month.getFullYear()}"><button type="button" class="icon-button" data-date-month="1" aria-label="Next month" title="Next month"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 18l6-6-6-6"/></svg></button></div><table role="grid" aria-label="${esc(month.toLocaleDateString(undefined, { month: "long", year: "numeric" }))}"><thead><tr>${["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map((d, i) => `<th scope="col" class="${i > 4 ? "weekend" : ""}">${d}</th>`).join("")}</tr></thead><tbody>${Array.from(
       { length: 6 },
       (_, row) =>
         `<tr>${Array.from({ length: 7 }, (_, col) => {

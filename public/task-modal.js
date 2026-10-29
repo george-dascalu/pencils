@@ -1,6 +1,7 @@
 import { taskHistoryHTML } from "./task-history.js";
 import { nextStatuses } from "./workflow-model.js";
 import { positionPopover } from "./popover-position.js";
+import { focusOnOpen } from "./open-focus.js";
 import { taskColorAttributes, refreshTaskControlColors } from "./task-colors.js";
 export function taskPickerHTML(
   { name, title, value, choices, iconOnly },
@@ -9,7 +10,7 @@ export function taskPickerHTML(
   const chosen = choices.find((c) => c.value === value) || choices[0];
   return `<div class="task-picker ${iconOnly ? "icon-only" : ""}" data-task-picker="${name}" ${taskColorAttributes(state, name, value)}>
     <select name="${name}" aria-label="${title}" hidden>${choices.map((c) => `<option value="${esc(c.value)}" data-icon="${esc(c.icon)}" ${c.value === value ? "selected" : ""}>${esc(c.label)}</option>`).join("")}</select>
-    <button type="button" class="task-picker-trigger" aria-haspopup="listbox" aria-expanded="false" aria-label="${title}: ${esc(chosen.label)}" title="${title}: ${esc(chosen.label)}"><span data-picker-symbol>${icon(chosen.icon)}</span>${iconOnly ? "" : `<span data-picker-label>${esc(chosen.label)}</span>`}${icon("chevron")}</button>
+    <button type="button" class="task-picker-trigger" aria-haspopup="listbox" aria-expanded="false" aria-label="${title}: ${esc(chosen.label)}" title="${title}: ${esc(chosen.label)}"><span data-picker-symbol>${icon(chosen.icon)}</span>${iconOnly ? "" : `<span data-picker-label>${esc(chosen.label)}</span>`}${iconOnly ? "" : icon("chevron")}</button>
     <div class="task-picker-popover selection-popover" hidden>${name === "parent" ? '<input type="search" placeholder="Find a parent task…" aria-label="Find a parent task">' : ""}<div role="listbox" aria-label="${title}">${choices.map((c) => `<button type="button" role="option" aria-selected="${c.value === chosen.value}" data-picker-value="${esc(c.value)}" ${taskColorAttributes(state, name, c.value)}>${icon(c.icon)}<span>${esc(c.label)}</span>${icon("check")}</button>`).join("")}</div></div>
   </div>`;
 }
@@ -87,7 +88,7 @@ export function taskModalControls(ctx, form, restoreVersion) {
       filterParents(search);
     }
     positionPicker();
-    (search || picker.querySelector("[aria-selected=true]"))?.focus();
+    focusOnOpen(search || picker.querySelector("[aria-selected=true]"), picker.querySelector("[aria-selected=true], [data-picker-value]"));
   }
   function filterParents(input) {
     const needle = input.value.trim().toLowerCase();
@@ -147,6 +148,7 @@ export function taskModalControls(ctx, form, restoreVersion) {
       }
     }
   });
+  let pickerQuery = "", pickerTypedAt = 0;
   form.addEventListener("keydown", (event) => {
     const picker = event.target.closest("[data-task-picker]");
     if (
@@ -162,6 +164,19 @@ export function taskModalControls(ctx, form, restoreVersion) {
     if (!picker) return;
     if (event.key === "Tab") {
       closePicker();
+      return;
+    }
+    const typed = event.key.length === 1 && !event.ctrlKey && !event.metaKey && !event.altKey && !event.target.matches("input");
+    if (typed && openPicker) {
+      event.preventDefault();
+      const now = Date.now();
+      pickerQuery = (now - pickerTypedAt > 700 ? "" : pickerQuery) + event.key.toLocaleLowerCase();
+      pickerTypedAt = now;
+      const choices = [...picker.querySelectorAll("[data-picker-value]")].filter((el) => !el.hidden && !el.disabled);
+      const active = choices.indexOf(document.activeElement);
+      const ordered = [...choices.slice(active + 1), ...choices.slice(0, active + 1)];
+      const needle = [...pickerQuery].every((c) => c === pickerQuery[0]) ? pickerQuery[0] : pickerQuery;
+      ordered.find((el) => el.textContent.trim().toLocaleLowerCase().startsWith(needle))?.focus();
       return;
     }
     if (!["ArrowDown", "ArrowUp", "Home", "End"].includes(event.key)) return;
@@ -210,8 +225,8 @@ export function taskModalControls(ctx, form, restoreVersion) {
     form
       .querySelector("[data-feature=task-history]")
       .setAttribute("aria-expanded", "true");
-    panel.innerHTML = `<div class="task-history-head"><h3>Version history</h3><button type="button" class="icon-button" data-task-modal="history-close" aria-label="Close version history">${icon("close")}</button></div><div data-history-content aria-live="polite">Loading history…</div><p data-history-error class="form-error" role="alert"></p>`;
-    panel.querySelector("[data-task-modal=history-close]").focus();
+    panel.innerHTML = `<div class="task-history-head"><h3 tabindex="-1">Version history</h3><button type="button" class="icon-button" data-task-modal="history-close" aria-label="Close version history">${icon("close")}</button></div><div data-history-content aria-live="polite">Loading history…</div><p data-history-error class="form-error" role="alert"></p>`;
+    panel.querySelector(".task-history-head h3").focus({ preventScroll: true });
     try {
       const data = await api(
         `/history?file=${encodeURIComponent(target.file)}`,

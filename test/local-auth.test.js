@@ -55,8 +55,32 @@ test("local identity preserves password accounts and cannot be used as a remote 
   assert.deepEqual((await new Auth(store, true).accounts()).map((u) => u.username), ["admin"]);
 });
 
-test("automatic local administrator can configure Jira, complete OAuth and own background sync", async (t) => {
-  const { store, auth } = await fixture(t);
+test("single-user mode uses the same owner on every connection and can return to required authentication", async (t) => {
+  const { root, store, auth: local } = await fixture(t);
+  const required = new Auth(store, "required");
+  await required.save({ username: "admin", password: "fixture-admin-password", admin: true, organisations: {} });
+  const file = path.join(root, ".pencils", "accounts.json");
+  const before = await fs.readFile(file, "utf8");
+  const single = new Auth(store, "single-user", "George");
+  for (const ip of ["127.0.0.1", "192.168.1.25", "100.74.164.52", "::ffff:100.74.164.52", "203.0.113.5", "2001:db8::1"]) {
+    assert.deepEqual(await single.user(requestFrom(ip)), await local.user(requestFrom("127.0.0.1")));
+    assert.equal(await required.user(requestFrom(ip)), null);
+  }
+  assert.equal(await local.user(requestFrom("100.74.164.52")), null, "Local mode's network boundary is unchanged");
+  assert.equal(single.enabled, true, "Integration ownership is available");
+  assert.equal((await single.accounts()).find((u) => u.username === "George").admin, true);
+  await assert.rejects(single.save({ username: "George", admin: false }), /managed by server settings/);
+  assert.throws(() => new Auth(store, "single-user", "<invalid>"), /LOCAL_USER_NAME/);
+  assert.equal(await fs.readFile(file, "utf8"), before);
+  const login = await required.login({ username: "admin", password: "fixture-admin-password" }, "remote");
+  const remote = requestFrom("100.74.164.52", { cookie: `pencils_session=${login.token}` });
+  assert.equal((await required.user(remote)).username, "admin");
+  assert.equal((await single.user(remote)).username, "George", "Old cookies do not change the automatic owner");
+});
+
+for (const mode of ["local", "single-user"]) test(`automatic ${mode} administrator can configure Jira, complete OAuth and own background sync`, async (t) => {
+  const { store } = await fixture(t);
+  const auth = new Auth(store, mode, "George");
   const project = await store.createProject({ title: "Local sources" });
   const env = { APP_ORIGIN: "http://localhost:3000", JIRA_CLIENT_ID: "fixture-client", JIRA_CLIENT_SECRET: "fixture-secret" };
   const providerFetch = async (url) => {
@@ -96,7 +120,7 @@ test("automatic local administrator can configure Jira, complete OAuth and own b
   const callback = await fetch(`${base}/api/source-callback/jira?state=${consentURL.searchParams.get("state")}&code=fixture-code`, { redirect: "manual" });
   assert.equal(callback.status, 303);
   assert.equal((await store.snapshot(project.id)).project.source_owner, "George");
-  const afterRestart = new Sources(store, new Auth(store, "local", "George"), { env, fetch: providerFetch });
+  const afterRestart = new Sources(store, new Auth(store, mode, "George"), { env, fetch: providerFetch });
   await afterRestart.poll();
   const tasks = (await store.snapshot(project.id)).tasks;
   assert.equal(tasks.length, 1);

@@ -50,8 +50,8 @@
   font-size: 12px;
 }
 :is(#selection-tools, .inline-floating-tools, .task-rich-tools) .icon {
-  width: 18px;
-  height: 18px;
+  width: 16px;
+  height: 16px;
   flex-shrink: 0;
 }
 :is(#selection-tools, .inline-floating-tools, .task-rich-tools)
@@ -75,7 +75,7 @@
 }
 :is(#selection-tools, .inline-floating-tools, .task-rich-tools)
   :is(button:disabled, [aria-disabled="true"]) {
-  opacity: 0.35;
+  opacity: 0.45;
   cursor: not-allowed;
 }
 .selection-action-label {
@@ -96,15 +96,15 @@
   left: 0;
   width: 244px;
   max-width: calc(100vw - 40px);
-  padding: 10px;
+  padding: var(--popover-padding, 8px);
   display: flex;
   flex-direction: column;
   gap: 4px;
   border: 1px solid var(--line);
-  border-radius: 10px;
+  border-radius: var(--radius-popover, 10px);
   background: var(--surface);
   color: var(--ink);
-  box-shadow: 0 8px 30px #0003;
+  box-shadow: var(--shadow-popover);
   overflow-y: auto;
   z-index: 2;
 }
@@ -278,7 +278,7 @@
 
 .selection-filter-total.filtered {
   background: var(--green);
-  color: white;
+  color: var(--paper);
 }
 
 /* Compact previews with space between independent connector controls. */
@@ -457,3 +457,30 @@
   position: relative;
   z-index: 1;
 }
+
+/* One formatting toolbar everywhere: the groups scroll sideways as one line,
+   snap to whole controls, and a chevron marks an edge with more tools. */
+.rich-toolbar-shell { position: relative; display: flex; align-items: stretch; flex: 1 1 auto; min-width: 0; max-width: 100%; }
+.rich-toolbar {
+  display: flex; align-items: center; flex-wrap: nowrap; gap: 0; flex: 1 1 auto; min-width: 0;
+  overflow-x: auto; overflow-y: hidden; overscroll-behavior-x: contain;
+  scroll-snap-type: x mandatory; scrollbar-width: none; -webkit-overflow-scrolling: touch;
+}
+.rich-toolbar::-webkit-scrollbar { display: none; }
+.rich-format-groups { display: contents; }
+.rich-toolbar .selection-group { flex: 0 0 auto; }
+/* Snap stops are group boundaries, which are also control boundaries, so a stop never leaves a control cut off on the left. */
+.rich-toolbar .selection-group { scroll-snap-align: start; }
+.rich-format-groups > .selection-group:first-child { border-left: 0; }
+/* Edge chevrons sit in the row (not over it), so snapping never hides a control
+   under them and showing one cannot shift the scroll position in a loop. */
+.rich-scroll {
+  flex: 0 0 auto; width: 22px; display: flex; align-items: center; justify-content: center;
+  padding: 0; border: 0; border-radius: 6px; color: var(--ink); background: transparent; cursor: pointer;
+}
+.rich-scroll:hover { background: var(--surface-soft); }
+.rich-scroll[hidden] { display: none; }
+.rich-scroll .icon { width: 14px; height: 14px; }
+@media (pointer: coarse) { .rich-scroll { width: 44px; } }
+.selection-menu > .selection-popover[popover] { position: fixed; inset: auto; margin: 0; }
+.rich-format-menu .selection-popover .selection-action-label { white-space: nowrap; }

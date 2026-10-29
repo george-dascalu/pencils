@@ -27,6 +27,7 @@ import {
 import { detailLevel, viewportCache, viewportRect } from "./viewport-cache.js";
 import { boardSession } from "./board-session.js";
 import { paintObjectGeometry } from "./object-geometry.js";
+import { paintNodePreview } from "./board-preview.js";
 import { timelineHTML } from "./task-timeline.js";
 import { frameThumbnail } from "./frame-export.js";
 import { frameOutline } from "./frame-outline.js";
@@ -48,6 +49,7 @@ import {
 } from "./frame-model.js";
 import { textAlignment } from "./text-alignment.js";
 import { connectorStyle } from "./connector-style.js";
+import { relationshipLabel, sharedLabels, sharedPrefix, labelSpot, spotOnRoute } from "./edge-labels.js";
 import { connectorTarget, connectorPreview } from "./connector-drag.js";
 import {
   placeholder,
@@ -137,6 +139,7 @@ export function canvasPro(ctx, basic) {
     clipboard = null;
   const name = () =>
     localStorage.getItem("pencils:participant") ||
+    state.session?.user?.username ||
     `Guest ${sync.client.slice(-4)}`;
   const btn = (action, text, extra = "") =>
     `<button type="button" class="button small${action === "collapse" ? " icon-button" : ""}" data-pro="${action}" ${extra}>${text}</button>`;
@@ -237,13 +240,47 @@ export function canvasPro(ctx, basic) {
       detailedEdges = new Set(detailed.map(e => e.id));
       bitmapEdges = candidates.filter(e => !detailedEdges.has(e.id));
     }
+    // Label text reads from start to end. Arrows of one kind fanning out from one
+    // side of an object share a trunk, so one label (on the lowest id) names them all.
+    const nodeOf = (id) => (exporting ? index.get(id) : effectiveNode(id));
+    const taskOf = (id) => taskMap.get(nodeOf(id)?.task) || null;
+    const texts = new Map(), byEdge = new Map();
+    for (const entry of candidates) {
+      const e = entry.edge;
+      const dependency = edgeDependency(b, e, taskMap, index);
+      const base = relationshipLabel(e, taskOf(e.from), taskOf(e.to));
+      const text = dependency.active
+        ? e.planRelation === "dependency"
+          ? "blocks"
+          : base
+            ? `${base} · blocks`
+            : "blocks"
+        : base ||
+          (dependency.valid && e.relationship === "blocks"
+            ? ""
+            : e.relationship === "relates"
+              ? ""
+              : e.relationship || "");
+      texts.set(e.id, { dependency, text });
+      byEdge.set(e.id, entry);
+    }
+    const shared = sharedLabels(candidates.map(({ edge: e }) => ({ id: e.id, from: e.from, fromSide: e.fromSide, routing: e.routing, bends: e.bends, label: texts.get(e.id).text })));
+    const routeOf = (entry) => {
+      if (!exporting) return scene.route(entry);
+      const a = index.get(entry.edge.from), c = index.get(entry.edge.to);
+      return a && c ? routeEdge(entry.edge, a, c, scene.spatial.search(entry)) : null;
+    };
+    const targetName = (id) => {
+      const node = nodeOf(id), task = taskMap.get(node?.task);
+      return task ? task.key || task.title : String(node?.text || "").replace(/<[^>]*>/g, "").trim().slice(0, 40);
+    };
     for (const entry of detailed) {
       const e = entry.edge;
       const a = exporting ? index.get(e.from) : effectiveNode(e.from),
         c = exporting ? index.get(e.to) : effectiveNode(e.to);
       if (!a || !c || a.id === c.id) continue;
       if (!exporting && !intersects(entry, r)) continue;
-      const dependency = edgeDependency(b, e, taskMap, index);
+      const { dependency, text: edgeLabel } = texts.get(e.id) || { dependency: edgeDependency(b, e, taskMap, index), text: "" };
       const appearance = dependency.active
         ? { ...e, ...dependencyStyle(b, state.project) }
         : e;
@@ -256,20 +293,25 @@ export function canvasPro(ctx, basic) {
           .map(other => scene.route(other).points);
         p.d = lineJumps(p.points, routes);
       }
-      const edgeLabel = dependency.active
-        ? e.planRelation === "dependency"
-          ? "blocks"
-          : e.label
-            ? `${e.label} · blocks`
-            : "blocks"
-        : e.label ||
-          (dependency.valid && e.relationship === "blocks"
-            ? ""
-            : e.relationship === "relates"
-              ? ""
-              : e.relationship || "");
+      const group = shared.get(e.id);
+      let labelHTML = "";
+      if (edgeLabel && (!group || group.lead === e.id)) {
+        let x = p.x, y = p.y - 9, beside = false, tooltip = "";
+        if (group) {
+          const routes = group.members.map((id) => (id === e.id ? p : routeOf(byEdge.get(id)))?.points);
+          const spot = routes.every((points) => points?.length > 1) && labelSpot(sharedPrefix(routes));
+          if (spot) ({ x, y, beside } = spot);
+          const names = group.members.map((id) => targetName(byEdge.get(id).edge.to)).filter(Boolean);
+          tooltip = `<title>${esc(`${edgeLabel} ${names.length === group.members.length ? names.join(", ") : `${group.members.length} objects`}`)}</title>`;
+        } else if ((e.planRelation || dependency.active) && p.points?.length > 1) {
+          // Generated relationship text sits beside a vertical line, not across it.
+          const spot = spotOnRoute(p.points, { x: p.x, y: p.y });
+          if (spot) ({ x, y, beside } = spot);
+        }
+        labelHTML = `<text class="edge-label${beside ? " edge-label-beside" : ""}" data-edge="${esc(e.id)}" data-edge-label="main" x="${x + (e.labelOffset?.x || 0)}" y="${y + (e.labelOffset?.y || 0)}">${esc(edgeLabel)}${tooltip}</text>`;
+      }
       const style = connectorStyle(appearance, color, esc);
-      content += `<g data-edge="${esc(e.id)}"${dependency.active ? ' data-task-dependency="true"' : ""}><defs>${style.defs}</defs>${exporting ? "" : `<path class="connector-hit" d="${p.d}" fill="none" stroke="transparent" stroke-width="${Math.max(12 / state.camera.z, appearance.width || 2)}"/>`}<path class="canvas-edge ${basic.selectedEdges.has(e.id) || e.id === state.selectedEdge ? "selected" : ""}" data-edge="${esc(e.id)}" d="${p.d}" fill="none" stroke="${esc(color)}" ${style.attrs}/>${edgeLabel ? `<text class="edge-label" data-edge="${esc(e.id)}" data-edge-label="main" x="${p.x + (e.labelOffset?.x || 0)}" y="${p.y - 9 + (e.labelOffset?.y || 0)}">${esc(edgeLabel)}</text>` : ""}${(e.labels || []).map((label, i) => `<text class="edge-label" data-edge="${esc(e.id)}" data-edge-label="${i}" x="${p.x + label.x}" y="${p.y + label.y}">${esc(label.text)}</text>`).join("")}</g>`;
+      content += `<g data-edge="${esc(e.id)}"${dependency.active ? ' data-task-dependency="true"' : ""}><defs>${style.defs}</defs>${exporting ? "" : `<path class="connector-hit" d="${p.d}" fill="none" stroke="transparent" stroke-width="${Math.max(12 / state.camera.z, appearance.width || 2)}"/>`}<path class="canvas-edge ${basic.selectedEdges.has(e.id) || e.id === state.selectedEdge ? "selected" : ""}" data-edge="${esc(e.id)}" d="${p.d}" fill="none" stroke="${esc(color)}" ${style.attrs}/>${labelHTML}${(e.labels || []).map((label, i) => `<text class="edge-label" data-edge="${esc(e.id)}" data-edge-label="${i}" x="${p.x + label.x}" y="${p.y + label.y}">${esc(label.text)}</text>`).join("")}</g>`;
     }
     return content + (exporting ? "" : endpointHandles(b));
   }
@@ -532,7 +574,7 @@ export function canvasPro(ctx, basic) {
         if (asNote) {
           el.innerHTML = `<div class="note-content ${section?.text ? "has-body" : ""}"><div class="note-title canvas-markdown" data-inline-title>${esc(t.title)}</div><div class="note-body node-text canvas-markdown">${section ? (section.text ? markdown(section.text) : "") : "<p>Heading or block not found.</p>"}</div></div>`;
         } else {
-          el.innerHTML = `<div class="live-card-heading"><span class="canvas-task-identity"><span class="canvas-task-type" role="img" aria-label="${esc(ctx.label(t.type))}" title="${esc(ctx.label(t.type))}">${icon(t.type)}</span><span class="canvas-task-key" title="${esc(t.key || t.id)}">${esc(t.key || t.id)}</span></span><strong class="task-title" title="${esc(t.title)}" data-inline-title>${esc(t.title)}</strong><div class="live-card-actions">${disclosure(n)}${btn("comments", icon("comment") + (commentCount ? `<span class="task-comment-count" aria-hidden="true">${commentCount}</span>` : ""), `data-id="${esc(n.id)}" aria-label="Comments on ${esc(t.title)}${commentCount ? ` (${commentCount})` : ""}" title="Comments${commentCount ? ` (${commentCount})` : ""}"`)}${btn("task-details", "↗", `data-task="${esc(t.id)}" aria-label="Open task details" title="Open task details"`)}</div></div><div class="live-card-state">${cardAssignee(t, `data-task="${esc(t.id)}"`)}${cardPriority(t, `data-task="${esc(t.id)}"`)}<select class="canvas-task-status" ${taskColorAttributes(state, "status", t.status)} data-canvas-status="${esc(t.id)}" ${t.source?"disabled":""} aria-label="Task status" title="${esc(statusLabel(state.config, t.status))}">${nextStatuses(
+          el.innerHTML = `<div class="live-card-heading"><span class="canvas-task-identity"><span class="canvas-task-type" role="img" aria-label="${esc(ctx.label(t.type))}" title="${esc(ctx.label(t.type))}">${icon(t.type)}</span><span class="canvas-task-key" title="${esc(t.key || t.id)}">${esc(t.key || t.id)}</span></span><strong class="task-title" title="${esc(t.title)}" data-inline-title>${esc(t.title)}</strong><div class="live-card-actions">${disclosure(n)}${btn("comments", icon("comment") + (commentCount ? `<span class="task-comment-count" aria-hidden="true">${commentCount}</span>` : ""), `data-id="${esc(n.id)}" aria-label="Comments on ${esc(t.title)}${commentCount ? ` (${commentCount})` : ""}" title="Comments${commentCount ? ` (${commentCount})` : ""}"`)}${btn("task-details", "↗", `data-task="${esc(t.id)}" aria-label="Open task details" title="Open task details"`)}</div></div><div class="live-card-state">${cardAssignee(t, `data-task="${esc(t.id)}"`)}<select class="canvas-task-status" ${taskColorAttributes(state, "status", t.status)} data-canvas-status="${esc(t.id)}" ${t.source?"disabled":""} aria-label="Task status" title="${esc(statusLabel(state.config, t.status))}">${nextStatuses(
             state.config,
             t.status,
           )
@@ -542,7 +584,7 @@ export function canvasPro(ctx, basic) {
             )
             .join(
               "",
-            )}</select>${cardEndDate(t, n, flags.overdue)}</div>${t.source?`<small class="source-badge">${esc(sourceLabel(t))} · Source fields are read-only</small>`:""}${flags.blocked ? '<div class="canvas-task-flags"><b>Blocked</b></div>' : ""}<div class="canvas-markdown task-card-description" ${n.taskCollapsed ? "hidden" : ""}>${section ? (section.text ? markdown(section.text) : '<span class="is-placeholder">Add task notes…</span>') : "<p>Heading or block not found.</p>"}</div>${n.subpath ? `<small class="embed-label">${esc(n.subpath)}</small>` : ""}`;
+            )}</select>${cardPriority(t, `data-task="${esc(t.id)}"`)}${cardEndDate(t, n, flags.overdue)}</div>${t.source?`<small class="source-badge">${esc(sourceLabel(t))} · Source fields are read-only</small>`:""}${flags.blocked ? '<div class="canvas-task-flags"><b>Blocked</b></div>' : ""}<div class="canvas-markdown task-card-description" ${n.taskCollapsed ? "hidden" : ""}>${section ? (section.text ? markdown(section.text) : '<span class="is-placeholder">Add task notes…</span>') : "<p>Heading or block not found.</p>"}</div>${n.subpath ? `<small class="embed-label">${esc(n.subpath)}</small>` : ""}`;
         }
       } else if (n.type === "file") {
         const attachment = localAttachment(n);
@@ -905,11 +947,11 @@ export function canvasPro(ctx, basic) {
     updateUndo();
     $("#canvas-extras")?.insertAdjacentHTML(
       "afterbegin",
-      `<button type="button" class="button small" data-session="open">Board session</button>${btn("note-add", "Live note")}${btn("query-add", "Live task view")}${btn("templates", "Templates")}${btn("outline", "Outline")}${btn("connections", "Connections")}${btn("present", "Present")}${btn("activity", "Activity")}${btn("shortcuts", "?", 'aria-label="Board shortcuts"')}`,
+      `<span class="board-menu-heading">Insert</span>${btn("note-add", "Live note")}${btn("query-add", "Live task view")}${btn("templates", "Templates")}<span class="board-menu-heading">Navigate</span>${btn("outline", "Outline")}${btn("connections", "Connections")}${btn("present", "Present")}<span class="board-menu-heading">Collaborate</span><button type="button" class="button small" data-session="open">Board session</button>${btn("activity", "Activity")}${btn("shortcuts", "Keyboard shortcuts")}<span class="board-menu-heading">Tools</span>`,
     );
     $("#canvas").insertAdjacentHTML(
       "beforeend",
-      `<canvas id="canvas-overview" aria-hidden="true"></canvas><aside id="canvas-outline" class="canvas-panel ${outlineOpen ? "" : "hidden"}"></aside><div id="canvas-presence" class="canvas-presence"></div><div id="canvas-cursors" aria-hidden="true"></div><div id="canvas-search-panel" class="canvas-panel canvas-search-panel ${searchOpen ? "" : "hidden"}" role="region" aria-label="Board search and filters"><div class="canvas-find"><input id="canvas-find" type="search" aria-label="Find board objects" placeholder="Find on board…" value="${esc(search)}"><div id="canvas-find-results"></div></div><div class="canvas-filters"><input id="canvas-owner" aria-label="Filter canvas by owner" placeholder="Owner" value="${esc(owner)}"><select id="canvas-status" aria-label="Filter canvas by status"><option value="">Every status</option>${state.config.statuses.map((s) => `<option value="${esc(s)}" ${s === status ? "selected" : ""}>${esc(statusLabel(state.config, s))}</option>`).join("")}</select></div></div><button id="canvas-minimap" aria-label="Minimap: click to navigate"><canvas width="200" height="125"></canvas></button>`,
+      `<canvas id="canvas-overview" aria-hidden="true"></canvas><aside id="canvas-outline" class="canvas-panel ${outlineOpen ? "" : "hidden"}"></aside><div id="canvas-presence" class="canvas-presence"></div><div id="canvas-cursors" aria-hidden="true"></div><div id="canvas-search-panel" class="canvas-panel canvas-search-panel ${searchOpen ? "" : "hidden"}" role="region" aria-label="Board search and filters"><div class="canvas-find"><div class="canvas-search-head"><input id="canvas-find" type="search" aria-label="Find board objects" placeholder="Find on board…" value="${esc(search)}"><button type="button" class="icon-button" data-pro="search-close" aria-label="Close search" title="Close search">${icon("close")}</button></div><div id="canvas-find-results"></div></div><div class="canvas-filters"><input id="canvas-owner" aria-label="Filter canvas by owner" placeholder="Owner" value="${esc(owner)}"><select id="canvas-status" aria-label="Filter canvas by status"><option value="">Every status</option>${state.config.statuses.map((s) => `<option value="${esc(s)}" ${s === status ? "selected" : ""}>${esc(statusLabel(state.config, s))}</option>`).join("")}</select></div></div><button id="canvas-minimap" aria-label="Minimap: click to navigate"><canvas width="200" height="125"></canvas></button>`,
     );
     updateSearchButton();
     enhance();
@@ -1050,10 +1092,29 @@ export function canvasPro(ctx, basic) {
   function paintOverviewDOM() {
     if (scene) paintOverview(new Set($$(".board-node").map(el => el.dataset.node)));
   }
-  function camera() {
+  let touchNavigation = false, overviewSnapshot = null;
+  function camera({ navigating = false } = {}) {
     commentPanel.position();
     positionInline();
-    basic.positionToolbar();
+    basic.positionToolbar({ navigating });
+    const canvas = $("#canvas");
+    if (navigating && scene && canvas) {
+      if (cameraFrame) cancelAnimationFrame(cameraFrame);
+      cameraFrame = null;
+      clearTimeout(viewportCleanup);
+      if (!touchNavigation) {
+        touchNavigation = true;
+        canvas.classList.add("touch-navigating");
+        detailTransition.clear();
+        overviewSnapshot = null;
+      }
+      moveOverview();
+      paintMap();
+      paintPresence();
+      return;
+    }
+    touchNavigation = false;
+    canvas?.classList.remove("touch-navigating");
     if (!cameraFrame) cameraFrame = requestAnimationFrame(reconcile);
     clearTimeout(viewportCleanup);
     viewportCleanup = setTimeout(() => {
@@ -1061,38 +1122,59 @@ export function canvasPro(ctx, basic) {
       if (!cameraFrame) cameraFrame = requestAnimationFrame(reconcile);
     }, 1300);
   }
-  function paintOverview(rendered) {
+  // Keep the bitmap in the same coordinate space as the live cards while
+  // fingers move. Repaint an overscanned surface only when its coverage or
+  // resolution runs out, then rebuild detail after contact ends.
+  function moveOverview() {
+    const canvas = $("#canvas"), c = $("#canvas-overview"), cam = state.camera;
+    if (!canvas || !c) return;
+    const width = canvas.clientWidth, height = canvas.clientHeight;
+    const cached = overviewSnapshot;
+    const scale = cached ? cam.z / cached.camera.z : 1;
+    const x = cached ? cam.x - cached.camera.x * scale - cached.padding * scale : 0;
+    const y = cached ? cam.y - cached.camera.y * scale - cached.padding * scale : 0;
+    if (!cached || cached.canvas !== c || scale < .65 || scale > 1.5 ||
+        x > 0 || y > 0 || x + cached.width * scale < width || y + cached.height * scale < height) {
+      paintOverview(new Set($$(".board-node").map(el => el.dataset.node)), 256);
+    } else c.style.transform = `translate(${x}px,${y}px) scale(${scale})`;
+  }
+  let previewTheme = null;
+  function paintOverview(rendered, padding = 0) {
     const c = $("#canvas-overview"),
       canvas = $("#canvas");
     if (!c || !canvas) return;
-    if (c.width !== canvas.clientWidth || c.height !== canvas.clientHeight) {
-      c.width = canvas.clientWidth; c.height = canvas.clientHeight;
+    const width = canvas.clientWidth, height = canvas.clientHeight;
+    if (c.width !== width + padding * 2 || c.height !== height + padding * 2) {
+      c.width = width + padding * 2; c.height = height + padding * 2;
     }
+    c.style.width = `${c.width}px`; c.style.height = `${c.height}px`;
+    c.style.transform = `translate(${-padding}px,${-padding}px)`;
+    overviewSnapshot = { canvas: c, camera: { ...state.camera }, padding, width: c.width, height: c.height };
     const g = c.getContext("2d");
     g.clearRect(0, 0, c.width, c.height);
-    const r = rect(), cam = state.camera;
-    paintOverviewEdges(g, bitmapEdges, scene, cam, basic.selectedEdges,
+    const themeKey = document.documentElement.dataset.theme;
+    if (!previewTheme || previewTheme.key !== themeKey || previewTheme.canvas !== canvas) {
+      const style = getComputedStyle(canvas);
+      previewTheme = { key: themeKey, canvas,
+        surface: style.getPropertyValue('--surface').trim() || '#ffffff',
+        border: style.getPropertyValue('--muted').trim() || '#78906f',
+        selection: themeKey === 'dark' ? '#bdd990' : '#4d6c55' };
+    }
+    const r = viewportRect(state.camera, width, height, padding),
+      cam = { ...state.camera, x: state.camera.x + padding, y: state.camera.y + padding };
+    const overviewEdges = padding
+      ? scene.edges.search(r).filter(e => !detailedEdges.has(e.id)) : bitmapEdges;
+    paintOverviewEdges(g, overviewEdges, scene, cam, basic.selectedEdges,
       document.documentElement.dataset.theme === "dark" ? "#8fbbec" : "#4276a5");
     const fading = detailTransition.bitmap();
     for (const n of scene.spatial.search(r))
       if ((!rendered.has(n.id) || fading.has(n.id)) && !hidden.has(n.id) && intersects(n, r)) {
-        g.fillStyle = nodeFill(n, "#dce5d8");
-        g.fillRect(
-          n.x * cam.z + cam.x,
-          n.y * cam.z + cam.y,
-          Math.max(2, n.w * cam.z),
-          Math.max(2, (n.collapsed ? 48 : n.h) * cam.z),
-        );
-        g.strokeStyle = selected.has(n.id) ? "#4d6c55" : "#78906f";
-        g.lineWidth = selected.has(n.id) ? 2 : 1;
-        if (n.w * cam.z > 5) g.strokeRect(
-          n.x * cam.z + cam.x,
-          n.y * cam.z + cam.y,
-          n.w * cam.z,
-          (n.collapsed ? 48 : n.h) * cam.z,
-        );
+        paintNodePreview(g, n, cam, selected.has(n.id), previewTheme);
       }
   }
+  // Minimap colours follow the theme tokens, so the map repaints on a theme change.
+  const themeColor = (name, fallback) => getComputedStyle(document.documentElement).getPropertyValue(name).trim() || fallback;
+  addEventListener("pencils-appearance", () => { mapImage = null; if ($("#canvas-minimap canvas")?.isConnected && board()) paintMap(); });
   function paintMap() {
     const el = $("#canvas-minimap canvas");
     if (!el || !board()) return;
@@ -1102,9 +1184,9 @@ export function canvasPro(ctx, basic) {
     if (!mapImage) {
       mapImage = document.createElement("canvas"); mapImage.width = 200; mapImage.height = 125;
       const m = mapImage.getContext("2d");
-      m.fillStyle = "#fafbf7"; m.fillRect(0, 0, 200, 125);
+      m.fillStyle = themeColor("--surface", "#fafbf7"); m.fillRect(0, 0, 200, 125);
       for (const n of board().nodes) if (!hidden.has(n.id)) {
-        m.fillStyle = nodeFill(n, "#a4b69a");
+        m.fillStyle = nodeFill(n, themeColor("--green", "#a4b69a"));
         m.fillRect(5 + (n.x - box.x) * scale, 5 + (n.y - box.y) * scale,
           Math.max(1, n.w * scale), Math.max(1, (n.collapsed ? 48 : n.h) * scale));
       }
@@ -1112,7 +1194,7 @@ export function canvasPro(ctx, basic) {
     g.clearRect(0, 0, 200, 125); g.drawImage(mapImage, 0, 0);
     const canvas = $("#canvas"),
       c = state.camera;
-    g.strokeStyle = "#35553d";
+    g.strokeStyle = themeColor("--ink", "#35553d");
     g.lineWidth = 2;
     g.strokeRect(
       5 + (-c.x / c.z - box.x) * scale,
@@ -1142,7 +1224,12 @@ export function canvasPro(ctx, basic) {
     searchOpen = open;
     $("#canvas-search-panel")?.classList.toggle("hidden", !open);
     updateSearchButton();
-    if (focus) $(open ? "#canvas-find" : '[data-pro="search-toggle"]')?.focus();
+    if (!focus) return;
+    if (open) return $("#canvas-find")?.focus();
+    // Phones keep the toggle in the closed tools panel: return focus to the board instead of
+    // leaving it in the hidden search field.
+    const toggle = $('[data-pro="search-toggle"]');
+    (toggle?.getClientRects().length ? toggle : $("#canvas"))?.focus({ preventScroll: true });
   }
   document.addEventListener(
     "pointerdown",
@@ -1372,6 +1459,7 @@ export function canvasPro(ctx, basic) {
     editor.rich = canvasRichText(form, markdown, {
       controls: $(".inline-floating-tools"),
       plain,
+      emptyParagraph: n.type === "sticky" && !isTaskNote(n),
       reposition: positionInline,
       onAlignment(value) {
         if (
@@ -1934,6 +2022,7 @@ export function canvasPro(ctx, basic) {
         );
       }
     } else if (action === "search-toggle") showSearch(!searchOpen, true);
+    else if (action === "search-close") showSearch(false, true);
     else if (action === "search-open") showSearch(true, true);
     else if (action === "grid-title") {
       const grid = board().nodes.find(
@@ -3303,6 +3392,10 @@ export function canvasPro(ctx, basic) {
       if (presenceVersion !== result.version) {
         presenceVersion = result.version;
         notes.clear();
+      }
+      // Retry on every heartbeat until the page has caught up: a refresh held back while
+      // someone types must still apply afterwards.
+      if (result.version !== state.snapshotVersion) {
         const canRefresh = () =>
           current === route("boards", board()?.id) &&
           !editor &&
@@ -3314,10 +3407,10 @@ export function canvasPro(ctx, basic) {
           !state.boardTaskEditor &&
           !state.selectionToolbarOpen &&
           !state.toolDragging &&
-          !document.querySelector("#shared-select-menu") &&
-          !document.activeElement?.matches("input,textarea,select");
+          !document.querySelector("#shared-select-menu, #attachment-preview") &&
+          !document.activeElement?.matches("input,textarea,select,[contenteditable=true]");
         if (canRefresh()) {
-          await ctx.refresh(true, canRefresh);
+          await ctx.refresh(true, canRefresh, { quiet: true });
         }
       }
     } catch {
@@ -3335,6 +3428,12 @@ export function canvasPro(ctx, basic) {
   });
   window.addEventListener("resize", camera);
   function beforeRender() {
+    // Navigation without a tap (Back, a link, a restored route) still closes
+    // the comments panel once the board it belongs to is no longer shown.
+    commentPanel.position();
+    touchNavigation = false;
+    overviewSnapshot = null;
+    $("#canvas")?.classList.remove("touch-navigating");
     parkedDetails.clear();
     detailedEdges.clear();
     edgeDetailPending = false;

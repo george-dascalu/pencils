@@ -2,12 +2,12 @@
 .select-menu,
 .task-picker-popover.selection-popover {
   box-sizing: border-box;
-  padding: 6px;
+  padding: var(--popover-padding, 8px);
   border: 1px solid var(--line);
-  border-radius: 10px;
+  border-radius: var(--radius-popover, 10px);
   background: var(--surface);
   color: var(--ink);
-  box-shadow: 0 8px 30px #0003;
+  box-shadow: var(--shadow-popover);
   overflow-y: auto;
   overscroll-behavior: contain;
 }

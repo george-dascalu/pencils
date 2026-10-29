@@ -1,4 +1,6 @@
+import { confirmAction } from "./confirm-popover.js";
 import { deferredController } from "./deferred-controller.js";
+import { DEFAULT_TASK_TYPES } from "./task-types.js";
 import { kanbanGroup, kanbanGroups } from "./kanban-model.js";
 import { priorityLabel } from "./task-priority.js";
 import { randomUUID } from "./uuid.js";
@@ -15,6 +17,7 @@ import { organisationTeams, projectTeamControls } from "./teams.js";
 import { taskModalControls } from "./task-modal.js";
 import { taskAttachments } from "./task-attachments.js";
 import { taskRelationshipsEditor } from "./task-relationships.js";
+import { taskDocumentsEditor } from "./task-documents.js";
 import { taskDescription } from "./task-description.js";
 import { projectLayout } from "./project-layout.js";
 import { personalSettings } from "./personal-settings.js";
@@ -24,8 +27,10 @@ import { tablePreferences } from "./table-model.js";
 import { taskReorder } from "./task-reorder.js";
 import { taskRowEditor } from "./task-row-editor.js";
 import { recoveryUI } from "./recovery-ui.js";
+import { featureRequests } from "./feature-requests.js";
 
 export function installFeatures(ctx) {
+  featureRequests(ctx);
   const {
     state,
     storage,
@@ -84,6 +89,7 @@ export function installFeatures(ctx) {
     taskEditor = null,
     attachments = null,
     relationships = null,
+    documentsEditor = null,
     autosave = null,
     taskComments = null,
     activeDraft = null,
@@ -101,7 +107,7 @@ export function installFeatures(ctx) {
     return (
       state.config || {
         statuses: ["backlog", "todo", "in-progress", "review", "done"],
-        types: ["epic", "milestone", "story", "task", "bug"],
+        types: [...DEFAULT_TASK_TYPES],
         done: ["done"],
         fields: [],
       }
@@ -198,7 +204,7 @@ export function installFeatures(ctx) {
     const f = state.extraFilters || {};
     host.insertAdjacentHTML(
       "afterbegin",
-      `<div class="feature-toolbar" id="feature-toolbar"><select id="saved-view" aria-label="Saved project views"><option value="">Unsaved view</option>${[
+      `${["board", "drawing"].includes(state.view) && !state.boardGallery ? `<div class="feature-toolbar" id="feature-toolbar"><select id="saved-view" aria-label="Saved project views"><option value="">Unsaved view</option>${[
         ["Personal · this browser", personalViews()],
         ["Project · shared", state.project.views || []],
       ]
@@ -208,16 +214,22 @@ export function installFeatures(ctx) {
         )
         .join(
           "",
-        )}</select>${button("view-save", "Save view")}${state.savedView ? button("view-save-as", "Save as…") : ""}${state.savedView ? button("view-delete", "Delete view") : ""}</div>${["board", "drawing", "overview"].includes(state.view) ? "" : `<div class="advanced-filters"><input id="filter-assignee" aria-label="Filter assignee" placeholder="Assignee" value="${esc(f.assignee || "")}"><input id="filter-tag" aria-label="Filter tag" placeholder="Tag" value="${esc(f.tag || "")}"><select id="filter-due" aria-label="Filter deadline">${options(["", "overdue", "week", "none"], f.due || "", { "": "Any deadline", overdue: "Overdue", week: "Next 7 days", none: "No deadline" })}</select><select id="group-by" aria-label="Group tasks">${options(["status", "type", "assignee", "priority", "none"], state.groupBy || "status", { status: "Group: status", type: "Group: type", assignee: "Group: assignee", priority: "Group: priority", none: "No grouping" })}</select><label>Completion<select id="filter-completion">${options(["", "open", "done"], f.completion || "", { "": "Any completion", open: "Open", done: "Completed" })}</select></label><label><input type="checkbox" id="filter-blocked" ${f.blocked ? "checked" : ""}> Blocked</label><label><input type="checkbox" id="filter-archived" ${f.archived ? "checked" : ""}> Include archived</label><button type="button" class="button small" data-action="filters-reset">Clear filters</button></div>`}`,
+        )}</select>${button("view-save", "Save view")}${state.savedView ? button("view-save-as", "Save as…") : ""}${state.savedView ? button("view-delete", "Delete view") : ""}</div>` : ""}${["board", "drawing", "overview"].includes(state.view) ? "" : `<div class="advanced-filters"><input id="filter-assignee" aria-label="Filter assignee" placeholder="Assignee" value="${esc(f.assignee || "")}"><input id="filter-tag" aria-label="Filter tag" placeholder="Tag" value="${esc(f.tag || "")}"><select id="filter-due" aria-label="Filter deadline">${options(["", "overdue", "week", "none"], f.due || "", { "": "Any deadline", overdue: "Overdue", week: "Next 7 days", none: "No deadline" })}</select><select id="group-by" aria-label="Group tasks">${options(["status", "type", "assignee", "priority", "none"], state.groupBy || "status", { status: "Group: status", type: "Group: type", assignee: "Group: assignee", priority: "Group: priority", none: "No grouping" })}</select><label>Completion<select id="filter-completion">${options(["", "open", "done"], f.completion || "", { "": "Any completion", open: "Open", done: "Completed" })}</select></label><label><input type="checkbox" id="filter-blocked" ${f.blocked ? "checked" : ""}> Blocked</label><label><input type="checkbox" id="filter-archived" ${f.archived ? "checked" : ""}> Include archived</label><button type="button" class="button small" data-action="filters-reset">Clear filters</button></div>`}`,
     );
     if (state.view === "table") {
       $("#group-by")?.remove();
       $(".toolbar-right")?.setAttribute("hidden", "");
     } else $(".toolbar-right")?.removeAttribute("hidden");
+    if (["calendar", "timeline", "capacity"].includes(state.view)) {
+      // Planning views have their own ordering; task sort and grouping do not apply.
+      $("#group-by")?.remove();
+      $("#sort")?.setAttribute("hidden", "");
+    }
     $(".kanban-group-control")?.remove();
+    $(".kanban-id-control")?.remove();
     if (state.view === "kanban") {
       $("#group-by")?.remove();
-      $(".toolbar-right")?.insertAdjacentHTML("afterbegin", `<label class="kanban-group-control">Swimlanes<select id="kanban-group" class="filter" aria-label="Kanban swimlanes">${options(kanbanGroups, kanbanGroup(state.kanbanGroupBy), { none: "None", assignee: "Assignee", priority: "Priority", type: "Task type" })}</select></label>`);
+      $(".toolbar-right")?.insertAdjacentHTML("afterbegin", `<label class="kanban-group-control">Swimlanes<select id="kanban-group" class="filter" aria-label="Kanban swimlanes">${options(kanbanGroups, kanbanGroup(state.kanbanGroupBy), { none: "None", assignee: "Assignee", priority: "Priority", type: "Task type" })}</select></label><label class="kanban-group-control kanban-id-control"><input type="checkbox" id="kanban-show-ids" ${storage.get(`kanban-show-ids:${state.project.id}`, false) === true ? "checked" : ""}>Show card IDs</label>`);
     }
     layout.projectHeader();
   }
@@ -237,7 +249,7 @@ export function installFeatures(ctx) {
       return;
     $("#view-content")?.insertAdjacentHTML(
       "beforeend",
-      `<div id="pagination" class="pagination">${button("page-prev", "← Previous", state.page ? "" : "disabled")}<span>Page ${(state.page || 0) + 1} of ${Math.ceil(total / 100)} · ${total} ${state.view === "tree" ? "root groups" : "tasks"}</span>${button("page-next", "Next →", (state.page || 0) + 1 >= Math.ceil(total / 100) ? "disabled" : "")}</div>`,
+      `<div id="pagination" class="pagination">${button("page-prev", `${icon("chevron-left")}<span>Previous</span>`, state.page ? "" : "disabled")}<span>Page ${(state.page || 0) + 1} of ${Math.ceil(total / 100)} · ${total} ${state.view === "tree" ? "root groups" : "tasks"}</span>${button("page-next", `<span>Next</span>${icon("chevron-right")}`, (state.page || 0) + 1 >= Math.ceil(total / 100) ? "disabled" : "")}</div>`,
     );
   }
   document.addEventListener("click", (event) => {
@@ -284,7 +296,7 @@ export function installFeatures(ctx) {
           .slice(0, 2)
           .toUpperCase();
         avatar.title = state.session.automatic
-          ? `${state.session.user.username} · Administrator · Automatic local sign-in`
+          ? `${state.session.user.username} · Administrator · Automatic sign-in`
           : state.session.user.username;
         avatar.setAttribute("aria-description", avatar.title);
       }
@@ -307,6 +319,7 @@ export function installFeatures(ctx) {
       estimate: t.estimate ?? null,
       dependencies: data.getAll("dependencies"),
       related_records: data.getAll("related_records"),
+      documents: data.getAll("documents"),
       recurrence: t.recurrence ?? null,
       fields,
       comments: [
@@ -330,6 +343,8 @@ export function installFeatures(ctx) {
   function dialogOpened(kind, pageForm) {
     relationships?.destroy();
     relationships = null;
+    documentsEditor?.destroy();
+    documentsEditor = null;
     autosave?.destroy();
     autosave = null;
     taskComments?.destroy();
@@ -366,9 +381,7 @@ export function installFeatures(ctx) {
       attachments = taskAttachments(ctx, form, taskEditor);
       taskModal = taskModalControls(ctx, form, async (version) => {
         if (
-          !confirm(
-            "Restore this version? Your current edits will be saved in history first.",
-          )
+          !(await confirmAction({ title: "Restore this version?", message: "Your current edits are saved in history first.", confirmLabel: "Restore" }))
         )
           return;
         if (autosave && !(await autosave.flush())) return;
@@ -461,13 +474,16 @@ export function installFeatures(ctx) {
         },
       );
     }
-    if (kind === "task" && form?.dataset.id) {
+    if (kind === "task" && form && !form.dataset.draftNode) {
       relationships = taskRelationshipsEditor(ctx, form, {
-        flush: () => autosave?.flush() || Promise.resolve(false),
+        flush: () => (form.dataset.id ? autosave?.flush() || Promise.resolve(false) : Promise.resolve(true)),
         changed: (id) => {
           if (["board", "drawing"].includes(state.view)) canvas.taskSaved(id);
           else if (state.view !== "settings") renderView(true);
         },
+      });
+      documentsEditor = taskDocumentsEditor({ ...ctx, features: { openDocument: (id) => documentFeature.load().then(() => documents.openDocument(id)) } }, form, {
+        flush: () => (form.dataset.id ? autosave?.flush() || Promise.resolve(false) : Promise.resolve(true)),
       });
     }
     if (kind === "project" && form) {
@@ -477,7 +493,7 @@ export function installFeatures(ctx) {
           : {
               statuses: ["backlog", "todo", "in-progress", "review", "done"],
               done: ["done"],
-              types: ["epic", "milestone", "story", "task", "bug"],
+              types: [...DEFAULT_TASK_TYPES],
               fields: [],
             };
       form.dataset.schema = JSON.stringify(c);
@@ -578,7 +594,7 @@ export function installFeatures(ctx) {
         "input,textarea,select,[contenteditable=true]",
       ) ||
       document.querySelector(
-        "#shared-select-menu,button:active,summary:active,.board-node:active,[data-edge]:active",
+        "#shared-select-menu,#attachment-preview,button:active,summary:active,.board-node:active,[data-edge]:active",
       ) ||
       (["board", "drawing"].includes(state.view) && !["cursor", "hand"].includes(state.tool))
     );
@@ -602,7 +618,7 @@ export function installFeatures(ctx) {
             return false;
           }
           return true;
-        });
+        }, { quiet: true });
       } catch {
       } finally {
         refreshing = false;
@@ -620,8 +636,8 @@ export function installFeatures(ctx) {
     return [
       ...(state.project
         ? [
-            { id: "new-task", title: "New task", run: () => taskDialog(null) },
-            ...[["workflow", "Workflow & fields"], ["import", "Import notes"], ["templates", "Task templates"], ["quick-capture", "Quick capture task"]].map(([id, title]) => ({ id, title, run: () => click(id) })),
+            { id: "new-task", title: "New card", run: () => taskDialog(null) },
+            ...[["workflow", "Statuses & workflow"], ["import", "Import notes"], ["templates", "Task templates"], ["quick-capture", "Quick capture"]].map(([id, title]) => ({ id, title, run: () => click(id) })),
             ...[
               "overview",
               "list",
@@ -753,11 +769,11 @@ export function installFeatures(ctx) {
       const current = savedViews().find((v) => v.id === state.savedView);
       state.savingViewAs = action === "view-save-as";
       showDialog(
-        `<dialog class="dialog"><form id="view-form">${dialogHead("Save this view")}<div class="dialog-body">${field("name", "View name", current?.name || "", "text", 'required maxlength="100"')}<label class="field">Who can use this view<select name="scope"><option value="personal" ${current?.scope === "personal" || !current ? "selected" : ""}>Personal · this browser</option><option value="project" ${current && current.scope !== "personal" ? "selected" : ""}>Project · shared with project members</option></select></label><p>Includes filters, grouping, sorting and columns. Personal views stay in this browser.</p></div><div class="dialog-foot"><button class="button primary" type="submit">Save view</button></div></form></dialog>`,
+        `<dialog class="dialog"><form id="view-form">${dialogHead("Save this view")}<div class="dialog-body">${field("name", "View name", current?.name || "", "text", 'required maxlength="100"')}<label class="field">Who can use this view<select name="scope"><option value="personal" ${current?.scope === "personal" || !current ? "selected" : ""}>Personal · this browser</option><option value="project" ${current && current.scope !== "personal" ? "selected" : ""}>Project · shared with project members</option></select></label><p>Saves this board’s current view. Personal views stay in this browser.</p></div><div class="dialog-foot"><button class="button primary" type="submit">Save view</button></div></form></dialog>`,
         "view",
       );
     }
-    if (action === "view-delete" && confirm("Delete this saved view?")) {
+    if (action === "view-delete" && (await confirmAction({ anchor: el, title: "Delete this saved view?", message: "Anyone using a shared view loses it too.", confirmLabel: "Delete view", danger: true }))) {
       if (personalViews().some((v) => v.id === state.savedView))
         storage.set(
           personalViewKey(),
@@ -773,7 +789,7 @@ export function installFeatures(ctx) {
       renderView();
     }
     if (action === "quick-capture")
-      showDialog(`<dialog class="dialog">${dialogHead("Quick capture task")}<form id="quick-capture" class="dialog-body"><label class="field">Title<input name="title" aria-label="Quick capture task" placeholder="Task title…" required maxlength="300" autofocus></label><button class="button primary" type="submit">Add task</button></form></dialog>`, "quick-capture");
+      showDialog(`<dialog class="dialog">${dialogHead("Quick capture")}<form id="quick-capture" class="dialog-body"><label class="field">Title<input name="title" aria-label="Card title" placeholder="Card title…" required maxlength="300" autofocus></label><button class="button primary" type="submit">Add card</button></form></dialog>`, "quick-capture");
     if (action === "workflow") settings.open("workflow");
     if (action === "page-prev" || action === "page-next") {
       state.page = Math.max(
@@ -844,6 +860,11 @@ export function installFeatures(ctx) {
       return;
     }
     const currentTask = task($("#task-form")?.dataset.id);
+    if (action === "task-details" && currentTask) {
+      taskComments?.close();
+      taskModal?.hideHistory();
+      $("[data-feature=task-details]")?.focus({ preventScroll: true });
+    }
     if (action === "task-comments" && currentTask) {
       taskModal?.hideHistory();
       taskComments?.open(currentTask);
@@ -897,9 +918,7 @@ export function installFeatures(ctx) {
     }
     if (
       action === "project-delete" &&
-      confirm(
-        `Move ${state.project.title} and all its tasks and canvases to Trash?`,
-      )
+      (await confirmAction({ anchor: el, title: "Move this project to Trash?", message: `${state.project.title} and all its cards and boards move to Trash. Recover it from Personal settings → Recovery & backups.`, confirmLabel: "Move to Trash", danger: true }))
     ) {
       await api(route(), {
         method: "DELETE",
@@ -912,7 +931,7 @@ export function installFeatures(ctx) {
     if (
       action === "canvas-delete" &&
       board() &&
-      confirm(`Move ${board().title} to Trash?`)
+      (await confirmAction({ anchor: el, title: "Delete this board?", message: `${board().title} moves to Trash.`, confirmLabel: "Delete board", danger: true }))
     ) {
       await api(route("boards", board().id), {
         method: "DELETE",
@@ -986,6 +1005,11 @@ export function installFeatures(ctx) {
         el.type === "checkbox" ? el.checked : el.value;
       state.page = 0;
       renderView(true);
+    }
+    if (el.id === "kanban-show-ids") {
+      storage.set(`kanban-show-ids:${state.project.id}`, el.checked);
+      renderView(true);
+      $("#kanban-show-ids")?.focus({ preventScroll: true });
     }
     if (el.id === "kanban-group") {
       state.kanbanGroupBy = kanbanGroup(el.value);
@@ -1156,6 +1180,15 @@ export function installFeatures(ctx) {
     progress,
     dialogOpened,
     flushTask: () => autosave?.flush() || Promise.resolve(true),
+    commitRelationships: (id) => relationships?.commit(id) || Promise.resolve(),
+    createDocument: async (title) => {
+      await documentFeature.load();
+      return documents.create(title);
+    },
+    openDocument: async (id) => {
+      await documentFeature.load();
+      return documents.openDocument(id);
+    },
     taskSyncChanged: () => {
       autosave?.syncChanged();
       relationships?.refresh();
@@ -1163,6 +1196,8 @@ export function installFeatures(ctx) {
     dialogClosed: () => {
       relationships?.destroy();
       relationships = null;
+      documentsEditor?.destroy();
+      documentsEditor = null;
       autosave?.destroy();
       autosave = null;
       taskComments?.destroy();

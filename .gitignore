@@ -231,3 +231,5 @@ playwright-report/
 test-results/
 
 .release-backups/
+.request-work/
+.request-input/

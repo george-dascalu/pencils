@@ -107,9 +107,13 @@ export function penTools(ctx) {
       mode = ["erase", "lasso"].includes(state.tool) ? state.tool : s.brush;
     const btn = (key, title, glyph) =>
       `<button type="button" class="selection-action ${mode === key ? "active" : ""}" data-pen-mode="${key}" title="${title}" aria-label="${title}" aria-pressed="${mode === key}">${icon(glyph)}</button>`;
+    const toggle = (key, title, glyph, pressed, disabled = false) =>
+      `<button type="button" class="selection-action ${pressed ? "active" : ""}" data-pen-${key} title="${title}" aria-label="${title}" aria-pressed="${pressed}" ${disabled ? "disabled" : ""}>${icon(glyph)}</button>`;
+    const range = (key, title, min, max, step, value, display) =>
+      `<label class="pen-range"><span>${title}<output data-pen-value="${key}" for="pen-${key}">${display}</output></span><input id="pen-${key}" type="range" data-pen-${key} aria-label="${title}" aria-valuetext="${display}" min="${min}" max="${max}" step="${step}" value="${value}"></label>`;
     canvas.insertAdjacentHTML(
       "beforeend",
-      `<div id="pen-tools" role="toolbar" aria-label="Pen tools"><button type="button" class="selection-action" data-pen-move aria-label="Move drawing tools" title="Drag to move tools">⠿</button><div class="selection-group">${btn("pen", "Pen", "pencil")}${btn("highlighter", "Highlighter", "highlighter")}${btn("erase", "Eraser (drawings only)", "eraser")}${btn("lasso", "Lasso selection", "group")}</div><div class="selection-group pen-presets">${presets.map((p, i) => `<button type="button" class="pen-preset ${i === active && mode !== "erase" ? "active" : ""}" data-pen-preset="${i}" title="Preset ${i + 1}: ${p.brush}, ${p.strokeWidth}px" aria-label="Pen preset ${i + 1}" aria-pressed="${i === active && mode !== "erase"}"><span style="background:${p.color};height:${Math.min(12, p.strokeWidth + 2)}px"></span></button>`).join("")}</div>${mode !== "erase" ? `<div class="selection-group">${colorPicker({ value: s.color, label: "Pen colour", name: "pen-color" })}<label class="pen-width">${icon("stroke-width")}<select aria-label="Pen thickness" data-pen-width>${[1, 2, 3, 5, 8, 12, 18, 24, 32].map((w) => `<option value="${w}" ${w === s.strokeWidth ? "selected" : ""}>${w} px</option>`).join("")}</select></label></div><label class="pen-pressure" title="Vary line width with stylus pressure"><input type="checkbox" data-pen-pressure ${s.pressure ? "checked" : ""} ${mode === "highlighter" ? "disabled" : ""}>Pressure</label>` : `<label><input type="checkbox" data-pen-partial ${partial ? "checked" : ""}>Partial eraser</label>`}<label><input type="checkbox" data-pen-recognise ${recognise ? "checked" : ""}>Recognise shapes</label><details class="pen-preferences"><summary title="Pen preferences" aria-label="Pen preferences">⚙</summary><div class="selection-popover"><label>Drawing hand<select data-pen-hand><option value="right" ${hand === "right" ? "selected" : ""}>Right</option><option value="left" ${hand === "left" ? "selected" : ""}>Left</option></select></label><label>Stabilisation<input type="range" data-pen-smoothing min="0" max="0.8" step="0.05" value="${s.smoothing}"></label><label>Pressure response<input type="range" data-pen-curve min="0.4" max="2" step="0.1" value="${curve}"></label><output data-pen-pressure-reading>Draw with Pencil to test pressure.</output>${gestureSettingsHTML()}</div></details><button type="button" class="selection-action" data-pen-done title="Select tool (V)" aria-label="Finish drawing">${icon("check")}</button></div>`,
+      `<div id="pen-tools" role="toolbar" aria-label="Pen tools"><button type="button" class="selection-action" data-pen-move aria-label="Move drawing tools" title="Drag to move tools">${icon("drag")}</button><div class="selection-group">${btn("pen", "Pen", "pencil")}${btn("highlighter", "Highlighter", "highlighter")}${btn("erase", "Eraser (drawings only)", "eraser")}${btn("lasso", "Lasso selection", "group")}</div><div class="selection-group pen-presets">${presets.map((p, i) => `<button type="button" class="pen-preset ${i === active && mode !== "erase" ? "active" : ""}" data-pen-preset="${i}" title="Preset ${i + 1}: ${p.brush}, ${p.strokeWidth}px" aria-label="Pen preset ${i + 1}" aria-pressed="${i === active && mode !== "erase"}"><span style="background:${p.color};height:${Math.min(12, p.strokeWidth + 2)}px"></span></button>`).join("")}</div>${mode !== "erase" ? `<div class="selection-group">${colorPicker({ value: s.color, label: "Pen colour", name: "pen-color" })}<label class="pen-width">${icon("stroke-width")}<select aria-label="Pen thickness" data-pen-width>${[1, 2, 3, 5, 8, 12, 18, 24, 32].map((w) => `<option value="${w}" ${w === s.strokeWidth ? "selected" : ""}>${w} px</option>`).join("")}</select></label></div>${toggle("pressure", "Pressure sensitivity", "pen-pressure", s.pressure, mode === "highlighter")}` : `<label><input type="checkbox" data-pen-partial ${partial ? "checked" : ""}>Partial eraser</label>`}${toggle("recognise", "Recognise shapes", "recognise-shapes", recognise)}<details class="pen-preferences selection-menu"><summary class="selection-action" title="Pen settings" aria-label="Pen settings">${icon("settings")}</summary><div class="selection-popover" role="group" aria-label="Pen settings"><div class="pen-preferences-head"><strong>Pen settings</strong><button type="button" class="icon-button" data-pen-preferences-close aria-label="Close pen settings">${icon("close")}</button></div><label class="field">Drawing hand<select data-pen-hand><option value="right" ${hand === "right" ? "selected" : ""}>Right</option><option value="left" ${hand === "left" ? "selected" : ""}>Left</option></select></label>${range("smoothing", "Stabilisation", 0, 0.8, 0.05, s.smoothing, `${Math.round(s.smoothing * 100)}%`)}${range("curve", "Pressure response", 0.4, 2, 0.1, curve, curve.toFixed(1))}${gestureSettingsHTML({ compact: true })}</div></details><button type="button" class="selection-action" data-pen-done title="Select tool (V)" aria-label="Finish drawing">${icon("check")}</button></div>`,
     );
     const tools = $("#pen-tools");
     tools.querySelector(".pen-preferences").addEventListener("toggle", positionPreferences);
@@ -125,7 +129,7 @@ export function penTools(ctx) {
         mode === "erase"
           ? "Erase drawings · Undo restores · Esc to select"
           : state.view === "board"
-            ? "Pencil draws · Fingers select, move, pan and pinch · Gesture shortcuts in Pen preferences"
+            ? "Pencil draws · Fingers select, move, pan and pinch · Gesture shortcuts in Pen settings"
             : "Drag to draw · Shift for a straight line · P pen · E eraser · Esc to select";
   }
   document.addEventListener("click", (e) => {
@@ -133,7 +137,18 @@ export function penTools(ctx) {
     if (!root) return;
     const mode = e.target.closest("[data-pen-mode]"),
       preset = e.target.closest("[data-pen-preset]");
-    if (mode) setMode(mode.dataset.penMode);
+    const toggle = e.target.closest("[data-pen-pressure],[data-pen-recognise]");
+    if (toggle && !toggle.disabled) {
+      const pressure = toggle.hasAttribute("data-pen-pressure");
+      const pressed = pressure ? (presets[active].pressure = !presets[active].pressure) : (recognise = !recognise);
+      toggle.setAttribute("aria-pressed", String(pressed));
+      toggle.classList.toggle("active", pressed);
+      save();
+    } else if (e.target.closest("[data-pen-preferences-close]")) {
+      const preferences = $(".pen-preferences");
+      preferences.open = false;
+      preferences.querySelector("summary").focus({ preventScroll: true });
+    } else if (mode) setMode(mode.dataset.penMode);
     else if (preset) {
       active = +preset.dataset.penPreset;
       state.tool = "draw";
@@ -144,6 +159,20 @@ export function penTools(ctx) {
       renderView(true);
     }
   });
+  document.addEventListener("pointerdown", e => {
+    const preferences = $(".pen-preferences[open]");
+    if (preferences && !e.target.closest(".pen-preferences,#shared-select-menu")) preferences.open = false;
+  }, true);
+  document.addEventListener("input", e => {
+    if (!e.target.closest("#pen-tools") || !e.target.matches("[data-pen-smoothing],[data-pen-curve]")) return;
+    const smoothing = e.target.hasAttribute("data-pen-smoothing");
+    const value = Number(e.target.value);
+    if (smoothing) presets[active].smoothing = value;
+    else curve = value;
+    const display = smoothing ? `${Math.round(value * 100)}%` : value.toFixed(1);
+    e.target.setAttribute("aria-valuetext", display);
+    $(smoothing ? '[data-pen-value="smoothing"]' : '[data-pen-value="curve"]').textContent = display;
+  });
   document.addEventListener("change", (e) => {
     if (!e.target.closest("#pen-tools")) return;
     if (e.target.matches("[data-pen-hand]")) {
@@ -153,8 +182,9 @@ export function penTools(ctx) {
       render();
       return;
     }
-    if (e.target.matches("[data-pen-curve]")) {
-      curve = +e.target.value;
+    if (e.target.matches("[data-pen-curve],[data-pen-smoothing]")) {
+      if (e.target.hasAttribute("data-pen-curve")) curve = +e.target.value;
+      else presets[active].smoothing = +e.target.value;
       save();
       return;
     }
@@ -163,19 +193,10 @@ export function penTools(ctx) {
       save();
       return;
     }
-    if (e.target.matches("[data-pen-recognise]")) {
-      recognise = e.target.checked;
-      save();
-      return;
-    }
     const s = presets[active];
     if (e.target.name === "pen-color") s.color = e.target.value;
     else if (e.target.matches("[data-pen-width]"))
       s.strokeWidth = +e.target.value;
-    else if (e.target.matches("[data-pen-smoothing]"))
-      s.smoothing = Number(e.target.value);
-    else if (e.target.matches("[data-pen-pressure]"))
-      s.pressure = e.target.checked;
     else return;
     save();
     render();
@@ -204,11 +225,6 @@ export function penTools(ctx) {
   document.addEventListener(
     "pointermove",
     (e) => {
-      if (e.pointerType === "pen") {
-        const out = $("[data-pen-pressure-reading]");
-        if (out)
-          out.textContent = `Pressure ${Math.round(e.pressure * 100)}% · tilt ${Math.round(e.tiltX)}°, ${Math.round(e.tiltY)}°`;
-      }
       if (!moving || e.pointerId !== moving.id) return;
       const tools = $("#pen-tools"),
         canvas = $("#canvas");

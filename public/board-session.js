@@ -18,6 +18,16 @@ export function boardSession(ctx, basic) {
     lastInvite = "",
     room = "";
   const dismissed=new Set();
+  // Presenting and invitations belong to one board: start afresh when the board changes. Actions
+  // call this too, so a heartbeat that ran before the board loaded cannot clear them.
+  function enter() {
+    const key = board()?.id;
+    if (key === room) return;
+    room = key;
+    following = null;
+    broadcasting = false;
+    invite = 0;
+  }
   const session = () => board()?.settings?.session || {};
   const write = (fn) =>
     changeBoard((b) => {
@@ -66,6 +76,7 @@ export function boardSession(ctx, basic) {
     }
     const action = e.target.closest("[data-session]")?.dataset.session;
     if (!action) return;
+    enter();
     if (action === "open") return open();
     if (action === "broadcast") broadcasting = !broadcasting;
     if (action === "invite") {
@@ -135,13 +146,7 @@ export function boardSession(ctx, basic) {
   setInterval(tick, 1000);
   return {
     payload() {
-      const key = board()?.id;
-      if (key !== room) {
-        room = key;
-        following = null;
-        broadcasting = false;
-        invite = 0;
-      }
+      enter();
       return { camera: state.camera, presenting: broadcasting, invite };
     },
     update(next) {

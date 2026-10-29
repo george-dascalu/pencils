@@ -11,9 +11,9 @@ import path from "node:path";
 import { randomUUID } from "node:crypto";
 import YAML from "yaml";
 import { EventEmitter } from "node:events";
-import { watch } from "node:fs";
+import { watch, readdirSync, statSync } from "node:fs";
 import { Problem } from "./problem.js";
-import { schema, validateViews, progress } from "./model.js";
+import { schema, upgradeDefaultTaskTypes, validateViews, progress } from "./model.js";
 import { installRecovery } from "./recovery.js";
 import { decodeCanvas, encodeCanvas } from "../public/canvas-format.js";
 import { installCanvas } from "./canvas.js";
@@ -151,10 +151,14 @@ export class Store {
       } catch {
         continue;
       } // Unreadable notes remain untouched and are reported by list().
-      if (!Object.hasOwn(record.data, "organisation")) {
+      const upgradedSchema = upgradeDefaultTaskTypes(record.data.schema);
+      if (!Object.hasOwn(record.data, "organisation") || upgradedSchema !== record.data.schema) {
         await this.write(
           file,
-          { ...record.data, organisation: DEFAULT_ORGANISATION },
+          { ...record.data,
+            organisation: record.data.organisation ?? DEFAULT_ORGANISATION,
+            ...(upgradedSchema ? { schema: upgradedSchema } : {}),
+          },
           record.body,
           record,
         );
@@ -220,9 +224,9 @@ export class Store {
       }
     };
     const pendingFiles=new Set();
-    const changed = (name, _, file) => {
+    const changed = (file) => {
       if(file?.endsWith(".tmp"))return;
-      pendingFiles.add(file?path.join(this.root,name,String(file)):null);
+      pendingFiles.add(file);
       clearTimeout(this.watchTimer);
       this.watchTimer=setTimeout(async()=>{
         const files=[...pendingFiles];pendingFiles.clear();
@@ -233,18 +237,48 @@ export class Store {
         }
       },100);this.watchTimer.unref();
     };
+    // One watcher per directory: Linux recursive watchers stop reporting a file once it has
+    // been replaced by a rename, which is how Pencils saves, so later in-place edits (Obsidian)
+    // went unseen. New directories get a watcher as they appear.
+    const directories = new Map();
+    const watchDirectory = (dir) => {
+      if (directories.has(dir)) return;
+      const handle = watch(dir, (event, name) => {
+        const file = name ? path.join(dir, String(name)) : null;
+        if (file && event === "rename") {
+          let folder = false;
+          try { folder = statSync(file).isDirectory(); } catch {}
+          // Files may land in a new folder before its watcher starts: report what it holds.
+          // The folder can vanish again meanwhile; then there is nothing to report.
+          if (folder && !directories.has(file)) {
+            try {
+              watchDirectory(file);
+              for (const entry of readdirSync(file, { recursive: true, withFileTypes: true }))
+                if (entry.isFile()) changed(path.join(entry.parentPath, entry.name));
+            } catch {}
+            return;
+          }
+          // A removed folder may have held anything: forget it and its subfolders, refresh once.
+          if (!folder && directories.has(file)) {
+            for (const [dir, watcher] of directories)
+              if (dir === file || dir.startsWith(file + path.sep)) { watcher.close(); directories.delete(dir); }
+            return changed(null);
+          }
+        }
+        // A watched folder's own watcher reports its files; this event says nothing new.
+        if (file && directories.has(file)) return;
+        changed(file);
+      });
+      handle.on("error", fallback);
+      handle.unref();
+      handles.push(handle);
+      directories.set(dir, handle);
+      for (const entry of readdirSync(dir, { withFileTypes: true }))
+        if (entry.isDirectory()) watchDirectory(path.join(dir, entry.name));
+    };
     try {
       // Recovery/history files can outnumber live notes. Watch only public content.
-      for (const name of ["Projects", "Organisations"]) {
-        const handle = watch(
-          path.join(this.root, name),
-          { recursive: true },
-          (event,file)=>changed(name,event,file),
-        );
-        handle.on("error", fallback);
-        handle.unref();
-        handles.push(handle);
-      }
+      for (const name of ["Projects", "Organisations"]) watchDirectory(path.join(this.root, name));
       this.watcher = {
         close: () => handles.forEach((handle) => handle.close()),
         handles,

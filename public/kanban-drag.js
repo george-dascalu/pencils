@@ -1,5 +1,6 @@
 import { kanbanDropChanges, kanbanDropError, laneValue } from "./kanban-model.js";
 import { reorderTasks } from "./task-order-model.js";
+import { snapKanbanColumns } from "./kanban-layout.js";
 export function kanbanDrag(ctx) {
   const { state, task, patchTask, renderView, storage, toast } = ctx;
   let drag = null,
@@ -12,6 +13,7 @@ export function kanbanDrag(ctx) {
   }
   const reduce = matchMedia("(prefers-reduced-motion: reduce)");
   function clean() {
+    const board = drag?.card.closest(".kanban");
     cancelAnimationFrame(frame);
     frame = null;
     drag?.card.classList.remove("kanban-drag-source");
@@ -24,6 +26,7 @@ export function kanbanDrag(ctx) {
       el.classList.remove("workflow-blocked");
       el.removeAttribute("title");
     });
+    snapKanbanColumns(board);
     document.body.classList.remove("kanban-dragging");
     state.kanbanDragging = false;
     drag = null;

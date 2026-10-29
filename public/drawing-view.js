@@ -35,7 +35,9 @@ export function drawingView(ctx) {
     checkedKey = checkingKey = null;
   }
   function svg(board) {
-    const nodes = board.nodes.filter((n) => !n.layerHidden),
+    const nodes = board.nodes.filter((n) => !n.layerHidden);
+    if (!nodes.length) return '<div class="drawing-thumb-empty" aria-hidden="true">Empty board</div>';
+    const
       left = Math.min(0, ...nodes.map((n) => n.x)),
       top = Math.min(0, ...nodes.map((n) => n.y)),
       width = Math.max(400, ...nodes.map((n) => n.x + n.w)) - left,
@@ -54,11 +56,11 @@ export function drawingView(ctx) {
       .join("")}</svg>`;
   }
   function gallery() {
-    return `<section class="drawing-gallery"><header><h2>Canvas gallery</h2><p>Tasks, notes, images and sketches together. Draw with Pencil; use fingers to select, move, pan and pinch.</p><div class="canvas-gallery-actions"><button class="button primary" data-action="board-new">${icon("plus")}New canvas</button><button class="button" data-drawing-action="recover">Local checkpoints</button><button class="button" data-drawing-action="offline">Prepare offline drawing</button><a class="button" href="/drawing-offline.html">Open offline pad ↗</a></div></header><div class="drawing-cards">${
+    return `<section class="drawing-gallery"><header><h2>Boards</h2><p>Tasks, notes, images and sketches together. Draw with Pencil; use fingers to select, move, pan and pinch.</p><div class="canvas-gallery-actions"><button class="button primary" data-action="board-new">${icon("plus")}New board</button><button class="button" data-drawing-action="recover">Local checkpoints</button><button class="button" data-drawing-action="offline">Prepare offline drawing</button><a class="button" href="/drawing-offline.html">${icon("external")}Open offline pad</a></div></header><div class="drawing-cards">${
       canvases()
         .map(
           (b) =>
-            `<article><button type="button" data-drawing-action="open" data-id="${esc(b.id)}">${svg(b)}<strong>${esc(b.title)}</strong><small>${b.nodes.length} objects · ${b.nodes.filter((n) => n.type === "draw").length} strokes</small></button><button type="button" class="button small" data-drawing-action="link" data-id="${esc(b.id)}">Copy canvas link</button></article>`,
+            `<article><button type="button" data-drawing-action="open" data-id="${esc(b.id)}">${svg(b)}<strong>${esc(b.title)}</strong><small>${b.nodes.length} objects · ${b.nodes.filter((n) => n.type === "draw").length} strokes</small></button><button type="button" class="button small" data-drawing-action="link" data-id="${esc(b.id)}">Copy board link</button></article>`,
         )
         .join("") || "<p>No canvases yet. Create one to start.</p>"
     }</div></section>`;
@@ -197,7 +199,7 @@ export function drawingView(ctx) {
     if (menu && !menu.querySelector("[data-board-persistent]"))
       menu.insertAdjacentHTML(
         "beforeend",
-        `<div class="canvas-library-tools" data-board-persistent="true"><button type="button" class="button small" data-drawing-action="gallery">${icon("board")}Canvas gallery</button><button type="button" class="button small" data-drawing-action="link-task">${icon("task")}Link tasks</button><button type="button" class="button small" data-drawing-action="link" data-id="${esc(b.id)}">${icon("link")}Copy canvas link</button><button type="button" class="button small" data-drawing-action="recover">${icon("clock")}Local checkpoints</button><button type="button" class="button small" data-drawing-action="offline">${icon("download")}Prepare offline drawing</button><a class="button small" href="/drawing-offline.html">Open offline pad ↗</a><small class="field-hint" data-drawing-save>Device checkpoint available</small></div>`,
+        `<div class="canvas-library-tools" data-board-persistent="true"><button type="button" class="button small" data-drawing-action="gallery">${icon("board")}Boards</button><button type="button" class="button small" data-drawing-action="link-task">${icon("task")}Link tasks</button><button type="button" class="button small" data-drawing-action="link" data-id="${esc(b.id)}">${icon("link")}Copy board link</button><button type="button" class="button small" data-drawing-action="recover">${icon("clock")}Local checkpoints</button><button type="button" class="button small" data-drawing-action="offline">${icon("download")}Prepare offline drawing</button><a class="button small" href="/drawing-offline.html">${icon("external")}Open offline pad</a><small class="field-hint" data-drawing-save>Device checkpoint available</small></div>`,
       );
     document.querySelector("#canvas")?.classList.add("drawing-canvas");
   }

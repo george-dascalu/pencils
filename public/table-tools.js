@@ -83,7 +83,7 @@ export function tableTools(ctx) {
   const button = (action, name, glyph, extra = "") =>
     `<button type="button" class="icon-button" data-table-action="${action}" aria-label="${esc(name)}" title="${esc(name)}" ${extra}>${icon(glyph)}</button>`;
   const menu = (key, name, body) =>
-    `<details class="board-menu" data-board-menu="table-${key}" ${state.headerMenu === `table-${key}` ? "open" : ""}><summary>${icon(key === "groups" ? "group" : key === "sorts" ? "sort" : "filter")}${name}<span aria-hidden="true">⌄</span></summary><div class="board-menu-panel table-menu-panel">${body}</div></details>`;
+    `<details class="board-menu" data-board-menu="table-${key}" ${state.headerMenu === `table-${key}` ? "open" : ""}><summary>${icon(key === "groups" ? "group" : key === "sorts" ? "sort" : "filter")}${name}<svg class="icon menu-caret" viewBox="0 0 24 24" aria-hidden="true"><path d="m8 10 4 4 4-4"/></svg></summary><div class="board-menu-panel table-menu-panel">${body}</div></details>`;
   function filterHTML(f, i) {
     const field = tableFields(state.config).find((x) => x.key === f.field);
     const ops =
@@ -146,7 +146,7 @@ export function tableTools(ctx) {
       (f) => !p.filters.some((x) => x.field === f.key),
     );
     const filters = `${p.filters.map(filterHTML).join("")}<label class="field">Add column filter<select id="table-add-filter" aria-label="Add column filter"><option value="">Choose a column…</option>${available.map((f) => `<option value="${esc(f.key)}">${esc(f.name)}</option>`).join("")}</select></label>${p.filters.length ? '<button class="button small" data-table-action="clear-filters">Clear column filters</button>' : ""}`;
-    return `<div class="table-view-tools">${menu("groups", `Group${p.groups.length ? ` (${p.groups.length})` : ""}`, groups)}${menu("sorts", `Sort${p.sorts.length ? ` (${p.sorts.length})` : ""}`, sorts)}${menu("filters", `Column filters${count ? ` (${count})` : ""}`, filters)}${`<button class="button small" data-query-open>Advanced filters${p.query ? " · Active" : ""}</button>`}${p.groups.length || p.sorts.length || p.filters.length || p.query ? '<button class="button small" data-table-action="reset">Reset table view</button>' : ""}</div>`;
+    return `<div class="table-view-tools">${menu("groups", `Group${p.groups.length ? ` (${p.groups.length})` : ""}`, groups)}${menu("sorts", `Sort${p.sorts.length ? ` (${p.sorts.length})` : ""}`, sorts)}${menu("filters", `Column filters${count ? ` (${count})` : ""}`, `${filters}<footer class="table-menu-footer"><button type="button" class="button small" data-query-open>Advanced filters${p.query ? " · Active" : ""}</button></footer>`)}${p.groups.length || p.sorts.length || p.filters.length || p.query ? '<button class="button small" data-table-action="reset">Reset table view</button>' : ""}</div>`;
   }
   function redraw() {
     const scroll = document.querySelector(".table-scroll")?.scrollLeft || 0;

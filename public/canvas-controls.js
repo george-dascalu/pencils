@@ -67,7 +67,7 @@ export function canvasControls(ctx, basic) {
     const key = preferenceKey();
     if (displayKey !== key) {
       const saved = storage.get(key, {}) || {};
-      minimap = saved.minimap !== false;
+      minimap = saved.minimap ?? !matchMedia("(max-width: 600px)").matches;
       grid = saved.grid !== false;
       expanded = saved.expanded === true;
       displayKey = key;
@@ -83,17 +83,18 @@ export function canvasControls(ctx, basic) {
     );
     canvas.classList.toggle("grid-hidden", !grid);
     $("#canvas-minimap")?.classList.toggle("hidden", !minimap);
+    $('[data-board-display="minimap"]')?.setAttribute("aria-pressed", String(minimap));
     canvas.classList.toggle("board-expanded", expanded);
     setBoardExpanded(expanded);
     if (!$("#board-expand"))
       $(".board-controls")?.insertAdjacentHTML(
         "beforeend",
-        '<button id="board-expand" type="button" class="icon-button" data-board-display="expand"></button><button class="button small" data-board-display="fullscreen" aria-label="Full screen">⛶</button>',
+        `<button id="board-expand" type="button" class="icon-button" data-board-display="expand"></button><button type="button" class="icon-button" data-board-display="fullscreen" aria-label="Full screen" title="Full screen">${icon("fullscreen")}</button>`,
       );
     if (!$("#expanded-board-settings"))
       $(".board-controls")?.insertAdjacentHTML(
         "beforeend",
-        `<button id="expanded-board-settings" type="button" class="button small" data-feature="board-settings" aria-label="Board settings" title="Board settings">${icon("settings")}</button>`,
+        `<button id="expanded-board-settings" type="button" class="icon-button" data-feature="board-settings" aria-label="Board settings" title="Board settings">${icon("settings")}</button>`,
       );
     const expandButton = $("#board-expand");
     const expandLabel = expanded ? "Exit expanded view" : "Expand board";
@@ -124,19 +125,19 @@ export function canvasControls(ctx, basic) {
     renderView(true);
     $("#canvas")?.focus({ preventScroll: true });
   }
-  function position() {
+  function position({ navigating = false } = {}) {
     const navigationHeight = $(".board-controls")?.offsetHeight;
     if (navigationHeight) $("#canvas")?.style.setProperty("--board-controls-height", `${navigationHeight}px`);
     capacity.position();
     // Grid handles need screen-sized targets; unrelated task cards do not.
     const gridHitSize = `${8 / state.camera.z}px`;
-    for (const grid of $$(".board-node.grid"))
+    for (const grid of navigating ? [] : $$(".board-node.grid"))
       if (grid.style.getPropertyValue("--grid-hit-size") !== gridHitSize)
         grid.style.setProperty("--grid-hit-size", gridHitSize);
     const toolbar = $("#selection-tools"),
-      canvas = $("#canvas"),
-      nodes = basic.pick();
+      canvas = $("#canvas");
     if (!toolbar || !canvas) return;
+    const nodes = basic.pick();
     const edges = basic.pickEdges(), selected = new Set(nodes.map(n => n.id));
     const byId = edges.length ? new Map(board().nodes.map(n => [n.id, n])) : null;
     const paths = new Map($$("path.canvas-edge").map(el => [el.dataset.edge, el]));
@@ -200,6 +201,10 @@ export function canvasControls(ctx, basic) {
   document.addEventListener("click", async (e) => {
     const button = e.target.closest("[data-board-display]");
     if (!button || !active()) return;
+    if (button.dataset.boardDisplay === "minimap") {
+      minimap = !minimap;
+      saveDisplay(); render(); return;
+    }
     if (
       button.dataset.boardDisplay === "fullscreen" &&
       !document.fullscreenElement
@@ -445,8 +450,6 @@ export function canvasControls(ctx, basic) {
       else if (cmd && ["+", "=", "-"].includes(k))
         action = () => zoom(k === "-" ? 1 / 1.2 : 1.2);
       else if (e.altKey && e.code === "Digit1") action = fitBoard;
-      else if (e.altKey && e.code === "Digit2")
-        action = () => call("zoom-selection");
       else if (e.key === "F1") action = () => call("shortcuts");
       else if (!cmd && !e.altKey) {
         const tools = {

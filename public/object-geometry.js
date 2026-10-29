@@ -69,7 +69,7 @@ export function objectGeometryControls(n, ctx) {
         <button type="button" data-pro="object-style" aria-label="Parent frame and appearance" title="Parent frame and appearance">${icon("frame")}<span>Frame</span></button>
         ${ctx.colorPicker({ name: "object-border", label: "Border colour", value: n.borderColor || "#82937d" })}
       </div>
-      ${n.type === "image" ? `<div class="geometry-crop geometry-wide"><strong>Crop (%)</strong>${["Left", "Top", "Right", "Bottom"].map((label, i) => `<label title="Crop ${label.toLowerCase()}">${label}<input aria-label="Crop ${label.toLowerCase()}" data-crop-side="${i}" type="range" min="0" max="90" value="${(n.crop?.[i] || 0) * 100}"></label>`).join("")}<div class="geometry-footer"><button type="button" data-image-command="reset" title="Reset crop">${icon("rotate")} Reset</button><button type="button" data-image-command="replace" title="Replace image">${icon("image")} Replace</button></div></div>` : ""}
+      ${n.type === "image" ? `<div class="geometry-crop geometry-wide"><strong>Crop (%)</strong>${["Left", "Top", "Right", "Bottom"].map((label, i) => `<label title="Crop ${label.toLowerCase()}">${label}<input aria-label="Crop ${label.toLowerCase()}" data-crop-side="${i}" type="range" min="0" max="90" value="${(n.crop?.[i] || 0) * 100}" aria-valuetext="${Math.round((n.crop?.[i] || 0) * 100)}%"></label>`).join("")}<div class="geometry-footer"><button type="button" data-image-command="reset" title="Reset crop">${icon("rotate")} Reset</button><button type="button" data-image-command="replace" title="Replace image">${icon("image")} Replace</button></div></div>` : ""}
     </div>
   </details>`;
 }

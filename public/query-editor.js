@@ -47,7 +47,7 @@ export function queryEditor(ctx, preferences, persist) {
     return `<div class="query-rule"><select data-query-path="${path}" data-query-key="field" aria-label="Filter field">${options(
       fields.map((f) => [f.key, f.name]),
       node.field,
-    )}</select><select data-query-path="${path}" data-query-key="op" aria-label="Filter operator">${options(ops, node.op)}</select>${["contains", "eq", "before", "after"].includes(node.op) ? `<input data-query-path="${path}" data-query-key="value" aria-label="Filter value" maxlength="500" value="${esc(node.value || "")}" type="${["before", "after"].includes(node.op) ? "date" : "text"}">` : ""}<button type="button" class="icon-button" data-query-remove="${path}" aria-label="Remove condition">×</button></div>`;
+    )}</select><select data-query-path="${path}" data-query-key="op" aria-label="Filter operator">${options(ops, node.op)}</select>${["contains", "eq", "before", "after"].includes(node.op) ? `<input data-query-path="${path}" data-query-key="value" aria-label="Filter value" maxlength="500" value="${esc(node.value || "")}" type="${["before", "after"].includes(node.op) ? "date" : "text"}">` : ""}<button type="button" class="icon-button" data-query-remove="${path}" aria-label="Remove condition"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg></button></div>`;
   }
   function paint() {
     document.querySelector("#query-editor-rules").innerHTML = rows(draft);

@@ -1,6 +1,7 @@
 import { helpArticles, helpArticle } from "./help-content.js";
+import { mainWidth } from "./layout-width.js";
 
-export function helpPageHTML(id, { esc, icon }) {
+export function helpPageHTML(id, { esc, icon, requests = false }) {
   const article = helpArticle(id);
   const content = (html) =>
     html
@@ -10,12 +11,12 @@ export function helpPageHTML(id, { esc, icon }) {
         '<div class="help-table" tabindex="0" role="region" aria-label="Reference table">',
       );
   return `<section class="help-page" aria-label="Help wiki">
-    <header class="help-page-heading"><button class="button small" data-action="help-back">${icon("arrow")}Back</button><span>Help centre</span></header>
+    <header class="help-page-heading"><button class="button small" data-action="help-back">${icon("arrow")}Back</button><span>Help centre</span>${requests ? `<button class="button small" data-feature-requests>${icon("comment")}Feature requests</button>` : ""}</header>
     <div class="help-layout">
       <aside class="help-sidebar">
         <label class="field" for="help-search">Search help<input id="help-search" type="search" placeholder="Search guides…" autocomplete="off" aria-controls="help-navigation"></label>
         <p id="help-search-status" class="field-hint" role="status" aria-live="polite"></p>
-        <details class="help-navigation" ${innerWidth > 800 ? "open" : ""}><summary>Browse guides</summary><nav id="help-navigation" aria-label="Help articles">
+        <details class="help-navigation" ${mainWidth() > 780 ? "open" : ""}><summary>Browse guides</summary><nav id="help-navigation" aria-label="Help articles">
           ${[...new Set(helpArticles.map((a) => a.group))]
             .map(
               (group) =>
@@ -35,7 +36,7 @@ export function helpPageHTML(id, { esc, icon }) {
         <h1 id="help-title" tabindex="-1">${esc(article.title)}</h1><p class="help-intro">${esc(article.summary)}</p>
         <nav class="help-contents" aria-label="On this page"><strong>On this page</strong>${article.sections.map((s) => `<button type="button" data-help-section="${s.id}">${esc(s.title)}</button>`).join("")}</nav>
         ${article.sections.map((s) => `<section class="help-section"><h2 id="help-section-${s.id}" tabindex="-1">${esc(s.title)}</h2>${content(s.html)}</section>`).join("")}
-        <footer class="help-article-footer">Guides for this installation · Documentation checked 17 October 2026</footer>
+        <footer class="help-article-footer">Guides for this installation · Documentation checked ${esc(article.updated || "17 October 2026")}</footer>
       </article>
     </div>
   </section>`;

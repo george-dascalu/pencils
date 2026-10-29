@@ -6,7 +6,7 @@ See [CHANGELOG.md](CHANGELOG.md) for dated additions, changes and fixes. The [Pr
 
 ## Make the workspace yours
 
-Every project view uses the same compact header: project title in the breadcrumb, **Overview**, **Planning**, **Tasks**, **Boards**, **New task** and **Project settings**. Tasks contains List, Tree, Table and Kanban; Planning contains Calendar, Timeline and Capacity. Overview shows project progress, open/blocked/overdue tasks, status counts and upcoming deadlines.
+Every project view uses the same compact header: project title in the breadcrumb, **Overview**, **Planning**, **Tasks**, **Boards**, **New** (a card or a document) and **Project settings**. Tasks contains List, Tree, Table and Kanban; Planning contains Calendar, Timeline and Capacity. Overview shows project progress, open/blocked/overdue tasks, status counts and upcoming deadlines.
 
 Project Settings has its own grouped sidebar and dedicated pages. General, Organisation & teams, Statuses & workflow, Types & hierarchy and Custom fields save independently. Data sources, Import notes, Automation, Diagnostics and Archive & recovery contain their own tools. Source configuration and automation editing have direct links; browser Back, Forward and reload preserve the page. Unsaved changes require an explicit discard before navigating away. Templates are removed from the settings navigation. On phones, choose a page using Settings section.
 
@@ -18,6 +18,7 @@ Development rule: **Consistency**. Reuse shared UI and keep common actions, term
 - Open **Personal settings** with the avatar at the top right. Choose Light, Dark, or System appearance and one of eight fonts: Manrope (default), DM Sans, Space Grotesk, Outfit, Sora, Work Sans, Lora, or Fraunces. Preferences are local to this browser and shared across its tabs; other devices retain their own choices.
 - Fonts and their SIL Open Font Licenses are bundled under `public/fonts/`, with source links in `SOURCES.json`. No external font service is used at runtime.
 - Open **Project settings** to edit the ordered status list and specify which statuses count as completed. New projects can define their own workflow during creation. Changes apply only to that project and are stored in its Markdown frontmatter. A status used by an existing task cannot be removed until those tasks are moved to another status. Use **Types & hierarchy** for card types and parent/child rules, and **Custom fields** for additional task information.
+- Standard card types are Epic, Milestone, Story, Task, Activity and Bug. Choose **Activity** in the task editor’s type picker; it supports the same dates, assignments, descriptions and relationships as other cards.
 
 ## Project settings and task IDs
 
@@ -32,7 +33,7 @@ cp .env.example .env
 docker compose up -d --build
 ```
 
-Open **http://localhost:3000**, or **http://SERVER-IP:3000** from another device on the same network. The server computer must be running and reachable. Core local features need no internet service, CDN, font server, account provider or API key. Optional Jira and SharePoint sources need internet access and registered OAuth applications. One-time Miro imports need internet access and either a Miro OAuth app or a temporary access token. Building the image initially needs internet access for Node and npm packages; see the offline instructions below to transfer a prebuilt image.
+Needs Docker Engine 25 or later. Open **http://localhost:3000**, or **http://SERVER-IP:3000** from another device on the same network. The server computer must be running and reachable. Core local features need no internet service, CDN, font server, account provider or API key. Optional Jira and SharePoint sources need internet access and registered OAuth applications. One-time Miro imports need internet access and either a Miro OAuth app or a temporary access token. Building the image initially needs internet access for Node and npm packages; see the offline instructions below to transfer a prebuilt image.
 
 Set `VAULT_PATH` to the folder you want to use, and set `LOCAL_UID` / `LOCAL_GID` to the output of `id -u` / `id -g` on Linux. The app runs as that user in a read-only container, with a writable vault mount. The host folder must be writable by that user. Stop with `docker compose down`; the vault remains on disk.
 
@@ -46,7 +47,7 @@ Add draft subtasks in the new-task editor before saving the parent. Choose each 
 
 Date fields use a shared Monday-first calendar with stronger weekdays and muted weekend columns. Type dates directly, or open the calendar button (Alt+Down from the field); arrow keys navigate days, Page Up/Down changes months, and Escape closes it. The Calendar view uses the same weekday/weekend distinction.
 
-The task editor uses a compact layout with Start date beside Due date, searchable prerequisites under Dependencies, and Planning collapsed by default. Dependencies distinguish **Blocked by** (prerequisites) from **Blocks** (downstream tasks). Descriptions open in a WYSIWYG editor with the same formatting controls as board notes; Markdown and Preview remain available. Descriptions are still saved as Markdown, and browser drafts and attachments are preserved.
+The task editor keeps Start and Due dates together. **Relationships** contains parents, children, **Blocked by**, **Blocks** and related tasks; its sort icon opens ordering and direction, while **+** opens a contextual task picker beside the button. On phones, relationship rows stay on one line with compact assignee, priority and status indicators. Descriptions use the shared rich-text editor and still save as Markdown. A narrow toolbar keeps common formatting on one line; **More formatting** contains strikethrough, numbered lists, Markdown and Preview. Use **Add attachments** below the description to choose files on any device; desktop drag and drop also works. Browser drafts and attachments are preserved.
 
 - Create multiple organisations, each with multiple projects; move projects between organisations without changing note paths or task identifiers.
 - Work in overview, list, tree, spreadsheet, kanban, freeform board, calendar and timeline views. Save named views with filters, grouping, sorting and column layouts shared by everyone in the project.
@@ -85,7 +86,7 @@ Personal settings can switch between wheel-to-zoom mouse navigation and scroll-t
 
 Boards view uses the shared compact project header and fills the remaining window. **Boards** manages canvases. The left toolbar creates objects and opens **Project tasks**; **More** provides live notes, live task views, images, the outline, presentation, frame navigation, canvas templates, exports and history. **Board settings** controls the board name, snapping and appearance. Project settings and New task remain beside the view tabs. Expanding a task card opens the same compact, nonmodal side editor as New task; editing keeps the board camera unchanged and retains subtasks, header actions, comments and version history. **Expand board** hides the surrounding workspace, and **Full screen** also hides browser chrome.
 
-Open **Project tasks → New draft task** to prepare a board-only task, including its description, priority, assignee and proposed subtasks. Priority and assignee can also be changed directly on draft cards; these changes save automatically and carry over when finalised. Drafts have a dashed border, a pencil icon before their title and no project ID. The type menu can turn a draft back into a Note; its task details are retained for converting it back later. Project task cards show their task-type icon before the title. Converting a Note to a Task creates a draft with a title from the note and a blank description, keeping its comments and connections. Converting an existing draft to a Note and back preserves its description. The **Finalise task** icon sits immediately left of Comments in the card header and creates the project task and its subtasks in place, preserving the card’s position, appearance, comments and connections. Undo returns the card to a draft without deleting the project records; finalising it again reuses them.
+Open **Project tasks → New draft task** to prepare a board-only task, including its description, priority, assignee and proposed subtasks. Priority and assignee can also be changed directly on draft cards; these changes save automatically and carry over when finalised. Drafts have a dashed border, their card type icon and a Draft badge, and no project ID. The type menu can turn a draft back into a Note; its task details are retained for converting it back later. Project task cards show their task-type icon before the title. Converting a Note to a Task creates a draft with a title from the note and a blank description, keeping its comments and connections. Converting an existing draft to a Note and back preserves its description. The **Finalise task** icon sits immediately left of Comments in the card header and creates the project task and its subtasks in place, preserving the card’s position, appearance, comments and connections. Undo returns the card to a draft without deleting the project records; finalising it again reuses them.
 
 Board arrows can represent task dependencies: connect two project task cards, select the arrow, then choose **Task dependency → Make dependency**. A → B means A must finish before B. Existing arrows reflect relationships edited in task details, and cycles are prevented. Use **Remove dependency** to unlink tasks; deleting or reconnecting a visual arrow leaves existing task dependencies intact. Drafts must be finalised before their arrows can create dependencies. Set their shared colour, stroke, thickness and arrowhead in **Board settings → Dependency arrow style**; changes apply immediately to that board and its exports, with Ctrl/⌘ Z to undo and Reset to restore defaults. Existing project styles remain the starting appearance until a board chooses its own style. Dependency arrows also have a toolbar shortcut to these settings.
 
@@ -112,9 +113,9 @@ Each project can have multiple named canvases. The board includes eight connecte
 
 The importer copies sticky notes, rich text, supported shapes, frames, connectors, accessible images/GIFs and supported documents into ordinary `.canvas` objects and local attachments. Embeds become links. Unreadable or unsupported items returned by Miro become labelled links at their original positions. The report lists approximations and omitted connectors; Miro may not return some unsupported items at all. Comments, native tables/grids, freehand strokes, live queries and Pencils project-frame behaviour are not imported. Use separate CSV/image exports for content unavailable through Miro's API. Fonts, transparency and connector routing may differ. Visual connectors do not automatically create task dependencies.
 
-Choose **New canvas** or **Current canvas**. Existing-canvas imports preserve local changes to previously imported objects and add only new source objects; they never refresh or overwrite an earlier import. A changed destination requires a new preview. Imported task cards are local Markdown tasks, with no source-owned fields or background sync. A failed commit rolls back new tasks, attachments and canvas changes together. Retrying a completed preview does not duplicate its import. Previews last 30 minutes; the server retains tokens only in memory and clears the current connection after import or disconnect.
+Choose **New board** or **Current canvas**. Existing-canvas imports preserve local changes to previously imported objects and add only new source objects; they never refresh or overwrite an earlier import. A changed destination requires a new preview. Imported task cards are local Markdown tasks, with no source-owned fields or background sync. A failed commit rolls back new tasks, attachments and canvas changes together. Retrying a completed preview does not duplicate its import. Previews last 30 minutes; the server retains tokens only in memory and clears the current connection after import or disconnect.
 
-For **Connect Miro**, create a Miro OAuth app with only `boards:read`, register the exact callback `${APP_ORIGIN}/api/miro-callback`, and set `MIRO_CLIENT_ID`, `MIRO_CLIENT_SECRET` and `APP_ORIGIN` on the server. Use HTTPS or a localhost callback; Docker Compose passes these variables through. Alternatively, **Use an access token** accepts a temporary token from a Miro app with `boards:read` and access to the source board, without OAuth server configuration. Both options require `AUTH_MODE=local` or a signed-in account with project write access in required mode. The import makes no changes in Miro. Large reads can hit Miro's rate limits; the error gives a retry delay. Each preview supports up to 9,500 source objects, 19,000 connectors and 50 MB of media, with a 10 MB limit per file; canvas storage limits still apply.
+For **Connect Miro**, create a Miro OAuth app with only `boards:read`, register the exact callback `${APP_ORIGIN}/api/miro-callback`, and set `MIRO_CLIENT_ID`, `MIRO_CLIENT_SECRET` and `APP_ORIGIN` on the server. Use HTTPS or a localhost callback; Docker Compose passes these variables through. Alternatively, **Use an access token** accepts a temporary token from a Miro app with `boards:read` and access to the source board, without OAuth server configuration. Both options require `AUTH_MODE=local`, `AUTH_MODE=single-user` or a signed-in account with project write access in required mode. The import makes no changes in Miro. Large reads can hit Miro's rate limits; the error gives a retry delay. Each preview supports up to 9,500 source objects, 19,000 connectors and 50 MB of media, with a 10 MB limit per file; canvas storage limits still apply.
 
 **Grid titles:** double-click the title in a grid’s top bar, or click its pencil button, to rename it in place. Click outside or press Enter to save; Undo restores the previous title. The title is included above the Markdown table in Obsidian Canvas exports. Drag the top bar to move the grid.
 
@@ -140,7 +141,7 @@ The recent operation log retains up to 200 operations (approximately 2 MB, or on
 
 ## Markdown and Obsidian
 
-**Documents**, between Overview and Planning, provides a project document explorer and a Markdown-native editor. **Live preview** formats Markdown around the active line. Edit callout titles/content, table cells, quotes and code directly in their rendered components; tables also have Add row and Add column controls. Math and diagrams have inline formula/code fields. Component edits autosave to Markdown without exposing the section's Markdown syntax. **Source** shows the complete Markdown with syntax highlighting and line numbers. **Reading** displays the formatted document. Switching views does not rewrite the source or clear undo history. Ctrl/⌘ E switches Live preview/Source, Ctrl/⌘ B and I format the selection, and Ctrl/⌘ F opens search in the current view. Tab indents, lists continue on Enter, and the gutter folds headings and code.
+**Documents**, between Overview and Planning, provides a project document explorer and a Markdown-native editor. **Live preview** formats Markdown around the active line. Edit callout titles/content, table cells, quotes and code directly in their rendered components; tables also have Add row and Add column controls. Math and diagrams have inline formula/code fields. Component edits autosave to Markdown without exposing the section's Markdown syntax. **Source** shows the complete Markdown with syntax highlighting and line numbers. **Reading** displays the formatted document. Switching views does not rewrite the source or clear undo history. Ctrl/⌘ E switches Live preview/Source, Ctrl/⌘ B and I format the selection, and Ctrl/⌘ F opens search in the current view. Tab indents, lists continue on Enter, and the gutter folds headings and code. Cards link to documents from the **Documents** section of the card editor, and a document lists the cards that link to it.
 
 Use **Style**, the formatting buttons or **Insert** for headings, lists, checklists, quotes, code blocks, tables, callouts, footnotes, highlights, math and Mermaid diagrams. Live-preview checkboxes update their Markdown markers. Comments (`%%…%%`) stay in the source and are hidden in Reading. HTML is sanitised; executable scripts and remote image requests are excluded. Unknown plugin syntax stays intact in the source. **Document outline** jumps to headings; **Document tools** contains backlinks, undo/redo, export and Obsidian settings. Type `[[` to choose another project document: generated links use stable vault paths with readable labels. `![[…]]` embeds a document, heading or block, with bounded nesting. Duplicate document titles require a stable path. Attach local files through **Insert → Attach file**, or drop them onto the editor. Images render inline; other files open from their links.
 
@@ -201,6 +202,8 @@ For single-user use on this computer or a trusted local network, set `AUTH_MODE=
 
 Local mode trusts the socket peer address, including Docker bridge/private LAN addresses; it ignores browser-supplied forwarding headers. Public peers still require a password account. Use `AUTH_MODE=required` behind a public reverse proxy, since the proxy itself may connect from a private address.
 
+For a personal installation without any login screen, set `AUTH_MODE=single-user` and keep `LOCAL_USER_NAME=George`, then recreate the service. Every connection, including Tailscale, automatically uses that administrator identity. Integrations, source ownership and background sync remain available. Anyone who can reach the server has full workspace access in this mode; use network access controls for the installation. Existing password accounts are preserved, so setting `AUTH_MODE=required` restores password-based access.
+
 Default `AUTH_MODE=shared` permits every device reaching the server to read and edit the workspace. This matches a trusted LAN deployment. For restricted access, first create an administrator (password is read from standard input):
 
 ```bash
@@ -254,6 +257,30 @@ For a production Node installation, run `npm run build` before `NODE_ENV=product
 
 ## Backend structure and capacity
 
+### Feature request inbox
+
+Administrators can open **Help → Feature requests** or use **Feature requests** at the bottom of the sidebar. Submit a description, priority and up to five attachments (10 MB per file, 20 MB total). The panel supports file selection, drag and drop, and pasted screenshots. Requests have a searchable status list, progress notes and downloadable attachments.
+
+The vault stores `feature-requests/index.md`, one `feature-requests/fr-<uuid>/request.md` per request, and an `attachments/` subfolder. Requests and their progress survive container updates and restarts. The API owns this queue; avoid editing its frontmatter while a worker is active. Use the UI or API to update status so the index stays current.
+
+For automatic implementation on the existing Linux host:
+
+```bash
+codex login
+codex login status
+npm run requests:install-worker
+```
+
+This installs `pencils-request-worker.service` in the current user's systemd directory and enables it at login. The worker requires Node, Git, Docker Compose, network access and a signed-in Codex CLI. It uses the CLI's configured model and account allowance. It runs outside Docker; no Codex credentials or Docker socket are mounted in the application container. User-service lingering must be enabled separately if it should run after logout.
+
+The worker polls every 15 seconds and checks sign-in every minute. It processes one request at a time in priority/creation order. A scoped secret in `.pencils/feature-worker-key` authorises queue operations only; it does not grant access to project APIs. Set `PENCILS_REQUEST_URL` to a local origin if the default `http://127.0.0.1:${PORT:-3000}` is unsuitable. `PENCILS_CODEX_BIN` can select a CLI executable. The worker reads the existing `.env` for the vault and port, but does not pass provider secrets to child processes.
+
+Code work runs with Codex's `workspace-write` sandbox in `.request-work/`, with network access for research and checks. The worker runs `npm run check`, `npm test` and `npm run build` before applying changes. Concurrent source edits prevent promotion. Successful deployment retains a rollback image and checks `/api/health` for the expected version; failed startup restores the previous container image. Logs and the latest structured result are retained with the request. `Ready to release` means checked work needs attention; only a successful worker deployment is automatically marked `Done`. Pending questions and failures remain visible, and expired worker leases are marked `Needs input` instead of silently rerunning an uncertain change.
+
+Use the inbox's pause button to stop new requests starting, or `systemctl --user stop pencils-request-worker` to stop the process. An active request continues when the queue is merely paused. Inspect the service with `systemctl --user status pencils-request-worker`; `npm run requests:worker -- --once` performs one poll manually. Automatic work is unavailable until the local CLI is signed in and the worker is running.
+
+For future maintenance, the request's Markdown file and progress log are the durable record. Read them before resuming work, preserve attachments, and update the request through the API/UI when implementation, questions, validation or deployment status changes.
+
 The HTTP layer uses Fastify and TypeScript in `server/http/`, with routes grouped by domain. Task, document and board services remain JavaScript in `server/services/`; `server/store.js` owns vault access and transactional writes. `npm run build:server` compiles the HTTP modules, and `npm run typecheck` checks them. Normal installation, development, tests and production builds include the compilation step.
 
 Markdown and `.canvas` files remain authoritative. Search and table queries use a rebuildable SQLite index in a worker thread. Task edits update affected rows incrementally. Provider network requests run outside the vault writer queue; applying fetched changes remains transactional.
@@ -266,17 +293,22 @@ See the [backend and board performance assessment](reports/2026-10-20-backend-bo
 npx playwright install chromium firefox webkit
 npm run test:release
 
-# Focused checks during development
-npm run check
-npm test
-npm run test:table-performance
-npm run test:accessibility
-npm run test:drawing
-npm run test:sources
-BROWSER=firefox npm run test:review-workflows
+# During development
+npm run check                       # syntax and types, about 2 seconds
+npm test                            # unit tests, about 2 seconds
+npm run e2e                         # every browser test in Chromium, in parallel (a few minutes)
+npm run e2e -- e2e/board            # a folder or file;  -- -g "drawer"  for matching titles
+npx playwright show-trace test-results/…/trace.zip   # step through a failed test
+
+# Release the working tree to the running container (see AGENTS.md › Deployment)
+npm run release -- patch
 ```
 
-Tests use temporary vaults. They cover Markdown persistence/migration, file revisions, safe paths, UTF-8 request chunking, backup/history/trash restore, workflow validation, recurrence, three-way merge, organisation permissions, browser editing, saved views, range paste, offline save recovery, canvas manipulation/export and mobile layout. `test/offline.mjs` and `test/compose.offline.yaml` verify an isolated Docker deployment without outbound connectivity.
+Browser tests are Playwright Test specs in `e2e/<area>/` (see `e2e/README.md`). Each file starts its own server and temporary vault; failures are retried once and reported as flaky, with a trace. Audits run with `npx playwright test --project=audit`, and the offline Docker image check with `--project=docker` (it changes host networking, so it never runs alongside the other tests). `npm run test:release` adds the `@gate` tests in Firefox and WebKit (`GATE_BROWSERS=firefox` limits it to installed engines).
+
+`npm run release` refuses to start unless `CHANGELOG.md` has the changes under `## Unreleased`. It runs the checks and unit tests, sets the version in `package.json`, `package-lock.json` and `public/app-version.js`, dates the changelog entry (Europe/London), builds the image, tags the running image `pencils:rollback-before-<version>`, recreates the container with its existing settings and waits for `/api/health` to report the new version. If the new version does not become healthy, it restores the previous image. Afterwards it tags `pencils:release-<version>`.
+
+Tests use temporary vaults. They cover Markdown persistence/migration, file revisions, safe paths, UTF-8 request chunking, backup/history/trash restore, workflow validation, recurrence, three-way merge, organisation permissions, browser editing, saved views, range paste, offline save recovery, canvas manipulation/export and mobile layout. `e2e/platform/offline.spec.mjs` builds the image and verifies it in containers without any network.
 
 Board navigation uses **scroll to zoom at the pointer** and **Shift + scroll to pan vertically**. Pinch and Ctrl/Command-wheel also zoom. Right-drag, middle-drag and Space-drag pan while preserving selection. V selects, H pans, N/T/S select click-to-place sticky/text/shape tools, L connects and P draws. Ctrl/Command-click adds or removes a selection; Alt/Option-drag duplicates. F1 opens the shortcut reference. Native touch pan/pinch and pressure-sensitive pen input remain available.
 
@@ -324,7 +356,7 @@ Open **People** in the sidebar’s **Teams** section to add people with optional
 
 People and teams are stored in organisation Markdown frontmatter; projects store team IDs, and tasks retain the readable assignee name plus a stable `assignee_id`. These remain available offline and in Obsidian. Opening and saving a legacy task preserves its prior assignment and tags.
 
-Existing task editors save changes automatically while you work. Header icons provide Delete, Duplicate, Archive, Version history and Comments; comments and history open to the right without closing the editor. Failed saves stay in the browser queue and retry when the server is reachable. Closing flushes pending edits; incomplete required fields remain recoverable as a browser draft. New tasks still use Create task.
+Existing task editors save changes automatically while you work. The header groups Details, Version history and Comments; narrow screens switch between them in the same panel, while wide screens show comments/history alongside the details. On phones, type and ID precede a smaller title, and **More task actions** contains Duplicate, Archive and Delete. These actions remain directly visible on larger screens. Failed saves stay in the browser queue and retry when the server is reachable. Closing flushes pending edits; incomplete required fields remain recoverable as a browser draft. New tasks still use Create task.
 
 ## Project workflows
 
@@ -358,7 +390,7 @@ Dependency arrows run from a prerequisite's right side to the dependent task's l
 
 ### Visual rules
 
-Project settings and **Workflow & fields** include visual workflow and card hierarchy editors. Select a card to inspect its connections, or choose **Connect**, then a source and destination to toggle a rule. Connection chips also remove individual rules. **All links** shows the full graph; turn it off to focus on the selected card.
+Project settings and **Statuses & workflow** include visual workflow and card hierarchy editors. Select a card to inspect its connections, or choose **Connect**, then a source and destination to toggle a rule. Connection chips also remove individual rules. **All links** shows the full graph; turn it off to focus on the selected card.
 
 Workflow arrows are allowed status moves when **Restrict status changes** is enabled. **Status names, order & defaults** contains the naming and ordering controls. Hierarchy arrows point from a parent type to an allowed child type; **No parent** defines the top-level types. Saved hierarchy rules apply in **Enforce rules** mode; **Freeflow** permits all relationships. Both editors use the existing project save and validation rules.
 
@@ -371,7 +403,7 @@ The header's **Help** button opens a local wiki with searchable setup guides, ar
 
 In **Project settings → Data sources & sync**, add one or more Obsidian folders, Jira Cloud queries, or SharePoint Excel tables. Use **Preview mapping** before **Sync now**. Sources start with read access and polling disabled. Enable polling for five-minute reads; Pause or Disconnect stops future reads. Disconnect removes credentials while retaining imported tasks and local annotations.
 
-Integration setup supports `AUTH_MODE=local` automatic administrator access, or `AUTH_MODE=required` with a signed-in workspace administrator. The first connected source makes that project private to its source owner and workspace administrators, even after disconnect. Provider fields (title, type, status, priority, assignee and due date) are read-only in local editors. Local descriptions, comments, dependencies and related-record links remain separate. Imported records have stable source IDs and source badges; source links open the original Jira issue, workbook or Obsidian note. A missing query result means **not returned**, not necessarily deleted.
+Integration setup supports `AUTH_MODE=local` or `AUTH_MODE=single-user` automatic administrator access, or `AUTH_MODE=required` with a signed-in workspace administrator. The first connected source makes that project private to its source owner and workspace administrators, even after disconnect. Provider fields (title, type, status, priority, assignee and due date) are read-only in local editors. Local descriptions, comments, dependencies and related-record links remain separate. Imported records have stable source IDs and source badges; source links open the original Jira issue, workbook or Obsidian note. A missing query result means **not returned**, not necessarily deleted.
 
 This is a personal integration model. It does not reproduce each provider's record-level sharing rules. Imported Markdown, backups and browser/device caches can be read by people with access to those files/devices. Use a vault and devices whose readers are authorised for the imported data. Workspace administrators can read these projects. Loss of provider access stops synchronisation; it does not erase previous imports or exports.
 
@@ -403,4 +435,4 @@ Related local writes have a recoverable journal and a process writer lock. A cra
 
 ## Review implementation checks
 
-[IMPLEMENTATION.md](IMPLEMENTATION.md) maps the 60 review recommendations to code, checks and verification limits. Run `npm run test:release` for syntax, model/server tests and 12 maintained journeys in each of Chromium, Firefox and WebKit. Install the Playwright browsers and their platform dependencies first (`npx playwright install-deps` on supported Linux distributions). `GATE_BROWSERS=webkit node test/browser-gate.mjs` selects one engine for targeted work. `npm run test:accessibility` checks all nine views in light/dark themes using axe; this does not replace a manual screen-reader or physical-device review. `npm run test:table-performance` measures 1k/10k/50k query models, not full network/render latency. All fixtures use temporary vaults. The drawing interruption test stops its temporary origin, avoiding a [WebKit offline-emulation bug](https://github.com/microsoft/playwright/issues/42775).
+[IMPLEMENTATION.md](IMPLEMENTATION.md) maps the 60 review recommendations to code, checks and verification limits. Run `npm run test:release` for syntax, model/server tests and 12 maintained journeys in each of Chromium, Firefox and WebKit. Install the Playwright browsers and their platform dependencies first (`npx playwright install-deps` on supported Linux distributions). `GATE_BROWSERS=webkit npm run test:release` selects one engine for targeted work. `npm run e2e -- accessibility` checks all nine views in light/dark themes using axe; this does not replace a manual screen-reader or physical-device review. `npm run e2e -- table-benchmark` measures 1k/10k/50k query models, not full network/render latency. All fixtures use temporary vaults. The drawing interruption test stops its temporary origin, avoiding a [WebKit offline-emulation bug](https://github.com/microsoft/playwright/issues/42775).

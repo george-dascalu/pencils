@@ -348,6 +348,15 @@
   inset: 0;
   pointer-events: none;
   z-index: 0;
+  transform-origin: 0 0;
+}
+.canvas.touch-navigating #canvas-overview {
+  will-change: transform;
+}
+@media (pointer: coarse) {
+  /* One shared layer for the bounded set of visible cards. Prepare it before
+     contact so Safari does not rasterise every card on the first pinch frame. */
+  .canvas-world { will-change: transform; }
 }
 .canvas-panel {
   position: absolute;
@@ -623,7 +632,7 @@
   width: max-content;
   max-width: min(760px, calc(100% - 24px));
   max-height: 130px;
-  box-shadow: 0 6px 24px #0002;
+  box-shadow: var(--shadow-popover);
   z-index: 18;
 }
 .board-selection {
@@ -681,7 +690,7 @@
   user-select: text;
 }
 #canvas-inline-form .inline-rich:focus {
-  border-color: var(--green);
+  border-color: var(--text-focus-color);
 }
 #canvas-inline-form .inline-rich :first-child,
 #canvas-inline-form .inline-preview :first-child {
@@ -818,8 +827,11 @@ html.board-expanded-view .shell {
   border: 1px solid var(--line);
   border-radius: 9px;
   box-shadow: 0 4px 16px #263c3420;
-  z-index: 12;
+  /* Above the selection toolbar (30), which follows the result it selects. */
+  z-index: 31;
 }
+.canvas-search-head { display: flex; align-items: center; gap: 6px; }
+.canvas-search-head input { flex: 1 1 auto; min-width: 0; }
 .canvas-search-panel .canvas-find,
 .canvas-search-panel .canvas-filters {
   position: static;
@@ -849,6 +861,9 @@ html.board-expanded-view .shell {
   white-space: normal;
   text-align: left;
   overflow-wrap: anywhere;
+  /* Long titles wrap: grow past the shared control height instead of overlapping the next result. */
+  height: auto !important;
+  padding-block: 6px !important;
 }
 .board-tools [data-pro="search-toggle"] {
   position: relative;
@@ -890,4 +905,45 @@ html.board-expanded-view .shell {
 @media (max-width: 600px) {
   .board-controls { max-width: calc(100% - 16px); flex-wrap: wrap; justify-content: flex-end; }
   #canvas-minimap { bottom: calc(var(--board-controls-height, 54px) + 25px); }
+}
+
+.phone-board-dock { display: flex; }
+.phone-board-palette[hidden] { display: none !important; }
+@media (max-width: 600px) {
+  .phone-board-dock {
+    position: absolute; z-index: 15; left: 8px; right: 8px; width: max-content; margin-inline: auto; bottom: max(8px, env(safe-area-inset-bottom));
+    max-width: calc(100% - 16px); gap: 4px; padding: 4px; align-items: center;
+    border: 1px solid var(--line); border-radius: 8px; background: var(--surface);
+    box-shadow: var(--shadow-popover); touch-action: manipulation;
+  }
+  .phone-board-dock:has(.phone-board-palette:not([hidden])) { z-index: 30; }
+  .phone-board-dock > :is(.board-tools, .board-controls) {
+    position: static; width: auto; max-width: none; max-height: none; flex-direction: row; flex-wrap: nowrap;
+    padding: 0; margin: 0; border: 0; border-radius: 0; background: transparent; box-shadow: none; overflow: visible; gap: 2px;
+  }
+  .phone-board-dock .board-tool-group[aria-label="Navigate"] { flex-direction: row; gap: 2px; }
+  .phone-board-dock .board-tool-group[aria-label="Navigate"] > .board-tool-category { display: none; }
+  .phone-board-dock #zoom-label { min-width: 30px; font-variant-numeric: tabular-nums; color: var(--ink); }
+  .phone-board-dock .board-controls { border-left: 1px solid var(--line); padding-left: 4px; }
+  /* The panel uses viewport coordinates, independent of the zoomed canvas. */
+  .phone-board-palette {
+    position: fixed; z-index: 30; display: flex; flex-direction: column; gap: 12px;
+    padding: 12px; overflow: auto; overscroll-behavior: contain; touch-action: pan-y;
+    border: 1px solid var(--line); border-radius: 8px; background: var(--surface); color: var(--ink); box-shadow: var(--shadow-popover);
+  }
+  .phone-board-palette > header { display: flex; align-items: center; justify-content: space-between; }
+  .phone-board-palette :is(.board-tool-group, .phone-board-extra-navigation, .phone-board-view-tools) { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 4px; padding: 0; border: 0; }
+  .phone-board-palette .board-tool-category { grid-column: 1 / -1; justify-self: start; font-size: 12px; padding-block: 4px; }
+  .board-tools .phone-board-palette button:not([data-phone-tools-close]) {
+    display: flex; align-items: center; justify-content: flex-start; text-align: left; gap: 8px;
+    width: 100% !important; min-width: 0 !important; padding-inline: 6px !important; color: var(--ink);
+    font-size: 12px;
+  }
+  .phone-board-palette button:not([data-phone-tools-close])::after { content: attr(aria-label); }
+  .phone-board-palette button > .icon { flex: 0 0 var(--control-icon-size); }
+  .phone-board-palette button[aria-pressed="true"], .board-tools:has(.phone-board-palette .active) > .phone-board-more { background: var(--surface-soft); color: var(--green); }
+  .canvas-presence { top: 8px; right: 8px; max-width: calc(100% - 16px); }
+  #canvas-minimap { bottom: calc(var(--control-height) + 24px + env(safe-area-inset-bottom)); }
+  #canvas-search-panel { left: 8px; right: 8px; top: 8px; max-width: calc(100% - 16px); }
+  .presenting .phone-board-dock { display: none; }
 }

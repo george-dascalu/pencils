@@ -1,9 +1,14 @@
+import { syncTopbarTitle } from "./topbar-title.js";
+import { panelCategories } from "./document-insert.js";
 import { markdownDocumentEditor } from "./document-editor.js";
 import { documentReadingSearch } from "./document-reading-search.js";
 import { documentMarkdown } from "./document-markdown.js";
 import { documentHeadings, documentOutline, documentStats, documentReference, resolveDocument, obsidianDocumentURI } from "./document-model.js";
 import { positionPopover } from "./popover-position.js";
+import { richToolbar } from "./canvas-rich-text.js";
+import { installToolbarScroll, floatMenuPanel } from "./rich-toolbar-scroll.js";
 import { randomUUID } from "./uuid.js";
+import { allowsTextAutofocus, focusOnOpen } from "./open-focus.js";
 
 export function projectDocuments(ctx) {
   const { state, api, sync, storage, esc, icon, renderView, toast } = ctx;
@@ -11,7 +16,6 @@ export function projectDocuments(ctx) {
   let readingSearch = null;
   let mode = storage.get("document-mode", "live");
   let documentWidth = storage.get("document-width", "page") === "full" ? "full" : "page";
-  let sidebarCollapsed = storage.get("document-sidebar-collapsed", false);
   let activeFolder = null;
   let explorerDrag = null, folderMovePending = false;
   const closedFolders = new Set();
@@ -172,7 +176,7 @@ export function projectDocuments(ctx) {
     };
     box.querySelector("form").addEventListener("submit", event => { event.preventDefault(); void save(); });
     box.querySelector("[data-delete-folder]")?.addEventListener("click", () => void save(true));
-    box.querySelector("input").focus(); box.querySelector("input").select();
+    if (focusOnOpen(box.querySelector("input"), box.querySelector("button"))) box.querySelector("input").select();
   }
   async function versionsPanel(button) {
     const pid = project, id = current.id;
@@ -218,6 +222,7 @@ export function projectDocuments(ctx) {
     void sync.enqueue(endpoint(project, current.id), base, changes);
     syncChanged();
     updateStats();
+    syncTopbarTitle(state);
   }
   function updateStats() {
     if (!form) return;
@@ -265,13 +270,20 @@ export function projectDocuments(ctx) {
     panel.addEventListener("keydown", event => {
       if (event.key === "Escape") { event.preventDefault(); event.stopPropagation(); closePanel(true); }
     });
-    panel.querySelector("input,button")?.focus({ preventScroll: true });
+    focusOnOpen(panel.querySelector("input,button"), panel.querySelector("button"));
     return panel;
   }
   function setMode(next, focus = true) {
     readingSearch?.close();
     if (next === "reading") editor.escape();
     mode = next; storage.set("document-mode", next);
+    form.dataset.documentMode = mode;
+    const picker = form.querySelector(".document-mode-picker");
+    if (picker) {
+      const label = `Document view: ${mode === "reading" ? "Reading" : mode === "source" ? "Source" : "Live preview"}`;
+      picker.innerHTML = icon(mode === "reading" ? "preview" : mode === "source" ? "code" : "pencil");
+      picker.setAttribute("aria-label", label); picker.title = label;
+    }
     const reading = form.querySelector(".document-reading"), host = form.querySelector(".document-codemirror");
     host.hidden = mode === "reading";
     reading.hidden = mode !== "reading";
@@ -283,16 +295,23 @@ export function projectDocuments(ctx) {
       for (const heading of reading.querySelectorAll("h1,h2,h3,h4,h5,h6")) if (!heading.id) heading.id = `document-heading-${heading.textContent.trim().replace(/\s+/g, "-").toLocaleLowerCase()}`;
       editor.hydrate(reading);
       if (focus) reading.focus();
-    } else { editor.setMode(mode); if (focus) editor.focus(); }
+    } else {
+      editor.setMode(mode);
+      if (focus) {
+        if (allowsTextAutofocus()) editor.focus();
+        else (picker?.getClientRects().length ? picker : form.querySelector(`[data-document-mode="${mode}"]`))?.focus({ preventScroll: true });
+      }
+    }
   }
   function setDocumentWidth(next) {
     documentWidth = next;
     storage.set("document-width", next);
     form.dataset.documentWidth = next;
-    const button = form.querySelector("[data-document-action=width]");
-    button.setAttribute("aria-pressed", String(next === "full"));
-    button.title = next === "full" ? "Use page width" : "Use full width";
-    button.innerHTML = icon(next === "full" ? "width-page" : "width-full");
+    for (const button of document.querySelectorAll("[data-document-action=width]")) {
+      button.setAttribute("aria-pressed", String(next === "full"));
+      button.title = next === "full" ? "Use page width" : "Use full width";
+      button.innerHTML = icon(next === "full" ? "width-page" : "width-full") + (button.classList.contains("document-panel-item") ? (next === "full" ? "Use page width" : "Use full width") : "");
+    }
     editor?.view.requestMeasure();
   }
   function followLink(reference) {
@@ -332,6 +351,9 @@ export function projectDocuments(ctx) {
     button.dataset.configured = String(!!uri);
   }
   function reset() {
+    const host = document.querySelector("#sidebar-documents");
+    if (host) host.innerHTML = "";
+    document.querySelector(".sidebar")?.removeAttribute("data-documents");
     clearExplorerDrag();
     closePanel();
     readingSearch?.destroy(); readingSearch = null;
@@ -339,7 +361,16 @@ export function projectDocuments(ctx) {
     editor?.destroy();
     editor = form = current = project = renderer = null;
   }
+  let scrolled = null; // { id, scroll: { selector: scrollTop } } for the open document
+  // The document list sits in the main sidebar, so it has no pane of its own
+  // to open, close or make inert.
+  function syncExplorer() {}
   function render() {
+    // A refresh of the same open document (for example after a save's change
+    // notice rebuilds the app) keeps its scroll position instead of jumping
+    // to the top. Positions are recorded while scrolling, because a full
+    // refresh has already replaced the old editor by the time this runs.
+    const keep = scrolled?.id === state.selectedDocument ? scrolled : null;
     reset();
     const content = document.querySelector("#view-content");
     if (!state.selectedDocument) {
@@ -349,42 +380,48 @@ export function projectDocuments(ctx) {
     const doc = selected();
     content.className = "content documents-content";
     if (!folders().some(f => f.id === activeFolder)) activeFolder = null;
-    content.innerHTML = `<div class="documents-workspace" data-sidebar-collapsed="${!!doc && sidebarCollapsed}" data-pane="${state.documentExplorerOpen || !doc ? "explorer" : "editor"}">
-      <aside class="document-explorer" aria-label="Document explorer">
-        <header data-document-folder-drop="" title="Drop here to move to Documents"><h2><button type="button" class="document-root" data-document-root>Documents <span class="count" id="document-count">${all().length}</span></button></h2><div class="document-explorer-actions"><button type="button" class="icon-button" data-document-action="create" aria-label="New document" title="New document">${icon("plus")}</button><button type="button" class="icon-button" data-document-action="new-folder" aria-label="New folder" title="New folder">${icon("folder")}</button>${doc ? `<button type="button" class="icon-button" data-document-action="sidebar" aria-label="Collapse Documents sidebar" title="Collapse sidebar">${icon("chevron")}</button>` : ""}</div></header>
+    // The document tree lives in the main sidebar (iPad and desktop) and in the
+    // drawer's Documents level (phones); the workspace holds the editor only.
+    const host = document.querySelector("#sidebar-documents");
+    if (host) {
+      host.innerHTML = `
+      <aside id="document-explorer" class="document-explorer" aria-label="Document explorer">
+        <header data-document-folder-drop="" title="Drop here to move to Documents"><button type="button" class="icon-button sidebar-documents-back" data-drawer-back aria-label="Back to the menu" title="Back to the menu">${icon("chevron")}</button><h2><button type="button" class="document-root" data-document-root>Documents <span class="count" id="document-count">${all().length}</span></button></h2><div class="document-explorer-actions"><button type="button" class="icon-button" data-document-action="create" aria-label="New document" title="New document">${icon("plus")}</button><button type="button" class="icon-button" data-document-action="new-folder" aria-label="New folder" title="New folder">${icon("folder")}</button></div></header>
         <label class="document-search search">${icon("search")}<input type="search" id="document-search" aria-label="Find a document" placeholder="Find a document…" value="${esc(state.documentSearch || "")}"></label>
         <nav aria-label="Project documents"><ul id="document-list">${explorer()}</ul></nav>
         <footer><button type="button" class="button small" data-document-action="import">${icon("plus")}Import Markdown</button><input type="file" id="document-import" accept=".md,.markdown,text/markdown,text/plain" multiple hidden></footer>
       </aside>
+`;
+      host.closest(".sidebar")?.setAttribute("data-documents", "shown");
+    }
+    content.innerHTML = `<div class="documents-workspace" data-has-document="${!!doc}">
       <section class="document-editor" aria-label="Document content">${doc ? `
         <form id="document-form" data-document-width="${documentWidth}">
-          <header class="document-heading"><button type="button" class="icon-button document-browse" data-document-action="browse" aria-label="Browse documents" title="Show Documents sidebar" aria-expanded="${!sidebarCollapsed}">${icon("menu")}</button>${icon("file")}
+          <header class="document-heading">${icon("file")}
             <input name="title" aria-label="Document title" value="${esc(doc.title)}" placeholder="Untitled document" maxlength="300" autocomplete="off">
-            <a class="icon-button" href="#" data-document-action="obsidian" aria-label="Open in Obsidian" title="Open in Obsidian">${icon("external")}</a>
-            <button type="button" class="icon-button" data-document-action="versions" aria-label="Page versions" title="Page versions · Version ${doc.version || 1}" data-version="${doc.version || 1}">${icon("clock")}</button>
-            <button type="button" class="icon-button" data-document-action="tools" aria-label="Document tools" title="Document tools">${icon("more")}</button>
-            <button type="button" class="icon-button" data-document-action="export" aria-label="Export Markdown" title="Export Markdown">${icon("download")}</button>
-            <details class="board-menu document-delete"><summary aria-label="Delete document" title="Delete document">${icon("trash")}</summary><div class="board-menu-panel"><p>Move this document to Trash?</p><button type="button" class="button small danger" data-document-action="delete">Move to Trash</button></div></details>
-          </header>
-          <div class="document-controls">
-            <div class="document-formatting" role="toolbar" aria-label="Format document">
-              <select data-document-format-select aria-label="Paragraph style"><option value="">Style</option><option value="paragraph">Paragraph</option>${[1, 2, 3, 4, 5, 6].map(n => `<option value="h${n}">Heading ${n}</option>`).join("")}</select>
-              ${[["bold", "bold", "Bold"], ["italic", "italic", "Italic"], ["check", "check", "Checklist"], ["link", "link", "Link"]].map(([command, glyph, title]) => `<button type="button" class="icon-button" data-document-format="${command}" aria-label="${title}" title="${title}">${icon(glyph)}</button>`).join("")}
-              <button type="button" class="button small" data-document-action="insert">${icon("plus")}Insert</button>
-            </div>
             <div class="document-view-controls" role="toolbar" aria-label="Document navigation">
-            <button type="button" class="icon-button" data-document-action="outline" aria-label="Document outline" title="Document outline" aria-expanded="false" aria-haspopup="dialog" popovertarget="document-outline-panel">${icon("tree")}</button>
-            <div class="document-modes" role="group" aria-label="Document view">${[["live", "Live preview", "pencil"], ["source", "Source", "code"], ["reading", "Reading", "preview"]].map(([key, label, glyph]) => `<button type="button" class="icon-button" data-document-mode="${key}" aria-label="${label}" title="${label}" aria-pressed="${mode === key}">${icon(glyph)}</button>`).join("")}</div>
-            <button type="button" class="icon-button" data-document-action="width" aria-label="Full width" aria-pressed="${documentWidth === "full"}" title="${documentWidth === "full" ? "Use page width" : "Use full width"}">${icon(documentWidth === "full" ? "width-page" : "width-full")}</button>
-
-            <button type="button" class="icon-button" data-document-action="find" aria-label="Find in document" title="Find in document (Ctrl / ⌘ F)">${icon("search")}</button>
+              <button type="button" class="icon-button document-secondary-control" data-document-action="outline" aria-label="Document outline" title="Document outline" aria-expanded="false" aria-haspopup="dialog" popovertarget="document-outline-panel">${icon("tree")}</button>
+              <div class="document-modes" role="group" aria-label="Document view">${[["live", "Live preview", "pencil"], ["source", "Source", "code"], ["reading", "Reading", "preview"]].map(([key, label, glyph]) => `<button type="button" class="icon-button" data-document-mode="${key}" aria-label="${label}" title="${label}" aria-pressed="${mode === key}">${icon(glyph)}</button>`).join("")}</div>
+              <button type="button" class="icon-button document-mode-picker" data-document-action="mode-menu" aria-haspopup="dialog" aria-label="Document view">${icon("pencil")}</button>
+              <button type="button" class="icon-button document-secondary-control" data-document-action="width" aria-label="Full width" aria-pressed="${documentWidth === "full"}" title="${documentWidth === "full" ? "Use page width" : "Use full width"}">${icon(documentWidth === "full" ? "width-page" : "width-full")}</button>
+              <button type="button" class="icon-button document-format-toggle" data-document-action="format-toggle" aria-label="Show formatting" title="Show formatting" aria-expanded="false" aria-controls="document-formatting">${icon("heading")}</button>
+              <button type="button" class="icon-button" data-document-action="find" aria-label="Find in document" title="Find in document (Ctrl / ⌘ F)">${icon("search")}</button>
             </div>
+            <a class="icon-button document-file-action" href="#" data-document-action="obsidian" aria-label="Open in Obsidian" title="Open in Obsidian">${icon("external")}</a>
+            <button type="button" class="icon-button document-file-action" data-document-action="versions" aria-label="Page versions" title="Page versions · Version ${doc.version || 1}" data-version="${doc.version || 1}">${icon("clock")}</button>
+            <button type="button" class="icon-button" data-document-action="tools" aria-label="Document tools" title="Document tools">${icon("more")}</button>
+            <button type="button" class="icon-button document-file-action" data-document-action="export" aria-label="Export Markdown" title="Export Markdown">${icon("download")}</button>
+            <details class="board-menu document-delete document-file-action"><summary aria-label="Delete document" title="Delete document">${icon("trash")}</summary><div class="board-menu-panel"><p>Move this document to Trash?</p><button type="button" class="button small danger" data-document-action="delete">Move to Trash</button></div></details>
+          </header>
+          ${(() => { const cards = (state.tasks || []).filter((t) => (t.documents || []).includes(doc.id)); return cards.length ? `<div class="document-linked-cards"><span class="caption">Linked cards</span>${cards.map((t) => `<button type="button" class="button soft" data-action="task-open" data-id="${esc(t.id)}" title="Open ${esc(t.title)}">${icon(t.type || "task")}<span class="task-relationship-key">${esc(t.key || t.id)}</span><span class="task-relationship-title">${esc(t.title)}</span></button>`).join("")}</div>` : ""; })()}
+          <div class="document-controls">
+            <div id="document-formatting" class="document-formatting task-rich-tools" role="toolbar" aria-label="Format document">${richToolbar(icon, { adapter: "document", alignment: null, modes: false, idPrefix: "document", extra: `<div class="selection-group" role="group" aria-label="Insert more"><button type="button" class="selection-action" data-document-action="insert" aria-label="Insert" title="Insert a table, code, callout or more">${icon("plus")}<span class="selection-action-label">Insert</span></button></div>` })}</div>
           </div>
           <div class="document-save-problem" data-document-save-problem hidden><span data-document-save role="status" aria-live="polite"></span><button type="button" class="button small" data-feature="recovery" data-document-recovery hidden>Review pending save</button></div>
           <div class="document-writing"><div class="document-codemirror"></div><article class="document-reading" tabindex="0" aria-label="Document reading view" hidden></article><textarea name="body" hidden>${esc(doc.body || "")}</textarea></div>
           <input type="file" id="document-attachment" accept=".png,.jpg,.jpeg,.gif,.webp,.pdf,.txt,.md,.csv,.zip" multiple hidden>
           <footer class="document-save"><span data-document-stats></span></footer>
-        </form>` : `<div class="document-empty">${icon("file")}<h2>${state.selectedDocument ? "Document unavailable" : "A home for your project notes"}</h2><p>${state.selectedDocument ? "Choose another document from the explorer." : "Write briefs, meeting notes and reference documents."}</p><button type="button" class="button primary" data-document-action="create">${icon("plus")}New document</button></div>`}
+        </form>` : `<div class="empty document-empty">${icon("file")}<h2>${state.selectedDocument ? "Document unavailable" : "A home for your project notes"}</h2><p>${state.selectedDocument ? "Choose another document from the explorer." : "Write briefs, meeting notes and reference documents."}</p><button type="button" class="button soft" data-document-action="create">${icon("plus")}New document</button><button type="button" class="button document-empty-browse" data-document-action="browse">${icon("documents")}Browse documents</button></div>`}
       </section></div>`;
     if (!doc) return;
     current = doc;
@@ -400,8 +437,10 @@ export function projectDocuments(ctx) {
         form.elements.body.dispatchEvent(new Event("input", { bubbles: true }));
       },
       onError: message => toast(message, true), onLink: followLink,
+      onInsert(command) { if (command === "attach") form.querySelector("#document-attachment").click(); },
     });
     readingSearch = documentReadingSearch({ form, content: form.querySelector(".document-reading"), icon });
+    installToolbarScroll(form.querySelector(".document-formatting .rich-toolbar-shell"));
     form.addEventListener("input", changed);
     form.addEventListener("submit", e => { e.preventDefault(); editor.flush(); });
     form.addEventListener("keydown", e => {
@@ -427,9 +466,27 @@ export function projectDocuments(ctx) {
       event.preventDefault(); event.stopPropagation(); form.classList.remove("document-drag-over");
       void attachFiles([...event.dataTransfer.files]);
     });
-    setMode(mode, false); updateStats(); updateObsidianLink();
-    if (state.documentExplorerOpen) document.querySelector("#document-search").focus({ preventScroll: true });
+    setMode(mode, false); updateStats(); updateObsidianLink(); syncExplorer(); syncTopbarTitle(state);
+    if (keep?.id === doc.id) {
+      const restore = () => { for (const [selector, top] of Object.entries(keep.scroll)) { const el = form?.querySelector(selector); if (el && top) el.scrollTop = top; } };
+      restore();
+      requestAnimationFrame(restore);
+    } else scrolled = { id: doc.id, scroll: {} };
+    form.addEventListener("scroll", event => {
+      const selector = [".cm-scroller", ".document-reading"].find(s => event.target.matches?.(s));
+      if (!selector) return;
+      if (scrolled?.id !== doc.id) scrolled = { id: doc.id, scroll: {} };
+      scrolled.scroll[selector] = event.target.scrollTop;
+    }, true);
     syncChanged();
+  }
+  // Open from another view (a linked card): remember the choice, then switch views.
+  function openDocument(id) {
+    if (state.view === "documents" && document.querySelector(".documents-workspace")) return open(id);
+    storage.set(listKey(), id);
+    state.selectedDocument = id;
+    state.documentExplorerOpen = false;
+    ctx.openView("documents");
   }
   function open(id) {
     reset();
@@ -445,10 +502,12 @@ export function projectDocuments(ctx) {
     if (state.project?.id !== pid) return;
     state.documents = [...all(), record];
     state.documentSearch = "";
-    if (state.view === "documents") {
+    if (state.view === "documents" && document.querySelector(".documents-workspace")) {
       open(record.id);
-      form.elements.title.focus();
-      form.elements.title.select();
+      if (focusOnOpen(form.elements.title, form.querySelector('[data-document-action="browse"]'))) form.elements.title.select();
+    } else {
+      storage.set(listKey(), record.id);
+      state.selectedDocument = record.id;
     }
     return record;
   }
@@ -478,11 +537,21 @@ export function projectDocuments(ctx) {
       return;
     }
     const item = event.target.closest("[data-document-open]");
-    if (item) { open(item.dataset.documentOpen); return; }
-    const viewButton = event.target.closest("[data-document-mode]");
-    if (viewButton && form) { setMode(viewButton.dataset.documentMode); return; }
+    // Works from any view (the phone drawer lists documents everywhere).
+    if (item) { openDocument(item.dataset.documentOpen); return; }
+    const viewButton = event.target.closest("button[data-document-mode]");
+    if (viewButton && form) { closePanel(); setMode(viewButton.dataset.documentMode); return; }
+    for (const menu of document.querySelectorAll(".document-formatting details[open]"))
+      if (!menu.contains(event.target)) { menu.open = false; floatMenuPanel(menu); }
     const formatButton = event.target.closest("[data-document-format]");
-    if (formatButton && editor) { closePanel(); if (mode === "reading") setMode("live", false); editor.format(formatButton.dataset.documentFormat); return; }
+    if (formatButton && editor) {
+      closePanel();
+      if (mode === "reading") setMode("live", false);
+      editor.format(formatButton.dataset.documentFormat);
+      const menu = formatButton.closest("details.selection-menu");
+      if (menu) { menu.open = false; floatMenuPanel(menu); }
+      return;
+    }
     const jump = event.target.closest("[data-document-jump]");
     if (jump && editor) { closePanel(); setMode("live", false); editor.jump(Number(jump.dataset.documentJump)); return; }
     const link = event.target.closest(".document-reading [data-document-ref]");
@@ -499,18 +568,23 @@ export function projectDocuments(ctx) {
     const action = button.dataset.documentAction;
     event.preventDefault();
     try {
-      if (action === "new-folder") folderPanel(button);
+      if (action === "mode-menu") {
+        showPanel(button, "Document view", [ ["live", "Live preview", "pencil"], ["source", "Source", "code"], ["reading", "Reading", "preview"] ].map(([key, title, glyph]) => `<button type="button" class="document-panel-item" data-document-mode="${key}" aria-pressed="${mode === key}">${icon(glyph)}${title}${mode === key ? icon("check") : ""}</button>`).join(""));
+      } else if (action === "format-toggle") {
+        const open = form.dataset.formatOpen !== "true";
+        form.dataset.formatOpen = String(open);
+        button.setAttribute("aria-expanded", String(open));
+        button.setAttribute("aria-label", open ? "Hide formatting" : "Show formatting");
+        button.title = open ? "Hide formatting" : "Show formatting";
+        editor.view.requestMeasure();
+      } else if (action === "new-folder") folderPanel(button);
       else if (action === "width") setDocumentWidth(documentWidth === "full" ? "page" : "full");
       else if (action === "move") movePanel(button);
       else if (action === "versions") await versionsPanel(button);
-      else if (action === "sidebar") {
-        sidebarCollapsed = true; storage.set("document-sidebar-collapsed", true);
-        state.documentExplorerOpen = false;
-        const workspace = document.querySelector(".documents-workspace");
-        workspace.dataset.sidebarCollapsed = "true"; workspace.dataset.pane = "editor";
-        const browse = form.querySelector("[data-document-action=browse]");
-        browse.setAttribute("aria-expanded", "false"); browse.focus({ preventScroll: true });
-      } else if (action === "obsidian") {
+      else if (action === "obsidian") {
+        if (!button.closest(".document-heading")) {
+          closePanel(); form.querySelector('.document-heading [data-document-action="obsidian"]').click(); return;
+        }
         if (button.dataset.configured !== "true") { obsidianSettings(button); return; }
         editor.flush();
         const pid = project, id = current.id, url = endpoint(pid, id);
@@ -533,27 +607,22 @@ export function projectDocuments(ctx) {
         button.setAttribute("aria-expanded", "true");
       } else if (action === "tools") {
         const backlinks = all().filter(d => d.id !== current.id && [...(d.body || "").matchAll(/\[\[([^\]\n]+)\]\]|\[[^\]]*\]\(([^)\s]+)\)/g)].some(m => resolveDocument(m[1] || m[2], all())?.id === current.id));
-        showPanel(button, "Document tools", `<button type="button" class="document-panel-item" data-document-action="move">${icon("folder")}Move to folder</button><button type="button" class="document-panel-item" data-document-action="versions">${icon("clock")}Page versions</button><button type="button" class="document-panel-item" data-document-action="obsidian-settings">${icon("settings")}Obsidian settings</button><button type="button" class="document-panel-item" data-document-action="export">${icon("download")}Export Markdown</button><button type="button" class="document-panel-item" data-document-format="undo">${icon("undo")}Undo</button><button type="button" class="document-panel-item" data-document-format="redo">${icon("redo")}Redo</button><h3>Backlinks (${backlinks.length})</h3>${backlinks.map(d => `<button type="button" class="document-panel-item" data-document-open="${esc(d.id)}">${icon("file")}${esc(d.title)}</button>`).join("") || "<p>No documents link here yet.</p>"}`);
+        showPanel(button, "Document tools", `${!form.querySelector('.document-heading [data-document-action="width"]').getClientRects().length ? `<button type="button" class="document-panel-item" data-document-action="outline">${icon("tree")}Document outline</button><button type="button" class="document-panel-item" data-document-action="width" aria-pressed="${documentWidth === "full"}">${icon("width-full")}${documentWidth === "full" ? "Use page width" : "Use full width"}</button>` : ""}<button type="button" class="document-panel-item" data-document-action="obsidian">${icon("external")}Open in Obsidian</button><button type="button" class="document-panel-item" data-document-action="move">${icon("folder")}Move to folder</button><button type="button" class="document-panel-item" data-document-action="versions">${icon("clock")}Page versions</button><button type="button" class="document-panel-item" data-document-action="obsidian-settings">${icon("settings")}Obsidian settings</button><button type="button" class="document-panel-item" data-document-action="export">${icon("download")}Export Markdown</button><button type="button" class="document-panel-item" data-document-format="undo">${icon("undo")}Undo</button><button type="button" class="document-panel-item" data-document-format="redo">${icon("redo")}Redo</button>${!form.querySelector(".document-delete").getClientRects().length ? `<button type="button" class="document-panel-item danger" data-document-action="confirm-delete">${icon("trash")}Delete document</button>` : ""}<h3>Backlinks (${backlinks.length})</h3>${backlinks.map(d => `<button type="button" class="document-panel-item" data-document-open="${esc(d.id)}">${icon("file")}${esc(d.title)}</button>`).join("") || "<p>No documents link here yet.</p>"}`);
+      } else if (action === "confirm-delete") {
+        showPanel(button, "Delete document", '<p>Move this document to Trash?</p><button type="button" class="button danger" data-document-action="delete">Move to Trash</button>');
       } else if (action === "insert") {
-        const categories = [
-          ["Structure", [["h1","Heading","heading"],["bullet","Bullet list","list"],["number","Numbered list","numbered"],["check","Checklist","check"],["quote","Quote","quote"],["rule","Divider","minus"]]],
-          ["Formatting", [["strike","Strikethrough","strike"],["highlight","Highlight","highlight"],["code","Inline code","code"]]],
-          ["Components", [["table","Table","table"],["callout","Callout","comment"],["codeblock","Code block","codeblock"],["math","Math","math"],["mermaid","Mermaid diagram","tree"]]],
-          ["References & files", [["wiki","Document link","link"],["footnote","Footnote","footnote"],["attach","Attach file","attachment"]]],
-        ];
+        const categories = panelCategories();
         showPanel(button, "Insert", `<div class="document-insert-options">${categories.map(([title, items]) => `<section aria-label="${title}"><h3>${title}</h3>${items.map(([key,label,glyph]) => `<button type="button" class="document-panel-item" ${key === "attach" ? 'data-document-action="attach"' : `data-document-format="${key}"`}>${icon(glyph)}${label}</button>`).join("")}</section>`).join("")}</div>`);
 
       } else if (action === "attach") { closePanel(); form.querySelector("#document-attachment").click(); }
       else if (action === "browse") {
-        const mobile = matchMedia("(max-width: 780px)").matches;
-        sidebarCollapsed = mobile ? false : !sidebarCollapsed;
-        storage.set("document-sidebar-collapsed", sidebarCollapsed);
-        document.querySelector(".documents-workspace").dataset.sidebarCollapsed = String(sidebarCollapsed);
-        button.setAttribute("aria-expanded", String(!sidebarCollapsed));
-        state.documentExplorerOpen = true;
-        document.querySelector(".documents-workspace").dataset.pane = "explorer";
-        if (!sidebarCollapsed) document.querySelector("#document-search").focus();
-      } else if (action === "create") {
+        // The document list is in the main sidebar: open the phone drawer on it,
+        // or show a collapsed desktop sidebar, then offer the search field.
+        if (document.querySelector(".mobile-menu")?.getClientRects().length) document.querySelector(".mobile-menu").click();
+        else {
+          if (document.documentElement.dataset.sidebar === "collapsed") document.querySelector('.desktop-sidebar-toggle')?.click();
+          focusOnOpen(document.querySelector("#document-search"), button);
+        }      } else if (action === "create") {
         button.disabled = true;
         await create();
       } else if (action === "import") document.querySelector("#document-import").click();
@@ -640,6 +709,11 @@ export function projectDocuments(ctx) {
     void (item.kind === "folder" ? moveFolder(item.id, parent) : moveDocument(item.id, parent)).catch(error => toast(error.message, true));
   });
   document.addEventListener("dragend", clearExplorerDrag);
+  // The style menu lives inside the scrolling toolbar; open it in the top layer.
+  document.addEventListener("toggle", (event) => {
+    const menu = event.target;
+    if (menu instanceof HTMLDetailsElement && menu.closest(".document-formatting")) floatMenuPanel(menu, { width: 200, maxHeight: 320 });
+  }, true);
   document.addEventListener("change", async event => {
     if (event.target.matches("[data-document-format-select]")) {
       if (event.target.value) editor.format(event.target.value);
@@ -688,5 +762,5 @@ export function projectDocuments(ctx) {
       event.preventDefault(); event.returnValue = "";
     }
   });
-  return { render, reset, syncChanged };
+  return { render, reset, syncChanged, create, openDocument };
 }

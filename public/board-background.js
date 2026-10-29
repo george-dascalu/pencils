@@ -1,3 +1,5 @@
+import { syncTopbarTitle } from "./topbar-title.js";
+import { positionPopover } from "./popover-position.js";
 import { dependencyStyle, defaultDependencyStyle } from "./dependency-style.js";
 import {
   dependencyStyleHTML,
@@ -90,8 +92,7 @@ export function boardSettings(ctx, controls) {
     const above = below < 240 && r.top > below;
     const available = Math.max(120, above ? r.top - 20 : below);
     popup.style.setProperty("--settings-height", `${available}px`);
-    popup.style.left = `${Math.max(12, Math.min(r.left, innerWidth - popup.offsetWidth - 12))}px`;
-    popup.style.top = `${Math.max(12, above ? r.top - popup.offsetHeight - 8 : r.bottom + 8)}px`;
+    positionPopover(popup, r, { width: popup.offsetWidth || 420, maxHeight: available, gap: 8 });
   }
   window.addEventListener("resize", position);
   window.addEventListener("pagehide", flush);
@@ -181,8 +182,9 @@ export function boardSettings(ctx, controls) {
         : "plain",
     });
     form.querySelector("output").textContent = `${settings.spacing} px`;
-    form.querySelector('[name="spacing"]').disabled =
-      settings.pattern === "plain";
+    const spacing = form.querySelector('[name="spacing"]');
+    spacing.setAttribute("aria-valuetext", `${settings.spacing} px`);
+    spacing.disabled = settings.pattern === "plain";
   }
   function open(button = visibleTrigger()) {
     if (popup) return close(true);
@@ -211,7 +213,7 @@ export function boardSettings(ctx, controls) {
     popup.setAttribute("popover", "manual");
     popup.setAttribute("role", "dialog");
     popup.setAttribute("aria-label", "Board settings");
-    popup.innerHTML = `<form id="board-settings-form"><div class="dialog-head"><h2>Board settings</h2><button type="button" class="button small" data-board-settings-reset>Reset</button><button type="button" class="icon-button" data-board-settings-close aria-label="Close board settings">${icon("close")}</button></div><div class="dialog-body"><section class="board-settings-section"><label class="field">Board name<input name="title" value="${esc(board().title)}" required maxlength="300" autocomplete="off"></label></section><section class="board-settings-section" aria-labelledby="board-snapping-heading"><h3 id="board-snapping-heading">Snapping</h3><label class="board-setting-toggle"><input id="canvas-snap" name="snap" type="checkbox" ${board().settings?.snap !== false ? "checked" : ""}><span>Snap to grid<small>Place and resize objects in 20 px steps.</small></span></label><label class="board-setting-toggle"><input id="canvas-align" name="align-objects" type="checkbox" ${board().settings?.alignObjects !== false ? "checked" : ""}><span>Align with nearby objects<small>Snap to edges, centres, equal spacing and matching sizes. Hold Alt while dragging to bypass snapping.</small></span></label></section><section class="board-settings-section" aria-labelledby="board-background-heading"><h3 id="board-background-heading">Background</h3><fieldset class="background-patterns"><legend>Pattern</legend>${[
+    popup.innerHTML = `<form id="board-settings-form"><div class="dialog-head"><h2>Board settings</h2><button type="button" class="button" data-board-settings-reset>Reset</button><button type="button" class="icon-button" data-board-settings-close aria-label="Close board settings">${icon("close")}</button></div><div class="dialog-body"><section class="board-settings-section"><label class="field">Board name<input name="title" value="${esc(board().title)}" required maxlength="300" autocomplete="off"></label></section><section class="board-settings-section" aria-labelledby="board-snapping-heading"><h3 id="board-snapping-heading">Snapping</h3><label class="board-setting-toggle"><input id="canvas-snap" name="snap" type="checkbox" ${board().settings?.snap !== false ? "checked" : ""}><span>Snap to grid<small>Place and resize objects in 20 px steps.</small></span></label><label class="board-setting-toggle"><input id="canvas-align" name="align-objects" type="checkbox" ${board().settings?.alignObjects !== false ? "checked" : ""}><span>Align with nearby objects<small>Snap to edges, centres, equal spacing and matching sizes. Hold Alt while dragging to bypass snapping.</small></span></label></section><section class="board-settings-section" aria-labelledby="board-background-heading"><h3 id="board-background-heading">Background</h3><fieldset class="background-patterns"><legend>Pattern</legend>${[
       ["plain", "Plain"],
       ["dots", "Dots"],
       ["grid", "Grid"],
@@ -224,7 +226,7 @@ export function boardSettings(ctx, controls) {
       )
       .join(
         "",
-      )}</fieldset><div class="field-row"><div class="field">Background colour${colorPicker({ value: s.color === "auto" ? "#f5f6ee" : s.color, name: "background-color", label: "Background colour" })}<label class="background-auto"><input type="checkbox" name="theme-color" ${s.color === "auto" ? "checked" : ""}> Use theme colour</label></div><div class="field">Pattern colour${colorPicker({ value: s.lineColor === "auto" ? "#ced6c1" : s.lineColor, name: "line-color", label: "Pattern colour" })}<label class="background-auto"><input type="checkbox" name="auto-line" ${s.lineColor === "auto" ? "checked" : ""}> Automatic contrast</label></div></div><label class="field">Pattern spacing <output>${s.spacing} px</output><input name="spacing" type="range" min="8" max="160" step="4" value="${s.spacing}"></label><div class="background-preview" role="img" aria-label="Background preview"><span>Preview</span></div><p class="field-hint">Changes save automatically. Use Ctrl / ⌘ Z to undo. Snapping and background are saved with this board for everyone. Fine grid adds a stronger line every five squares. Pattern spacing sets the small square size; it is visual and does not change the snapping distance.</p></section>${dependencyStyleHTML(board(), ctx)}<section class="board-settings-section" aria-labelledby="board-display-heading"><h3 id="board-display-heading">Display</h3><label class="board-setting-toggle"><input name="show-pattern" type="checkbox" ${display.grid ? "checked" : ""}><span>Show background pattern<small>Toggle with G while on the board.</small></span></label><label class="board-setting-toggle"><input name="show-minimap" type="checkbox" ${display.minimap ? "checked" : ""}><span>Show minimap<small>Toggle with M while on the board.</small></span></label><p class="field-hint">Display preferences are remembered for this board in this browser.</p></section></div></form>`;
+      )}</fieldset><div class="field-row"><div class="field">Background colour${colorPicker({ value: s.color === "auto" ? "#f5f6ee" : s.color, name: "background-color", label: "Background colour" })}<label class="background-auto"><input type="checkbox" name="theme-color" ${s.color === "auto" ? "checked" : ""}> Use theme colour</label></div><div class="field">Pattern colour${colorPicker({ value: s.lineColor === "auto" ? "#ced6c1" : s.lineColor, name: "line-color", label: "Pattern colour" })}<label class="background-auto"><input type="checkbox" name="auto-line" ${s.lineColor === "auto" ? "checked" : ""}> Automatic contrast</label></div></div><label class="field">Pattern spacing <output for="board-pattern-spacing">${s.spacing} px</output><input id="board-pattern-spacing" name="spacing" type="range" min="8" max="160" step="4" value="${s.spacing}" aria-valuetext="${s.spacing} px"></label><div class="background-preview" role="img" aria-label="Background preview"><span>Preview</span></div><p class="field-hint">Changes save automatically. Use Ctrl / ⌘ Z to undo. Snapping and background are saved with this board for everyone. Fine grid adds a stronger line every five squares. Pattern spacing sets the small square size; it is visual and does not change the snapping distance.</p></section>${dependencyStyleHTML(board(), ctx)}<section class="board-settings-section" aria-labelledby="board-display-heading"><h3 id="board-display-heading">Display</h3><label class="board-setting-toggle"><input name="show-pattern" type="checkbox" ${display.grid ? "checked" : ""}><span>Show background pattern<small>Toggle with G while on the board.</small></span></label><label class="board-setting-toggle"><input name="show-minimap" type="checkbox" ${display.minimap ? "checked" : ""}><span>Show minimap<small>Toggle with M while on the board.</small></span></label><p class="field-hint">Display preferences are remembered for this board in this browser.</p></section></div></form>`;
     popup.querySelector(".dialog-body").insertAdjacentHTML("afterbegin", `<section class="board-settings-section"><button type="button" class="button" data-feature="miro-import">${icon("download")}Import from Miro</button></section>`);
     document.body.append(popup);
     popup.addEventListener("toggle", (e) => {
@@ -273,6 +275,7 @@ export function boardSettings(ctx, controls) {
     }
     const option = $("#board-select option:checked");
     if (option) option.textContent = board().title;
+    syncTopbarTitle(state);
     preview(form);
   }
   function flush() {

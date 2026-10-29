@@ -3,22 +3,90 @@
    Content cards, multiline editors, canvas objects and resize handles are not
    controls and keep their own dimensions. */
 :root {
-  --control-height: 36px;
-  --control-padding: 10px;
+  --control-height: 32px;
+  --control-padding: 8px;
   --control-font-size: 13px;
   --control-icon-size: 16px;
+  --board-control-height: 28px;
   --menu-control-height: 28px;
   --menu-panel-padding: 8px;
   --task-checkbox-size: 13px;
-  --task-checkbox-target: 17px;
+  --task-checkbox-target: 24px;
+  --text-focus-color: #737373;
+  --touch-text-font-size: 16px;
+  /* Type scale for the card popup and the Table view: one step per role. */
+  --type-initials: 10px;
+  --type-meta: 11px;
+  --type-small: 12px;
+  --type-body: 13px;
+  --type-section: 14px;
+  --type-title: 20px;
+  --type-table: 12px;
+  --type-table-title: 13px;
+  --control-bar-padding: 4px;
+  --control-bar-gap: 4px;
+  --control-bar-height: calc(var(--control-height) + 2 * var(--control-bar-padding));
 }
-:root[data-density="compact"] { --control-height: 32px; }
+:root[data-theme="dark"] { --text-focus-color: #a3a3a3; }
+/* Horizontal workspace scrolling must not become browser Back/Forward. */
+html, body { overscroll-behavior-x: none; }
+/* Writing surfaces use a quiet, neutral focus treatment. Navigation and
+   action controls retain their existing keyboard focus indicators. */
+textarea,
+.document-reading,
+[contenteditable="true"],
+[contenteditable="plaintext-only"] {
+  --focus-ring: 1px solid var(--text-focus-color);
+}
+:root[data-density="compact"] { --control-height: 28px; --board-control-height: 24px; --control-bar-padding: 2px; }
 @media (pointer: coarse) {
+  /* Keep the app at its page scale while allowing normal scrolling. The
+     canvas handles its own pan and pinch through Pointer Events. iOS Safari
+     needs installPageZoomGuard (scroll-gestures.js) as well. */
+  html { touch-action: pan-x pan-y; }
   :root, :root[data-density] {
     --control-height: 44px;
     --menu-control-height: 44px;
     --task-checkbox-target: 44px;
+    /* Body text matches the 16px text-entry size so nothing jumps between
+       reading and editing; iOS zooms into smaller editable text. */
+    --type-meta: 12px;
+    --type-small: 14px;
+    --type-body: var(--touch-text-font-size);
+    --type-section: 16px;
+    --type-title: 18px;
+    --type-table: var(--touch-text-font-size);
+    --type-table-title: var(--touch-text-font-size);
   }
+}
+@media (max-width: 600px) {
+  :root { --type-title: 18px; }
+}
+
+/* Shared chrome uses the same density as its controls, in every workspace. */
+.main > .topbar,
+.main.project-main > .topbar,
+:root:not([data-sidebar="collapsed"]) .main.project-main > .topbar {
+  min-height: var(--control-bar-height);
+  padding-block: var(--control-bar-padding);
+}
+.main.project-main :is(.toolbar, .board-toolbar),
+.document-heading, .document-controls, .document-explorer > header {
+  min-height: var(--control-bar-height);
+  padding-block: var(--control-bar-padding);
+  gap: var(--control-bar-gap);
+}
+.main.project-main :is(.toolbar-left, .toolbar-right, .top-actions),
+.board-project-tools, .planning-head, .planning-period, .planning-options {
+  gap: var(--control-bar-gap);
+}
+.planning-head { margin-bottom: 8px; }
+.task-dialog.board-task-editor .task-editor-head {
+  gap: var(--control-bar-gap);
+  padding-block: var(--control-bar-padding);
+}
+.task-editor-page .task-editor-head {
+  padding-top: max(var(--control-bar-padding), env(safe-area-inset-top));
 }
 
 /* Dropdown contents use one compact variant; triggers retain the page size. */
@@ -50,7 +118,7 @@
   .board-menu-panel > button, .selection-popover > button,
   .select-menu [role="option"], .task-picker-popover [role="option"],
   .date-picker-head button, .date-picker-foot button, .date-picker-popover td button,
-  .document-link, .document-panel-item, .cm-search .cm-button, .row-choice, .row-due, .row-task-link, .row-open,
+  .document-link, .document-panel-item, .cm-search .cm-button, .row-choice, .row-due, .row-task-link,
   .task-reorder-handle, .tree-toggle, .tree-toggle-spacer,
   .table-description, .table-open
 ) {
@@ -89,8 +157,10 @@
     [type="hidden"], [type="checkbox"], [type="radio"], [type="range"], [type="color"], [type="file"]) {
   font-size: var(--control-font-size) !important;
 }
+.task-table td :is(input, select):not([type="checkbox"], [type="radio"]) { font-size: var(--type-table) !important; }
+.task-table td input[data-task-field="title"] { font-size: var(--type-table-title) !important; }
 :is(.icon-button, .avatar, .side-label button, .organisation-actions button[aria-label],
-    .board-tools button, .row-open,
+    .board-tools button,
     .task-reorder-handle, .tree-toggle, .tree-toggle-spacer) {
   width: var(--control-height) !important;
   min-width: var(--control-height) !important;
@@ -116,6 +186,15 @@
   border: 0;
   box-shadow: inset 0 0 0 1px var(--line);
 }
+@media (min-width: 601px) and (pointer: coarse) {
+  .view-layout-switcher button > span { display: none; }
+  .view-layout-switcher button {
+    width: var(--control-height) !important;
+    min-width: var(--control-height) !important;
+    flex: 0 0 var(--control-height) !important;
+    padding-inline: 0 !important;
+  }
+}
 .search > .icon {
   top: 50%;
   transform: translateY(-50%);
@@ -126,13 +205,13 @@
 .planning-head > .date-field { flex: 0 1 180px; }
 .planning-head > h2 { overflow-wrap: anywhere; }
 .task-table.spreadsheet {
-  --table-selection-width: 94px;
+  /* Handle and checkbox, plus the open button where it is shown. */
+  --table-selection-width: calc(70px + var(--table-open-slot, 24px));
   --table-row-height: var(--control-height);
   --table-row-action-height: var(--control-height);
   --table-header-height: var(--control-height);
 }
-.task-checkbox,
-.task-row > .check-button {
+.task-checkbox {
   position: relative;
   display: inline-grid;
   place-items: center;
@@ -143,42 +222,48 @@
   margin: 0;
   cursor: pointer;
 }
+/* The native box is drawn inside a 24px (44px on touch) control so the whole target is the input. */
 .task-table.spreadsheet .task-checkbox > input[type="checkbox"] {
-  width: var(--task-checkbox-size);
-  height: var(--task-checkbox-size);
-  min-height: var(--task-checkbox-size);
+  appearance: none;
+  -webkit-appearance: none;
+  display: grid;
+  place-items: center;
+  width: var(--task-checkbox-target);
+  height: var(--task-checkbox-target);
+  min-height: var(--task-checkbox-target);
   margin: 0;
   padding: 0;
-  cursor: inherit;
-}
-/* The small visual sits inside the existing keyboard/touch control. */
-.task-row > .check-button {
   border: 0;
   background: transparent;
+  cursor: inherit;
 }
-.task-row > .check-button::before {
+.task-table.spreadsheet .task-checkbox > input[type="checkbox"]::before {
   content: "";
   box-sizing: border-box;
-  position: absolute;
-  inset: auto;
   width: var(--task-checkbox-size);
   height: var(--task-checkbox-size);
   border: 1px solid var(--line);
   border-radius: 3px;
   background: var(--surface);
 }
-.task-row > .check-button.done::before {
+.task-table.spreadsheet .task-checkbox > input[type="checkbox"]:checked::before,
+.task-table.spreadsheet .task-checkbox > input[type="checkbox"]:indeterminate::before {
   border-color: var(--green);
-  background: var(--surface-soft);
+  background-color: var(--green);
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: 9px 9px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'%3E%3Cpath d='m2.5 6.5 2.5 2.5 4.5-5' fill='none' stroke='%23fff' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
 }
-.task-row > .check-button > .icon {
-  position: relative;
-  width: 10px;
-  height: 10px;
-  color: var(--green);
+.task-table.spreadsheet .task-checkbox > input[type="checkbox"]:indeterminate::before {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'%3E%3Cpath d='M3 6h6' fill='none' stroke='%23fff' stroke-width='1.8' stroke-linecap='round'/%3E%3C/svg%3E");
+}
+.task-table.spreadsheet .task-checkbox > input[type="checkbox"]:focus-visible {
+  outline: var(--focus-ring);
+  outline-offset: -3px;
+  border-radius: 4px;
 }
 @media (pointer: coarse) {
-  .task-table.spreadsheet { --table-selection-width: 122px; }
 }
 .task-table.spreadsheet .task-row-actions { gap: 2px; }
 .task-row > :is(.row-assignee, .row-priority, .task-type) {
@@ -201,22 +286,150 @@
 
 .task-attachment-choose { min-height: var(--control-height); text-align: start; }
 @media (pointer: coarse) {
-  .task-table.spreadsheet { --table-selection-width: 142px; }
+  /* Small editable text triggers iPhone focus magnification. Keep text entry
+     readable without enlarging toolbar buttons or transformed board cards. */
+  :is(
+    input:not([type="hidden"], [type="checkbox"], [type="radio"], [type="range"], [type="color"], [type="file"]),
+    select, textarea, [contenteditable="true"], [contenteditable="plaintext-only"]
+  ):not(#canvas *, .title-input) { font-size: var(--touch-text-font-size) !important; }
+  /* Title fields set their own size, never below 16px on touch. */
+}
+@media (pointer: coarse) {
+  .task-table.spreadsheet { --table-selection-width: calc(96px + var(--table-open-slot, 46px)); }
   .spreadsheet .task-row-actions > .table-open {
     width: var(--control-height); min-width: var(--control-height);
     flex-basis: var(--control-height);
   }
   .agenda-row > button { min-height: 44px; }
+  /* Card content uses document coordinates, like its text and geometry.
+     Menus and the task editor remain outside the scaled world with 44px targets. */
+  #canvas .board-node.task {
+    --control-height: var(--board-control-height);
+    --control-font-size: 11px;
+    --control-padding: 6px;
+  }
   #canvas .live-card-actions > button,
   #canvas .canvas-task-priority,
   #canvas .canvas-task-status,
   #canvas .canvas-task-assignee {
-    min-width: var(--canvas-touch-target, 44px) !important;
-    min-height: var(--canvas-touch-target, 44px) !important;
-    height: var(--canvas-touch-target, 44px) !important;
+    /* Controls belong to the board's coordinate space. Inverse zoom sizing
+       reflows every card and crowds out titles as the user pinches out. */
+    min-width: var(--control-height) !important;
+    min-height: var(--control-height) !important;
+    height: var(--control-height) !important;
   }
   #canvas .canvas-task-priority select { height: 100% !important; }
   #canvas .board-node.task .live-card-state {
-    grid-template-columns: repeat(2, var(--card-control-size)) minmax(0, 1fr) auto;
+    grid-template-columns: var(--card-control-size) minmax(0, 1fr) calc(var(--card-control-size) + 12px) auto;
   }
+}
+
+/* Secondary text keeps a 12px floor on phones and tablets; avatar initials stay at 10px. */
+@media (pointer: coarse) {
+  .main :is(.task-id, .phone-task-status, .phone-task-meta, .table-open, .column-header, .kanban-card .priority,
+    .kanban-assignee-name, .count, .task-row .due, .timeline-bar, .board-tool-category, .capacity-percent,
+    .task-color-badge, .task-key, .eyebrow, .field-hint, .caption, .document-save, .phone-current-view, .app-version,
+    .directory-count, .side-label, .version, .side-footer) { font-size: 12px; }
+  .main .task-assignee { font-size: 10px; }
+}
+
+/* Frequent touch actions outside the shared control list still get 44px targets. */
+@media (pointer: coarse) {
+  .timeline-task-open, .capacity-task, .add-row,
+  .dashboard-deadlines > button, .request-row, .search-result, .text-link {
+    min-height: var(--control-height);
+  }
+  /* Kanban cards open on tap anywhere on the card, so the title button keeps its natural height
+     and native drag can start from the card body. */
+  .main label:has(> input[type="checkbox"]), .main label:has(> input[type="radio"]),
+  #dialogs label:has(> input[type="checkbox"]), #dialogs label:has(> input[type="radio"]) {
+    min-height: var(--control-height); display: inline-flex; align-items: center; gap: 8px;
+  }
+  .main details > summary, #dialogs details:not(.task-secondary-actions) > summary { min-height: var(--control-height); display: flex; align-items: center; gap: 6px; }
+  .milestone-toggle { top: 50%; width: var(--control-height); height: var(--control-height); display: grid; place-items: center; transform: translateY(-50%); }
+}
+
+/* Multiline text keeps the same size as other fields; touch devices avoid focus zoom. */
+@media (pointer: coarse) {
+  .main textarea, #dialogs textarea { font-size: var(--touch-text-font-size) !important; }
+}
+
+/* Task fields. The card editor keeps full-size fields. Lists (List and Tree
+   rows, relationships, Table, Kanban) share one smaller chip that sits inside
+   its 32px (44px on touch) target, leaving room above and below. Extend these
+   selector lists instead of styling the fields per view. */
+:root {
+  --field-radius: 7px;
+  --list-field-height: 24px;
+  --list-field-status-width: 104px;
+  --list-field-priority-width: calc(var(--list-field-height) + 8px);
+  --list-field-icon: 14px;
+}
+@media (pointer: coarse) {
+  :root { --list-field-height: 32px; --list-field-status-width: 120px; --list-field-icon: 16px; }
+}
+@media not (pointer: coarse) {
+  :root[data-density="compact"] { --list-field-height: 20px; }
+}
+:is(.row-assignee, .task-relationship-assignee, .kanban-assignee, .phone-task-meta, .spreadsheet td[data-column-key="assignee"] .table-cell-value) > .task-assignee {
+  box-sizing: border-box;
+  flex: none;
+  width: var(--list-field-height) !important;
+  height: var(--list-field-height) !important;
+  min-width: var(--list-field-height);
+  margin: 0;
+  font-size: 10px !important;
+}
+/* No display on the targets: each view decides whether a field shows (phones hide row fields). */
+.field-chip,
+.spreadsheet td:is([data-column-key="status"], [data-column-key="priority"]) .table-cell-value {
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  height: var(--list-field-height) !important;
+  min-height: 0 !important;
+  border: 1px solid var(--task-color-border, var(--line)) !important;
+  border-radius: var(--field-radius) !important;
+  background-color: var(--surface) !important;
+  color: var(--task-color-ink, var(--ink));
+  font-size: var(--type-small) !important;
+  line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.field-chip-status,
+.spreadsheet td[data-column-key="status"] .table-cell-value {
+  width: 100%;
+  min-width: 0;
+  padding: 0 8px !important;
+}
+.field-chip-priority,
+.spreadsheet td[data-column-key="priority"] .table-cell-value {
+  flex: none !important;
+  justify-content: center;
+  width: var(--list-field-priority-width) !important;
+  min-width: var(--list-field-priority-width) !important;
+  padding: 0 !important;
+}
+:is(.field-chip-priority, .spreadsheet td[data-column-key="priority"] .table-cell-value) .icon {
+  width: var(--list-field-icon);
+  height: var(--list-field-icon);
+}
+/* The phone summary line sizes its status to the text so the line fits. */
+.phone-task-meta > .field-chip-status { flex: 0 1 auto; width: auto; max-width: 50%; }
+/* The targets around the chips stay transparent and full height. */
+.task-row > :is(.row-status, .row-priority) { padding: 0 !important; background: transparent !important; border: 0 !important; }
+.task-row > .row-priority { flex: 0 0 max(var(--control-height), var(--list-field-priority-width)) !important; width: max(var(--control-height), var(--list-field-priority-width)) !important; }
+.spreadsheet td:is([data-column-key="status"], [data-column-key="priority"], [data-column-key="assignee"]) .table-cell-select { padding: 0 6px; background: transparent !important; border: 0 !important; }
+.spreadsheet td:is([data-column-key="status"], [data-column-key="priority"], [data-column-key="assignee"]) .table-cell-chevron { display: none; }
+/* Board cards keep their document-scale sizes with the same shape. */
+#canvas .board-node.task :is(.canvas-task-status, .canvas-task-priority) { border-radius: var(--field-radius) !important; }
+#canvas .board-node.task .canvas-task-status { padding-inline: 10px !important; background-image: none !important; }
+
+/* Mouse rows keep the drag handle and tree toggle narrow so the card starts
+   near the edge; touch keeps 44px targets. */
+@media not (pointer: coarse) {
+  .main .task-row > .task-reorder-handle { width: 16px !important; min-width: 16px !important; flex: 0 0 16px !important; }
+  .main .task-row > .tree-toggle { width: 24px !important; min-width: 24px !important; flex: 0 0 24px !important; }
 }

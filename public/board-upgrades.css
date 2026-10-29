@@ -269,7 +269,7 @@
 .task-dates-popover footer { padding-top: 10px; border-top: 1px solid var(--line); }
 .task-dates-popover footer > [type="submit"] { margin-left: auto; }
 .task-dates-popover .form-error { margin: 8px 0; }
-.task-dates-popover .task-dates-actions { justify-content: flex-end; margin-bottom: 10px; }
+.task-dates-popover .task-dates-actions { justify-content: flex-end; align-items: center; gap: 8px; margin-bottom: 10px; }
 #task-dates-form > .field:last-of-type { margin-bottom: 0; }
 #task-dates-form > [data-task-dates-pick] { margin-top: 12px; }
 @media (pointer: coarse) {
@@ -291,7 +291,7 @@
   background-position-x: var(--timeline-offset, 0px);
 }
 .timeline-track[aria-disabled="true"] { cursor: default; }
-.timeline-track:focus-visible { outline: 2px solid var(--green); outline-offset: -2px; }
+.timeline-track:focus-visible { outline: var(--focus-ring); outline-offset: -2px; }
 .timeline-track.timeline-picking .timeline-schedule-hint { visibility: hidden; }
 .timeline-schedule-hint { display: block; padding: 12px; color: var(--muted); font-size: 12px; pointer-events: none; }
 .timeline-range-preview {
@@ -340,6 +340,7 @@
 .timeline-unplanned .timeline-task-label { cursor: grab; }
 .task-timeline .timeline-bar {
   position: absolute;
+  z-index: 2;
   top: 8px;
   height: 28px;
   cursor: grab;
@@ -365,10 +366,12 @@
 }
 .timeline-dependencies {
   position: absolute;
+  z-index: 1;
   pointer-events: none;
   overflow: hidden;
   fill: none;
-  stroke: var(--accent, #78906f);
+  color: var(--green);
+  stroke: currentColor;
   stroke-width: 1.5;
   width: calc(100% - 240px);
 }

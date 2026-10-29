@@ -1,6 +1,7 @@
 .task-attachments {
   margin-top: 20px;
 }
+.task-attachment-choose { margin-top: 12px; max-width: 100%; }
 .task-attachments[hidden] {
   display: none;
 }
@@ -52,7 +53,7 @@
   border-radius: 10px;
   color: var(--ink);
   background: var(--surface);
-  box-shadow: 0 10px 32px #0003;
+  box-shadow: var(--shadow-popover);
   overflow: auto;
   overscroll-behavior: contain;
 }

@@ -1,5 +1,8 @@
 import TurndownService from "/vendor/turndown.js";
 import { gfm } from "/vendor/turndown-gfm.js";
+import { codeLanguages, codeLanguageName, codeLanguageEntry, highlightCode } from "./document-code.js";
+import { TABLE_SCROLL_MARKER } from "./document-markdown.js";
+import { focusOnOpen } from "./open-focus.js";
 
 const converter = new TurndownService({ headingStyle: "atx", codeBlockStyle: "fenced", bulletListMarker: "-" });
 converter.use(gfm);
@@ -79,6 +82,20 @@ export function editableDocumentComponent({ element, raw, from, kind, editor, re
       commit(node);
     });
     node.addEventListener("keydown", event => {
+      // Ctrl/Cmd+Home/End and Cmd+Up/Down move within this block. Left to the
+      // browser they jump to the editor's ends, which CodeMirror cannot place
+      // inside a block and resolves to the start of the document.
+      const toStart = (event.ctrlKey || event.metaKey) && event.key === "Home" || event.metaKey && event.key === "ArrowUp";
+      const toEnd = (event.ctrlKey || event.metaKey) && event.key === "End" || event.metaKey && event.key === "ArrowDown";
+      if (toStart || toEnd) {
+        event.preventDefault(); event.stopPropagation();
+        const edge = document.createRange();
+        edge.selectNodeContents(node); edge.collapse(toStart);
+        const selection = window.getSelection();
+        if (event.shiftKey && selection.rangeCount && node.contains(selection.anchorNode)) selection.extend(edge.startContainer, edge.startOffset);
+        else { selection.removeAllRanges(); selection.addRange(edge); }
+        return;
+      }
       if (event.key === "Tab" && (event.ctrlKey || event.metaKey || event.altKey)) return;
       if ((event.ctrlKey || event.metaKey) && ["s", "e"].includes(event.key.toLowerCase())) return;
       if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "z") {
@@ -181,8 +198,13 @@ export function editableDocumentComponent({ element, raw, from, kind, editor, re
   };
   if (kind === "table") {
     const table = element.querySelector("table");
-    const aligns = token.align || [];
-    const originalRows = [token.header, ...token.rows].map(row => row.map(cell => cell.text));
+    // A table that scrolls sideways keeps its layout comment before the table.
+    const tableToken = token.type === "documentTableLayout" ? token.tokens[0] : token;
+    let layout = token.type === "documentTableLayout" ? "scroll" : "fit";
+    let frame = table.parentElement.matches(".document-table-scroll") ? table.parentElement : null;
+    if (!frame) { frame = document.createElement("div"); table.before(frame); frame.append(table); }
+    const aligns = tableToken.align || [];
+    const originalRows = [tableToken.header, ...tableToken.rows].map(row => row.map(cell => cell.text));
     for (const row of table.rows) for (const cell of row.cells) {
       const rowIndex = row.rowIndex, column = cell.cellIndex;
       cell.dataset.originalHtml = cell.innerHTML;
@@ -196,26 +218,44 @@ export function editableDocumentComponent({ element, raw, from, kind, editor, re
           : toMarkdown(cell).replace(/\r?\n+/g, "<br>").replace(/(?<!\\)\|/g, "\\|")));
       const line = cells => `| ${cells.join(" | ")} |`;
       const separators = rows[0].map((_, i) => aligns[i] === "center" ? ":---:" : aligns[i] === "right" ? "---:" : aligns[i] === "left" ? ":---" : "---");
-      return [line(rows[0]), line(separators), ...rows.slice(1).map(line)].join("\n");
+      const markdown = [line(rows[0]), line(separators), ...rows.slice(1).map(line)].join("\n");
+      return layout === "scroll" ? `${TABLE_SCROLL_MARKER}\n${markdown}` : markdown;
     };
     const actions = document.createElement("div"); actions.className = "document-component-actions";
     for (const [label, action] of [
-      ["Add row", () => {
+      // The new cell takes focus for typing, except on touch screens, where
+      // that would open the keyboard (the shared open-focus rule).
+      ["Add row", event => {
         const body = table.tBodies[0] || table.createTBody(), row = body.insertRow();
         for (let i = 0; i < table.rows[0].cells.length; i++) field(row.insertCell(), `Row ${row.rowIndex}, column ${i + 1}`);
-        commit(); row.cells[0].focus();
+        commit(); focusOnOpen(row.cells[0], event.currentTarget);
       }],
-      ["Add column", () => {
+      ["Add column", event => {
         for (const row of table.rows) {
           const cell = document.createElement(row.rowIndex ? "td" : "th");
           row.append(cell); field(cell, `${row.rowIndex ? `Row ${row.rowIndex}` : "Header"}, column ${cell.cellIndex + 1}`);
         }
-        commit(); table.rows[0].lastElementChild.focus();
+        commit(); focusOnOpen(table.rows[0].lastElementChild, event.currentTarget);
       }],
     ]) {
       const button = document.createElement("button"); button.type = "button"; button.className = "button small";
       button.textContent = label; button.addEventListener("click", action); actions.append(button);
     }
+    // Fit the page width (wrapping text) or keep whole words and scroll sideways.
+    const switcher = document.createElement("div");
+    switcher.className = "document-table-layout"; switcher.setAttribute("role", "group"); switcher.setAttribute("aria-label", "Table width");
+    const showLayout = () => {
+      frame.classList.toggle("document-table-scroll", layout === "scroll");
+      for (const button of switcher.children) button.setAttribute("aria-pressed", String(button.dataset.tableLayout === layout));
+    };
+    for (const [value, label] of [["fit", "Fit width"], ["scroll", "Scroll"]]) {
+      const button = document.createElement("button"); button.type = "button"; button.className = "button small";
+      button.dataset.tableLayout = value; button.textContent = label;
+      button.addEventListener("click", () => { if (layout === value) return; layout = value; showLayout(); commit(); editor.requestMeasure(); });
+      switcher.append(button);
+    }
+    showLayout();
+    actions.append(switcher);
     element.append(actions);
   } else if (kind === "blockquote") {
     const header = callout(source);
@@ -263,12 +303,39 @@ export function editableDocumentComponent({ element, raw, from, kind, editor, re
       code.textContent = token.text; pre.append(code); element.append(pre);
     }
     field(code, diagram ? "Diagram code" : "Code block", { plain: true });
+    // The fence's info string; its first word is the language.
+    let info = token.lang || "";
     serialize = () => {
       const text = code.innerText.replace(/\n$/, "");
-      if (token.codeBlockStyle === "indented") return text.split("\n").map(line => "    " + line).join("\n");
+      if (token.codeBlockStyle === "indented" && !info) return text.split("\n").map(line => "    " + line).join("\n");
       const fence = "`".repeat(Math.max(3, ...[...text.matchAll(/`+/g)].map(match => match[0].length + 1)));
-      return `${fence}${token.lang || ""}\n${text}\n${fence}`;
+      return `${fence}${info}\n${text}\n${fence}`;
     };
+    if (!diagram) {
+      // Choose the language from a menu instead of editing the fence.
+      // An alias selects its menu entry; the fence keeps its text until changed.
+      const known = codeLanguageEntry(info);
+      const current = known ? known[0] : codeLanguageName(info);
+      const options = known ? codeLanguages : [...codeLanguages, [current, current]];
+      const head = document.createElement("div");
+      head.className = "document-code-head";
+      head.contentEditable = "false";
+      head.innerHTML = `<select class="document-code-language" aria-label="Code language" title="Code language">${options.map(([name, label]) => `<option value="${name.replace(/"/g, "&quot;")}" ${name === current ? "selected" : ""}>${label.replace(/</g, "&lt;")}</option>`).join("")}</select>`;
+      element.prepend(head);
+      const picker = head.querySelector("select");
+      picker.addEventListener("change", () => {
+        const rest = info.trim().split(/\s+/).slice(1).join(" ");
+        info = picker.value ? [picker.value, rest].filter(Boolean).join(" ") : "";
+        code.className = picker.value ? `language-${picker.value}` : "";
+        commit(code);
+        void highlightCode(code, picker.value);
+      });
+      let timer = 0;
+      code.addEventListener("input", () => {
+        clearTimeout(timer);
+        timer = setTimeout(() => highlightCode(code, codeLanguageName(info)), 120);
+      });
+    }
     if (diagram) code.addEventListener("blur", () => {
       const preview = element.querySelector("[data-document-diagram]");
       preview.textContent = code.innerText; delete preview.dataset.rendered; hydrate(element);

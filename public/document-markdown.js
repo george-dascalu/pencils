@@ -3,12 +3,26 @@ import DOMPurify from "/vendor/purify.js";
 import { katex, markedFootnote } from "/vendor/editor/deps.js";
 import { resolveDocument, documentSection } from "./document-model.js";
 
+// A table may keep its columns and scroll sideways instead of fitting the page.
+// The choice is an HTML comment on the line before it, invisible elsewhere.
+export const TABLE_SCROLL_MARKER = "<!-- table: scroll -->";
+const tableLayout = {
+  name: "documentTableLayout", level: "block", start: src => src.indexOf("<!--"),
+  tokenizer(src) {
+    const marker = /^<!--[ \t]*table:[ \t]*scroll[ \t]*-->[ \t]*\n/.exec(src);
+    if (!marker) return;
+    const table = this.lexer.tokenizer.table(src.slice(marker[0].length));
+    if (table) return { type: "documentTableLayout", raw: marker[0] + table.raw, layout: "scroll", tokens: [table] };
+  },
+  renderer(token) { return `<div class="document-table-scroll">${this.parser.parse(token.tokens)}</div>`; },
+};
+
 export function documentMarkdown({ documents, project, esc }) {
   let depth = 0, sequence = 0;
   const inlineParser = new Marked({ gfm: true, breaks: false });
   // Preview range discovery must not mutate the footnote renderer's state.
   const blockParser = new Marked({ gfm: true, breaks: false });
-  blockParser.use({ extensions: [{
+  blockParser.use({ extensions: [tableLayout, {
     name: "documentMathBlock", level: "block", start: src => src.indexOf("$$"),
     tokenizer(src) {
       const match = /^\$\$[ \t]*\n?([\s\S]+?)\n?\$\$(?:[ \t]*\n|$)/.exec(src);
@@ -41,6 +55,7 @@ export function documentMarkdown({ documents, project, esc }) {
       },
     },
     extensions: [
+      tableLayout,
       {
         name: "documentMathBlock", level: "block",
         start: src => src.indexOf("$$"),

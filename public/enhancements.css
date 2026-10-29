@@ -9,12 +9,13 @@ select,
 textarea {
   font: inherit;
 }
-button:focus,
-a:focus,
-input:focus,
-select:focus,
-textarea:focus,
-summary:focus,
+/* One inset focus ring for every control; it sits on the border of text fields. */
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+summary:focus-visible,
 [contenteditable="true"]:focus-visible,
 [tabindex]:focus-visible {
   outline: var(--focus-ring);
@@ -22,7 +23,6 @@ summary:focus,
 }
 .caption,
 .field-hint,
-.view-footnote,
 .tree-parent,
 .task-id {
   color: #5b695f;
@@ -266,7 +266,7 @@ summary:focus,
 }
 .login {
   max-width: 420px;
-  margin: 8vh auto;
+  margin: 8dvh auto;
   padding: 30px;
   background: #fff;
   border: 1px solid #d4ddca;
@@ -451,9 +451,6 @@ summary:focus,
   white-space: nowrap;
   font-size: 11px;
 }
-.timeline-bar.complete {
-  background: #9eaf91;
-}
 .markdown-preview img {
   max-width: 100%;
   max-height: 500px;
@@ -605,6 +602,10 @@ summary:focus,
   cursor: pointer;
   text-anchor: middle;
 }
+/* One label shared by arrows fanning out along a vertical trunk sits to its left. */
+.edge-label.edge-label-beside {
+  text-anchor: end;
+}
 .board-node {
   overflow: visible;
 }
@@ -619,7 +620,7 @@ summary:focus,
   flex-wrap: wrap;
 }
 .task-dialog {
-  max-height: 94vh;
+  max-height: 94dvh;
 }
 .form-error:not(:empty) {
   padding: 10px;
@@ -628,7 +629,7 @@ summary:focus,
   margin: 12px 0;
   border-radius: 6px;
 }
-@media (max-width: 800px) {
+@media (max-width: 780px) {
   .hero-right > .icon-button {
     display: inline-flex !important;
   }
@@ -673,7 +674,7 @@ summary:focus,
     white-space: nowrap;
   }
   .login {
-    margin: 5vh 15px;
+    margin: 5dvh 15px;
   }
   .advanced-filters > input {
     width: 110px;

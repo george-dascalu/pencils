@@ -3,12 +3,22 @@ import { positionPopover } from "./popover-position.js";
 // Keep native selects as the form controls; share a themed menu across every view.
 export function installSelectMenus({ esc, icon, taskColor = () => "" }) {
   let source,
+    anchorEl,
+    lastPointerType = "mouse",
     menu,
     frame,
     query = "",
     typedAt = 0,
     touchStart,
     touchClick;
+  // A label around (or for) a select activates it; route that through the app menu too.
+  const controlOf = (target) => {
+    if (!(target instanceof Element)) return null;
+    if (target instanceof HTMLSelectElement) return target;
+    const label = target.closest("label");
+    const control = label?.control;
+    return control instanceof HTMLSelectElement && !target.closest("select, button, input, a") ? control : null;
+  };
   const eligible = (el) =>
     el instanceof HTMLSelectElement &&
     !el.multiple &&
@@ -27,24 +37,34 @@ export function installSelectMenus({ esc, icon, taskColor = () => "" }) {
     "Choose an option";
   function close(focus = false) {
     if (!menu) return;
-    const target = source;
+    const target = source, anchor = anchorEl || source;
     menu.remove();
-    menu = source = null;
+    menu = source = anchorEl = null;
     cancelAnimationFrame(frame);
     target.removeAttribute("aria-controls");
     target.setAttribute("aria-expanded", "false");
-    if (focus && target.isConnected) target.focus({ preventScroll: true });
+    if (anchor !== target) {
+      anchor.removeAttribute("aria-controls");
+      anchor.setAttribute("aria-expanded", "false");
+    }
+    // Focus returns to the control for keyboard and mouse users. After a touch
+    // choice the select stays unfocused: iOS opens its own picker on focus.
+    const restore =
+      focus && anchor.isConnected &&
+      !(anchor instanceof HTMLSelectElement && lastPointerType === "touch");
+    if (restore) anchor.focus({ preventScroll: true });
   }
   function position() {
     if (!menu) return;
+    const anchor = anchorEl || source;
     if (
-      !source.isConnected ||
-      !source.getClientRects().length ||
+      !anchor.isConnected ||
+      !anchor.getClientRects().length ||
       source.matches(":disabled") ||
-      source.closest("dialog:not([open]), details:not([open]), [hidden]")
+      anchor.closest("dialog:not([open]), details:not([open]), [hidden]")
     )
       return close();
-    const r = source.getBoundingClientRect();
+    const r = anchor.getBoundingClientRect();
     positionPopover(menu, r, {
       width: Math.max(r.width, source.dataset.selectSymbol ? 116 : 220),
     });
@@ -85,10 +105,11 @@ export function installSelectMenus({ esc, icon, taskColor = () => "" }) {
         .querySelector(`[data-select-index="${focused}"]:not(:disabled)`)
         ?.focus({ preventScroll: true });
   }
-  function open(select) {
+  function open(select, anchor = select) {
     if (source === select) return close(true);
     close();
     source = select;
+    anchorEl = anchor;
     query = "";
     menu = document.createElement("div");
     menu.className = "select-menu";
@@ -100,6 +121,10 @@ export function installSelectMenus({ esc, icon, taskColor = () => "" }) {
     (select.closest("dialog, [popover]") || document.body).append(menu);
     select.setAttribute("aria-controls", menu.id);
     select.setAttribute("aria-expanded", "true");
+    if (anchor !== select) {
+      anchor.setAttribute("aria-controls", menu.id);
+      anchor.setAttribute("aria-expanded", "true");
+    }
     menu.showPopover();
     paint();
     const current =
@@ -126,11 +151,13 @@ export function installSelectMenus({ esc, icon, taskColor = () => "" }) {
     document.addEventListener(
       type,
       (event) => {
+        const control = controlOf(event.target);
         if (type === "pointerdown") {
+          lastPointerType = event.pointerType || "mouse";
           touchStart =
-            eligible(event.target) && event.pointerType === "touch"
+            control && eligible(control) && event.pointerType === "touch"
               ? {
-                  target: event.target,
+                  target: control,
                   x: event.clientX,
                   y: event.clientY,
                   id: event.pointerId,
@@ -139,12 +166,13 @@ export function installSelectMenus({ esc, icon, taskColor = () => "" }) {
           touchClick = null;
         }
         if (
-          eligible(event.target) &&
+          control && eligible(control) &&
           (event.button == null || event.button === 0)
         ) {
           event.preventDefault();
           event.stopImmediatePropagation();
-          event.target.focus({ preventScroll: true });
+          // Touch keeps focus on the menu itself: focusing a select on iOS opens the platform picker.
+          if (event.pointerType !== "touch") control.focus({ preventScroll: true });
         } else if (menu?.contains(event.target)) {
           event.stopImmediatePropagation();
         } else if (type === "pointerdown") close();
@@ -157,6 +185,29 @@ export function installSelectMenus({ esc, icon, taskColor = () => "" }) {
     "pointercancel",
     () => {
       touchStart = null;
+    },
+    true,
+  );
+  // A tap handled above must not also activate the platform picker: cancel the
+  // touch sequence's default (and its synthesised click), and swallow double-clicks.
+  document.addEventListener(
+    "touchend",
+    (event) => {
+      const control = controlOf(event.target);
+      if (!control || !eligible(control)) return;
+      if (touchClick?.target === control && performance.now() < touchClick.until && event.cancelable)
+        event.preventDefault();
+    },
+    { capture: true, passive: false },
+  );
+  document.addEventListener(
+    "dblclick",
+    (event) => {
+      const control = controlOf(event.target);
+      if (control && eligible(control)) {
+        event.preventDefault();
+        event.stopImmediatePropagation();
+      }
     },
     true,
   );
@@ -182,18 +233,19 @@ export function installSelectMenus({ esc, icon, taskColor = () => "" }) {
   document.addEventListener(
     "click",
     (event) => {
-      if (eligible(event.target)) {
+      const control = controlOf(event.target);
+      if (control && eligible(control)) {
         event.preventDefault();
         event.stopImmediatePropagation();
         if (
-          touchClick?.target === event.target &&
+          touchClick?.target === control &&
           performance.now() < touchClick.until &&
           event.detail !== 0
         ) {
           touchClick = null;
           return;
         }
-        open(event.target);
+        open(control);
       } else if (menu?.contains(event.target)) {
         event.preventDefault();
         event.stopImmediatePropagation();
@@ -206,6 +258,7 @@ export function installSelectMenus({ esc, icon, taskColor = () => "" }) {
   document.addEventListener(
     "keydown",
     (event) => {
+      lastPointerType = "keyboard";
       const inside = menu?.contains(event.target);
       if (
         !inside &&
@@ -317,4 +370,5 @@ export function installSelectMenus({ esc, icon, taskColor = () => "" }) {
     attributeFilter: ["disabled", "hidden", "selected", "label"],
     characterData: true,
   });
+  return { open };
 }

@@ -6,11 +6,11 @@
   flex-direction: column;
   gap: 12px;
   overflow: auto;
-  padding: 12px;
+  padding: var(--popover-padding, 8px);
   background: var(--surface);
   border: 1px solid var(--line);
-  border-radius: 8px;
-  box-shadow: 0 12px 36px #0003;
+  border-radius: var(--radius-popover, 10px);
+  box-shadow: var(--shadow-popover);
 }
 .mobile-view-options:not([open]) > .mobile-view-options-panel { display: none; }
 .mobile-view-options > summary { list-style: none; }
@@ -20,9 +20,15 @@
   display: flex; flex-wrap: wrap; gap: 8px; padding: 0; margin: 0; width: 100%;
 }
 .mobile-view-options-panel .caption { display: none; }
+/* Filters show as a plain list on phones; sorting opens from its own icon button. */
+.mobile-view-options-panel .board-menu[data-expanded] > summary { display: none; }
+.mobile-view-options-panel .board-menu[data-expanded] > .board-menu-panel {
+  position: static !important; width: 100%; max-width: none; max-height: none; margin: 0; padding: 0; border: 0; box-shadow: none; background: transparent;
+}
 @media (max-width: 600px) {
   .toolbar:has(.mobile-view-options) { padding-block: 6px; }
-  .toolbar-left:has(.mobile-view-options) { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 6px; width: 100%; }
+  .toolbar-left:has(.mobile-view-options) { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; gap: 6px; width: 100%; }
+  .toolbar-left:has(.mobile-view-options) #sort, .mobile-view-options-panel #sort { display: none; }
   .toolbar-left > .view-layout-switcher { grid-column: 1 / -1; width: 100%; }
   .toolbar-left > .search { min-width: 0; width: 100%; max-width: none; }
   .toolbar-left .view-layout-switcher button { flex: 1; }
@@ -33,13 +39,15 @@
   grid-template-columns: minmax(0, 1fr);
   grid-template-rows: auto auto minmax(0, 1fr);
 }
+.main > .topbar {
+  min-height: 56px;
+  height: auto;
+  padding: 0 20px;
+}
 .main.project-main > .topbar {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
   gap: 16px;
-  min-height: 56px;
-  height: auto;
-  padding: 0 20px;
 }
 .main.project-main > :is(.hero, .stats-strip) {
   display: none;
@@ -53,7 +61,10 @@
   background: transparent;
 }
 .topbar .tabs .tab {
-  padding: 17px 9px;
+  width: var(--control-height);
+  min-width: var(--control-height);
+  padding: 0;
+  justify-content: center;
   flex-shrink: 0;
 }
 .board-project-tools {
@@ -80,6 +91,15 @@
 .main.project-main .breadcrumb > :not(strong) {
   flex-shrink: 0;
 }
+/* With a board or document open, the project becomes a crumb like the organisation. */
+.topbar .breadcrumb > .project-crumb {
+  color: var(--muted);
+  max-width: 220px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex-shrink: 1;
+}
 .main.project-main > #view-toolbar {
   grid-row: 2;
   min-width: 0;
@@ -92,7 +112,7 @@
 @media (max-width: 1600px) {
   .main.project-main .save-state { display: none; }
 }
-@media (max-width: 1150px) {
+@media (min-width: 601px) and (max-width: 720px) {
   .main.project-main > .topbar {
     grid-template-columns: minmax(0, 1fr) auto;
     gap: 0 12px;
@@ -104,7 +124,7 @@
 }
 /* With the sidebar open, give centred navigation its own row before the side
    controls run out of room. Wide headers keep equal space on either side. */
-@media (min-width: 1151px) and (max-width: 1400px) {
+@media (min-width: 781px) and (max-width: 950px) {
   :root:not([data-sidebar="collapsed"]) .main.project-main > .topbar {
     grid-template-columns: minmax(0, 1fr) auto;
     gap: 0 12px;
@@ -120,9 +140,17 @@
   }
   :root:not([data-sidebar="collapsed"]) .topbar .tabs .tab { padding-block: 12px; }
 }
-@media (max-width: 780px) {
+@media (max-width: 600px) {
   .topbar .tabs { display: none; }
   .board-project-tools { padding-block: 6px; }
+}
+@media (min-width: 601px) {
+  .topbar .mobile-view-switcher { display: none; }
+  .topbar .breadcrumb { gap: 6px; }
+  .topbar .view-tab-group { padding-inline: 2px; margin-inline: 0; }
+}
+@media (min-width: 601px) and (max-width: 1150px) {
+  .topbar .organisation-crumb, .topbar .breadcrumb > span:not(.phone-current-view) { display: none; }
 }
 .main:is([data-layout-view="board"], [data-layout-view="drawing"]) .canvas:not(.board-expanded) {
   height: 100%;
@@ -192,12 +220,12 @@
   display: flex;
   flex-direction: column;
   gap: 6px;
-  padding: 10px;
+  padding: var(--popover-padding, 8px);
   background: var(--surface, #fff);
   color: var(--ink);
   border: 1px solid var(--line);
-  border-radius: 10px;
-  box-shadow: 0 12px 36px #0003;
+  border-radius: var(--radius-popover, 10px);
+  box-shadow: var(--shadow-popover);
 }
 .board-menu:not([open]) > .board-menu-panel {
   display: none;
@@ -233,7 +261,7 @@
   transition: none;
 }
 .board-menu-panel > button:focus-visible {
-  outline: 2px solid var(--green);
+  outline: var(--focus-ring);
   outline-offset: -2px;
 }
 .board-menu-panel > button:disabled {
@@ -319,6 +347,19 @@
 .main[data-layout-view="tree"] {
   height: 100dvh;
 }
+/* The spreadsheet owns both scroll axes. Keep its surrounding page anchored,
+   including Safari's edge bounce and the gap between its large and dynamic
+   viewport heights when browser chrome is visible. Warnings retain page scroll. */
+html.table-viewport-view,
+html.table-viewport-view body {
+  height: 100%;
+  overflow: hidden;
+  overscroll-behavior: none;
+}
+.table-viewport-view .shell {
+  height: 100dvh;
+  min-height: 0;
+}
 .main.project-main > #view-content[data-layout-view="table"],
 .main.project-main > #view-content[data-layout-view="kanban"],
 .main.project-main > #view-content[data-layout-view="timeline"],
@@ -342,6 +383,15 @@
   overflow: auto;
   scrollbar-color: var(--muted) var(--surface-soft);
   background: var(--surface);
+}
+.table-viewport-view #view-content > .table-scroll {
+  min-height: 0;
+  overscroll-behavior: none;
+}
+/* Touch screens scroll the Table one axis per swipe (installAxisLockedScroll
+   in scroll-gestures.js); iOS would otherwise scroll it diagonally. */
+@media (pointer: coarse) {
+  #view-content > .table-scroll { touch-action: none; }
 }
 #view-content > .task-timeline {
   display: flex;
@@ -375,8 +425,13 @@
   padding-bottom: 0;
   overflow-x: auto;
   overflow-y: hidden;
+  scroll-snap-type: x mandatory;
+  overscroll-behavior-x: contain;
 }
 #view-content > .kanban > .kanban-column {
+  flex: 0 0 var(--kanban-column-width, var(--kanban-min-column-width));
+  min-width: 0;
+  scroll-snap-align: none start;
   min-height: 0;
   overflow-x: hidden;
   overflow-y: auto;
@@ -403,14 +458,21 @@
   overscroll-behavior: contain;
 }
 .kanban-lanes-content {
-  min-width: calc(var(--kanban-columns) * 225px + (var(--kanban-columns) - 1) * 17px);
+  width: calc(var(--kanban-columns) * var(--kanban-column-width, var(--kanban-min-column-width)) + (var(--kanban-columns) - 1) * var(--kanban-gap));
   min-height: 100%;
 }
 .kanban-lanes-header,
 .kanban-lane-row {
   display: grid;
-  grid-template-columns: repeat(var(--kanban-columns), minmax(225px, 1fr));
-  gap: 17px;
+  grid-template-columns: repeat(var(--kanban-columns), var(--kanban-column-width, var(--kanban-min-column-width)));
+  gap: var(--kanban-gap);
+}
+.kanban-lanes-header > .column-header {
+  min-width: 0;
+  scroll-snap-align: none start;
+}
+.kanban-dragging #view-content > .kanban {
+  scroll-snap-type: none;
 }
 .kanban-lanes-header {
   position: sticky;
@@ -685,7 +747,7 @@
   margin-bottom: 10px;
 }
 .task-picker-list {
-  max-height: 50vh;
+  max-height: 50dvh;
   overflow: auto;
 }
 .task-picker-list .board-pick {
@@ -737,3 +799,233 @@
 #quick-capture.dialog-body input { width: 100%; }
 #quick-capture.dialog-body > button { align-self: flex-end; }
 #view-toolbar > .shared-query-controls { padding: 7px 16px; }
+
+/* Phones navigate from one drawer; the active view stays in the header. */
+.phone-project-navigation, .phone-drawer-utilities, .phone-drawer-close,
+.phone-current-view, .phone-new-task, .drawer-switcher { display: none; }
+@media (max-width: 780px) {
+  .sidebar { overflow-y: auto; overscroll-behavior: contain; padding: 8px 12px 16px; }
+  .sidebar .brand { padding: 4px 8px 8px; margin-right: 52px; }
+  .phone-drawer-close { display: inline-flex; position: absolute; top: 12px; right: 12px; flex-shrink: 0; }
+}
+@media (max-width: 600px) {
+  /* The drawer fits one screen: a project and organisation switcher, New,
+     the views as tiles and one row of settings. Rows share one left edge and
+     the shared touch type sizes. */
+  .sidebar { width: min(320px, calc(100vw - 36px)); z-index: 120; padding: 8px 12px 12px; }
+  .sidebar-overlay.visible { z-index: 119; }
+  .sidebar .brand { padding: 4px 4px 10px; }
+  .drawer-switcher { display: flex; align-items: center; gap: 12px; width: 100%; min-height: 56px; padding: 6px 12px; border: 1px solid #ffffff24; border-radius: 8px; background: #ffffff0d; color: inherit; text-align: left; }
+  .drawer-switcher .project-mark { width: 12px; height: 12px; }
+  .drawer-switcher-text { display: grid; flex: 1; min-width: 0; }
+  .drawer-switcher-text :is(strong, small) { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .drawer-switcher-text strong { font-size: var(--type-body); font-weight: 600; }
+  .drawer-switcher-text small { font-size: var(--type-small); color: #a6b7ac; }
+  .drawer-switcher > .icon:last-child { transition: transform 0.15s; }
+  .drawer-switcher[aria-expanded="true"] > .icon:last-child { transform: rotate(180deg); }
+  .sidebar[data-switcher="closed"] > :is(.organisation-switch, .side-label, .project-links, .side-new, .sidebar-directory) { display: none; }
+  /* Organisation, projects and teams under the switcher. */
+  .sidebar .organisation-switch { margin: 8px 0 0; padding: 0; border: 0; }
+  .sidebar .organisation-switch .workspace-icon { display: none; }
+  .sidebar .organisation-choice select { padding-inline: 12px 28px; font-size: var(--type-body); background-position: right 12px center; min-height: 44px; }
+  .sidebar .organisation-actions { margin: 0; padding-inline: 12px; }
+  .sidebar .organisation-actions button { font-size: var(--type-small); min-height: 44px; }
+  .sidebar .side-label { padding: 12px 12px 4px; }
+  .sidebar .side-label > [data-action="project-new"] { display: none; }
+  .sidebar :is(.project-link, .directory-link, .side-new) { min-height: 44px; margin: 0; padding: 0 12px; font-size: var(--type-body); }
+  .sidebar .project-links, .sidebar .directory-links { gap: 0; }
+  .sidebar .sidebar-directory { margin-top: 0; }
+  /* Every drawer section label shares one small-caps style and left edge. */
+  .sidebar .phone-navigation-group > span, .sidebar .side-label, .sidebar .organisation-choice > span {
+    font-size: var(--type-meta); font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: #a1b1a4;
+  }
+  .sidebar .organisation-choice > span { margin: 0; padding: 12px 12px 0; }
+  .phone-project-navigation { display: flex; flex-direction: column; gap: 4px; padding-top: 8px; }
+  .phone-project-navigation > .new-menu > summary { width: 100%; justify-content: center; font-size: var(--type-body) !important; }
+  .phone-navigation-group { display: grid; grid-template-columns: repeat(var(--tiles, 4), minmax(0, 1fr)); gap: 4px; }
+  .phone-navigation-group > span { grid-column: 1 / -1; padding: 8px 12px 0; }
+  .sidebar :is(.phone-navigation-group, .phone-drawer-utilities) .button {
+    /* 48px tiles (PEN-1: drawer rows stay compact), still 44px+ targets. */
+    flex-direction: column; justify-content: center; gap: 2px; min-width: 0; height: 48px !important; min-height: 48px;
+    padding: 2px !important; font-size: var(--type-small) !important; line-height: 1.15; background: transparent; border-color: transparent; color: inherit;
+  }
+  .sidebar :is(.phone-navigation-group, .phone-drawer-utilities) .button > span { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .sidebar :is(.phone-navigation-group, .phone-drawer-utilities) .button > .icon { width: 18px; height: 18px; flex-shrink: 0; }
+  .phone-project-navigation .active { background: #ffffff16; border-color: #ffffff24; }
+  .phone-project-navigation .primary { background: var(--green); }
+  .phone-drawer-utilities { display: grid; grid-template-columns: repeat(var(--tiles, 4), minmax(0, 1fr)); gap: 4px; margin-top: 8px; padding-top: 8px; border-top: 1px solid #ffffff24; }
+  /* An open switcher works like a submenu: the views wait until it closes. */
+  .sidebar[data-switcher="open"] > .phone-project-navigation { display: none; }
+  /* The Documents level: the document list replaces the menu, with a way back. */
+  .sidebar:not([data-drawer-level="documents"]) > .sidebar-documents { display: none !important; }
+  .sidebar[data-drawer-level="documents"] > :not(.brand, .phone-drawer-close, .sidebar-documents) { display: none !important; }
+  .sidebar[data-drawer-level="documents"] > .sidebar-documents { display: flex; flex: 1 1 0; min-height: 0; margin-top: 0; padding-top: 0; border: 0; }
+  .sidebar-documents .sidebar-documents-back { display: inline-flex; flex-shrink: 0; }
+  .sidebar-documents .sidebar-documents-back > .icon { transform: rotate(90deg); }
+  .sidebar .sidebar-documents .document-explorer > header { gap: 4px; padding: 0 0 8px; }
+  .sidebar .sidebar-documents .document-explorer h2 { font-size: var(--type-body); letter-spacing: 0; text-transform: none; color: #e3e9df; }
+  .sidebar .sidebar-documents .document-link { min-height: 44px; padding-inline: 12px; font-size: var(--type-body); }
+  .sidebar .sidebar-documents .document-search input { font-size: var(--type-body); }
+  .document-empty-browse { display: inline-flex; }
+  .phone-navigation-group [data-drawer-documents] { position: relative; }
+  .phone-navigation-group .drawer-tile-more { position: absolute; top: 4px; right: 4px; display: flex; color: #a1b1a4; }
+  .phone-navigation-group .button > .drawer-tile-more > .icon { width: 14px; height: 14px; transform: rotate(-90deg); }
+  .sidebar .side-bottom { padding: 8px 12px 0; }
+  .sidebar .side-bottom [data-feature-requests] { display: none; }
+  .sidebar .side-footer { margin: 0; font-size: var(--type-meta); }
+  .main > .topbar, .main.project-main > .topbar,
+  :root:not([data-sidebar="collapsed"]) .main.project-main > .topbar {
+    display: flex; align-items: center; justify-content: space-between;
+    min-height: 56px; gap: 8px; padding: 4px 8px;
+  }
+  .topbar .breadcrumb { display: grid; grid-template-columns: var(--control-height) minmax(0, 1fr); grid-template-rows: auto auto; column-gap: 8px; row-gap: 0; flex: 1; min-width: 0; }
+  .topbar .breadcrumb .mobile-menu { grid-row: 1 / 3; }
+  .topbar .breadcrumb > .organisation-crumb, .topbar .breadcrumb > span:not(.phone-current-view) { display: none; }
+  .topbar .breadcrumb strong { grid-area: 1 / 2; font-size: 13px; align-self: end; line-height: 1.35; }
+  .phone-current-view { display: block; grid-area: 2 / 2; color: var(--muted); font-size: 11px; align-self: start; }
+  .topbar .board-project-tools, .topbar .top-actions > :is([data-action="project-edit"], [data-action="help"], .avatar) { display: none; }
+  .topbar .top-actions { gap: 2px; flex: 0 0 auto; }
+  .topbar .phone-new-task { display: inline-flex; }
+  .topbar .app-version { display: none; }
+  .toolbar-left > .view-layout-switcher { display: none; }
+  .toolbar-left:has(.mobile-view-options) { grid-template-columns: minmax(0, 1fr) var(--control-height) var(--control-height); }
+  .mobile-view-options > summary { justify-content: center; width: var(--control-height); }
+  .list-group > .section-title, #view-content[data-layout-view="tree"] > .section-title { min-height: var(--control-height); margin-block: 6px; font-size: 13px; }
+}
+@media (prefers-reduced-motion: reduce) { .sidebar { transition: none; } }
+@media (min-width: 601px) and (max-width: 1150px) {
+  .board-project-tools { max-width: 100%; }
+  .topbar .board-project-tools > .tabs { min-width: 0; flex: 1; overflow-x: auto; }
+  .board-project-tools > .button { flex-shrink: 0; }
+}
+.kanban-id-control { min-height: var(--control-height); cursor: pointer; }
+
+.planning-period, .planning-options { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.planning-period > h2 { margin: 0; }
+.planning-period > [data-feature$="-prev"] > .icon { transform: rotate(180deg); }
+.phone-table-key { display: none; }
+.table-title-line { display: flex; align-items: center; min-width: 0; }
+.table-title-line > :not(.phone-table-key) { flex: 1 1 auto; min-width: 0; }
+@media (max-width: 600px) {
+  .planning-head { margin: 0 0 8px; padding: 0; gap: 0; }
+  .planning-period { display: grid; grid-template-columns: var(--control-height) minmax(0, 1fr) var(--control-height); width: 100%; gap: 4px; }
+  .planning-period > h2 { text-align: center; font-size: 14px; line-height: 1.4; }
+  .mobile-view-options-panel :is(.planning-options, .planning-head, .timeline-options) { display: flex; flex-direction: column; align-items: stretch; gap: 12px; width: 100%; }
+  .mobile-view-options-panel :is(.planning-options, .timeline-options) > label { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+  .mobile-view-options-panel :is(.planning-options, .timeline-options) select { min-width: 0; max-width: 70%; }
+  .mobile-view-options-panel .field-hint { margin: 0; }
+  .task-table.spreadsheet { --table-open-slot: 0px; --table-phone-title-width: max(150px, calc(100vw - var(--table-selection-width) - 18px)); }
+  /* The key opens the card from the title line, so phones need no separate open button. */
+  .spreadsheet .phone-table-key { display: inline-flex; align-items: center; order: -1; flex: none; height: var(--control-height); margin: 0; padding: 0 2px 0 8px; border: 0; background: none; color: var(--muted); font-family: ui-monospace, monospace; font-size: var(--type-meta); cursor: pointer; }
+  .spreadsheet .phone-table-key:focus-visible { outline: var(--focus-ring); outline-offset: -2px; }
+  .spreadsheet .task-row-actions > .table-open { display: none; }
+  .spreadsheet [data-column-key="title"] input { font-weight: 500; }
+  .spreadsheet [data-column-key="title"] .table-column-grip,
+  .spreadsheet [data-column-key="title"] [data-resize-column] { display: none; }
+  .board-toolbar:has(.mobile-view-options) { display: flex; flex-wrap: nowrap; padding: 6px 8px; gap: 8px; }
+  .board-toolbar:has(.mobile-view-options) > #board-select { flex: 1; min-width: 0; max-width: none; }
+  .board-toolbar .mobile-view-options { flex: none; }
+  .mobile-view-options-panel > .board-save { display: block; }
+}
+
+/* Menu carets are icons like every other glyph; they turn when a menu is open. */
+.board-menu > summary > .menu-caret { width: 12px; height: 12px; margin-inline-start: 2px; flex-shrink: 0; transition: transform 0.15s; }
+.board-menu[open] > summary > .menu-caret { transform: rotate(180deg); }
+.table-menu-footer, .table-columns-footer { margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--line); display: flex; gap: 6px; }
+/* The sort control keeps its full label at tablet widths. */
+#sort { min-width: 150px; }
+
+/* Anchored confirmation for destructive actions. */
+.selection-popover.confirm-popover {
+  position: fixed;
+  inset: auto;
+  top: auto;
+  left: auto;
+  margin: 0;
+  z-index: 400;
+  display: grid;
+  gap: 10px;
+  padding: var(--popover-padding, 8px);
+  background: var(--surface);
+  color: var(--ink);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-popover, 10px);
+  box-shadow: var(--shadow-popover);
+}
+.selection-popover.confirm-popover .confirm-title { font-size: 14px; }
+.selection-popover.confirm-popover .confirm-message { margin: 0; color: var(--muted); font-size: 13px; line-height: 1.5; }
+.selection-popover.confirm-popover .confirm-actions { display: flex; justify-content: flex-end; gap: 8px; }
+/* Menu headings group a long list of actions. */
+.board-menu-panel > .board-menu-heading {
+  display: block;
+  padding: 10px 10px 2px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.board-menu-panel > .board-menu-heading:first-child { padding-top: 4px; }
+/* Filter fields line up with the other controls in the menu. */
+.board-menu-panel > .field { display: flex; flex-direction: column; align-items: stretch; text-align: start; margin: 0; padding-inline: 10px; }
+.board-menu-panel > .field > :is(select, input) { width: 100%; max-width: none; }
+/* On phones the filters menu flows inside View options instead of floating over it. */
+@media (max-width: 600px) {
+  .mobile-view-options-panel details.board-menu { flex: 1 1 100%; width: 100%; min-width: 0; max-width: 100%; }
+  .mobile-view-options-panel .board-menu-panel {
+    position: static !important;
+    box-sizing: border-box;
+    contain: inline-size;
+    width: 100% !important;
+    min-width: 0;
+    max-width: 100% !important;
+    max-height: none !important;
+    overflow-x: hidden;
+    box-shadow: none;
+    border: 0;
+    padding: 4px 0 0;
+  }
+  .mobile-view-options-panel .board-menu-panel > * { max-width: 100%; min-width: 0; }
+  .mobile-view-options-panel .board-menu-panel :is(div, label, fieldset) { flex-wrap: wrap; max-width: 100%; min-width: 0; }
+  .mobile-view-options-panel .board-menu-panel :is(select, input, button) { max-width: 100%; min-width: 0; }
+  .mobile-view-options-panel .board-menu-panel fieldset { min-inline-size: 0; max-width: 100%; }
+  .mobile-view-options-panel .table-filter-rule { grid-template-columns: minmax(0, 1fr); }
+  .mobile-view-options-panel .table-filter-rule > * { flex-wrap: wrap; min-width: 0; max-width: 100%; }
+}
+.dialog.compact-dialog { width: min(420px, calc(100vw - 32px)); }
+
+/* The topbar version repeats the sidebar footer while the sidebar is visible,
+   unless it carries the Update available notice. */
+@media (min-width: 781px) {
+  :root:not([data-sidebar="collapsed"]) .topbar .app-version:not(:has(.app-update-available)) { display: none; }
+}
+/* Task types as chips. */
+.type-list-field { display: flex; flex-direction: column; gap: 8px; }
+.type-chips { display: flex; flex-wrap: wrap; gap: 6px; margin: 0; padding: 0; list-style: none; }
+.type-chip { display: inline-flex; align-items: center; gap: 2px; padding-inline-start: 10px; border: 1px solid var(--line); border-radius: 999px; background: var(--surface-soft); font-size: 13px; color: var(--ink); }
+.type-chip > span { text-transform: capitalize; }
+.type-add { display: flex; gap: 6px; align-items: center; }
+.type-add > input { flex: 1; min-width: 0; }
+/* Empty board thumbnail. */
+.drawing-thumb-empty { display: grid; place-items: center; aspect-ratio: 4 / 3; border-radius: 6px; background: var(--surface-soft); color: var(--muted); font-size: 12px; }
+
+/* Current directory page and other segmented controls share the layout switcher's active look. */
+.directory-tabs .button[aria-current="page"],
+.document-modes .icon-button[aria-pressed="true"],
+.task-pane-switcher [aria-pressed="true"],
+.pen-presets .pen-preset.active {
+  background: var(--surface-soft);
+  border-color: var(--green);
+  color: var(--green);
+  box-shadow: none;
+}
+.pen-presets .pen-preset:not(.active):hover { background: var(--surface-soft); box-shadow: none; }
+.board-tools button[aria-pressed="true"] { background: var(--surface-soft); color: var(--green); }
+
+/* The New menu keeps its button look while open; the phone icon variant stays borderless. */
+.new-menu > summary.button.primary { justify-content: center; }
+.new-menu[open] > summary.button.primary { background: #3f5e48; border-color: #3f5e48; color: #fff; }
+[data-theme="dark"] .new-menu[open] > summary.button.primary { background: #436a50; border-color: #6a9674; color: #f2f8ed; }
+.new-menu > summary.icon-button { border: 0; }
+.new-menu[open] > summary.icon-button { background: var(--surface-soft); }
+.new-menu-panel { min-width: 160px; }

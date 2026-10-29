@@ -1,4 +1,6 @@
 import { APP_VERSION } from "../../public/app-version.js";
+import { FeatureRequests } from "../feature-requests.js";
+import { featureRequestsRoutes } from "./routes/feature-requests.js";
 import { BOARD_LIMITS } from "../../public/board-limits.js";
 import Fastify, {
   type FastifyInstance,
@@ -96,6 +98,7 @@ export function createServer(
     automations: new Automations(store, auth),
     index: new RecordIndex(store),
     diagnostics: new Diagnostics(),
+    requests: new FeatureRequests(store),
     rooms: new Map(),
   };
   store.watch();
@@ -228,9 +231,9 @@ export function createServer(
         bytes: (data, type, extra = {}) =>
           reply
             .code(200)
+            .header("Cache-Control", "no-store")
             .headers(extra)
             .type(type)
-            .header("Cache-Control", "no-store")
             .send(data),
         authorizeWrite: () => authorizeWrite(ctx),
         mutate: (fn) =>
@@ -275,6 +278,8 @@ export function createServer(
         });
   }
   app.get("/api/health", async (_req, reply) => reply.header("Cache-Control", "no-store").send({ ok: true, version: APP_VERSION }));
+  route(["/api/feature-requests", "/api/feature-requests/:request", "/api/feature-requests/:request/attachments/:file"], featureRequestsRoutes, false, 30_000_000);
+  route(["/api/feature-request-worker"], featureRequestsRoutes, true);
   route(
     ["/api/session", "/api/miro-callback", "/api/source-callback/:provider"],
     authenticationRoutes,

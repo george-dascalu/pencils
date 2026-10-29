@@ -1,6 +1,13 @@
 /* Board navigation is controlled by its camera, never by native scroll offsets. */
 .canvas {
   overflow: clip;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+}
+.canvas :is(input, textarea, [contenteditable="true"], [contenteditable="plaintext-only"]) {
+  user-select: text;
+  -webkit-user-select: text;
+  -webkit-touch-callout: default;
 }
 /* Keep the object surface and typography identical during editing. */
 .board-node .canvas-markdown {
@@ -166,6 +173,8 @@
   line-height: inherit;
   outline: none;
   user-select: text;
+  -webkit-user-select: text;
+  -webkit-touch-callout: default;
   pointer-events: auto;
   cursor: text;
 }
@@ -205,9 +214,25 @@
   font-style: italic;
   pointer-events: none;
 }
+/* A real empty paragraph gives WebKit a caret line at the note's text
+   alignment. Generated placeholder text alone has no editable caret position. */
+#canvas-inline-form .inline-rich[data-empty="true"]:has(> [data-empty-line])::before {
+  content: none;
+}
+#canvas-inline-form .inline-rich > [data-empty-line] { position: relative; }
+#canvas-inline-form .inline-rich[data-empty="true"] > [data-empty-line]::before {
+  content: attr(data-placeholder);
+  position: absolute;
+  inset-inline-start: 0;
+  width: 100%;
+  opacity: 0.55;
+  font-style: italic;
+  pointer-events: none;
+}
 #canvas-inline-form [data-inline-title] {
   cursor: text;
   user-select: text;
+  -webkit-user-select: text;
   outline: none;
   pointer-events: auto;
   display: block;
@@ -401,7 +426,7 @@
   border-radius: 6px;
   background: var(--surface);
   color: var(--ink);
-  box-shadow: 0 2px 8px #00000014;
+  box-shadow: var(--shadow-raised);
   font: 500 12px/1.4 var(--app-font, sans-serif);
   font-variant-numeric: tabular-nums;
   white-space: nowrap;

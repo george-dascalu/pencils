@@ -1,0 +1,5563 @@
+[
+ {
+  "ctx": "phone",
+  "theme": "light",
+  "width": 390,
+  "name": "command-k",
+  "shot": "phone-light-command-k.png",
+  "metrics": {
+   "title": "A little more possibility · Pencils",
+   "theme": "light",
+   "density": "comfortable",
+   "coarse": true,
+   "hoverNone": true,
+   "innerWidth": 390,
+   "innerHeight": 844,
+   "scrollWidth": 390,
+   "scrollHeight": 1240,
+   "overflowX": false,
+   "bodyOverflowX": false,
+   "visibleInteractive": 145,
+   "smallCount": 0,
+   "small": [],
+   "offscreen": [],
+   "clipped": [],
+   "heights": {
+    "44": 4
+   },
+   "landmarks": {
+    "topbar": [
+     0,
+     0,
+     390,
+     53
+    ],
+    "sidebar": [
+     -320,
+     0,
+     320,
+     844
+    ],
+    "mobileMenu": [
+     8,
+     4,
+     44,
+     44
+    ],
+    "crumb": null,
+    "tabs": null,
+    "layoutSwitcher": null,
+    "viewSwitcherSelect": null,
+    "newTask": [
+     -302,
+     752,
+     284,
+     44
+    ],
+    "projectSettings": [
+     -302,
+     1297,
+     284,
+     44
+    ],
+    "help": [
+     -302,
+     1345,
+     284,
+     44
+    ],
+    "avatar": null,
+    "toolbar": [
+     0,
+     53,
+     390,
+     52
+    ],
+    "search": [
+     10,
+     57,
+     322,
+     44
+    ],
+    "filters": null,
+    "sort": null,
+    "group": null,
+    "mobileViewOptions": [
+     336,
+     57,
+     44,
+     44
+    ],
+    "saveState": null
+   },
+   "overlays": [],
+   "fontSizes": {
+    "31px": 2,
+    "16px": 1,
+    "11px": 9,
+    "13px": 20,
+    "9px": 7,
+    "10px": 41,
+    "12px": 67,
+    "14px": 90,
+    "20px": 12,
+    "25px": 1
+   },
+   "toasts": [],
+   "emptyState": null
+  },
+  "axe": [],
+  "errors": [],
+  "failed": [],
+  "console": []
+ },
+ {
+  "ctx": "phone",
+  "theme": "light",
+  "width": 390,
+  "name": "task-history",
+  "shot": "phone-light-task-history.png",
+  "metrics": {
+   "title": "A little more possibility · Pencils",
+   "theme": "light",
+   "density": "comfortable",
+   "coarse": true,
+   "hoverNone": true,
+   "innerWidth": 390,
+   "innerHeight": 844,
+   "scrollWidth": 390,
+   "scrollHeight": 844,
+   "overflowX": false,
+   "bodyOverflowX": false,
+   "visibleInteractive": 74,
+   "smallCount": 1,
+   "small": [
+    [
+     "summary 358x39",
+     {
+      "n": 1,
+      "label": "Current version14/10/2026, 19:18:33Earliest s"
+     }
+    ]
+   ],
+   "offscreen": [],
+   "clipped": [],
+   "heights": {
+    "44": 4
+   },
+   "landmarks": {
+    "topbar": [
+     0,
+     0,
+     390,
+     53
+    ],
+    "sidebar": [
+     -320,
+     0,
+     320,
+     844
+    ],
+    "mobileMenu": [
+     8,
+     4,
+     44,
+     44
+    ],
+    "crumb": null,
+    "tabs": null,
+    "layoutSwitcher": null,
+    "viewSwitcherSelect": null,
+    "newTask": [
+     -302,
+     752,
+     284,
+     44
+    ],
+    "projectSettings": [
+     -302,
+     1297,
+     284,
+     44
+    ],
+    "help": [
+     -302,
+     1345,
+     284,
+     44
+    ],
+    "avatar": null,
+    "toolbar": [
+     0,
+     53,
+     390,
+     52
+    ],
+    "search": [
+     10,
+     57,
+     322,
+     44
+    ],
+    "filters": null,
+    "sort": null,
+    "group": null,
+    "mobileViewOptions": [
+     336,
+     57,
+     44,
+     44
+    ],
+    "saveState": null
+   },
+   "overlays": [
+    {
+     "sig": "dialog.dialog.task-dialog.board-task-editor",
+     "rect": [
+      0,
+      0,
+      390,
+      844
+     ],
+     "beyondRight": false,
+     "beyondBottom": false,
+     "beyondLeft": false,
+     "beyondTop": false,
+     "scrollable": false,
+     "overflowY": "hidden",
+     "position": "fixed",
+     "z": "100"
+    }
+   ],
+   "fontSizes": {
+    "31px": 2,
+    "16px": 1,
+    "11px": 9,
+    "13px": 20,
+    "9px": 7,
+    "10px": 43,
+    "12px": 8,
+    "14px": 13,
+    "20px": 12
+   },
+   "toasts": [],
+   "emptyState": null
+  },
+  "axe": [],
+  "errors": [],
+  "failed": [],
+  "console": []
+ },
+ {
+  "ctx": "phone",
+  "theme": "light",
+  "width": 390,
+  "name": "task-relationship-add",
+  "shot": "phone-light-task-relationship-add.png",
+  "metrics": {
+   "title": "A little more possibility · Pencils",
+   "theme": "light",
+   "density": "comfortable",
+   "coarse": true,
+   "hoverNone": true,
+   "innerWidth": 390,
+   "innerHeight": 844,
+   "scrollWidth": 390,
+   "scrollHeight": 844,
+   "overflowX": false,
+   "bodyOverflowX": false,
+   "visibleInteractive": 102,
+   "smallCount": 0,
+   "small": [],
+   "offscreen": [],
+   "clipped": [],
+   "heights": {
+    "44": 4
+   },
+   "landmarks": {
+    "topbar": [
+     0,
+     0,
+     390,
+     53
+    ],
+    "sidebar": [
+     -320,
+     0,
+     320,
+     844
+    ],
+    "mobileMenu": [
+     8,
+     4,
+     44,
+     44
+    ],
+    "crumb": null,
+    "tabs": null,
+    "layoutSwitcher": null,
+    "viewSwitcherSelect": null,
+    "newTask": [
+     -302,
+     752,
+     284,
+     44
+    ],
+    "projectSettings": [
+     -302,
+     1297,
+     284,
+     44
+    ],
+    "help": [
+     -302,
+     1345,
+     284,
+     44
+    ],
+    "avatar": null,
+    "toolbar": [
+     0,
+     53,
+     390,
+     52
+    ],
+    "search": [
+     10,
+     57,
+     322,
+     44
+    ],
+    "filters": null,
+    "sort": [
+     284,
+     585,
+     44,
+     44
+    ],
+    "group": null,
+    "mobileViewOptions": [
+     336,
+     57,
+     44,
+     44
+    ],
+    "saveState": null
+   },
+   "overlays": [
+    {
+     "sig": "dialog.dialog.task-dialog.board-task-editor",
+     "rect": [
+      0,
+      0,
+      390,
+      844
+     ],
+     "beyondRight": false,
+     "beyondBottom": false,
+     "beyondLeft": false,
+     "beyondTop": false,
+     "scrollable": false,
+     "overflowY": "hidden",
+     "position": "fixed",
+     "z": "100"
+    },
+    {
+     "sig": "div.selection-popover.task-relationship-picker#task-relationship-picker",
+     "rect": [
+      8,
+      210,
+      374,
+      367
+     ],
+     "beyondRight": false,
+     "beyondBottom": false,
+     "beyondLeft": false,
+     "beyondTop": false,
+     "scrollable": false,
+     "overflowY": "auto",
+     "position": "fixed",
+     "z": "2"
+    }
+   ],
+   "fontSizes": {
+    "31px": 2,
+    "16px": 1,
+    "11px": 17,
+    "13px": 20,
+    "9px": 7,
+    "10px": 64,
+    "12px": 17,
+    "14px": 14,
+    "20px": 12,
+    "0px": 11
+   },
+   "toasts": [],
+   "emptyState": null
+  },
+  "axe": [],
+  "errors": [],
+  "failed": [],
+  "console": []
+ },
+ {
+  "ctx": "phone",
+  "theme": "light",
+  "name": "list-sort",
+  "failed": "locator.click: Timeout 15000ms exceeded.\nCall log:\n  - waiting for locator('details > summary:visible').filter({ hasText: /^sort/i }).first()\n"
+ },
+ {
+  "ctx": "phone",
+  "theme": "light",
+  "name": "list-group",
+  "failed": "locator.click: Timeout 15000ms exceeded.\nCall log:\n  - waiting for locator('details > summary:visible').filter({ hasText: /^group/i }).first()\n"
+ },
+ {
+  "ctx": "phone",
+  "theme": "light",
+  "name": "table-columns",
+  "failed": "locator.click: Timeout 15000ms exceeded.\nCall log:\n  - waiting for getByRole('button', { name: /^columns/i }).first()\n"
+ },
+ {
+  "ctx": "phone",
+  "theme": "light",
+  "name": "board-project-tasks",
+  "failed": "locator.click: Timeout 15000ms exceeded.\nCall log:\n  - waiting for getByRole('button', { name: /project tasks/i }).first()\n"
+ },
+ {
+  "ctx": "phone",
+  "theme": "light",
+  "name": "new-project",
+  "failed": "locator.click: Timeout 15000ms exceeded.\nCall log:\n  - waiting for getByRole('button', { name: /new project/i }).first()\n    - locator resolved to <button class=\"side-new\" data-action=\"project-new\">…</button>\n  - attempting click action\n    2 × waiting for element to be visible, enabled and stable\n "
+ },
+ {
+  "ctx": "phone",
+  "theme": "light",
+  "name": "new-organisation",
+  "failed": "locator.click: Timeout 15000ms exceeded.\nCall log:\n  - waiting for getByRole('button', { name: /new organisation/i }).first()\n    - locator resolved to <button data-action=\"organisation-new\">…</button>\n  - attempting click action\n    2 × waiting for element to be visible, enabled and stable\n      - "
+ },
+ {
+  "ctx": "phone",
+  "theme": "light",
+  "width": 390,
+  "name": "phone-view-options",
+  "shot": "phone-light-phone-view-options.png",
+  "metrics": {
+   "title": "A little more possibility · Pencils",
+   "theme": "light",
+   "density": "comfortable",
+   "coarse": true,
+   "hoverNone": true,
+   "innerWidth": 390,
+   "innerHeight": 844,
+   "scrollWidth": 390,
+   "scrollHeight": 844,
+   "overflowX": false,
+   "bodyOverflowX": false,
+   "visibleInteractive": 206,
+   "smallCount": 12,
+   "small": [
+    [
+     "input 13x13",
+     {
+      "n": 10,
+      "label": "Select Test task from note"
+     }
+    ],
+    [
+     "input#grid-all 13x13",
+     {
+      "n": 1,
+      "label": "Select all visible rows"
+     }
+    ],
+    [
+     "button.add-row 378x41",
+     {
+      "n": 1,
+      "label": "+ New row"
+     }
+    ]
+   ],
+   "offscreen": [
+    {
+     "sig": "button.table-column-grip",
+     "label": "Move ID column",
+     "rect": [
+      379,
+      106,
+      44,
+      44
+     ]
+    }
+   ],
+   "clipped": [
+    {
+     "sig": "span.sr-only#grid-selection-count",
+     "text": "0 selected on this page",
+     "over": 126,
+     "rect": [
+      34,
+      360,
+      1,
+      1
+     ]
+    }
+   ],
+   "heights": {
+    "44": 12
+   },
+   "landmarks": {
+    "topbar": [
+     0,
+     0,
+     390,
+     53
+    ],
+    "sidebar": [
+     -320,
+     0,
+     320,
+     844
+    ],
+    "mobileMenu": [
+     8,
+     4,
+     44,
+     44
+    ],
+    "crumb": null,
+    "tabs": null,
+    "layoutSwitcher": null,
+    "viewSwitcherSelect": null,
+    "newTask": [
+     -302,
+     752,
+     284,
+     44
+    ],
+    "projectSettings": [
+     -302,
+     1297,
+     284,
+     44
+    ],
+    "help": [
+     -302,
+     1345,
+     284,
+     44
+    ],
+    "avatar": null,
+    "toolbar": [
+     0,
+     53,
+     390,
+     52
+    ],
+    "search": [
+     10,
+     57,
+     322,
+     44
+    ],
+    "filters": null,
+    "sort": [
+     150,
+     230,
+     95,
+     44
+    ],
+    "group": [
+     35,
+     230,
+     107,
+     44
+    ],
+    "mobileViewOptions": [
+     336,
+     57,
+     44,
+     44
+    ],
+    "saveState": null
+   },
+   "overlays": [],
+   "fontSizes": {
+    "31px": 2,
+    "16px": 1,
+    "11px": 81,
+    "13px": 49,
+    "9px": 13,
+    "10px": 20,
+    "12px": 18,
+    "14px": 2,
+    "20px": 12
+   },
+   "toasts": [],
+   "emptyState": null
+  },
+  "axe": [],
+  "errors": [],
+  "failed": [],
+  "console": []
+ },
+ {
+  "ctx": "phone",
+  "theme": "light",
+  "width": 390,
+  "name": "help-article",
+  "shot": "phone-light-help-article.png",
+  "metrics": {
+   "title": "Server setup · Help · Pencils",
+   "theme": "light",
+   "density": "comfortable",
+   "coarse": true,
+   "hoverNone": true,
+   "innerWidth": 390,
+   "innerHeight": 844,
+   "scrollWidth": 390,
+   "scrollHeight": 2810,
+   "overflowX": false,
+   "bodyOverflowX": false,
+   "visibleInteractive": 32,
+   "smallCount": 2,
+   "small": [
+    [
+     "summary 358x43",
+     {
+      "n": 1,
+      "label": "Browse guides"
+     }
+    ],
+    [
+     "a 25x21",
+     {
+      "n": 1,
+      "label": "Help"
+     }
+    ]
+   ],
+   "offscreen": [],
+   "clipped": [],
+   "heights": {
+    "44": 1
+   },
+   "landmarks": {
+    "topbar": [
+     0,
+     0,
+     390,
+     53
+    ],
+    "sidebar": [
+     -320,
+     0,
+     320,
+     844
+    ],
+    "mobileMenu": [
+     8,
+     4,
+     44,
+     44
+    ],
+    "crumb": null,
+    "tabs": null,
+    "layoutSwitcher": null,
+    "viewSwitcherSelect": null,
+    "newTask": null,
+    "projectSettings": null,
+    "help": [
+     -302,
+     551,
+     284,
+     44
+    ],
+    "avatar": null,
+    "toolbar": null,
+    "search": null,
+    "filters": null,
+    "sort": null,
+    "group": null,
+    "mobileViewOptions": null,
+    "saveState": null
+   },
+   "overlays": [],
+   "fontSizes": {
+    "31px": 2,
+    "9px": 1,
+    "10px": 4,
+    "12px": 9,
+    "11px": 6,
+    "13px": 19,
+    "14px": 10,
+    "28px": 1,
+    "16px": 1,
+    "21px": 3,
+    "12.6px": 16
+   },
+   "toasts": [],
+   "emptyState": null
+  },
+  "axe": [],
+  "errors": [],
+  "failed": [],
+  "console": []
+ },
+ {
+  "ctx": "phone",
+  "theme": "dark",
+  "width": 390,
+  "name": "command-k",
+  "shot": "phone-dark-command-k.png",
+  "metrics": {
+   "title": "A little more possibility · Pencils",
+   "theme": "dark",
+   "density": "comfortable",
+   "coarse": true,
+   "hoverNone": true,
+   "innerWidth": 390,
+   "innerHeight": 844,
+   "scrollWidth": 390,
+   "scrollHeight": 1240,
+   "overflowX": false,
+   "bodyOverflowX": false,
+   "visibleInteractive": 145,
+   "smallCount": 0,
+   "small": [],
+   "offscreen": [],
+   "clipped": [],
+   "heights": {
+    "44": 4
+   },
+   "landmarks": {
+    "topbar": [
+     0,
+     0,
+     390,
+     53
+    ],
+    "sidebar": [
+     -320,
+     0,
+     320,
+     844
+    ],
+    "mobileMenu": [
+     8,
+     4,
+     44,
+     44
+    ],
+    "crumb": null,
+    "tabs": null,
+    "layoutSwitcher": null,
+    "viewSwitcherSelect": null,
+    "newTask": [
+     -302,
+     752,
+     284,
+     44
+    ],
+    "projectSettings": [
+     -302,
+     1297,
+     284,
+     44
+    ],
+    "help": [
+     -302,
+     1345,
+     284,
+     44
+    ],
+    "avatar": null,
+    "toolbar": [
+     0,
+     53,
+     390,
+     52
+    ],
+    "search": [
+     10,
+     57,
+     322,
+     44
+    ],
+    "filters": null,
+    "sort": null,
+    "group": null,
+    "mobileViewOptions": [
+     336,
+     57,
+     44,
+     44
+    ],
+    "saveState": null
+   },
+   "overlays": [],
+   "fontSizes": {
+    "31px": 2,
+    "16px": 1,
+    "11px": 9,
+    "13px": 20,
+    "9px": 7,
+    "10px": 41,
+    "12px": 67,
+    "14px": 90,
+    "20px": 12,
+    "25px": 1
+   },
+   "toasts": [],
+   "emptyState": null
+  },
+  "axe": [],
+  "errors": [],
+  "failed": [],
+  "console": []
+ },
+ {
+  "ctx": "phone",
+  "theme": "dark",
+  "width": 390,
+  "name": "task-history",
+  "shot": "phone-dark-task-history.png",
+  "metrics": {
+   "title": "A little more possibility · Pencils",
+   "theme": "dark",
+   "density": "comfortable",
+   "coarse": true,
+   "hoverNone": true,
+   "innerWidth": 390,
+   "innerHeight": 844,
+   "scrollWidth": 390,
+   "scrollHeight": 844,
+   "overflowX": false,
+   "bodyOverflowX": false,
+   "visibleInteractive": 74,
+   "smallCount": 1,
+   "small": [
+    [
+     "summary 358x39",
+     {
+      "n": 1,
+      "label": "Current version14/10/2026, 19:18:33Earliest s"
+     }
+    ]
+   ],
+   "offscreen": [],
+   "clipped": [],
+   "heights": {
+    "44": 4
+   },
+   "landmarks": {
+    "topbar": [
+     0,
+     0,
+     390,
+     53
+    ],
+    "sidebar": [
+     -320,
+     0,
+     320,
+     844
+    ],
+    "mobileMenu": [
+     8,
+     4,
+     44,
+     44
+    ],
+    "crumb": null,
+    "tabs": null,
+    "layoutSwitcher": null,
+    "viewSwitcherSelect": null,
+    "newTask": [
+     -302,
+     752,
+     284,
+     44
+    ],
+    "projectSettings": [
+     -302,
+     1297,
+     284,
+     44
+    ],
+    "help": [
+     -302,
+     1345,
+     284,
+     44
+    ],
+    "avatar": null,
+    "toolbar": [
+     0,
+     53,
+     390,
+     52
+    ],
+    "search": [
+     10,
+     57,
+     322,
+     44
+    ],
+    "filters": null,
+    "sort": null,
+    "group": null,
+    "mobileViewOptions": [
+     336,
+     57,
+     44,
+     44
+    ],
+    "saveState": null
+   },
+   "overlays": [
+    {
+     "sig": "dialog.dialog.task-dialog.board-task-editor",
+     "rect": [
+      0,
+      0,
+      390,
+      844
+     ],
+     "beyondRight": false,
+     "beyondBottom": false,
+     "beyondLeft": false,
+     "beyondTop": false,
+     "scrollable": false,
+     "overflowY": "hidden",
+     "position": "fixed",
+     "z": "100"
+    }
+   ],
+   "fontSizes": {
+    "31px": 2,
+    "16px": 1,
+    "11px": 9,
+    "13px": 20,
+    "9px": 7,
+    "10px": 43,
+    "12px": 8,
+    "14px": 13,
+    "20px": 12
+   },
+   "toasts": [],
+   "emptyState": null
+  },
+  "axe": [],
+  "errors": [],
+  "failed": [],
+  "console": []
+ },
+ {
+  "ctx": "phone",
+  "theme": "dark",
+  "width": 390,
+  "name": "task-relationship-add",
+  "shot": "phone-dark-task-relationship-add.png",
+  "metrics": {
+   "title": "A little more possibility · Pencils",
+   "theme": "dark",
+   "density": "comfortable",
+   "coarse": true,
+   "hoverNone": true,
+   "innerWidth": 390,
+   "innerHeight": 844,
+   "scrollWidth": 390,
+   "scrollHeight": 844,
+   "overflowX": false,
+   "bodyOverflowX": false,
+   "visibleInteractive": 102,
+   "smallCount": 0,
+   "small": [],
+   "offscreen": [],
+   "clipped": [],
+   "heights": {
+    "44": 4
+   },
+   "landmarks": {
+    "topbar": [
+     0,
+     0,
+     390,
+     53
+    ],
+    "sidebar": [
+     -320,
+     0,
+     320,
+     844
+    ],
+    "mobileMenu": [
+     8,
+     4,
+     44,
+     44
+    ],
+    "crumb": null,
+    "tabs": null,
+    "layoutSwitcher": null,
+    "viewSwitcherSelect": null,
+    "newTask": [
+     -302,
+     752,
+     284,
+     44
+    ],
+    "projectSettings": [
+     -302,
+     1297,
+     284,
+     44
+    ],
+    "help": [
+     -302,
+     1345,
+     284,
+     44
+    ],
+    "avatar": null,
+    "toolbar": [
+     0,
+     53,
+     390,
+     52
+    ],
+    "search": [
+     10,
+     57,
+     322,
+     44
+    ],
+    "filters": null,
+    "sort": [
+     284,
+     585,
+     44,
+     44
+    ],
+    "group": null,
+    "mobileViewOptions": [
+     336,
+     57,
+     44,
+     44
+    ],
+    "saveState": null
+   },
+   "overlays": [
+    {
+     "sig": "dialog.dialog.task-dialog.board-task-editor",
+     "rect": [
+      0,
+      0,
+      390,
+      844
+     ],
+     "beyondRight": false,
+     "beyondBottom": false,
+     "beyondLeft": false,
+     "beyondTop": false,
+     "scrollable": false,
+     "overflowY": "hidden",
+     "position": "fixed",
+     "z": "100"
+    },
+    {
+     "sig": "div.selection-popover.task-relationship-picker#task-relationship-picker",
+     "rect": [
+      8,
+      210,
+      374,
+      367
+     ],
+     "beyondRight": false,
+     "beyondBottom": false,
+     "beyondLeft": false,
+     "beyondTop": false,
+     "scrollable": false,
+     "overflowY": "auto",
+     "position": "fixed",
+     "z": "2"
+    }
+   ],
+   "fontSizes": {
+    "31px": 2,
+    "16px": 1,
+    "11px": 17,
+    "13px": 20,
+    "9px": 7,
+    "10px": 64,
+    "12px": 17,
+    "14px": 14,
+    "20px": 12,
+    "0px": 11
+   },
+   "toasts": [],
+   "emptyState": null
+  },
+  "axe": [],
+  "errors": [],
+  "failed": [],
+  "console": []
+ },
+ {
+  "ctx": "phone",
+  "theme": "dark",
+  "name": "list-sort",
+  "failed": "locator.click: Timeout 15000ms exceeded.\nCall log:\n  - waiting for locator('details > summary:visible').filter({ hasText: /^sort/i }).first()\n"
+ },
+ {
+  "ctx": "phone",
+  "theme": "dark",
+  "name": "list-group",
+  "failed": "locator.click: Timeout 15000ms exceeded.\nCall log:\n  - waiting for locator('details > summary:visible').filter({ hasText: /^group/i }).first()\n"
+ },
+ {
+  "ctx": "phone",
+  "theme": "dark",
+  "name": "table-columns",
+  "failed": "locator.click: Timeout 15000ms exceeded.\nCall log:\n  - waiting for getByRole('button', { name: /^columns/i }).first()\n"
+ },
+ {
+  "ctx": "phone",
+  "theme": "dark",
+  "name": "board-project-tasks",
+  "failed": "locator.click: Timeout 15000ms exceeded.\nCall log:\n  - waiting for getByRole('button', { name: /project tasks/i }).first()\n"
+ },
+ {
+  "ctx": "phone",
+  "theme": "dark",
+  "name": "new-project",
+  "failed": "locator.click: Timeout 15000ms exceeded.\nCall log:\n  - waiting for getByRole('button', { name: /new project/i }).first()\n    - locator resolved to <button class=\"side-new\" data-action=\"project-new\">…</button>\n  - attempting click action\n    2 × waiting for element to be visible, enabled and stable\n "
+ },
+ {
+  "ctx": "phone",
+  "theme": "dark",
+  "name": "new-organisation",
+  "failed": "locator.click: Timeout 15000ms exceeded.\nCall log:\n  - waiting for getByRole('button', { name: /new organisation/i }).first()\n    - locator resolved to <button data-action=\"organisation-new\">…</button>\n  - attempting click action\n    - waiting for element to be visible, enabled and stable\n    - elem"
+ },
+ {
+  "ctx": "phone",
+  "theme": "dark",
+  "width": 390,
+  "name": "phone-view-options",
+  "shot": "phone-dark-phone-view-options.png",
+  "metrics": {
+   "title": "A little more possibility · Pencils",
+   "theme": "dark",
+   "density": "comfortable",
+   "coarse": true,
+   "hoverNone": true,
+   "innerWidth": 390,
+   "innerHeight": 844,
+   "scrollWidth": 390,
+   "scrollHeight": 844,
+   "overflowX": false,
+   "bodyOverflowX": false,
+   "visibleInteractive": 206,
+   "smallCount": 12,
+   "small": [
+    [
+     "input 13x13",
+     {
+      "n": 10,
+      "label": "Select Test task from note"
+     }
+    ],
+    [
+     "input#grid-all 13x13",
+     {
+      "n": 1,
+      "label": "Select all visible rows"
+     }
+    ],
+    [
+     "button.add-row 378x41",
+     {
+      "n": 1,
+      "label": "+ New row"
+     }
+    ]
+   ],
+   "offscreen": [
+    {
+     "sig": "button.table-column-grip",
+     "label": "Move ID column",
+     "rect": [
+      379,
+      106,
+      44,
+      44
+     ]
+    }
+   ],
+   "clipped": [
+    {
+     "sig": "span.sr-only#grid-selection-count",
+     "text": "0 selected on this page",
+     "over": 126,
+     "rect": [
+      34,
+      360,
+      1,
+      1
+     ]
+    }
+   ],
+   "heights": {
+    "44": 12
+   },
+   "landmarks": {
+    "topbar": [
+     0,
+     0,
+     390,
+     53
+    ],
+    "sidebar": [
+     -320,
+     0,
+     320,
+     844
+    ],
+    "mobileMenu": [
+     8,
+     4,
+     44,
+     44
+    ],
+    "crumb": null,
+    "tabs": null,
+    "layoutSwitcher": null,
+    "viewSwitcherSelect": null,
+    "newTask": [
+     -302,
+     752,
+     284,
+     44
+    ],
+    "projectSettings": [
+     -302,
+     1297,
+     284,
+     44
+    ],
+    "help": [
+     -302,
+     1345,
+     284,
+     44
+    ],
+    "avatar": null,
+    "toolbar": [
+     0,
+     53,
+     390,
+     52
+    ],
+    "search": [
+     10,
+     57,
+     322,
+     44
+    ],
+    "filters": null,
+    "sort": [
+     150,
+     230,
+     95,
+     44
+    ],
+    "group": [
+     35,
+     230,
+     107,
+     44
+    ],
+    "mobileViewOptions": [
+     336,
+     57,
+     44,
+     44
+    ],
+    "saveState": null
+   },
+   "overlays": [],
+   "fontSizes": {
+    "31px": 2,
+    "16px": 1,
+    "11px": 81,
+    "13px": 49,
+    "9px": 13,
+    "10px": 20,
+    "12px": 18,
+    "14px": 2,
+    "20px": 12
+   },
+   "toasts": [],
+   "emptyState": null
+  },
+  "axe": [],
+  "errors": [],
+  "failed": [],
+  "console": []
+ },
+ {
+  "ctx": "phone",
+  "theme": "dark",
+  "width": 390,
+  "name": "help-article",
+  "shot": "phone-dark-help-article.png",
+  "metrics": {
+   "title": "Server setup · Help · Pencils",
+   "theme": "dark",
+   "density": "comfortable",
+   "coarse": true,
+   "hoverNone": true,
+   "innerWidth": 390,
+   "innerHeight": 844,
+   "scrollWidth": 390,
+   "scrollHeight": 2810,
+   "overflowX": false,
+   "bodyOverflowX": false,
+   "visibleInteractive": 32,
+   "smallCount": 2,
+   "small": [
+    [
+     "summary 358x43",
+     {
+      "n": 1,
+      "label": "Browse guides"
+     }
+    ],
+    [
+     "a 25x21",
+     {
+      "n": 1,
+      "label": "Help"
+     }
+    ]
+   ],
+   "offscreen": [],
+   "clipped": [],
+   "heights": {
+    "44": 1
+   },
+   "landmarks": {
+    "topbar": [
+     0,
+     0,
+     390,
+     53
+    ],
+    "sidebar": [
+     -320,
+     0,
+     320,
+     844
+    ],
+    "mobileMenu": [
+     8,
+     4,
+     44,
+     44
+    ],
+    "crumb": null,
+    "tabs": null,
+    "layoutSwitcher": null,
+    "viewSwitcherSelect": null,
+    "newTask": null,
+    "projectSettings": null,
+    "help": [
+     -302,
+     551,
+     284,
+     44
+    ],
+    "avatar": null,
+    "toolbar": null,
+    "search": null,
+    "filters": null,
+    "sort": null,
+    "group": null,
+    "mobileViewOptions": null,
+    "saveState": null
+   },
+   "overlays": [],
+   "fontSizes": {
+    "31px": 2,
+    "9px": 1,
+    "10px": 4,
+    "12px": 9,
+    "11px": 6,
+    "13px": 19,
+    "14px": 10,
+    "28px": 1,
+    "16px": 1,
+    "21px": 3,
+    "12.6px": 16
+   },
+   "toasts": [],
+   "emptyState": null
+  },
+  "axe": [],
+  "errors": [],
+  "failed": [],
+  "console": []
+ },
+ {
+  "ctx": "ipad-portrait",
+  "theme": "light",
+  "width": 820,
+  "name": "command-k",
+  "shot": "ipad-portrait-light-command-k.png",
+  "metrics": {
+   "title": "A little more possibility · Pencils",
+   "theme": "light",
+   "density": "comfortable",
+   "coarse": true,
+   "hoverNone": true,
+   "innerWidth": 820,
+   "innerHeight": 1180,
+   "scrollWidth": 820,
+   "scrollHeight": 1789,
+   "overflowX": false,
+   "bodyOverflowX": false,
+   "visibleInteractive": 191,
+   "smallCount": 0,
+   "small": [],
+   "offscreen": [],
+   "clipped": [],
+   "heights": {
+    "44": 17
+   },
+   "landmarks": {
+    "topbar": [
+     210,
+     0,
+     610,
+     97
+    ],
+    "sidebar": [
+     0,
+     0,
+     210,
+     1180
+    ],
+    "mobileMenu": null,
+    "crumb": null,
+    "tabs": [
+     230,
+     49,
+     468,
+     43
+    ],
+    "layoutSwitcher": [
+     226,
+     101,
+     182,
+     44
+    ],
+    "viewSwitcherSelect": null,
+    "newTask": [
+     702,
+     48,
+     98,
+     44
+    ],
+    "projectSettings": [
+     660,
+     4,
+     44,
+     44
+    ],
+    "help": [
+     708,
+     4,
+     44,
+     44
+    ],
+    "avatar": [
+     756,
+     4,
+     44,
+     44
+    ],
+    "toolbar": [
+     210,
+     97,
+     610,
+     52
+    ],
+    "search": [
+     412,
+     101,
+     170,
+     44
+    ],
+    "filters": null,
+    "sort": null,
+    "group": null,
+    "mobileViewOptions": null,
+    "saveState": [
+     616,
+     19,
+     40,
+     15
+    ]
+   },
+   "overlays": [],
+   "fontSizes": {
+    "31px": 2,
+    "9px": 13,
+    "10px": 10,
+    "12px": 84,
+    "11px": 5,
+    "14px": 78,
+    "13px": 28,
+    "20px": 12,
+    "25px": 1
+   },
+   "toasts": [],
+   "emptyState": null
+  },
+  "errors": [],
+  "failed": [],
+  "console": []
+ },
+ {
+  "ctx": "ipad-portrait",
+  "theme": "light",
+  "width": 820,
+  "name": "task-history",
+  "shot": "ipad-portrait-light-task-history.png",
+  "metrics": {
+   "title": "A little more possibility · Pencils",
+   "theme": "light",
+   "density": "comfortable",
+   "coarse": true,
+   "hoverNone": true,
+   "innerWidth": 820,
+   "innerHeight": 1180,
+   "scrollWidth": 820,
+   "scrollHeight": 1789,
+   "overflowX": false,
+   "bodyOverflowX": false,
+   "visibleInteractive": 122,
+   "smallCount": 1,
+   "small": [
+    [
+     "summary 552x39",
+     {
+      "n": 1,
+      "label": "Current version14/10/2026, 19:18:33Earliest s"
+     }
+    ]
+   ],
+   "offscreen": [],
+   "clipped": [],
+   "heights": {
+    "44": 17
+   },
+   "landmarks": {
+    "topbar": [
+     210,
+     0,
+     610,
+     97
+    ],
+    "sidebar": [
+     0,
+     0,
+     210,
+     1180
+    ],
+    "mobileMenu": null,
+    "crumb": null,
+    "tabs": [
+     230,
+     49,
+     468,
+     43
+    ],
+    "layoutSwitcher": [
+     226,
+     101,
+     182,
+     44
+    ],
+    "viewSwitcherSelect": null,
+    "newTask": [
+     702,
+     48,
+     98,
+     44
+    ],
+    "projectSettings": [
+     660,
+     4,
+     44,
+     44
+    ],
+    "help": [
+     708,
+     4,
+     44,
+     44
+    ],
+    "avatar": [
+     756,
+     4,
+     44,
+     44
+    ],
+    "toolbar": [
+     210,
+     97,
+     610,
+     52
+    ],
+    "search": [
+     412,
+     101,
+     170,
+     44
+    ],
+    "filters": null,
+    "sort": null,
+    "group": null,
+    "mobileViewOptions": null,
+    "saveState": [
+     616,
+     19,
+     40,
+     15
+    ]
+   },
+   "overlays": [
+    {
+     "sig": "dialog.dialog.task-dialog.board-task-editor",
+     "rect": [
+      222,
+      12,
+      586,
+      1156
+     ],
+     "beyondRight": false,
+     "beyondBottom": false,
+     "beyondLeft": false,
+     "beyondTop": false,
+     "scrollable": false,
+     "overflowY": "visible",
+     "position": "fixed",
+     "z": "28"
+    }
+   ],
+   "fontSizes": {
+    "31px": 2,
+    "9px": 13,
+    "10px": 11,
+    "12px": 26,
+    "11px": 5,
+    "14px": 1,
+    "13px": 28,
+    "20px": 12
+   },
+   "toasts": [],
+   "emptyState": null
+  },
+  "errors": [],
+  "failed": [],
+  "console": []
+ },
+ {
+  "ctx": "ipad-portrait",
+  "theme": "light",
+  "width": 820,
+  "name": "task-relationship-add",
+  "shot": "ipad-portrait-light-task-relationship-add.png",
+  "metrics": {
+   "title": "A little more possibility · Pencils",
+   "theme": "light",
+   "density": "comfortable",
+   "coarse": true,
+   "hoverNone": true,
+   "innerWidth": 820,
+   "innerHeight": 1180,
+   "scrollWidth": 820,
+   "scrollHeight": 1789,
+   "overflowX": false,
+   "bodyOverflowX": false,
+   "visibleInteractive": 153,
+   "smallCount": 0,
+   "small": [],
+   "offscreen": [],
+   "clipped": [],
+   "heights": {
+    "44": 17
+   },
+   "landmarks": {
+    "topbar": [
+     210,
+     0,
+     610,
+     97
+    ],
+    "sidebar": [
+     0,
+     0,
+     210,
+     1180
+    ],
+    "mobileMenu": null,
+    "crumb": null,
+    "tabs": [
+     230,
+     49,
+     468,
+     43
+    ],
+    "layoutSwitcher": [
+     226,
+     101,
+     182,
+     44
+    ],
+    "viewSwitcherSelect": null,
+    "newTask": [
+     702,
+     48,
+     98,
+     44
+    ],
+    "projectSettings": [
+     660,
+     4,
+     44,
+     44
+    ],
+    "help": [
+     708,
+     4,
+     44,
+     44
+    ],
+    "avatar": [
+     756,
+     4,
+     44,
+     44
+    ],
+    "toolbar": [
+     210,
+     97,
+     610,
+     52
+    ],
+    "search": [
+     412,
+     101,
+     170,
+     44
+    ],
+    "filters": null,
+    "sort": [
+     701,
+     509,
+     44,
+     44
+    ],
+    "group": null,
+    "mobileViewOptions": null,
+    "saveState": [
+     616,
+     19,
+     40,
+     15
+    ]
+   },
+   "overlays": [
+    {
+     "sig": "dialog.dialog.task-dialog.board-task-editor",
+     "rect": [
+      222,
+      12,
+      586,
+      1156
+     ],
+     "beyondRight": false,
+     "beyondBottom": false,
+     "beyondLeft": false,
+     "beyondTop": false,
+     "scrollable": false,
+     "overflowY": "visible",
+     "position": "fixed",
+     "z": "28"
+    },
+    {
+     "sig": "div.selection-popover.task-relationship-picker#task-relationship-picker",
+     "rect": [
+      280,
+      561,
+      520,
+      367
+     ],
+     "beyondRight": false,
+     "beyondBottom": false,
+     "beyondLeft": false,
+     "beyondTop": false,
+     "scrollable": false,
+     "overflowY": "auto",
+     "position": "fixed",
+     "z": "2"
+    }
+   ],
+   "fontSizes": {
+    "31px": 2,
+    "9px": 13,
+    "10px": 43,
+    "12px": 35,
+    "11px": 13,
+    "14px": 2,
+    "13px": 28,
+    "20px": 12
+   },
+   "toasts": [],
+   "emptyState": null
+  },
+  "errors": [],
+  "failed": [],
+  "console": []
+ },
+ {
+  "ctx": "ipad-portrait",
+  "theme": "light",
+  "name": "list-sort",
+  "failed": "locator.click: Timeout 15000ms exceeded.\nCall log:\n  - waiting for locator('details > summary:visible').filter({ hasText: /^sort/i }).first()\n"
+ },
+ {
+  "ctx": "ipad-portrait",
+  "theme": "light",
+  "name": "list-group",
+  "failed": "locator.click: Timeout 15000ms exceeded.\nCall log:\n  - waiting for locator('details > summary:visible').filter({ hasText: /^group/i }).first()\n"
+ },
+ {
+  "ctx": "ipad-portrait",
+  "theme": "light",
+  "name": "table-columns",
+  "failed": "locator.click: Timeout 15000ms exceeded.\nCall log:\n  - waiting for getByRole('button', { name: /^columns/i }).first()\n"
+ },
+ {
+  "ctx": "ipad-portrait",
+  "theme": "light",
+  "width": 820,
+  "name": "board-project-tasks",
+  "shot": "ipad-portrait-light-board-project-tasks.png",
+  "metrics": {
+   "title": "A little more possibility · Pencils",
+   "theme": "light",
+   "density": "comfortable",
+   "coarse": true,
+   "hoverNone": true,
+   "innerWidth": 820,
+   "innerHeight": 1180,
+   "scrollWidth": 820,
+   "scrollHeight": 1180,
+   "overflowX": false,
+   "bodyOverflowX": false,
+   "visibleInteractive": 67,
+   "smallCount": 1,
+   "small": [
+    [
+     "button.button.small 27x44",
+     {
+      "n": 1,
+      "label": "Full screen"
+     }
+    ]
+   ],
+   "offscreen": [],
+   "clipped": [],
+   "heights": {
+    "44": 13
+   },
+   "landmarks": {
+    "topbar": [
+     210,
+     0,
+     610,
+     97
+    ],
+    "sidebar": [
+     0,
+     0,
+     210,
+     1180
+    ],
+    "mobileMenu": null,
+    "crumb": null,
+    "tabs": [
+     230,
+     49,
+     468,
+     43
+    ],
+    "layoutSwitcher": null,
+    "viewSwitcherSelect": null,
+    "newTask": [
+     702,
+     48,
+     98,
+     44
+    ],
+    "projectSettings": [
+     660,
+     4,
+     44,
+     44
+    ],
+    "help": [
+     708,
+     4,
+     44,
+     44
+    ],
+    "avatar": [
+     756,
+     4,
+     44,
+     44
+    ],
+    "toolbar": null,
+    "search": null,
+    "filters": null,
+    "sort": null,
+    "group": null,
+    "mobileViewOptions": null,
+    "saveState": [
+     616,
+     19,
+     40,
+     15
+    ]
+   },
+   "overlays": [],
+   "fontSizes": {
+    "31px": 2,
+    "9px": 1,
+    "10px": 5,
+    "12px": 5,
+    "11px": 5,
+    "14px": 1,
+    "13px": 6
+   },
+   "toasts": [],
+   "emptyState": null
+  },
+  "errors": [],
+  "failed": [],
+  "console": []
+ },
+ {
+  "ctx": "ipad-portrait",
+  "theme": "light",
+  "width": 820,
+  "name": "new-project",
+  "shot": "ipad-portrait-light-new-project.png",
+  "metrics": {
+   "title": "Our organisation · Pencils",
+   "theme": "light",
+   "density": "comfortable",
+   "coarse": true,
+   "hoverNone": true,
+   "innerWidth": 820,
+   "innerHeight": 1180,
+   "scrollWidth": 820,
+   "scrollHeight": 1243,
+   "overflowX": false,
+   "bodyOverflowX": false,
+   "visibleInteractive": 131,
+   "smallCount": 3,
+   "small": [
+    [
+     "input 13x13",
+     {
+      "n": 3,
+      "label": ""
+     }
+    ]
+   ],
+   "offscreen": [
+    {
+     "sig": "button.rule-diagram-node",
+     "label": "In progress",
+     "rect": [
+      694,
+      1161,
+      160,
+      56
+     ]
+    },
+    {
+     "sig": "button.rule-diagram-node",
+     "label": "story",
+     "rect": [
+      694,
+      2068,
+      160,
+      56
+     ]
+    },
+    {
+     "sig": "button.rule-diagram-node",
+     "label": "bug",
+     "rect": [
+      694,
+      2208,
+      160,
+      56
+     ]
+    }
+   ],
+   "clipped": [
+    {
+     "sig": "span.workflow-toggle-label",
+     "text": "Completed",
+     "over": 61,
+     "rect": [
+      421,
+      1585,
+      1,
+      1
+     ]
+    },
+    {
+     "sig": "span.workflow-toggle-label",
+     "text": "Default",
+     "over": 40,
+     "rect": [
+      501,
+      1585,
+      1,
+      1
+     ]
+    },
+    {
+     "sig": "span.workflow-toggle-label",
+     "text": "Completed",
+     "over": 61,
+     "rect": [
+      421,
+      1638,
+      1,
+      1
+     ]
+    },
+    {
+     "sig": "span.workflow-toggle-label",
+     "text": "Default",
+     "over": 40,
+     "rect": [
+      501,
+      1638,
+      1,
+      1
+     ]
+    },
+    {
+     "sig": "span.workflow-toggle-label",
+     "text": "Completed",
+     "over": 61,
+     "rect": [
+      421,
+      1691,
+      1,
+      1
+     ]
+    },
+    {
+     "sig": "span.workflow-toggle-label",
+     "text": "Default",
+     "over": 40,
+     "rect": [
+      501,
+      1691,
+      1,
+      1
+     ]
+    },
+    {
+     "sig": "span.workflow-toggle-label",
+     "text": "Completed",
+     "over": 61,
+     "rect": [
+      421,
+      1744,
+      1,
+      1
+     ]
+    },
+    {
+     "sig": "span.workflow-toggle-label",
+     "text": "Default",
+     "over": 40,
+     "rect": [
+      501,
+      1744,
+      1,
+      1
+     ]
+    },
+    {
+     "sig": "span.workflow-toggle-label",
+     "text": "Completed",
+     "over": 61,
+     "rect": [
+      421,
+      1797,
+      1,
+      1
+     ]
+    },
+    {
+     "sig": "span.workflow-toggle-label",
+     "text": "Default",
+     "over": 40,
+     "rect": [
+      501,
+      1797,
+      1,
+      1
+     ]
+    }
+   ],
+   "heights": {
+    "44": 3
+   },
+   "landmarks": {
+    "topbar": [
+     210,
+     0,
+     610,
+     53
+    ],
+    "sidebar": [
+     0,
+     0,
+     210,
+     1180
+    ],
+    "mobileMenu": null,
+    "crumb": null,
+    "tabs": null,
+    "layoutSwitcher": null,
+    "viewSwitcherSelect": null,
+    "newTask": null,
+    "projectSettings": null,
+    "help": [
+     693,
+     4,
+     44,
+     44
+    ],
+    "avatar": [
+     756,
+     4,
+     44,
+     44
+    ],
+    "toolbar": null,
+    "search": null,
+    "filters": null,
+    "sort": null,
+    "group": null,
+    "mobileViewOptions": null,
+    "saveState": [
+     634,
+     19,
+     40,
+     15
+    ]
+   },
+   "overlays": [],
+   "fontSizes": {
+    "31px": 3,
+    "9px": 1,
+    "10px": 7,
+    "12px": 31,
+    "11px": 12,
+    "13px": 31,
+    "32px": 4,
+    "24px": 1,
+    "14px": 38,
+    "11.6667px": 9,
+    "22px": 1,
+    "9.16667px": 1,
+    "25px": 1,
+    "16.38px": 1
+   },
+   "toasts": [],
+   "emptyState": null
+  },
+  "errors": [],
+  "failed": [],
+  "console": []
+ },
+ {
+  "ctx": "ipad-portrait",
+  "theme": "light",
+  "width": 820,
+  "name": "new-organisation",
+  "shot": "ipad-portrait-light-new-organisation.png",
+  "metrics": {
+   "title": "Alternative Controls · Pencils",
+   "theme": "light",
+   "density": "comfortable",
+   "coarse": true,
+   "hoverNone": true,
+   "innerWidth": 820,
+   "innerHeight": 1180,
+   "scrollWidth": 820,
+   "scrollHeight": 1180,
+   "overflowX": false,
+   "bodyOverflowX": false,
+   "visibleInteractive": 22,
+   "smallCount": 0,
+   "small": [],
+   "offscreen": [],
+   "clipped": [],
+   "heights": {
+    "44": 3
+   },
+   "landmarks": {
+    "topbar": [
+     210,
+     0,
+     610,
+     53
+    ],
+    "sidebar": [
+     0,
+     0,
+     210,
+     1180
+    ],
+    "mobileMenu": null,
+    "crumb": null,
+    "tabs": null,
+    "layoutSwitcher": null,
+    "viewSwitcherSelect": null,
+    "newTask": null,
+    "projectSettings": null,
+    "help": [
+     693,
+     4,
+     44,
+     44
+    ],
+    "avatar": [
+     756,
+     4,
+     44,
+     44
+    ],
+    "toolbar": null,
+    "search": null,
+    "filters": null,
+    "sort": null,
+    "group": null,
+    "mobileViewOptions": null,
+    "saveState": [
+     634,
+     19,
+     40,
+     15
+    ]
+   },
+   "overlays": [],
+   "fontSizes": {
+    "31px": 2,
+    "9px": 1,
+    "10px": 6,
+    "12px": 12,
+    "11px": 11,
+    "55px": 2,
+    "14px": 1,
+    "13px": 6,
+    "25px": 1,
+    "16.38px": 2
+   },
+   "toasts": [],
+   "emptyState": null
+  },
+  "errors": [],
+  "failed": [],
+  "console": []
+ },
+ {
+  "ctx": "ipad-portrait",
+  "theme": "light",
+  "name": "phone-view-options",
+  "failed": "no view options at this width"
+ },
+ {
+  "ctx": "ipad-portrait",
+  "theme": "light",
+  "width": 820,
+  "name": "help-article",
+  "shot": "ipad-portrait-light-help-article.png",
+  "metrics": {
+   "title": "Server setup · Help · Pencils",
+   "theme": "light",
+   "density": "comfortable",
+   "coarse": true,
+   "hoverNone": true,
+   "innerWidth": 820,
+   "innerHeight": 1180,
+   "scrollWidth": 820,
+   "scrollHeight": 2850,
+   "overflowX": false,
+   "bodyOverflowX": false,
+   "visibleInteractive": 31,
+   "smallCount": 15,
+   "small": [
+    [
+     "a 220x40",
+     {
+      "n": 10,
+      "label": "Help & guides"
+     }
+    ],
+    [
+     "summary 220x43",
+     {
+      "n": 1,
+      "label": "Browse guides"
+     }
+    ],
+    [
+     "a 25x21",
+     {
+      "n": 1,
+      "label": "Help"
+     }
+    ],
+    [
+     "button 218x37",
+     {
+      "n": 1,
+      "label": "Choose local sign-in or accounts"
+     }
+    ],
+    [
+     "button 180x37",
+     {
+      "n": 1,
+      "label": "Choose a callback address"
+     }
+    ],
+    [
+     "button 247x37",
+     {
+      "n": 1,
+      "label": "Configure only the providers you use"
+     }
+    ]
+   ],
+   "offscreen": [],
+   "clipped": [],
+   "heights": {
+    "44": 3
+   },
+   "landmarks": {
+    "topbar": [
+     210,
+     0,
+     610,
+     53
+    ],
+    "sidebar": [
+     0,
+     0,
+     210,
+     1180
+    ],
+    "mobileMenu": null,
+    "crumb": null,
+    "tabs": null,
+    "layoutSwitcher": null,
+    "viewSwitcherSelect": null,
+    "newTask": null,
+    "projectSettings": null,
+    "help": [
+     693,
+     4,
+     44,
+     44
+    ],
+    "avatar": [
+     756,
+     4,
+     44,
+     44
+    ],
+    "toolbar": null,
+    "search": null,
+    "filters": null,
+    "sort": null,
+    "group": null,
+    "mobileViewOptions": null,
+    "saveState": [
+     634,
+     19,
+     40,
+     15
+    ]
+   },
+   "overlays": [],
+   "fontSizes": {
+    "31px": 2,
+    "9px": 1,
+    "10px": 5,
+    "12px": 9,
+    "11px": 8,
+    "13px": 17,
+    "14px": 10,
+    "32px": 1,
+    "16px": 1,
+    "21px": 3,
+    "12.6px": 16
+   },
+   "toasts": [],
+   "emptyState": null
+  },
+  "errors": [],
+  "failed": [],
+  "console": []
+ },
+ {
+  "ctx": "ipad-portrait",
+  "theme": "dark",
+  "width": 820,
+  "name": "command-k",
+  "shot": "ipad-portrait-dark-command-k.png",
+  "metrics": {
+   "title": "A little more possibility · Pencils",
+   "theme": "dark",
+   "density": "comfortable",
+   "coarse": true,
+   "hoverNone": true,
+   "innerWidth": 820,
+   "innerHeight": 1180,
+   "scrollWidth": 820,
+   "scrollHeight": 1789,
+   "overflowX": false,
+   "bodyOverflowX": false,
+   "visibleInteractive": 191,
+   "smallCount": 0,
+   "small": [],
+   "offscreen": [],
+   "clipped": [],
+   "heights": {
+    "44": 17
+   },
+   "landmarks": {
+    "topbar": [
+     210,
+     0,
+     610,
+     97
+    ],
+    "sidebar": [
+     0,
+     0,
+     210,
+     1180
+    ],
+    "mobileMenu": null,
+    "crumb": null,
+    "tabs": [
+     230,
+     49,
+     468,
+     43
+    ],
+    "layoutSwitcher": [
+     226,
+     101,
+     182,
+     44
+    ],
+    "viewSwitcherSelect": null,
+    "newTask": [
+     702,
+     48,
+     98,
+     44
+    ],
+    "projectSettings": [
+     660,
+     4,
+     44,
+     44
+    ],
+    "help": [
+     708,
+     4,
+     44,
+     44
+    ],
+    "avatar": [
+     756,
+     4,
+     44,
+     44
+    ],
+    "toolbar": [
+     210,
+     97,
+     610,
+     52
+    ],
+    "search": [
+     412,
+     101,
+     170,
+     44
+    ],
+    "filters": null,
+    "sort": null,
+    "group": null,
+    "mobileViewOptions": null,
+    "saveState": [
+     616,
+     19,
+     40,
+     15
+    ]
+   },
+   "overlays": [],
+   "fontSizes": {
+    "31px": 2,
+    "9px": 13,
+    "10px": 10,
+    "12px": 84,
+    "11px": 5,
+    "14px": 78,
+    "13px": 28,
+    "20px": 12,
+    "25px": 1
+   },
+   "toasts": [],
+   "emptyState": null
+  },
+  "errors": [],
+  "failed": [],
+  "console": []
+ },
+ {
+  "ctx": "ipad-portrait",
+  "theme": "dark",
+  "width": 820,
+  "name": "task-history",
+  "shot": "ipad-portrait-dark-task-history.png",
+  "metrics": {
+   "title": "A little more possibility · Pencils",
+   "theme": "dark",
+   "density": "comfortable",
+   "coarse": true,
+   "hoverNone": true,
+   "innerWidth": 820,
+   "innerHeight": 1180,
+   "scrollWidth": 820,
+   "scrollHeight": 1789,
+   "overflowX": false,
+   "bodyOverflowX": false,
+   "visibleInteractive": 122,
+   "smallCount": 1,
+   "small": [
+    [
+     "summary 552x39",
+     {
+      "n": 1,
+      "label": "Current version14/10/2026, 19:18:33Earliest s"
+     }
+    ]
+   ],
+   "offscreen": [],
+   "clipped": [],
+   "heights": {
+    "44": 17
+   },
+   "landmarks": {
+    "topbar": [
+     210,
+     0,
+     610,
+     97
+    ],
+    "sidebar": [
+     0,
+     0,
+     210,
+     1180
+    ],
+    "mobileMenu": null,
+    "crumb": null,
+    "tabs": [
+     230,
+     49,
+     468,
+     43
+    ],
+    "layoutSwitcher": [
+     226,
+     101,
+     182,
+     44
+    ],
+    "viewSwitcherSelect": null,
+    "newTask": [
+     702,
+     48,
+     98,
+     44
+    ],
+    "projectSettings": [
+     660,
+     4,
+     44,
+     44
+    ],
+    "help": [
+     708,
+     4,
+     44,
+     44
+    ],
+    "avatar": [
+     756,
+     4,
+     44,
+     44
+    ],
+    "toolbar": [
+     210,
+     97,
+     610,
+     52
+    ],
+    "search": [
+     412,
+     101,
+     170,
+     44
+    ],
+    "filters": null,
+    "sort": null,
+    "group": null,
+    "mobileViewOptions": null,
+    "saveState": [
+     616,
+     19,
+     40,
+     15
+    ]
+   },
+   "overlays": [
+    {
+     "sig": "dialog.dialog.task-dialog.board-task-editor",
+     "rect": [
+      222,
+      12,
+      586,
+      1156
+     ],
+     "beyondRight": false,
+     "beyondBottom": false,
+     "beyondLeft": false,
+     "beyondTop": false,
+     "scrollable": false,
+     "overflowY": "visible",
+     "position": "fixed",
+     "z": "28"
+    }
+   ],
+   "fontSizes": {
+    "31px": 2,
+    "9px": 13,
+    "10px": 11,
+    "12px": 26,
+    "11px": 5,
+    "14px": 1,
+    "13px": 28,
+    "20px": 12
+   },
+   "toasts": [],
+   "emptyState": null
+  },
+  "errors": [],
+  "failed": [],
+  "console": []
+ },
+ {
+  "ctx": "ipad-portrait",
+  "theme": "dark",
+  "width": 820,
+  "name": "task-relationship-add",
+  "shot": "ipad-portrait-dark-task-relationship-add.png",
+  "metrics": {
+   "title": "A little more possibility · Pencils",
+   "theme": "dark",
+   "density": "comfortable",
+   "coarse": true,
+   "hoverNone": true,
+   "innerWidth": 820,
+   "innerHeight": 1180,
+   "scrollWidth": 820,
+   "scrollHeight": 1789,
+   "overflowX": false,
+   "bodyOverflowX": false,
+   "visibleInteractive": 153,
+   "smallCount": 0,
+   "small": [],
+   "offscreen": [],
+   "clipped": [],
+   "heights": {
+    "44": 17
+   },
+   "landmarks": {
+    "topbar": [
+     210,
+     0,
+     610,
+     97
+    ],
+    "sidebar": [
+     0,
+     0,
+     210,
+     1180
+    ],
+    "mobileMenu": null,
+    "crumb": null,
+    "tabs": [
+     230,
+     49,
+     468,
+     43
+    ],
+    "layoutSwitcher": [
+     226,
+     101,
+     182,
+     44
+    ],
+    "viewSwitcherSelect": null,
+    "newTask": [
+     702,
+     48,
+     98,
+     44
+    ],
+    "projectSettings": [
+     660,
+     4,
+     44,
+     44
+    ],
+    "help": [
+     708,
+     4,
+     44,
+     44
+    ],
+    "avatar": [
+     756,
+     4,
+     44,
+     44
+    ],
+    "toolbar": [
+     210,
+     97,
+     610,
+     52
+    ],
+    "search": [
+     412,
+     101,
+     170,
+     44
+    ],
+    "filters": null,
+    "sort": [
+     701,
+     509,
+     44,
+     44
+    ],
+    "group": null,
+    "mobileViewOptions": null,
+    "saveState": [
+     616,
+     19,
+     40,
+     15
+    ]
+   },
+   "overlays": [
+    {
+     "sig": "dialog.dialog.task-dialog.board-task-editor",
+     "rect": [
+      222,
+      12,
+      586,
+      1156
+     ],
+     "beyondRight": false,
+     "beyondBottom": false,
+     "beyondLeft": false,
+     "beyondTop": false,
+     "scrollable": false,
+     "overflowY": "visible",
+     "position": "fixed",
+     "z": "28"
+    },
+    {
+     "sig": "div.selection-popover.task-relationship-picker#task-relationship-picker",
+     "rect": [
+      280,
+      561,
+      520,
+      367
+     ],
+     "beyondRight": false,
+     "beyondBottom": false,
+     "beyondLeft": false,
+     "beyondTop": false,
+     "scrollable": false,
+     "overflowY": "auto",
+     "position": "fixed",
+     "z": "2"
+    }
+   ],
+   "fontSizes": {
+    "31px": 2,
+    "9px": 13,
+    "10px": 43,
+    "12px": 35,
+    "11px": 13,
+    "14px": 2,
+    "13px": 28,
+    "20px": 12
+   },
+   "toasts": [],
+   "emptyState": null
+  },
+  "errors": [],
+  "failed": [],
+  "console": []
+ },
+ {
+  "ctx": "ipad-portrait",
+  "theme": "dark",
+  "name": "list-sort",
+  "failed": "locator.click: Timeout 15000ms exceeded.\nCall log:\n  - waiting for locator('details > summary:visible').filter({ hasText: /^sort/i }).first()\n"
+ },
+ {
+  "ctx": "ipad-portrait",
+  "theme": "dark",
+  "name": "list-group",
+  "failed": "locator.click: Timeout 15000ms exceeded.\nCall log:\n  - waiting for locator('details > summary:visible').filter({ hasText: /^group/i }).first()\n"
+ },
+ {
+  "ctx": "ipad-portrait",
+  "theme": "dark",
+  "name": "table-columns",
+  "failed": "locator.click: Timeout 15000ms exceeded.\nCall log:\n  - waiting for getByRole('button', { name: /^columns/i }).first()\n"
+ },
+ {
+  "ctx": "ipad-portrait",
+  "theme": "dark",
+  "width": 820,
+  "name": "board-project-tasks",
+  "shot": "ipad-portrait-dark-board-project-tasks.png",
+  "metrics": {
+   "title": "A little more possibility · Pencils",
+   "theme": "dark",
+   "density": "comfortable",
+   "coarse": true,
+   "hoverNone": true,
+   "innerWidth": 820,
+   "innerHeight": 1180,
+   "scrollWidth": 820,
+   "scrollHeight": 1180,
+   "overflowX": false,
+   "bodyOverflowX": false,
+   "visibleInteractive": 67,
+   "smallCount": 1,
+   "small": [
+    [
+     "button.button.small 27x44",
+     {
+      "n": 1,
+      "label": "Full screen"
+     }
+    ]
+   ],
+   "offscreen": [],
+   "clipped": [],
+   "heights": {
+    "44": 13
+   },
+   "landmarks": {
+    "topbar": [
+     210,
+     0,
+     610,
+     97
+    ],
+    "sidebar": [
+     0,
+     0,
+     210,
+     1180
+    ],
+    "mobileMenu": null,
+    "crumb": null,
+    "tabs": [
+     230,
+     49,
+     468,
+     43
+    ],
+    "layoutSwitcher": null,
+    "viewSwitcherSelect": null,
+    "newTask": [
+     702,
+     48,
+     98,
+     44
+    ],
+    "projectSettings": [
+     660,
+     4,
+     44,
+     44
+    ],
+    "help": [
+     708,
+     4,
+     44,
+     44
+    ],
+    "avatar": [
+     756,
+     4,
+     44,
+     44
+    ],
+    "toolbar": null,
+    "search": null,
+    "filters": null,
+    "sort": null,
+    "group": null,
+    "mobileViewOptions": null,
+    "saveState": [
+     616,
+     19,
+     40,
+     15
+    ]
+   },
+   "overlays": [],
+   "fontSizes": {
+    "31px": 2,
+    "9px": 1,
+    "10px": 5,
+    "12px": 5,
+    "11px": 5,
+    "14px": 1,
+    "13px": 6
+   },
+   "toasts": [],
+   "emptyState": null
+  },
+  "errors": [],
+  "failed": [],
+  "console": []
+ },
+ {
+  "ctx": "ipad-portrait",
+  "theme": "dark",
+  "width": 820,
+  "name": "new-project",
+  "shot": "ipad-portrait-dark-new-project.png",
+  "metrics": {
+   "title": "Our organisation · Pencils",
+   "theme": "dark",
+   "density": "comfortable",
+   "coarse": true,
+   "hoverNone": true,
+   "innerWidth": 820,
+   "innerHeight": 1180,
+   "scrollWidth": 820,
+   "scrollHeight": 1243,
+   "overflowX": false,
+   "bodyOverflowX": false,
+   "visibleInteractive": 131,
+   "smallCount": 3,
+   "small": [
+    [
+     "input 13x13",
+     {
+      "n": 3,
+      "label": ""
+     }
+    ]
+   ],
+   "offscreen": [
+    {
+     "sig": "button.rule-diagram-node",
+     "label": "In progress",
+     "rect": [
+      694,
+      1161,
+      160,
+      56
+     ]
+    },
+    {
+     "sig": "button.rule-diagram-node",
+     "label": "story",
+     "rect": [
+      694,
+      2068,
+      160,
+      56
+     ]
+    },
+    {
+     "sig": "button.rule-diagram-node",
+     "label": "bug",
+     "rect": [
+      694,
+      2208,
+      160,
+      56
+     ]
+    }
+   ],
+   "clipped": [
+    {
+     "sig": "span.workflow-toggle-label",
+     "text": "Completed",
+     "over": 61,
+     "rect": [
+      421,
+      1585,
+      1,
+      1
+     ]
+    },
+    {
+     "sig": "span.workflow-toggle-label",
+     "text": "Default",
+     "over": 40,
+     "rect": [
+      501,
+      1585,
+      1,
+      1
+     ]
+    },
+    {
+     "sig": "span.workflow-toggle-label",
+     "text": "Completed",
+     "over": 61,
+     "rect": [
+      421,
+      1638,
+      1,
+      1
+     ]
+    },
+    {
+     "sig": "span.workflow-toggle-label",
+     "text": "Default",
+     "over": 40,
+     "rect": [
+      501,
+      1638,
+      1,
+      1
+     ]
+    },
+    {
+     "sig": "span.workflow-toggle-label",
+     "text": "Completed",
+     "over": 61,
+     "rect": [
+      421,
+      1691,
+      1,
+      1
+     ]
+    },
+    {
+     "sig": "span.workflow-toggle-label",
+     "text": "Default",
+     "over": 40,
+     "rect": [
+      501,
+      1691,
+      1,
+      1
+     ]
+    },
+    {
+     "sig": "span.workflow-toggle-label",
+     "text": "Completed",
+     "over": 61,
+     "rect": [
+      421,
+      1744,
+      1,
+      1
+     ]
+    },
+    {
+     "sig": "span.workflow-toggle-label",
+     "text": "Default",
+     "over": 40,
+     "rect": [
+      501,
+      1744,
+      1,
+      1
+     ]
+    },
+    {
+     "sig": "span.workflow-toggle-label",
+     "text": "Completed",
+     "over": 61,
+     "rect": [
+      421,
+      1797,
+      1,
+      1
+     ]
+    },
+    {
+     "sig": "span.workflow-toggle-label",
+     "text": "Default",
+     "over": 40,
+     "rect": [
+      501,
+      1797,
+      1,
+      1
+     ]
+    }
+   ],
+   "heights": {
+    "44": 3
+   },
+   "landmarks": {
+    "topbar": [
+     210,
+     0,
+     610,
+     53
+    ],
+    "sidebar": [
+     0,
+     0,
+     210,
+     1180
+    ],
+    "mobileMenu": null,
+    "crumb": null,
+    "tabs": null,
+    "layoutSwitcher": null,
+    "viewSwitcherSelect": null,
+    "newTask": null,
+    "projectSettings": null,
+    "help": [
+     693,
+     4,
+     44,
+     44
+    ],
+    "avatar": [
+     756,
+     4,
+     44,
+     44
+    ],
+    "toolbar": null,
+    "search": null,
+    "filters": null,
+    "sort": null,
+    "group": null,
+    "mobileViewOptions": null,
+    "saveState": [
+     634,
+     19,
+     40,
+     15
+    ]
+   },
+   "overlays": [],
+   "fontSizes": {
+    "31px": 3,
+    "9px": 1,
+    "10px": 7,
+    "12px": 31,
+    "11px": 12,
+    "13px": 31,
+    "32px": 4,
+    "24px": 1,
+    "14px": 38,
+    "11.6667px": 9,
+    "22px": 1,
+    "9.16667px": 1,
+    "25px": 1,
+    "16.38px": 1
+   },
+   "toasts": [],
+   "emptyState": null
+  },
+  "errors": [],
+  "failed": [],
+  "console": []
+ },
+ {
+  "ctx": "ipad-portrait",
+  "theme": "dark",
+  "width": 820,
+  "name": "new-organisation",
+  "shot": "ipad-portrait-dark-new-organisation.png",
+  "metrics": {
+   "title": "Alternative Controls · Pencils",
+   "theme": "dark",
+   "density": "comfortable",
+   "coarse": true,
+   "hoverNone": true,
+   "innerWidth": 820,
+   "innerHeight": 1180,
+   "scrollWidth": 820,
+   "scrollHeight": 1180,
+   "overflowX": false,
+   "bodyOverflowX": false,
+   "visibleInteractive": 22,
+   "smallCount": 0,
+   "small": [],
+   "offscreen": [],
+   "clipped": [],
+   "heights": {
+    "44": 3
+   },
+   "landmarks": {
+    "topbar": [
+     210,
+     0,
+     610,
+     53
+    ],
+    "sidebar": [
+     0,
+     0,
+     210,
+     1180
+    ],
+    "mobileMenu": null,
+    "crumb": null,
+    "tabs": null,
+    "layoutSwitcher": null,
+    "viewSwitcherSelect": null,
+    "newTask": null,
+    "projectSettings": null,
+    "help": [
+     693,
+     4,
+     44,
+     44
+    ],
+    "avatar": [
+     756,
+     4,
+     44,
+     44
+    ],
+    "toolbar": null,
+    "search": null,
+    "filters": null,
+    "sort": null,
+    "group": null,
+    "mobileViewOptions": null,
+    "saveState": [
+     634,
+     19,
+     40,
+     15
+    ]
+   },
+   "overlays": [],
+   "fontSizes": {
+    "31px": 2,
+    "9px": 1,
+    "10px": 6,
+    "12px": 12,
+    "11px": 11,
+    "55px": 2,
+    "14px": 1,
+    "13px": 6,
+    "25px": 1,
+    "16.38px": 2
+   },
+   "toasts": [],
+   "emptyState": null
+  },
+  "errors": [],
+  "failed": [],
+  "console": []
+ },
+ {
+  "ctx": "ipad-portrait",
+  "theme": "dark",
+  "name": "phone-view-options",
+  "failed": "no view options at this width"
+ },
+ {
+  "ctx": "ipad-portrait",
+  "theme": "dark",
+  "width": 820,
+  "name": "help-article",
+  "shot": "ipad-portrait-dark-help-article.png",
+  "metrics": {
+   "title": "Server setup · Help · Pencils",
+   "theme": "dark",
+   "density": "comfortable",
+   "coarse": true,
+   "hoverNone": true,
+   "innerWidth": 820,
+   "innerHeight": 1180,
+   "scrollWidth": 820,
+   "scrollHeight": 2850,
+   "overflowX": false,
+   "bodyOverflowX": false,
+   "visibleInteractive": 31,
+   "smallCount": 15,
+   "small": [
+    [
+     "a 220x40",
+     {
+      "n": 10,
+      "label": "Help & guides"
+     }
+    ],
+    [
+     "summary 220x43",
+     {
+      "n": 1,
+      "label": "Browse guides"
+     }
+    ],
+    [
+     "a 25x21",
+     {
+      "n": 1,
+      "label": "Help"
+     }
+    ],
+    [
+     "button 218x37",
+     {
+      "n": 1,
+      "label": "Choose local sign-in or accounts"
+     }
+    ],
+    [
+     "button 180x37",
+     {
+      "n": 1,
+      "label": "Choose a callback address"
+     }
+    ],
+    [
+     "button 247x37",
+     {
+      "n": 1,
+      "label": "Configure only the providers you use"
+     }
+    ]
+   ],
+   "offscreen": [],
+   "clipped": [],
+   "heights": {
+    "44": 3
+   },
+   "landmarks": {
+    "topbar": [
+     210,
+     0,
+     610,
+     53
+    ],
+    "sidebar": [
+     0,
+     0,
+     210,
+     1180
+    ],
+    "mobileMenu": null,
+    "crumb": null,
+    "tabs": null,
+    "layoutSwitcher": null,
+    "viewSwitcherSelect": null,
+    "newTask": null,
+    "projectSettings": null,
+    "help": [
+     693,
+     4,
+     44,
+     44
+    ],
+    "avatar": [
+     756,
+     4,
+     44,
+     44
+    ],
+    "toolbar": null,
+    "search": null,
+    "filters": null,
+    "sort": null,
+    "group": null,
+    "mobileViewOptions": null,
+    "saveState": [
+     634,
+     19,
+     40,
+     15
+    ]
+   },
+   "overlays": [],
+   "fontSizes": {
+    "31px": 2,
+    "9px": 1,
+    "10px": 5,
+    "12px": 9,
+    "11px": 8,
+    "13px": 17,
+    "14px": 10,
+    "32px": 1,
+    "16px": 1,
+    "21px": 3,
+    "12.6px": 16
+   },
+   "toasts": [],
+   "emptyState": null
+  },
+  "errors": [],
+  "failed": [],
+  "console": []
+ },
+ {
+  "ctx": "desktop",
+  "theme": "light",
+  "width": 1440,
+  "name": "command-k",
+  "shot": "desktop-light-command-k.png",
+  "metrics": {
+   "title": "A little more possibility · Pencils",
+   "theme": "light",
+   "density": "comfortable",
+   "coarse": false,
+   "hoverNone": false,
+   "innerWidth": 1440,
+   "innerHeight": 900,
+   "scrollWidth": 1440,
+   "scrollHeight": 900,
+   "overflowX": false,
+   "bodyOverflowX": false,
+   "visibleInteractive": 192,
+   "smallCount": 12,
+   "small": [
+    [
+     "button.check-button 17x17",
+     {
+      "n": 11,
+      "label": "Complete Fix keyboard focus in dialogs"
+     }
+    ],
+    [
+     "button.check-button.done 17x17",
+     {
+      "n": 1,
+      "label": "Reopen Collect inspiration & early ideas"
+     }
+    ]
+   ],
+   "offscreen": [],
+   "clipped": [],
+   "heights": {
+    "32": 18
+   },
+   "landmarks": {
+    "topbar": [
+     236,
+     0,
+     1204,
+     41
+    ],
+    "sidebar": [
+     0,
+     0,
+     236,
+     900
+    ],
+    "mobileMenu": null,
+    "crumb": [
+     294,
+     4,
+     88,
+     32
+    ],
+    "tabs": [
+     698,
+     5,
+     178,
+     31
+    ],
+    "layoutSwitcher": [
+     252,
+     45,
+     295,
+     32
+    ],
+    "viewSwitcherSelect": null,
+    "newTask": [
+     880,
+     4,
+     98,
+     32
+    ],
+    "projectSettings": [
+     1316,
+     4,
+     32,
+     32
+    ],
+    "help": [
+     1352,
+     4,
+     32,
+     32
+    ],
+    "avatar": [
+     1388,
+     4,
+     32,
+     32
+    ],
+    "toolbar": [
+     236,
+     41,
+     1204,
+     40
+    ],
+    "search": [
+     551,
+     45,
+     218,
+     32
+    ],
+    "filters": null,
+    "sort": null,
+    "group": null,
+    "mobileViewOptions": null,
+    "saveState": [
+     1272,
+     13,
+     40,
+     15
+    ]
+   },
+   "overlays": [],
+   "fontSizes": {
+    "31px": 2,
+    "9px": 13,
+    "10px": 10,
+    "12px": 84,
+    "11px": 31,
+    "14px": 78,
+    "13px": 8,
+    "25px": 1
+   },
+   "toasts": [],
+   "emptyState": null
+  },
+  "axe": [],
+  "errors": [],
+  "failed": [],
+  "console": []
+ },
+ {
+  "ctx": "desktop",
+  "theme": "light",
+  "width": 1440,
+  "name": "task-history",
+  "shot": "desktop-light-task-history.png",
+  "metrics": {
+   "title": "A little more possibility · Pencils",
+   "theme": "light",
+   "density": "comfortable",
+   "coarse": false,
+   "hoverNone": false,
+   "innerWidth": 1440,
+   "innerHeight": 900,
+   "scrollWidth": 1440,
+   "scrollHeight": 900,
+   "overflowX": false,
+   "bodyOverflowX": false,
+   "visibleInteractive": 142,
+   "smallCount": 12,
+   "small": [
+    [
+     "button.check-button 17x17",
+     {
+      "n": 11,
+      "label": "Complete Fix keyboard focus in dialogs"
+     }
+    ],
+    [
+     "button.check-button.done 17x17",
+     {
+      "n": 1,
+      "label": "Reopen Collect inspiration & early ideas"
+     }
+    ]
+   ],
+   "offscreen": [],
+   "clipped": [],
+   "heights": {
+    "32": 18
+   },
+   "landmarks": {
+    "topbar": [
+     236,
+     0,
+     1204,
+     41
+    ],
+    "sidebar": [
+     0,
+     0,
+     236,
+     900
+    ],
+    "mobileMenu": null,
+    "crumb": [
+     294,
+     4,
+     88,
+     32
+    ],
+    "tabs": [
+     698,
+     5,
+     178,
+     31
+    ],
+    "layoutSwitcher": [
+     252,
+     45,
+     295,
+     32
+    ],
+    "viewSwitcherSelect": null,
+    "newTask": [
+     880,
+     4,
+     98,
+     32
+    ],
+    "projectSettings": [
+     1316,
+     4,
+     32,
+     32
+    ],
+    "help": [
+     1352,
+     4,
+     32,
+     32
+    ],
+    "avatar": [
+     1388,
+     4,
+     32,
+     32
+    ],
+    "toolbar": [
+     236,
+     41,
+     1204,
+     40
+    ],
+    "search": [
+     551,
+     45,
+     218,
+     32
+    ],
+    "filters": null,
+    "sort": [
+     1345,
+     449,
+     32,
+     32
+    ],
+    "group": null,
+    "mobileViewOptions": null,
+    "saveState": [
+     1272,
+     13,
+     40,
+     15
+    ]
+   },
+   "overlays": [
+    {
+     "sig": "dialog.dialog.task-dialog.board-task-editor",
+     "rect": [
+      708,
+      12,
+      720,
+      876
+     ],
+     "beyondRight": false,
+     "beyondBottom": false,
+     "beyondLeft": false,
+     "beyondTop": false,
+     "scrollable": false,
+     "overflowY": "visible",
+     "position": "fixed",
+     "z": "31"
+    }
+   ],
+   "fontSizes": {
+    "31px": 2,
+    "9px": 13,
+    "10px": 11,
+    "12px": 27,
+    "11px": 39,
+    "14px": 2,
+    "13px": 9
+   },
+   "toasts": [],
+   "emptyState": null
+  },
+  "axe": [],
+  "errors": [],
+  "failed": [],
+  "console": []
+ },
+ {
+  "ctx": "desktop",
+  "theme": "light",
+  "width": 1440,
+  "name": "task-relationship-add",
+  "shot": "desktop-light-task-relationship-add.png",
+  "metrics": {
+   "title": "A little more possibility · Pencils",
+   "theme": "light",
+   "density": "comfortable",
+   "coarse": false,
+   "hoverNone": false,
+   "innerWidth": 1440,
+   "innerHeight": 900,
+   "scrollWidth": 1440,
+   "scrollHeight": 900,
+   "overflowX": false,
+   "bodyOverflowX": false,
+   "visibleInteractive": 154,
+   "smallCount": 12,
+   "small": [
+    [
+     "button.check-button 17x17",
+     {
+      "n": 11,
+      "label": "Complete Fix keyboard focus in dialogs"
+     }
+    ],
+    [
+     "button.check-button.done 17x17",
+     {
+      "n": 1,
+      "label": "Reopen Collect inspiration & early ideas"
+     }
+    ]
+   ],
+   "offscreen": [],
+   "clipped": [],
+   "heights": {
+    "32": 18
+   },
+   "landmarks": {
+    "topbar": [
+     236,
+     0,
+     1204,
+     41
+    ],
+    "sidebar": [
+     0,
+     0,
+     236,
+     900
+    ],
+    "mobileMenu": null,
+    "crumb": [
+     294,
+     4,
+     88,
+     32
+    ],
+    "tabs": [
+     698,
+     5,
+     178,
+     31
+    ],
+    "layoutSwitcher": [
+     252,
+     45,
+     295,
+     32
+    ],
+    "viewSwitcherSelect": null,
+    "newTask": [
+     880,
+     4,
+     98,
+     32
+    ],
+    "projectSettings": [
+     1316,
+     4,
+     32,
+     32
+    ],
+    "help": [
+     1352,
+     4,
+     32,
+     32
+    ],
+    "avatar": [
+     1388,
+     4,
+     32,
+     32
+    ],
+    "toolbar": [
+     236,
+     41,
+     1204,
+     40
+    ],
+    "search": [
+     551,
+     45,
+     218,
+     32
+    ],
+    "filters": null,
+    "sort": [
+     1345,
+     449,
+     32,
+     32
+    ],
+    "group": null,
+    "mobileViewOptions": null,
+    "saveState": [
+     1272,
+     13,
+     40,
+     15
+    ]
+   },
+   "overlays": [
+    {
+     "sig": "dialog.dialog.task-dialog.board-task-editor",
+     "rect": [
+      708,
+      12,
+      720,
+      876
+     ],
+     "beyondRight": false,
+     "beyondBottom": false,
+     "beyondLeft": false,
+     "beyondTop": false,
+     "scrollable": false,
+     "overflowY": "visible",
+     "position": "fixed",
+     "z": "28"
+    },
+    {
+     "sig": "div.selection-popover.task-relationship-picker#task-relationship-picker",
+     "rect": [
+      900,
+      98,
+      520,
+      343
+     ],
+     "beyondRight": false,
+     "beyondBottom": false,
+     "beyondLeft": false,
+     "beyondTop": false,
+     "scrollable": false,
+     "overflowY": "auto",
+     "position": "fixed",
+     "z": "2"
+    }
+   ],
+   "fontSizes": {
+    "31px": 2,
+    "9px": 24,
+    "10px": 10,
+    "12px": 24,
+    "11px": 72,
+    "14px": 13,
+    "13px": 8
+   },
+   "toasts": [],
+   "emptyState": null
+  },
+  "axe": [],
+  "errors": [],
+  "failed": [],
+  "console": []
+ },
+ {
+  "ctx": "desktop",
+  "theme": "light",
+  "name": "list-sort",
+  "failed": "locator.click: Timeout 15000ms exceeded.\nCall log:\n  - waiting for locator('details > summary:visible').filter({ hasText: /^sort/i }).first()\n"
+ },
+ {
+  "ctx": "desktop",
+  "theme": "light",
+  "name": "list-group",
+  "failed": "locator.click: Timeout 15000ms exceeded.\nCall log:\n  - waiting for locator('details > summary:visible').filter({ hasText: /^group/i }).first()\n"
+ },
+ {
+  "ctx": "desktop",
+  "theme": "light",
+  "name": "table-columns",
+  "failed": "locator.click: Timeout 15000ms exceeded.\nCall log:\n  - waiting for getByRole('button', { name: /^columns/i }).first()\n"
+ },
+ {
+  "ctx": "desktop",
+  "theme": "light",
+  "width": 1440,
+  "name": "board-project-tasks",
+  "shot": "desktop-light-board-project-tasks.png",
+  "metrics": {
+   "title": "A little more possibility · Pencils",
+   "theme": "light",
+   "density": "comfortable",
+   "coarse": false,
+   "hoverNone": false,
+   "innerWidth": 1440,
+   "innerHeight": 900,
+   "scrollWidth": 1440,
+   "scrollHeight": 900,
+   "overflowX": false,
+   "bodyOverflowX": false,
+   "visibleInteractive": 68,
+   "smallCount": 0,
+   "small": [],
+   "offscreen": [],
+   "clipped": [],
+   "heights": {
+    "32": 14
+   },
+   "landmarks": {
+    "topbar": [
+     236,
+     0,
+     1204,
+     41
+    ],
+    "sidebar": [
+     0,
+     0,
+     236,
+     900
+    ],
+    "mobileMenu": null,
+    "crumb": [
+     294,
+     4,
+     88,
+     32
+    ],
+    "tabs": [
+     698,
+     5,
+     178,
+     31
+    ],
+    "layoutSwitcher": null,
+    "viewSwitcherSelect": null,
+    "newTask": [
+     880,
+     4,
+     98,
+     32
+    ],
+    "projectSettings": [
+     1316,
+     4,
+     32,
+     32
+    ],
+    "help": [
+     1352,
+     4,
+     32,
+     32
+    ],
+    "avatar": [
+     1388,
+     4,
+     32,
+     32
+    ],
+    "toolbar": null,
+    "search": null,
+    "filters": null,
+    "sort": null,
+    "group": null,
+    "mobileViewOptions": null,
+    "saveState": [
+     1272,
+     13,
+     40,
+     15
+    ]
+   },
+   "overlays": [],
+   "fontSizes": {
+    "31px": 2,
+    "9px": 1,
+    "10px": 5,
+    "12px": 5,
+    "11px": 7,
+    "14px": 1,
+    "13px": 6
+   },
+   "toasts": [],
+   "emptyState": null
+  },
+  "axe": [
+   {
+    "id": "color-contrast",
+    "impact": "serious",
+    "n": 1,
+    "sample": [
+     {
+      "target": ".board-task-results > .field-hint",
+      "html": "<p class=\"field-hint\">12 tasks</p>",
+      "summary": "Fix any of the following:\n  Element has insufficient color contrast of 3.71 (foreground color: #7b8970, background color: #ffffff, font size: 9.0pt (12px), font weight: normal). Expected contrast rati"
+     }
+    ]
+   }
+  ],
+  "errors": [],
+  "failed": [],
+  "console": []
+ },
+ {
+  "ctx": "desktop",
+  "theme": "light",
+  "width": 1440,
+  "name": "new-project",
+  "shot": "desktop-light-new-project.png",
+  "metrics": {
+   "title": "Our organisation · Pencils",
+   "theme": "light",
+   "density": "comfortable",
+   "coarse": false,
+   "hoverNone": false,
+   "innerWidth": 1440,
+   "innerHeight": 900,
+   "scrollWidth": 1440,
+   "scrollHeight": 1219,
+   "overflowX": false,
+   "bodyOverflowX": false,
+   "visibleInteractive": 132,
+   "smallCount": 2,
+   "small": [
+    [
+     "input 13x13",
+     {
+      "n": 2,
+      "label": ""
+     }
+    ]
+   ],
+   "offscreen": [],
+   "clipped": [
+    {
+     "sig": "span.workflow-toggle-label",
+     "text": "Completed",
+     "over": 61,
+     "rect": [
+      731,
+      1496,
+      1,
+      1
+     ]
+    },
+    {
+     "sig": "span.workflow-toggle-label",
+     "text": "Default",
+     "over": 40,
+     "rect": [
+      811,
+      1496,
+      1,
+      1
+     ]
+    },
+    {
+     "sig": "span.workflow-toggle-label",
+     "text": "Completed",
+     "over": 61,
+     "rect": [
+      731,
+      1537,
+      1,
+      1
+     ]
+    },
+    {
+     "sig": "span.workflow-toggle-label",
+     "text": "Default",
+     "over": 40,
+     "rect": [
+      811,
+      1537,
+      1,
+      1
+     ]
+    },
+    {
+     "sig": "span.workflow-toggle-label",
+     "text": "Completed",
+     "over": 61,
+     "rect": [
+      731,
+      1578,
+      1,
+      1
+     ]
+    },
+    {
+     "sig": "span.workflow-toggle-label",
+     "text": "Default",
+     "over": 40,
+     "rect": [
+      811,
+      1578,
+      1,
+      1
+     ]
+    },
+    {
+     "sig": "span.workflow-toggle-label",
+     "text": "Completed",
+     "over": 61,
+     "rect": [
+      731,
+      1619,
+      1,
+      1
+     ]
+    },
+    {
+     "sig": "span.workflow-toggle-label",
+     "text": "Default",
+     "over": 40,
+     "rect": [
+      811,
+      1619,
+      1,
+      1
+     ]
+    },
+    {
+     "sig": "span.workflow-toggle-label",
+     "text": "Completed",
+     "over": 61,
+     "rect": [
+      731,
+      1660,
+      1,
+      1
+     ]
+    },
+    {
+     "sig": "span.workflow-toggle-label",
+     "text": "Default",
+     "over": 40,
+     "rect": [
+      811,
+      1660,
+      1,
+      1
+     ]
+    }
+   ],
+   "heights": {
+    "32": 4
+   },
+   "landmarks": {
+    "topbar": [
+     236,
+     0,
+     1204,
+     41
+    ],
+    "sidebar": [
+     0,
+     0,
+     236,
+     900
+    ],
+    "mobileMenu": null,
+    "crumb": [
+     294,
+     4,
+     88,
+     32
+    ],
+    "tabs": null,
+    "layoutSwitcher": null,
+    "viewSwitcherSelect": null,
+    "newTask": null,
+    "projectSettings": null,
+    "help": [
+     1337,
+     4,
+     32,
+     32
+    ],
+    "avatar": [
+     1388,
+     4,
+     32,
+     32
+    ],
+    "toolbar": null,
+    "search": null,
+    "filters": null,
+    "sort": null,
+    "group": null,
+    "mobileViewOptions": null,
+    "saveState": [
+     1278,
+     13,
+     40,
+     15
+    ]
+   },
+   "overlays": [],
+   "fontSizes": {
+    "31px": 2,
+    "9px": 1,
+    "10px": 7,
+    "12px": 31,
+    "11px": 14,
+    "36px": 1,
+    "13px": 31,
+    "32px": 4,
+    "24px": 1,
+    "14px": 38,
+    "11.6667px": 9,
+    "22px": 1,
+    "9.16667px": 1,
+    "25px": 1,
+    "16.38px": 1
+   },
+   "toasts": [],
+   "emptyState": null
+  },
+  "axe": [],
+  "errors": [],
+  "failed": [],
+  "console": []
+ },
+ {
+  "ctx": "desktop",
+  "theme": "light",
+  "width": 1440,
+  "name": "new-organisation",
+  "shot": "desktop-light-new-organisation.png",
+  "metrics": {
+   "title": "Alternative Controls · Pencils",
+   "theme": "light",
+   "density": "comfortable",
+   "coarse": false,
+   "hoverNone": false,
+   "innerWidth": 1440,
+   "innerHeight": 900,
+   "scrollWidth": 1440,
+   "scrollHeight": 900,
+   "overflowX": false,
+   "bodyOverflowX": false,
+   "visibleInteractive": 23,
+   "smallCount": 0,
+   "small": [],
+   "offscreen": [],
+   "clipped": [],
+   "heights": {
+    "32": 4
+   },
+   "landmarks": {
+    "topbar": [
+     236,
+     0,
+     1204,
+     41
+    ],
+    "sidebar": [
+     0,
+     0,
+     236,
+     900
+    ],
+    "mobileMenu": null,
+    "crumb": [
+     294,
+     4,
+     104,
+     32
+    ],
+    "tabs": null,
+    "layoutSwitcher": null,
+    "viewSwitcherSelect": null,
+    "newTask": null,
+    "projectSettings": null,
+    "help": [
+     1337,
+     4,
+     32,
+     32
+    ],
+    "avatar": [
+     1388,
+     4,
+     32,
+     32
+    ],
+    "toolbar": null,
+    "search": null,
+    "filters": null,
+    "sort": null,
+    "group": null,
+    "mobileViewOptions": null,
+    "saveState": [
+     1278,
+     13,
+     40,
+     15
+    ]
+   },
+   "overlays": [],
+   "fontSizes": {
+    "31px": 2,
+    "9px": 1,
+    "10px": 6,
+    "12px": 12,
+    "11px": 13,
+    "55px": 2,
+    "14px": 1,
+    "13px": 6,
+    "25px": 1,
+    "16.38px": 2
+   },
+   "toasts": [],
+   "emptyState": null
+  },
+  "axe": [],
+  "errors": [],
+  "failed": [],
+  "console": []
+ },
+ {
+  "ctx": "desktop",
+  "theme": "light",
+  "name": "phone-view-options",
+  "failed": "no view options at this width"
+ },
+ {
+  "ctx": "desktop",
+  "theme": "light",
+  "width": 1440,
+  "name": "help-article",
+  "shot": "desktop-light-help-article.png",
+  "metrics": {
+   "title": "Server setup · Help · Pencils",
+   "theme": "light",
+   "density": "comfortable",
+   "coarse": false,
+   "hoverNone": false,
+   "innerWidth": 1440,
+   "innerHeight": 900,
+   "scrollWidth": 1440,
+   "scrollHeight": 1857,
+   "overflowX": false,
+   "bodyOverflowX": false,
+   "visibleInteractive": 32,
+   "smallCount": 1,
+   "small": [
+    [
+     "a 25x21",
+     {
+      "n": 1,
+      "label": "Help"
+     }
+    ]
+   ],
+   "offscreen": [],
+   "clipped": [],
+   "heights": {
+    "32": 4
+   },
+   "landmarks": {
+    "topbar": [
+     236,
+     0,
+     1204,
+     41
+    ],
+    "sidebar": [
+     0,
+     0,
+     236,
+     900
+    ],
+    "mobileMenu": null,
+    "crumb": [
+     294,
+     4,
+     104,
+     32
+    ],
+    "tabs": null,
+    "layoutSwitcher": null,
+    "viewSwitcherSelect": null,
+    "newTask": null,
+    "projectSettings": null,
+    "help": [
+     1337,
+     4,
+     32,
+     32
+    ],
+    "avatar": [
+     1388,
+     4,
+     32,
+     32
+    ],
+    "toolbar": null,
+    "search": null,
+    "filters": null,
+    "sort": null,
+    "group": null,
+    "mobileViewOptions": null,
+    "saveState": [
+     1278,
+     13,
+     40,
+     15
+    ]
+   },
+   "overlays": [],
+   "fontSizes": {
+    "31px": 2,
+    "9px": 1,
+    "10px": 5,
+    "12px": 9,
+    "11px": 10,
+    "13px": 17,
+    "14px": 10,
+    "32px": 1,
+    "16px": 1,
+    "21px": 3,
+    "12.6px": 16
+   },
+   "toasts": [],
+   "emptyState": null
+  },
+  "axe": [],
+  "errors": [],
+  "failed": [],
+  "console": []
+ },
+ {
+  "ctx": "desktop",
+  "theme": "dark",
+  "width": 1440,
+  "name": "command-k",
+  "shot": "desktop-dark-command-k.png",
+  "metrics": {
+   "title": "A little more possibility · Pencils",
+   "theme": "dark",
+   "density": "comfortable",
+   "coarse": false,
+   "hoverNone": false,
+   "innerWidth": 1440,
+   "innerHeight": 900,
+   "scrollWidth": 1440,
+   "scrollHeight": 900,
+   "overflowX": false,
+   "bodyOverflowX": false,
+   "visibleInteractive": 192,
+   "smallCount": 12,
+   "small": [
+    [
+     "button.check-button 17x17",
+     {
+      "n": 11,
+      "label": "Complete Fix keyboard focus in dialogs"
+     }
+    ],
+    [
+     "button.check-button.done 17x17",
+     {
+      "n": 1,
+      "label": "Reopen Collect inspiration & early ideas"
+     }
+    ]
+   ],
+   "offscreen": [],
+   "clipped": [],
+   "heights": {
+    "32": 18
+   },
+   "landmarks": {
+    "topbar": [
+     236,
+     0,
+     1204,
+     41
+    ],
+    "sidebar": [
+     0,
+     0,
+     236,
+     900
+    ],
+    "mobileMenu": null,
+    "crumb": [
+     294,
+     4,
+     88,
+     32
+    ],
+    "tabs": [
+     698,
+     5,
+     178,
+     31
+    ],
+    "layoutSwitcher": [
+     252,
+     45,
+     295,
+     32
+    ],
+    "viewSwitcherSelect": null,
+    "newTask": [
+     880,
+     4,
+     98,
+     32
+    ],
+    "projectSettings": [
+     1316,
+     4,
+     32,
+     32
+    ],
+    "help": [
+     1352,
+     4,
+     32,
+     32
+    ],
+    "avatar": [
+     1388,
+     4,
+     32,
+     32
+    ],
+    "toolbar": [
+     236,
+     41,
+     1204,
+     40
+    ],
+    "search": [
+     551,
+     45,
+     218,
+     32
+    ],
+    "filters": null,
+    "sort": null,
+    "group": null,
+    "mobileViewOptions": null,
+    "saveState": [
+     1272,
+     13,
+     40,
+     15
+    ]
+   },
+   "overlays": [],
+   "fontSizes": {
+    "31px": 2,
+    "9px": 13,
+    "10px": 10,
+    "12px": 84,
+    "11px": 31,
+    "14px": 78,
+    "13px": 8,
+    "25px": 1
+   },
+   "toasts": [],
+   "emptyState": null
+  },
+  "axe": [],
+  "errors": [],
+  "failed": [],
+  "console": []
+ },
+ {
+  "ctx": "desktop",
+  "theme": "dark",
+  "width": 1440,
+  "name": "task-history",
+  "shot": "desktop-dark-task-history.png",
+  "metrics": {
+   "title": "A little more possibility · Pencils",
+   "theme": "dark",
+   "density": "comfortable",
+   "coarse": false,
+   "hoverNone": false,
+   "innerWidth": 1440,
+   "innerHeight": 900,
+   "scrollWidth": 1440,
+   "scrollHeight": 900,
+   "overflowX": false,
+   "bodyOverflowX": false,
+   "visibleInteractive": 142,
+   "smallCount": 12,
+   "small": [
+    [
+     "button.check-button 17x17",
+     {
+      "n": 11,
+      "label": "Complete Fix keyboard focus in dialogs"
+     }
+    ],
+    [
+     "button.check-button.done 17x17",
+     {
+      "n": 1,
+      "label": "Reopen Collect inspiration & early ideas"
+     }
+    ]
+   ],
+   "offscreen": [],
+   "clipped": [],
+   "heights": {
+    "32": 18
+   },
+   "landmarks": {
+    "topbar": [
+     236,
+     0,
+     1204,
+     41
+    ],
+    "sidebar": [
+     0,
+     0,
+     236,
+     900
+    ],
+    "mobileMenu": null,
+    "crumb": [
+     294,
+     4,
+     88,
+     32
+    ],
+    "tabs": [
+     698,
+     5,
+     178,
+     31
+    ],
+    "layoutSwitcher": [
+     252,
+     45,
+     295,
+     32
+    ],
+    "viewSwitcherSelect": null,
+    "newTask": [
+     880,
+     4,
+     98,
+     32
+    ],
+    "projectSettings": [
+     1316,
+     4,
+     32,
+     32
+    ],
+    "help": [
+     1352,
+     4,
+     32,
+     32
+    ],
+    "avatar": [
+     1388,
+     4,
+     32,
+     32
+    ],
+    "toolbar": [
+     236,
+     41,
+     1204,
+     40
+    ],
+    "search": [
+     551,
+     45,
+     218,
+     32
+    ],
+    "filters": null,
+    "sort": [
+     1345,
+     449,
+     32,
+     32
+    ],
+    "group": null,
+    "mobileViewOptions": null,
+    "saveState": [
+     1272,
+     13,
+     40,
+     15
+    ]
+   },
+   "overlays": [
+    {
+     "sig": "dialog.dialog.task-dialog.board-task-editor",
+     "rect": [
+      708,
+      12,
+      720,
+      876
+     ],
+     "beyondRight": false,
+     "beyondBottom": false,
+     "beyondLeft": false,
+     "beyondTop": false,
+     "scrollable": false,
+     "overflowY": "visible",
+     "position": "fixed",
+     "z": "31"
+    }
+   ],
+   "fontSizes": {
+    "31px": 2,
+    "9px": 13,
+    "10px": 11,
+    "12px": 27,
+    "11px": 39,
+    "14px": 2,
+    "13px": 9
+   },
+   "toasts": [],
+   "emptyState": null
+  },
+  "axe": [],
+  "errors": [],
+  "failed": [],
+  "console": []
+ },
+ {
+  "ctx": "desktop",
+  "theme": "dark",
+  "width": 1440,
+  "name": "task-relationship-add",
+  "shot": "desktop-dark-task-relationship-add.png",
+  "metrics": {
+   "title": "A little more possibility · Pencils",
+   "theme": "dark",
+   "density": "comfortable",
+   "coarse": false,
+   "hoverNone": false,
+   "innerWidth": 1440,
+   "innerHeight": 900,
+   "scrollWidth": 1440,
+   "scrollHeight": 900,
+   "overflowX": false,
+   "bodyOverflowX": false,
+   "visibleInteractive": 154,
+   "smallCount": 12,
+   "small": [
+    [
+     "button.check-button 17x17",
+     {
+      "n": 11,
+      "label": "Complete Fix keyboard focus in dialogs"
+     }
+    ],
+    [
+     "button.check-button.done 17x17",
+     {
+      "n": 1,
+      "label": "Reopen Collect inspiration & early ideas"
+     }
+    ]
+   ],
+   "offscreen": [],
+   "clipped": [],
+   "heights": {
+    "32": 18
+   },
+   "landmarks": {
+    "topbar": [
+     236,
+     0,
+     1204,
+     41
+    ],
+    "sidebar": [
+     0,
+     0,
+     236,
+     900
+    ],
+    "mobileMenu": null,
+    "crumb": [
+     294,
+     4,
+     88,
+     32
+    ],
+    "tabs": [
+     698,
+     5,
+     178,
+     31
+    ],
+    "layoutSwitcher": [
+     252,
+     45,
+     295,
+     32
+    ],
+    "viewSwitcherSelect": null,
+    "newTask": [
+     880,
+     4,
+     98,
+     32
+    ],
+    "projectSettings": [
+     1316,
+     4,
+     32,
+     32
+    ],
+    "help": [
+     1352,
+     4,
+     32,
+     32
+    ],
+    "avatar": [
+     1388,
+     4,
+     32,
+     32
+    ],
+    "toolbar": [
+     236,
+     41,
+     1204,
+     40
+    ],
+    "search": [
+     551,
+     45,
+     218,
+     32
+    ],
+    "filters": null,
+    "sort": [
+     1345,
+     449,
+     32,
+     32
+    ],
+    "group": null,
+    "mobileViewOptions": null,
+    "saveState": [
+     1272,
+     13,
+     40,
+     15
+    ]
+   },
+   "overlays": [
+    {
+     "sig": "dialog.dialog.task-dialog.board-task-editor",
+     "rect": [
+      708,
+      12,
+      720,
+      876
+     ],
+     "beyondRight": false,
+     "beyondBottom": false,
+     "beyondLeft": false,
+     "beyondTop": false,
+     "scrollable": false,
+     "overflowY": "visible",
+     "position": "fixed",
+     "z": "28"
+    },
+    {
+     "sig": "div.selection-popover.task-relationship-picker#task-relationship-picker",
+     "rect": [
+      900,
+      98,
+      520,
+      343
+     ],
+     "beyondRight": false,
+     "beyondBottom": false,
+     "beyondLeft": false,
+     "beyondTop": false,
+     "scrollable": false,
+     "overflowY": "auto",
+     "position": "fixed",
+     "z": "2"
+    }
+   ],
+   "fontSizes": {
+    "31px": 2,
+    "9px": 24,
+    "10px": 10,
+    "12px": 24,
+    "11px": 72,
+    "14px": 13,
+    "13px": 8
+   },
+   "toasts": [],
+   "emptyState": null
+  },
+  "axe": [],
+  "errors": [],
+  "failed": [],
+  "console": []
+ },
+ {
+  "ctx": "desktop",
+  "theme": "dark",
+  "name": "list-sort",
+  "failed": "locator.click: Timeout 15000ms exceeded.\nCall log:\n  - waiting for locator('details > summary:visible').filter({ hasText: /^sort/i }).first()\n"
+ },
+ {
+  "ctx": "desktop",
+  "theme": "dark",
+  "name": "list-group",
+  "failed": "locator.click: Timeout 15000ms exceeded.\nCall log:\n  - waiting for locator('details > summary:visible').filter({ hasText: /^group/i }).first()\n"
+ },
+ {
+  "ctx": "desktop",
+  "theme": "dark",
+  "name": "table-columns",
+  "failed": "locator.click: Timeout 15000ms exceeded.\nCall log:\n  - waiting for getByRole('button', { name: /^columns/i }).first()\n"
+ },
+ {
+  "ctx": "desktop",
+  "theme": "dark",
+  "width": 1440,
+  "name": "board-project-tasks",
+  "shot": "desktop-dark-board-project-tasks.png",
+  "metrics": {
+   "title": "A little more possibility · Pencils",
+   "theme": "dark",
+   "density": "comfortable",
+   "coarse": false,
+   "hoverNone": false,
+   "innerWidth": 1440,
+   "innerHeight": 900,
+   "scrollWidth": 1440,
+   "scrollHeight": 900,
+   "overflowX": false,
+   "bodyOverflowX": false,
+   "visibleInteractive": 68,
+   "smallCount": 0,
+   "small": [],
+   "offscreen": [],
+   "clipped": [],
+   "heights": {
+    "32": 14
+   },
+   "landmarks": {
+    "topbar": [
+     236,
+     0,
+     1204,
+     41
+    ],
+    "sidebar": [
+     0,
+     0,
+     236,
+     900
+    ],
+    "mobileMenu": null,
+    "crumb": [
+     294,
+     4,
+     88,
+     32
+    ],
+    "tabs": [
+     698,
+     5,
+     178,
+     31
+    ],
+    "layoutSwitcher": null,
+    "viewSwitcherSelect": null,
+    "newTask": [
+     880,
+     4,
+     98,
+     32
+    ],
+    "projectSettings": [
+     1316,
+     4,
+     32,
+     32
+    ],
+    "help": [
+     1352,
+     4,
+     32,
+     32
+    ],
+    "avatar": [
+     1388,
+     4,
+     32,
+     32
+    ],
+    "toolbar": null,
+    "search": null,
+    "filters": null,
+    "sort": null,
+    "group": null,
+    "mobileViewOptions": null,
+    "saveState": [
+     1272,
+     13,
+     40,
+     15
+    ]
+   },
+   "overlays": [],
+   "fontSizes": {
+    "31px": 2,
+    "9px": 1,
+    "10px": 5,
+    "12px": 5,
+    "11px": 7,
+    "14px": 1,
+    "13px": 6
+   },
+   "toasts": [],
+   "emptyState": null
+  },
+  "axe": [],
+  "errors": [],
+  "failed": [],
+  "console": []
+ },
+ {
+  "ctx": "desktop",
+  "theme": "dark",
+  "width": 1440,
+  "name": "new-project",
+  "shot": "desktop-dark-new-project.png",
+  "metrics": {
+   "title": "Our organisation · Pencils",
+   "theme": "dark",
+   "density": "comfortable",
+   "coarse": false,
+   "hoverNone": false,
+   "innerWidth": 1440,
+   "innerHeight": 900,
+   "scrollWidth": 1440,
+   "scrollHeight": 1219,
+   "overflowX": false,
+   "bodyOverflowX": false,
+   "visibleInteractive": 132,
+   "smallCount": 2,
+   "small": [
+    [
+     "input 13x13",
+     {
+      "n": 2,
+      "label": ""
+     }
+    ]
+   ],
+   "offscreen": [],
+   "clipped": [
+    {
+     "sig": "span.workflow-toggle-label",
+     "text": "Completed",
+     "over": 61,
+     "rect": [
+      731,
+      1496,
+      1,
+      1
+     ]
+    },
+    {
+     "sig": "span.workflow-toggle-label",
+     "text": "Default",
+     "over": 40,
+     "rect": [
+      811,
+      1496,
+      1,
+      1
+     ]
+    },
+    {
+     "sig": "span.workflow-toggle-label",
+     "text": "Completed",
+     "over": 61,
+     "rect": [
+      731,
+      1537,
+      1,
+      1
+     ]
+    },
+    {
+     "sig": "span.workflow-toggle-label",
+     "text": "Default",
+     "over": 40,
+     "rect": [
+      811,
+      1537,
+      1,
+      1
+     ]
+    },
+    {
+     "sig": "span.workflow-toggle-label",
+     "text": "Completed",
+     "over": 61,
+     "rect": [
+      731,
+      1578,
+      1,
+      1
+     ]
+    },
+    {
+     "sig": "span.workflow-toggle-label",
+     "text": "Default",
+     "over": 40,
+     "rect": [
+      811,
+      1578,
+      1,
+      1
+     ]
+    },
+    {
+     "sig": "span.workflow-toggle-label",
+     "text": "Completed",
+     "over": 61,
+     "rect": [
+      731,
+      1619,
+      1,
+      1
+     ]
+    },
+    {
+     "sig": "span.workflow-toggle-label",
+     "text": "Default",
+     "over": 40,
+     "rect": [
+      811,
+      1619,
+      1,
+      1
+     ]
+    },
+    {
+     "sig": "span.workflow-toggle-label",
+     "text": "Completed",
+     "over": 61,
+     "rect": [
+      731,
+      1660,
+      1,
+      1
+     ]
+    },
+    {
+     "sig": "span.workflow-toggle-label",
+     "text": "Default",
+     "over": 40,
+     "rect": [
+      811,
+      1660,
+      1,
+      1
+     ]
+    }
+   ],
+   "heights": {
+    "32": 4
+   },
+   "landmarks": {
+    "topbar": [
+     236,
+     0,
+     1204,
+     41
+    ],
+    "sidebar": [
+     0,
+     0,
+     236,
+     900
+    ],
+    "mobileMenu": null,
+    "crumb": [
+     294,
+     4,
+     88,
+     32
+    ],
+    "tabs": null,
+    "layoutSwitcher": null,
+    "viewSwitcherSelect": null,
+    "newTask": null,
+    "projectSettings": null,
+    "help": [
+     1337,
+     4,
+     32,
+     32
+    ],
+    "avatar": [
+     1388,
+     4,
+     32,
+     32
+    ],
+    "toolbar": null,
+    "search": null,
+    "filters": null,
+    "sort": null,
+    "group": null,
+    "mobileViewOptions": null,
+    "saveState": [
+     1278,
+     13,
+     40,
+     15
+    ]
+   },
+   "overlays": [],
+   "fontSizes": {
+    "31px": 2,
+    "9px": 1,
+    "10px": 7,
+    "12px": 31,
+    "11px": 14,
+    "36px": 1,
+    "13px": 31,
+    "32px": 4,
+    "24px": 1,
+    "14px": 38,
+    "11.6667px": 9,
+    "22px": 1,
+    "9.16667px": 1,
+    "25px": 1,
+    "16.38px": 1
+   },
+   "toasts": [],
+   "emptyState": null
+  },
+  "axe": [],
+  "errors": [],
+  "failed": [],
+  "console": []
+ },
+ {
+  "ctx": "desktop",
+  "theme": "dark",
+  "width": 1440,
+  "name": "new-organisation",
+  "shot": "desktop-dark-new-organisation.png",
+  "metrics": {
+   "title": "Alternative Controls · Pencils",
+   "theme": "dark",
+   "density": "comfortable",
+   "coarse": false,
+   "hoverNone": false,
+   "innerWidth": 1440,
+   "innerHeight": 900,
+   "scrollWidth": 1440,
+   "scrollHeight": 900,
+   "overflowX": false,
+   "bodyOverflowX": false,
+   "visibleInteractive": 23,
+   "smallCount": 0,
+   "small": [],
+   "offscreen": [],
+   "clipped": [],
+   "heights": {
+    "32": 4
+   },
+   "landmarks": {
+    "topbar": [
+     236,
+     0,
+     1204,
+     41
+    ],
+    "sidebar": [
+     0,
+     0,
+     236,
+     900
+    ],
+    "mobileMenu": null,
+    "crumb": [
+     294,
+     4,
+     104,
+     32
+    ],
+    "tabs": null,
+    "layoutSwitcher": null,
+    "viewSwitcherSelect": null,
+    "newTask": null,
+    "projectSettings": null,
+    "help": [
+     1337,
+     4,
+     32,
+     32
+    ],
+    "avatar": [
+     1388,
+     4,
+     32,
+     32
+    ],
+    "toolbar": null,
+    "search": null,
+    "filters": null,
+    "sort": null,
+    "group": null,
+    "mobileViewOptions": null,
+    "saveState": [
+     1278,
+     13,
+     40,
+     15
+    ]
+   },
+   "overlays": [],
+   "fontSizes": {
+    "31px": 2,
+    "9px": 1,
+    "10px": 6,
+    "12px": 12,
+    "11px": 13,
+    "55px": 2,
+    "14px": 1,
+    "13px": 6,
+    "25px": 1,
+    "16.38px": 2
+   },
+   "toasts": [],
+   "emptyState": null
+  },
+  "axe": [],
+  "errors": [],
+  "failed": [],
+  "console": []
+ },
+ {
+  "ctx": "desktop",
+  "theme": "dark",
+  "name": "phone-view-options",
+  "failed": "no view options at this width"
+ },
+ {
+  "ctx": "desktop",
+  "theme": "dark",
+  "width": 1440,
+  "name": "help-article",
+  "shot": "desktop-dark-help-article.png",
+  "metrics": {
+   "title": "Server setup · Help · Pencils",
+   "theme": "dark",
+   "density": "comfortable",
+   "coarse": false,
+   "hoverNone": false,
+   "innerWidth": 1440,
+   "innerHeight": 900,
+   "scrollWidth": 1440,
+   "scrollHeight": 1857,
+   "overflowX": false,
+   "bodyOverflowX": false,
+   "visibleInteractive": 32,
+   "smallCount": 1,
+   "small": [
+    [
+     "a 25x21",
+     {
+      "n": 1,
+      "label": "Help"
+     }
+    ]
+   ],
+   "offscreen": [],
+   "clipped": [],
+   "heights": {
+    "32": 4
+   },
+   "landmarks": {
+    "topbar": [
+     236,
+     0,
+     1204,
+     41
+    ],
+    "sidebar": [
+     0,
+     0,
+     236,
+     900
+    ],
+    "mobileMenu": null,
+    "crumb": [
+     294,
+     4,
+     104,
+     32
+    ],
+    "tabs": null,
+    "layoutSwitcher": null,
+    "viewSwitcherSelect": null,
+    "newTask": null,
+    "projectSettings": null,
+    "help": [
+     1337,
+     4,
+     32,
+     32
+    ],
+    "avatar": [
+     1388,
+     4,
+     32,
+     32
+    ],
+    "toolbar": null,
+    "search": null,
+    "filters": null,
+    "sort": null,
+    "group": null,
+    "mobileViewOptions": null,
+    "saveState": [
+     1278,
+     13,
+     40,
+     15
+    ]
+   },
+   "overlays": [],
+   "fontSizes": {
+    "31px": 2,
+    "9px": 1,
+    "10px": 5,
+    "12px": 9,
+    "11px": 10,
+    "13px": 17,
+    "14px": 10,
+    "32px": 1,
+    "16px": 1,
+    "21px": 3,
+    "12.6px": 16
+   },
+   "toasts": [],
+   "emptyState": null
+  },
+  "axe": [],
+  "errors": [],
+  "failed": [],
+  "console": []
+ }
+]

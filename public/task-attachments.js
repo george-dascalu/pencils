@@ -23,8 +23,8 @@ export function taskAttachments(
   status.className = "field-hint task-attachment-status";
   status.setAttribute("role", "status");
   choose.type = "button";
-  choose.className = "task-attachment-choose text-link";
-  choose.textContent = "Drop files here or choose files to attach.";
+  choose.className = "task-attachment-choose button";
+  choose.innerHTML = `${icon("attachment")}<span>Add attachments</span>`;
   input.type = "file";
   input.multiple = true;
   input.hidden = true;

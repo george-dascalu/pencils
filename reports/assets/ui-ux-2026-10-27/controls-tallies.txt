@@ -1,0 +1,212 @@
+
+==== phone: control families with more than one visual variant
+
+select: 16 variants
+   32x h44 pad0px/8px/0px/8px r0px f13px/400 b(0px rgb(48, 59, 53)) [table,columns-open] "EpicMilestoneStory"
+   22x h44 pad0px/14px/0px/0px r3px f13px/400 b(0px rgb(237, 242, 231)) [list,table,kanban,calendar] "Our organisation"
+   12x h44 pad0px/8px/0px/8px r0px f13px/400 b(0px color(srgb 0.717647 0.739216 0.709804)) [table,columns-open] "BacklogTo doIn pro"
+   11x h44 pad0px/12px/0px/12px r7px f13px/400 b(1px rgb(220, 224, 213)) [settings-general,settings-workflow,settings-teams,settings-sources] "GeneralOrganisatio"
+   10x h44 pad0px/8px/0px/8px r0px f13px/400 b(0px color(srgb 0.605882 0.733333 0.794118)) [table,columns-open] "UrgentHighMediumLo"
+
+input[checkbox]: 8 variants
+   16x h44 pad0px/0px/0px/0px r0px f11px/400 b(0px rgb(48, 59, 53)) [table,columns-open] ""
+   14x h13 pad0px/0px/0px/0px r0px f12px/400 b(0px rgb(38, 60, 52)) [filters-open,columns-open] ""
+   6x h13 pad0px/0px/0px/0px r0px f12px/400 b(0px rgb(48, 59, 53)) [settings-workflow] ""
+   2x h44 pad0px/0px/0px/0px r0px f11px/500 b(0px rgb(95, 110, 100)) [table,columns-open] ""
+   2x h13 pad0px/0px/0px/0px r0px f14px/400 b(0px rgb(38, 60, 52)) [personal] ""
+
+summary: 8 variants
+   24x h44 pad0px/8px/0px/8px r0px f13px/500 b(0px rgb(38, 60, 52)) [table,columns-open] ""
+   4x h44 pad0px/8px/0px/8px r6px f12px/400 b(0px rgb(38, 60, 52)) [task-edit,task-new] ""
+   4x h44 pad0px/8px/0px/8px r6px f13px/400 b(1px rgb(229, 231, 223)) [columns-open] "Filters"
+   2x h44 pad0px/8px/0px/8px r6px f13px/400 b(1px rgb(77, 108, 85)) [filters-open,columns-open] "Filters"
+   1x h44 pad8px/10px/8px/10px r0px f14px/400 b(0px rgb(48, 59, 53)) [calendar] "Unscheduled (0)"
+
+input: 6 variants
+   11x h44 pad0px/12px/0px/34px r7px f13px/400 b(1px rgb(227, 230, 220)) [list,table,kanban,calendar] ""
+   2x h44 pad0px/10px/0px/10px r7px f12px/400 b(1px rgb(220, 224, 213)) [filters-open] ""
+   1x h44 pad0px/4px/0px/4px r7px f16px/600 b(1px rgba(0, 0, 0, 0)) [documents] ""
+   1x h44 pad0px/12px/0px/12px r7px f14px/400 b(1px rgb(220, 224, 213)) [settings-general] ""
+   1x h44 pad0px/12px/0px/12px r7px f13px/400 b(1px rgb(220, 224, 213)) [settings-general] ""
+
+button[button].icon-button: 5 variants
+   25x h44 pad0px/0px/0px/0px r6px f14px/400 b(0px rgb(125, 133, 121)) [documents,settings-workflow,task-edit,task-new] ""
+   24x h44 pad0px/0px/0px/0px r6px f12px/400 b(0px rgb(125, 133, 121)) [columns-open] ""
+   5x h44 pad0px/0px/0px/0px r6px f12px/500 b(0px rgb(147, 161, 135)) [kanban] ""
+   1x h44 pad0px/0px/0px/0px r6px f14px/400 b(0px rgb(77, 108, 85)) [task-edit] ""
+   1x h44 pad0px/0px/0px/0px r6px f13px/400 b(0px rgb(125, 133, 121)) [columns-open] ""
+
+button: 4 variants
+   44x h44 pad0px/0px/0px/0px r0px f10px/400 b(0px rgb(173, 190, 169)) [list,table,kanban,calendar] "New organisation"
+   22x h44 pad0px/0px/0px/0px r0px f10px/600 b(0px rgb(161, 177, 164)) [list,table,kanban,calendar] ""
+   7x h63 pad12px/12px/12px/12px r0px f14px/400 b(0px rgb(38, 60, 52)) [org-home] "Control task 0Cont"
+   7x h71 pad12px/12px/12px/12px r0px f14px/400 b(0px rgb(38, 60, 52)) [overview] "Control task 0Unas"
+
+button[button]: 3 variants
+   24x h44 pad0px/4px/0px/4px r0px f10px/500 b(0px rgb(95, 110, 100)) [table,columns-open] "Title"
+   2x h44 pad0px/0px/0px/0px r5px f14px/400 b(0px rgb(136, 153, 120)) [board,board-settings] ""
+   2x h44 pad6px/8px/6px/8px r4px f13px/400 b(1px rgba(0, 0, 0, 0)) [help] "Bring your project"
+
+button[button].button.small: 3 variants
+   7x h44 pad0px/8px/0px/8px r6px f13px/500 b(1px rgb(220, 225, 212)) [board,settings-workflow,settings-sources,org-people] "Guest 7fxb"
+   1x h44 pad4px/8px/4px/8px r5px f12px/500 b(1px rgba(0, 0, 0, 0)) [filters-open] "Clear filters"
+   1x h44 pad0px/8px/0px/8px r6px f12px/500 b(1px rgb(220, 225, 212)) [columns-open] "Export matching CS"
+
+button[button].task-picker-trigger: 3 variants
+   2x h44 pad0px/6px/0px/6px r7px f13px/400 b(1px rgb(229, 231, 223)) [task-edit,task-new] ""
+   1x h44 pad0px/6px/0px/6px r7px f13px/400 b(1px color(srgb 0.605882 0.733333 0.794118)) [task-edit] ""
+   1x h44 pad0px/6px/0px/6px r7px f13px/400 b(1px color(srgb 0.8 0.723529 0.507843)) [task-new] ""
+
+button.button: 2 variants
+   238x h44 pad0px/8px/0px/8px r6px f13px/500 b(1px rgba(0, 0, 0, 0)) [list,table,kanban,calendar] "Overview"
+   1x h44 pad0px/8px/0px/8px r6px f13px/500 b(1px rgb(220, 225, 212)) [org-people] "Teams 0"
+
+button.button.primary: 2 variants
+   19x h44 pad0px/8px/0px/8px r6px f13px/500 b(1px rgba(0, 0, 0, 0)) [list,table,kanban,calendar] "New card"
+   1x h44 pad0px/8px/0px/8px r6px f13px/500 b(1px rgb(63, 94, 72)) [org-home] "New project"
+
+button.icon-button.phone-new-task: 2 variants
+   18x h44 pad0px/0px/0px/0px r6px f14px/400 b(0px rgb(125, 133, 121)) [list,table,kanban,calendar] ""
+   1x h44 pad0px/0px/0px/0px r6px f14px/400 b(0px rgb(53, 76, 54)) [task-new] ""
+
+input[text]: 2 variants
+   16x h44 pad0px/8px/0px/8px r0px f13px/500 b(0px rgb(48, 59, 53)) [table,columns-open] ""
+   16x h44 pad0px/8px/0px/8px r0px f13px/400 b(0px rgb(48, 59, 53)) [table,columns-open] ""
+
+input[date]: 2 variants
+   32x h44 pad0px/48px/0px/8px r0px f13px/400 b(0px rgb(48, 59, 53)) [table,columns-open] ""
+   4x h44 pad0px/48px/0px/5px r7px f16px/400 b(0px rgb(38, 60, 52)) [task-edit,task-new] ""
+
+button.icon-button: 2 variants
+   4x h44 pad0px/0px/0px/0px r6px f14px/400 b(0px rgb(125, 133, 121)) [calendar,capacity] ""
+   2x h44 pad0px/0px/0px/0px r6px f10px/400 b(0px rgb(125, 133, 121)) [board,board-settings] ""
+
+button[button].rule-diagram-node: 2 variants
+   3x h56 pad8px/12px/8px/12px r10px f14px/400 b(1px rgb(229, 231, 223)) [settings-workflow] "To doDefault"
+   1x h56 pad8px/12px/8px/12px r10px f14px/400 b(1px rgb(77, 108, 85)) [settings-workflow] "Backlog"
+
+input[radio]: 2 variants
+   11x h13 pad0px/0px/0px/0px r0px f14px/400 b(0px rgb(38, 60, 52)) [personal] ""
+   5x h13 pad0px/0px/0px/0px r0px f12px/400 b(0px rgb(48, 59, 53)) [settings-workflow] ""
+
+select.filter: 2 variants
+   2x h44 pad0px/26px/0px/10px r7px f12px/400 b(1px rgb(227, 230, 220)) [filters-open] "All statusesBacklo"
+   1x h44 pad0px/26px/0px/10px r7px f13px/400 b(1px rgb(227, 230, 220)) [filters-open] "Date createdManual"
+
+==== phone: icon sizes inside controls
+239x 16px in button.button
+56x 16px in button[button].icon-button
+44x 13px in button
+44x 18px in button.side-new
+43x 17px in button.directory-link
+36x 18px in button[button].date-picker-trigger
+32x 16px in summary
+22x 16px in button.icon-button.phone-drawer-close
+22x 18px in button
+22x 16px in button.icon-button.mobile-menu
+20x 16px in button.button.primary
+19x 16px in button.icon-button.phone-new-task
+16x 13px in button.table-open
+15x 16px in button.button.active
+13x 16px in summary.button
+8x 16px in button[button].button.small.calendar-dates
+8x 16px in button[button].icon-button.timeline-date-action
+8x 15px in button[button].selection-action
+7x 14px in button.add-row
+6x 16px in button.icon-button
+5x 10px in button.check-button.done
+4x 16px in button[button].button.settings-return
+4x 16px in button[button].button.small
+4x 18px in button[button].rule-diagram-node
+4x 12px in button[button].task-picker-trigger
+2x 16px in button[button].active
+2x 16px in button[button]
+2x 16px in button.phone-board-more.icon-button
+2x 16px in button.button.small
+2x 16px in summary.icon-button
+2x 15px in summary
+2x 16px in button[button].task-attachment-choose.button
+1x 16px in button[button].icon-button.document-browse
+1x 16px in button[button].icon-button.document-mode-picker
+1x 16px in button[button].icon-button.document-format-toggle
+1x 11px in summary
+1x 18px in button[button].rule-diagram-node.is-done
+1x 17px in button.directory-link.active
+1x 16px in button.button.soft
+
+==== phone: icon-only controls lacking aria-label
+none
+
+==== phone: layout containers
+1x div.board-menu-panel gap=4px pad=8px/8px/8px/8px flex=column margin=0px/0px [filters-open]
+1x div.board-menu-panel.table-columns-panel gap=4px pad=8px/8px/8px/8px flex=column margin=0px/0px [columns-open]
+2x div.board-toolbar gap=4px pad=4px/10px/4px/10px flex=row margin=0px/0px [board,board-settings]
+2x div.dialog-foot gap=9px pad=17px/25px/17px/25px flex=row margin=0px/0px [org-people,personal]
+3x div.dialog-foot.settings-save-bar gap=10px pad=12px/16px/12px/16px flex=row margin=0px/0px [settings-general,settings-workflow,settings-teams]
+1x div.dialog-foot.task-editor-foot gap=8px pad=10px/12px/10px/12px flex=row margin=0px/0px [task-new]
+1x div.dialog-foot.task-editor-foot gap=8px pad=6px/12px/6px/12px flex=row margin=0px/0px [task-edit]
+1x div.dialog-head gap=normal pad=22px/25px/19px/25px flex=row margin=0px/0px [personal]
+2x div.field gap=4px pad=0px/0px/0px/0px flex=column margin=0px/5px [task-edit,task-new]
+1x div.field gap=7px pad=0px/0px/0px/0px flex=column margin=0px/20px [settings-general]
+2x div.field.task-dates gap=5px pad=0px/0px/0px/0px flex=column margin=0px/0px [task-edit,task-new]
+1x div.grid-tools gap=8px pad=0px/0px/0px/0px flex=row margin=0px/0px [columns-open]
+1x div.planning-head gap=12px pad=0px/0px/0px/0px flex=row margin=0px/8px [capacity]
+1x div.planning-head gap=4px pad=0px/0px/0px/0px flex=row margin=0px/8px [calendar]
+1x div.table-view-tools gap=8px pad=0px/0px/0px/0px flex=row margin=0px/0px [columns-open]
+11x div.toolbar gap=4px pad=4px/10px/4px/10px flex=row margin=0px/0px [list,table,kanban]
+2x header.board-task-editor-heading.dialog-head.task-editor-head gap=4px pad=4px/12px/4px/12px flex=column margin=0px/0px [task-edit,task-new]
+2x label.field gap=4px pad=0px/0px/0px/0px flex=column margin=0px/5px [task-edit,task-new]
+2x label.field gap=4px pad=3px/10px/3px/10px flex=column margin=0px/0px [filters-open]
+1x label.field gap=7px pad=0px/0px/0px/0px flex=column margin=0px/0px [help]
+2x label.field gap=7px pad=0px/0px/0px/0px flex=column margin=0px/17px [personal]
+5x label.field gap=7px pad=0px/0px/0px/0px flex=column margin=0px/20px [settings-general,settings-teams]
+3x label.field gap=7px pad=0px/0px/0px/0px flex=column margin=10px/10px [personal]
+4x label.field.settings-mobile-nav gap=7px pad=0px/0px/0px/0px flex=column margin=16px/17px [settings-general,settings-workflow,settings-teams]
+2x label.field.task-assignee-field gap=4px pad=0px/0px/0px/0px flex=column margin=0px/5px [task-edit,task-new]
+
+==== desktop: layout containers
+1x div.board-menu-panel gap=4px pad=8px/8px/8px/8px flex=column margin=0px/0px [filters-open]
+1x div.board-menu-panel.table-columns-panel gap=4px pad=8px/8px/8px/8px flex=column margin=0px/0px [columns-open]
+2x div.board-toolbar gap=4px pad=4px/16px/4px/16px flex=row margin=0px/0px [board,board-settings]
+2x div.dialog-foot gap=9px pad=17px/25px/17px/25px flex=row margin=0px/0px [org-people,personal]
+3x div.dialog-foot.settings-save-bar gap=10px pad=16px/24px/16px/24px flex=row margin=0px/0px [settings-general,settings-workflow,settings-teams]
+1x div.dialog-foot.task-editor-foot gap=8px pad=10px/12px/10px/12px flex=row margin=0px/0px [task-new]
+1x div.dialog-foot.task-editor-foot gap=8px pad=6px/12px/6px/12px flex=row margin=0px/0px [task-edit]
+1x div.dialog-head gap=8px pad=12px/16px/12px/16px flex=row margin=0px/0px [board-settings]
+1x div.dialog-head gap=normal pad=22px/25px/19px/25px flex=row margin=0px/0px [personal]
+2x div.field gap=4px pad=0px/0px/0px/0px flex=column margin=0px/5px [task-edit,task-new]
+3x div.field gap=7px pad=0px/0px/0px/0px flex=column margin=0px/17px [board-settings]
+1x div.field gap=7px pad=0px/0px/0px/0px flex=column margin=0px/20px [settings-general]
+2x div.field.task-dates gap=5px pad=0px/0px/0px/0px flex=column margin=0px/0px [task-edit,task-new]
+2x div.grid-tools gap=8px pad=0px/0px/0px/0px flex=row margin=0px/8px [table,columns-open]
+1x div.planning-head gap=10px 16px pad=0px/0px/0px/0px flex=row margin=0px/8px [timeline]
+1x div.planning-head gap=12px pad=0px/0px/0px/0px flex=row margin=0px/8px [capacity]
+1x div.planning-head gap=4px pad=0px/0px/0px/0px flex=row margin=0px/8px [calendar]
+1x div.selection-popover gap=3px pad=0px/0px/0px/0px flex=row margin=0px/0px [task-edit]
+2x div.table-view-tools gap=6px pad=0px/0px/0px/0px flex=row margin=0px/8px [table,columns-open]
+11x div.toolbar gap=4px pad=4px/16px/4px/16px flex=row margin=0px/0px [list,table,kanban]
+2x header.board-task-editor-heading.dialog-head.task-editor-head gap=4px pad=4px/12px/4px/12px flex=column margin=0px/0px [task-edit,task-new]
+2x label.field gap=4px pad=0px/0px/0px/0px flex=column margin=0px/5px [task-edit,task-new]
+2x label.field gap=4px pad=3px/10px/3px/10px flex=column margin=0px/0px [filters-open]
+1x label.field gap=7px pad=0px/0px/0px/0px flex=column margin=0px/0px [help]
+7x label.field gap=7px pad=0px/0px/0px/0px flex=column margin=0px/17px [personal,board-settings]
+5x label.field gap=7px pad=0px/0px/0px/0px flex=column margin=0px/20px [settings-general,settings-teams]
+3x label.field gap=7px pad=0px/0px/0px/0px flex=column margin=10px/10px [personal]
+2x label.field.task-assignee-field gap=4px pad=0px/0px/0px/0px flex=column margin=0px/5px [task-edit,task-new]
+
+==== desktop: badges
+40x label.row-status.row-choice.task-color-badge h32 11px/400 r5px pad0px/6px/0px/6px
+26x span.count h18 10px/600 r4px pad2px/6px/2px/6px
+20x span.task-assignee.unassigned h22 9px/400 r50% pad0px/0px/0px/0px
+20x span.task-assignee h22 9px/400 r50% pad0px/0px/0px/0px
+12x span.task-assignee.unassigned h24 9px/400 r50% pad0px/0px/0px/0px
+12x span.task-assignee h24 9px/400 r50% pad0px/0px/0px/0px
+7x span.task-color-badge h21 10.8333px/400 r5px pad2px/6px/2px/6px
+7x small.task-color-badge h21 11.6667px/400 r5px pad2px/6px/2px/6px
+5x span.count h14 10px/500 r0px pad0px/0px/0px/0px
+2x span.count h18 13px/500 r0px pad0px/0px/0px/0px
+2x span.task-assignee.unassigned h32 11px/400 r50% pad0px/0px/0px/0px
+1x span.count h19 14px/600 r0px pad0px/0px/0px/0px
+
+==== desktop: icon-only controls lacking aria-label
+none

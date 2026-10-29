@@ -1,13 +1,40 @@
 export { nextDate } from "../public/recurrence-model.js";
 import { validTablePreferences } from "../public/table-model.js";
 import { Problem } from "./problem.js";
+import { DEFAULT_TASK_TYPES } from "../public/task-types.js";
 
 export const DEFAULT_SCHEMA = {
   statuses: ["backlog", "todo", "in-progress", "review", "done"],
-  types: ["epic", "milestone", "story", "task", "bug"],
+  types: [...DEFAULT_TASK_TYPES],
+  types_version: 1,
   done: ["done"],
   fields: [],
 };
+
+// Upgrade the original built-in list once. Custom lists remain project-owned,
+// and removing Activity after this upgrade must survive future restarts.
+export function upgradeDefaultTaskTypes(config) {
+  if (!config || config.types_version != null) return config;
+  const previous = DEFAULT_TASK_TYPES.filter((type) => type !== "activity");
+  if (!Array.isArray(config.types) || config.types.length !== previous.length ||
+      !previous.every((type) => config.types.includes(type))) return config;
+  // Leave invalid external edits untouched so the usual vault warnings can
+  // report them without preventing the workspace from starting.
+  try { schema(config); } catch { return config; }
+  const next = structuredClone(config);
+  next.types.splice(next.types.indexOf("task") + 1, 0, "activity");
+  next.types_version = 1;
+  if (next.hierarchy) {
+    // Activity starts with Task's placement rules without loosening rules for
+    // any existing type. The project hierarchy editor can adjust it later.
+    const extend = (types) => types.includes("task") ? [...types, "activity"] : [...types];
+    const rules = next.hierarchy;
+    rules.roots = extend(rules.roots);
+    rules.children.activity = [...rules.children.task];
+    for (const type of next.types) rules.children[type] = extend(rules.children[type]);
+  }
+  return next;
+}
 const fail = (message) => {
   throw new Problem(400, message);
 };
@@ -147,6 +174,24 @@ export function validateExtras(data, config) {
       ))
   )
     fail("Dependencies must be task identifiers.");
+  if (
+    data.related_records != null &&
+    (!Array.isArray(data.related_records) ||
+      data.related_records.length > 200 ||
+      data.related_records.some(
+        (v) => typeof v !== "string" || !/^t-[a-zA-Z0-9_-]+$/.test(v),
+      ))
+  )
+    fail("Related records must be task identifiers.");
+  if (
+    data.documents != null &&
+    (!Array.isArray(data.documents) ||
+      data.documents.length > 200 ||
+      data.documents.some(
+        (v) => typeof v !== "string" || !/^d-[a-zA-Z0-9_-]+$/.test(v),
+      ))
+  )
+    fail("Linked documents must be document identifiers.");
   if (
     data.recurrence != null &&
     (!["day", "week", "month"].includes(data.recurrence.unit) ||

@@ -194,7 +194,7 @@ export function updateProjectFrame(
   for (const t of active) {
     for (const dependency of new Set(t.dependencies || []))
       link(dependency, t.id, "dependency", "blocks");
-    if (t.parent) link(t.parent, t.id, "parent", "parent / child");
+    if (t.parent) link(t.parent, t.id, "parent", "parent of");
   }
   const removed = new Set(
     owned.filter((n) => !cards.has(n.task)).map((n) => n.id),

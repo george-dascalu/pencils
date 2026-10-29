@@ -11,3 +11,10 @@ README.md
 *.log
 
 .release-backups/
+.request-work/
+.request-input/
+
+e2e
+test-results
+playwright-report
+playwright.config.mjs

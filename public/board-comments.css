@@ -10,8 +10,8 @@
   border-radius: 12px;
   background: var(--surface);
   color: var(--ink);
-  box-shadow: 0 8px 30px #0003;
-  font-size: 13px;
+  box-shadow: var(--shadow-popover);
+  font-size: var(--type-body);
   overflow: hidden;
 }
 .board-comments:popover-open {
@@ -28,7 +28,8 @@
   padding: 10px 12px;
 }
 .board-comments-head strong {
-  font-size: 15px;
+  font-size: var(--type-section);
+  font-weight: 600;
 }
 .board-comments-object {
   padding: 0 12px 10px;
@@ -56,10 +57,11 @@
   overflow-wrap: anywhere;
 }
 .board-comment:focus { outline: 1px solid var(--green); outline-offset: -1px; }
-.comment-author { color: var(--task-color-ink, var(--ink)); }
+.comment-author { color: var(--task-color-ink, var(--ink)); font-size: var(--type-small); font-weight: 600; }
+.board-comment .comment-body { font-size: var(--type-body); }
 .comment-footer { display: flex; align-items: flex-end; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
 .comment-footer time { margin-inline-start: auto; white-space: nowrap; font-variant-numeric: tabular-nums; cursor: help; }
-.comment-thread-replies > summary { display: flex; align-items: center; gap: 5px; padding: 4px 10px 8px; list-style: none; color: var(--muted); font-size: 11px; cursor: pointer; min-height: var(--control-height); }
+.comment-thread-replies > summary { display: flex; align-items: center; gap: 5px; padding: 4px 10px 8px; list-style: none; color: var(--muted); font-size: var(--type-meta); cursor: pointer; min-height: var(--control-height); }
 .comment-thread-replies > summary::-webkit-details-marker { display: none; }
 .comment-thread-replies > summary > .icon { width: 12px; height: 12px; transform: rotate(-90deg); }
 .comment-thread-replies[open] > summary > .icon { transform: none; }
@@ -76,7 +78,7 @@
   gap: 3px;
 }
 .board-comment time {
-  font-size: 11px;
+  font-size: var(--type-meta);
   color: var(--muted);
 }
 .board-comment p {
@@ -94,7 +96,7 @@
 #board-comment-form textarea {
   width: 100%;
   resize: none;
-  font-size: 13px;
+  font-size: var(--type-body);
 }
 #board-comment-form button {
   align-self: flex-end;
@@ -123,7 +125,7 @@
 .comment-deleted,
 .comment-reply-label {
   color: var(--muted);
-  font-size: 11px;
+  font-size: var(--type-meta);
 }
 .comment-actions {
   display: flex;
@@ -136,7 +138,7 @@
   border: 0;
   background: transparent;
   color: var(--green);
-  font-size: 11px;
+  font-size: var(--type-meta);
 }
 .comment-reactions {
   display: flex;
@@ -247,8 +249,8 @@
 .comment-rich-tools .rich-format-menu > .selection-popover { top: auto; bottom: calc(100% + 4px); width: 180px; }
 .comment-rich-tools .rich-link-field { top: auto; bottom: calc(100% + 4px); width: calc(100% - 4px); }
 .comment-rich-tools .inline-error:empty { display: none; }
-#board-comment-form :is(.inline-rich, .inline-preview, textarea) { min-height: 80px; max-height: 160px; overflow: auto; width: 100%; margin: 0; padding: 8px; border: 1px solid var(--line); border-radius: 6px; background: var(--surface); color: var(--ink); font-size: 13px; line-height: 1.5; }
-#board-comment-form .inline-rich:focus { border-color: var(--green); outline: 1px solid var(--green); outline-offset: -1px; }
+#board-comment-form :is(.inline-rich, .inline-preview, textarea) { min-height: 80px; max-height: 160px; overflow: auto; width: 100%; margin: 0; padding: 8px; border: 1px solid var(--line); border-radius: 6px; background: var(--surface); color: var(--ink); font-size: var(--type-body); line-height: 1.5; }
+#board-comment-form .inline-rich:focus { border-color: var(--text-focus-color); outline: var(--focus-ring); outline-offset: -1px; }
 #board-comment-form .inline-rich[data-empty=true]::before { content: attr(data-placeholder); color: var(--muted); pointer-events: none; }
 #board-comment-form .inline-rich > :first-child { margin-top: 0; }
 #board-comment-form .inline-rich > :last-child { margin-bottom: 0; }
@@ -264,7 +266,8 @@
 /* Compact, single-row formatting and a keyboard-accessible corner grip. */
 .board-comments-head { flex-shrink: 0; border-bottom: 1px solid var(--line); }
 #board-comment-form .comment-rich-tools { --control-height: 24px; --control-icon-size: 13px; flex-wrap: nowrap; gap: 0; }
-.comment-rich-tools :is(.rich-toolbar, .selection-group) { flex-wrap: nowrap; flex-shrink: 0; gap: 0; }
+.comment-rich-tools .selection-group { flex-wrap: nowrap; flex-shrink: 0; gap: 0; }
+.comment-rich-tools .rich-toolbar { flex-wrap: nowrap; gap: 0; }
 .comment-rich-tools .selection-group { padding-inline: 1px; }
 .comment-rich-tools .selection-action { width: 24px; min-width: 24px !important; padding-inline: 0 !important; }
 .comment-rich-tools .selection-menu > summary { min-width: 32px !important; padding-inline: 3px !important; gap: 1px; }
@@ -274,8 +277,47 @@
 .comment-panel-resize svg { width: 17px; height: 17px; }
 .comment-panel-resize:hover { color: var(--ink); background: var(--surface-soft); }
 .comment-panel-resize:focus-visible { outline: var(--focus-ring); outline-offset: -2px; }
-.board-comments:has(.comment-panel-resize) [data-comment-submit] { margin-right: 20px; }
 @media (pointer: coarse) {
   .comment-panel-resize { width: 44px; height: 44px; }
-  .board-comments:has(.comment-panel-resize) [data-comment-submit] { margin-right: 40px; }
 }
+
+/* Touch devices get full-size formatting controls; the compact 24px rules above are for pointers. */
+@media (pointer: coarse) {
+  #board-comment-form .comment-rich-tools { --control-height: 44px; --control-icon-size: 16px; flex-wrap: wrap; }
+  .comment-rich-tools .selection-action { width: var(--control-height); min-width: var(--control-height) !important; }
+  .comment-rich-tools .selection-menu > summary { min-width: var(--control-height) !important; }
+  #board-comment-form .comment-rich-tools :is(button, summary) > .icon { width: 16px; height: 16px; }
+}
+
+/* The send button sits right of the text box: as tall as the box and slim.
+   Rows stay automatic so hidden reply and error rows leave no gaps; the error
+   follows the button so the button shares the text box's row. */
+#board-comment-form {
+  --comment-send-width: 32px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) var(--comment-send-width);
+  gap: 6px;
+  align-items: stretch;
+}
+#board-comment-form > * { grid-column: 1 / -1; }
+#board-comment-form > :is(.inline-rich, textarea, .inline-preview) { grid-column: 1; }
+#board-comment-form > .comment-compose-error { order: 1; }
+#board-comment-form > [data-comment-submit] {
+  grid-column: 2;
+  align-self: stretch;
+  width: var(--comment-send-width) !important;
+  min-width: 0 !important;
+  height: auto !important;
+  min-height: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  justify-content: center;
+}
+#board-comment-form > [data-comment-submit] > .icon { width: 16px; height: 16px; }
+/* The panel's resize grip keeps its corner below the composer. */
+.board-comments:has(.comment-panel-resize) #board-comment-form { padding-bottom: 28px; }
+@media (pointer: coarse) {
+  #board-comment-form { --comment-send-width: 44px; }
+  .board-comments:has(.comment-panel-resize) #board-comment-form { padding-bottom: 48px; }
+}
+

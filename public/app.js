@@ -1,15 +1,22 @@
 import { APP_VERSION, watchAppVersion } from "./app-version.js";
+import { DEFAULT_TASK_TYPES } from "./task-types.js";
 import { updateViewLayout } from "./view-layout.js";
+import { installTopbarTitle } from "./topbar-title.js";
+import { installEditableControlGuard } from "./editable-controls.js";
 import { taskFocus } from "./task-focus.js";
+import { focusOnOpen, prepareDialogFocus } from "./open-focus.js";
 import { randomUUID } from "./uuid.js";
+import { formatDay } from "./format-date.js";
+import { confirmAction } from "./confirm-popover.js";
 import { priorityOptions as priorities, priorityLabels, priorityLabel, defaultPriority } from "./task-priority.js";
 import { browserNavigation } from "./navigation.js";
+import { installEdgeSwipeGuard, installPageZoomGuard, installAxisLockedScroll } from "./scroll-gestures.js";
 import { helpPageHTML } from "./help.js";
 import { helpArticle } from "./help-content.js";
 import { saveState, saveIssue } from "./save-state.js";
 import { appStatus } from "./app-status.js";
 import {sourceLabel} from "./source-model.js";
-import { pageOf, treePage, visibilitySummary } from "./task-visibility.js";
+import { pageOf, treePage } from "./task-visibility.js";
 import { renderCanvasEdges } from "./canvas-lines.js";
 import { boardTaskState, unavailableTaskHTML } from "./board-task-state.js";
 import { draftTaskData, draftTaskFields } from "./draft-task.js";
@@ -35,6 +42,7 @@ import { smoothZoom } from "./camera-motion.js";
 import { paintBoardBackground } from "./board-background.js";
 import { installColorPickers } from "./color-picker.js";
 import { kanbanDrag } from "./kanban-drag.js";
+import { observeKanbanLayout } from "./kanban-layout.js";
 import { kanbanGroup, kanbanLanes, laneKey } from "./kanban-model.js";
 import { taskReorderHandle } from "./task-reorder.js";
 import { compareTaskOrder } from "./task-order-model.js";
@@ -42,6 +50,10 @@ import { SaveQueue } from "./sync.js";
 import { createMarkdown } from "./markdown.js";
 import { installFeatures } from "./features.js";
 const $ = (selector, root = document) => root.querySelector(selector);
+installEdgeSwipeGuard();
+installPageZoomGuard();
+installAxisLockedScroll("#view-content > .table-scroll");
+installEditableControlGuard();
 const $$ = (selector, root = document) => [...root.querySelectorAll(selector)];
 const esc = (value) =>
   String(value ?? "").replace(
@@ -92,6 +104,7 @@ const paths = {
   documents: "M5 3h9l5 5v13H5zM14 3v6h5M8 13h8M8 17h6",
   overview: "M3 3h7v7H3zM14 3h7v7h-7zM3 14h7v7H3zM14 14h7v7h-7z",
   comment: "M4 4h16v12H9l-5 4V4ZM8 8h8M8 12h5",
+  send: "M22 2 11 13M22 2l-7 20-4-9-9-4z",
   duplicate: "M8 8h13v13H8zM16 8V3H3v13h5",
   unlock: "M8 10V7a4 4 0 0 1 8 0M5 10h14v11H5zM12 14v3",
   rotate: "M3 10a9 9 0 1 1 2 8M3 4v6h6",
@@ -117,6 +130,7 @@ const paths = {
   list: "M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01",
   tree: "M4 3v14h5M4 7h5M13 5h8v4h-8zM13 15h8v4h-8z",
   calendar: "M4 5h16v16H4zM8 3v4M16 3v4M4 10h16M8 14h2M14 14h2M8 18h2",
+  drag: "M9 5h.01M15 5h.01M9 12h.01M15 12h.01M9 19h.01M15 19h.01",
   table: "M3 4h18v16H3zM3 9h18M3 14h18M9 4v16M15 4v16",
   kanban: "M3 4h5v10H3zM10 4h5v16h-5zM17 4h5v7h-5z",
   board: "M3 3h7v7H3zM14 3h7v11h-7zM3 14h7v7H3zM14 18h7",
@@ -130,7 +144,7 @@ const paths = {
   arrow: "M5 12h14m-5-5 5 5-5 5",
   close: "m6 6 12 12M18 6 6 18",
   folder: "M3 6h7l2 3h9v11H3V6Z",
-  more: "M5 12h.01M12 12h.01M19 12h.01",
+  more: "M6.25 12a1.25 1.25 0 1 1-2.5 0 1.25 1.25 0 0 1 2.5 0Zm7 0a1.25 1.25 0 1 1-2.5 0 1.25 1.25 0 0 1 2.5 0Zm7 0a1.25 1.25 0 1 1-2.5 0 1.25 1.25 0 0 1 2.5 0Z",
   reply: "M9 10 4 15l5 5M4 15h10a6 6 0 0 0 0-12h-2",
   smile: "M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0ZM8 9h.01M16 9h.01M8 14c1 4 7 4 8 0",
   leaf: "M20 3C5 1 1 12 8 17c7 5 14-3 12-14ZM4 21 16 8",
@@ -159,6 +173,9 @@ const paths = {
   minus: "M5 12h14",
   fit: "M8 3H3v5M16 3h5v5M3 16v5h5M21 16v5h-5",
   expand: "M15 3h6v6M21 3l-7 7M9 21H3v-6M3 21l7-7",
+  fullscreen: "M8 3H3v5M16 3h5v5M8 21H3v-5M16 21h5v-5",
+  "chevron-left": "M15 18l-6-6 6-6",
+  "chevron-right": "M9 18l6-6-6-6",
   shrink: "M21 3l-7 7m0-6v6h6M3 21l7-7m-6 0h6v6",
   "width-full": "M3 4v16M21 4v16M4 12h16M8 8l-4 4 4 4M16 8l4 4-4 4",
   "width-page": "M7 3v18M17 3v18M10 7h4M10 12h4M10 17h4",
@@ -166,11 +183,19 @@ const paths = {
   undo: "M3 10h10a7 7 0 0 1 0 14M3 10l5-5M3 10l5 5",
   redo: "M21 10H11a7 7 0 0 0 0 14m10-14-5-5m5 5-5 5",
   play: "m8 4 12 8-12 8Z",
+  pause: "M7 4h3v16H7zM14 4h3v16h-3z",
+  info: "M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18M12 10v7M12 7h.01",
+  checklist: "M10 6h11M10 12h11M10 18h11M3 6l1.5 1.5L7 5M3 12l1.5 1.5L7 11M3 18l1.5 1.5L7 17",
+  codeblock: "M4 4h16v16H4zM9.5 9 7 12l2.5 3M14.5 9l2.5 3-2.5 3",
+  divider: "M3 5h18v14H3zM7 12h10",
+  markdown: "M3 6h18v12H3zM6.5 15V9l2.5 3 2.5-3v6M16 9v6m-2.5-2.5L16 15l2.5-2.5",
   pencil: "m4 16 12-12 4 4L8 20H4v-4Zm9-9 4 4",
   file: "M5 3h9l5 5v13H5zM14 3v6h5M8 13h8M8 17h6",
   highlighter: "m5 14 9-10 6 6-10 9-5-5ZM5 14l-2 7 7-2M3 21h12",
   eraser: "m4 13 9-10 8 8-9 10H7l-3-4v-4Zm3-3 9 8M12 21h10",
   "stroke-width": "M4 5h16M4 12h16M4 20h16M4 19h16M4 21h16",
+  "pen-pressure": "M9 3h6l2 9-5 6-5-6 2-9ZM12 8v10M7 21h10",
+  "recognise-shapes": "m8 3 5 8H3l5-8ZM14 14h7v7h-7zM10 18a4 4 0 1 1-8 0 4 4 0 0 1 8 0Z",
   download: "M12 3v12m-5-5 5 5 5-5M4 16v5h16v-5",
   upload: "M12 16V3m-5 5 5-5 5 5M4 16v5h16v-5",
   repeat: "M3 7h15l-3-3M21 17H6l3 3M18 7l3 3V7M6 17l-3-3v3",
@@ -181,7 +206,7 @@ const paths = {
 const icon = (name) =>
   `<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="${paths[name] || paths.task}"/></svg>`;
 const colorPicker = installColorPickers({ esc, icon });
-installSelectMenus({ esc, icon, taskColor: (field, value) => taskFieldColor(state, field, value) });
+const selectMenus = installSelectMenus({ esc, icon, taskColor: (field, value) => taskFieldColor(state, field, value) });
 installTaskControlColors(() => state);
 installDatePickers({ esc, icon });
 document.addEventListener(
@@ -206,7 +231,7 @@ const statusNames = {
   review: "In review",
   done: "Done",
 };
-let types = ["epic", "milestone", "story", "task", "bug"];
+let types = [...DEFAULT_TASK_TYPES];
 const taskViews = ["list", "tree", "table", "kanban"];
 const planningViews = ["calendar", "timeline", "capacity"];
 const views = [
@@ -224,6 +249,7 @@ const views = [
 const label = (str) => String(str || "").replace(/^./, (c) => c.toUpperCase());
 const viewLabels = { board: "Boards" };
 const viewLabel = (view) => viewLabels[view] || label(view);
+installTopbarTitle({ viewLabel });
 const storage = {
   get(key, fallback) {
     try {
@@ -330,10 +356,32 @@ const app = $("#app");
 function toast(message, error = false) {
   const el = document.createElement("div");
   el.className = `toast${error ? " error" : ""}`;
-  el.textContent = message;
+  el.setAttribute("role", error ? "alert" : "status");
+  const text = document.createElement("span");
+  text.className = "toast-text";
+  text.textContent = message;
+  const close = document.createElement("button");
+  close.type = "button";
+  close.className = "toast-close";
+  close.setAttribute("data-toast-close", "");
+  close.setAttribute("aria-label", "Dismiss notification");
+  close.innerHTML = icon("close");
+  const remove = () => {
+    clearTimeout(timer);
+    el.remove();
+  };
+  close.addEventListener("click", remove);
+  el.append(text, close);
   $("#toasts").append(el);
-  setTimeout(() => el.remove(), error ? 9000 : 3500);
+  const timer = setTimeout(remove, error ? 9000 : 3500);
+  return remove;
 }
+window.PencilsToast = toast;
+document.addEventListener("keydown", (event) => {
+  if (event.key !== "Escape" || event.defaultPrevented) return;
+  const last = $("#toasts .toast:last-child [data-toast-close]");
+  if (last && !document.querySelector("dialog[open], :popover-open, .select-menu[open]")) last.click();
+});
 async function api(url, options = {}) {
   let response;
   try {
@@ -343,6 +391,7 @@ async function api(url, options = {}) {
         "Content-Type": "application/json",
         "X-Pencils-Name": encodeURIComponent(
           localStorage.getItem("pencils:participant") ||
+            state.session?.user?.username ||
             `Guest ${sync.client.slice(-4)}`,
         ),
         ...options.headers,
@@ -391,12 +440,13 @@ function projectDescription() {
     "A little space to turn plans into progress."
   );
 }
+// Revisions are sorted: the server may list the same records in another order.
 function signature(snapshot) {
   return JSON.stringify([
     snapshot.project.revision,
-    snapshot.tasks.map((t) => t.revision),
-    snapshot.boards.map((b) => b.revision),
-    (snapshot.documents || []).map(d => d.revision),
+    snapshot.tasks.map((t) => t.revision).sort(),
+    snapshot.boards.map((b) => b.revision).sort(),
+    (snapshot.documents || []).map(d => d.revision).sort(),
     snapshot.warnings,
     snapshot.taskAvailability,
   ]);
@@ -485,6 +535,7 @@ function openView(view) {
   const next = view === "tasks" ? preferredAreaView("task", taskViews, "list") : view === "planning" ? preferredAreaView("planning", planningViews, "calendar") : view === "drawing" ? "board" : view;
   if (!views.includes(next)) return false;
   if (state.view === next) return true;
+  state.helpArticle = null;
   features.drawingReset();
   state.boardGallery = false;
   state.settingsDirty = false;
@@ -502,7 +553,10 @@ function setLoading(value) {
   for (const control of document.querySelectorAll('[data-action="view"],#project-view-switcher'))
     control.disabled = value;
 }
-async function refresh(render = true, shouldApply = () => true) {
+// Background refreshes pass { quiet: true }: when the changes hold nothing this page does not
+// already show (this browser's own saves, changes in other projects), they are marked as seen
+// without rebuilding the page.
+async function refresh(render = true, shouldApply = () => true, { quiet = false } = {}) {
   await boardQueue;
   if (!shouldApply()) return;
   const projectId = state.project?.id;
@@ -510,6 +564,12 @@ async function refresh(render = true, shouldApply = () => true) {
   let snapshot=null,workspace=null;
   if(projectId && Number.isInteger(state.snapshotVersion)){
     const delta=await api(`/projects/${projectId}/delta?since=${state.snapshotVersion}`);
+    if(quiet && !delta.full && state.project?.id === projectId && !deltaChangesState(delta.records)){
+      state.snapshotVersion=Math.max(state.snapshotVersion,delta.version);
+      // The page already shows these revisions; keep the 30-second check from rebuilding for them.
+      state.signature=signature(state);
+      return;
+    }
     if(!delta.full){snapshot={version:delta.version,project:state.project,tasks:[...state.tasks],boards:[...state.boards],documents:[...(state.documents || [])],warnings:state.warnings,taskAvailability:state.taskAvailability,progress:state.progress};for(const record of delta.records){if(record.kind==="project")snapshot.project=record.value;else{const list=snapshot[record.kind],index=list.findIndex(v=>v.id===record.value.id);if(index<0)list.push(record.value);else list[index]=record.value;}}}
   }
   if(!snapshot){workspace=await fetchWorkspace();snapshot=projectId?await api(`/projects/${projectId}`):null;}
@@ -531,17 +591,28 @@ async function refresh(render = true, shouldApply = () => true) {
   }
 }
 
+// Whether any record differs from what the page holds (object key order aside).
+function deltaChangesState(records) {
+  const stable = (value) => JSON.stringify(value, (_, v) => (v && typeof v === "object" && !Array.isArray(v) ? Object.fromEntries(Object.entries(v).sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))) : v));
+  return records.some(({ kind, value }) => {
+    const current = kind === "project" ? state.project : state[kind]?.find((item) => item.id === value.id);
+    return !current || stable(current) !== stable(value);
+  });
+}
 function applySnapshot(snapshot) {
   if (state.project?.id !== snapshot.project.id) {
     state.boardTaskPanel = false;
     state.boardTaskFilters = {};
   }
   state.snapshotVersion=snapshot.version;
+  // A project moved to another organisation reopens there.
+  if (state.project?.id === snapshot.project.id && state.project.organisation !== snapshot.project.organisation)
+    storage.set(`project:${snapshot.project.organisation}`, snapshot.project.id);
   state.project = snapshot.project;
   state.projects = state.projects.map(p=>p.id===snapshot.project.id?{...p,...snapshot.project}:p);
   state.config = snapshot.project.schema || {
     statuses: ["backlog", "todo", "in-progress", "review", "done"],
-    types: ["epic", "milestone", "story", "task", "bug"],
+    types: [...DEFAULT_TASK_TYPES],
     done: ["done"],
     fields: [],
   };
@@ -616,8 +687,10 @@ async function openProject(id) {
   state.navigation++;
   try {
     const snapshot = await api(`/projects/${id}`);
+    // A project just created (or an organisation just joined) is not in the sidebar yet.
     if (
-      !state.organisations.some((o) => o.id === snapshot.project.organisation)
+      !state.organisations.some((o) => o.id === snapshot.project.organisation) ||
+      !state.projects.some((p) => p.id === id)
     )
       applyWorkspace(await fetchWorkspace());
     activateProject(snapshot);
@@ -678,9 +751,12 @@ function directoryPageHTML() {
   const o = state.organisation,
     page = state.directoryPage,
     title = label(page);
-  return `<section class="content project-settings-page directory-page"><header class="settings-page-heading"><h1>${title}</h1><p>${page === "teams" ? "Build teams and choose their members." : "Manage people and their weekly task limits."} ${esc(o.title)}.</p></header><nav class="directory-tabs" aria-label="Organisation directory"><button class="button ${page === "teams" ? "soft" : ""}" data-action="directory-open" data-page="teams" ${page === "teams" ? 'aria-current="page"' : ""}>${icon("group")}Teams <span class="count">${o.teams?.length || 0}</span></button><button class="button ${page === "people" ? "soft" : ""}" data-action="directory-open" data-page="people" ${page === "people" ? 'aria-current="page"' : ""}>${icon("people")}People <span class="count">${o.people?.length || 0}</span></button></nav><form id="organisation-form" data-directory-page="${page}" data-id="${esc(o.id)}" data-revision="${esc(o.revision)}"><div class="dialog-body"><div class="form-error hidden" role="alert"></div></div><div class="dialog-foot"><span class="field-hint">Changes apply to this organisation.</span><button class="button primary" type="submit">Save ${page}</button></div></form></section>`;
+  return `<section class="content project-settings-page directory-page"><header class="settings-page-heading"><h1>${title}</h1><p>${page === "teams" ? "Build teams and choose their members." : "Manage people and their weekly task limits."} ${esc(o.title)}.</p></header><nav class="directory-tabs" aria-label="Organisation directory"><button class="button" data-action="directory-open" data-page="teams" ${page === "teams" ? 'aria-current="page"' : ""}>${icon("group")}Teams <span class="count">${o.teams?.length || 0}</span></button><button class="button" data-action="directory-open" data-page="people" ${page === "people" ? 'aria-current="page"' : ""}>${icon("people")}People <span class="count">${o.people?.length || 0}</span></button></nav><form id="organisation-form" data-directory-page="${page}" data-id="${esc(o.id)}" data-revision="${esc(o.revision)}"><div class="dialog-body"><div class="form-error hidden" role="alert"></div></div><div class="dialog-foot"><span class="field-hint">Changes apply to this organisation.</span><button class="button primary" type="submit">Save ${page}</button></div></form></section>`;
 }
 function renderApp() {
+  keepFocus(renderAppNow);
+}
+function renderAppNow() {
   const dateOpener = document.activeElement?.closest("[data-task-dates]");
   const dateScope = dateOpener?.closest("[data-timeline]")?.dataset.timeline;
   features.documentsReset();
@@ -692,11 +768,13 @@ function renderApp() {
   )
     closeDialog(false, { confirmDirty: false });
   const p = state.project;
-  document.title = `${state.helpArticle ? helpArticle(state.helpArticle).title + " · Help" : state.directoryPage ? label(state.directoryPage) + " · " + state.organisation?.title : p?.title || state.organisation?.title || "Workspace"} · Pencils`;
+  document.title = `${state.helpArticle ? helpArticle(state.helpArticle).title + " · Help" : state.directoryPage ? label(state.directoryPage) + " · " + state.organisation?.title : p ? `${viewLabel(state.view)} · ${p.title}` : state.organisation?.title || "Workspace"} · Pencils`;
   app.innerHTML = `<div class="shell">
     <button class="sidebar-overlay ${state.menu ? "visible" : ""}" data-action="menu" aria-label="Close sidebar"></button>
-    <aside id="workspace-sidebar" class="sidebar ${state.menu ? "open" : ""}">
+    <aside id="workspace-sidebar" class="sidebar ${state.menu ? "open" : ""}" data-switcher="${!p || state.drawerSwitcher ? "open" : "closed"}" data-drawer-level="${p && state.drawerLevel === "documents" ? "documents" : "menu"}">
       <button class="brand" data-action="home" aria-label="Pencils home"><img src="/icon.svg" alt=""><span class="wordmark">pencils<span style="color:#b9d18c">.</span></span></button>
+      <button class="icon-button phone-drawer-close" data-action="menu" aria-label="Close navigation">${icon("close")}</button>
+      ${drawerSwitcherHTML()}
       <div class="organisation-switch"><div class="organisation-switch-row"><span class="workspace-icon" style="color:${safeColor(state.organisation?.color)}">${icon("folder")}</span><label class="organisation-choice"><span>ORGANISATION</span><select id="organisation-select" aria-label="Switch organisation">${state.organisations.map((o) => `<option value="${esc(o.id)}" ${o.id === state.organisation?.id ? "selected" : ""}>${esc(o.title)}</option>`).join("")}</select></label></div><div class="organisation-actions"><button data-action="organisation-new">${icon("plus")}New organisation</button><button data-action="organisation-edit" aria-label="Organisation settings" ${state.organisation ? "" : "disabled"}>${icon("settings")}</button></div></div>
       <div class="side-label">PROJECTS<button data-action="project-new" aria-label="Create project">${icon("plus")}</button></div>
       <nav class="project-links" aria-label="Projects">${organisationProjects()
@@ -706,14 +784,17 @@ function renderApp() {
         )
         .join("")}</nav>
       <button class="side-new" data-action="project-new">${icon("plus")}New project</button>
+      ${p ? '<section id="sidebar-documents" class="sidebar-documents" aria-label="Documents"></section>' : ""}
       ${state.organisation ? `<section class="sidebar-directory"><div class="side-label">TEAMS</div><nav class="directory-links" aria-label="Teams and people">${["teams", "people"].map((page) => `<button class="directory-link ${state.directoryPage === page ? "active" : ""}" data-action="directory-open" data-page="${page}" ${state.directoryPage === page ? 'aria-current="page"' : ""}>${icon(page === "teams" ? "group" : "people")}<span>${label(page)}</span><span class="directory-count">${state.organisation[page]?.length || 0}</span></button>`).join("")}</nav></section>` : ""}
-      <div class="side-bottom">
+      ${p ? phoneNavigationHTML() : ""}
+      <div class="phone-drawer-utilities" role="group" aria-label="Settings and help" style="--tiles:${(p ? 3 : 2) + (state.session?.user?.admin ? 1 : 0)}">${p ? `<button class="button" data-action="project-edit" aria-label="Project settings">${icon("settings")}<span>Settings</span></button>` : ""}<button class="button" data-action="help" aria-label="Help & guides">${icon("help")}<span>Help</span></button><button class="button" data-personal="settings" aria-label="Personal settings">${icon("people")}<span>You</span></button>${state.session?.user?.admin ? `<button class="button" data-feature-requests aria-label="Feature requests">${icon("comment")}<span>Requests</span></button>` : ""}</div>
+      <div class="side-bottom">${state.session?.user?.admin ? `<button class="side-new" data-feature-requests>${icon("comment")}Feature requests</button>` : ""}
       <div class="side-footer"><span class="dot"></span>Local workspace<span class="version">v${APP_VERSION}</span></div></div>
     </aside>
     <main class="main">
-      <header class="topbar"><div class="breadcrumb"><button class="icon-button desktop-sidebar-toggle" data-personal="sidebar" aria-controls="workspace-sidebar" aria-expanded="true" aria-label="Collapse sidebar">${icon("menu")}</button><button class="icon-button mobile-menu" data-action="menu" aria-label="Toggle sidebar">${icon("menu")}</button><button class="organisation-crumb" data-action="home" title="${esc(state.organisation?.title)}">${esc(state.organisation?.title || "Organisations")}</button><span>/</span><strong ${p ? 'role="heading" aria-level="1"' : ""}>${esc(state.helpArticle ? "Help" : state.directoryPage ? label(state.directoryPage) : p?.title || "Projects")}</strong></div>${p ? projectNavigationHTML() : ""}<div class="top-actions"><div class="save-state" id="save-state">${appStatusHTML()}</div>${p ? `<button class="icon-button" data-action="project-edit" aria-label="Project settings" title="Project settings">${icon("settings")}</button>` : ""}<button class="icon-button" data-action="help" aria-label="Help & keyboard shortcuts">${icon("help")}</button><button class="avatar" data-personal="settings" aria-label="Personal settings" title="Personal settings">WE</button></div></header>
+      <header class="topbar"><div class="breadcrumb"><button class="icon-button desktop-sidebar-toggle" data-personal="sidebar" aria-controls="workspace-sidebar" aria-expanded="true" aria-label="Collapse sidebar">${icon("menu")}</button><button class="icon-button mobile-menu" data-action="menu" aria-label="Toggle sidebar" aria-controls="workspace-sidebar" aria-expanded="${state.menu}">${icon("menu")}</button><button class="organisation-crumb" data-action="home" title="${esc(state.organisation?.title)}">${esc(state.organisation?.title || "Organisations")}</button><span>/</span>${p ? `<span class="project-crumb" hidden>${esc(p.title)}</span><span class="project-crumb-separator" aria-hidden="true" hidden>/</span>` : ""}<strong ${p ? 'role="heading" aria-level="1"' : ""}>${esc(p?.title || (state.helpArticle ? "Help" : state.directoryPage ? label(state.directoryPage) : "Projects"))}</strong>${p ? `<span class="phone-current-view">${state.helpArticle ? "Help" : viewLabel(state.view)}</span>` : ""}</div>${p ? projectNavigationHTML() : ""}<div class="top-actions">${p ? newMenuHTML("icon") : ""}<div class="save-state" id="save-state">${appStatusHTML()}</div>${p ? `<button class="icon-button" data-action="project-edit" aria-label="Project settings" title="Project settings">${icon("settings")}</button>` : ""}<button class="icon-button" data-action="help" aria-label="Help & keyboard shortcuts" ${state.helpArticle ? 'aria-current="page"' : ""}>${icon("help")}</button><button class="avatar" data-personal="settings" aria-label="Personal settings" title="Personal settings">WE</button></div></header>
       ${!state.online ? '<div class="connection-banner">Local server unavailable. Reconnect to its network to save changes.</div>' : ""}
-      ${state.helpArticle ? helpPageHTML(state.helpArticle, { esc, icon }) : state.directoryPage ? directoryPageHTML() : p ? projectPage() : welcomePage()}
+      ${state.helpArticle ? helpPageHTML(state.helpArticle, { esc, icon, requests: !!state.session?.user?.admin }) : state.directoryPage ? directoryPageHTML() : p ? projectPage() : welcomePage()}
     </main></div>`;
   updateViewLayout(state);
   if (p) renderView();
@@ -736,6 +817,25 @@ function renderApp() {
     document.querySelector(`${scope}[data-task-dates="${CSS.escape(dateOpener.dataset.taskDates)}"]`)
       ?.focus({ preventScroll: true });
   }
+}
+// Background refreshes and saves rebuild the page or the view; keep keyboard focus on the
+// same control when the rebuild replaced it and focus fell to the page.
+function keepFocus(render) {
+  const focused = document.activeElement !== document.body ? document.activeElement : null;
+  const key = focusKey(focused);
+  const result = render();
+  if (key && !focused.isConnected && document.activeElement === document.body)
+    [...document.querySelectorAll(key)].find((el) => el.getClientRects().length)?.focus({ preventScroll: true });
+  return result;
+}
+// A selector that finds the same control after a rebuild: a board object (or the board), an
+// element with an id, or a control named by its data-action / data-id / data-feature / data-pro.
+function focusKey(el) {
+  const node = el?.closest("#canvas [data-node], #canvas");
+  if (node) return node.id === "canvas" ? "#canvas" : `#canvas [data-node="${CSS.escape(node.dataset.node)}"]`;
+  if (el?.id) return `#${CSS.escape(el.id)}`;
+  const keys = ["action", "id", "feature", "pro"].filter((key) => el?.dataset[key]);
+  return keys.length ? keys.map((key) => `[data-${key}="${CSS.escape(el.dataset[key])}"]`).join("") : null;
 }
 function safeColor(value) {
   return /^#[0-9a-f]{6}$/i.test(value) ? value : "#66856f";
@@ -768,9 +868,86 @@ function warningsHTML(warnings) {
     ? `<details class="warning"><summary>${warnings.length} vault ${warnings.length === 1 ? "issue" : "issues"} need attention</summary>${warnings.map((w) => `<div>${esc(w)}</div>`).join("")}</details>`
     : "";
 }
+// One New control everywhere: it offers a card or a document (PEN-6).
+function newMenuHTML(kind = "button") {
+  const summary = kind === "icon"
+    ? `<summary class="icon-button" aria-label="New" title="New card or document">${icon("plus")}</summary>`
+    : `<summary class="button primary" title="New card or document">${icon("plus")}New</summary>`;
+  return `<details class="board-menu new-menu${kind === "icon" ? " phone-new-task" : ""}" data-new-menu data-board-menu="new-${kind}">${summary}<div class="board-menu-panel new-menu-panel"><button type="button" data-action="task-new">${icon("task")}Card</button><button type="button" data-action="document-new">${icon("file")}Document</button></div></details>`;
+}
+// Phones: the drawer opens on a switcher naming the project and organisation;
+// organisation, projects and teams appear beneath it when it is opened. Views
+// follow as compact tiles, and settings sit in one row at the bottom.
+function drawerSwitcherHTML() {
+  const p = state.project, open = !p || state.drawerSwitcher;
+  return `<button type="button" class="drawer-switcher" data-drawer-switcher aria-expanded="${open}" aria-label="${esc(p ? `${p.title}, ${state.organisation?.title || ""}. Switch project or organisation` : "Projects and organisations")}">${p ? `<span class="project-mark" style="background:${safeColor(p.color)}"></span>` : icon("folder")}<span class="drawer-switcher-text"><strong>${esc(p?.title || "Projects")}</strong><small>${esc(state.organisation?.title || "Organisations")}</small></span>${icon("chevron")}</button>`;
+}
+function phoneNavigationHTML() {
+  return `<nav class="phone-project-navigation" aria-label="Project navigation">${newMenuHTML()}${[
+    ["Workspace", ["overview", "documents", "board"]], ["Tasks", taskViews], ["Planning", planningViews],
+  ].map(([name, views]) => `<div class="phone-navigation-group" style="--tiles:${views.length}"><span>${name}</span>${views.map(view => view === "documents"
+    // Documents drills down to the document list inside the drawer.
+    ? `<button class="button ${state.view === view ? "active" : ""}" data-drawer-documents data-view="${view}" aria-label="${viewLabel(view)}: show documents" ${state.view === view ? 'aria-current="page"' : ""}>${icon(view)}<span>${viewLabel(view)}</span><span class="drawer-tile-more" aria-hidden="true">${icon("chevron")}</span></button>`
+    : `<button class="button ${state.view === view ? "active" : ""}" data-action="view" data-view="${view}" ${state.view === view ? 'aria-current="page"' : ""}>${icon(view)}<span>${viewLabel(view)}</span></button>`).join("")}</div>`).join("")}</nav>`;
+}
+function setDrawerLevel(level) {
+  state.drawerLevel = level;
+  const sidebar = $(".sidebar");
+  sidebar?.setAttribute("data-drawer-level", level);
+  if (state.menu) (level === "documents" ? sidebar?.querySelector("[data-drawer-back]") : sidebar?.querySelector('[data-drawer-documents]'))?.focus({ preventScroll: true });
+}
+document.addEventListener("click", event => {
+  if (event.target.closest("[data-drawer-documents]")) {
+    state.drawerLevel = "documents";
+    if (state.view !== "documents") openView("documents");
+    setSidebarOpen(true, false);
+    return;
+  }
+  if (event.target.closest("[data-drawer-back]")) { setDrawerLevel("menu"); return; }
+  const switcher = event.target.closest("[data-drawer-switcher]");
+  if (!switcher || !state.project) return;
+  state.drawerSwitcher = !state.drawerSwitcher;
+  switcher.setAttribute("aria-expanded", String(state.drawerSwitcher));
+  switcher.closest(".sidebar")?.setAttribute("data-switcher", state.drawerSwitcher ? "open" : "closed");
+});
+function setSidebarOpen(open, focus = true) {
+  state.menu = open;
+  const sidebar = $(".sidebar"), mobile = matchMedia("(max-width: 780px)").matches;
+  // Each opening starts with the switcher closed: on the document list in
+  // Documents, on the project's views elsewhere.
+  if (open && state.project) {
+    state.drawerSwitcher = false;
+    sidebar?.setAttribute("data-switcher", "closed");
+    sidebar?.querySelector("[data-drawer-switcher]")?.setAttribute("aria-expanded", "false");
+    state.drawerLevel = state.view === "documents" ? "documents" : "menu";
+    sidebar?.setAttribute("data-drawer-level", state.drawerLevel);
+  }
+  sidebar?.classList.toggle("open", open);
+  $(".sidebar-overlay")?.classList.toggle("visible", open);
+  if (sidebar && mobile) sidebar.inert = !open;
+  if ($(".main")) $(".main").inert = mobile && open;
+  $(".mobile-menu")?.setAttribute("aria-expanded", String(open));
+  if (focus) (open ? sidebar?.querySelector(".phone-drawer-close") : $(".mobile-menu"))?.focus({ preventScroll: true });
+}
+// The drawer uses the same action handlers as the desktop navigation.
+document.addEventListener("click", event => {
+  // Choosing or creating a document in the drawer also closes it.
+  const button = event.target.closest('.sidebar [data-action], .sidebar [data-personal], .sidebar [data-document-open], .sidebar [data-document-action="create"]');
+  if (state.menu && button && button.dataset.action !== "menu") setSidebarOpen(false, false);
+}, true);
+document.addEventListener("keydown", event => {
+  if (!state.menu || !matchMedia("(max-width: 780px)").matches || event.defaultPrevented) return;
+  if (event.key === "Escape") { event.preventDefault(); event.stopImmediatePropagation(); setSidebarOpen(false); }
+  if (event.key === "Tab") {
+    const items = [...$(".sidebar").querySelectorAll('button,select,a[href],input')].filter(el => !el.disabled && el.getClientRects().length);
+    const first = items[0], last = items.at(-1);
+    if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last?.focus(); }
+    else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first?.focus(); }
+  }
+}, true);
 function projectNavigationHTML() {
   const total = state.tasks.filter((task) => !task.archived).length;
-  const area = taskViews.includes(state.view) ? "tasks" : planningViews.includes(state.view) ? "planning" : state.view;
+  const area = state.helpArticle ? "help" : taskViews.includes(state.view) ? "tasks" : planningViews.includes(state.view) ? "planning" : state.view;
   return `<div id="board-project-tools" class="board-project-tools">
     <nav class="tabs" aria-label="Project views">${[
       ["Overview", ["overview"]],
@@ -783,12 +960,12 @@ function projectNavigationHTML() {
         ([name, group]) =>
           `<div class="view-tab-group" role="group" aria-label="${name}">${group.map((view) => {
             const active = view === "tasks" ? taskViews.includes(state.view) : view === "planning" ? planningViews.includes(state.view) : state.view === view;
-            return `<button class="tab ${active ? "active" : ""}" data-action="view" data-view="${view}" ${active ? 'aria-current="page"' : ""}>${icon(view === "tasks" ? "list" : view === "planning" ? "calendar" : view)}${viewLabel(view)}${view === "tasks" ? `<span class="tab-count">${total}</span>` : ""}</button>`;
+            return `<button class="tab ${active ? "active" : ""}" data-action="view" data-view="${view}" aria-label="${viewLabel(view)}" title="${viewLabel(view)}${view === "tasks" ? ` · ${total} tasks` : ""}" ${active ? 'aria-current="page"' : ""}>${icon(view === "tasks" ? "list" : view === "planning" ? "calendar" : view)}</button>`;
           }).join("")}</div>`,
       )
       .join("")}</nav>
-    <label class="mobile-view-switcher">View <select id="project-view-switcher" aria-label="Project view">${area === "settings" ? '<option value="settings" selected disabled>Settings</option>' : ""}${["overview", "documents", "planning", "tasks", "board"].map((view) => `<option value="${view}" ${view === area ? "selected" : ""}>${viewLabel(view)}</option>`).join("")}</select></label>
-    <button class="button primary" data-action="task-new" aria-label="New task">${icon("plus")}New task</button>
+    <label class="mobile-view-switcher">View <select id="project-view-switcher" aria-label="Project view">${["settings", "help"].includes(area) ? `<option value="${area}" selected disabled>${label(area)}</option>` : ""}${["overview", "documents", "planning", "tasks", "board"].map((view) => `<option value="${view}" ${view === area ? "selected" : ""}>${viewLabel(view)}</option>`).join("")}</select></label>
+    ${newMenuHTML()}
   </div>`;
 }
 function projectPage() {
@@ -845,6 +1022,10 @@ function filteredTasks() {
   });
 }
 function renderView(onlyContent = false) {
+  return keepFocus(() => renderViewNow(onlyContent));
+}
+function renderViewNow(onlyContent) {
+  observeKanbanLayout(null);
   navigation.schedule();
   updateViewLayout(state);
   if (
@@ -853,7 +1034,7 @@ function renderView(onlyContent = false) {
   )
     closeDialog(false, { confirmDirty: false });
   features.canvasBeforeRender();
-  if (!state.project) return;
+  if (!state.project || state.helpArticle) return;
   if (!features.viewReady()) {
     const view = state.view, project = state.project.id;
     $("#view-toolbar").innerHTML = "";
@@ -888,8 +1069,8 @@ function renderView(onlyContent = false) {
       ["board", "drawing"].includes(state.view)
         ? boardToolbar()
         : state.view === "overview"
-          ? '<div class="overview-toolbar">Project overview</div>'
-          : `<div class="toolbar"><div class="toolbar-left"><label class="search">${icon("search")}<input id="search" aria-label="Search tasks" placeholder="Find a task…" value="${esc(state.search)}"></label><select id="filter-status" class="filter" aria-label="Filter by status"><option value="all">All statuses</option>${options(statuses, state.status, statusNames)}</select><select id="filter-type" class="filter" aria-label="Filter by task type"><option value="all">All types</option>${options(types, state.type)}</select></div><div class="toolbar-right"><span class="caption">A place for every little detail</span><select id="sort" class="filter" aria-label="Sort tasks">${options(["created", "order", "title", "priority", "due", "status"], state.sort, { created: "Date created", order: "Manual order", title: "Title A–Z", priority: "Priority", due: "Due date", status: "Status" })}</select></div></div>`;
+          ? ""
+          : `<div class="toolbar"><div class="toolbar-left"><label class="search">${icon("search")}<input id="search" type="search" aria-label="Search tasks" placeholder="Find a task…" value="${esc(state.search)}"></label><select id="filter-status" class="filter" aria-label="Filter by status"><option value="all">All statuses</option>${options(statuses, state.status, statusNames)}</select><select id="filter-type" class="filter" aria-label="Filter by task type"><option value="all">All types</option>${options(types, state.type)}</select></div><div class="toolbar-right"><span class="caption">A place for every little detail</span><select id="sort" class="filter" aria-label="Sort tasks">${options(["created", "order", "title", "priority", "due", "status"], state.sort, { created: "Date created", order: "Manual order", title: "Title A–Z", priority: "Priority", due: "Due date", status: "Status" })}</select></div></div>`;
   }
   const content = $("#view-content");
   const previousKanban = onlyContent && state.view === "kanban" ? content.querySelector(".kanban") : null;
@@ -905,6 +1086,7 @@ function renderView(onlyContent = false) {
   const previousTools = content.querySelector(".board-tools");
   const toolScroll = previousTools && previousTools.dataset.board === board()?.id ? previousTools.scrollTop : 0;
   const allTasks = filteredTasks();
+  state.statusTotals = Object.fromEntries(state.config.statuses.map((status) => [status, allTasks.filter((t) => t.status === status).length]));
   const page =
     state.view === "tree"
       ? treePage(allTasks, state.tasks, state.page, undefined, state.sort === "order" ? compareTaskOrder : null)
@@ -935,8 +1117,8 @@ function renderView(onlyContent = false) {
   };
   content.innerHTML =
     !tasks.length &&
-    !["kanban", "overview", "capacity", "table", "timeline"].includes(state.view)
-      ? `<div class="empty">${icon("leaf")}<h2>${state.tasks.length ? "No matching tasks" : "Create your first task"}</h2><p>${state.tasks.length ? "No tasks match the current filters. Archived tasks are hidden unless Include archived is selected." : ["list", "tree"].includes(state.view) ? "Use New task above to add your first task." : "Add your first task, then make the plan your own."}</p>${state.tasks.length ? '<button class="button soft" data-action="filters-reset">Clear filters</button>' : ["list", "tree"].includes(state.view) ? "" : '<button class="button soft" data-action="task-new">+ Add a task</button>'}</div>`
+    !["kanban", "overview", "capacity", "table", "timeline", "calendar"].includes(state.view)
+      ? `<div class="empty">${icon("leaf")}<h2>${state.tasks.length ? "No matching tasks" : "Create your first card"}</h2><p>${state.tasks.length ? "No tasks match the current filters. Archived tasks are hidden unless Include archived is selected." : ["list", "tree"].includes(state.view) ? "Use New card above to add your first card." : "Add your first card, then make the plan your own."}</p>${state.tasks.length ? '<button class="button soft" data-action="filters-reset">Clear filters</button>' : ["list", "tree"].includes(state.view) ? "" : '<button class="button soft" data-action="task-new">${icon("plus")}Add a card</button>'}</div>`
       : renderers[state.view](tasks);
   // Safari needs a local listener on non-button cards to send taps to the
   // shared click handler, including taps on their padding and metadata.
@@ -961,13 +1143,9 @@ function renderView(onlyContent = false) {
   features.adaptToolbar();
   if (["overview", "table", "timeline"].includes(state.view)) return;
   features.pagination(state.view === "tree" ? page.total : allTasks.length);
-  if (!["list", "tree", "kanban"].includes(state.view))
-    content.insertAdjacentHTML(
-      "beforeend",
-      `<div class="view-footnote">${icon("leaf")}${esc(visibilitySummary(state.tasks, allTasks))} <button class="text-link" data-action="filters-reset">Clear filters</button></div>`,
-    );
   if (treeScroll) content.querySelector(".tree-wrapper").scrollTo(treeScroll);
   const currentKanban = content.querySelector(".kanban");
+  observeKanbanLayout(currentKanban);
   if (kanbanScroll && currentKanban?.dataset.group === kanbanScroll.group) {
     currentKanban.scrollTo(kanbanScroll.x, kanbanScroll.y);
     if (kanbanScroll.group === "none") [...currentKanban.children].forEach((c, i) => c.scrollTop = kanbanScroll.columns[i] || 0);
@@ -995,13 +1173,13 @@ function assigneeHTML(t) {
   return `<span class="task-assignee ${initials ? "" : "unassigned"}" ${taskColorAttributes(state, "assignee", t.assignee)} title="${esc(t.assignee || "Unassigned")}">${esc(initials) || "–"}</span>`;
 }
 function priorityHTML(t) {
-  return `<span class="priority ${esc(t.priority)}" ${taskColorAttributes(state, "priority", t.priority)} title="${esc(priorityLabel(t.priority))} priority">${icon(`priority-${t.priority}`)}${esc(priorityLabel(t.priority))}</span>`;
+  return `<span class="field-chip field-chip-priority priority ${esc(t.priority)}" role="img" aria-label="Priority: ${esc(priorityLabel(t.priority))}" ${taskColorAttributes(state, "priority", t.priority)} title="${esc(priorityLabel(t.priority))} priority">${icon(`priority-${t.priority || "none"}`)}</span>`;
 }
 function dueHTML(t) {
   const today = new Date(),
     local = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
   return t.due
-    ? `<span class="due ${t.due < local && !state.config.done.includes(t.status) ? "overdue" : ""}">${esc(new Date(`${t.due}T12:00:00`).toLocaleDateString(undefined, { day: "numeric", month: "short" }))}</span>`
+    ? `<span class="due ${t.due < local && !state.config.done.includes(t.status) ? "overdue" : ""}">${esc(formatDay(t.due))}</span>`
     : "";
 }
 function taskRow(t, depth = null, hasChildren = false) {
@@ -1010,24 +1188,23 @@ function taskRow(t, depth = null, hasChildren = false) {
   const assignee = t.assignee || "Unassigned";
   const control = (field, name) => `name="${field}" data-row-field="${field}" data-id="${esc(t.id)}" aria-label="${name} for ${esc(t.title)}" ${t.source ? 'disabled title="Managed by the connected source"' : ""}`;
   return `<div data-task-order-row="${esc(t.id)}" data-task-order-group="${esc(depth !== null || state.groupBy === "none" ? "" : t[state.groupBy || "status"] || "")}" class="task-row ${depth !== null ? "tree-row" : ""} ${t.contextOnly ? "tree-context" : ""}" ${depth !== null ? `style="--depth:${Math.min(depth, 12)}"` : ""}>
-    ${depth !== null ? `<button class="tree-toggle ${state.collapsed.has(t.id) ? "collapsed" : ""}" data-action="collapse" data-id="${esc(t.id)}" aria-label="${state.collapsed.has(t.id) ? "Expand" : "Collapse"} subtasks" ${hasChildren ? `aria-expanded="${!state.collapsed.has(t.id)}" title="${state.tasks.filter(c => c.parent === t.id).length} subtasks"` : "disabled"}>${hasChildren ? icon("chevron") : ""}</button>` : '<span class="tree-toggle-spacer" aria-hidden="true"></span>'}
+    ${depth !== null ? `<button class="tree-toggle ${state.collapsed.has(t.id) ? "collapsed" : ""}" data-action="collapse" data-id="${esc(t.id)}" aria-label="${state.collapsed.has(t.id) ? "Expand" : "Collapse"} subtasks" ${hasChildren ? `aria-expanded="${!state.collapsed.has(t.id)}" title="${state.tasks.filter(c => c.parent === t.id).length} subtasks"` : "disabled"}>${hasChildren ? icon("chevron") : ""}</button>` : ""}
     ${taskReorderHandle(t, esc)}
-    <button class="check-button ${done ? "done" : ""}" ${t.source ? 'disabled title="Change completion in the source"' : `title="${esc(statusNames[t.status] || t.status)}"`} data-action="task-check" data-id="${esc(t.id)}" aria-label="${done ? "Reopen" : "Complete"} ${esc(t.title)}">${done ? icon("check") : ""}</button>
-    <button type="button" class="row-open" data-action="task-open" data-id="${esc(t.id)}" aria-label="Open ${esc(t.title)}" title="Open task details">${icon("external")}</button>
     <button type="button" class="task-type row-task-link ${esc(t.type)}" data-action="task-open" data-id="${esc(t.id)}" aria-label="Open ${esc(t.title)} (${esc(label(t.type))})" title="${esc(label(t.type))} · Open task details">${icon(t.type)}</button>
     <button type="button" class="task-id row-task-link" data-action="task-open" data-id="${esc(t.id)}" aria-label="Open ${esc(t.key || t.id)}: ${esc(t.title)}" title="${esc(t.source ? sourceLabel(t) : t.key || t.id)}">${esc(t.key || t.id)}</button>
+    <div class="row-title"><input class="task-title ${done ? "done" : ""}" data-row-field="title" data-id="${esc(t.id)}" aria-label="Title for ${esc(t.title)}" title="${esc(t.title)}" value="${esc(t.title)}" maxlength="300" required ${t.source ? 'readonly aria-description="Managed by the connected source"' : 'aria-description="Enter to save. Escape to cancel."'}>${t.contextOnly ? '<span class="context-badge">Ancestor context</span>' : ""}</div>
     <label class="row-assignee row-choice" title="${esc(assignee)}">${assigneeHTML(t)}<select ${control("assignee", "Assignee")}>${assigneeOptions(state, t.assignee, esc)}</select></label>
-    <label class="priority row-priority row-choice ${esc(priority)}" ${taskColorAttributes(state, "priority", priority)} title="${esc(priorityLabel(priority))} priority">${icon(`priority-${priority}`)}<select ${control("priority", "Priority")}>${options(priorities, priority, priorityLabels)}</select></label>
-    <label class="row-status row-choice task-color-badge" ${taskColorAttributes(state, "status", t.status)} title="${esc(statusNames[t.status] || t.status)}"><span aria-hidden="true">${esc(statusNames[t.status] || t.status)}</span><select ${control("status", "Status")}>${options(nextStatuses(state.config, t.status), t.status, statusNames)}</select></label>
+    <label class="row-status row-choice" ${taskColorAttributes(state, "status", t.status)} title="${esc(statusNames[t.status] || t.status)}"><span class="field-chip field-chip-status" aria-hidden="true">${esc(statusNames[t.status] || t.status)}</span><select ${control("status", "Status")}>${options(nextStatuses(state.config, t.status), t.status, statusNames)}</select></label>
+    <label class="row-priority row-choice" ${taskColorAttributes(state, "priority", priority)} title="${esc(priorityLabel(priority))} priority"><span class="field-chip field-chip-priority priority ${esc(priority)}" aria-hidden="true">${icon(`priority-${priority}`)}</span><select ${control("priority", "Priority")}>${options(priorities, priority, priorityLabels)}</select></label>
     <button type="button" class="row-due" data-row-dates="${esc(t.id)}" aria-label="${esc(t.due ? new Date(`${t.due}T12:00:00`).toLocaleDateString(undefined, { day: "numeric", month: "short" }) : "Set dates")} — edit dates for ${esc(t.title)}" aria-haspopup="dialog" aria-expanded="false" title="${esc(`Start: ${t.start || "Not set"} · Due: ${t.due || "Not set"}`)}">${dueHTML(t) || '<span class="due">—</span>'}</button>
-    <div class="row-title"><input class="task-title ${done ? "done" : ""}" data-row-field="title" data-id="${esc(t.id)}" aria-label="Title for ${esc(t.title)}" title="${esc(t.title)}" value="${esc(t.title)}" maxlength="300" required ${t.source ? 'readonly aria-description="Managed by the connected source"' : 'aria-description="Enter to save. Escape to cancel."'}>${t.contextOnly ? '<span class="context-badge">Ancestor context</span>' : ""}</div></div>`;
+    <button type="button" class="phone-task-open" data-action="task-open" data-id="${esc(t.id)}" aria-label="Open ${esc(t.key || t.id)}: ${esc(t.title)}"><span class="phone-task-title ${done ? "done" : ""}">${esc(t.title)}</span><span class="phone-task-meta">${icon(t.type)}<span>${esc(t.key || t.id)}</span>${assigneeHTML(t)}<span class="field-chip field-chip-status phone-task-status" ${taskColorAttributes(state, "status", t.status)}>${esc(statusNames[t.status] || t.status)}</span><span class="field-chip field-chip-priority phone-task-priority" ${taskColorAttributes(state, "priority", priority)} title="${esc(priorityLabel(priority))}">${icon(`priority-${priority}`)}</span>${dueHTML(t)}</span></button></div>`;
 }
 function listView(tasks) {
   return statuses
     .filter((s) => tasks.some((t) => t.status === s))
     .map(
       (status) =>
-        `<section class="list-group"><h2 class="section-title"><span class="status-dot ${status}" ${taskColorAttributes(state, "status", status)}></span>${esc(statusNames[status])}<span class="count">${tasks.filter((t) => t.status === status).length}</span><span class="line"></span></h2><div>${tasks
+        `<section class="list-group"><h2 class="section-title"><span class="status-dot ${status}" ${taskColorAttributes(state, "status", status)}></span>${esc(statusNames[status])}<span class="count">${state.statusTotals?.[status] ?? tasks.filter((t) => t.status === status).length}</span><span class="line"></span></h2><div>${tasks
           .filter((t) => t.status === status)
           .map((t) => taskRow(t))
           .join(
@@ -1090,22 +1267,23 @@ function tableView(tasks) {
     `<input type="${type}" data-task-field="${key}" data-id="${esc(t.id)}" value="${esc(key === "tags" ? (t.tags || []).join(", ") : t[key] || "")}" aria-label="${label(key)} for ${esc(t.title)}" ${key === "title" ? 'maxlength="300" required' : ""}>`;
   return `<div class="table-scroll"><table class="task-table"><thead><tr><th>#</th>${["title", "type", "status", "priority", "parent", "assignee", "due", "tags"].map((field) => `<th><button data-action="sort-column" data-field="${field}">${field === "due" ? "Due date" : label(field)}${state.sort === field ? (state.sortDir === 1 ? " ↑" : " ↓") : ""}</button></th>`).join("")}</tr></thead><tbody>${tasks.map((t, index) => `<tr><td>${index + 1}</td><td class="title-cell"><button class="table-open" data-action="task-open" data-id="${esc(t.id)}" aria-label="Open ${esc(t.title)}">${icon("external")}</button>${input(t, "title")}</td><td>${select(t, "type", types)}</td><td>${select(t, "status", statuses, statusNames)}</td><td>${select(t, "priority", priorities, priorityLabels)}</td><td><select data-task-field="parent" data-id="${esc(t.id)}" aria-label="Parent for ${esc(t.title)}">${parentOptions(t.parent, t.id)}</select></td><td>${input(t, "assignee")}</td><td>${input(t, "due", "date")}</td><td>${input(t, "tags")}</td></tr>`).join("")}</tbody></table></div><button class="add-row" data-action="task-new">${icon("plus")}New row</button>`;
 }
-function kanbanCard(t) {
-  return `<article class="kanban-card" draggable="true" data-drag-task="${esc(t.id)}"><div class="card-top"><span class="task-type ${esc(t.type)}" role="img" aria-label="${esc(label(t.type))}" title="${esc(label(t.type))}">${icon(t.type)}</span><span class="task-id" title="${esc(t.source ? sourceLabel(t) : t.key || t.id)}">${esc(t.key || t.id)}</span><button class="task-title" aria-keyshortcuts="Alt+ArrowUp Alt+ArrowDown" aria-description="Alt + Up or Down reorders this task within its column." data-action="task-open" data-id="${esc(t.id)}">${esc(t.title)}</button></div><div class="card-bottom"><span class="kanban-assignee" title="${esc(t.assignee || "Unassigned")}">${assigneeHTML(t)}<span class="kanban-assignee-name">${esc(t.assignee || "Unassigned")}</span></span>${priorityHTML(t)}</div></article>`;
+function kanbanCard(t, showIds = false) {
+  return `<article class="kanban-card" draggable="true" data-drag-task="${esc(t.id)}"><div class="card-top"><span class="task-type ${esc(t.type)}" role="img" aria-label="${esc(label(t.type))}" title="${esc(label(t.type))}">${icon(t.type)}</span>${showIds ? `<span class="task-id" title="${esc(t.source ? sourceLabel(t) : t.key || t.id)}">${esc(t.key || t.id)}</span>` : ""}<button class="task-title" aria-keyshortcuts="Alt+ArrowUp Alt+ArrowDown" aria-description="Alt + Up or Down reorders this task within its column." data-action="task-open" data-id="${esc(t.id)}">${esc(t.title)}</button></div><div class="card-bottom"><span class="kanban-assignee" role="img" aria-label="Assignee: ${esc(t.assignee || "Unassigned")}" title="${esc(t.assignee || "Unassigned")}">${assigneeHTML(t)}</span>${priorityHTML(t)}</div></article>`;
 }
 function kanbanView(tasks) {
+  const showIds = storage.get(`kanban-show-ids:${state.project.id}`, false) === true;
   const field = kanbanGroup(state.kanbanGroupBy);
-  const header = (status, items, defaults = "") => `<div class="column-header"><span class="status-dot ${esc(status)}" ${taskColorAttributes(state, "status", status)}></span>${esc(statusNames[status])}<span class="count">${items.length}</span><button data-action="task-new" data-status="${esc(status)}" ${defaults} aria-label="Add task to ${esc(statusNames[status])}">${icon("plus")}</button></div>`;
+  const header = (status, items, defaults = "") => `<div class="column-header"><span class="status-dot ${esc(status)}" ${taskColorAttributes(state, "status", status)}></span>${esc(statusNames[status])}<span class="count">${items.length}</span><button type="button" class="icon-button" data-action="task-new" data-status="${esc(status)}" ${defaults} aria-label="Add card to ${esc(statusNames[status])}" title="Add card">${icon("plus")}</button></div>`;
   const column = (status, items, value = "") => {
     const grouped = field !== "none";
     const key = grouped ? JSON.stringify([field, value, status]) : status;
     const limit = state.kanbanLimits?.[`${state.project.id}/${key}`] || 100;
     const defaults = grouped ? `data-kanban-field="${field}" data-kanban-value="${esc(value)}"` : "";
-    return `<section class="kanban-column" data-drop-status="${esc(status)}" ${defaults} aria-label="${esc(statusNames[status])}">${grouped ? "" : header(status, items)}${items.slice(0, limit).map(kanbanCard).join("")}${items.length > limit ? `<button class="button small" data-kanban-more="${esc(key)}">Show 100 more (${Math.min(limit, items.length)} shown)</button>` : ""}<button class="add-row" data-action="task-new" data-status="${esc(status)}" ${defaults}>${icon("plus")}Add task</button></section>`;
+    return `<section class="kanban-column" data-drop-status="${esc(status)}" ${defaults} aria-label="${esc(statusNames[status])}">${grouped ? "" : header(status, items)}${items.slice(0, limit).map(t => kanbanCard(t, showIds)).join("")}${items.length > limit ? `<button class="button small" data-kanban-more="${esc(key)}">Show 100 more (${Math.min(limit, items.length)} shown)</button>` : ""}<button class="add-row" data-action="task-new" data-status="${esc(status)}" ${defaults}>${icon("plus")}Add card</button></section>`;
   };
-  if (field === "none") return `<div class="kanban" data-group="none">${statuses.map(status => column(status, tasks.filter(t => t.status === status))).join("")}</div>`;
+  if (field === "none") return `<div class="kanban" role="region" aria-label="Kanban board" tabindex="0" data-group="none">${statuses.map(status => column(status, tasks.filter(t => t.status === status))).join("")}</div>`;
   const lanes = kanbanLanes(tasks, field, state.config);
-  return `<div class="kanban kanban-swimlanes" data-group="${field}" style="--kanban-columns:${statuses.length}"><div class="kanban-lanes-content"><div class="kanban-lanes-header">${statuses.map(status => header(status, tasks.filter(t => t.status === status))).join("")}</div>${lanes.map(([value, items], index) => {
+  return `<div class="kanban kanban-swimlanes" role="region" aria-label="Kanban board" tabindex="0" data-group="${field}" style="--kanban-columns:${statuses.length}"><div class="kanban-lanes-content"><div class="kanban-lanes-header">${statuses.map(status => header(status, tasks.filter(t => t.status === status))).join("")}</div>${lanes.map(([value, items], index) => {
     const key = laneKey(field, value), collapsed = (state.kanbanCollapsed || []).includes(key);
     const title = field === "assignee" ? value || "Unassigned" : field === "priority" ? priorityLabel(value) : label(value);
     return `<section class="kanban-lane" data-lane-value="${esc(value)}"><h2 class="kanban-lane-heading"><button type="button" data-kanban-collapse="${esc(key)}" aria-expanded="${!collapsed}" aria-controls="kanban-lane-${index}">${icon("chevron")}${["assignee", "priority"].includes(field) ? taskColorDot(state, field, value) : ""}<span>${esc(title)}</span><span class="count">${items.length}</span></button></h2><div class="kanban-lane-row" id="kanban-lane-${index}" ${collapsed ? "hidden" : ""}>${statuses.map(status => column(status, items.filter(t => t.status === status), value)).join("")}</div></section>`;
@@ -1113,6 +1291,8 @@ function kanbanView(tasks) {
 }
 
 let taskPanelController = null, restoreTaskFocus = null;
+// Small operations open at a width sized to their content instead of the full dialog.
+const COMPACT_DIALOGS = ["board", "canvas-note", "canvas-name", "board-layers", "bulk-stickies", "quick-capture", "view", "keyboard-connector", "frame-link"];
 function showDialog(html, kind, { boardPanel = false, nodeId = null } = {}) {
   const opener = document.activeElement;
   if (taskPanelController && !closeDialog(false, { confirmDirty: false }))
@@ -1128,6 +1308,8 @@ function showDialog(html, kind, { boardPanel = false, nodeId = null } = {}) {
   state.dirty = false;
   $("#dialogs").innerHTML = html;
   const dialog = $("dialog");
+  if (COMPACT_DIALOGS.includes(kind)) dialog.classList.add("compact-dialog");
+  prepareDialogFocus(dialog);
   restoreTaskFocus = kind === "task"
     ? taskFocus(opener, dialog.querySelector("#task-form")?.dataset.id)
     : null;
@@ -1149,26 +1331,6 @@ function showDialog(html, kind, { boardPanel = false, nodeId = null } = {}) {
         kind === "frame-update" ? ".project-frame-update" : '[data-pro="convert"]',
     });
   else dialog.showModal();
-  if (kind === "task" && !boardPanel && dialog.matches(":modal")) {
-    let outsideDown = false;
-    const outside = (event) => {
-      const r = dialog.getBoundingClientRect();
-      return (
-        event.clientX < r.left ||
-        event.clientX > r.right ||
-        event.clientY < r.top ||
-        event.clientY > r.bottom
-      );
-    };
-    dialog.addEventListener("pointerdown", (event) => {
-      outsideDown = event.target === dialog && outside(event);
-    });
-    dialog.addEventListener("click", (event) => {
-      if (outsideDown && event.target === dialog && outside(event))
-        closeDialog(false, { confirmDirty: false });
-      outsideDown = false;
-    });
-  }
   dialog.addEventListener("cancel", (event) => {
     event.preventDefault();
     closeDialog();
@@ -1254,7 +1416,7 @@ const navigationDefaults = {
 };
 function navigationSnapshot() {
   const route = state.helpArticle
-    ? { page: "help", article: state.helpArticle, organisation: state.organisation?.id || null }
+    ? { page: "help", article: state.helpArticle, project: state.project?.id || null, view: "help", organisation: state.organisation?.id || null }
     : state.project
     ? {
         project: state.project.id,
@@ -1331,7 +1493,8 @@ async function restoreNavigation(entry, stillCurrent = () => true) {
       state.tableCollapsed = new Set(entry.preferences?.tableCollapsed || []);
       state.tableFilterSearch = {};
       state.headerMenu = null;
-      state.view = destination.view;
+      state.helpArticle = destination.page === "help" ? helpArticle(destination.article).id : null;
+      state.view = state.helpArticle ? "help" : destination.view;
       state.selectedDocument = destination.document || null;
       state.settingsSection = destination.settingsSection || "general";
       state.settingsDetail = destination.settingsDetail || "";
@@ -1349,7 +1512,7 @@ async function restoreNavigation(entry, stillCurrent = () => true) {
         storage.set(`board:${state.project.id}`, state.selectedBoard);
         loadCamera();
       }
-      storage.set(`view:${state.project.id}`, state.view);
+      if (!state.helpArticle) storage.set(`view:${state.project.id}`, state.view);
     } else {
       clearProject();
       state.organisation = organisation || state.organisation;
@@ -1418,6 +1581,7 @@ const features = installFeatures({
   refresh,
   openProject,
   openView,
+  openSelectMenu: (select, anchor) => selectMenus.open(select, anchor),
   canNavigate,
   loadCamera,
   openOrganisation,
@@ -1434,7 +1598,6 @@ const features = installFeatures({
   remember,
   updateCamera,
   updateEdges,
-  nodeDialog,
   safeColor,
   clearProject,
   filteredTasks,
@@ -1451,7 +1614,7 @@ function organisationDialog(edit = false) {
     : { title: "", body: "", color: "#66856f" };
   if (!organisation) return;
   showDialog(
-    `<dialog class="dialog"><form id="organisation-form" data-id="${esc(edit ? organisation.id : "")}" data-revision="${esc(organisation.revision || "")}">${dialogHead(edit ? "Organisation settings" : "A home for your projects")}<div class="dialog-body"><div class="form-error hidden"></div><label class="field">Organisation name<input name="title" value="${esc(organisation.title)}" placeholder="A company, a team, or your own space" maxlength="300" required autofocus></label><label class="field">Description<textarea name="body" rows="3" placeholder="What brings these projects together?">${esc(organisation.body)}</textarea></label><div class="field">Organisation colour${colorPicker({ label: "Organisation colour", value: organisation.color })}</div><p>Each organisation has its own project list. You can switch organisations at any time.</p></div><div class="dialog-foot"><button type="button" class="button" data-action="dialog-close">Cancel</button><button type="submit" class="button primary">${edit ? "Save organisation" : "Create organisation"}</button></div></form></dialog>`,
+    `<dialog class="dialog"><form id="organisation-form" data-id="${esc(edit ? organisation.id : "")}" data-revision="${esc(organisation.revision || "")}">${dialogHead(edit ? "Organisation settings" : "A home for your projects")}<div class="dialog-body"><div class="form-error hidden" role="alert"></div><label class="field">Organisation name<input name="title" value="${esc(organisation.title)}" placeholder="A company, a team, or your own space" maxlength="300" required autofocus></label><label class="field">Description<textarea name="body" rows="3" placeholder="What brings these projects together?">${esc(organisation.body)}</textarea></label><div class="field">Organisation colour${colorPicker({ label: "Organisation colour", value: organisation.color })}</div><p>Each organisation has its own project list. You can switch organisations at any time.</p></div><div class="dialog-foot"><button type="button" class="button" data-action="dialog-close">Cancel</button><button type="submit" class="button primary">${edit ? "Save organisation" : "Create organisation"}</button></div></form></dialog>`,
     "organisation",
   );
 }
@@ -1465,7 +1628,7 @@ function projectFormHTML(edit = false) {
         default_view: "list",
         organisation: state.organisation.id,
       };
-  return `<form id="project-form" data-edit="${edit}" data-revision="${esc(p.revision || "")}">${edit ? "" : dialogHead("A fresh page for a new project")}<div class="dialog-body"><div class="form-error hidden"></div><label class="field">Project name<input name="title" value="${esc(p.title)}" placeholder="What are we working on?" maxlength="300" required autofocus></label><label class="field">Project key<input name="key" value="${esc(p.key || "")}" placeholder="e.g. WEB" pattern="[A-Za-z][A-Za-z0-9]{1,11}" maxlength="12" ${edit ? "required" : ""}><span class="field-hint">Tasks use IDs such as WEB-1. Leave blank when creating a project to generate a key.</span></label><label class="field">Organisation<select name="organisation" required>${state.organisations.map((o) => `<option value="${esc(o.id)}" ${o.id === p.organisation ? "selected" : ""}>${esc(o.title)}</option>`).join("")}</select>${edit ? '<span class="field-hint">Changing this moves the project, including its tasks and canvases, to the selected organisation.</span>' : ""}</label><label class="field">A few words about it<textarea name="body" rows="3" placeholder="The idea, the intention, the possibilities…">${esc(p.body)}</textarea></label><div class="field-row"><div class="field">Project colour${colorPicker({ label: "Project colour", value: p.color })}</div>${edit ? `<label class="field">Default view<select name="default_view">${options(views, p.default_view === "drawing" ? "board" : p.default_view, viewLabels)}</select></label>` : ""}</div><p>Projects live in your vault as folders. Every task is a Markdown file you can open in Obsidian.</p></div><div class="dialog-foot"><button type="button" class="button" data-action="${edit ? "settings-close" : "dialog-close"}">${edit ? "Back to project" : "Cancel"}</button><button class="button primary" type="submit">${edit ? "Save project" : "Create project"} ${icon("arrow")}</button></div></form>`;
+  return `<form id="project-form" data-edit="${edit}" data-revision="${esc(p.revision || "")}">${edit ? "" : dialogHead("A fresh page for a new project")}<div class="dialog-body"><div class="form-error hidden" role="alert"></div><label class="field">Project name<input name="title" value="${esc(p.title)}" placeholder="What are we working on?" maxlength="300" required autofocus></label><label class="field">Project key<input name="key" value="${esc(p.key || "")}" placeholder="e.g. WEB" pattern="[A-Za-z][A-Za-z0-9]{1,11}" maxlength="12" ${edit ? "required" : ""}><span class="field-hint">Tasks use IDs such as WEB-1. Leave blank when creating a project to generate a key.</span></label><label class="field">Organisation<select name="organisation" required>${state.organisations.map((o) => `<option value="${esc(o.id)}" ${o.id === p.organisation ? "selected" : ""}>${esc(o.title)}</option>`).join("")}</select>${edit ? '<span class="field-hint">Changing this moves the project, including its tasks and canvases, to the selected organisation.</span>' : ""}</label><label class="field">A few words about it<textarea name="body" rows="3" placeholder="The idea, the intention, the possibilities…">${esc(p.body)}</textarea></label><div class="field-row"><div class="field">Project colour${colorPicker({ label: "Project colour", value: p.color })}</div>${edit ? `<label class="field">Default view<select name="default_view">${options(views, p.default_view === "drawing" ? "board" : p.default_view, viewLabels)}</select></label>` : ""}</div><p>Projects live in your vault as folders. Every task is a Markdown file you can open in Obsidian.</p></div><div class="dialog-foot"><button type="button" class="button" data-action="${edit ? "settings-close" : "dialog-close"}">${edit ? "Back to project" : "Cancel"}</button><button class="button primary" type="submit">${edit ? "Save project" : "Create project"} ${icon("arrow")}</button></div></form>`;
 }
 function projectDialog(edit = false) {
   if (!canNavigate()) return;
@@ -1490,7 +1653,7 @@ function draftTaskDialog(nodeId = "new") {
 
 function taskDialog(id = null, defaults = {}, replace = false) {
   if (!id && state.boardTaskEditor && !$("#task-form")?.dataset.id) {
-    $("#task-form [name=title]")?.focus();
+    focusOnOpen($("#task-form [name=title]"), $('.task-dialog [data-action="dialog-close"]'));
     return;
   }
   const t = id
@@ -1513,7 +1676,7 @@ function taskDialog(id = null, defaults = {}, replace = false) {
   const picker = (name, title, value, choices, iconOnly = false) =>
     taskPickerHTML({ name, title, value, choices, iconOnly }, { esc, icon, state });
   const metadata = {
-    priority: `<div class="field"><span>Priority</span>${picker(
+    priority: `<div class="field"><span class="sr-only">Priority</span>${picker(
       "priority",
       "Priority",
       t.priority,
@@ -1524,8 +1687,8 @@ function taskDialog(id = null, defaults = {}, replace = false) {
       })),
       true,
     )}</div>`,
-    status: `<label class="field">Status<select name="status" aria-label="Status" ${taskColorAttributes(state, "status", t.status)}>${options(id ? nextStatuses(state.config, t.status) : statuses, t.status, statusNames)}</select></label>`,
-    assignee: `<label class="field task-assignee-field"><span>Assignee</span><span class="task-assignee-choice"><span data-assignee-avatar>${assigneeHTML(t)}</span><select name="assignee" aria-label="Assignee" ${taskColorAttributes(state, "assignee", t.assignee)} ${assigneeHint(state) ? 'aria-describedby="task-assignee-help"' : ""}>${assigneeOptions(state, t.assignee, esc)}</select></span></label>`,
+    status: `<label class="field"><span class="sr-only">Status</span><select name="status" aria-label="Status" ${taskColorAttributes(state, "status", t.status)}>${options(id ? nextStatuses(state.config, t.status) : statuses, t.status, statusNames)}</select></label>`,
+    assignee: `<label class="field task-assignee-field"><span class="sr-only">Assignee</span><span class="task-assignee-choice"><span data-assignee-avatar>${assigneeHTML(t)}</span><select name="assignee" aria-label="Assignee" ${taskColorAttributes(state, "assignee", t.assignee)} ${assigneeHint(state) ? 'aria-describedby="task-assignee-help"' : ""}>${assigneeOptions(state, t.assignee, esc)}</select></span></label>`,
   };
   const html = `<dialog class="dialog task-dialog" aria-label="Task editor"><form id="task-form" class="${id ? "task-edit-form" : "task-create-form"}" data-board="${esc(!id && ["board", "drawing"].includes(state.view) ? state.selectedBoard : "")}" data-draft-node="${esc(t.draftNode || "")}" data-id="${esc(id || "")}" data-revision="${esc(t.revision || "")}">
     <div class="dialog-head task-editor-head"><div class="task-editor-header-row"><div class="task-identity-row">
@@ -1536,10 +1699,9 @@ function taskDialog(id = null, defaults = {}, replace = false) {
         types.map((value) => ({ value, label: label(value), icon: value })),
         true,
       )}
-      <span class="task-id task-key" title="${esc(t.key || (isDraft ? "Draft" : "New task"))}">${esc(t.key || id || (isDraft ? "Draft" : "New"))}</span>
-    </div>${id ? `<div class="task-editor-actions" role="group" aria-label="Task actions"><button type="button" class="icon-button danger" data-action="task-delete" data-id="${esc(id)}" aria-label="Delete task" title="Delete task">${icon("trash")}</button><button type="button" class="icon-button" data-feature="task-duplicate" aria-label="Duplicate task" title="Duplicate task">${icon("duplicate")}</button><button type="button" class="icon-button" data-feature="task-archive" aria-label="${t.archived ? "Unarchive task" : "Archive task"}" title="${t.archived ? "Unarchive task" : "Archive task"}">${icon("folder")}</button><button type="button" class="icon-button" data-feature="task-history" aria-expanded="false" aria-label="Version history" title="Version history">${icon("clock")}</button><button type="button" class="icon-button" data-feature="task-comments" aria-expanded="false" aria-label="Task comments" title="Comments">${icon("comment")}</button></div>` : isDraft ? `<div class="task-editor-actions" role="group" aria-label="Draft actions"><button type="button" class="icon-button" data-feature="draft-finalise" aria-label="Finalise task" title="Finalise task">${icon("task")}</button></div>` : ""}<button type="button" class="icon-button" data-action="dialog-close" aria-label="Close dialog">${icon("close")}</button></div><div class="task-title-row"><input class="title-input" name="title" aria-label="Task title" value="${esc(t.title)}" placeholder="Task title" required maxlength="300" autofocus></div></div>
-    <div class="task-editor-content"><div class="dialog-body"><div class="form-error hidden"></div>
-      <div class="task-metadata"><div class="task-metadata-main">${metadata.assignee}${metadata.priority}${metadata.status}<div class="field task-dates"><span>Dates</span><div class="task-date-range" role="group" aria-label="Start and due dates"><input type="date" name="start" aria-label="Start date" title="Start date" value="${esc(t.start || "")}"><span aria-hidden="true">→</span><input type="date" name="due" aria-label="Due date" title="Due date" value="${esc(t.due || "")}"></div></div></div></div>
+    </div>${id ? `<div class="task-editor-actions" role="group" aria-label="Task actions"><button type="button" class="icon-button danger" data-action="task-delete" data-id="${esc(id)}" aria-label="Delete task" title="Delete task">${icon("trash")}</button><button type="button" class="icon-button" data-feature="task-duplicate" aria-label="Duplicate task" title="Duplicate task">${icon("duplicate")}</button><button type="button" class="icon-button" data-feature="task-archive" aria-label="${t.archived ? "Unarchive task" : "Archive task"}" title="${t.archived ? "Unarchive task" : "Archive task"}">${icon("archive")}</button><button type="button" class="icon-button" data-feature="task-history" aria-expanded="false" aria-label="Version history" title="Version history">${icon("clock")}</button><button type="button" class="icon-button" data-feature="task-comments" aria-expanded="false" aria-label="Task comments" title="Comments">${icon("comment")}</button></div>` : isDraft ? `<div class="task-editor-actions" role="group" aria-label="Draft actions"><button type="button" class="icon-button" data-feature="draft-finalise" aria-label="Finalise task" title="Finalise task">${icon("task")}</button></div>` : ""}<button type="button" class="icon-button" data-action="dialog-close" aria-label="Close dialog">${icon("close")}</button></div><div class="task-title-row"><input class="title-input" name="title" aria-label="Task title" value="${esc(t.title)}" placeholder="Task title" required maxlength="300" autofocus>${t.key || id ? `<span class="task-id task-key" title="${esc(t.key || id)}">${esc(t.key || id)}</span>` : isDraft ? '<span class="task-id task-key">Draft</span>' : ""}</div></div>
+    <div class="task-editor-content"><div class="dialog-body"><div class="form-error hidden" role="alert"></div>
+      <div class="task-metadata"><div class="task-metadata-main">${metadata.assignee}${metadata.status}${metadata.priority}<div class="field task-dates"><span class="sr-only">Dates</span><div class="task-date-range" role="group" aria-label="Start and due dates"><input type="date" name="start" aria-label="Start date" title="Start date" value="${esc(t.start || "")}"><span aria-hidden="true">→</span><input type="date" name="due" aria-label="Due date" title="Due date" value="${esc(t.due || "")}"></div></div></div></div>
       ${assigneeHint(state) ? `<p id="task-assignee-help" class="sr-only">${esc(assigneeHint(state))}</p>` : ""}
       ${taskDescriptionHTML(t.body, { esc, icon })}
       <input type="hidden" name="parent" value="${esc(t.parent || "")}">
@@ -1547,12 +1709,14 @@ function taskDialog(id = null, defaults = {}, replace = false) {
       <input type="hidden" name="tags" value="${esc((t.tags || []).join(", "))}">
       <input type="hidden" name="pendingSubtasks" value="${esc(JSON.stringify(t.subtasks || []))}"><input type="hidden" name="creation_request" value="${id ? "" : randomUUID()}">
       ${(t.related_records || []).map(record => `<input type="hidden" name="related_records" value="${esc(record)}">`).join("")}
+      ${(t.documents || []).map(document => `<input type="hidden" name="documents" value="${esc(document)}">`).join("")}
       </div>
       <aside class="task-history-panel" aria-label="Task version history" hidden></aside></div>
-    <div class="dialog-foot task-editor-foot">${id || isDraft ? '<span class="task-autosave-status" data-autosave-status role="status" aria-live="polite">Saved automatically</span>' : `<div class="task-create-actions"><label class="create-another"><input type="checkbox" name="createAnother" ${t.createAnother ? "checked" : ""}>Create another</label><button class="button primary" type="submit">Create task</button></div>`}</div></form></dialog>`;
+    <div class="dialog-foot task-editor-foot">${id || isDraft ? '<span class="task-autosave-status" data-autosave-status role="status" aria-live="polite">Saved automatically</span>' : `<div class="task-create-actions"><label class="create-another"><input type="checkbox" name="createAnother" ${t.createAnother ? "checked" : ""}>Create another</label><button class="button primary" type="submit">Create card</button></div>`}</div></form></dialog>`;
   if (replace && $(".task-dialog")) {
     const template = document.createElement("template");
     template.innerHTML = html;
+    prepareDialogFocus(template.content.firstElementChild);
     $(".task-dialog").replaceChildren(
       ...template.content.firstElementChild.childNodes,
     );
@@ -1575,8 +1739,8 @@ async function openHelp(article = "start") {
   const id = helpArticle(article).id;
   if (state.helpArticle === id) return;
   const opened = await restoreNavigation({ route: {
-    page: "help", article: id, organisation: state.organisation?.id || null,
-  } });
+    page: "help", article: id, project: state.project?.id || null, view: "help", organisation: state.organisation?.id || null,
+  }, preferences: navigationSnapshot().preferences });
   if (opened) {
     window.scrollTo(0, 0);
     $("#help-title")?.focus({ preventScroll: true });
@@ -1595,11 +1759,11 @@ async function patchTask(id, changes, rerender = true) {
 }
 
 function boardToolbar() {
-  return `<div class="board-toolbar"><select id="board-select" aria-label="Select canvas">${state.boards.filter(b=>!b.archived).map((b) => `<option value="${esc(b.id)}" ${b.id === state.selectedBoard ? "selected" : ""}>${esc(b.title)}</option>`).join("")}</select><button class="button small" data-action="board-new">${icon("plus")}New canvas</button><span class="spacer"></span><button type="button" class="button small board-settings-button" data-feature="board-settings">${icon("settings")}Board settings</button><span class="board-save" id="board-save">${esc(saveIssue([...sync.entries.values()], {storageError:sync.storageError,online:state.online}) ? "" : saveState([...sync.entries.values()],{storageError:sync.storageError,online:state.online}))}</span>${state.boardConflict ? '<button class="button small" data-feature="recovery">Resolve</button>' : ""}</div>`;
+  return `<div class="board-toolbar"><select id="board-select" aria-label="Select board">${state.boards.filter(b=>!b.archived).map((b) => `<option value="${esc(b.id)}" ${b.id === state.selectedBoard ? "selected" : ""}>${esc(b.title)}</option>`).join("")}</select><button class="button small" data-action="board-new">${icon("plus")}New board</button><span class="spacer"></span><button type="button" class="button small board-settings-button" data-feature="board-settings">${icon("settings")}Board settings</button><span class="board-save" id="board-save">${esc(saveIssue([...sync.entries.values()], {storageError:sync.storageError,online:state.online}) ? "" : saveState([...sync.entries.values()],{storageError:sync.storageError,online:state.online}))}</span>${state.boardConflict ? '<button class="button small" data-feature="recovery">Resolve</button>' : ""}</div>`;
 }
 function boardToolsHTML() {
   const tool = (name, title, action = "board-add", glyph = name) =>
-    `<button type="button" class="${state.tool === name ? "active" : ""}" data-action="${action}" data-tool="${name}" title="${title}" aria-label="${title}">${icon(glyph)}</button>`;
+    `<button type="button" class="${state.tool === name ? "active" : ""}" aria-pressed="${state.tool === name}" data-action="${action}" data-tool="${name}" title="${title}" aria-label="${title}">${icon(glyph)}</button>`;
   const groups = [
     ["Navigate", tool("cursor", "Select / move", "board-tool") + tool("hand", "Pan canvas", "board-tool") + `<button type="button" data-pro="search-toggle" aria-label="Search board" title="Search board (Ctrl / ⌘ F)" aria-expanded="false" aria-controls="canvas-search-panel">${icon("search")}</button>`],
     ["Tasks", `<button type="button" data-action="board-task" aria-label="Project tasks" title="Project tasks" aria-expanded="${!!state.boardTaskPanel}" aria-controls="board-task-panel">${icon("task")}</button><button type="button" data-feature="project-frame-add" data-tool="project-frame" title="Project frame" aria-label="Add Project frame">${icon("project-frame")}</button>`],
@@ -1621,7 +1785,7 @@ function boardView() {
 }
 function selectionHTML() {
   return state.selectedEdge
-    ? `<div class="board-selection"><button class="button small" data-action="edge-delete">${icon("trash")}Remove connector</button></div>`
+    ? `<div class="board-selection"><button class="button small" data-action="edge-delete">${icon("trash")}Delete connector</button></div>`
     : "";
 }
 function nodeHTML(n) {
@@ -1637,25 +1801,18 @@ function updateEdges() {
   if (!svg || !board()) return;
   renderCanvasEdges(svg, edgesHTML(board()), state.camera.z);
 }
-const canvasTouchPointer = matchMedia("(pointer: coarse)");
-canvasTouchPointer.addEventListener("change", () => updateCamera());
-function updateCamera(animated = false) {
+function updateCamera(animated = false, { persist = true, navigating = false } = {}) {
   if (!animated) cameraMotion.cancel();
   const world = $("#canvas-world"),
     canvas = $("#canvas");
   if (!world) return;
   const { x, y, z } = state.camera;
   world.style.transform = `translate(${x}px,${y}px) scale(${z})`;
-  // Fine-pointer controls do not use this inherited variable. Updating it still
-  // invalidates styles on every card, so only size touch targets when needed.
-  if (canvasTouchPointer.matches)
-    world.style.setProperty("--canvas-touch-target", `${44 / z}px`);
-  else world.style.removeProperty("--canvas-touch-target");
   paintBoardBackground(canvas, board()?.settings?.background, state.camera);
   const zoomLabel = $("#zoom-label"), zoomText = `${Math.round(z * 100)}%`;
   if (zoomLabel.textContent !== zoomText) zoomLabel.textContent = zoomText;
-  storage.set(`camera:${state.selectedBoard}`, state.camera);
-  features.canvasCamera();
+  if (persist) storage.set(`camera:${state.selectedBoard}`, state.camera);
+  features.canvasCamera({ navigating });
 }
 function loadCamera() {
   const saved = storage.get(`camera:${state.selectedBoard}`, storage.get(`drawing-camera:${state.selectedBoard}`, { x: 15, y: 0, z: 0.85 }));
@@ -1831,24 +1988,10 @@ function addNode(type, taskId = null, position = null, draft = null) {
   if (!["task", "draft"].includes(type)) features.canvasEdit(id);
   return node;
 }
-function nodeDialog(id = state.selectedNode) {
-  const node = board()?.nodes.find((n) => n.id === id);
-  if (!node || node.projectFrame) return;
-  if (node.type === "draft") return draftTaskDialog(node.id);
-  if (node.type === "task") {
-    if (task(node.task)) taskDialog(node.task);
-    else toast("The linked task no longer exists.", true);
-    return;
-  }
-  showDialog(
-    `<dialog class="dialog"><form id="node-form" data-id="${esc(id)}">${dialogHead(`A little ${node.type === "sticky" ? "note" : node.type}`)}<div class="dialog-body"><div class="form-error hidden"></div><label class="field">Text<textarea name="text" rows="5" maxlength="10000" autofocus>${esc(node.text)}</textarea></label><div class="field-row"><label class="field">Width<input type="number" name="w" value="${node.w}" min="${nodeMinimum(node).w}" max="100000" required></label><label class="field">Height<input type="number" name="h" value="${node.h}" min="${nodeMinimum(node).h}" max="100000" required></label></div><div class="field-row"><label class="field">X position<input type="number" name="x" value="${node.x}" min="-100000" max="100000" required></label><label class="field">Y position<input type="number" name="y" value="${node.y}" min="-100000" max="100000" required></label></div>${node.type !== "text" ? `<div class="field">Colour${colorPicker({ value: node.color || "#e6eddf" })}</div>` : ""}</div><div class="dialog-foot"><button type="button" class="button" data-action="dialog-close">Cancel</button><button class="button primary" type="submit">Save object</button></div></form></dialog>`,
-    "node",
-  );
-}
 function boardNameDialog(rename = false) {
   if (rename && !board()) return;
   showDialog(
-    `<dialog class="dialog"><form id="board-form" data-rename="${rename}">${dialogHead(rename ? "Name this canvas" : "A new place to think")}<div class="dialog-body"><div class="form-error hidden"></div><label class="field">Canvas name<input name="title" value="${esc(rename ? board().title : "")}" required maxlength="300" placeholder="Ideas, a roadmap, the big picture…" autofocus></label></div><div class="dialog-foot"><button type="button" class="button" data-action="dialog-close">Cancel</button><button type="submit" class="button primary">${rename ? "Save name" : "Create canvas"}</button></div></form></dialog>`,
+    `<dialog class="dialog"><form id="board-form" data-rename="${rename}">${dialogHead(rename ? "Name this board" : "A new place to think")}<div class="dialog-body"><div class="form-error hidden" role="alert"></div><label class="field">Board name<input name="title" value="${esc(rename ? board().title : "")}" required maxlength="300" placeholder="Ideas, a roadmap, the big picture…" autofocus></label></div><div class="dialog-foot"><button type="button" class="button" data-action="dialog-close">Cancel</button><button type="submit" class="button primary">${rename ? "Save name" : "Create canvas"}</button></div></form></dialog>`,
     "board",
   );
 }
@@ -1872,7 +2015,7 @@ function boardTaskPanelHTML() {
       ["off", "Not on this board"],
       ["on", "On this board"],
     ],
-  )}</div><div class="board-task-results" aria-live="polite">${boardTaskResultsHTML()}</div><footer><button type="button" class="button primary" data-action="board-create-task">${icon("plus")}New project task</button><button type="button" class="button" data-action="board-create-draft">${icon("pencil")}New draft task</button><small>Drag a task onto the board, or click to place it. Cards share the project task.</small></footer></aside>`;
+  )}</div><div class="board-task-results" aria-live="polite">${boardTaskResultsHTML()}</div><footer><button type="button" class="button primary" data-action="board-create-task">${icon("plus")}New project card</button><button type="button" class="button" data-action="board-create-draft">${icon("pencil")}New draft card</button><small>Drag a task onto the board, or click to place it. Cards share the project task.</small></footer></aside>`;
 }
 function boardTaskResultsHTML() {
   const f = state.boardTaskFilters || {},
@@ -1905,7 +2048,7 @@ function toggleBoardTasks() {
   }
   state.boardTaskPanel = !state.boardTaskPanel;
   renderView();
-  if (state.boardTaskPanel) $("#board-task-search")?.focus();
+  if (state.boardTaskPanel) focusOnOpen($("#board-task-search"), $('[data-action="board-task"]'));
 }
 document.addEventListener("input", (event) => {
   const el = event.target;
@@ -1944,9 +2087,7 @@ document.addEventListener("click", async (event) => {
         renderApp();
         break;
       case "menu":
-        state.menu = !state.menu;
-        $(".sidebar").classList.toggle("open", state.menu);
-        $(".sidebar-overlay").classList.toggle("visible", state.menu);
+        setSidebarOpen(!state.menu);
         break;
       case "organisation-new":
         organisationDialog();
@@ -1999,6 +2140,13 @@ document.addEventListener("click", async (event) => {
       case "dialog-close":
         closeDialog();
         break;
+      case "document-new": {
+        const record = await features.createDocument();
+        if (record) {
+          await features.openDocument(record.id);
+        }
+        break;
+      }
       case "task-new":
         taskDialog(null, {
           status: el.dataset.status || initialStatus(state.config),
@@ -2016,26 +2164,10 @@ document.addEventListener("click", async (event) => {
         closeDialog();
         if (!state.dialog) taskDialog(null, { parent: id });
         break;
-      case "task-check": {
-        const current = task(id).status;
-        const next = nextStatuses(state.config, current).find(
-          (s) =>
-            state.config.done.includes(s) !==
-            state.config.done.includes(current),
-        );
-        if (!next)
-          throw new Error(
-            "Open this task and follow its allowed status moves before completing or reopening it.",
-          );
-        await patchTask(id, { status: next });
-        break;
-      }
       case "task-delete":
         if (!(await features.flushTask())) return;
         if (
-          confirm(
-            "Remove this task? Its Markdown file will move to the vault’s .trash folder.",
-          )
+          await confirmAction({ anchor: el, title: "Delete this task?", message: "Its Markdown file moves to the vault’s .trash folder.", confirmLabel: "Delete task", danger: true })
         ) {
           await api(route("tasks", id), {
             method: "DELETE",
@@ -2047,10 +2179,11 @@ document.addEventListener("click", async (event) => {
         }
         break;
       case "view": {
+        const fromDrawer = el.closest(".phone-project-navigation");
         const fromLayout = el.closest(".view-layout-switcher");
         if (openView(el.dataset.view))
           document
-            .querySelector(`${fromLayout ? ".view-layout-switcher" : ".tabs"} [data-view="${el.dataset.view}"]`)
+            .querySelector(fromDrawer ? ".mobile-menu" : `${fromLayout ? ".view-layout-switcher" : ".tabs"} [data-view="${el.dataset.view}"]`)
             ?.focus({ preventScroll: true });
         break;
       }
@@ -2094,22 +2227,13 @@ document.addEventListener("click", async (event) => {
         );
         $("#markdown-preview").classList.remove("hidden");
         $(".markdown-source").classList.add("hidden");
-        $$(".md-tabs button").forEach((b) =>
-          b.classList.toggle("active", b === el),
-        );
         break;
       case "md-edit":
         $("#markdown-preview").classList.add("hidden");
         $(".markdown-source").classList.remove("hidden");
-        $$(".md-tabs button").forEach((b) =>
-          b.classList.toggle("active", b === el),
-        );
         break;
       case "board-new":
         boardNameDialog();
-        break;
-      case "board-rename":
-        boardNameDialog(true);
         break;
       case "board-tool":
         state.tool = el.dataset.tool;
@@ -2172,9 +2296,7 @@ document.addEventListener("click", async (event) => {
         break;
       case "board-reload":
         if (
-          confirm(
-            "Reload the canvas from disk? Unsaved canvas edits will be discarded.",
-          )
+          await confirmAction({ anchor: el, title: "Reload this board from disk?", message: "Unsaved board edits will be discarded.", confirmLabel: "Reload" })
         ) {
           await boardQueue;
           state.boardConflict = false;
@@ -2318,6 +2440,7 @@ document.addEventListener("submit", async (event) => {
           )
             addNode("task", created.id);
         }
+        await features.commitRelationships(created.id);
       }
       const wasPanel = !!state.boardTaskEditor;
       if (createAnother) {

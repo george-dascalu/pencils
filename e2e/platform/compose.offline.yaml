@@ -1,0 +1,19 @@
+# Used by offline.spec.mjs. By hand: set SMOKE_VAULT_PATH to an empty temporary directory, then
+# docker compose -f e2e/platform/compose.offline.yaml run --rm offline-check write   (and then read)
+# OFFLINE_IMAGE picks the image (default pencils:local, the deployed one).
+services:
+  offline-check:
+    image: "${OFFLINE_IMAGE:-pencils:local}"
+    network_mode: none
+    user: "${LOCAL_UID:-1000}:${LOCAL_GID:-1000}"
+    environment:
+      VAULT_PATH: /data
+    volumes:
+      - "${SMOKE_VAULT_PATH:?Set SMOKE_VAULT_PATH to an empty temporary directory}:/data"
+      - "./offline-container.mjs:/app/test/offline.mjs:ro"
+    read_only: true
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    entrypoint: ["node", "/app/test/offline.mjs"]

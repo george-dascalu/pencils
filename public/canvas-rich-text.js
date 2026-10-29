@@ -1,6 +1,8 @@
 import DOMPurify from "/vendor/purify.js";
 import { alignmentButtons, textAlignments } from "./text-alignment.js";
 import { positionToolbarPopover } from "./selection-toolbar.js";
+import { focusOnOpen } from "./open-focus.js";
+import { installToolbarScroll, floatMenuPanel } from "./rich-toolbar-scroll.js";
 import TurndownService from "/vendor/turndown.js";
 import { gfm } from "/vendor/turndown-gfm.js";
 
@@ -11,6 +13,7 @@ export function canvasRichText(
   {
     controls = form,
     plain = false,
+    emptyParagraph = false,
     reposition = () => {},
     onAlignment = () => {},
     sourceName = "text",
@@ -22,48 +25,60 @@ export function canvasRichText(
   const source = form.elements?.[sourceName] || form.querySelector(`[name="${sourceName}"]`);
   const formats = controls.querySelector(".rich-format-menu");
   const alignment = controls.querySelector(".rich-align-menu");
-  const menus = [formats, alignment];
+  const menus = [formats, alignment].filter(Boolean);
+  const scrolling = installToolbarScroll(controls.querySelector(".rich-toolbar-shell"));
   const linkField = controls.querySelector(".rich-link-field");
   const linkButton = controls.querySelector("[data-rich-link]");
   function closeMenus(focus = false) {
     const openMenu = menus.find((menu) => menu.open);
     const open = !!openMenu || !linkField.classList.contains("hidden");
     const trigger = openMenu ? openMenu.querySelector("summary") : linkButton;
-    menus.forEach((menu) => (menu.open = false));
+    menus.forEach((menu) => { menu.open = false; floatMenuPanel(menu); });
     linkField.classList.add("hidden");
     linkButton.setAttribute("aria-expanded", "false");
     if (focus && open) trigger.focus({ preventScroll: true });
     return open;
   }
   function positionMenus() {
-    const canvas = controls.closest("#canvas, .dialog-body, .document-editor");
+    // Menus float in the top layer wherever the toolbar lives; the link field
+    // stays anchored inside its canvas or dialog.
+    for (const menu of menus) floatMenuPanel(menu, { width: 200, maxHeight: 320 });
+    const canvas = controls.closest("#canvas, .dialog-body, .document-editor, .board-comments, .task-comments-panel");
     if (!canvas) return;
-    for (const menu of menus)
-      if (menu.open)
-        positionToolbarPopover(
-          menu.querySelector(".selection-popover"),
-          menu,
-          canvas,
-        );
     if (!linkField.classList.contains("hidden"))
       positionToolbarPopover(linkField, controls, canvas);
   }
   function activeFormats() {
     const selection = window.getSelection();
     if (mode !== "rich" || !rich.contains(selection?.anchorNode)) return;
+    const element = selectionElement();
+    const custom = {
+      highlight: () => !!element?.closest("mark"),
+      inlineCode: () => !!element?.closest("code"),
+      checklist: () => !!element?.closest("li")?.querySelector(':scope > input[type="checkbox"]'),
+      codeBlock: () => !!element?.closest("pre"),
+    };
     for (const button of controls.querySelectorAll(
       "[data-rich-command][aria-pressed]",
-    ))
+    )) {
+      const name = button.dataset.richCommand;
       button.setAttribute(
         "aria-pressed",
-        String(document.queryCommandState(button.dataset.richCommand)),
+        String(custom[name] ? custom[name]() : document.queryCommandState(name)),
       );
+    }
+  }
+  function selectionElement() {
+    const node = window.getSelection()?.anchorNode;
+    const element = node?.nodeType === Node.ELEMENT_NODE ? node : node?.parentElement;
+    return element && rich.contains(element) ? element : null;
   }
   const rich = form.querySelector(".inline-rich");
   const preview = form.querySelector(".inline-preview");
   const converter = new TurndownService({
     headingStyle: "atx",
     codeBlockStyle: "fenced",
+    hr: "---",
     bulletListMarker: "-",
   });
   converter.use(gfm);
@@ -104,6 +119,13 @@ export function canvasRichText(
       const value = readSource(source.value);
       if (plain) rich.textContent = value;
       else rich.innerHTML = value.trim() ? markdown(value) : "";
+      if (emptyParagraph && !value.trim()) {
+        const line = document.createElement("p");
+        line.dataset.emptyLine = "";
+        line.dataset.placeholder = rich.dataset.placeholder || "";
+        line.append(document.createElement("br"));
+        rich.replaceChildren(line);
+      }
       rich.dataset.empty = String(
         !rich.textContent.trim() && !rich.querySelector("img"),
       );
@@ -120,9 +142,10 @@ export function canvasRichText(
     rich.classList.toggle("hidden", next !== "rich");
     preview.classList.toggle("hidden", next !== "preview");
     controls
-      .querySelector(".rich-toolbar")
+      .querySelector(".rich-format-groups")
       .classList.toggle("hidden", next !== "rich" || plain);
     closeMenus();
+    scrolling.update();
     const modeButton = controls.querySelector("[data-rich-mode]");
     modeButton.dataset.richMode = next === "source" ? "rich" : "source";
     const modeLabel = next === "source" ? "Rich text" : "Markdown";
@@ -143,7 +166,7 @@ export function canvasRichText(
     form.dataset.editorMode = next;
     reposition();
     if (next !== "preview")
-      (next === "rich" ? rich : source).focus({ preventScroll: true });
+      focusOnOpen(next === "rich" ? rich : source, modeButton.closest("details")?.querySelector("summary") || modeButton);
   }
   const remember = () => {
     const s = window.getSelection();
@@ -162,9 +185,64 @@ export function canvasRichText(
       s.addRange(selection);
     }
   };
+  // Inline wraps toggle a mark or code element around the selection.
+  function toggleInline(tag) {
+    const wrapper = selectionElement()?.closest(tag);
+    if (wrapper) {
+      const parent = wrapper.parentNode;
+      while (wrapper.firstChild) parent.insertBefore(wrapper.firstChild, wrapper);
+      wrapper.remove();
+      return;
+    }
+    const range = window.getSelection()?.rangeCount ? window.getSelection().getRangeAt(0) : null;
+    if (!range) return;
+    const holder = document.createElement("div");
+    holder.append(range.cloneContents());
+    const inner = range.collapsed ? "text" : holder.innerHTML;
+    document.execCommand("insertHTML", false, `<${tag}>${inner}</${tag}>`);
+  }
+  function checklist() {
+    let item = selectionElement()?.closest("li");
+    if (!item) {
+      document.execCommand("insertUnorderedList");
+      item = selectionElement()?.closest("li");
+    }
+    if (!item) return;
+    const box = item.querySelector(':scope > input[type="checkbox"]');
+    if (box) {
+      box.remove();
+      return;
+    }
+    const input = document.createElement("input");
+    input.type = "checkbox";
+    input.contentEditable = "false";
+    item.prepend(input);
+  }
+  function codeBlock() {
+    const existing = selectionElement()?.closest("pre");
+    if (existing) {
+      const paragraph = document.createElement("p");
+      paragraph.textContent = existing.textContent;
+      existing.replaceWith(paragraph);
+      return;
+    }
+    const selection = window.getSelection();
+    const block = selectionElement()?.closest("p,h1,h2,h3,h4,h5,h6,blockquote,li,div");
+    const text = selection?.isCollapsed ? block?.textContent || "" : selection.toString();
+    const pre = document.createElement("pre"), code = document.createElement("code");
+    code.textContent = text || "code";
+    pre.append(code);
+    if (block && block !== rich && (selection?.isCollapsed || selection.toString() === block.textContent)) block.replaceWith(pre);
+    else document.execCommand("insertHTML", false, pre.outerHTML);
+  }
   function command(name, value = null) {
     restore();
-    document.execCommand(name, false, value);
+    if (name === "highlight") toggleInline("mark");
+    else if (name === "inlineCode") toggleInline("code");
+    else if (name === "checklist") checklist();
+    else if (name === "codeBlock") codeBlock();
+    else if (name === "divider") document.execCommand("insertHTML", false, "<hr><p><br></p>");
+    else document.execCommand(name, false, value);
     if (name === "createLink")
       for (const link of rich.querySelectorAll("a[href]"))
         if (link.getAttribute("href") === value) link.dataset.mdHref = value;
@@ -287,6 +365,9 @@ export function canvasRichText(
     }
   });
   controls.addEventListener("click", (e) => {
+    // A menu summary toggles natively; float its panel on the next frame so the
+    // top-layer position is ready before the toggle event settles.
+    if (e.target.closest("summary")) requestAnimationFrame(positionMenus);
     const el = e.target.closest(
       "[data-rich-mode],[data-rich-command],[data-rich-link],[data-rich-link-save],[data-text-align],[data-rich-preview]",
     );
@@ -408,6 +489,7 @@ export function canvasRichText(
               buttons.length) %
             buttons.length;
     buttons[index]?.focus({ preventScroll: true });
+    buttons[index]?.scrollIntoView({ block: "nearest", inline: "nearest" });
   });
   controls.querySelector(".rich-modes").classList.toggle("hidden", plain);
   show("rich");
@@ -422,7 +504,7 @@ export function canvasRichText(
     flush,
     positionMenus,
     escape: () => closeMenus(true),
-    destroy: () => lifecycle.abort(),
+    destroy: () => { scrolling.destroy(); closeMenus(); lifecycle.abort(); },
     preview: togglePreview,
     reload: () => show(mode),
   };
@@ -435,27 +517,65 @@ export function richToolbar(
     alignment = "left",
     previewAction = 'data-pro="inline-preview"',
     idPrefix = "canvas",
+    adapter = "rich",
+    modes = true,
+    extra = "",
   } = {},
 ) {
+  // One control set for every surface. The rich editor runs execCommand names
+  // (plus a few custom verbs); documents run their Markdown editor's names.
+  const rich = adapter === "rich";
+  const COMMANDS = {
+    paragraph: ["formatBlock", "p", "paragraph"],
+    h1: ["formatBlock", "h1", "h1"],
+    h2: ["formatBlock", "h2", "h2"],
+    h3: ["formatBlock", "h3", "h3"],
+    quote: ["formatBlock", "blockquote", "quote"],
+    bold: ["bold", "", "bold"],
+    italic: ["italic", "", "italic"],
+    strike: ["strikeThrough", "", "strike"],
+    highlight: ["highlight", "", "highlight"],
+    code: ["inlineCode", "", "code"],
+    bullet: ["insertUnorderedList", "", "bullet"],
+    number: ["insertOrderedList", "", "number"],
+    check: ["checklist", "", "check"],
+    codeblock: ["codeBlock", "", "codeblock"],
+    divider: ["divider", "", "rule"],
+  };
   const action = (label, glyph, attributes = "") =>
     `<button type="button" class="selection-action" aria-label="${label}" title="${label}" ${attributes}>${icon(glyph)}<span class="selection-action-label">${label}</span></button>`;
-  const format = (command, label, glyph, value = "") =>
-    action(
+  const control = (key, label, glyph, pressed = true) => {
+    const [command, value, documentCommand] = COMMANDS[key];
+    return action(
       label,
       glyph,
-      `data-rich-command="${command}" ${value ? `data-value="${value}"` : 'aria-pressed="false"'}`,
+      rich
+        ? `data-rich-command="${command}" ${value ? `data-value="${value}"` : pressed ? 'aria-pressed="false"' : ""}`
+        : `data-document-format="${documentCommand}"`,
     );
-  return `<div class="rich-toolbar" role="group" aria-label="Format text">
-    <div class="selection-group"><details class="selection-menu rich-format-menu"><summary aria-label="Text style" title="Text style">${icon("text")}${icon("chevron")}</summary><div class="selection-popover" role="group" aria-label="Text style">
-      ${format("formatBlock", "Paragraph", "paragraph", "p")}${format("formatBlock", "Heading", "heading", "h2")}${format("formatBlock", "Quote", "quote", "blockquote")}
-    </div></details></div>
-    <div class="selection-group" role="group" aria-label="Text emphasis">${format("bold", "Bold", "bold")}${format("italic", "Italic", "italic")}${format("strikeThrough", "Strikethrough", "strike")}</div>
-    <div class="selection-group" role="group" aria-label="Lists">${format("insertUnorderedList", "Bullet list", "list")}${format("insertOrderedList", "Numbered list", "numbered")}</div>
-    <div class="selection-group" role="group" aria-label="Links">${action("Link", "link", 'data-rich-link aria-expanded="false"')}</div>
+  };
+  const group = (label, content, className = "") =>
+    `<div class="selection-group ${className}" role="group" aria-label="${label}">${content}</div>`;
+  const menu = (className, label, glyph, items) =>
+    `<details class="selection-menu ${className}"><summary aria-label="${label}" title="${label}">${glyph}${icon("chevron")}</summary><div class="selection-popover" role="group" aria-label="${label}">${items}</div></details>`;
+  const link = rich
+    ? action("Link", "link", 'data-rich-link aria-expanded="false"')
+    : action("Link", "link", 'data-document-format="link"');
+  return `<div class="rich-toolbar-shell">
+    <button type="button" class="rich-scroll" data-rich-scroll="start" aria-label="Scroll formatting tools back" title="More tools" hidden>${icon("chevron-left")}</button>
+    <div class="rich-toolbar" role="group" aria-label="Format text">
+      <div class="rich-format-groups">
+        ${group("Text style", menu("rich-format-menu", "Text style", icon("text"), `${control("paragraph", "Paragraph", "paragraph", false)}${control("h1", "Heading 1", "heading", false)}${control("h2", "Heading 2", "heading", false)}${control("h3", "Heading 3", "heading", false)}${control("quote", "Quote", "quote", false)}`))}
+        ${group("Text emphasis", `${control("bold", "Bold", "bold")}${control("italic", "Italic", "italic")}${control("strike", "Strikethrough", "strike")}${control("highlight", "Highlight", "highlighter")}${control("code", "Inline code", "code")}`)}
+        ${group("Lists", `${control("bullet", "Bullet list", "list")}${control("number", "Numbered list", "numbered")}${control("check", "Checklist", "checklist")}`)}
+        ${group("Insert", `${link}${control("codeblock", "Code block", "codeblock")}${control("divider", "Divider", "divider", false)}`)}
+      </div>
+      ${rich && alignment !== null ? group("Text alignment", menu("rich-align-menu", "Text alignment", icon(`text-${alignment || "left"}`), alignmentButtons(icon, alignment))) : ""}
+      ${rich && modes ? `${group("Text editing mode", action("Markdown", "markdown", 'data-rich-mode="source" aria-pressed="false"'), "rich-modes")}${group("Text preview", action("Preview", "preview", `${previewAction} aria-pressed="false"`))}` : ""}
+      ${extra}
+    </div>
+    <button type="button" class="rich-scroll" data-rich-scroll="end" aria-label="Scroll formatting tools forward" title="More tools" hidden>${icon("chevron-right")}</button>
   </div>
-  <div class="selection-group ${alignment === null ? "hidden" : ""}" role="group" aria-label="Text alignment"><details class="selection-menu rich-align-menu"><summary aria-label="Text alignment" title="Text alignment">${icon(`text-${alignment || "left"}`)}${icon("chevron")}</summary><div class="selection-popover" role="group" aria-label="Text alignment">${alignmentButtons(icon, alignment)}</div></details></div>
-  <div class="selection-group rich-modes" role="group" aria-label="Text editing mode">${action("Markdown", "code", 'data-rich-mode="source" aria-pressed="false"')}</div>
-  <div class="selection-group" role="group" aria-label="Text preview">${action("Preview", "preview", `${previewAction} aria-pressed="false"`)}</div>
-  <div class="selection-popover rich-link-field hidden" role="group" aria-label="Insert link"><label for="${idPrefix}-rich-url">Link address</label><div class="rich-link-input"><input id="${idPrefix}-rich-url" name="rich-url" aria-label="Link URL" placeholder="https://…"><button type="button" class="selection-action rich-save" data-rich-link-save aria-label="Apply link" title="Apply link">${icon("check")}</button></div></div>
+  ${rich ? `<div class="selection-popover rich-link-field hidden" role="group" aria-label="Insert link"><label for="${idPrefix}-rich-url">Link address</label><div class="rich-link-input"><input id="${idPrefix}-rich-url" name="rich-url" aria-label="Link URL" placeholder="https://…"><button type="button" class="selection-action rich-save" data-rich-link-save aria-label="Apply link" title="Apply link">${icon("check")}</button></div></div>` : ""}
   ${restored ? '<span class="rich-draft" role="status">Draft restored</span>' : ""}<p class="inline-error" role="alert"></p>`;
 }

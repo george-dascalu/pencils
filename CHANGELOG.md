@@ -2,7 +2,549 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
-## Unreleased
+## 0.19.30 — 2026-10-29
+
+### Fixed
+
+- The page no longer redraws itself about 30 seconds after your own save, or when nothing has changed but the server lists records in another order.
+- Removing or recreating folders in the vault while Pencils runs (for example from Obsidian) keeps every folder watched, and a folder that disappears mid-scan no longer risks stopping the server.
+- On a board, background updates also wait while you type in a formatted text field.
+
+## 0.19.29 — 2026-10-29
+
+### Changed
+
+- Saving no longer redraws the whole page a moment later. Your own saves, and changes in other projects, are recognised and skipped; changes from other people or Obsidian still appear within a second or two.
+
+### Fixed
+
+- On a board, a change held back while you were busy (for example typing in search) now applies as soon as you finish, instead of waiting for the next change.
+- On phones, closing board search with Escape returns focus to the board instead of leaving it in the hidden search field, which held back later updates.
+- Ctrl/⌘ shortcuts such as Ctrl+K (search and commands) work while a header menu button has focus, for example New right after closing a new card.
+- **Update plan** on a project frame no longer fails now and then with "Tasks changed" when nothing had changed.
+- Board search results with long titles no longer overlap, so choosing one selects that object rather than the one below it.
+- An open attachment preview is no longer closed by a change arriving from elsewhere, and toolbar buttons such as Board settings keep keyboard focus when the board refreshes.
+- **Invite everyone to my view** works straight after opening a board; an invitation sent while the board was still loading was dropped.
+
+## 0.19.28 — 2026-10-29
+
+### Fixed
+
+- Edits made in Obsidian (or any editor that saves in place) to a note Pencils had already saved now show up in open browsers. Previously such a file stopped being watched on Linux, including in the Docker image.
+- Keyboard focus stays on the selected board object, or on the board, when the board refreshes after a save, so Delete, arrow keys and shortcuts keep working.
+- Closing the card editor returns focus to the task even when its save finishes just after the editor closes.
+- A new project appears in the sidebar as soon as it opens.
+- A project moved to another organisation reopens when you switch to that organisation.
+- An open New menu no longer closes when the page refreshes in the background.
+- Text alignment is back in the toolbar while editing frame titles, live task views and other plain-text board objects.
+- After choosing a board search result, the next results stay clickable: the search panel now sits above the selection toolbar.
+- Board search has a Close button, so phones can close it without tapping the board.
+- On desktop with the sidebar open, the header shows **Update available** when a newer version is deployed.
+- The formatting toolbar's scroll arrows are full 44px touch targets.
+
+## 0.19.27 — 2026-10-28
+
+### Changed
+
+- Documents no longer has its own second sidebar. On iPad and desktop, the document list (search, folders, New document, New folder and Import Markdown) sits in the main sidebar under the projects while Documents is open, and the editor uses the full width.
+- On phones there is a single menu button. Its Documents tile shows the document list inside the menu, with a back arrow to return. Opening the menu while in Documents goes straight to the list, and choosing or creating a document closes it.
+- The document heading no longer has its own menu button.
+
+## 0.19.26 — 2026-10-28
+
+### Changed
+
+- The phone menu fits on one screen. It opens on a switcher naming the current project and its organisation, followed by New, the views as compact tiles grouped under Workspace, Tasks and Planning, and one row for project settings, help, your settings and feature requests.
+- Tapping the switcher shows the organisation, projects and teams, with New project offered once. While it is open, the views are hidden. Opening the menu without a project shows the projects straight away.
+- Menu text uses the app's touch sizes, with one left edge for rows and section labels.
+
+## 0.19.25 — 2026-10-28
+
+### Fixed
+
+- Pressing Back, or swiping back on iPhone, while a board's comments panel is open now closes the panel instead of leaving it over the previous view.
+- In a document, Ctrl+Home and Ctrl+End (Cmd+Up and Cmd+Down on Mac) inside a code block, table cell or callout move to the start or end of that block. Previously the next typing went to the start of the document. Holding Shift selects to the start or end of the block.
+- On iPad and desktop, the fold arrows beside document headings line up with their headings, and clicking or tapping one folds or unfolds the section. Before, the arrows sat below their headings and did nothing.
+
+## 0.19.24 — 2026-10-28
+
+### Fixed
+
+- On iPhone and iPad, tapping Fit width, Scroll, Add row or Add column under a document table no longer opens the keyboard. The same applies to any button inside a document block. On touch screens, Add row and Add column no longer put the cursor in the new cell; with a keyboard and mouse they still do.
+
+## 0.19.23 — 2026-10-28
+
+### Changed
+
+- On phones, documents no longer show the fold column on the left. Text has the same 16px margin on both sides, in live preview and reading mode. iPad and desktop keep the fold arrows.
+
+### Fixed
+
+- Headings in live preview no longer start one space to the right of paragraph text.
+
+## 0.19.22 — 2026-10-28
+
+### Added
+
+- Each table in a document has a Fit width / Scroll switch next to Add row and Add column. Fit width, the default, wraps the table to the page. Scroll keeps whole words on one line and lets the table scroll sideways. The choice is saved in the document as an invisible comment before the table, so it also applies in reading mode and stays hidden in other Markdown apps.
+
+## 0.19.21 — 2026-10-28
+
+### Fixed
+
+- A code block written as "javascript", "py", "sh" or another alias now shows its language in the menu, for example JavaScript, instead of an extra lowercase entry. The block's text is left as written until you choose a language.
+
+## 0.19.20 — 2026-10-28
+
+### Added
+
+- Code blocks in documents show syntax colours in live preview and reading mode, in light and dark themes. Keywords, strings, comments, numbers, names and types each have their own colour, and the code stays plain editable text.
+- Each code block has a language menu. Choose JavaScript, Python, SQL, Shell and 20 more, or Plain text, without editing the block's text. The colours update straight away.
+
+## 0.19.19 — 2026-10-28
+
+### Added
+
+- Type "/" at the start of a line or after a space in a document to insert an element, as in Obsidian. The menu offers the Insert panel's elements in the same groups, plus Heading 2 and Heading 3. Keep typing to filter, then press Enter or tap an item. Escape closes the menu and keeps what you typed.
+
+### Changed
+
+- Document link suggestions (after "[[") use the app's font and icons.
+
+### Fixed
+
+- Turning an empty line into a heading, list item, checklist item or quote now leaves the cursor after the new marker, so typing continues in the right place.
+
+## 0.19.18 — 2026-10-28
+
+### Fixed
+
+- On iPhone and iPad, tapping a checklist box in a document ticks it without opening the keyboard.
+- A document keeps its scroll position when the app refreshes after a save, for example after ticking a box and closing the keyboard, instead of jumping to the top.
+
+## 0.19.17 — 2026-10-28
+
+### Changed
+
+- On phones and iPad, each swipe in the Table scrolls either sideways or up and down, never diagonally. The first movement picks the direction, and a flick keeps its momentum in that direction. A sideways swipe that starts on a title cell now scrolls the table. Mouse, trackpad and wheel scrolling are unchanged.
+
+## 0.19.16 — 2026-10-28
+
+### Fixed
+
+- Relationship and dependency labels on a vertical arrow now sit beside the line instead of having it run through the words.
+
+## 0.19.15 — 2026-10-28
+
+### Changed
+
+- Relationship arrows on boards read from start to end: "parent of", or "child of" when an arrow is drawn from the child, instead of "parent / child".
+- Arrows of the same kind that fan out from one card now share a single label on their common line, instead of repeating it on every arrow. Hover the label to see every card it points to.
+- With a board or document open, the top bar shows its name instead of the project's. On phones the second line shows the view and the project, for example "Boards · Project name". Wide desktop windows show Organisation / Project / Board.
+- The comment box's send button now sits to the right of the text box, as tall as the box and slim, and shows a send icon. Its name changes to "Send reply" while you reply.
+
+### Fixed
+
+- Long titles on board task cards now end in an ellipsis instead of being cut off mid-word on iPhone and iPad.
+
+## 0.19.14 — 2026-10-28
+
+### Fixed
+
+- On iPhone and iPad, a pinch no longer zooms the whole app. This covers pinches inside a dialog or the card editor's description, and pinches with one finger on a dialog and one on the board.
+- The board now pans and zooms only while every finger is on it. A finger on a dialog, the card panel or other controls stops the board following the other finger until both lift. Pinching with both fingers on the board works as before, even while the card panel is open.
+
+## 0.19.13 — 2026-10-28
+
+### Fixed
+
+- On phones, the List and Tree summary line now shows assignee, status and priority with the same bordered chips as every other list, and cards without an assignee show the empty avatar.
+
+## 0.19.12 — 2026-10-28
+
+### Changed
+
+- Assignee, status and priority no longer use tinted backgrounds. Each value shows its colour on the border and text only, on the same neutral fill, in every view and in both themes. Borders use a little more of the colour so values stay easy to tell apart.
+- Assignee avatars are now rounded squares with the same corners as the status box, everywhere tasks show an assignee.
+- List and Tree rows lose the empty space on their left. List no longer reserves a column for the tree toggle, and on desktop the drag handle and tree toggle are narrower. On iPad and narrow windows the second line of each row now starts at the left edge. Touch targets stay 44px.
+
+## 0.19.11 — 2026-10-28
+
+### Changed
+
+- Assignee, status and priority are smaller in lists: List and Tree rows, relationships, Table cells and Kanban cards share one compact size (24px, 32px on touch) with room above and below, while the card editor keeps its full-size fields. Tap targets stay 44px on touch, and Table rows are back to their compact height.
+
+## 0.19.10 — 2026-10-28
+
+### Changed
+
+- Assignee, status and priority now look the same in every view, matching the card editor: the same avatar size, a tinted status box of one shared width, and a bordered priority tile. This covers List and Tree rows, relationship rows and search results, Table cells, Kanban cards and board task cards.
+- In List and Tree rows the title now follows the ID, ahead of the fields.
+- Relationship rows give every status the same width, and on narrow screens place the fields on a second line instead of shrinking them.
+- Kanban cards show the assignee as an avatar and the priority as an icon tile; names and labels stay in tooltips. Table rows are slightly taller to fit the card-sized fields, and their status, priority and assignee cells no longer show dropdown arrows.
+
+## 0.19.9 — 2026-10-28
+
+### Changed
+
+- Task fields appear in one order everywhere: card type, ID, assignee, status, priority. This applies to List and Tree rows, phone summaries, the card's fields, relationship rows and search results, board task cards, the relationship sort menu and the default Table columns. Saved Table column layouts are kept.
+- Relationship rows show the assignee as an avatar only; the name stays in its tooltip.
+- The Add relationship panel puts the relationship type, search and close button on one row, without the Relationship caption.
+
+## 0.19.8 — 2026-10-28
+
+### Changed
+
+- The card popup and the Table view share one type scale. Section headings (Relationships, Documents, Comments, Version history) now match, as do subheadings (Children and the history months). Card body text, dates, status, relationship titles and posted comments use one size. Keys, times and badges use one smaller size that never drops below 11px, or 12px on touch.
+- On iPad and phones the card title is now larger than its body text, and Table cells read at the same 16px as their editable fields. Column headers are no longer smaller than the cells on desktop.
+- On phones the card key at the start of each Table row opens the card, so the separate open button is gone and titles get more room.
+
+### Fixed
+
+- History entries no longer use 10px timestamps and labels, and the Documents heading is no longer larger than Relationships.
+
+## 0.19.7 — 2026-10-28
+
+### Changed
+
+- List and Tree rows no longer carry a completion checkbox or a separate open button. The card type icon and the ID open the card; narrow and phone layouts reflow accordingly.
+- The card view no longer shows the Assignee, Priority, Status, Dates and Description captions. The controls keep their accessible names for screen readers.
+
+### Fixed
+
+- On iPad the card header showed both the More button and the inline Duplicate, Archive and Delete actions, stacked on two lines. It now matches desktop with the actions inline.
+
+## 0.19.6 — 2026-10-27
+
+### Added
+
+- Formatting controls now include Highlight, Inline code, Checklist, Code block, Divider and three heading levels, in the description, comments and documents alike.
+
+### Changed
+
+- One formatting toolbar everywhere: the description, comment composers, board text and the document editor share the same grouped controls (text style, emphasis, lists, insert). Documents keep their own view modes and Insert menu; rich text surfaces keep Markdown and Preview.
+- On narrow screens the toolbar scrolls sideways as one line, snaps so no control is cut off, and shows a chevron at an edge with more tools. The More menu that hid tools is gone.
+
+## 0.19.5 — 2026-10-27
+
+### Changed
+
+- Version history rows are left-aligned (date line, then the change summary) and grouped under a heading per month, newest first.
+- The comment composer uses the same collapsing formatting toolbar as the description: on narrow screens the extra tools move into a More menu so the controls stay on one line.
+
+## 0.19.4 — 2026-10-27
+
+### Changed
+
+- Phone card page: the Details, History and Comments switcher is icon-only, Details has its own icon (info) instead of the card icon, the switcher lines up with the card type icon, and the More control is drawn in the ink colour with solid dots. The More icon is bolder everywhere.
+- The card editor's Status control no longer shows a dropdown arrow; it opens the app menu on tap.
+
+### Fixed
+
+- Double-tapping a dropdown on iOS no longer opens the native picker: a handled tap cancels the platform activation and double-clicks on selects are swallowed.
+
+## 0.19.3 — 2026-10-27
+
+### Fixed
+
+- Choosing an option from a dropdown by touch no longer hands focus back to the select, so iOS no longer opens its native picker right after the app menu closes. Keyboard and mouse users still get focus back.
+
+## 0.19.2 — 2026-10-27
+
+Resolves the owner's Pencils project cards PEN-1 and PEN-4 to PEN-10 (mobile layout, scrolling and zoom, the New control, document links).
+
+### Added
+
+- Cards link to project documents from a Documents section in the card editor, and a document lists the cards that link to it (PEN-7).
+- The header New control offers a card or a document everywhere, including the phone header and drawer (PEN-6).
+- A new card accepts relationships (parent, child, blocked by, blocks, related) before it is saved; links to other cards apply once the card exists (PEN-4).
+- Phones show a Sort icon button beside the view options; the filters list opens directly without a Filters dropdown (PEN-9).
+
+### Changed
+
+- The phone drawer is compact: the close button sits beside the logo, every section label shares one style, New sits under the project name and rows are tighter (PEN-1).
+- The card key (for example PEN-4) follows the title instead of sitting under the type button; icon-only type and priority pickers lose their dropdown arrows (PEN-4).
+- Attached images and files are cached by the browser instead of being downloaded on every preview (PEN-4).
+
+### Fixed
+
+- The phone card page no longer draws the Details, History and Comments labels over each other (PEN-5).
+- Text fields on touch devices are at least 16px, so iOS no longer zooms when the search box or other fields are focused (PEN-8).
+- On phones the app shell no longer scrolls; lists, boards and panels scroll inside the view (PEN-10).
+
+## 0.19.1 — 2026-10-27
+
+Resolves the 27 October controls audit (`reports/2026-10-27-controls-audit.md`): one look and one behaviour for buttons, fields, dropdowns, sliders, popovers and feedback.
+
+### Added
+
+- The task picker (type, priority, status, assignee) supports type-ahead: typing a letter focuses the first matching option, and its caret turns while the list is open.
+- Toasts carry a close control and dismiss with Escape; messages announce as status or alert for screen readers.
+- Sliders announce their value (`aria-valuetext`) and the board pattern spacing shows a live readout.
+- The dates editor popover has a title.
+
+### Changed
+
+- Every `<select>` opens the shared app menu on every device, including when its label is clicked or tapped; the native iOS picker no longer appears.
+- Focus rings follow `:focus-visible` with one width everywhere; text fields show focus through their border instead of a second ring.
+- Board tools and card checkboxes expose `aria-pressed`; the current directory page uses `aria-current` instead of a styled button. Segmented controls share one active treatment.
+- Disabled controls share one treatment (45% opacity, not-allowed cursor); checkboxes, radios and sliders use the green accent.
+- Fields share one border, radius and placeholder token; textareas use the same 13px text as inputs (16px on touch). Invalid fields show a red border and form errors announce as alerts.
+- The header search is a real search field and other search inputs carry the magnifier.
+- Counts, tab badges, directory counts and tags share one 11px size; assignee chips are 24px in lists.
+- Icons inside controls are 16px, including the selection toolbar; text glyphs (⛶ ‹ › ↶ ↷ ← → ⠿) are replaced by icons in the board controls, date picker, pager, table and pen tools, reorder handles and the offline drawing view.
+- Popovers share one padding and radius token.
+- Remove team and remove person are trash icon buttons labelled Delete; Full screen, Board settings and the date picker arrows are icon buttons; Clear column filters is a soft button; the Recovery and Personal settings footers use a plain Close.
+- Empty states share one component: Documents uses it with a soft call to action and the timeline says "No cards yet" with an icon.
+- Dropped the dead `.button.small` size and the unused Markdown tab styles.
+
+## 0.19.0 — 2026-10-27
+
+Resolves the 36 findings of the 27 October UI/UX assessment (`reports/2026-10-27-ui-ux-assessment.md`).
+
+### Added
+
+- Destructive actions (delete task, board, view or project, bulk status and archive, restores, discards) confirm in a small popover beside the control instead of the browser dialog. It closes with Escape, Cancel or a tap outside and returns focus.
+- One date format everywhere: days read "14 Oct" (with the year when it differs) on dashboards, lists and relationships; history shows "14 Oct 2026, 19:18".
+- Types & hierarchy edits task types as chips with Add and Remove.
+- The phone task editor labels its Details, History and Comments tabs. The shortcut guide explains that N adds a card everywhere except on a board, where it selects the sticky-note tool.
+- Shared tokens for borders, danger text, popover shadows and radii, with dark values.
+
+### Changed
+
+- Tablet layouts follow the width of the workspace column, so an open sidebar counts: List and Tree rows, the Calendar month grid, the Documents explorer and the settings navigation adapt on iPad landscape and portrait.
+- One vocabulary for creation: New card, Add card, Add a card, Create card and Quick capture. Boards are called boards in the gallery, selector and board actions; Delete task confirms as a delete; Remove connector is Delete connector; the pen panel is Pen settings.
+- Calendar and Timeline share the same Hide/Show weekends button. Planning views hide the task sort and group controls, and the sort control keeps its full label on tablets.
+- Table keeps Advanced filters inside the Column filters menu and Export matching CSV inside the Columns menu. Open, column-menu, caret, remove and add glyphs are icons.
+- List and Tree group counts show the total across pages.
+- The board More menu is grouped into Insert, Navigate, Collaborate and Tools. Save view describes what it saves.
+- Filter fields line up with the other menu controls and fill the menu; on phones the filters list opens inside View options.
+- Comments and History are panes of the task panel without a second close button; on wide screens they align with the panel and stay clear of the sidebar. New and existing task headers keep the close button in the same corner. Escape in the comments pane returns to Details first.
+- New board, embed note, layers, bulk notes, quick capture, save view, display name and frame link open in a compact dialog.
+- Secondary text is at least 12px on phones and tablets. Kanban column add, card titles, timeline milestone toggles, comment formatting, People remove, disclosure summaries and checkbox labels reach 44px on touch; table row checkboxes offer a 24px target.
+- Dark theme: the minimap, error toasts, calendar cards and timeline bars use theme colours. Muted, kicker and count text meet 4.5:1 contrast.
+- Presence shows the signed-in name. Browser titles include the current view. Overview no longer repeats its label and the version appears once while the sidebar is open.
+- Zoom to selection is Shift+2 only.
+- Board gallery drops the saved-view controls, labels empty boards and styles the offline pad link as a button.
+
+### Fixed
+
+- Safe-area insets apply on iOS (`viewport-fit=cover`) and heights use the dynamic viewport.
+- Table shows source-owned statuses by name and the source badge no longer overflows the title cell.
+- Phone Kanban shows the edge of the next column.
+- The word-count chip no longer covers document text.
+- Date picker and board settings use the shared popover positioning.
+- Timeline copy no longer says "Click".
+- Unused code removed: the node dialog, board rename action, task-dialog outside-click handler and duplicate sizing rules.
+
+## 0.18.43 — 2026-10-26
+
+### Changed
+
+- Removed the matching/total/archived task summary footer from project views.
+
+## 0.18.42 — 2026-10-26
+
+### Added
+
+- Calendar cards span their scheduled dates. Drag a card to move it, or drag its start/end handles to resize its date range, with touch and keyboard support. Unscheduled cards can be dropped onto a day or scheduled using the shared date editor.
+- Calendar has a remembered Show/Hide weekends button.
+
+### Changed
+
+- Status and type are grouped inside the shared Filters menu for task and planning views.
+- Removed the calendar's “tasks have no due date” footer message.
+
+### Fixed
+
+- Agenda and unscheduled lists keep readable titles and compact date controls. Agenda includes cards spanning the selected period, including cards with only a start date, and keeps the same date when switching layouts.
+- Timeline dependencies appear as directional arrows above the row backgrounds, follow moved/resized bars and remain aligned with custom date ranges and hidden weekends.
+
+## 0.18.41 — 2026-10-26
+
+### Fixed
+
+- Table view stays anchored on iPad: rows and columns scroll inside the grid without moving or bouncing the surrounding page. Column headers stay visible, and other views retain their normal scrolling.
+
+## 0.18.40 — 2026-10-26
+
+### Changed
+
+- Pen pressure and shape recognition use icon toggles with clear on/off states, and More settings uses the shared settings icon.
+- Pen settings have full-width Stabilisation and Pressure response sliders with live values. Adjusting sliders keeps the panel open; explanatory text has been removed, and the panel supports Close, Escape and outside-tap dismissal.
+
+## 0.18.39 — 2026-10-26
+
+### Fixed
+
+- With the Select tool on iPad and other touch devices, hold empty board space or a frame interior briefly, then drag to box-select objects. Quick swipes still pan, pinch zoom takes over cleanly, and holding the board no longer starts browser text selection.
+- Newly placed notes show the text cursor at the note's text alignment from the first edit, instead of displaying it at the top before typing in the middle.
+
+## 0.18.38 — 2026-10-26
+
+### Changed
+
+- iPad task and planning layout controls use icons for List, Tree, Table, Kanban, Calendar, Timeline and Capacity, with accessible labels and full-size touch targets.
+- Removed saved-view lists and Save view actions from Overview, Planning and Tasks, including their phone menus. Filters, sorting and grouping remain available.
+
+## 0.18.37 — 2026-10-26
+
+### Changed
+
+- On iPad and other touch tablets, List, Tree, Table and Kanban layout buttons show icons only, with accessible labels and full-size touch targets.
+
+## 0.18.36 — 2026-10-26
+
+### Fixed
+
+- Edge swipes in the mobile page gutter no longer trigger browser Back/Forward. Normal scrolling, direct control taps and Board pan/zoom remain available.
+- Scrolling over a card editor on iPad stays inside the editor, including its title, footer and scroll boundaries, instead of moving the workspace behind it.
+
+### Changed
+
+- Card editors use a single Close button; the redundant Back button has been removed.
+
+## 0.18.35 — 2026-10-25
+
+### Changed
+
+- Desktop and iPad project navigation uses icons with hover labels. The creation action is now called New card, including the phone sidebar, command menu and shortcut guide.
+- Document view modes, outline, width, search and file actions share the title bar. The second bar contains only text formatting and Insert; narrow editors keep additional document actions in the tools menu.
+- Shared buttons and fields are 32px high on desktop, or 28px in Compact mode. Headers and toolbars use tighter spacing throughout the app, while touch controls retain 44px targets.
+
+## 0.18.34 — 2026-10-25
+
+### Changed
+
+- On phones, tasks open as full pages with one scroll area and a pinned header. Back and Close return to the previous list position; wider screens keep the contextual task panel.
+
+### Fixed
+
+- Swiping the task title or reaching the top or bottom of the editor no longer scrolls the workspace behind it. Task page scrolling stays separate from keyboard viewport adjustments.
+
+## 0.18.33 — 2026-10-25
+
+### Fixed
+
+- Add relationship opens a contextual picker beside its button, even with a long relationship list, and stays within the visible screen above the phone keyboard.
+- Phone task descriptions and text fields use readable text sizing to prevent focus magnification; task panels resize with the visible viewport when the keyboard opens.
+
+### Changed
+
+- Task editors have a clear Add attachments button with a paperclip icon, including on iPhone.
+
+## 0.18.32 — 2026-10-25
+
+### Changed
+
+- Document editing no longer draws a green frame around the page or inline components. Text areas and rich-text editors use neutral focus borders in light and dark themes.
+
+## 0.18.31 — 2026-10-25
+
+### Added
+
+- Activity card type with its own icon throughout task editors, filters and project views. New projects and existing projects using the standard type list include Activity; custom lists remain unchanged. Existing hierarchy rules give Activity the same placement options as Task.
+
+## 0.18.30 — 2026-10-25
+
+### Changed
+
+- Task editors use one grouped Details, History and Comments control in the header. On phones, the type and ID sit before a smaller title, with secondary actions in More.
+- Phone task formatting stays on one line with full touch targets; More formatting contains strikethrough, numbered lists, Markdown and preview.
+- Relationships have single-line rows and icon-only sort/add controls alongside their heading. Sorting and direction share a contextual menu; compact rows retain linked-task access and show assignee, priority and status indicators.
+
+### Fixed
+
+- Task panels fit beside the navigation sidebar on tablets. Escape closes a formatting menu before closing the task, and relationship pickers avoid opening the touch keyboard automatically.
+
+## 0.18.29 — 2026-10-23
+
+### Added
+
+- Feature requests in Help and the navigation sidebar: submit descriptions with screenshots or files, search/filter the queue, change priorities and statuses, and follow progress. Requests and attachments live in the vault’s `feature-requests` folder, with a Markdown index.
+- An optional host worker picks up requests one at a time through a scoped authenticated queue. It uses isolated source copies, checks for concurrent workspace edits, runs checks, retains a rollback image and verifies deployments. The inbox shows setup requirements, connection status and a pause/resume control; interrupted work is retained for review.
+
+## 0.18.28 — 2026-10-23
+
+### Fixed
+
+- Opening tasks, comments and document navigation on touch devices no longer focuses text fields automatically. Switching between rich text and Markdown also waits for a tap before editing, keeping the software keyboard out of the way while browsing.
+
+## 0.18.27 — 2026-10-23
+
+### Changed
+
+- Touch devices no longer pinch or double-tap to zoom the whole page. Scrolling and the Board’s own pan and zoom gestures remain available.
+
+## 0.18.26 — 2026-10-23
+
+### Changed
+
+- Phone Table puts the task title first, with its ID underneath, while retaining desktop column preferences and access to the remaining fields.
+- Phone Board uses a compact bottom dock with selection, panning, fit and zoom information. A labelled tools panel contains creation, search, history and additional view controls; the minimap starts hidden on phones.
+- Calendar and Capacity keep period navigation on one line. Secondary planning controls, Timeline options and Board settings share the phone View options panel.
+
+## 0.18.25 — 2026-10-23
+
+### Changed
+
+- Kanban fits a whole number of columns across the available width and snaps horizontal scrolling to column boundaries. Columns resize with the window, sidebar and device orientation, including boards with swimlanes.
+
+## 0.18.24 — 2026-10-23
+
+### Changed
+
+- Kanban cards hide their IDs by default. Enable Show card IDs in the Kanban controls (View options on phones) to display them; the preference is remembered for each project in this browser.
+
+## 0.18.23 — 2026-10-23
+
+### Changed
+
+- Phones use a single compact header and a navigation drawer for project views, settings and Help. New task stays within reach, and navigation closes with Escape, an outside tap or a selected destination.
+- Documents on phones use an overlaid file sidebar, a compact view menu and optional single-line formatting tools. Search stays available; versions, export, width and deletion move into Document tools.
+- Phone List and Tree rows show a title and a small metadata line, with completion, hierarchy and reorder controls beside them. Tap a title to edit its fields. Touch rows shrink from 145px to 69px while controls retain shared touch targets.
+
+### Fixed
+
+- Narrow tablet headers scroll their navigation tabs instead of pushing actions outside the viewport.
+- Task focus returns to a visible opener after editing or autosave, including the phone row.
+
+## 0.18.22 — 2026-10-22
+
+### Fixed
+
+- Board task cards use smaller, aligned assignee, priority, status and date controls on touch devices. Their menus and the surrounding toolbar retain full touch targets; Compact mode also reduces card fields.
+- Bitmap objects and connectors follow two-finger pan and pinch immediately, with a reusable overscanned preview instead of waiting for fingers to lift. Detail settles after the gesture.
+- Safari can reuse the visible board layer while zooming. Grid control sizes update when the gesture finishes instead of repeatedly reflowing and repainting the board during contact.
+- Pinching a large board below 8% no longer jumps to 8%; touch now supports the same zoom range as the other controls.
+
+## 0.18.21 — 2026-10-22
+
+### Added
+
+- Optional single-user mode opens directly as the configured owner on every connection, including Tailscale, without a password or login screen. Integrations and background sync retain the same owner; password accounts remain available if required authentication is restored.
+
+## 0.18.20 — 2026-10-21
+
+### Fixed
+
+- Help opened from a project retains its project name, navigation, New task and Settings controls, including after reload and browser Back/Forward. Standalone Help uses the shared header height and padding. New task opens within the Help viewport.
+- Board card controls scale with the card on touch devices instead of growing inside it as you zoom out, keeping titles and metadata visible and avoiding repeated layout changes.
+- Touch pan and pinch apply the latest camera once per display frame, reuse the gesture's starting bounds and save the camera when contact ends. Gesture cancellation, one-finger continuation and Pencil input retain their existing behavior.
+
+## 0.18.19 — 2026-10-21
+
+### Added
+
+- Help now includes a searchable “Import from Miro” guide, linked from the Help home page. It covers where to find the importer, account or token connection, preview options, supported content, limits and troubleshooting.
+
+## 0.18.18 — 2026-10-21
+
+### Changed
+
+- Board detail uses a gentler 220 ms entrance and faster 160 ms exit. Reversing zoom continues the same fade from its current position instead of restarting a full animation.
+- Bitmap previews retain card colours, rounded corners, shape silhouettes and rotation, reducing the visual jump when detail appears or disappears. Previews follow the current light or dark surface colour.
+- Changing the system's reduced-motion preference immediately settles active fades. Transitions retain the existing rendering limits and use no duplicate cards or continuous JavaScript animation loop.
 
 ## 0.18.17 — 2026-10-21
 

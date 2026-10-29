@@ -1,7 +1,7 @@
 import { createHash } from "node:crypto";
 import { Problem } from "./problem.js";
 export const STATUSES = ["backlog", "todo", "in-progress", "review", "done"];
-export const TYPES = ["epic", "milestone", "story", "task", "bug"];
+export { DEFAULT_TASK_TYPES as TYPES } from "../public/task-types.js";
 export const PRIORITIES = ["none", "low", "medium", "high", "urgent"];
 export const DEFAULT_ORGANISATION = "o-default";
 export const idPattern = /^[a-zA-Z0-9_-]{1,80}$/;
