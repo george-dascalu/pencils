@@ -348,6 +348,7 @@ export function projectSettings(ctx, { sources, automations, personal, organisat
     try {
       if (section === "personal") {
         host.innerHTML = personal().html();
+        personal().mounted(host);
         return;
       }
       if (section === "organisation") {

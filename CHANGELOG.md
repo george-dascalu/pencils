@@ -2,6 +2,12 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.20.7 — 2026-10-29
+
+### Added
+
+- Capture from your phone: **Settings → You → Capture from your phone** makes a token for a project, and an iPhone Shortcut can then send text there as a new card. The first line becomes the title, the rest the description, and #words become tags, along with inbox. The section shows the Shortcut steps. A token is shown once, can only add cards to its project, stops working if you lose edit access, and can be revoked.
+
 ## 0.20.6 — 2026-10-29
 
 ### Added

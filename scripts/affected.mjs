@@ -28,7 +28,7 @@ const AREAS = {
   tasks: /^(task-(?!timeline)|draft-|attachment-preview|recurrence-|dependency-model|hierarchy-model)/,
   lists: /^(grid(?!-merge)|table-|kanban-|view-layout|drag-feedback|task-row-editor|task-order-model|task-reorder|task-colors)/,
   planning: /^(calendar|capacity|planning|timeline-|task-timeline|schedule-|teams)/,
-  settings: /^(project-settings|personal-settings|project-sources|source-model|project-automations|workflow-|teams|recovery-ui|backup-limits)/,
+  settings: /^(project-settings|personal-settings|capture-settings|project-sources|source-model|project-automations|workflow-|teams|recovery-ui|backup-limits)/,
   navigation: /^(help|topbar-title)/,
   ui: /^(color-|select-menu|date-picker|confirm-popover|format-date|in-place-editing)/,
 };

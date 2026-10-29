@@ -16,6 +16,7 @@ Development rule: **Consistency**. Reuse shared UI and keep common actions, term
 
 - Use the sidebar toggle in the top bar to collapse or expand navigation on desktop. Your choice survives reloads. On phones, the menu still opens a navigation drawer.
 - Open **Settings** with the gear at the top right; its **You** section holds your own preferences. Choose Light, Dark, or System appearance and one of eight fonts: Manrope (default), DM Sans, Space Grotesk, Outfit, Sora, Work Sans, Lora, or Fraunces. Preferences are local to this browser and shared across its tabs; other devices retain their own choices.
+- **Capture from your phone** (Settings → You): make a token for a project, then add a **Get Contents of URL** step to an iPhone Shortcut that sends `POST /api/capture` with `Authorization: Bearer <token>` and a JSON body `{ "text": "…" }`. The first line becomes a card's title, the rest its description, and `#words` its tags, with `inbox`. A token is shown once and can be revoked there.
 - Fonts and their SIL Open Font Licenses are bundled under `public/fonts/`, with source links in `SOURCES.json`. No external font service is used at runtime.
 - Open **Project settings** to edit the ordered status list and specify which statuses count as completed. New projects can define their own workflow during creation. Changes apply only to that project and are stored in its Markdown frontmatter. A status used by an existing task cannot be removed until those tasks are moved to another status. Use **Types & hierarchy** for card types and parent/child rules, and **Custom fields** for additional task information.
 - Standard card types are Epic, Milestone, Story, Task, Activity and Bug. Choose **Activity** in the task editor’s type picker; it supports the same dates, assignments, descriptions and relationships as other cards.
@@ -226,6 +227,8 @@ unset PENCILS_ADMIN_PASSWORD
 ```
 
 Then set `AUTH_MODE=required` in `.env` and restart with `docker compose up -d`. Use **Accounts & access** to create or update users. Administrators access all organisations and recovery tools; each other account can be an editor, viewer or have no access to each organisation. Changing an account invalidates its existing sessions. Sessions use HttpOnly, SameSite cookies, expire after 12 hours, and end on server restart. Passwords are stored as salted scrypt hashes; login attempts are rate-limited.
+
+Capture tokens (Settings → You → Capture from your phone) are the only credential accepted without a session. Each one can only add cards to its project, acts as the person who made it (their edit access is checked on every capture), is stored as a SHA-256 hash in `.pencils/capture-tokens.json`, and shares a limit of 30 captures a minute per address. A token travels with each request, so use HTTPS or a VPN such as Tailscale when capturing away from the local network.
 
 For native HTTPS, provide a certificate trusted by the client devices and its key in `.env`:
 
