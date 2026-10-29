@@ -46,7 +46,8 @@ for (const [device, width] of sizes) {
         expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
         if (width > 600) {
           const tabs = page.locator(".topbar .tabs .tab:visible");
-          await expect(tabs).toHaveCount(5);
+          // Five views, then Search (at every width since 0.20.4).
+          await expect(tabs).toHaveCount(6);
           for (const tab of await tabs.all()) {
             expect((await tab.textContent()).trim(), "Navigation is icon-only").toBe("");
             expect(await tab.getAttribute("aria-label")).toBeTruthy();

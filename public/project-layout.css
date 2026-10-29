@@ -57,8 +57,8 @@
   overflow: visible;
   background: transparent;
 }
-/* Search follows the view tabs only in the phone bar; wider screens use Ctrl/⌘ K. */
-.topbar .tabs > :is(.tabs-divider, .tab-search) { display: none; }
+/* Search follows the view tabs after a divider at every width (also Ctrl/⌘ K). */
+.topbar .tabs > .tabs-divider { flex: none; align-self: center; width: 1px; height: 20px; margin: 0 4px; background: var(--line); }
 .topbar .tabs .tab {
   width: var(--control-height);
   min-width: var(--control-height);

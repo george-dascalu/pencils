@@ -1,6 +1,7 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import { Worker } from "node:worker_threads";
+import { documentEntry, boardEntry } from "./search-query.js";
 
 export class RecordIndex {
   constructor(store) {
@@ -11,6 +12,7 @@ export class RecordIndex {
     this.pending = new Map();
     this.sequence = 0;
     this.versions = new Map();
+    this.contentVersions = new Map();
     this.queue = Promise.resolve();
     this.lastRebuild = null;
   }
@@ -48,6 +50,7 @@ export class RecordIndex {
           this.worker = null;
           this.opening = null;
           this.versions.clear();
+          this.contentVersions.clear();
         };
         worker.on("error", failed);
         worker.on("exit", (code) => {
@@ -78,17 +81,8 @@ export class RecordIndex {
       const since = this.versions.get(project);
       const version = this.store.version;
       if (!force && since === version) return;
-      const history = this.store.changeLog;
-      const changes = history.filter((c) => c.version > since);
-      const full =
-        force ||
-        since === undefined ||
-        (history.length && since < history[0].version - 1) ||
-        changes.some(
-          (c) =>
-            !c.record ||
-            (c.record.project === project && c.record.kind === "project"),
-        );
+      const changed = force ? null : this.changes(project, since, ["tasks"]);
+      const full = !changed;
       const started = performance.now(),
         tasks = [],
         deleted = [];
@@ -96,14 +90,7 @@ export class RecordIndex {
         // No board/document payloads are read just to index task text.
         tasks.push(...(await this.store.children(project, "tasks")).items);
       } else {
-        const ids = new Set(
-          changes
-            .filter(
-              (c) => c.record?.project === project && c.record.kind === "tasks",
-            )
-            .map((c) => c.record.id),
-        );
-        for (const id of ids) {
+        for (const id of changed.tasks) {
           const file = this.store.file(project, "tasks", id);
           try {
             tasks.push(this.store.public(await this.store.read(file), file));
@@ -129,9 +116,55 @@ export class RecordIndex {
     this.queue = work.catch(() => {});
     return work;
   }
-  async search(project, text, limit = 60) {
-    await this.ensure(project);
-    return this.call("search", { project, text, limit });
+  // Which records of `kinds` changed since `since`; null when only a full reindex is safe.
+  changes(project, since, kinds) {
+    const history = this.store.changeLog;
+    const changes = history.filter((c) => c.version > since);
+    if (
+      since === undefined ||
+      (history.length && since < history[0].version - 1) ||
+      changes.some((c) => !c.record || (c.record.project === project && c.record.kind === "project"))
+    )
+      return null;
+    return Object.fromEntries(kinds.map((kind) => [kind, new Set(changes.filter((c) => c.record.project === project && c.record.kind === kind).map((c) => c.record.id))]));
+  }
+  // Documents and board text for search, tracked apart from cards so table queries never read them.
+  async ensureContent(project) {
+    const work = this.queue.then(async () => {
+      await this.open();
+      const since = this.contentVersions.get(project), version = this.store.version;
+      if (since === version) return;
+      const changed = this.changes(project, since, ["documents", "boards"]);
+      const entries = [], deleted = [];
+      for (const [kind, short, entry] of [["documents", "doc", documentEntry], ["boards", "board", boardEntry]]) {
+        if (!changed) {
+          for (const item of (await this.store.children(project, kind)).items) entries.push({ kind: short, ...entry(item) });
+          continue;
+        }
+        for (const id of changed[kind]) {
+          const file = this.store.file(project, kind, id);
+          // Deleted or unreadable: left out of search (the full read skips it with a warning too).
+          try {
+            entries.push({ kind: short, ...entry(this.store.public(await this.store.read(file), file)) });
+          } catch {
+            deleted.push([short, id]);
+          }
+        }
+      }
+      if (!changed || entries.length || deleted.length)
+        await this.call("content", { project, full: !changed, entries, deleted });
+      this.contentVersions.set(project, version);
+    });
+    this.queue = work.catch(() => {});
+    return work;
+  }
+  // One ranked list across the projects the caller can open (index-worker.js "search").
+  async search(projects, text, limit = 60) {
+    for (const p of projects) {
+      await this.ensure(p.id);
+      await this.ensureContent(p.id);
+    }
+    return this.call("search", { projects: projects.map((p) => p.id), text, limit, now: Date.now() });
   }
   async query(project, input, user) {
     await this.ensure(project);
@@ -147,6 +180,7 @@ export class RecordIndex {
     };
   }
   async rebuild() {
+    this.contentVersions.clear();
     for (const p of (await this.store.list()).projects)
       await this.ensure(p.id, true);
     return { projects: this.versions.size, last: this.lastRebuild };
@@ -156,6 +190,7 @@ export class RecordIndex {
     this.worker = null;
     this.opening = null;
     this.versions.clear();
+    this.contentVersions.clear();
     for (const p of this.pending.values())
       p.reject(new Error("Search index closed."));
     this.pending.clear();

@@ -60,23 +60,17 @@ export async function workspaceRoutes(ctx: RequestContext): Promise<unknown> {
   }
   if (resource === "search" && method === "GET") {
     const projects = (await store.list()).projects.filter(
-        (p: Input) => auth.allow(user, p.organisation) && sourceAccess(user, p),
-      ),
-      tasks = [];
-    for (const p of projects) {
-      for (const t of await index.search(
-        p.id,
-        url.searchParams.get("q"),
-        Math.max(1, 60 - tasks.length),
-      ))
-        tasks.push({
-          ...t,
-          project_title: p.title,
-          organisation: p.organisation,
-        });
-      if (tasks.length >= 60) break;
-    }
-    return json(200, { tasks, limit: 60 });
+      (p: Input) => auth.allow(user, p.organisation) && sourceAccess(user, p),
+    );
+    const byId = new Map<string, Input>(projects.map((p: Input) => [p.id, p]));
+    const found = await index.search(projects, url.searchParams.get("q") || "");
+    return json(200, {
+      results: found.results.map((r: Input) => {
+        const p = byId.get(r.project) as Input;
+        return { ...r, project_title: p.title, organisation: p.organisation };
+      }),
+      suggestion: found.suggestion,
+    });
   }
   if (resource === "changes" && method === "GET")
     return json(200, { version: store.version });

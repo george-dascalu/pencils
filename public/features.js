@@ -537,8 +537,9 @@ export function installFeatures(ctx) {
     boot = fn;
     for (const event of ["pointerdown", "keydown"])
       document.addEventListener(event, () => refreshInteraction++, true);
+    // A component that already used the key (the document editor's Ctrl/⌘ K link) keeps it.
     document.addEventListener("keydown", (e) => {
-      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k" && !e.defaultPrevented) {
         e.preventDefault();
         searchDialog();
       }
@@ -611,7 +612,7 @@ export function installFeatures(ctx) {
   }
   async function searchDialog() {
     showDialog(
-      `<dialog class="dialog wide-dialog">${dialogHead("Search and commands")}<div class="dialog-body"><label class="field">Search<input id="global-search-input" type="search" placeholder="Tasks, documents, boards or commands…" autofocus></label><div id="command-results"></div><div id="global-search-results"></div></div><div class="dialog-foot"><button class="button" data-action="dialog-close">Close</button></div></dialog>`,
+      `<dialog class="dialog wide-dialog">${dialogHead("Search and commands")}<div class="dialog-body"><label class="field">Search<input id="global-search-input" type="search" placeholder="Cards, documents, boards or commands…" autofocus></label><div id="command-results"></div><div id="global-search-results"></div></div><div class="dialog-foot"><button class="button" data-action="dialog-close">Close</button></div></dialog>`,
       "search",
     );
     searchResults("");
@@ -659,24 +660,28 @@ export function installFeatures(ctx) {
     ];
   }
   let searchSequence=0;
+  const searchKinds = { card: ["Card", "task"], doc: ["Document", "file"], board: ["Board", "board"] };
+  // Excerpts arrive with \u0002 and \u0003 around each match; everything else is escaped.
+  const excerptHTML = (text) => esc(text).replace(/\u0002/g, "<mark>").replace(/\u0003/g, "</mark>");
   async function searchResults(query) {
+    if (!$("#command-results")) return; // closed while the search waited
     const words = query.toLowerCase().trim().split(/\s+/);
     const found = (text) => words.every((word) => text.toLowerCase().includes(word));
     const matches = commands().filter((command) => found(command.title));
-    // The open project's documents and boards are already loaded; tasks come from the server for every project.
-    const loaded = (title, items, feature, kind) => items.length ? `<p class="field-hint">${title}</p>${items.sort((a, b) => a.title.localeCompare(b.title, undefined, { numeric: true, sensitivity: "base" })).slice(0, 8).map((item) => `<button class="search-result" data-feature="${feature}" data-id="${esc(item.id)}"><strong>${esc(item.title)}</strong><span>${kind} · ${esc(state.project.title)}</span></button>`).join("")}` : "";
     $("#command-results").innerHTML =
-      `<p class="field-hint">Commands</p>${matches.map((command) => `<button class="search-result command-result" data-feature="command-run" data-command="${esc(command.id)}">${esc(command.title)}</button>`).join("") || "<p>No matching commands.</p>"}${state.project ? loaded("Documents", (state.documents || []).filter((d) => found(`${d.title}\n${d.body || ""}`)), "search-document", "Document") + loaded("Boards", state.boards.filter((b) => !b.archived && found(b.title)), "search-board", "Board") : ""}<p class="field-hint">Tasks</p>`;
+      `<p class="field-hint">Commands</p>${matches.map((command) => `<button class="search-result command-result" data-feature="command-run" data-command="${esc(command.id)}">${esc(command.title)}</button>`).join("") || "<p>No matching commands.</p>"}`;
     const sequence=++searchSequence;
-    let results;try{results=(await api(`/search?q=${encodeURIComponent(query)}`)).tasks;}catch(error){if(sequence===searchSequence && $("#global-search-results"))$("#global-search-results").textContent=error.message;return;}
+    if (!query.trim()) { $("#global-search-results").innerHTML = ""; return; }
+    // One ranked list from the server: cards, documents and boards in every project you can open.
+    let data;try{data=await api(`/search?q=${encodeURIComponent(query)}`);}catch(error){if(sequence===searchSequence && $("#global-search-results"))$("#global-search-results").textContent=error.message;return;}
     if(sequence!==searchSequence || !$("#global-search-results"))return;
-    $("#global-search-results").innerHTML =
-      results
-        .map(
-          (t) =>
-            `<button class="search-result" data-feature="global-open" data-id="${t.id}" data-project="${t.project}"><strong>${esc(t.key || "")} ${esc(t.title)}</strong><span>${esc(state.organisations.find((o) => o.id === t.organisation)?.title)} / ${esc(t.project_title)} · ${esc(t.status)}${t.archived ? " · Archived" : ""}</span></button>`,
-        )
-        .join("") || "<p>No matching tasks.</p>";
+    const where = (r) => [state.organisations.find((o) => o.id === r.organisation)?.title, r.project_title].filter(Boolean).map(esc).join(" / ");
+    $("#global-search-results").innerHTML = `<p class="field-hint">Cards, documents and boards</p>${
+      data.results.map((r) => {
+        const [kind, glyph] = searchKinds[r.kind];
+        return `<button class="search-result" data-feature="search-open" data-kind="${r.kind}" data-id="${esc(r.id)}" data-project="${esc(r.project)}" data-key="${esc(r.key || "")}" data-title="${esc(r.title)}"><strong>${icon(glyph)}${r.key ? `${esc(r.key)} ` : ""}${esc(r.title)}</strong><span>${kind} · ${where(r)}${r.status ? ` · ${esc(r.status)}` : ""}${r.archived ? " · Archived" : ""}</span>${r.excerpt ? `<span class="search-excerpt">${excerptHTML(r.excerpt)}</span>` : ""}</button>`;
+      }).join("") || (data.suggestion ? `<p>Nothing found. Did you mean <button type="button" class="text-link" data-feature="search-suggestion" data-query="${esc(data.suggestion)}">${esc(data.suggestion)}</button>?</p>` : "<p>Nothing found.</p>")
+    }<p class="field-hint">Enter opens · Alt+Enter links it in the open document · "phrase", -word, #tag, in:cards, in:docs, in:boards</p>`;
   }
   document.addEventListener("keydown", (event) => {
     if (
@@ -691,7 +696,18 @@ export function installFeatures(ctx) {
     ];
     if (!results.length) return;
     const index = results.indexOf(document.activeElement);
-    if (event.key === "Enter" && event.target.id === "global-search-input") {
+    // Alt+Enter: a [[link]] to the focused (or first) result at the open document's caret.
+    if (event.key === "Enter" && event.altKey) {
+      const chosen = document.activeElement?.closest?.('[data-feature="search-open"]') || $('#global-search-results [data-feature="search-open"]');
+      if (!chosen) return;
+      event.preventDefault();
+      const { kind, id, project, key, title } = chosen.dataset;
+      // Documents resolve links to cards and documents of their own project only.
+      if (kind === "board" || project !== state.project?.id) { toast("Alt+Enter links cards and documents of this project.", true); return; }
+      const link = kind === "card" ? `[[${key || id}]]` : `[[Projects/${project}/documents/${id}|${title.replace(/[[\]|]/g, "")}]]`;
+      closeDialog();
+      if (!documents.insertText(link)) toast("Open a document to insert a link.", true);
+    } else if (event.key === "Enter" && event.target.id === "global-search-input") {
       event.preventDefault();
       results[0].click();
     } else if (event.key !== "Enter") {
@@ -740,14 +756,23 @@ export function installFeatures(ctx) {
       if (!state.dialog) await command?.run();
     }
     if (action === "global-search") await searchDialog();
-    if (action === "search-document" || action === "search-board") {
+    if (action === "search-open") {
       closeDialog();
       if (state.dialog) return;
-      if (action === "search-board") await drawings.enter(el.dataset.id);
+      const { kind, id, project } = el.dataset;
+      if (state.project?.id !== project && !(await openProject(project))) return;
+      if (kind === "card") taskDialog(id);
+      else if (kind === "board") await drawings.enter(id);
       else {
         await documentFeature.load();
-        await documents.openDocument(el.dataset.id);
+        await documents.openDocument(id);
       }
+    }
+    if (action === "search-suggestion") {
+      const input = $("#global-search-input");
+      input.value = el.dataset.query;
+      input.focus();
+      await searchResults(input.value);
     }
     if (action === "global-open" || action === "note-open") {
       closeDialog();
@@ -976,9 +1001,12 @@ export function installFeatures(ctx) {
     const note = event.target.closest('[data-action="note-open"]');
     if (note) click("note-open", note).catch((e) => toast(e.message, true));
   });
+  // Searches start once typing pauses; searchSequence drops answers that arrive late.
+  let searchTimer;
   document.addEventListener("input", (event) => {
-    if (event.target.id === "global-search-input")
-      searchResults(event.target.value);
+    if (event.target.id !== "global-search-input") return;
+    clearTimeout(searchTimer);
+    searchTimer = setTimeout(() => searchResults(event.target.value), 150);
   });
   document.addEventListener("change", (event) => {
     const el = event.target;

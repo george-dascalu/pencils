@@ -2,6 +2,20 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.20.4 — 2026-10-29
+
+### Added
+
+- Search works like Obsidian's Omnisearch. It returns one ranked list of cards, documents and board text from every project you can open (and your personal space). Titles count most, then headings, then tags, then the text. Results whose title starts with what you typed, and recently changed ones, move up. Words match as you type them, accents don't matter, and each result shows a highlighted excerpt. Use `"a phrase"`, `-word` to leave something out, `#tag`, and `in:cards`, `in:docs` or `in:boards`. When nothing matches, **Did you mean** offers a close spelling. Alt+Enter links the result into the open document.
+
+### Changed
+
+- The Search button now follows the view tabs in the top bar on iPad and desktop too, after a divider, as it already did in the phone bar.
+
+### Fixed
+
+- In a document, Ctrl/⌘ K inserts a link without also opening search.
+
 ## 0.20.3 — 2026-10-29
 
 ### Added

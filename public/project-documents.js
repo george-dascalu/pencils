@@ -980,5 +980,11 @@ export function projectDocuments(ctx) {
       event.preventDefault(); event.returnValue = "";
     }
   });
-  return { render, reset, syncChanged, create, openDocument, templatePanel, today };
+  // Search's Alt+Enter: text at the open document's caret; false when no document is open.
+  function insertText(text) {
+    if (!editor || !form?.isConnected) return false;
+    editor.insert(text);
+    return true;
+  }
+  return { render, reset, syncChanged, create, openDocument, templatePanel, today, insertText };
 }

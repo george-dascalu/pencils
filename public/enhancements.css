@@ -351,6 +351,20 @@ summary:focus-visible,
   font-size: 12px;
   color: var(--muted);
 }
+.search-result strong {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.search-result .search-excerpt {
+  color: var(--ink);
+  overflow-wrap: anywhere;
+}
+.search-excerpt mark {
+  background: color-mix(in srgb, #dab63c 30%, var(--surface));
+  color: var(--ink);
+  padding: 0 1px;
+}
 .planning-head {
   display: flex;
   justify-content: space-between;

@@ -157,9 +157,10 @@ onDevices(["phone"], () => test("tapping Documents again opens the document list
   await expect(page.locator(".sidebar .sidebar-documents [data-document-open]", { hasText: "Notes" })).toBeVisible();
 }));
 
-onDevices(["ipad", "desktop"], () => test("wider screens keep the view tabs in the top bar", async ({ page }) => {
+onDevices(["ipad", "desktop"], () => test("wider screens keep the view tabs in the top bar, with Search after them (owner request, 29 Oct)", async ({ page }) => {
   await open(page);
   const box = await bar(page).boundingBox();
   expect(box.y).toBeLessThan(80);
-  await expect(bar(page).getByRole("button", { name: "Search", exact: true }), "Search is a phone bar button; wider screens use Ctrl/⌘ K").toBeHidden();
+  const [boards, search] = await Promise.all([tab(page, "board").boundingBox(), bar(page).getByRole("button", { name: "Search", exact: true }).boundingBox()]);
+  expect(search.x, "Search follows the view tabs").toBeGreaterThan(boards.x + boards.width);
 }));
