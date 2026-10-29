@@ -1,8 +1,8 @@
-// Owner request, 28 October 2026: with a board or a document open, the top bar
-// names that board or document instead of the project. Phones keep the view and
-// project on the second line; wide desktop headers keep the project as a crumb
-// (Organisation / Project / Board). Other views still show the project.
+// Owner requests, 28 and 29 October 2026: the top bar title is only the open board or
+// document, or the project when nothing is open, with no organisation or project crumbs.
+// Phones name the view on the second line.
 import { test, expect, onDevices, useApp } from "../fixtures.mjs";
+import { renameDocument } from "../helpers/documents.mjs";
 
 const app = useApp(async (store) => {
   const project = await store.createProject({ title: "A little more possibility", key: "TB" });
@@ -40,9 +40,8 @@ onDevices(["phone", "ipad", "desktop"], () => test("a board names itself in the 
   expect(h.heading, JSON.stringify(h)).toBe("Test Project canvas");
   expect(h.headingVisible, "the board name is visible").toBe(true);
   expect(h.tooltip, "the tooltip keeps the project").toMatch(/A little more possibility/);
-  if (device === "phone") expect(h.second, "the second line keeps the view and the project").toBe("Boards · A little more possibility");
-  if (device === "ipad") expect(h.trail, "iPad shows only the board name").toEqual(["Test Project canvas"]);
-  if (device === "desktop") expect(h.trail.slice(-3), "desktop keeps the project as a crumb").toEqual(["A little more possibility", "/", "Test Project canvas"]);
+  if (device === "phone") expect(h.second, "the second line names the view").toBe("Boards");
+  expect(h.trail, "only the board name").toEqual(["Test Project canvas"]);
 }));
 
 onDevices(["phone", "desktop"], () => test("switching boards renames the header", async ({ page }) => {
@@ -63,18 +62,20 @@ test("renaming a board in Board settings renames the header", async ({ page }) =
 
 onDevices(["phone", "ipad", "desktop"], () => test("an open document names itself in the header", async ({ page, device }) => {
   await page.goto(`${base()}/documents/${app.doc.id}`);
-  const title = page.locator('.documents-workspace [name="title"]');
-  await title.waitFor();
+  // Since 0.19.31 the document bar has no title field (a hidden one keeps the name).
+  await page.locator("#document-form .document-heading").waitFor();
+  const title = page.locator('#document-form input[type=hidden][name="title"]');
   // Earlier devices rename the shared document, so start from its current title.
   const current = await title.inputValue();
   expect(current).toMatch(/notes/);
   await expect(heading(page)).toHaveText(current);
   const h = await header(page);
-  if (device === "phone") expect(h.second).toBe("Documents · A little more possibility");
-  if (device === "desktop") expect(h.trail.slice(-3)).toEqual(["A little more possibility", "/", current]);
-  // Renaming the document renames the header as you type.
-  await title.fill(`Weekly ${device} notes`);
+  if (device === "phone") expect(h.second).toBe("Documents");
+  expect(h.trail).toEqual([current]);
+  // Renaming the document (Document tools → Rename) renames the header.
+  await renameDocument(page, `Weekly ${device} notes`);
   await expect(heading(page)).toHaveText(`Weekly ${device} notes`);
+  await expect.poll(async () => (await app.store.snapshot(app.project.id)).documents.find((d) => d.id === app.doc.id).title).toBe(`Weekly ${device} notes`);
 }));
 
 onDevices(["phone", "ipad", "desktop"], () => test("other views still name the project", async ({ page, device }) => {
@@ -83,7 +84,7 @@ onDevices(["phone", "ipad", "desktop"], () => test("other views still name the p
   const h = await header(page);
   expect(h.heading).toBe("A little more possibility");
   if (device === "phone") expect(h.second).toBe("List");
-  if (device === "desktop") expect(!h.trail.includes("/") || h.trail.filter((t) => t === "/").length === 1, `only Organisation / Project ${JSON.stringify(h.trail)}`).toBe(true);
+  expect(h.trail, "only the project name").toEqual(["A little more possibility"]);
   // Leaving a board returns the header to the project.
   await openBoard(page);
   await page.goto(`${base()}/table`);

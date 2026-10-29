@@ -170,3 +170,18 @@ onDevices(["ipad"], () => {
     expect((await camera(page)).scale).toBe(1);
   });
 });
+
+// Owner request, 29 October 2026: a finger must not drag the whole app up or down. Safari's
+// rubber-band bounce moves the page even where nothing scrolls; the page itself never
+// overscrolls, while lists and panels keep scrolling.
+onDevices(["phone", "ipad", "desktop"], () => {
+  test("the page itself never bounces or drags with the finger", async ({ page }) => {
+    await page.goto(`${app.base}/#project/${app.project.id}/list`);
+    await page.locator(".topbar").waitFor();
+    const behaviour = await page.evaluate(() => [document.documentElement, document.body].map((el) => {
+      const style = getComputedStyle(el);
+      return [style.overscrollBehaviorX, style.overscrollBehaviorY];
+    }));
+    expect(behaviour).toEqual([["none", "none"], ["none", "none"]]);
+  });
+});

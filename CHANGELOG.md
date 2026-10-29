@@ -2,6 +2,27 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.19.31 — 2026-10-29
+
+### Changed
+
+- One **Settings** page holds your own settings (appearance, fonts, board controls, recovery and sign-in), the project's and the organisation's, opened from a single Settings button in the top bar (and **Settings** in the phone menu). Personal and organisation settings are no longer dialogs; the profile button is gone.
+- The top bar names only the open board or document, or the project when nothing is open, without organisation or project crumbs.
+- Documents have one bar: formatting on the left, the document's controls on the right. The name shows in the top bar; rename it from **Document tools → Rename**, which also opens for a new document.
+- Calendar, Timeline, Capacity and Table show their own controls on the right of the toolbar row, beside the view switcher, search and filters, instead of in a second bar.
+- Undo and redo on a board apply at once instead of reloading the project.
+
+### Removed
+
+- The feature request inbox and its automatic worker.
+- The **New card** button at the bottom of the Table (use **New** in the top bar).
+
+### Fixed
+
+- Saving the organisation's name, description or colour no longer clears its people and teams, or fails when a project uses one of its teams.
+- On iPad and phones a finger no longer drags the whole app up or down; lists and panels still scroll.
+- Scheduling a row on the Timeline works again where its options sit outside the timeline (the toolbar, or View options on phones).
+
 ## 0.19.30 — 2026-10-29
 
 ### Fixed

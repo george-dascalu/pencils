@@ -27,14 +27,15 @@ const values = (locator) => locator.locator("option").evaluateAll((els) => els.m
 const patched = (page) => page.waitForResponse((r) => r.request().method() === "PATCH" && r.url().includes(app.task.id));
 async function openWorkflow(page) {
   await page.goto(`${app.base}/#project/${app.project.id}/list`);
-  await page.locator(".top-actions [data-action=project-edit]").click();
+  // Since 0.19.31 the top bar's single Settings button replaces the project gear.
+  await page.locator(".top-actions [data-action=settings]").click();
   await selectSettingsPage(page, "workflow");
 }
 
 test("the workflow editor renames, restricts and protects statuses, and guards unsaved changes", async ({ page }) => {
   await page.goto(app.base);
   await page.locator(".project-link").click();
-  await page.locator(".top-actions [data-action=project-edit]").click();
+  await page.locator(".top-actions [data-action=settings]").click();
   await selectSettingsPage(page, "workflow");
   await row(page, "todo").locator("[data-status-name]").fill("Ready queue");
   await page.locator("[data-workflow-rules]").check();

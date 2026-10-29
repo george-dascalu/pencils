@@ -346,17 +346,6 @@ button svg {
   width: 13px;
   height: 13px;
 }
-.avatar {
-  width: 29px;
-  height: 29px;
-  display: grid;
-  place-items: center;
-  border-radius: 50%;
-  background: #e9e8de;
-  color: #5e6958;
-  font-size: 10px;
-  font-weight: 600;
-}
 .icon-button.mobile-menu {
   display: none;
 }
@@ -1915,9 +1904,6 @@ input[type="search"]:not(.search input) {
   .breadcrumb strong {
     max-width: 180px;
   }
-  .avatar {
-    flex-shrink: 0;
-  }
   .top-actions {
     gap: 6px;
   }
@@ -1994,19 +1980,6 @@ input[type="search"]:not(.search input) {
   width: 13px;
   height: 13px;
 }
-.organisation-crumb {
-  padding: 0;
-  color: var(--muted);
-  font-size: 11px;
-  max-width: 180px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  text-align: left;
-}
-.organisation-crumb:hover {
-  color: #3f5e48;
-}
 .breadcrumb {
   min-width: 0;
 }
@@ -2064,9 +2037,6 @@ input[type="search"]:not(.search input) {
   overflow: hidden;
 }
 @media (max-width: 780px) {
-  .organisation-crumb {
-    max-width: 105px;
-  }
   .breadcrumb {
     flex: 1;
   }

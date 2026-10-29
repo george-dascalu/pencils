@@ -7,6 +7,8 @@ export function timelineSelection(ctx, closeEditors) {
   let selection = null, press = null, saving = false;
   const axes = root => timelineAxis(+root.dataset.min, +root.dataset.unit, root.dataset.weekends !== "false");
   const range = root => root.dataset.rangeEnd ? { start: root.dataset.rangeStart, end: root.dataset.rangeEnd } : null;
+  // The Timeline's options (and their hint) may sit in the toolbar or View options, outside the section.
+  const hintFor = root => root.querySelector(".timeline-hint") || document.querySelector(`[data-timeline-options="${CSS.escape(root.dataset.timeline)}"] .timeline-hint`) || document.createElement("span");
   const rowTask = track => task(track.closest("[data-timeline-row]")?.dataset.timelineRow);
   const stop = e => { e.preventDefault(); e.stopImmediatePropagation(); };
   const eligible = (track, target) => track && !rowTask(track)?.source &&
@@ -49,7 +51,7 @@ export function timelineSelection(ctx, closeEditors) {
     if (!t || t.source) return;
     if (!selection || selection.track !== track || !selection.start) {
       clear(); closeEditors();
-      const root = track.closest("[data-timeline]"), hint = root.querySelector(".timeline-hint");
+      const root = track.closest("[data-timeline]"), hint = hintFor(root);
       const el = document.createElement("span"); el.className = "timeline-range-preview"; el.setAttribute("aria-hidden", "true");
       track.append(el); track.classList.add("timeline-picking");
       selection = { track, root, hint, originalHint: hint.textContent, start: date, cursor: date, preview: el, project: state.project.id };
@@ -70,7 +72,7 @@ export function timelineSelection(ctx, closeEditors) {
   function arm(track) {
     if (!track || rowTask(track)?.source || saving) return;
     clear(); closeEditors();
-    const root = track.closest("[data-timeline]"), hint = root.querySelector(".timeline-hint");
+    const root = track.closest("[data-timeline]"), hint = hintFor(root);
     const el = document.createElement("span"); el.className = "timeline-range-preview"; el.hidden = true;
     track.append(el); track.classList.add("timeline-picking");
     selection = { track, root, hint, originalHint: hint.textContent, start: null, cursor: axes(root).dateAt(0), preview: el, project: state.project.id };

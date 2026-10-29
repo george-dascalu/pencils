@@ -50,7 +50,8 @@ test("Help opens as a page in the project header, and Back restores the filtered
   await expect(page.locator(".tabs [data-view]")).toHaveCount(5);
   await expect(page.locator('.tabs [aria-current="page"]')).toHaveCount(0);
   await expect(page.locator(".topbar .new-menu > summary:visible")).toHaveCount(1);
-  await expect(page.locator('.topbar [data-action="project-edit"]')).toHaveCount(1);
+  // Since 0.19.31 one Settings button replaces the project gear and the avatar.
+  await expect(page.locator('.topbar [data-action="settings"]')).toHaveCount(1);
   await expect(page.locator("dialog"), "Help is a page, not a modal").toHaveCount(0);
   expect(new URL(page.url()).hash).toBe("#help/start");
   await page.goBack();
@@ -133,8 +134,8 @@ for (const width of [1600, 1180, 390]) {
       await title(page, "Help & guides");
       if (phone) {
         await page.locator(".mobile-menu").click();
-        await page.locator('.phone-drawer-utilities [data-action="project-edit"]').click();
-      } else await page.locator('.topbar [data-action="project-edit"]').click();
+        await page.locator('.phone-drawer-utilities [data-action="settings"]').click();
+      } else await page.locator('.topbar [data-action="settings"]').click();
       await page.locator("[data-settings-form]").waitFor();
       await expect(page.locator(".help-page")).toHaveCount(0);
     });

@@ -3,7 +3,7 @@
 // for every selected object, layer order, delete and undo, persistence across reloads, menus
 // kept inside the board on desktop and phone, and a dark surface in dark mode.
 import { test, expect, useApp } from "../fixtures.mjs";
-import { clickControl, openBoardSearch } from "../helpers/menu-controls.mjs";
+import { clickControl, openBoardSearch, openSettingsPage } from "../helpers/menu-controls.mjs";
 
 const nodes = (a, b, extra = {}) => [
   { id: "note", type: "sticky", text: "First idea", x: 80, y: 150, w: 240, h: 200, color: "#f5e7a2" },
@@ -180,9 +180,12 @@ for (const viewportSize of [{ width: 1600, height: 1100 }, { width: 390, height:
 test("in dark mode the toolbar has a dark surface", async ({ page }) => {
   await resetBoard();
   await openBoard(page);
-  await page.getByRole("button", { name: "Personal settings", exact: true }).click();
+  // Since 0.19.31 the former Personal settings are the Settings page's "You" section, and
+  // "Back to project" returns to the board.
+  await openSettingsPage(page, "personal");
   await page.locator("[name=personal-theme][value=dark]").check();
-  await page.locator("[data-action=dialog-close]").first().click();
+  await page.locator("[data-action=settings-close]").click();
+  await page.locator("#canvas").waitFor();
   await find(page, "note", "First idea");
   await menu(page, "arrange").click();
   expect(await toolbar(page).evaluate((el) => getComputedStyle(el).backgroundColor)).not.toBe("rgb(255, 255, 255)");

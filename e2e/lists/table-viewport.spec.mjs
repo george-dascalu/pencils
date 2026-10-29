@@ -1,5 +1,5 @@
 // The Table fills the space below the header at every width: the scroll area spans the
-// component, its scrollbars sit at the bottom above the New row action, the page itself
+// component, its scrollbars sit at the bottom, the page itself
 // never scrolls, few rows or columns leave blank space instead of stretching, headers
 // stay put while rows scroll, and Back restores the scroll position. Both themes.
 // Desktop tests belong to the cross-browser release gate.
@@ -40,14 +40,14 @@ async function fits(page) {
       documentHeight: document.documentElement.scrollHeight,
       viewportWidth: innerWidth,
       viewportHeight: innerHeight,
-      footer: document.querySelector(".add-row").getBoundingClientRect().bottom,
     };
   });
   const facts = JSON.stringify(actual);
   expect(Math.abs(actual.width - actual.availableWidth), `Scroll area spans component width ${facts}`).toBeLessThan(2);
   expect(Math.abs(actual.parentBottom - actual.viewportHeight), `Component fills remaining viewport height ${facts}`).toBeLessThan(2);
-  expect(actual.parentBottom - actual.bottom, `Scrollbar stays near the bottom, above the footer ${facts}`).toBeLessThan(140);
-  expect(actual.footer, `New row action remains visible ${facts}`).toBeLessThanOrEqual(actual.viewportHeight + 1);
+  // Since 0.19.31 the Table has no "+ New card" row below it (cards are created from New),
+  // so the scroll area reaches the component's bottom padding.
+  expect(actual.parentBottom - actual.bottom, `Scrollbar stays at the bottom ${facts}`).toBeLessThan(40);
   expect(actual.documentWidth, `No horizontal page scrolling ${facts}`).toBeLessThanOrEqual(actual.viewportWidth);
   expect(actual.documentHeight, `No vertical page scrolling ${facts}`).toBeLessThanOrEqual(actual.viewportHeight);
   expect(actual.x).toBe("auto");

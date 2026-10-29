@@ -28,8 +28,8 @@
   --control-bar-height: calc(var(--control-height) + 2 * var(--control-bar-padding));
 }
 :root[data-theme="dark"] { --text-focus-color: #a3a3a3; }
-/* Horizontal workspace scrolling must not become browser Back/Forward. */
-html, body { overscroll-behavior-x: none; }
+/* The page never overscrolls: no back-swipe, no rubber-band dragging the whole app (lists and panels still scroll). */
+html, body { overscroll-behavior: none; }
 /* Writing surfaces use a quiet, neutral focus treatment. Navigation and
    action controls retain their existing keyboard focus indicators. */
 textarea,
@@ -71,7 +71,7 @@ textarea,
   padding-block: var(--control-bar-padding);
 }
 .main.project-main :is(.toolbar, .board-toolbar),
-.document-heading, .document-controls, .document-explorer > header {
+.document-heading, .document-explorer > header {
   min-height: var(--control-bar-height);
   padding-block: var(--control-bar-padding);
   gap: var(--control-bar-gap);
@@ -110,7 +110,7 @@ textarea,
 
 :is(
   .button, .icon-button, .tab, .task-picker-trigger,
-  .avatar, .organisation-crumb, .project-link, .directory-link, .side-new,
+  .project-link, .directory-link, .side-new,
   .organisation-actions button, .side-label button, .settings-navigation nav a,
   .board-menu > summary, .selection-menu > summary, .color-picker > summary,
   .view-layout-switcher button, .selection-action, .symbol-select,
@@ -159,7 +159,7 @@ textarea,
 }
 .task-table td :is(input, select):not([type="checkbox"], [type="radio"]) { font-size: var(--type-table) !important; }
 .task-table td input[data-task-field="title"] { font-size: var(--type-table-title) !important; }
-:is(.icon-button, .avatar, .side-label button, .organisation-actions button[aria-label],
+:is(.icon-button, .side-label button, .organisation-actions button[aria-label],
     .board-tools button,
     .task-reorder-handle, .tree-toggle, .tree-toggle-spacer) {
   width: var(--control-height) !important;

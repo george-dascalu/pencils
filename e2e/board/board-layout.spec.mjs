@@ -4,7 +4,7 @@
 // scrolls without moving the board; menus follow the dark theme; and connection warnings stay
 // visible above the full-height canvas. No request leaves the app.
 import { test, expect, onDevices, useApp } from "../fixtures.mjs";
-import { clickControl, reveal, selectProjectView } from "../helpers/menu-controls.mjs";
+import { clickControl, openSettingsPage, reveal, selectProjectView } from "../helpers/menu-controls.mjs";
 import { newCard } from "../helpers/new-card.mjs";
 
 const app = useApp(async (store) => {
@@ -72,7 +72,8 @@ test.describe("wide desktop", () => {
 
   test("settings, full redraws and view switches keep exactly one of each board action", async ({ page }) => {
     await openBoard(page);
-    await page.getByRole("button", { name: "Project settings", exact: true }).click();
+    // Since 0.19.31 the top bar's Settings button opens the Settings page on the project's General.
+    await openSettingsPage(page);
     await page.locator("#project-form").waitFor();
     await selectProjectView(page, "board");
     // Trigger a complete content redraw; every menu must keep exactly one action.
@@ -95,9 +96,9 @@ onDevices(["ipad", "phone"], () => {
     expect(rect.height).toBeGreaterThan(viewport.height * 0.65);
     const overflow = await page.evaluate(() => ({ x: document.documentElement.scrollWidth - innerWidth, y: document.documentElement.scrollHeight - innerHeight }));
     expect(overflow.x <= 1 && overflow.y <= 1, JSON.stringify(overflow)).toBe(true);
-    // Since 0.19.26 phones reach Project settings from the drawer's settings row.
-    if (await page.locator(".mobile-menu").isVisible()) await page.locator(".mobile-menu").click();
-    await page.getByRole("button", { name: "Project settings", exact: true }).click();
+    // Since 0.19.26 phones reach settings from the drawer's settings row; since 0.19.31 one
+    // Settings button (top bar or drawer) opens the Settings page on the project's General.
+    await openSettingsPage(page);
     await page.locator("#project-form").waitFor();
     await selectProjectView(page, "board");
     // Since 0.19.2 the header New control is a menu offering a card or a document.
@@ -148,9 +149,12 @@ test.describe("short iPad window", () => {
 
 test("the More menu follows the dark theme", async ({ page }) => {
   await openBoard(page);
-  await page.getByRole("button", { name: "Personal settings", exact: true }).click();
+  // Since 0.19.31 the former Personal settings are the Settings page's "You" section, and
+  // "Back to project" returns to the board.
+  await openSettingsPage(page, "personal");
   await page.locator("[name=personal-theme][value=dark]").check();
-  await page.locator("[data-action=dialog-close]").first().click();
+  await page.locator("[data-action=settings-close]").click();
+  await page.locator("#canvas").waitFor();
   await summary(page, "more").click();
   const panel = page.locator("[data-board-menu=more] .board-menu-panel");
   await expect(panel).toBeVisible();

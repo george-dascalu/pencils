@@ -18,7 +18,8 @@ test.describe("desktop", () => {
     await page.goto(app.base);
     await page.locator(".project-link").click();
     await expect(page.locator("#view-content")).toContainText("WEB-1");
-    await page.getByRole("button", { name: "Project settings", exact: true }).click();
+    // Since 0.19.31 one Settings button in the top bar opens the Settings page on the project's General.
+    await page.locator(".topbar").getByRole("button", { name: "Settings", exact: true }).click();
     await expect(page.locator("dialog[open]")).toHaveCount(0);
     await page.locator(".project-settings-page [name=key]").fill("APP");
     await page.locator("#project-form [type=submit]").click();

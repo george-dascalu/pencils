@@ -6,7 +6,7 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { command, deploy, projectRoot } from "./request-worker.mjs";
+import { command, deploy, projectRoot } from "./deploy.mjs";
 
 const SEMVER = /^(\d+)\.(\d+)\.(\d+)$/;
 

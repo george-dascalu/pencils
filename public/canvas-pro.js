@@ -880,7 +880,7 @@ export function canvasPro(ctx, basic) {
       return;
     }
     if (!operation) return;
-    await api(route("boards", board().id) + "/undo", {
+    const saved = await api(route("boards", board().id) + "/undo", {
       method: "POST",
       body: {
         operation: operation.id,
@@ -888,7 +888,7 @@ export function canvasPro(ctx, basic) {
         client: sync.client,
       },
     });
-    await ctx.refresh();
+    ctx.applyBoard(saved);
   }
   document.addEventListener(
     "click",

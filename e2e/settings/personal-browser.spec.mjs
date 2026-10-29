@@ -2,10 +2,10 @@
 // assistive technology) and stays collapsed after a reload; eight fonts load from the local
 // server; light, dark and System themes apply, persist and reach other open tabs. Each project
 // keeps its own statuses, a status in use cannot be removed, and a new project can start with
-// its own workflow. On phones the drawer opens and closes and Personal settings fits the screen.
+// its own workflow. On phones the drawer opens and closes and the Settings page fits the screen.
 // Nothing is requested from outside the local server.
 import { test, expect, onDevices, useApp } from "../fixtures.mjs";
-import { selectProjectView, selectSettingsPage } from "../helpers/menu-controls.mjs";
+import { openSettingsPage, selectProjectView } from "../helpers/menu-controls.mjs";
 import { newCard } from "../helpers/new-card.mjs";
 
 const app = useApp(async (store) => ({
@@ -23,8 +23,12 @@ test.beforeEach(async ({ context }) => {
 test.afterEach(() => expect(external, "no external requests").toEqual([]));
 
 const html = (page) => page.locator("html");
-const openPersonal = (page) => page.getByRole("button", { name: "Personal settings", exact: true }).click();
-const closePersonal = (page) => page.getByRole("button", { name: "Close", exact: true }).click();
+// Since 0.19.31 one Settings button (top bar, or the phone drawer's settings row) opens the
+// Settings page; the former Personal settings dialog is its "You" section, which applies
+// changes immediately and has no Close button, so leaving goes back to the project.
+const openSettings = openSettingsPage;
+const openPersonal = (page) => openSettings(page, "personal");
+const closePersonal = (page) => page.locator("[data-action=settings-close]").click();
 async function openProject(page, project = app.project) {
   await page.goto(`${app.base}/#project/${project.id}/list`);
   await page.locator(".topbar").waitFor();
@@ -106,8 +110,7 @@ test("a theme chosen in one tab reaches the other open tabs", async ({ page, con
 
 test("a project's workflow is its own: new cards and Kanban use it, and a status in use cannot be removed", async ({ page }) => {
   await openProject(page);
-  await page.getByRole("button", { name: "Project settings", exact: true }).click();
-  await selectSettingsPage(page, "workflow");
+  await openSettings(page, "workflow");
   await setStatuses(page, ["ideas", "active", "shipped"], "shipped");
   await page.locator("#workflow-form [type=submit]").click();
   await expect.poll(async () => (await app.store.snapshot(app.project.id)).project.schema.statuses[0]).toBe("ideas");
@@ -121,8 +124,7 @@ test("a project's workflow is its own: new cards and Kanban use it, and a status
   await expect.poll(async () => (await app.store.snapshot(app.project.id)).tasks.length).toBe(1);
   await selectProjectView(page, "kanban");
   await expect.poll(() => page.locator(".kanban-column").evaluateAll((els) => els.map((el) => el.dataset.dropStatus))).toEqual(["ideas", "active", "shipped"]);
-  await page.getByRole("button", { name: "Project settings", exact: true }).click();
-  await selectSettingsPage(page, "workflow");
+  await openSettings(page, "workflow");
   await expect(page.locator("[data-workflow-status=ideas] [data-status-remove]")).toBeDisabled();
   expect((await app.store.snapshot(app.project.id)).project.schema.statuses).toEqual(["ideas", "active", "shipped"]);
   await page.locator("[data-action=settings-close]").click();
@@ -142,16 +144,22 @@ test("a new project can start with its own workflow", async ({ page }) => {
 });
 
 onDevices(["phone"], () => {
-  test("the drawer opens and closes, and Personal settings from its settings row fits the screen", async ({ page }) => {
+  test("the drawer opens and closes, and Settings from its settings row fits the screen", async ({ page }) => {
     await openProject(page);
     await page.getByRole("button", { name: "Toggle sidebar", exact: true }).click();
     await expect(page.locator(".sidebar")).toBeVisible();
     expect(await page.locator(".sidebar").evaluate((el) => el.inert)).toBe(false);
     await page.getByRole("button", { name: "Close sidebar", exact: true }).click({ position: { x: 350, y: 400 } });
     await page.waitForFunction(() => !document.querySelector(".sidebar.open"));
-    // Since 0.19.26 phones reach Personal settings from the drawer's settings row.
-    await page.getByRole("button", { name: "Toggle sidebar", exact: true }).click();
-    await page.locator(".phone-drawer-utilities").getByRole("button", { name: "Personal settings", exact: true }).click();
-    expect((await page.locator(".personal-dialog").boundingBox()).width).toBeLessThanOrEqual(390);
+    // Since 0.19.26 phones reach settings from the drawer's settings row; since 0.19.31 its
+    // Settings button opens the Settings page, whose "You" section was Personal settings.
+    await openSettings(page, "personal");
+    await expect(page.locator("[name=personal-theme]").first()).toBeVisible();
+    for (const part of ["#settings-section-select", "#settings-panel"]) {
+      const box = await page.locator(part).boundingBox();
+      expect(box.x, part).toBeGreaterThanOrEqual(0);
+      expect(box.x + box.width, part).toBeLessThanOrEqual(390);
+    }
+    expect(await page.evaluate(() => document.documentElement.scrollWidth), "no sideways scrolling").toBeLessThanOrEqual(390);
   });
 });

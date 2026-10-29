@@ -4,7 +4,7 @@
 // every project view, the table menus, the card editor, Project settings and Personal
 // settings, in light and dark, on desktop, tablet and phone widths, with no page overflow.
 import { test, expect, onDevices, useApp } from "../fixtures.mjs";
-import { reveal } from "../helpers/menu-controls.mjs";
+import { reveal, selectSettingsPage } from "../helpers/menu-controls.mjs";
 
 const app = useApp(async (store) => {
   const project = await store.createProject({ title: "Shared controls" });
@@ -132,9 +132,9 @@ onDevices(Object.keys(sizes), (device) => {
     await page.goto(`${app.base}/#project/${app.project.id}/settings/general`);
     await page.locator("[data-settings-form]").waitFor();
     await check(page, "#view-content", `${width} project settings`, height);
-    if (width <= 600) await page.locator(".mobile-menu").click();
-    await page.locator('[data-personal="settings"]:visible').click();
+    // Since 0.19.31 Personal settings is the "You" section of the same Settings page.
+    await selectSettingsPage(page, "personal");
     await page.locator("[name=personal-density]").waitFor();
-    await check(page, ".dialog", `${width} personal settings`, height);
+    await check(page, "#view-content", `${width} personal settings`, height);
   });
 });

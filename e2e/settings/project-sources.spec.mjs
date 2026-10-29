@@ -37,7 +37,8 @@ async function signIn(page) {
 
 test("a signed-in administrator previews an Obsidian source without changing tasks, then syncs it", { tag: "@gate" }, async ({ page }) => {
   await signIn(page);
-  await page.getByRole("button", { name: "Project settings", exact: true }).click();
+  // Since 0.19.31 one Settings button in the top bar opens the Settings page.
+  await page.locator(".topbar").getByRole("button", { name: "Settings", exact: true }).click();
   await selectSettingsPage(page, "sources");
   await page.locator('[data-source-action="new"]').click();
   await page.locator('#source-config [name="name"]').fill("Notes");

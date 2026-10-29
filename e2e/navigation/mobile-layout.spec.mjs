@@ -6,6 +6,7 @@
 // (modes, search, formatting, versions, delete confirmation) are in compact-navigation.spec.mjs.
 import AxeBuilder from "@axe-core/playwright";
 import { test, expect, onDevices, useApp } from "../fixtures.mjs";
+import { documentName } from "../helpers/documents.mjs";
 
 const app = useApp(async (store) => {
   const project = await store.demo();
@@ -75,7 +76,9 @@ onDevices(["phone"], () => {
     await page.locator(".mobile-menu").click();
     await expect.poll(() => inert(page, ".main")).toBe(true);
     await page.locator(`.sidebar [data-document-open="${app.second.id}"]`).click();
-    await expect(page.locator('[aria-label="Document title"]')).toHaveValue("Meeting notes");
+    // Since 0.19.31 the document bar has no title field; the top bar names the open document.
+    await expect(documentName(page)).toHaveText("Meeting notes");
+    await expect(page.locator('#document-form [name="title"]')).toHaveValue("Meeting notes");
     await expect.poll(() => inert(page, ".main")).toBe(false);
     await page.locator(".mobile-menu").click();
     await page.keyboard.press("Escape");
@@ -96,7 +99,8 @@ onDevices(["phone"], () => {
       }
       await goto(page, "documents");
       await expect(page.locator("html")).toHaveAttribute("data-theme", theme);
-      const a11y = await new AxeBuilder({ page }).include(".topbar").include(".document-heading").include(".document-controls").withTags(["wcag2a", "wcag2aa", "wcag21aa"]).analyze();
+      // Since 0.19.31 the document bar (.document-heading) also holds the formatting controls.
+      const a11y = await new AxeBuilder({ page }).include(".topbar").include(".document-heading").withTags(["wcag2a", "wcag2aa", "wcag21aa"]).analyze();
       expect(a11y.violations.map((v) => ({ id: v.id, targets: v.nodes.map((n) => n.target) }))).toEqual([]);
       // In Documents the drawer opens on the document list (0.19.27); Back shows the menu.
       await page.locator(".mobile-menu").click();

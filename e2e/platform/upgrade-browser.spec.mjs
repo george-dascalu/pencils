@@ -79,7 +79,8 @@ test("range paste fills title and type, and current view filters persist across 
 
 test("a custom type and a typed field reach new cards, the table, calendar and timeline", async ({ page }) => {
   await openProject(page);
-  await page.locator('.top-actions [data-action="project-edit"]').click();
+  // Since 0.19.31 one top-bar Settings button opens the Settings page (project sections included).
+  await page.locator('.topbar [data-action="settings"]').click();
   await selectSettingsPage(page, "hierarchy");
   await page.locator("#workflow-form [data-type-input]").fill("research");
   await page.locator("#workflow-form [data-type-add]").click();
@@ -216,9 +217,11 @@ test("multiselection, grouping, frames, resize, JSON Canvas and PNG export", asy
 test("phones reach Project settings from the drawer and the page does not overflow", async ({ page }) => {
   await openProject(page, "list");
   await page.setViewportSize({ width: 390, height: 844 });
-  // Since 0.19.26 phones reach Project settings from the drawer's settings row.
+  // Since 0.19.26 phones reach Project settings from the drawer's settings row; since 0.19.31
+  // that row holds only Settings (the one Settings page, project sections included) and Help.
   await page.locator(".mobile-menu").click();
-  await expect(page.locator(".phone-drawer-utilities [data-action=project-edit]")).toBeVisible();
+  await expect(page.locator(".phone-drawer-utilities [data-action=settings]")).toBeVisible();
+  await expect(page.locator(".phone-drawer-utilities button")).toHaveText(["Settings", "Help"]);
   await page.locator(".phone-drawer-close").click();
   await page.locator(".sidebar.open").waitFor({ state: "detached" });
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);

@@ -20,7 +20,8 @@ const schema = (page) => page.locator("[name=workflowSchema]").inputValue().then
 const saved = async () => (await app.store.snapshot(app.project.id)).project.schema;
 async function openSettings(page, section) {
   await page.goto(`${app.base}/#project/${app.project.id}/list`);
-  await page.locator(".top-actions [data-action=project-edit]").click();
+  // Since 0.19.31 the top bar's single Settings button replaces the project gear.
+  await page.locator(".top-actions [data-action=settings]").click();
   await selectSettingsPage(page, section);
 }
 
@@ -63,7 +64,7 @@ test("hierarchy links are edited on the diagram, the enforced mode saves, and bo
   expect(stored.hierarchy.roots).not.toContain("bug");
   await page.reload();
   await page.getByRole("button", { name: "Back to project", exact: true }).click();
-  await page.locator(".top-actions [data-action=project-edit]").click();
+  await page.locator(".top-actions [data-action=settings]").click();
   await selectSettingsPage(page, "hierarchy");
   expect((await schema(page)).transitions.todo).not.toContain("done");
   expect((await schema(page)).hierarchy.roots).not.toContain("bug");

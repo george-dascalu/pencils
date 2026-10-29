@@ -83,3 +83,16 @@ export async function cancelConfirm(page) {
   await page.locator(".confirm-popover [data-confirm-cancel]").click();
   await page.locator(".confirm-popover").waitFor({ state: "detached" });
 }
+
+// Since 0.19.31 one Settings button (the top bar's, or the phone drawer's settings row) opens
+// the Settings page: the project's sections (General first), "You" ("personal", the former
+// Personal settings) and Organisation. Pass a section to show it. Leave with
+// `[data-action=settings-close]`, which returns to the view Settings was opened from.
+export async function openSettingsPage(page, section) {
+  if (await page.locator(".mobile-menu").isVisible()) {
+    await page.locator(".mobile-menu").click();
+    await page.locator(".phone-drawer-utilities").getByRole("button", { name: "Settings", exact: true }).click();
+  } else await page.locator(".topbar [data-action=settings]").click();
+  await page.locator(".settings-navigation h1").waitFor();
+  if (section) await showSettingsSection(page, section);
+}

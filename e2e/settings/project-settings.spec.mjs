@@ -45,7 +45,8 @@ const title = (page) => page.locator('#project-form [name="title"]');
 
 test("Project settings opens on General as a page, and saving General keeps the workflow and teams", { tag: "@gate" }, async ({ page }) => {
   await page.goto(`${app.base}/#project/${app.project.id}/list`);
-  await page.getByRole("button", { name: "Project settings", exact: true }).click();
+  // Since 0.19.31 one Settings button in the top bar opens the Settings page on the project's General.
+  await page.locator(".topbar").getByRole("button", { name: "Settings", exact: true }).click();
   await title(page).waitFor();
   expect(new URL(page.url()).hash).toBe(hash("general"));
   await expect(page.locator(".project-settings-tools, dialog")).toHaveCount(0);

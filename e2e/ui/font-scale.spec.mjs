@@ -142,7 +142,6 @@ onDevices(["desktop", "ipad", "phone"], (device) => {
         description: size(r.querySelector(".table-description")),
         inputs: [...r.querySelectorAll('input[data-task-field]:not([data-task-field="title"])')].map(size),
         title: size(r.querySelector('input[data-task-field="title"]')),
-        addRow: size(document.querySelector(".add-row")),
       };
     }, row);
     expect(sizes.header, `headers ${JSON.stringify(sizes)}`).toBe(s.tableHeader);
@@ -150,7 +149,8 @@ onDevices(["desktop", "ipad", "phone"], (device) => {
     expect(sizes.description, `description ${JSON.stringify(sizes)}`).toBe(s.table);
     expect(sizes.inputs.length && sizes.inputs.every((v) => v === s.table), `inputs ${JSON.stringify(sizes)}`).toBeTruthy();
     expect(sizes.title, `title ${JSON.stringify(sizes)}`).toBe(s.tableTitle);
-    expect(sizes.addRow, "New card uses the control font").toBe(13);
+    // Since 0.19.31 the Table has no bottom "+ New card" row; New in the top bar creates cards.
+    await expect(page.locator(".add-row")).toHaveCount(0);
     const text = await smallestText(page, "#view-content .spreadsheet");
     const low = text.filter((t) => t.size < (t.initials ? s.initials : s.meta));
     expect(low.map((t) => `${t.text} ${t.size}px`), "no table text below the floor").toEqual([]);

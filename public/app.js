@@ -599,6 +599,13 @@ function deltaChangesState(records) {
     return !current || stable(current) !== stable(value);
   });
 }
+// Shows a board the server has just returned (after undo or redo) without reloading the project.
+function applyBoard(record) {
+  if (!state.boards.some((b) => b.id === record.id)) return; // another project opened meanwhile
+  state.boards = state.boards.map((b) => (b.id === record.id ? record : b));
+  state.boardBases = { ...state.boardBases, [record.id]: structuredClone(record) };
+  renderView();
+}
 function applySnapshot(snapshot) {
   if (state.project?.id !== snapshot.project.id) {
     state.boardTaskPanel = false;
@@ -701,7 +708,7 @@ async function openProject(id) {
   }
 }
 async function openOrganisation(id) {
-  if (state.directoryPage) return openDirectory(state.directoryPage, id);
+  if (["teams", "people"].includes(state.directoryPage)) return openDirectory(state.directoryPage, id);
   if (!canNavigate()) return false;
   const organisation = state.organisations.find((o) => o.id === id);
   if (!organisation)
@@ -787,18 +794,19 @@ function renderAppNow() {
       ${p ? '<section id="sidebar-documents" class="sidebar-documents" aria-label="Documents"></section>' : ""}
       ${state.organisation ? `<section class="sidebar-directory"><div class="side-label">TEAMS</div><nav class="directory-links" aria-label="Teams and people">${["teams", "people"].map((page) => `<button class="directory-link ${state.directoryPage === page ? "active" : ""}" data-action="directory-open" data-page="${page}" ${state.directoryPage === page ? 'aria-current="page"' : ""}>${icon(page === "teams" ? "group" : "people")}<span>${label(page)}</span><span class="directory-count">${state.organisation[page]?.length || 0}</span></button>`).join("")}</nav></section>` : ""}
       ${p ? phoneNavigationHTML() : ""}
-      <div class="phone-drawer-utilities" role="group" aria-label="Settings and help" style="--tiles:${(p ? 3 : 2) + (state.session?.user?.admin ? 1 : 0)}">${p ? `<button class="button" data-action="project-edit" aria-label="Project settings">${icon("settings")}<span>Settings</span></button>` : ""}<button class="button" data-action="help" aria-label="Help & guides">${icon("help")}<span>Help</span></button><button class="button" data-personal="settings" aria-label="Personal settings">${icon("people")}<span>You</span></button>${state.session?.user?.admin ? `<button class="button" data-feature-requests aria-label="Feature requests">${icon("comment")}<span>Requests</span></button>` : ""}</div>
-      <div class="side-bottom">${state.session?.user?.admin ? `<button class="side-new" data-feature-requests>${icon("comment")}Feature requests</button>` : ""}
+      <div class="phone-drawer-utilities" role="group" aria-label="Settings and help" style="--tiles:2"><button class="button" data-action="settings" aria-label="Settings">${icon("settings")}<span>Settings</span></button><button class="button" data-action="help" aria-label="Help & guides">${icon("help")}<span>Help</span></button></div>
+      <div class="side-bottom">
       <div class="side-footer"><span class="dot"></span>Local workspace<span class="version">v${APP_VERSION}</span></div></div>
     </aside>
     <main class="main">
-      <header class="topbar"><div class="breadcrumb"><button class="icon-button desktop-sidebar-toggle" data-personal="sidebar" aria-controls="workspace-sidebar" aria-expanded="true" aria-label="Collapse sidebar">${icon("menu")}</button><button class="icon-button mobile-menu" data-action="menu" aria-label="Toggle sidebar" aria-controls="workspace-sidebar" aria-expanded="${state.menu}">${icon("menu")}</button><button class="organisation-crumb" data-action="home" title="${esc(state.organisation?.title)}">${esc(state.organisation?.title || "Organisations")}</button><span>/</span>${p ? `<span class="project-crumb" hidden>${esc(p.title)}</span><span class="project-crumb-separator" aria-hidden="true" hidden>/</span>` : ""}<strong ${p ? 'role="heading" aria-level="1"' : ""}>${esc(p?.title || (state.helpArticle ? "Help" : state.directoryPage ? label(state.directoryPage) : "Projects"))}</strong>${p ? `<span class="phone-current-view">${state.helpArticle ? "Help" : viewLabel(state.view)}</span>` : ""}</div>${p ? projectNavigationHTML() : ""}<div class="top-actions">${p ? newMenuHTML("icon") : ""}<div class="save-state" id="save-state">${appStatusHTML()}</div>${p ? `<button class="icon-button" data-action="project-edit" aria-label="Project settings" title="Project settings">${icon("settings")}</button>` : ""}<button class="icon-button" data-action="help" aria-label="Help & keyboard shortcuts" ${state.helpArticle ? 'aria-current="page"' : ""}>${icon("help")}</button><button class="avatar" data-personal="settings" aria-label="Personal settings" title="Personal settings">WE</button></div></header>
+      <header class="topbar"><div class="breadcrumb"><button class="icon-button desktop-sidebar-toggle" data-personal="sidebar" aria-controls="workspace-sidebar" aria-expanded="true" aria-label="Collapse sidebar">${icon("menu")}</button><button class="icon-button mobile-menu" data-action="menu" aria-label="Toggle sidebar" aria-controls="workspace-sidebar" aria-expanded="${state.menu}">${icon("menu")}</button><strong ${p ? 'role="heading" aria-level="1"' : ""}>${esc(p?.title || (state.helpArticle ? "Help" : state.directoryPage ? label(state.directoryPage) : "Projects"))}</strong>${p ? `<span class="phone-current-view">${state.helpArticle ? "Help" : viewLabel(state.view)}</span>` : ""}</div>${p ? projectNavigationHTML() : ""}<div class="top-actions">${p ? newMenuHTML("icon") : ""}<div class="save-state" id="save-state">${appStatusHTML()}</div><button class="icon-button" data-action="settings" aria-label="Settings" title="Settings" ${(p ? state.view === "settings" : state.directoryPage === "settings") ? 'aria-current="page"' : ""}>${icon("settings")}</button><button class="icon-button" data-action="help" aria-label="Help & keyboard shortcuts" ${state.helpArticle ? 'aria-current="page"' : ""}>${icon("help")}</button></div></header>
       ${!state.online ? '<div class="connection-banner">Local server unavailable. Reconnect to its network to save changes.</div>' : ""}
-      ${state.helpArticle ? helpPageHTML(state.helpArticle, { esc, icon, requests: !!state.session?.user?.admin }) : state.directoryPage ? directoryPageHTML() : p ? projectPage() : welcomePage()}
+      ${state.helpArticle ? helpPageHTML(state.helpArticle, { esc, icon }) : state.directoryPage === "settings" ? '<div id="view-toolbar"></div><section id="view-content" class="content"></section>' : state.directoryPage ? directoryPageHTML() : p ? projectPage() : welcomePage()}
     </main></div>`;
   updateViewLayout(state);
   if (p) renderView();
-  if (state.directoryPage) {
+  if (state.directoryPage === "settings") void features.settingsRender();
+  else if (state.directoryPage) {
     const form = $("#organisation-form");
     features.dialogOpened("organisation", form);
     const dirty = () => {
@@ -1430,6 +1438,7 @@ function navigationSnapshot() {
     : {
         organisation: state.organisation?.id || null,
         page: state.directoryPage || "home",
+        settingsSection: state.directoryPage === "settings" ? state.settingsSection : null,
       };
   const preferences = Object.fromEntries(
     Object.entries(navigationDefaults).map(([key, fallback]) => [
@@ -1516,9 +1525,13 @@ async function restoreNavigation(entry, stillCurrent = () => true) {
     } else {
       clearProject();
       state.organisation = organisation || state.organisation;
-      state.directoryPage = ["teams", "people"].includes(destination.page)
+      state.directoryPage = ["teams", "people", "settings"].includes(destination.page)
         ? destination.page
         : null;
+      if (state.directoryPage === "settings") {
+        state.settingsSection = destination.settingsSection || "personal";
+        state.settingsDetail = "";
+      }
       state.helpArticle = destination.page === "help" ? helpArticle(destination.article).id : null;
       if (state.organisation)
         storage.set("organisation", state.organisation.id);
@@ -1579,6 +1592,8 @@ const features = installFeatures({
   renderApp,
   renderView,
   refresh,
+  applyBoard,
+  organisationFormHTML,
   openProject,
   openView,
   openSelectMenu: (select, anchor) => selectMenus.open(select, anchor),
@@ -1608,15 +1623,14 @@ const features = installFeatures({
   flushBoard: () => boardQueue,
 });
 kanbanDrag({ state, task, patchTask, renderView, storage, toast, statusNames });
+// New organisations are created in a dialog; the current one is edited on the Settings page.
+function organisationFormHTML(organisation = state.organisation) {
+  const edit = !!organisation?.id;
+  return `<form id="organisation-form" data-id="${esc(edit ? organisation.id : "")}" data-revision="${esc(organisation.revision || "")}">${edit ? "" : dialogHead("A home for your projects")}<div class="dialog-body"><div class="form-error hidden" role="alert"></div><label class="field">Organisation name<input name="title" value="${esc(organisation.title)}" placeholder="A company, a team, or your own space" maxlength="300" required ${edit ? "" : "autofocus"}></label><label class="field">Description<textarea name="body" rows="3" placeholder="What brings these projects together?">${esc(organisation.body)}</textarea></label><div class="field">Organisation colour${colorPicker({ label: "Organisation colour", value: organisation.color })}</div><p>Each organisation has its own project list. You can switch organisations at any time.</p></div><div class="dialog-foot">${edit ? "" : '<button type="button" class="button" data-action="dialog-close">Cancel</button>'}<button type="submit" class="button primary">${edit ? "Save organisation" : "Create organisation"}</button></div></form>`;
+}
 function organisationDialog(edit = false) {
-  const organisation = edit
-    ? state.organisation
-    : { title: "", body: "", color: "#66856f" };
-  if (!organisation) return;
-  showDialog(
-    `<dialog class="dialog"><form id="organisation-form" data-id="${esc(edit ? organisation.id : "")}" data-revision="${esc(organisation.revision || "")}">${dialogHead(edit ? "Organisation settings" : "A home for your projects")}<div class="dialog-body"><div class="form-error hidden" role="alert"></div><label class="field">Organisation name<input name="title" value="${esc(organisation.title)}" placeholder="A company, a team, or your own space" maxlength="300" required autofocus></label><label class="field">Description<textarea name="body" rows="3" placeholder="What brings these projects together?">${esc(organisation.body)}</textarea></label><div class="field">Organisation colour${colorPicker({ label: "Organisation colour", value: organisation.color })}</div><p>Each organisation has its own project list. You can switch organisations at any time.</p></div><div class="dialog-foot"><button type="button" class="button" data-action="dialog-close">Cancel</button><button type="submit" class="button primary">${edit ? "Save organisation" : "Create organisation"}</button></div></form></dialog>`,
-    "organisation",
-  );
+  if (edit) return state.organisation && features.settingsOpen("organisation");
+  showDialog(`<dialog class="dialog">${organisationFormHTML({ title: "", body: "", color: "#66856f" })}</dialog>`, "organisation");
 }
 function projectFormHTML(edit = false) {
   const p = edit
@@ -2102,9 +2116,17 @@ document.addEventListener("click", async (event) => {
         if (!canNavigate()) return;
         state.settingsDirty = false;
         state.dirty = false;
+        if (!state.project) {
+          state.directoryPage = null;
+          renderApp();
+          break;
+        }
         state.view = state.settingsReturn || "list";
         storage.set(`view:${state.project.id}`, state.view);
         renderApp();
+        break;
+      case "settings":
+        features.settingsOpen();
         break;
       case "project-edit":
         projectDialog(true);
@@ -2353,8 +2375,9 @@ document.addEventListener("submit", async (event) => {
         throw new Error(
           "Resolve the unsaved canvas changes before changing organisations.",
         );
-      data.people = JSON.parse(data.people || "[]");
-      data.teams = JSON.parse(data.teams || "[]");
+      // Only forms with the Teams and People editors send these; others leave them as they are.
+      if ("people" in data) data.people = JSON.parse(data.people || "[]");
+      if ("teams" in data) data.teams = JSON.parse(data.teams || "[]");
       const id = form.dataset.id;
       const organisation = await api(`/organisations${id ? `/${id}` : ""}`, {
         method: id ? "PATCH" : "POST",

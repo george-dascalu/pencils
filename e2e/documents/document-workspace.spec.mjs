@@ -54,7 +54,8 @@ test("the outline opens and closes by click, Enter and Space, Escape and an outs
   await page.keyboard.press("Escape");
   await expect(button).toHaveAttribute("aria-expanded", "false");
   await button.click();
-  await page.getByLabel("Document title", { exact: true }).click();
+  // Since 0.19.31 the document bar has no title field; click the page text outside the panel instead.
+  await page.locator(".document-writing .cm-content").click();
   await outline(page).waitFor({ state: "hidden" });
   await expect(button).toHaveAttribute("aria-expanded", "false");
 });

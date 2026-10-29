@@ -42,18 +42,22 @@ const snapshotTask = async (project, id) => (await app.store.snapshot(project.id
 test("people and teams are created in the organisation editor, and a team without members offers no assignees", { tag: "@gate" }, async ({ page }) => {
   const project = app.fresh;
   await page.goto(`${app.base}/#project/${project.id}/list`);
+  // Since 0.19.31 the sidebar's organisation button opens the Organisation section of the
+  // Settings page (no dialog), which also edits people and teams.
   await page.locator("[data-action=organisation-edit]").click();
+  await page.locator(".settings-loading").waitFor({ state: "detached" });
   await page.getByRole("button", { name: "Add person", exact: true }).click();
   await page.getByLabel("Person name", { exact: true }).fill("Alice");
   await page.locator("[data-person-field=task_capacity]").fill("0");
   await page.getByRole("button", { name: "Add team", exact: true }).click();
   await page.getByLabel("Team name", { exact: true }).fill("Design");
   await page.getByRole("button", { name: "Save organisation", exact: true }).click();
-  await page.locator("dialog").waitFor({ state: "detached" });
+  await page.getByText("Organisation saved.", { exact: true }).waitFor();
   const org = await app.store.getOrganisation(project.organisation);
   expect(org.people[0].task_capacity).toBe(0);
   expect(org.teams[0].members).toEqual([]);
-  await page.locator("[data-action=project-edit]:visible").click();
+  // The single top-bar Settings button replaces the project gear (0.19.31).
+  await page.locator('.topbar [data-action="settings"]').click();
   await selectSettingsPage(page, "teams");
   await page.locator("[data-project-team]").check();
   await page.getByRole("button", { name: "Save changes", exact: true }).click();

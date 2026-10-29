@@ -338,7 +338,6 @@ body {
     .filter,
     .button,
     .icon-button,
-    .avatar,
     .board-tools,
     .board-tools button,
     .board-controls,
@@ -421,7 +420,6 @@ body {
     .stats-strip span,
     .tab,
     .breadcrumb,
-    .organisation-crumb,
     .empty-state,
     .form-status,
     .board-save,
@@ -573,10 +571,6 @@ body {
 [data-theme="dark"] .empty p {
   color: var(--muted);
 }
-.top-actions .avatar {
-  display: grid;
-  flex-shrink: 0;
-}
 .breadcrumb {
   min-width: 0;
 }
@@ -594,12 +588,6 @@ body {
   }
   .breadcrumb > button {
     flex-shrink: 0;
-  }
-  .breadcrumb .organisation-crumb {
-    max-width: 85px;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
   }
 }
 .person-row {

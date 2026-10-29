@@ -44,25 +44,30 @@ const openProject = (page) => page.goto(`${app.base}/#project/${app.project.id}/
 
 test("projects and organisations take palette and validated custom colours", async ({ page }) => {
   await openProject(page);
-  await page.locator(".top-actions [data-action=project-edit]").click();
+  // Since 0.19.31 the top bar's single Settings button replaces the project gear.
+  await page.locator(".top-actions [data-action=settings]").click();
   await choose(page, "Peach", page.locator("#project-form"));
   // Since 0.15.18 Project settings is a page with its own save bar ("Save changes").
   await page.locator("#project-form [type=submit]").click();
   await page.getByText("Changes saved", { exact: true }).waitFor();
   await page.getByRole("button", { name: "Back to project", exact: true }).click();
   expect((await app.store.snapshot(app.project.id)).project.color).toBe("#edc48b");
+  // Since 0.19.31 the sidebar's organisation button opens the Organisation section of the
+  // Settings page instead of a dialog.
+  const organisation = page.locator("#organisation-form");
   await page.locator("[data-action=organisation-edit]").click();
-  await custom(page, "oops");
+  await custom(page, "oops", organisation);
   await expect(page.locator(".color-error")).toBeVisible();
   await page.locator("[data-color-hex]").fill("#123abc");
   await page.locator("[data-color-hex]").press("Enter");
-  await expect(page.locator("[name=color]")).toHaveValue("#123abc");
-  await page.locator("#organisation-form .dialog-foot button.primary").click();
-  await page.locator("dialog").waitFor({ state: "detached" });
+  await expect(organisation.locator("[name=color]")).toHaveValue("#123abc");
+  await organisation.locator(".dialog-foot button.primary").click();
+  await expect(page.locator("#toasts")).toContainText("Organisation saved.");
   expect(await recents(page), "invalid hex never becomes a recent colour").not.toContain("oops");
+  await page.locator("[data-action=settings-close]").click();
   await page.locator("[data-action=organisation-edit]").click();
-  await expect(page.locator("[name=color]")).toHaveValue("#123abc");
-  await page.locator("[data-action=dialog-close]").first().click();
+  await expect(organisation.locator("[name=color]")).toHaveValue("#123abc");
+  await page.locator("[data-action=settings-close]").click();
 });
 
 test("board objects and connectors take palette and custom colours", async ({ page }) => {
@@ -147,7 +152,7 @@ test("visual picking previews locally; applying saves one colour that recent lis
   await page.getByRole("button", { name: "Close board settings", exact: true }).click();
   await expect.poll(async () => (await current()).settings.background.color).toBe(picked);
   await page.reload();
-  await page.locator(".top-actions [data-action=project-edit]").click();
+  await page.locator(".top-actions [data-action=settings]").click();
   await expect(page.locator("[name=color]")).toHaveValue("#edc48b");
   await expect(page.locator(`[data-color-recent="${picked}"]`), "recent colours persist across a reload").toHaveCount(1);
 });

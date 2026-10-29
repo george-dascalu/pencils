@@ -679,9 +679,6 @@ summary:focus-visible,
   .advanced-filters > input {
     width: 110px;
   }
-  .top-actions .avatar {
-    display: none;
-  }
   .dashboard-deadlines > button {
     gap: 12px;
   }

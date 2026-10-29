@@ -39,7 +39,8 @@ test("the description, comments and documents share one formatting control set",
   await page.keyboard.press("Escape"); await page.keyboard.press("Escape");
   await open(page, "documents", ".documents-workspace");
   await page.locator(`[data-document-open="${app.doc.id}"]`).first().click();
-  await page.locator("#document-form [name=title]").waitFor();
+  // Since 0.19.31 the title is a hidden field; the document's formatting bar marks it open.
+  await page.locator("#document-form .document-formatting .rich-toolbar").waitFor();
   const documentNames = await names(page, ".document-formatting");
   expect(documentNames.slice(0, FORMATTING.length), `document toolbar: ${documentNames.join(", ")}`).toEqual(FORMATTING);
   expect(await styleItems(page, ".document-formatting")).toEqual(STYLES);
@@ -94,7 +95,7 @@ test("the new rich controls round-trip to Markdown", async ({ page }) => {
 
 test("the new document controls write Markdown", async ({ page }) => {
   await open(page, "documents", ".documents-workspace");
-  await page.locator("#document-form [name=title]").waitFor();
+  await page.locator("#document-form .document-formatting .rich-toolbar").waitFor();
   await page.locator(".document-codemirror .cm-content").click();
   await page.keyboard.press("Control+End");
   await page.locator('.document-formatting .rich-toolbar [aria-label="Checklist"]').click();

@@ -117,7 +117,8 @@ async function everyViewSharesTheHeader(page, size) {
     expect(tabs, `${view}: project tabs stay in place`).toEqual(header.tabs);
     expect(actions, `${view}: shared project actions`).toEqual(header.actions);
     await expect(page.locator(".hero")).toBeHidden();
-    await expect(page.locator(".top-actions [data-action=project-edit]")).toHaveCount(1);
+    // Since 0.19.31 one Settings button replaces the project gear and the avatar.
+    await expect(page.locator(".top-actions [data-action=settings]")).toHaveCount(1);
     await page.locator("#view-content").waitFor({ state: "visible" });
     const content = await boxOf(page, "#view-content");
     expect(content.height, `${view}: content has a visible box`).toBeGreaterThan(0);
@@ -125,10 +126,10 @@ async function everyViewSharesTheHeader(page, size) {
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), `${view}: horizontal overflow`).toBe(true);
     await expect(page.locator('[data-board-menu="project"]')).toHaveCount(0);
     await expect(page.locator(".topbar .new-menu > summary:visible")).toHaveCount(1);
-    await expect(page.locator('.topbar .top-actions [data-action="project-edit"]')).toHaveCount(1);
+    await expect(page.locator('.topbar .top-actions [data-action="settings"]')).toHaveCount(1);
     await expect(page.locator(".topbar .tabs")).toHaveCount(1);
     const create = await boxOf(page, size.width > 600 ? "#board-project-tools .new-menu > summary" : ".phone-new-task");
-    const settings = size.width > 600 ? await boxOf(page, '.top-actions [data-action="project-edit"]') : null;
+    const settings = size.width > 600 ? await boxOf(page, '.top-actions [data-action="settings"]') : null;
     if (size.width > 1150) {
       expect(Math.abs(actions.x + actions.width / 2 - (box.x + box.width / 2)), "Project navigation, including New task, is centred in the header").toBeLessThan(1);
       const breadcrumb = await boxOf(page, ".breadcrumb");
@@ -136,7 +137,7 @@ async function everyViewSharesTheHeader(page, size) {
       expect(breadcrumb.right <= actions.left && actions.right <= topActions.left, "Project navigation fits between the breadcrumb and version controls").toBe(true);
       const nav = await boxOf(page, ".tabs");
       expect(create.x >= nav.right && create.y >= box.y && create.bottom <= box.bottom, "New task follows the navigation in the top row").toBe(true);
-      expect(settings.x, "Project settings is on the right").toBeGreaterThanOrEqual(actions.right);
+      expect(settings.x, "Settings is on the right").toBeGreaterThanOrEqual(actions.right);
     }
     if (["board", "drawing"].includes(view)) {
       await reveal(page.locator("#saved-view"));
@@ -181,7 +182,7 @@ test("long views scroll, settings lists its sections and table headers share one
   await page.locator(".task-row").last().scrollIntoViewIfNeeded();
   await expect(page.locator(".task-row").last(), "Long views remain scrollable").toBeVisible();
   await page.evaluate(() => window.scrollTo(0, 0));
-  await page.locator('.top-actions [data-action="project-edit"]').click();
+  await page.locator('.top-actions [data-action="settings"]').click();
   for (const section of ["workflow", "import", "sources", "automation"]) await expect(page.locator(`.settings-navigation [data-settings-section="${section}"]`)).toBeVisible();
   await expect(page.locator('.settings-navigation [data-feature="templates"]')).toHaveCount(0);
   await selectSettingsPage(page, "workflow");

@@ -5,7 +5,7 @@
 // links and app controls. Also covers Open in Obsidian, the outline, links and
 // backlinks, attachments, and accessibility at desktop and phone widths.
 import { test, expect, useApp } from "../fixtures.mjs";
-import { axeViolations, noHorizontalScroll, setTheme } from "../helpers/documents.mjs";
+import { axeViolations, documentName, noHorizontalScroll, setTheme } from "../helpers/documents.mjs";
 
 const app = useApp(async (store) => {
   const project = await store.createProject({ title: "Markdown workspace" });
@@ -46,7 +46,8 @@ const mode = async (page, name) => {
   await page.getByRole("button", { name, exact: true }).click();
   await expect(page.getByRole("button", { name, exact: true })).toHaveAttribute("aria-pressed", "true");
 };
-const title = (page) => page.getByLabel("Document title", { exact: true });
+// Since 0.19.31 the open document's name shows in the top bar instead of a title field.
+const title = documentName;
 
 test("changing modes never rewrites the Markdown", async ({ page }) => {
   const { body, saved } = await open(page);
@@ -126,10 +127,10 @@ test("the outline, search, links and backlinks navigate without changing the fil
   await page.keyboard.press("Escape");
   await mode(page, "Reading");
   await page.locator(".document-reading [data-document-ref]").first().click();
-  await expect(title(page)).toHaveValue(app.target.title);
+  await expect(title(page)).toHaveText(app.target.title);
   await page.getByRole("button", { name: "Document tools", exact: true }).click();
   await page.getByRole("dialog", { name: "Document tools" }).getByRole("button", { name: record.title, exact: true }).click();
-  await expect(title(page)).toHaveValue(record.title);
+  await expect(title(page)).toHaveText(record.title);
   expect(await saved()).toBe(body);
 });
 

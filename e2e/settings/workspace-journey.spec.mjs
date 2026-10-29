@@ -196,8 +196,11 @@ test("Markdown edited outside the app shows live, and a conflicting edit keeps t
   await expect(page.locator('#task-form [name="title"]')).toHaveValue("Unsaved browser edit");
   page.once("dialog", (dialog) => dialog.accept());
   await click(page, "dialog-close");
-  await page.getByRole("button", { name: "Personal settings", exact: true }).click();
-  // The header save warning also links to Recovery; use the Personal settings one.
+  // Since 0.19.31 Personal settings is the "You" section of the Settings page, opened from
+  // the top bar's single Settings button.
+  await page.locator(".topbar").getByRole("button", { name: "Settings", exact: true }).click();
+  await selectSettingsPage(page, "personal");
+  // The header save warning also links to Recovery; use the Settings page's one.
   await page.locator('.personal-workspace-actions [data-feature="recovery"]').click();
   await page.locator('[data-feature="resolve-remote"]').click();
   await page.locator('[data-action="dialog-close"]').first().click();
@@ -246,9 +249,9 @@ test("moving a project to another organisation keeps its tasks and canvases, and
   await openDemo(page);
   await expect(page.locator("#organisation-select")).toHaveValue("o-default");
   const beforeMove = await snapshot();
-  // Since 0.19.26 the phone drawer's settings row also has Project settings, earlier in the
-  // page and hidden on desktop; use the top bar button.
-  await clickControl(page.locator('.topbar [data-action="project-edit"]'));
+  // Since 0.19.26 the phone drawer's settings row also has Settings, earlier in the page and
+  // hidden on desktop; use the top bar's Settings button (0.19.31, was the project gear).
+  await clickControl(page.locator('.topbar [data-action="settings"]'));
   await selectSettingsPage(page, "teams");
   await page.locator('#project-form [name="organisation"]').selectOption(studio.id);
   await page.locator('#project-form [type="submit"]').click();

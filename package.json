@@ -1,6 +1,6 @@
 {
   "name": "pencils",
-  "version": "0.19.30",
+  "version": "0.19.31",
   "private": true,
   "type": "module",
   "description": "An offline, Markdown-backed project workspace",
@@ -21,8 +21,6 @@
     "typecheck": "tsc -p tsconfig.json",
     "prestart": "npm run build:server",
     "pretest": "npm run build:server",
-    "requests:worker": "node scripts/request-worker.mjs",
-    "requests:install-worker": "node scripts/install-request-worker.mjs",
     "release": "node scripts/release.mjs"
   },
   "engines": {

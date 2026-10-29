@@ -27,10 +27,8 @@ import { tablePreferences } from "./table-model.js";
 import { taskReorder } from "./task-reorder.js";
 import { taskRowEditor } from "./task-row-editor.js";
 import { recoveryUI } from "./recovery-ui.js";
-import { featureRequests } from "./feature-requests.js";
 
 export function installFeatures(ctx) {
-  featureRequests(ctx);
   const {
     state,
     storage,
@@ -72,7 +70,7 @@ export function installFeatures(ctx) {
     automations = projectAutomations(settingsContext("automation")),
     drawingFeature = deferredController(() => import("./drawing-view.js").then(m => m.drawingView(ctx)), { ready: false }, ["enter", "settled"]),
     drawings = drawingFeature.controller;
-  settings = projectSettings(ctx, { sources, automations });
+  settings = projectSettings(ctx, { sources, automations, personal: () => personal, organisationEditor: (form) => dialogOpened("organisation", form) });
   const plan = planning(ctx),
     sheet = grid(ctx),
     recovery = recoveryUI(ctx),
@@ -224,6 +222,7 @@ export function installFeatures(ctx) {
       // Planning views have their own ordering; task sort and grouping do not apply.
       $("#group-by")?.remove();
       $("#sort")?.setAttribute("hidden", "");
+      $(".toolbar-right")?.setAttribute("hidden", "");
     }
     $(".kanban-group-control")?.remove();
     $(".kanban-id-control")?.remove();
@@ -289,18 +288,6 @@ export function installFeatures(ctx) {
     if (metric)
       metric.title =
         "Progress counts leaf tasks only, weighted by estimate when provided (otherwise 1). Parent tasks are not counted twice.";
-    if (state.session?.required && state.session.user) {
-      const avatar = $(".avatar");
-      if (avatar) {
-        avatar.textContent = state.session.user.username
-          .slice(0, 2)
-          .toUpperCase();
-        avatar.title = state.session.automatic
-          ? `${state.session.user.username} · Administrator · Automatic sign-in`
-          : state.session.user.username;
-        avatar.setAttribute("aria-description", avatar.title);
-      }
-    }
     if (state.project?.archived)
       $(".hero")?.insertAdjacentHTML(
         "afterend",
@@ -668,9 +655,8 @@ export function installFeatures(ctx) {
       },
       {
         id: "personal",
-        title: "Personal settings",
-        run: () =>
-          document.querySelector('[data-personal="settings"]')?.click(),
+        title: "Your settings",
+        run: () => settings.open("personal"),
       },
     ];
   }
@@ -918,7 +904,7 @@ export function installFeatures(ctx) {
     }
     if (
       action === "project-delete" &&
-      (await confirmAction({ anchor: el, title: "Move this project to Trash?", message: `${state.project.title} and all its cards and boards move to Trash. Recover it from Personal settings → Recovery & backups.`, confirmLabel: "Move to Trash", danger: true }))
+      (await confirmAction({ anchor: el, title: "Move this project to Trash?", message: `${state.project.title} and all its cards and boards move to Trash. Recover it from Settings → Recovery & backups.`, confirmLabel: "Move to Trash", danger: true }))
     ) {
       await api(route(), {
         method: "DELETE",

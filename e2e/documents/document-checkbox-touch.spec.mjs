@@ -3,7 +3,7 @@
 // top. A tap on a checkbox now toggles it without focusing the editor, and a
 // refresh of the Documents view keeps the open document's scroll position.
 import { test, expect, onDevices, useApp } from "../fixtures.mjs";
-import { openNewDocument } from "../helpers/documents.mjs";
+import { documentName, openNewDocument } from "../helpers/documents.mjs";
 
 const app = useApp(async (store) => ({ project: await store.createProject({ title: "Docs", key: "DC" }) }));
 const body = "# Plan\n\n" + Array.from({ length: 40 }, (_, i) => `Paragraph ${i} with enough words to fill a line or two on a phone screen.\n\n- [ ] Task ${i}\n`).join("\n");
@@ -39,14 +39,16 @@ onDevices(["phone"], () => {
     }, label);
     // iOS focuses the editor (and opens the keyboard) when a tap's touchend is
     // allowed to complete. The box's touchend is cancelled and it toggles itself.
-    const prevented = await page.evaluate((index) => {
-      const target = document.querySelectorAll(".document-checkbox")[index];
+    // Find the box by its label: CodeMirror may re-render the lines around the viewport, which
+    // shifts the boxes' order in the DOM.
+    const prevented = await page.evaluate((label) => {
+      const target = [...document.querySelectorAll(".document-checkbox")].find((c) => c.getAttribute("aria-label") === label);
       const touch = new Touch({ identifier: 1, target, clientX: 1, clientY: 1 });
       target.dispatchEvent(new TouchEvent("touchstart", { bubbles: true, cancelable: true, touches: [touch], targetTouches: [touch], changedTouches: [touch] }));
       const end = new TouchEvent("touchend", { bubbles: true, cancelable: true, changedTouches: [touch] });
       target.dispatchEvent(end);
       return end.defaultPrevented;
-    }, box.index);
+    }, box.label);
     expect(prevented, "the tap is kept from focusing the editor").toBe(true);
     await expect.poll(() => find(box.label), "the cancelled tap still ticks the box").toEqual({ checked: true, editorFocused: false });
     await page.touchscreen.tap(box.x, box.y);
@@ -72,7 +74,8 @@ onDevices(["phone"], () => {
     await open(page);
     const other = await app.store.createDocument(app.project.id, { title: `Other ${Date.now()}`, body });
     await page.goto(`${app.base}/#project/${app.project.id}/documents/${other.id}`);
-    await expect(page.getByLabel("Document title", { exact: true })).toHaveValue(other.title);
+    // Since 0.19.31 the open document's name shows in the top bar.
+    await expect(documentName(page)).toHaveText(other.title);
     // Scroll restoring runs at once and again on the next frame.
     await nextFrames(page);
     expect(await scrollTop(page)).toBe(0);

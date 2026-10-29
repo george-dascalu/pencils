@@ -3,7 +3,7 @@
 // background, saved in the board file and seen by fresh browsers; hiding the grid is a display
 // preference; the settings fit a phone; reset returns to the theme's background, light or dark.
 import { test, expect, onDevices, useApp } from "../fixtures.mjs";
-import { reveal } from "../helpers/menu-controls.mjs";
+import { openSettingsPage, reveal } from "../helpers/menu-controls.mjs";
 
 const app = useApp(async (store) => {
   const project = await store.createProject({ title: "Settings" });
@@ -152,9 +152,12 @@ test("reset returns to the theme's background, which follows the dark theme", as
   await page.locator("[data-board-settings-reset]").click();
   await close(page);
   await saved(page);
-  await page.getByRole("button", { name: "Personal settings", exact: true }).click();
+  // Since 0.19.31 the former Personal settings are the Settings page's "You" section, and
+  // "Back to project" returns to the board.
+  await openSettingsPage(page, "personal");
   await page.locator('[name="personal-theme"][value="dark"]').check();
-  await page.locator('[data-action="dialog-close"]').first().click();
+  await page.locator('[data-action="settings-close"]').click();
+  await page.locator("#canvas").waitFor();
   expect((await appearance(page)).color).toBe("rgb(23, 34, 28)");
   await open(page);
   await page.getByRole("radio", { name: "Fine grid", exact: true }).check();

@@ -32,6 +32,8 @@ test.use({ viewportSize: { width: 1600, height: 1000 } });
 const tasks = async ({ project }) => (await app.store.snapshot(project.id)).tasks;
 const task = async (seed, id) => (await tasks(seed)).find((t) => t.id === id);
 const timeline = (page) => page.locator('#view-content > [data-timeline="project"]');
+// Since 0.19.31 the Timeline's own controls sit on the right of the toolbar row above 600px.
+const options = (page) => page.locator('#view-toolbar .view-controls [data-timeline-options="project"]');
 const open = async (page, { project }) => {
   await page.goto(`${app.base}/#project/${project.id}/timeline`);
   await timeline(page).locator(".timeline-months span").first().waitFor();
@@ -86,7 +88,7 @@ test("hidden weekends compress the axis while resizing, moving, nudging and drop
   await open(page, seed);
   const original = await tasks(seed);
   await setWeekends(page, false);
-  await timeline(page).locator("[data-timeline-scale]").selectOption("day");
+  await options(page).locator("[data-timeline-scale]").selectOption("day");
   await timeline(page).locator('.timeline-ticks [data-date="2026-09-21"]').waitFor();
   expect(await timeline(page).locator(".timeline-ticks [data-date]").evaluateAll((els) => els.every((el) => ![0, 6].includes(new Date(el.dataset.date).getUTCDay()))), "no weekend ticks").toBe(true);
   const bar = page.locator(`[data-timeline-task="${seed.planned.id}"]`);

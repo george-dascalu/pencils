@@ -15,7 +15,7 @@ Colour fields throughout the app use the same circular swatch and dropdown palet
 Development rule: **Consistency**. Reuse shared UI and keep common actions, terminology and behaviour aligned across views. See [AGENTS.md](AGENTS.md).
 
 - Use the sidebar toggle in the top bar to collapse or expand navigation on desktop. Your choice survives reloads. On phones, the menu still opens a navigation drawer.
-- Open **Personal settings** with the avatar at the top right. Choose Light, Dark, or System appearance and one of eight fonts: Manrope (default), DM Sans, Space Grotesk, Outfit, Sora, Work Sans, Lora, or Fraunces. Preferences are local to this browser and shared across its tabs; other devices retain their own choices.
+- Open **Settings** with the gear at the top right; its **You** section holds your own preferences. Choose Light, Dark, or System appearance and one of eight fonts: Manrope (default), DM Sans, Space Grotesk, Outfit, Sora, Work Sans, Lora, or Fraunces. Preferences are local to this browser and shared across its tabs; other devices retain their own choices.
 - Fonts and their SIL Open Font Licenses are bundled under `public/fonts/`, with source links in `SOURCES.json`. No external font service is used at runtime.
 - Open **Project settings** to edit the ordered status list and specify which statuses count as completed. New projects can define their own workflow during creation. Changes apply only to that project and are stored in its Markdown frontmatter. A status used by an existing task cannot be removed until those tasks are moved to another status. Use **Types & hierarchy** for card types and parent/child rules, and **Custom fields** for additional task information.
 - Standard card types are Epic, Milestone, Story, Task, Activity and Bug. Choose **Activity** in the task editor’s type picker; it supports the same dates, assignments, descriptions and relationships as other cards.
@@ -81,7 +81,7 @@ Live task cards can display List, Table, Kanban or Timeline layouts. Each keeps 
 
 The Pen toolbar includes a partial eraser, lasso selection and optional simple shape recognition. Pen and highlighter remember their styles separately within each preset. **More → Board session** offers presenter sharing, opt-in invitations, a local timer and voting on selected objects. Following never starts without the recipient choosing it. Votes and timer state are stored with the board; presenter presence is temporary.
 
-Personal settings can switch between wheel-to-zoom mouse navigation and scroll-to-pan trackpad navigation, and disable single-letter shortcuts. Tab cycles board objects; Alt + Up/Down selects a parent/child; Alt + Shift + arrows resizes by 10 pixels. Existing Shift + corner drag remains axis constrained.
+Settings → You can switch between wheel-to-zoom mouse navigation and scroll-to-pan trackpad navigation, and disable single-letter shortcuts. Tab cycles board objects; Alt + Up/Down selects a parent/child; Alt + Shift + arrows resizes by 10 pixels. Existing Shift + corner drag remains axis constrained.
 
 
 Boards view uses the shared compact project header and fills the remaining window. **Boards** manages canvases. The left toolbar creates objects and opens **Project tasks**; **More** provides live notes, live task views, images, the outline, presentation, frame navigation, canvas templates, exports and history. **Board settings** controls the board name, snapping and appearance. Project settings and New task remain beside the view tabs. Expanding a task card opens the same compact, nonmodal side editor as New task; editing keeps the board camera unchanged and retains subtasks, header actions, comments and version history. **Expand board** hides the surrounding workspace, and **Full screen** also hides browser chrome.
@@ -198,7 +198,7 @@ Practice recovery into a separate directory and an isolated server instance befo
 
 ## Optional accounts and remote access
 
-For single-user use on this computer or a trusted local network, set `AUTH_MODE=local` and `LOCAL_USER_NAME=George` in `.env`, then recreate the service with `docker compose up -d --no-build --force-recreate pencils`. Loopback and private-network connections automatically use George with administrator access, including source connections and background sync. Personal settings shows the name and role; no password or Sign out action is needed in this mode. Existing password accounts remain unchanged. The local identity is defined by these server settings and stops being available if you change the mode or name. Keep its name stable while it owns sources or automations.
+For single-user use on this computer or a trusted local network, set `AUTH_MODE=local` and `LOCAL_USER_NAME=George` in `.env`, then recreate the service with `docker compose up -d --no-build --force-recreate pencils`. Loopback and private-network connections automatically use George with administrator access, including source connections and background sync. Settings shows the name and role; no password or Sign out action is needed in this mode. Existing password accounts remain unchanged. The local identity is defined by these server settings and stops being available if you change the mode or name. Keep its name stable while it owns sources or automations.
 
 Local mode trusts the socket peer address, including Docker bridge/private LAN addresses; it ignores browser-supplied forwarding headers. Public peers still require a password account. Use `AUTH_MODE=required` behind a public reverse proxy, since the proxy itself may connect from a private address.
 
@@ -256,30 +256,6 @@ npm start
 For a production Node installation, run `npm run build` before `NODE_ENV=production npm start`. Docker builds these assets automatically. Production uses content-hashed JavaScript chunks, one minified stylesheet and negotiated Brotli/gzip compression; the HTML is revalidated so updates pick up the new asset names. Board/drawing and Documents controllers load on first use. Keep the previous hashed assets when updating a running Node installation so already-open pages can finish loading their matching chunks. The separate prepared offline drawing shell remains locally available.
 
 ## Backend structure and capacity
-
-### Feature request inbox
-
-Administrators can open **Help → Feature requests** or use **Feature requests** at the bottom of the sidebar. Submit a description, priority and up to five attachments (10 MB per file, 20 MB total). The panel supports file selection, drag and drop, and pasted screenshots. Requests have a searchable status list, progress notes and downloadable attachments.
-
-The vault stores `feature-requests/index.md`, one `feature-requests/fr-<uuid>/request.md` per request, and an `attachments/` subfolder. Requests and their progress survive container updates and restarts. The API owns this queue; avoid editing its frontmatter while a worker is active. Use the UI or API to update status so the index stays current.
-
-For automatic implementation on the existing Linux host:
-
-```bash
-codex login
-codex login status
-npm run requests:install-worker
-```
-
-This installs `pencils-request-worker.service` in the current user's systemd directory and enables it at login. The worker requires Node, Git, Docker Compose, network access and a signed-in Codex CLI. It uses the CLI's configured model and account allowance. It runs outside Docker; no Codex credentials or Docker socket are mounted in the application container. User-service lingering must be enabled separately if it should run after logout.
-
-The worker polls every 15 seconds and checks sign-in every minute. It processes one request at a time in priority/creation order. A scoped secret in `.pencils/feature-worker-key` authorises queue operations only; it does not grant access to project APIs. Set `PENCILS_REQUEST_URL` to a local origin if the default `http://127.0.0.1:${PORT:-3000}` is unsuitable. `PENCILS_CODEX_BIN` can select a CLI executable. The worker reads the existing `.env` for the vault and port, but does not pass provider secrets to child processes.
-
-Code work runs with Codex's `workspace-write` sandbox in `.request-work/`, with network access for research and checks. The worker runs `npm run check`, `npm test` and `npm run build` before applying changes. Concurrent source edits prevent promotion. Successful deployment retains a rollback image and checks `/api/health` for the expected version; failed startup restores the previous container image. Logs and the latest structured result are retained with the request. `Ready to release` means checked work needs attention; only a successful worker deployment is automatically marked `Done`. Pending questions and failures remain visible, and expired worker leases are marked `Needs input` instead of silently rerunning an uncertain change.
-
-Use the inbox's pause button to stop new requests starting, or `systemctl --user stop pencils-request-worker` to stop the process. An active request continues when the queue is merely paused. Inspect the service with `systemctl --user status pencils-request-worker`; `npm run requests:worker -- --once` performs one poll manually. Automatic work is unavailable until the local CLI is signed in and the worker is running.
-
-For future maintenance, the request's Markdown file and progress log are the durable record. Read them before resuming work, preserve attachments, and update the request through the API/UI when implementation, questions, validation or deployment status changes.
 
 The HTTP layer uses Fastify and TypeScript in `server/http/`, with routes grouped by domain. Task, document and board services remain JavaScript in `server/services/`; `server/store.js` owns vault access and transactional writes. `npm run build:server` compiles the HTTP modules, and `npm run typecheck` checks them. Normal installation, development, tests and production builds include the compilation step.
 

@@ -5,6 +5,7 @@
 // cancelled touches and the pen side button never draw; the preferences fit iPad and phone
 // screens in both themes.
 import { test, expect, onDevices, useApp } from "../fixtures.mjs";
+import { openSettingsPage } from "../helpers/menu-controls.mjs";
 
 const card = { id: "note", type: "sticky", x: 220, y: 160, w: 250, h: 180, text: "Move with fingers" };
 const app = useApp(async (store) => {
@@ -235,13 +236,17 @@ onDevices(["ipad"], () => {
     await page.locator(".pen-preferences summary").click();
     await page.locator('[data-drawing-gesture="twoFingerTap"]').selectOption("redo");
     await page.locator(".pen-preferences summary").click();
-    await page.getByRole("button", { name: "Personal settings", exact: true }).click();
-    await expect(page.locator('.personal-dialog [data-drawing-gesture="twoFingerTap"]')).toHaveValue("redo");
-    await page.locator('.personal-dialog [data-drawing-gesture="twoFingerTap"]').selectOption("none");
+    // Since 0.19.31 the former Personal settings are the Settings page's "You" section; its
+    // "Back to project" returns to the board with the pen still chosen.
+    await openSettingsPage(page, "personal");
+    const personal = page.locator("#settings-panel");
+    await expect(personal.locator('[data-drawing-gesture="twoFingerTap"]')).toHaveValue("redo");
+    await personal.locator('[data-drawing-gesture="twoFingerTap"]').selectOption("none");
     await page.locator('[name="personal-theme"][value="dark"]').check();
-    // Since 0.19.1 the Personal settings footer uses a plain Close (was Done).
-    await page.locator('.personal-dialog .dialog-foot [data-action="dialog-close"]').click();
-    await expect(page.locator(".personal-dialog")).toHaveCount(0);
+    await page.locator('[data-action="settings-close"]').click();
+    await expect(page.locator(".settings-navigation")).toHaveCount(0);
+    await page.locator("#canvas.drawing-canvas").waitFor();
+    await expect(page.locator("#pen-tools"), "the pen stays chosen").toBeVisible();
     for (const [width, height] of [[834, 1194], [390, 844]]) {
       await page.setViewportSize({ width, height });
       await page.waitForFunction((width) => innerWidth === width, width);

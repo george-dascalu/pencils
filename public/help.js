@@ -1,7 +1,7 @@
 import { helpArticles, helpArticle } from "./help-content.js";
 import { mainWidth } from "./layout-width.js";
 
-export function helpPageHTML(id, { esc, icon, requests = false }) {
+export function helpPageHTML(id, { esc, icon }) {
   const article = helpArticle(id);
   const content = (html) =>
     html
@@ -11,7 +11,7 @@ export function helpPageHTML(id, { esc, icon, requests = false }) {
         '<div class="help-table" tabindex="0" role="region" aria-label="Reference table">',
       );
   return `<section class="help-page" aria-label="Help wiki">
-    <header class="help-page-heading"><button class="button small" data-action="help-back">${icon("arrow")}Back</button><span>Help centre</span>${requests ? `<button class="button small" data-feature-requests>${icon("comment")}Feature requests</button>` : ""}</header>
+    <header class="help-page-heading"><button class="button small" data-action="help-back">${icon("arrow")}Back</button><span>Help centre</span></header>
     <div class="help-layout">
       <aside class="help-sidebar">
         <label class="field" for="help-search">Search help<input id="help-search" type="search" placeholder="Search guides…" autocomplete="off" aria-controls="help-navigation"></label>

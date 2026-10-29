@@ -84,10 +84,14 @@ for (const [device, width] of [["phone", 390], ["ipad-portrait", 834], ["desktop
       await passive(page, () => mode("Reading"), "Document Reading mode");
       await passive(page, () => mode("Source"), "Document Source after Reading");
       if (drawer) await click(page.locator(".mobile-menu"));
+      // Since 0.19.31 the document bar has no title field: a new document opens the Rename
+      // panel, which leaves the keyboard closed on touch and focuses the name on desktop.
+      const name = page.getByRole("dialog", { name: "Rename document", exact: true }).getByLabel("Document name", { exact: true });
       await passive(page, async () => {
         await click(page.getByRole("button", { name: "New document", exact: true }));
-        await expect(page.locator('[aria-label="Document title"]')).toHaveValue("Untitled document");
+        await expect(name).toHaveValue("Untitled document");
       }, "New document");
+      if (!touch) await focused(name);
     });
   });
 }

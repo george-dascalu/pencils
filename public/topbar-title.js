@@ -1,7 +1,5 @@
-// The header names what is open. With a board or a document open, its name
-// replaces the project's: phones keep the view and project on the second line,
-// and wide desktop headers keep the project as a crumb (Organisation / Project /
-// Board). Every other view names the project.
+// The header names only what is open: the board or document, or else the project.
+// Phones name the view on a second line.
 let labelFor = (view) => view;
 export function installTopbarTitle({ viewLabel }) {
   labelFor = viewLabel;
@@ -27,12 +25,6 @@ export function syncTopbarTitle(state) {
     if (item) heading.title = `${project} / ${item}`;
     else heading.removeAttribute("title");
   }
-  const projectCrumb = crumb.querySelector(".project-crumb");
-  if (projectCrumb) {
-    projectCrumb.textContent = project;
-    projectCrumb.hidden = !item;
-    crumb.querySelector(".project-crumb-separator").hidden = !item;
-  }
   const second = crumb.querySelector(".phone-current-view");
-  if (second) second.textContent = item ? `${view} · ${project}` : view;
+  if (second) second.textContent = view;
 }

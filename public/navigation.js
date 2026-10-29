@@ -45,11 +45,11 @@ export function readLocation(hash = location.hash) {
       frame: project[4] || null,
     };
   }
-  const organisation = /^#organisation\/([\w-]+)\/(home|teams|people)$/.exec(
+  const organisation = /^#organisation\/([\w-]+)\/(home|teams|people|settings)(?:\/([\w-]+))?$/.exec(
     hash,
   );
   if (organisation)
-    return { organisation: organisation[1], page: organisation[2] };
+    return { organisation: organisation[1], page: organisation[2], settingsSection: organisation[3] || null };
   if (hash === "#home") return { page: "home" };
   return null;
 }
@@ -61,7 +61,7 @@ function locationFor(route) {
   if (route.project)
     return `#project/${route.project}/${route.view}${route.view === "documents" && route.document ? `/${route.document}` : route.view === "board" ? (route.gallery ? "/gallery" : route.board ? `/${route.board}` : "") : ""}`;
   return route.organisation
-    ? `#organisation/${route.organisation}/${route.page || "home"}`
+    ? `#organisation/${route.organisation}/${route.page || "home"}${route.page === "settings" && route.settingsSection ? `/${route.settingsSection}` : ""}`
     : "#home";
 }
 const identity = (entry) =>

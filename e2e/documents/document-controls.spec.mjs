@@ -1,5 +1,5 @@
-// Document controls: the view controls sit in the heading above a formatting bar
-// that holds only text controls, Insert groups its elements by category with
+// Document controls: the view controls share the document bar with a formatting
+// toolbar that holds only text controls, Insert groups its elements by category with
 // icons, and Find shows a compact search and replace panel on the right (with
 // regular-expression errors announced). Formatting marks reveal only around the
 // focused or hovered word. Phones keep the search panel inside the screen with
@@ -19,15 +19,21 @@ const find = (page) => page.locator(".cm-search input[name=search]");
 test.describe("desktop", () => {
   test.use({ viewportSize: { width: 1500, height: 1000 } });
 
-  test("view controls sit above a formatting bar of text controls", async ({ page }) => {
+  // Since 0.19.31 the formatting toolbar and the document's controls share one bar (no
+  // separate formatting row): formatting on the left, the view controls after it.
+  test("view controls share one bar with a formatting toolbar of text controls", async ({ page }) => {
     await open(page);
     const positioning = await page.evaluate(() => {
       const box = (s) => document.querySelector(s).getBoundingClientRect().toJSON();
       return { format: box(".document-formatting"), views: box(".document-view-controls"), footer: box(".document-save"), versions: box(".document-heading [data-document-action=versions]"), tools: box(".document-heading [data-document-action=tools]") };
     });
-    expect(positioning.views.y, "Document controls are above the formatting bar").toBeLessThan(positioning.format.y);
+    const middle = (r) => r.y + r.height / 2;
+    expect(Math.abs(middle(positioning.views) - middle(positioning.format)), "Document controls share the formatting bar's row").toBeLessThan(8);
+    expect(positioning.format.x + positioning.format.width, "Formatting comes before the document controls").toBeLessThanOrEqual(positioning.views.x + 1);
     await expect(page.locator(".document-heading .document-view-controls")).toHaveCount(1);
-    await expect(page.locator(".document-controls [data-document-action]:not([data-document-action=insert])"), "Second bar contains only text controls").toHaveCount(0);
+    await expect(page.locator(".document-heading > .document-formatting")).toHaveCount(1);
+    await expect(page.locator("#document-form .document-controls"), "no separate formatting bar remains").toHaveCount(0);
+    await expect(page.locator(".document-formatting [data-document-action]:not([data-document-action=insert])"), "The formatting toolbar contains only text controls").toHaveCount(0);
     expect(positioning.versions.x).toBeLessThan(positioning.tools.x);
     expect(positioning.footer.height <= 24 && positioning.footer.width < 250, JSON.stringify(positioning.footer)).toBe(true);
     await expect(page.locator(".document-modes [data-document-mode]")).toHaveCount(3);
@@ -98,7 +104,8 @@ test.describe("desktop", () => {
       await setTheme(page, theme);
       await click(page, "Find in document");
       await find(page).fill("preview");
-      expect(await axeViolations(page, [".document-controls", ".document-heading", ".cm-search"]), theme).toEqual([]);
+      // Since 0.19.31 the document bar (.document-heading) also holds the formatting controls.
+      expect(await axeViolations(page, [".document-heading", ".cm-search"]), theme).toEqual([]);
     }
   });
 

@@ -36,3 +36,19 @@ export async function axeViolations(page, selectors, tags = ["wcag2a", "wcag2aa"
 }
 
 export const noHorizontalScroll = (page) => page.evaluate(() => document.documentElement.scrollWidth <= innerWidth);
+
+// Since 0.19.31 the document bar has no title field: the open document's name shows in the
+// top bar, and Document tools → Rename changes it.
+export const documentName = (page) => page.locator('.topbar [role="heading"][aria-level="1"]');
+
+// Renames the open document through Document tools → Rename (a new document opens this panel itself).
+export async function renameDocument(page, name) {
+  const panel = page.getByRole("dialog", { name: "Rename document", exact: true });
+  if (!(await panel.isVisible())) {
+    await page.locator('.document-heading [data-document-action="tools"]').click();
+    await page.getByRole("dialog", { name: "Document tools", exact: true }).getByRole("button", { name: "Rename", exact: true }).click();
+  }
+  await panel.getByLabel("Document name", { exact: true }).fill(name);
+  await panel.getByRole("button", { name: "Rename", exact: true }).click();
+  await panel.waitFor({ state: "hidden" });
+}

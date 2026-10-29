@@ -103,7 +103,8 @@ test("Back, Forward and reload restore each view's search and table preferences"
 test("settings, directory pages, home and organisation switches join the history", { tag: "@gate" }, async ({ page }) => {
   const { project, other } = app;
   await start(page, projectRoute("kanban"));
-  await page.locator(".topbar [data-action=project-edit]").click();
+  // Since 0.19.31 the top bar's single Settings button opens the project's General first.
+  await page.locator(".topbar [data-action=settings]").click();
   await at(page, projectRoute("settings/general"));
   await back(page, projectRoute("kanban"));
   await forward(page, projectRoute("settings/general"));

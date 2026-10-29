@@ -5,7 +5,7 @@
 // tools. Live preview hides escaping backslashes away from the cursor and shows
 // dividers.
 import { test, expect, useApp } from "../fixtures.mjs";
-import { noHorizontalScroll, setTheme } from "../helpers/documents.mjs";
+import { documentName, noHorizontalScroll, setTheme } from "../helpers/documents.mjs";
 
 const body = "# A consistent page\n\nFirst paragraph with **bold**, _italic_ and `code`.\n\nSecond paragraph with escaped \\*asterisks\\* and \\[brackets\\].\n\n---\n\n## A section\n\nA paragraph underneath the section heading.\n\n### Smaller heading\n\nMore details.\n\n#### Small heading\n\nLast paragraph.";
 const app = useApp(async (store) => {
@@ -76,7 +76,8 @@ test("full width is remembered across reloads and other documents", async ({ pag
   await form(page).waitFor();
   await expect(toggle(page)).toHaveAttribute("aria-pressed", "true");
   await page.locator(`[data-document-open="${app.other.id}"]`).click();
-  await expect(page.getByLabel("Document title", { exact: true })).toHaveValue(app.other.title);
+  // Since 0.19.31 the open document's name shows in the top bar.
+  await expect(documentName(page)).toHaveText(app.other.title);
   await expect(form(page)).toHaveAttribute("data-document-width", "full");
 });
 

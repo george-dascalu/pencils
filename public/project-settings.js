@@ -4,6 +4,13 @@ import { projectTeamControls, projectPeople } from "./teams.js";
 
 export const settingsPages = [
   [
+    "personal",
+    "Appearance & workspace",
+    "people",
+    "You",
+    "Theme, font, density and board controls in this browser, plus search, recovery and sign-in.",
+  ],
+  [
     "general",
     "General",
     "settings",
@@ -73,7 +80,17 @@ export const settingsPages = [
     "Maintenance",
     "Review project history, archive this project or move it to Trash.",
   ],
+  [
+    "organisation",
+    "Organisation",
+    "folder",
+    "Organisation",
+    "Name, description and colour of this organisation.",
+  ],
 ];
+// Without an open project, Settings shows only your own and the organisation's sections.
+const workspaceSections = new Set(["personal", "organisation"]);
+const pagesFor = (project) => (project ? settingsPages : settingsPages.filter(([id]) => workspaceSections.has(id)));
 export const settingsPage = (id) =>
   settingsPages.find((p) => p[0] === id) || settingsPages[0];
 
@@ -121,7 +138,7 @@ if (typeof document !== "undefined") document.addEventListener("keydown", (event
   }
 });
 
-export function projectSettings(ctx, { sources, automations }) {
+export function projectSettings(ctx, { sources, automations, personal, organisationEditor }) {
   const {
     state,
     api,
@@ -135,10 +152,12 @@ export function projectSettings(ctx, { sources, automations }) {
   } = ctx;
   let sequence = 0;
   const page = () => settingsPage(state.settingsSection);
-  const current = (section) =>
-    state.project && state.view === "settings" && page()[0] === section;
+  const showing = () => (state.project ? state.view === "settings" : state.directoryPage === "settings");
+  const current = (section) => showing() && page()[0] === section;
   const href = (section, detail = "") =>
-    `#project/${state.project.id}/settings/${section}${detail ? `/${detail}` : ""}`;
+    state.project
+      ? `#project/${state.project.id}/settings/${section}${detail ? `/${detail}` : ""}`
+      : `#organisation/${state.organisation?.id}/settings/${section}`;
   const link = (section, title, detail = "") =>
     `<a class="button small" href="${href(section, detail)}" data-settings-section="${section}" data-settings-detail="${esc(detail)}">${title}</a>`;
   function clean() {
@@ -146,7 +165,7 @@ export function projectSettings(ctx, { sources, automations }) {
     state.dirty = false;
   }
   function canLeave() {
-    if (state.view !== "settings") return true;
+    if (!showing()) return true;
     if (state.settingsSaving) {
       toast("Wait for these settings to finish saving.");
       return false;
@@ -157,8 +176,21 @@ export function projectSettings(ctx, { sources, automations }) {
     clean();
     return true;
   }
-  function open(section = "general", detail = "", { force = false } = {}) {
-    if (!state.project || (!force && !ctx.canNavigate())) return false;
+  // One Settings page: the project's sections when a project is open, plus You and Organisation.
+  function open(section, detail = "", { force = false } = {}) {
+    if (!force && !ctx.canNavigate()) return false;
+    section ||= state.project ? (state.view === "settings" ? state.settingsSection : "general") : "personal";
+    if (!state.project) {
+      if (!state.organisation) return false;
+      clean();
+      state.helpArticle = null;
+      state.directoryPage = "settings";
+      state.settingsSection = workspaceSections.has(section) ? section : "personal";
+      state.settingsDetail = "";
+      renderApp();
+      document.querySelector("#settings-page-title")?.focus({ preventScroll: true });
+      return true;
+    }
     if (state.view !== "settings") state.settingsReturn = state.helpArticle
       ? ctx.storage.get(`view:${state.project.id}`, "list") : state.view;
     state.helpArticle = null;
@@ -228,7 +260,7 @@ export function projectSettings(ctx, { sources, automations }) {
     return `<form id="settings-import" data-settings-form><div class="dialog-body"><p>Each selected Markdown file creates one task. Your original files are kept. To keep an Obsidian folder in sync, use ${link("sources", "Data sources & sync")} instead.</p><label class="field">Markdown notes<input type="file" name="notes" accept=".md,text/markdown" multiple required></label><p class="field-hint">Up to 200 files per import. Review the selection before creating tasks.</p><div data-import-preview aria-live="polite"></div><div class="form-error hidden" role="alert"></div></div><div class="dialog-foot"><button type="submit" class="button primary" disabled>Import selected notes</button></div></form>`;
   }
   function advanced() {
-    return `<div class="settings-page-body"><section class="settings-action-row"><div><h3>Version history</h3><p>Review saved project settings and restore an earlier version.</p></div><button class="button" data-feature="project-history">Version history</button></section><section class="settings-action-row"><div><h3>${state.project.archived ? "Restore archived project" : "Archive project"}</h3><p>Keep tasks and boards while hiding the project from active planning. Restore it at any time.</p></div><button class="button" data-feature="project-archive">${state.project.archived ? "Unarchive project" : "Archive project"}</button></section><section class="settings-action-row settings-danger"><div><h3>Move project to Trash</h3><p>Moves this project and all its tasks and boards to Trash. Recover it from Personal settings → Recovery &amp; backups.</p></div><button class="button danger" data-feature="project-delete">Move to Trash</button></section></div>`;
+    return `<div class="settings-page-body"><section class="settings-action-row"><div><h3>Version history</h3><p>Review saved project settings and restore an earlier version.</p></div><button class="button" data-feature="project-history">Version history</button></section><section class="settings-action-row"><div><h3>${state.project.archived ? "Restore archived project" : "Archive project"}</h3><p>Keep tasks and boards while hiding the project from active planning. Restore it at any time.</p></div><button class="button" data-feature="project-archive">${state.project.archived ? "Unarchive project" : "Archive project"}</button></section><section class="settings-action-row settings-danger"><div><h3>Move project to Trash</h3><p>Moves this project and all its tasks and boards to Trash. Recover it from Settings → Recovery &amp; backups.</p></div><button class="button danger" data-feature="project-delete">Move to Trash</button></section></div>`;
   }
   async function diagnostics(host, valid) {
     const data = await api("/diagnostics");
@@ -271,8 +303,9 @@ export function projectSettings(ctx, { sources, automations }) {
   }
   async function render() {
     const serial = ++sequence,
-      projectId = state.project.id;
-    const [section, title, , , description] = page();
+      projectId = state.project?.id,
+      pages = pagesFor(state.project);
+    const [section, title, , , description] = pages.find(([id]) => id === state.settingsSection) || pages[0];
     state.settingsSection = section;
     const detail = state.settingsDetail || "";
     const valid = () =>
@@ -284,7 +317,7 @@ export function projectSettings(ctx, { sources, automations }) {
     document.querySelector("#view-toolbar").innerHTML = "";
     const content = document.querySelector("#view-content");
     content.className = "content project-settings-page project-settings-layout";
-    content.innerHTML = `<aside class="settings-navigation"><h1>Project settings</h1><p>${esc(state.project.title)}</p><nav aria-label="Project settings sections">${settingsPages
+    content.innerHTML = `<aside class="settings-navigation"><h1>Settings</h1><p>${esc(state.project?.title || state.organisation?.title || "")}</p><nav aria-label="Settings sections">${pages
       .map(([id, name, glyph, category]) => {
         const label =
           group !== category
@@ -295,11 +328,21 @@ export function projectSettings(ctx, { sources, automations }) {
       })
       .join(
         "",
-      )}</nav><label class="field settings-mobile-nav">Settings section<select id="settings-section-select">${settingsPages.map(([id, name]) => `<option value="${id}" ${id === section ? "selected" : ""}>${name}</option>`).join("")}</select></label><button type="button" class="button settings-return" data-action="settings-close">${icon("arrow-left")}Back to project</button></aside><section class="settings-content"><header class="settings-section-heading">${detail ? `${link(section, "← Back to " + title)}` : ""}<h2 id="settings-page-title" tabindex="-1">${esc(title)}</h2><p>${description}</p></header><div id="settings-panel" aria-live="polite"><p class="settings-loading" role="status">Loading ${esc(title.toLowerCase())}…</p></div></section>`;
+      )}</nav><label class="field settings-mobile-nav">Settings section<select id="settings-section-select">${pages.map(([id, name]) => `<option value="${id}" ${id === section ? "selected" : ""}>${name}</option>`).join("")}</select></label><button type="button" class="button settings-return" data-action="settings-close">${icon("arrow-left")}${state.project ? "Back to project" : "Back"}</button></aside><section class="settings-content"><header class="settings-section-heading">${detail ? `${link(section, "← Back to " + title)}` : ""}<h2 id="settings-page-title" tabindex="-1">${esc(title)}</h2><p>${description}</p></header><div id="settings-panel" aria-live="polite"><p class="settings-loading" role="status">Loading ${esc(title.toLowerCase())}…</p></div></section>`;
     const host = document.querySelector("#settings-panel");
     host.addEventListener("input", markDirty);
     host.addEventListener("change", markDirty);
     try {
+      if (section === "personal") {
+        host.innerHTML = personal().html();
+        return;
+      }
+      if (section === "organisation") {
+        host.innerHTML = ctx.organisationFormHTML();
+        // People and teams are edited here too, as in the Teams and People pages.
+        organisationEditor(host.querySelector("form"));
+        return;
+      }
       if (section === "sources") {
         await sources.renderPage(detail, valid);
         return;

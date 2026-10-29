@@ -1,8 +1,9 @@
 // Compact navigation (AGENTS.md, Consistency): the header's project navigation is icon-only
 // with labels and tooltips, New stays a labelled menu, and the header groups never overlap,
-// with the sidebar open or collapsed, from desktop down to phones. In Documents the title row
-// holds the document actions; Reading hides the text toolbar and keeps search; Live preview
-// brings back the formatting bar under the title; Insert, the outline and Page versions open
+// with the sidebar open or collapsed, from desktop down to phones. In Documents one bar holds
+// the formatting toolbar and the document actions (since 0.19.31, with no title field and no
+// separate formatting row); Reading hides the text toolbar and keeps search; Live preview
+// brings the formatting back into that bar; Insert, the outline and Page versions open
 // from compact controls. Phones also keep the formatting bar on one scrolling line and ask
 // before deleting (merged from the phone document checks of test/mobile-layout.mjs).
 import { test, expect, useApp } from "../fixtures.mjs";
@@ -59,20 +60,28 @@ for (const [device, width] of sizes) {
             expect(a.right <= b.left + 1 || b.right <= a.left + 1 || a.bottom <= b.top + 1 || b.bottom <= a.top + 1, `${width}px: header groups do not overlap`).toBe(true);
           }
         }
-        await expect(page.locator('.document-controls [data-document-mode], .document-controls [data-document-action]:not([data-document-action="insert"])')).toHaveCount(0);
+        // Since 0.19.31 there is no separate formatting row: the document bar holds both.
+        await expect(page.locator("#document-form .document-controls")).toHaveCount(0);
+        await expect(page.locator("#document-form .document-heading .document-formatting")).toHaveCount(1);
         if (width > 600) await expect(page.locator(".document-formatting"), "Tablet and desktop retain the text toolbar").toBeVisible();
         const heading = await page.locator(".document-heading").boundingBox();
+        const fits = (box) => box.x >= heading.x && box.x + box.width <= heading.x + heading.width + 1;
+        // Formatting buttons scroll sideways inside their toolbar, so the toolbar itself must fit.
+        for (const scroller of await page.locator(".document-heading .rich-toolbar-shell:visible").all())
+          expect(fits(await scroller.boundingBox()), "The formatting toolbar fits the document bar").toBe(true);
         for (const control of await page.locator(".document-heading button:visible, .document-heading input:visible").all()) {
           const box = await control.boundingBox();
-          expect(box.x >= heading.x && box.x + box.width <= heading.x + heading.width + 1, "Document controls fit their container").toBe(true);
-          expect(box.y >= heading.y && box.y + box.height <= heading.y + heading.height + 1, "Document actions share the title row").toBe(true);
+          const name = (await control.getAttribute("aria-label")) || (await control.textContent()).trim();
+          if (!(await control.evaluate((el) => !!el.closest(".rich-toolbar"))))
+            expect(fits(box), `Document controls fit their container: ${name} ${JSON.stringify(box)} in ${JSON.stringify(heading)}`).toBe(true);
+          expect(box.y >= heading.y && box.y + box.height <= heading.y + heading.height + 1, `Document actions share the document bar: ${name}`).toBe(true);
         }
         const picker = page.locator(".document-mode-picker");
         if (await picker.isVisible()) {
           await click(picker);
           await click(page.getByRole("button", { name: "Reading", exact: true }));
         } else await click(page.getByRole("button", { name: "Reading", exact: true }));
-        await expect(page.locator(".document-controls"), "Reading hides the text toolbar").toBeHidden();
+        await expect(page.locator(".document-formatting"), "Reading hides the text toolbar").toBeHidden();
         await click(page.getByRole("button", { name: "Find in document", exact: true }));
         await page.getByRole("searchbox", { name: "Find in document", exact: true }).fill("toolbar");
         await expect(page.locator("#document-form")).toHaveAttribute("data-document-mode", "reading");
@@ -82,7 +91,9 @@ for (const [device, width] of sizes) {
         const formatting = page.locator(".document-formatting");
         if (!(await formatting.isVisible())) await click(page.getByRole("button", { name: "Show formatting", exact: true }));
         await expect(formatting).toBeVisible();
-        expect((await formatting.boundingBox()).y).toBeGreaterThanOrEqual(heading.y + heading.height);
+        // The formatting comes back inside the document bar, not in a row of its own.
+        const bar = await page.locator(".document-heading").boundingBox(), format = await formatting.boundingBox();
+        expect(format.y >= bar.y && format.y + format.height <= bar.y + bar.height + 1, `formatting sits in the document bar ${JSON.stringify({ bar, format })}`).toBe(true);
         if (device === "phone") {
           expect(await formatting.evaluate((el) => getComputedStyle(el).flexWrap), "the phone formatting bar stays on one line").toBe("nowrap");
           await click(page.getByRole("button", { name: "Hide formatting", exact: true }));

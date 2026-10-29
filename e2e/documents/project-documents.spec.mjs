@@ -5,7 +5,7 @@
 // (view picker and Document tools for narrow editors).
 import fs from "node:fs/promises";
 import { test, expect, onDevices, useApp } from "../fixtures.mjs";
-import { noHorizontalScroll, setTheme } from "../helpers/documents.mjs";
+import { documentName, noHorizontalScroll, renameDocument, setTheme } from "../helpers/documents.mjs";
 
 const app = useApp(async (store) => {
   const project = await store.createProject({ title: "Documents studio" });
@@ -16,7 +16,8 @@ const app = useApp(async (store) => {
 });
 const snapshot = () => app.store.snapshot(app.project.id);
 const getDocument = (id) => app.store.getDocument(app.project.id, id);
-const title = (page) => page.getByLabel("Document title", { exact: true });
+// Since 0.19.31 the document's name shows in the top bar instead of a title field.
+const title = documentName;
 const rich = (page) => page.getByRole("textbox", { name: "Document content", exact: true });
 // A label unique to this test run, for documents a test creates.
 const tag = () => `${test.info().testId}-${test.info().repeatEachIndex}-${test.info().retry}`;
@@ -72,18 +73,21 @@ function documentTests() {
     await page.getByLabel("Find a document").fill("Decisions");
     await expect(page.locator("[data-document-open]")).toHaveCount(1);
     await page.locator(`[data-document-open="${app.second.id}"]`).click();
-    await expect(title(page)).toHaveValue("Meeting notes");
+    await expect(title(page)).toHaveText("Meeting notes");
     await page.goBack();
-    await expect(title(page)).toHaveValue("Project brief");
+    await expect(title(page)).toHaveText("Project brief");
   });
 
   test("a new document saves its title, rich text and Markdown, exports, and reloads", async ({ page }) => {
     await open(page);
     await browse(page);
     await page.getByRole("button", { name: "New document", exact: true }).first().click();
-    await expect(title(page)).toHaveValue("Untitled document");
+    await expect(title(page)).toHaveText("Untitled document");
+    // Since 0.19.31 a new document opens the Rename panel with its name ready to change.
+    await expect(page.getByRole("dialog", { name: "Rename document", exact: true }).getByLabel("Document name", { exact: true })).toHaveValue("Untitled document");
     const name = `Notes ${tag()}`;
-    await title(page).fill(name);
+    await renameDocument(page, name);
+    await expect(title(page)).toHaveText(name);
     await rich(page).fill("First paragraph\nSecond paragraph");
     await expect.poll(async () => (await snapshot()).documents.some((d) => d.title === name && d.body.includes("Second paragraph"))).toBe(true);
     const id = (await snapshot()).documents.find((d) => d.title === name).id;
@@ -104,7 +108,7 @@ function documentTests() {
     expect(await fs.readFile(await (await download).path(), "utf8")).toBe(markdown);
     await page.reload();
     await page.locator("#document-form").waitFor();
-    await expect(title(page)).toHaveValue(name);
+    await expect(title(page)).toHaveText(name);
   });
 
   test("edits made offline are kept across a reload and saved once back online", async ({ page }) => {

@@ -44,10 +44,11 @@ onDevices(["phone", "small"], () => test("the drawer fits one screen with the sw
   assert.ok(new Set(tiles.map((t) => t.top)).size <= 4, `views share rows ${JSON.stringify(tiles.map((t) => t.top))}`);
   assert.ok(tiles.every((t) => t.h >= 44 && t.w >= 44), "44px tap targets");
   assert.deepEqual(tiles.filter((t) => t.current).map((t) => t.view), ["list"]);
-  // Settings in one row.
+  // Settings in one row. Since 0.19.31 one Settings button replaces Project settings and
+  // Personal settings ("You"), and Feature requests are gone, leaving Settings and Help.
   const row = await page.locator(".sidebar .phone-drawer-utilities :is(button, [data-personal])").evaluateAll((els) => els.filter((el) => el.getClientRects().length).map((el) => [el.getAttribute("aria-label") || el.textContent.trim(), Math.round(el.getBoundingClientRect().top)]));
-  assert.ok(row.length >= 3 && new Set(row.map(([, top]) => top)).size === 1, `settings share one row ${JSON.stringify(row)}`);
-  assert.deepEqual(row.slice(0, 3).map(([name]) => name), ["Project settings", "Help & guides", "Personal settings"]);
+  assert.ok(row.length === 2 && new Set(row.map(([, top]) => top)).size === 1, `settings share one row ${JSON.stringify(row)}`);
+  assert.deepEqual(row.map(([name]) => name), ["Settings", "Help & guides"]);
 }));
 
 onDevices(["phone"], () => test("drawer text uses the shared touch sizes and one left edge", async ({ page }) => {

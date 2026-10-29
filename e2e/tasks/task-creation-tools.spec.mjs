@@ -6,6 +6,7 @@
 import { test, expect, useApp } from "../fixtures.mjs";
 import { newCard } from "../helpers/new-card.mjs";
 import { legacySubtasks } from "../helpers/task-editor-helpers.mjs";
+import { openSettingsPage } from "../helpers/menu-controls.mjs";
 
 const app = useApp(async (store) => {
   const project = await store.createProject({ title: "Creation tools", key: "TOOLS" });
@@ -78,8 +79,8 @@ test("the hierarchy editor refuses rules that existing cards break, fits a phone
   const parent = await app.store.createTask(app.project.id, { title: "Hierarchy parent", type: "task" });
   await app.store.createTask(app.project.id, { title: "Hierarchy bug", type: "bug", parent: parent.id });
   await openList(page);
-  await page.locator(".top-actions [data-action=project-edit]").click();
-  await page.locator('.settings-navigation [data-settings-section="hierarchy"]').click();
+  // Since 0.19.31 the top bar's one Settings button opens the Settings page (was the project gear).
+  await openSettingsPage(page, "hierarchy");
   await page.locator("[data-hierarchy-mode]").selectOption("enforced");
   await page.locator(".hierarchy-matrix > summary").click();
   await page.locator('[data-hierarchy-parent="task"][data-hierarchy-child="bug"]').uncheck();
