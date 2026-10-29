@@ -1,6 +1,7 @@
 // Search queries in the style of Obsidian's Omnisearch: words match as prefixes, "a phrase"
 // matches exactly, -word excludes, #tag matches tags and in:cards|docs|boards limits the kinds.
 // Terms are rebuilt from letters and digits only, so nothing typed can reach FTS5 syntax.
+import { documentTags } from "../public/document-properties.js";
 const words = (text) => String(text).match(/[\p{L}\p{N}]+/gu) || [];
 const KINDS = { c: "card", d: "doc", b: "board" };
 
@@ -57,7 +58,6 @@ export function rankResults(rows, parsed, now = Date.now()) {
 
 // What the search index holds for each kind of record: weighted columns (title, headings, tags,
 // body) and the details a result shows.
-const tagsIn = (body) => [...String(body || "").matchAll(/(?:^|\s)#([\p{L}\p{N}_/-]+)/gu)].map((m) => m[1]);
 export const cardEntry = (t) => ({
   id: t.id, info: { title: t.title, key: t.key, status: t.status, type: t.type, archived: !!t.archived, updated: t.updated },
   title: [...new Set([t.key, t.title, ...(t.aliases || [])].filter(Boolean))].join(" "), headings: "", tags: (t.tags || []).join(" "),
@@ -66,7 +66,7 @@ export const cardEntry = (t) => ({
 export const documentEntry = (d) => ({
   id: d.id, info: { title: d.title, updated: d.updated },
   title: d.title, headings: [...String(d.body || "").matchAll(/^#{1,6}[ \t]+(.+)$/gm)].map((m) => m[1]).join("\n"),
-  tags: [...(Array.isArray(d.tags) ? d.tags : []), ...tagsIn(d.body)].join(" "), body: d.body || "",
+  tags: documentTags(d).join(" "), body: d.body || "",
 });
 export const boardEntry = (b) => ({
   id: b.id, info: { title: b.title, archived: !!b.archived, updated: b.updated },

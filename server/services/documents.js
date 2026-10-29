@@ -2,6 +2,16 @@ import { documentFolder } from "../document-folders.js";
 import { randomUUID } from "node:crypto";
 import { Problem } from "../problem.js";
 import { now, validId, title, body } from "../values.js";
+import { checkProperties, checkTags, documentProperties } from "../../public/document-properties.js";
+
+// Property and tag problems are the caller's to fix.
+const checked = (check, value) => {
+  try {
+    return check(value);
+  } catch (error) {
+    throw new Problem(400, error.message);
+  }
+};
 
 export const documentsMethods = {
   validateDocument(data) {
@@ -48,11 +58,35 @@ export const documentsMethods = {
       const parent = await this.read(this.file(project, "project"));
       data.folder = documentFolder(input.folder, parent.data.document_folders);
     }
+    // `document_properties` ({ set, remove, tags }) changes only the properties it names, and the
+    // tags when sent. It has a name of its own because saves of the text send the whole record
+    // back, frontmatter included.
+    if (input.document_properties) {
+      const { set = {}, remove = [], tags } = input.document_properties;
+      if (!set || typeof set !== "object" || Array.isArray(set) || !Array.isArray(remove) || remove.length > 30 || (tags !== undefined && !Array.isArray(tags)))
+        throw new Problem(400, "Send properties to set, names to remove and a list of tags.");
+      const next = checked(checkProperties, set);
+      const editable = new Set(documentProperties(current.data).map(([name]) => name));
+      for (const name of Object.keys(next)) {
+        const other = Object.keys(current.data).find((key) => key !== name && key.toLowerCase() === name.toLowerCase());
+        if (other) throw new Problem(409, `“${name}” already exists as “${other}”.`);
+        if (Object.hasOwn(current.data, name) && !editable.has(name))
+          throw new Problem(409, `“${name}” holds a value Pencils can't edit; change it in Obsidian.`);
+      }
+      for (const name of remove) if (editable.has(name)) data[name] = undefined;
+      Object.assign(data, next);
+      if (tags !== undefined) {
+        const list = checked(checkTags, tags);
+        data.tags = list.length ? list : undefined;
+      }
+    }
     const markdown = "body" in input ? body(input.body) : current.body;
+    const meta = (record) => JSON.stringify([documentProperties(record), record.tags ?? []]);
     if (
       data.title === current.data.title &&
       markdown === current.body &&
-      (data.folder || null) === (current.data.folder || null)
+      (data.folder || null) === (current.data.folder || null) &&
+      meta(data) === meta(current.data)
     )
       return this.public(current, file);
     data.version =

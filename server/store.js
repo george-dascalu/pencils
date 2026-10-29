@@ -370,7 +370,9 @@ export class Store {
     for (const [key, value] of Object.entries(
       file.endsWith(".canvas") ? {} : data,
     )) {
-      if (
+      // An undefined value removes the key (a document property taken away).
+      if (value === undefined) doc.delete(key);
+      else if (
         !existing ||
         JSON.stringify(existing.data[key]) !== JSON.stringify(value)
       )

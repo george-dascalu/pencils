@@ -2,6 +2,12 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.20.5 — 2026-10-29
+
+### Added
+
+- Document properties and tags, kept as frontmatter that Obsidian reads. **Properties**, at the top of a document, lists them with their tags. Change a value in place, add one as text, a number, a date, a checkbox or a list, or remove it. Values Pencils can't edit, such as nested ones from Obsidian, are left as they are. Type `#tag` in **Find a document** to list documents with that tag, whether it's set as a property or written in the text. Search finds them too.
+
 ## 0.20.4 — 2026-10-29
 
 ### Added

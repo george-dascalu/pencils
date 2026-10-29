@@ -461,3 +461,19 @@ span.document-list-callout { display: block; }
 .document-table-layout > .button:last-child { border-radius: 0 var(--control-radius, 6px) var(--control-radius, 6px) 0; margin-inline-start: -1px; }
 .document-table-layout > .button[aria-pressed="true"] { background: var(--green); border-color: var(--green); color: var(--paper); }
 
+
+/* Properties and tags at the top of a document (document-properties.js). */
+/* Lined up with the text column, at its readable width. */
+.document-properties { width: calc(100% - 2 * var(--document-page-padding)); max-width: calc(var(--document-page-width) - 2 * var(--document-page-padding)); margin: 8px auto 0; border: 1px solid var(--line); border-radius: var(--field-radius, 8px); background: var(--surface); }
+.document-properties > summary { display: flex; align-items: center; gap: 8px; min-height: var(--control-height); padding: 0 10px; cursor: pointer; list-style: none; color: var(--muted); }
+.document-properties > summary::-webkit-details-marker { display: none; }
+.document-properties > summary > .icon { transition: transform .15s; transform: rotate(-90deg); }
+.document-properties[open] > summary > .icon { transform: none; }
+.document-tag-chips { display: flex; flex-wrap: wrap; gap: 4px; min-width: 0; }
+.document-tag { padding: 0 8px; border: 1px solid var(--line); border-radius: 999px; color: var(--green); font-size: 12px; line-height: 20px; }
+.document-property-list { display: grid; gap: 6px; padding: 4px 10px 8px; }
+.document-property { display: grid; grid-template-columns: clamp(72px, 28%, 160px) minmax(0, 1fr) var(--control-height); align-items: center; gap: 8px; }
+.document-property > input[type="checkbox"] { justify-self: start; }
+.document-property-name { overflow: hidden; color: var(--muted); text-overflow: ellipsis; white-space: nowrap; }
+.document-property > input:not([type="checkbox"]) { width: 100%; min-width: 0; }
+.document-properties > [data-property-add] { margin: 0 10px 10px; }

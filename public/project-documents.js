@@ -9,6 +9,7 @@ import { priorityLabel } from "./task-priority.js";
 import { parseTaskQuery, runTaskQuery } from "./document-task-query.js";
 import { plainMentions, linkMentions, unlinkedMentions } from "./document-mentions.js";
 import { expandTemplate, templatePrompts, templateDocuments, inTemplatesFolder, formatDate } from "./document-templates.js";
+import { documentProperties, checkTags, matchesDocument, frontmatterTags } from "./document-properties.js";
 import { taskColorAttributes } from "./task-colors.js";
 import { positionPopover } from "./popover-position.js";
 import { richToolbar } from "./canvas-rich-text.js";
@@ -58,7 +59,7 @@ export function projectDocuments(ctx) {
   };
   function explorer() {
     const query = (state.documentSearch || "").trim().toLocaleLowerCase();
-    const documents = all().filter(d => !query || `${d.title}\n${d.body}`.toLocaleLowerCase().includes(query))
+    const documents = all().filter(d => !query || matchesDocument(d, query))
       .sort((a, b) => a.title.localeCompare(b.title, undefined, { numeric: true, sensitivity: "base" }) || a.id.localeCompare(b.id));
     const documentItem = d => `<li><button type="button" draggable="true" class="document-link ${d.id === state.selectedDocument ? "active" : ""}" data-document-open="${esc(d.id)}" ${d.id === state.selectedDocument ? 'aria-current="page"' : ""} title="${esc([folderName(d.folder), d.title].filter(Boolean).join(" / "))}">${icon("file")}<span>${esc(d.title)}</span></button></li>`;
     if (query) return documents.map(documentItem).join("") || '<li class="document-explorer-empty">No matching documents.</li>';
@@ -403,6 +404,86 @@ export function projectDocuments(ctx) {
   // becomes a card linked to this document, and the text becomes a mention of it.
   // "```tasks" blocks: the project's matching cards as rows (type, key, title, assignee, status,
   // priority), with a box that completes the card. Blocks re-render whenever saves change.
+  // Properties and tags (document-properties.js): frontmatter Obsidian reads, edited at the top of
+  // the document. Each change saves on its own, after any pending text, naming only what it changes.
+  const splitList = (text) => text.split(",").map(t => t.trim()).filter(Boolean);
+  function propertyInput(name, value, type) {
+    const label = `aria-label="${esc(name)}"`;
+    if (type === "checkbox") return `<input type="checkbox" class="document-checkbox" ${label} ${value ? "checked" : ""}>`;
+    if (type === "number") return `<input type="number" step="any" ${label} value="${esc(String(value))}">`;
+    if (type === "date") return `<input type="date" ${label} value="${esc(value)}">`;
+    if (type === "list") return `<input type="text" ${label} value="${esc(value.join(", "))}" placeholder="Values, separated by commas">`;
+    return `<input type="text" ${label} value="${esc(value)}" maxlength="1000">`;
+  }
+  const propertiesSummary = (doc) => {
+    const count = documentProperties(doc).length;
+    return `${icon("chevron")}<span>Properties</span>${count ? `<span class="count">${count}</span>` : ""}<span class="document-tag-chips">${frontmatterTags(doc).map(tag => `<span class="document-tag">#${esc(tag)}</span>`).join("")}</span>`;
+  };
+  function propertiesHTML(doc) {
+    const tags = frontmatterTags(doc);
+    return `<details class="document-properties" data-tags="${esc(JSON.stringify(tags))}" ${storage.get("document-properties-open", false) ? "open" : ""}><summary>${propertiesSummary(doc)}</summary>
+      <div class="document-property-list">${documentProperties(doc).map(([name, value, type]) => `<div class="document-property" data-property="${esc(name)}" data-type="${type}" data-value="${esc(JSON.stringify(value))}"><span class="document-property-name" title="${esc(name)}">${esc(name)}</span>${propertyInput(name, value, type)}<button type="button" class="icon-button" data-property-remove aria-label="Remove ${esc(name)}" title="Remove ${esc(name)}">${icon("close")}</button></div>`).join("")}
+        <div class="document-property"><span class="document-property-name">Tags</span><input type="text" name="document-tags" aria-label="Tags" value="${esc(tags.join(", "))}" placeholder="Tags, separated by commas"></div></div>
+      <button type="button" class="button small" data-property-add>${icon("plus")}Add property</button></details>`;
+  }
+  const showProperties = (doc) => { const box = form?.querySelector(".document-properties"); if (box) box.outerHTML = propertiesHTML(doc); };
+  // `check(latest)` names a problem (such as a value changed elsewhere since it was shown); the
+  // saved values are then shown instead of being overwritten.
+  let propertySaving = Promise.resolve();
+  function saveProperties(change, check = () => null) {
+    const run = propertySaving.then(async () => {
+      const pid = state.project.id, id = current.id;
+      await flushDocument(id);
+      const url = endpoint(pid, id), latest = await api(url);
+      const keep = (record) => {
+        if (state.project?.id !== pid) return false;
+        state.documents = all().map(d => d.id === id ? record : d);
+        if (current?.id === id) current = record;
+        return current?.id === id;
+      };
+      const problem = check(latest);
+      if (problem) { if (keep(latest)) showProperties(latest); throw new Error(problem); }
+      const record = await api(url, { method: "PATCH", body: { revision: latest.revision, document_properties: change } });
+      if (keep(record)) form.querySelector(".document-properties summary").innerHTML = propertiesSummary(record);
+      syncChanged();
+      return record;
+    });
+    propertySaving = run.catch(() => {});
+    return run;
+  }
+  const changedElsewhere = "This changed in another window or in Obsidian; showing the saved version.";
+  async function propertyChanged(input) {
+    const box = form.querySelector(".document-properties");
+    if (input.name === "document-tags") {
+      const record = await saveProperties({ tags: checkTags(splitList(input.value)) }, latest => JSON.stringify(frontmatterTags(latest)) === box.dataset.tags ? null : changedElsewhere);
+      box.dataset.tags = JSON.stringify(frontmatterTags(record));
+      return;
+    }
+    const row = input.closest("[data-property]");
+    if (!row) return;
+    const { property: name, type } = row.dataset;
+    if (["number", "date"].includes(type) && !input.value) throw new Error(`Fill in “${name}”, or remove it.`);
+    const value = type === "checkbox" ? input.checked : type === "number" ? Number(input.value) : type === "list" ? splitList(input.value) : input.value;
+    const record = await saveProperties({ set: { [name]: value } }, latest => JSON.stringify(latest[name]) === row.dataset.value ? null : changedElsewhere);
+    row.dataset.value = JSON.stringify(record[name]);
+  }
+  function addPropertyPanel(button) {
+    const types = [["text", "Text"], ["number", "Number"], ["date", "Date"], ["checkbox", "Checkbox"], ["list", "List"]];
+    const box = showPanel(button, "Add property", `<form><label class="field">Name<input name="name" required maxlength="60" autocomplete="off"></label><label class="field">Type<select name="type">${types.map(([value, label]) => `<option value="${value}">${label}</option>`).join("")}</select></label><p class="form-error" role="alert" hidden></p><div class="document-panel-actions"><button type="submit" class="button primary">Add</button></div></form>`);
+    box.querySelector("form").addEventListener("submit", async event => {
+      event.preventDefault();
+      const data = new FormData(event.target), name = data.get("name").trim();
+      const value = { text: "", number: 0, date: formatDate(new Date(), "YYYY-MM-DD"), checkbox: false, list: [] }[data.get("type")];
+      try {
+        const record = await saveProperties({ set: { [name]: value } }, latest => Object.keys(latest).some(key => key.toLowerCase() === name.toLowerCase()) ? `“${name}” already exists.` : null);
+        showProperties(record);
+        closePanel();
+      } catch (error) {
+        const problem = box.querySelector(".form-error");
+        problem.textContent = error.message; problem.hidden = false;
+      }
+    });
+  }
   // In the personal space, queries read the cards of every project you can open (loaded with each document).
   let everywhere = null, everywhereRequest = 0; // { tasks, configs: Map(project ID → workflow config) }
   async function loadEverywhere() {
@@ -580,7 +661,7 @@ export function projectDocuments(ctx) {
       host.innerHTML = `
       <aside id="document-explorer" class="document-explorer" aria-label="Document explorer">
         <header data-document-folder-drop="" title="Drop here to move to Documents"><button type="button" class="icon-button sidebar-documents-back" data-drawer-back aria-label="Back to the menu" title="Back to the menu">${icon("chevron")}</button><h2><button type="button" class="document-root" data-document-root>Documents <span class="count" id="document-count">${all().length}</span></button></h2><div class="document-explorer-actions"><button type="button" class="icon-button" data-document-action="create" aria-label="New document" title="New document">${icon("plus")}</button><button type="button" class="icon-button" data-document-action="new-folder" aria-label="New folder" title="New folder">${icon("folder")}</button></div></header>
-        <label class="document-search search">${icon("search")}<input type="search" id="document-search" aria-label="Find a document" placeholder="Find a document…" value="${esc(state.documentSearch || "")}"></label>
+        <label class="document-search search">${icon("search")}<input type="search" id="document-search" aria-label="Find a document" placeholder="Find a document or #tag…" value="${esc(state.documentSearch || "")}"></label>
         <nav aria-label="Project documents"><ul id="document-list">${explorer()}</ul></nav>
         <footer><button type="button" class="button small" data-document-action="import">${icon("plus")}Import Markdown</button><input type="file" id="document-import" accept=".md,.markdown,text/markdown,text/plain" multiple hidden></footer>
       </aside>
@@ -609,6 +690,7 @@ export function projectDocuments(ctx) {
             <details class="board-menu document-delete document-file-action"><summary aria-label="Delete document" title="Delete document">${icon("trash")}</summary><div class="board-menu-panel"><p>Move this document to Trash?</p><button type="button" class="button small danger" data-document-action="delete">Move to Trash</button></div></details>
           </header>
           ${(() => { const cards = (state.tasks || []).filter((t) => (t.documents || []).includes(doc.id)); return cards.length ? `<div class="document-linked-cards"><span class="caption">Linked cards</span>${cards.map((t) => `<button type="button" class="button soft" data-action="task-open" data-id="${esc(t.id)}" title="Open ${esc(t.title)}">${icon(t.type || "task")}<span class="task-relationship-key">${esc(t.key || t.id)}</span><span class="task-relationship-title">${esc(t.title)}</span></button>`).join("")}</div>` : ""; })()}
+          ${propertiesHTML(doc)}
           <input type="hidden" name="title" value="${esc(doc.title)}">
           <div class="document-save-problem" data-document-save-problem hidden><span data-document-save role="status" aria-live="polite"></span><button type="button" class="button small" data-feature="recovery" data-document-recovery hidden>Review pending save</button></div>
           <div class="document-writing"><div class="document-codemirror"></div><article class="document-reading" tabindex="0" aria-label="Document reading view" hidden></article><textarea name="body" hidden>${esc(doc.body || "")}</textarea></div>
@@ -638,6 +720,19 @@ export function projectDocuments(ctx) {
     if (pendingCaret?.id === doc.id) { editor.jump(pendingCaret.at); pendingCaret = null; }
     if (state.project.personal) loadEverywhere().catch(error => toast(error.message, true));
     readingSearch = documentReadingSearch({ form, content: form.querySelector(".document-reading"), icon });
+    // The Properties section is replaced when it refreshes, so its events are handled here.
+    form.addEventListener("toggle", event => { if (event.target.matches?.(".document-properties")) storage.set("document-properties-open", event.target.open); }, true);
+    form.addEventListener("change", event => {
+      if (event.target.matches(".document-properties input")) propertyChanged(event.target).catch(error => toast(error.message, true));
+    });
+    form.addEventListener("click", event => {
+      const remove = event.target.closest(".document-properties [data-property-remove]"), add = event.target.closest(".document-properties [data-property-add]");
+      if (remove) {
+        const row = remove.closest("[data-property]");
+        saveProperties({ remove: [row.dataset.property] }).then(() => row.remove(), error => toast(error.message, true));
+      }
+      if (add) addPropertyPanel(add);
+    });
     installToolbarScroll(form.querySelector(".document-formatting .rich-toolbar-shell"));
     form.addEventListener("input", changed);
     form.addEventListener("submit", e => { e.preventDefault(); editor.flush(); });
