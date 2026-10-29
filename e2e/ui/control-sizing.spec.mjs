@@ -123,8 +123,8 @@ onDevices(Object.keys(sizes), (device) => {
     await page.locator("#task-form").waitFor();
     await check(page, "#task-form", `${width} task editor`, height);
     await page.locator("#task-form [data-task-picker=priority] .task-picker-trigger").click();
-    await page.locator(".task-picker-popover:not([hidden])").waitFor();
-    await check(page, ".task-picker-popover", `${width} priority options`, height);
+    await page.locator("[data-task-picker] .task-picker-popover:not([hidden])").waitFor();
+    await check(page, "[data-task-picker] .task-picker-popover", `${width} priority options`, height);
     await page.keyboard.press("Escape");
   });
 

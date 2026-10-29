@@ -779,7 +779,6 @@ body.task-reordering, body.task-reordering * { cursor: grabbing !important; user
 .task-relationships-heading h3 { margin-right: auto; }
 .task-relationship-sort { flex: none; }
 .task-relationship-sort > .selection-popover { position: fixed; inset: auto; }
-.task-relationship-sort .field, .task-relationship-sort select { width: 100%; }
 /* Fixed metadata tracks keep columns aligned across every relationship row. */
 .task-relationship-metadata { display: grid; grid-template-columns: var(--list-field-height) var(--list-field-status-width) var(--list-field-priority-width); align-items: center; flex-shrink: 0; gap: 8px; font-size: var(--type-meta); }
 .task-relationship-assignee { display: flex; align-items: center; min-width: 0; }

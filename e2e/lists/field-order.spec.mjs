@@ -109,7 +109,7 @@ onDevices(["desktop", "ipad", "phone"], () => {
 
 test("the relationship sort menu lists assignee, status, priority", async ({ page }) => {
   await openCard(page);
-  const options = await page.locator("[data-relationship-sort] option").allTextContents();
+  const options = await page.locator(".task-relationship-sort [role=option]").allTextContents();
   expect(options.slice(1)).toEqual(["Assignee", "Status", "Priority"]);
 });
 

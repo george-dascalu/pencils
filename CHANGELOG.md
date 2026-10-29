@@ -2,6 +2,12 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.19.41 — 2026-10-29
+
+### Changed
+
+- The card editor's relationship sort button lists its options straight away (Relationship order, Assignee, Status, Priority, with a check on the current one) instead of a **Sort by** dropdown inside the menu; arrow keys move between them. **Reverse order** stays underneath.
+
 ## 0.19.40 — 2026-10-29
 
 ### Changed

@@ -77,14 +77,24 @@ test("related rows show assignee, status and priority, and sorting never changes
   await expect(meta.getByRole("img", { name: "Priority: High" })).toHaveAttribute("title", "High");
   await expect(meta.locator('[data-task-color="assignee"],[data-task-color="priority"],[data-task-color="status"]')).toHaveCount(3);
   await section(page).locator(".task-relationship-sort > summary").click();
-  const sortBy = section(page).getByLabel("Sort relationships by", { exact: true });
-  await sortBy.selectOption("assignee");
+  // The options show straight away (29 Oct), without a second control to open.
+  const sortBy = (name) => section(page).locator(".task-relationship-sort").getByRole("option", { name, exact: true }).click();
+  await expect(section(page).locator(".task-relationship-sort").getByRole("option")).toHaveText(["Relationship order", "Assignee", "Status", "Priority"]);
+  await expect(section(page).getByRole("option", { name: "Relationship order" })).toHaveAttribute("aria-selected", "true");
+  await sortBy("Assignee");
+  await expect(section(page).getByRole("option", { name: "Assignee" })).toHaveAttribute("aria-selected", "true");
   await expect.poll(order).toEqual([urgent.id, related.id, lowest.id]);
-  await sortBy.selectOption("priority");
+  await sortBy("Priority");
   await expect.poll(order).toEqual([urgent.id, related.id, lowest.id]);
   await section(page).getByRole("button", { name: "Reverse relationship sort" }).click();
   await expect.poll(order).toEqual([lowest.id, related.id, urgent.id]);
-  await sortBy.selectOption("status");
+  await sortBy("Priority");
+  await expect(section(page).getByRole("button", { name: "Reverse relationship sort" }), "Choosing the current sort keeps Reverse order").toHaveAttribute("aria-pressed", "true");
+  await section(page).getByRole("option", { name: "Priority" }).press("ArrowDown");
+  await expect(section(page).getByRole("option", { name: "Relationship order" })).toBeFocused();
+  await page.keyboard.press("End");
+  await expect(section(page).getByRole("option", { name: "Priority" })).toBeFocused();
+  await sortBy("Status");
   await expect.poll(order).toEqual([lowest.id, related.id, urgent.id]);
   expect((await app.store.snapshot(app.project.id)).tasks, "Sorting never changes task data").toEqual(beforeSort);
   await row(page, "related", urgent).click();

@@ -25,7 +25,7 @@ export function taskRelationshipsEditor(ctx, form, { flush, changed }) {
   const host = document.createElement("section");
   host.className = "task-relationships";
   host.setAttribute("aria-label", "Relationships");
-  host.innerHTML = `<div class="task-relationships-heading"><h3>Relationships</h3><details class="selection-menu task-relationship-sort"><summary class="icon-button" aria-label="Sort relationships" title="Sort relationships">${icon("sort")}</summary><div class="selection-popover"><label class="field">Sort by<select aria-label="Sort relationships by" data-relationship-sort><option value="">Relationship order</option><option value="assignee">Assignee</option><option value="status">Status</option><option value="priority">Priority</option></select></label><button type="button" class="button" data-relationship-sort-direction aria-label="Reverse relationship sort">${icon("sort")}Reverse order</button></div></details><button type="button" class="icon-button" data-relationship-toggle aria-expanded="false" aria-label="Add relationship" title="Add relationship">${icon("plus")}</button></div>
+  host.innerHTML = `<div class="task-relationships-heading"><h3>Relationships</h3><details class="selection-menu task-relationship-sort"><summary class="icon-button" aria-label="Sort relationships" title="Sort relationships">${icon("sort")}</summary><div class="selection-popover task-picker-popover"><h3 class="popover-title">Sort by</h3><div role="listbox" aria-label="Sort relationships by">${[["", "Relationship order"], ["assignee", "Assignee"], ["status", "Status"], ["priority", "Priority"]].map(([value, label]) => `<button type="button" role="option" data-relationship-sort="${value}" aria-selected="false"><span>${label}</span>${icon("check")}</button>`).join("")}</div><button type="button" class="button" data-relationship-sort-direction aria-label="Reverse relationship sort">${icon("sort")}Reverse order</button></div></details><button type="button" class="icon-button" data-relationship-toggle aria-expanded="false" aria-label="Add relationship" title="Add relationship">${icon("plus")}</button></div>
     <div data-relationship-list></div>
     <div class="selection-popover task-relationship-picker" id="task-relationship-picker" data-relationship-picker popover="manual" role="dialog" aria-label="Add relationship" aria-modal="false" hidden>
       <div class="task-relationship-controls"><select aria-label="Relationship type">${relationshipTypes.map(([value, label]) => `<option value="${value}">${label}</option>`).join("")}</select><input type="search" aria-label="Find a task to link" placeholder="Find by ID or title…"><button type="button" class="icon-button" data-relationship-close aria-label="Close relationship picker">${icon("close")}</button></div>
@@ -38,8 +38,8 @@ export function taskRelationshipsEditor(ctx, form, { flush, changed }) {
   const toggle = host.querySelector("[data-relationship-toggle]");
   toggle.setAttribute("aria-controls", picker.id);
   toggle.setAttribute("aria-haspopup", "dialog");
-  const sort = host.querySelector("[data-relationship-sort]");
-  sort.value = sortField;
+  // The sort options show as soon as the menu opens; choosing one keeps it open for Reverse order.
+  const sortOptions = host.querySelectorAll("[data-relationship-sort]");
   const direction = host.querySelector("[data-relationship-sort-direction]");
   const sortMenu = host.querySelector(".task-relationship-sort");
   const positionSort = () => {
@@ -135,6 +135,7 @@ export function taskRelationshipsEditor(ctx, form, { flush, changed }) {
     toggle.disabled = busy;
     type.disabled = busy;
     search.disabled = busy;
+    for (const option of sortOptions) option.setAttribute("aria-selected", String(option.dataset.relationshipSort === sortField));
     direction.disabled = !sortField;
     direction.setAttribute("aria-pressed", String(sortDirection === -1));
     direction.title = sortDirection === -1 ? "Reverse order · click for default order" : "Default order · click to reverse";
@@ -233,6 +234,15 @@ export function taskRelationshipsEditor(ctx, form, { flush, changed }) {
   }
   host.addEventListener("click", async (event) => {
     const button = event.target.closest("button");
+    // Sorting only reorders the list, so it works while a link is being saved.
+    if (button?.dataset.relationshipSort !== undefined) {
+      if (button.dataset.relationshipSort === sortField) return;
+      sortField = button.dataset.relationshipSort;
+      sortDirection = 1;
+      ctx.storage.set(preferenceKey, { field: sortField, direction: sortDirection });
+      refresh();
+      return;
+    }
     if (!button || button.disabled || busy) return;
     if (button === direction) {
       sortDirection *= -1;
@@ -316,16 +326,15 @@ export function taskRelationshipsEditor(ctx, form, { flush, changed }) {
     event.stopPropagation();
     if (event.target === type) refresh();
   });
-  sort.addEventListener("change", event => {
-    event.stopPropagation();
-    sortField = sort.value;
-    sortDirection = 1;
-    ctx.storage.set(preferenceKey, { field: sortField, direction: sortDirection });
-    refresh();
-  });
   const keydown = (event) => {
     if (event.key === "Escape" && sortMenu.open) {
       event.preventDefault(); event.stopPropagation(); sortMenu.open = false; sortMenu.firstElementChild.focus(); return;
+    }
+    if (["ArrowDown", "ArrowUp", "Home", "End"].includes(event.key) && event.target.matches("[data-relationship-sort]")) {
+      event.preventDefault();
+      const options = [...sortOptions], index = options.indexOf(event.target);
+      options[event.key === "Home" ? 0 : event.key === "End" ? options.length - 1 : (index + (event.key === "ArrowUp" ? -1 : 1) + options.length) % options.length].focus();
+      return;
     }
     if (picker.hidden) return;
     if (event.key === "Escape") {

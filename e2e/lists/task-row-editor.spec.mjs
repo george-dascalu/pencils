@@ -63,7 +63,7 @@ async function phoneTaskFields(page, taskRow) {
     const picker = page.locator(`#task-form [data-task-picker="${name}"] .task-picker-trigger`);
     const custom = await picker.count();
     await (custom ? picker : page.locator(`#task-form [name="${name}"]`)).click();
-    const menu = page.locator(custom ? ".task-picker-popover:not([hidden])" : "#shared-select-menu");
+    const menu = page.locator(custom ? "[data-task-picker] .task-picker-popover:not([hidden])" : "#shared-select-menu");
     await menu.waitFor();
     const bounds = await menu.boundingBox();
     expect(bounds.x >= 0 && bounds.x + bounds.width <= width + 1, `${name} menu fits ${JSON.stringify(bounds)}`).toBe(true);

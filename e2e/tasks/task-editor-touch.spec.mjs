@@ -101,7 +101,7 @@ const reviewTests = (device, phone) => {
     await openCard(page, device, app.review);
     await relationships(page).waitFor();
     await tapOrClick(device, relationships(page).locator(".task-relationship-sort > summary"));
-    await relationships(page).getByLabel("Sort relationships by", { exact: true }).selectOption("assignee");
+    await tapOrClick(device, relationships(page).locator(".task-relationship-sort").getByRole("option", { name: "Assignee", exact: true }));
     await tapOrClick(device, relationships(page).getByRole("button", { name: "Reverse relationship sort" }));
     await page.keyboard.press("Escape");
     await expect(relationships(page).locator(".task-relationship-sort")).not.toHaveAttribute("open");

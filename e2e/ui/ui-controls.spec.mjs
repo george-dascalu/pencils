@@ -76,11 +76,11 @@ test("the task picker supports type-ahead, 16px icons and a turning caret", asyn
   await page.locator('.task-row [data-action="task-open"]:visible').first().click();
   await page.locator("#task-form").waitFor();
   await page.locator("[data-task-picker=priority] .task-picker-trigger").click();
-  await page.locator(".task-picker-popover:not([hidden])").waitFor();
+  await page.locator("[data-task-picker] .task-picker-popover:not([hidden])").waitFor();
   await page.keyboard.type("h");
   const focused = await page.evaluate(() => document.activeElement?.textContent.trim());
   expect(focused, `type-ahead focused "${focused}"`).toMatch(/^High/);
-  const iconSize = await page.locator('.task-picker-popover:not([hidden]) [role="option"] .icon').first().evaluate((el) => el.getBoundingClientRect().width);
+  const iconSize = await page.locator('[data-task-picker] .task-picker-popover:not([hidden]) [role="option"] .icon').first().evaluate((el) => el.getBoundingClientRect().width);
   expect(Math.round(iconSize)).toBe(16);
   // Icon-only pickers carry no dropdown arrow at all (PEN-4, 0.19.2).
   await expect(page.locator(".task-picker.icon-only .task-picker-trigger > .icon"), "icon-only pickers show no caret").toHaveCount(0);
