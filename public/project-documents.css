@@ -341,6 +341,9 @@ span.document-list-callout { display: block; }
 .document-outline ul ul { padding-inline-start: 20px; }
 .document-outline [hidden] { display: none; }
 .document-outline-row { display: flex; align-items: center; min-width: 0; }
+.document-mention-row { display: flex; align-items: center; gap: 6px; min-width: 0; }
+.document-mention-row .document-panel-item { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+.document-mention-context { display: block; }
 .document-outline-row .icon-button, .document-outline-spacer { flex: 0 0 var(--control-height); width: var(--control-height); }
 .document-outline-row .document-panel-item { flex: 1; min-width: 0; overflow-wrap: anywhere; }
 .document-outline [aria-expanded="false"] .icon { transform: rotate(-90deg); }

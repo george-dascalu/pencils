@@ -5,6 +5,7 @@ import { documentReadingSearch } from "./document-reading-search.js";
 import { documentMarkdown } from "./document-markdown.js";
 import { documentHeadings, documentOutline, documentStats, documentReference, resolveDocument, resolveCard, obsidianDocumentURI } from "./document-model.js";
 import { statusLabel } from "./workflow-model.js";
+import { plainMentions, linkMentions, unlinkedMentions } from "./document-mentions.js";
 import { taskColorAttributes } from "./task-colors.js";
 import { positionPopover } from "./popover-position.js";
 import { richToolbar } from "./canvas-rich-text.js";
@@ -334,6 +335,11 @@ export function projectDocuments(ctx) {
   }
   // "Card from text": the selection, or the current line without its list or heading marker,
   // becomes a card linked to this document, and the text becomes a mention of it.
+  // A few words either side of a mention, to show what Link will change.
+  const mentionContext = (body, { index, length }) => {
+    const start = Math.max(0, index - 30), end = Math.min(body.length, index + length + 30);
+    return `${start ? "…" : ""}${body.slice(start, end).replace(/\s+/g, " ").trim()}${end < body.length ? "…" : ""}`;
+  };
   let makingCard = false;
   async function makeCard() {
     if (makingCard) return;
@@ -656,8 +662,9 @@ export function projectDocuments(ctx) {
         outline.id = "document-outline-panel";
         button.setAttribute("aria-expanded", "true");
       } else if (action === "tools") {
+        const unlinked = unlinkedMentions(all(), current.title, current.id);
         const backlinks = all().filter(d => d.id !== current.id && [...(d.body || "").matchAll(/\[\[([^\]\n]+)\]\]|\[[^\]]*\]\(([^)\s]+)\)/g)].some(m => resolveDocument(m[1] || m[2], all())?.id === current.id));
-        showPanel(button, "Document tools", `<button type="button" class="document-panel-item" data-document-action="rename">${icon("pencil")}Rename</button>${!form.querySelector('.document-heading [data-document-action="width"]').getClientRects().length ? `<button type="button" class="document-panel-item" data-document-action="outline">${icon("tree")}Document outline</button><button type="button" class="document-panel-item" data-document-action="width" aria-pressed="${documentWidth === "full"}">${icon("width-full")}${documentWidth === "full" ? "Use page width" : "Use full width"}</button>` : ""}<button type="button" class="document-panel-item" data-document-action="obsidian">${icon("external")}Open in Obsidian</button><button type="button" class="document-panel-item" data-document-action="move">${icon("folder")}Move to folder</button><button type="button" class="document-panel-item" data-document-action="versions">${icon("clock")}Page versions</button><button type="button" class="document-panel-item" data-document-action="obsidian-settings">${icon("settings")}Obsidian settings</button><button type="button" class="document-panel-item" data-document-action="export">${icon("download")}Export Markdown</button><button type="button" class="document-panel-item" data-document-format="undo">${icon("undo")}Undo</button><button type="button" class="document-panel-item" data-document-format="redo">${icon("redo")}Redo</button>${!form.querySelector(".document-delete").getClientRects().length ? `<button type="button" class="document-panel-item danger" data-document-action="confirm-delete">${icon("trash")}Delete document</button>` : ""}<h3>Backlinks (${backlinks.length})</h3>${backlinks.map(d => `<button type="button" class="document-panel-item" data-document-open="${esc(d.id)}">${icon("file")}${esc(d.title)}</button>`).join("") || "<p>No documents link here yet.</p>"}`);
+        showPanel(button, "Document tools", `<button type="button" class="document-panel-item" data-document-action="rename">${icon("pencil")}Rename</button>${!form.querySelector('.document-heading [data-document-action="width"]').getClientRects().length ? `<button type="button" class="document-panel-item" data-document-action="outline">${icon("tree")}Document outline</button><button type="button" class="document-panel-item" data-document-action="width" aria-pressed="${documentWidth === "full"}">${icon("width-full")}${documentWidth === "full" ? "Use page width" : "Use full width"}</button>` : ""}<button type="button" class="document-panel-item" data-document-action="obsidian">${icon("external")}Open in Obsidian</button><button type="button" class="document-panel-item" data-document-action="move">${icon("folder")}Move to folder</button><button type="button" class="document-panel-item" data-document-action="versions">${icon("clock")}Page versions</button><button type="button" class="document-panel-item" data-document-action="obsidian-settings">${icon("settings")}Obsidian settings</button><button type="button" class="document-panel-item" data-document-action="export">${icon("download")}Export Markdown</button><button type="button" class="document-panel-item" data-document-format="undo">${icon("undo")}Undo</button><button type="button" class="document-panel-item" data-document-format="redo">${icon("redo")}Redo</button>${!form.querySelector(".document-delete").getClientRects().length ? `<button type="button" class="document-panel-item danger" data-document-action="confirm-delete">${icon("trash")}Delete document</button>` : ""}<h3>Backlinks (${backlinks.length})</h3>${backlinks.map(d => `<button type="button" class="document-panel-item" data-document-open="${esc(d.id)}">${icon("file")}${esc(d.title)}</button>`).join("") || "<p>No documents link here yet.</p>"}<h3>Unlinked mentions (${unlinked.length})</h3>${unlinked.map(({ document: d, mentions }) => `<div class="document-mention-row"><button type="button" class="document-panel-item" data-document-open="${esc(d.id)}" title="${mentions.length} mention${mentions.length === 1 ? "" : "s"}">${icon("file")}<span>${esc(d.title)}<span class="field-hint document-mention-context">${esc(mentionContext(d.body || "", mentions[0]))}</span></span></button><button type="button" class="button small" data-document-action="link-mentions" data-document-id="${esc(d.id)}" aria-label="Link mentions in ${esc(d.title)}">Link</button></div>`).join("") || "<p>No other document names this one without a link.</p>"}`);
       } else if (action === "rename") {
         renamePanel(form.querySelector('[data-document-action="tools"]'));
       } else if (action === "confirm-delete") {
@@ -668,6 +675,20 @@ export function projectDocuments(ctx) {
 
       } else if (action === "attach") { closePanel(); form.querySelector("#document-attachment").click(); }
       else if (action === "card") { closePanel(); await makeCard(); }
+      else if (action === "link-mentions") {
+        // Turns every plain mention of this document in the other one into a link, saved
+        // against that document's latest version.
+        const id = button.dataset.documentId, pid = project, self = current;
+        if (id && id !== self.id) {
+          await flushDocument(id);
+          const url = endpoint(pid, id), latest = await api(url);
+          const body = linkMentions(latest.body || "", plainMentions(latest.body || "", self.title), documentReference(self));
+          const record = await api(url, { method: "PATCH", body: { revision: latest.revision, body } });
+          if (state.project?.id === pid) state.documents = all().map(d => d.id === id ? record : d);
+          closePanel(true);
+          toast(`Linked the mentions in ${record.title}.`);
+        }
+      }
       else if (action === "browse") {
         // The document list is in the main sidebar: open the phone drawer on it,
         // or show a collapsed desktop sidebar, then offer the search field.

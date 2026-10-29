@@ -1,5 +1,6 @@
 import { positionPopover } from "./popover-position.js";
 import { focusOnOpen } from "./open-focus.js";
+import { cardMentions } from "./document-mentions.js";
 
 // Documents linked from a card. Links live on the task record (`documents`);
 // the document view lists the cards that point at it.
@@ -10,7 +11,7 @@ export function taskDocumentsEditor(ctx, form, { flush }) {
   host.className = "task-documents";
   host.setAttribute("aria-label", "Documents");
   host.innerHTML = `<div class="task-relationships-heading"><h3>Documents</h3><button type="button" class="icon-button" data-document-link-toggle aria-label="Link a document" title="Link a document" aria-haspopup="dialog" aria-expanded="false">${icon("plus")}</button></div>
-    <div data-document-list></div>
+    <div data-document-list></div><div class="task-document-mentions" data-document-mentions hidden></div>
     <div class="selection-popover task-relationship-picker" id="task-document-picker" popover="manual" role="dialog" aria-label="Link a document" hidden>
       <div class="task-relationship-controls"><input type="search" aria-label="Find a document" placeholder="Find a document…"><button type="button" class="icon-button" data-document-link-close aria-label="Close">${icon("close")}</button></div>
       <div class="task-relationship-options" data-document-options></div>
@@ -21,7 +22,7 @@ export function taskDocumentsEditor(ctx, form, { flush }) {
   toggle.setAttribute("aria-controls", picker.id);
   const search = picker.querySelector("input");
   const status = host.querySelector("[data-document-link-status]");
-  let disposed = false;
+  let disposed = false, mentionKey = "", mentionHTML = "";
   const active = () => !disposed && form.isConnected && state.project?.id === project;
   const linked = () => [...form.querySelectorAll('input[name="documents"]')].map((input) => input.value);
   const documents = () => state.documents || [];
@@ -37,6 +38,19 @@ export function taskDocumentsEditor(ctx, form, { flush }) {
     host.querySelector("[data-document-list]").innerHTML = ids.length
       ? ids.map((id) => `<div class="task-relationship-row"><button type="button" class="task-relationship-link" data-document-open="${esc(id)}" title="Open ${esc(title(id))}">${icon("file")}<span class="task-relationship-title">${esc(title(id))}</span></button><button type="button" class="icon-button" data-document-unlink="${esc(id)}" aria-label="Remove ${esc(title(id))}" title="Remove">${icon("close")}</button></div>`).join("")
       : '<p class="field-hint">No linked documents.</p>';
+    // Documents that mention this card by link or by its key, apart from the linked ones.
+    // Scanning every document is skipped while nothing it depends on has changed.
+    const task = form.dataset.id && (state.tasks || []).find((t) => t.id === form.dataset.id);
+    const key = task ? [task.key, ids.join(), documents().map((d) => d.revision || d.id).join()].join("|") : "";
+    if (key !== mentionKey) {
+      mentionKey = key;
+      const mentions = task ? cardMentions(task, documents()).filter(({ document: d }) => !ids.includes(d.id))
+        .sort((a, b) => a.document.title.localeCompare(b.document.title, undefined, { numeric: true, sensitivity: "base" })) : [];
+      mentionHTML = mentions.length ? `<p class="caption">Mentioned in</p>${mentions.map(({ document: d, linked }) => `<div class="task-relationship-row"><button type="button" class="task-relationship-link" data-document-open="${esc(d.id)}" title="Open ${esc(d.title)}">${icon("file")}<span class="task-relationship-title">${esc(d.title)}</span>${linked ? "" : '<span class="field-hint">Not linked</span>'}</button></div>`).join("")}` : "";
+      const list = host.querySelector("[data-document-mentions]");
+      list.hidden = !mentionHTML;
+      list.innerHTML = mentionHTML;
+    }
     if (!picker.hidden) {
       const query = search.value.trim().toLowerCase();
       const matches = documents().filter((d) => !ids.includes(d.id) && (d.title || "").toLowerCase().includes(query)).slice(0, 40);

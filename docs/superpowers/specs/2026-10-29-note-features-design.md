@@ -77,6 +77,16 @@ Decisions (owner, 29 Oct): captures land in a chosen project tagged `inbox`; Tod
 ### 14. Document tabs and split view (owner request, 29 Oct; desktop and iPad)
 - Open documents as tabs in the Documents view and show two side by side, split vertically or horizontally, each with its own editor and mode; phones keep one document at a time.
 
+### 15. One field box coloured by priority (owner request, 29 Oct)
+- Assignee, status and priority sit together in one bordered box wherever they appear together (List/Tree rows, phone summaries, relationship rows, card editor, board and Kanban cards); the box's border takes the priority's colour. The separate per-field borders go; AGENTS.md's field rule changes to match.
+- Priority colours become a project setting (shared colour picker), stored in project.md and validated on the server; today's colours (`public/task-colors.js`) are the defaults.
+
+### 16. Change fields from phone rows (owner request, 29 Oct)
+- On phones, tapping the assignee, status or priority in a List or Tree row opens that field's picker in a small panel and saves the choice, without opening the card editor; tapping elsewhere on the row still opens the card.
+
+### 17. No Info button where details always show (owner request, 29 Oct)
+- In the card editor's Info / History / Comments group, the Info button shows only where it switches panes (phones); on iPad and desktop, where the details are always visible, the group holds History and Comments.
+
 ## Out of scope (for later)
 Natural-language dates, Day Planner time blocks, weekly notes, `.base` export, client-side search index, arbitrary template scripts.
 

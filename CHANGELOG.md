@@ -2,6 +2,12 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.20.0 — 2026-10-29
+
+### Added
+
+- Unlinked mentions, as in Obsidian: **Document tools** lists the other documents that name this one in plain text, and **Link** turns those mentions into links that keep their wording. A card's **Documents** section also lists the documents that mention its key, marking those that don't link it.
+
 ## 0.19.44 — 2026-10-29
 
 ### Added
