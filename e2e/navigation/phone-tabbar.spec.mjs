@@ -2,14 +2,18 @@
 // bottom tab bar, the top bar's view tabs in a floating, rounded bar; icons since 0.19.34. Tasks and
 // Planning reopen their last layout; since 0.19.37 tapping the open tab again shows the layouts in
 // a tray above the bar. The drawer keeps the organisation, projects, teams, the document list,
-// Settings and Help, without view tiles.
+// Settings and Help, without view tiles. A Search button follows the tabs after a divider (29 Oct).
 import { test, expect, onDevices, useApp } from "../fixtures.mjs";
 
 const app = useApp(async (store) => {
   const project = await store.createProject({ title: "Tab bar", key: "TB" });
   for (let i = 0; i < 30; i++) await store.createTask(project.id, { title: `Task ${i}` });
   const doc = await store.createDocument(project.id, { title: "Notes", body: "# Notes\n\nText." });
-  return { project, doc };
+  const roadmap = await store.createDocument(project.id, { title: "Roadmap plan", body: "Plans" });
+  await store.createDocument(project.id, { title: "Meeting", body: "We agreed the roadmap." });
+  const sketches = await store.createBoard(project.id, { title: "Roadmap sketches" });
+  await store.createTask(project.id, { title: "Roadmap review" });
+  return { project, doc, roadmap, sketches };
 });
 const bar = (page) => page.locator(".topbar .tabs");
 const tab = (page, view) => bar(page).locator(`[data-view="${view}"]`);
@@ -26,7 +30,7 @@ onDevices(["phone", "small"], () => test("five icon tabs float at the bottom in 
   expect(box.y + box.height, `${device}: detached from the bottom edge`).toBeLessThan(height);
   expect(box.x > 0 && box.x + box.width < width, `${device}: detached from the sides`).toBe(true);
   expect(parseFloat(await bar(page).evaluate((el) => getComputedStyle(el).borderTopLeftRadius))).toBeGreaterThan(8);
-  expect(await bar(page).locator(".tab").evaluateAll((els) => els.map((el) => el.getAttribute("aria-label")))).toEqual(["Overview", "Documents", "Planning", "Tasks", "Boards"]);
+  expect(await bar(page).locator(".tab").evaluateAll((els) => els.map((el) => el.getAttribute("aria-label")))).toEqual(["Overview", "Documents", "Planning", "Tasks", "Boards", "Search"]);
   for (const t of await bar(page).locator(".tab").all()) {
     expect((await t.boundingBox()).height).toBeGreaterThanOrEqual(44);
     await expect(t.locator(".icon"), "icons only").toBeVisible();
@@ -100,6 +104,29 @@ onDevices(["phone", "small"], () => test("tapping the open Tasks or Planning tab
   await page.locator('.main[data-layout-view="timeline"]').waitFor();
 }));
 
+onDevices(["phone", "small"], () => test("Search sits after a divider and finds documents, boards and cards", async ({ page, device }) => {
+  await open(page);
+  const search = bar(page).getByRole("button", { name: "Search", exact: true });
+  const [boards, divider, button] = await Promise.all([tab(page, "board").boundingBox(), bar(page).locator(".tabs-divider").boundingBox(), search.boundingBox()]);
+  expect(boards.x + boards.width <= divider.x && divider.x + divider.width <= button.x, `${device}: Boards, divider, Search`).toBe(true);
+  expect(divider.height, "the divider is a visible line").toBeGreaterThan(10);
+  expect(Math.abs(button.width - boards.width), "Search is as wide as a tab").toBeLessThanOrEqual(1);
+  const find = async (name) => {
+    await bar(page).getByRole("button", { name: "Search", exact: true }).click();
+    await page.locator("#global-search-input").fill("roadmap");
+    await expect(page.locator(".search-result", { hasText: "Meeting" }), "documents match on their text too").toBeVisible();
+    await page.locator(".search-result", { hasText: name }).click();
+  };
+  await find("Roadmap plan");
+  await expect(page).toHaveURL(new RegExp(`/documents/${app.roadmap.id}$`));
+  await open(page);
+  await find("Roadmap sketches");
+  await expect(page).toHaveURL(new RegExp(`/board/${app.sketches.id}$`));
+  await open(page);
+  await find("Roadmap review");
+  await expect(page.locator("#task-form [name=title]")).toHaveValue("Roadmap review");
+}));
+
 onDevices(["phone"], () => test("the bar steps aside while typing", async ({ page }) => {
   await open(page);
   await expect(bar(page)).toBeVisible();
@@ -133,4 +160,5 @@ onDevices(["ipad", "desktop"], () => test("wider screens keep the view tabs in t
   await open(page);
   const box = await bar(page).boundingBox();
   expect(box.y).toBeLessThan(80);
+  await expect(bar(page).getByRole("button", { name: "Search", exact: true }), "Search is a phone bar button; wider screens use Ctrl/⌘ K").toBeHidden();
 }));

@@ -45,7 +45,7 @@ for (const [device, width] of sizes) {
         await nextFrame(page);
         expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
         if (width > 600) {
-          const tabs = page.locator(".topbar .tabs .tab");
+          const tabs = page.locator(".topbar .tabs .tab:visible");
           await expect(tabs).toHaveCount(5);
           for (const tab of await tabs.all()) {
             expect((await tab.textContent()).trim(), "Navigation is icon-only").toBe("");

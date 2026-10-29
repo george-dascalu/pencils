@@ -2,6 +2,12 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.19.42 — 2026-10-29
+
+### Added
+
+- Phones have a **Search** button at the end of the bottom bar, after a divider. It opens search, which now lists the open project's documents and boards as well as tasks from every project and commands.
+
 ## 0.19.41 — 2026-10-29
 
 ### Changed

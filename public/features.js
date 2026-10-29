@@ -611,7 +611,7 @@ export function installFeatures(ctx) {
   }
   async function searchDialog() {
     showDialog(
-      `<dialog class="dialog wide-dialog">${dialogHead("Search and commands")}<div class="dialog-body"><label class="field">Search<input id="global-search-input" type="search" placeholder="Tasks, views or commands…" autofocus></label><div id="command-results"></div><div id="global-search-results"></div></div><div class="dialog-foot"><button class="button" data-action="dialog-close">Close</button></div></dialog>`,
+      `<dialog class="dialog wide-dialog">${dialogHead("Search and commands")}<div class="dialog-body"><label class="field">Search<input id="global-search-input" type="search" placeholder="Tasks, documents, boards or commands…" autofocus></label><div id="command-results"></div><div id="global-search-results"></div></div><div class="dialog-foot"><button class="button" data-action="dialog-close">Close</button></div></dialog>`,
       "search",
     );
     searchResults("");
@@ -659,15 +659,13 @@ export function installFeatures(ctx) {
   }
   let searchSequence=0;
   async function searchResults(query) {
-    const matches = commands().filter((command) =>
-      query
-        .toLowerCase()
-        .trim()
-        .split(/\s+/)
-        .every((word) => command.title.toLowerCase().includes(word)),
-    );
+    const words = query.toLowerCase().trim().split(/\s+/);
+    const found = (text) => words.every((word) => text.toLowerCase().includes(word));
+    const matches = commands().filter((command) => found(command.title));
+    // The open project's documents and boards are already loaded; tasks come from the server for every project.
+    const loaded = (title, items, feature, kind) => items.length ? `<p class="field-hint">${title}</p>${items.sort((a, b) => a.title.localeCompare(b.title, undefined, { numeric: true, sensitivity: "base" })).slice(0, 8).map((item) => `<button class="search-result" data-feature="${feature}" data-id="${esc(item.id)}"><strong>${esc(item.title)}</strong><span>${kind} · ${esc(state.project.title)}</span></button>`).join("")}` : "";
     $("#command-results").innerHTML =
-      `<p class="field-hint">Commands</p>${matches.map((command) => `<button class="search-result command-result" data-feature="command-run" data-command="${esc(command.id)}">${esc(command.title)}</button>`).join("") || "<p>No matching commands.</p>"}<p class="field-hint">Tasks</p>`;
+      `<p class="field-hint">Commands</p>${matches.map((command) => `<button class="search-result command-result" data-feature="command-run" data-command="${esc(command.id)}">${esc(command.title)}</button>`).join("") || "<p>No matching commands.</p>"}${state.project ? loaded("Documents", (state.documents || []).filter((d) => found(`${d.title}\n${d.body || ""}`)), "search-document", "Document") + loaded("Boards", state.boards.filter((b) => !b.archived && found(b.title)), "search-board", "Board") : ""}<p class="field-hint">Tasks</p>`;
     const sequence=++searchSequence;
     let results;try{results=(await api(`/search?q=${encodeURIComponent(query)}`)).tasks;}catch(error){if(sequence===searchSequence && $("#global-search-results"))$("#global-search-results").textContent=error.message;return;}
     if(sequence!==searchSequence || !$("#global-search-results"))return;
@@ -741,6 +739,15 @@ export function installFeatures(ctx) {
       if (!state.dialog) await command?.run();
     }
     if (action === "global-search") await searchDialog();
+    if (action === "search-document" || action === "search-board") {
+      closeDialog();
+      if (state.dialog) return;
+      if (action === "search-board") await drawings.enter(el.dataset.id);
+      else {
+        await documentFeature.load();
+        await documents.openDocument(el.dataset.id);
+      }
+    }
     if (action === "global-open" || action === "note-open") {
       closeDialog();
       if (state.dialog) return;

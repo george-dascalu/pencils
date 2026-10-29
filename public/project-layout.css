@@ -57,6 +57,8 @@
   overflow: visible;
   background: transparent;
 }
+/* Search follows the view tabs only in the phone bar; wider screens use Ctrl/⌘ K. */
+.topbar .tabs > :is(.tabs-divider, .tab-search) { display: none; }
 .topbar .tabs .tab {
   width: var(--control-height);
   min-width: var(--control-height);
@@ -143,6 +145,8 @@
   .topbar .tabs .view-tab-group::after { display: none; }
   .topbar .tabs .tab { flex: 1; width: auto; min-width: 0; margin: 0; padding: 0 !important; border: 0; border-radius: 12px; }
   .topbar .tabs .tab.active { background: var(--surface-soft); color: var(--green); }
+  .topbar .tabs > .tab-search { display: flex; }
+  .topbar .tabs > .tabs-divider { display: block; flex: none; width: 1px; margin: 8px 2px; background: var(--line); }
   .main:has(:is(input:not([type="checkbox"], [type="radio"], [type="range"], [type="color"], [type="button"], [type="submit"]), textarea, [contenteditable]:not([contenteditable="false"])):focus) .topbar .tabs { display: none; }
   :root:has(.main.project-main) #toasts { bottom: calc(var(--tabbar-space) + env(safe-area-inset-bottom) + 8px); }
   /* Tapping the open Tasks or Planning tab again shows its layouts in a tray that rises above the
