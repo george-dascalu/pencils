@@ -50,7 +50,12 @@ import { SaveQueue } from "./sync.js";
 import { createMarkdown } from "./markdown.js";
 import { installFeatures } from "./features.js";
 const $ = (selector, root = document) => root.querySelector(selector);
-installEdgeSwipeGuard();
+// Where the sidebar is a drawer, the swipe in from the left edge opens it.
+installEdgeSwipeGuard({
+  onSwipeFromLeft: () => {
+    if (matchMedia("(max-width: 780px)").matches && !state.menu && !state.dialog && $(".sidebar")) setSidebarOpen(true);
+  },
+});
 installPageZoomGuard();
 installAxisLockedScroll("#view-content > .table-scroll");
 installEditableControlGuard();

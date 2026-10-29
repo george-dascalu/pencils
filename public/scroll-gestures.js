@@ -1,18 +1,43 @@
 // Safari's screen-edge history gesture is not covered by overscroll-behavior.
 // Cancel only starts in the narrow edge gutter; ordinary scrolling, controls,
-// text selection and the canvas's Pointer Events remain available.
-export function installEdgeSwipeGuard() {
+// text selection and the canvas's Pointer Events remain available. A swipe that
+// starts in the left gutter and travels mostly sideways calls onSwipeFromLeft
+// (phones open the sidebar where Safari would go back), unless it starts in a
+// text field or on a surface that handles its own touches (touch-action: none,
+// such as the board and the Table).
+export function installEdgeSwipeGuard({ onSwipeFromLeft } = {}) {
+  let swipe = null;
+  const ownTouches = target => {
+    for (let el = target; el && el !== document.body; el = el.parentElement)
+      if (getComputedStyle(el).touchAction === "none") return true;
+    return false;
+  };
   const start = event => {
+    swipe = null;
     if (event.touches.length !== 1 || !event.cancelable) return;
-    if (event.target.closest('button, a, input, textarea, select, summary, [role="button"], [contenteditable]:not([contenteditable="false"])')) return;
     const viewport = window.visualViewport;
     const left = viewport?.offsetLeft || 0;
     const right = left + (viewport?.width || innerWidth);
-    const x = event.touches[0].clientX;
+    const { clientX: x, clientY: y } = event.touches[0];
+    if (x - left < 20 && !event.target.closest('input, textarea, select, [contenteditable]:not([contenteditable="false"])') && !ownTouches(event.target)) swipe = { x, y };
+    if (event.target.closest('button, a, input, textarea, select, summary, [role="button"], [contenteditable]:not([contenteditable="false"])')) return;
     if (x - left < 20 || right - x < 20) event.preventDefault();
   };
+  const move = event => {
+    if (!swipe || event.touches.length !== 1) return (swipe = null);
+    const dx = event.touches[0].clientX - swipe.x, dy = Math.abs(event.touches[0].clientY - swipe.y);
+    if (dy > 30 || dx < -10) swipe = null;
+    else if (dx > 30 && dx > dy * 2) {
+      swipe = null;
+      onSwipeFromLeft?.();
+    }
+  };
   document.addEventListener("touchstart", start, { passive: false });
-  return () => document.removeEventListener("touchstart", start);
+  document.addEventListener("touchmove", move, { passive: true });
+  return () => {
+    document.removeEventListener("touchstart", start);
+    document.removeEventListener("touchmove", move);
+  };
 }
 
 // Touch devices stay at page scale. CSS touch-action covers Chromium, but iOS

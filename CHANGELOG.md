@@ -2,6 +2,12 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.19.38 — 2026-10-29
+
+### Added
+
+- On phones, swiping in from the left edge of the screen opens the sidebar, where Safari would otherwise go back a page.
+
 ## 0.19.37 — 2026-10-29
 
 ### Changed
