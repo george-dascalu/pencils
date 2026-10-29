@@ -6,5 +6,7 @@
   "sora": "https://github.com/google/fonts/tree/main/ofl/sora",
   "worksans": "https://github.com/google/fonts/tree/main/ofl/worksans",
   "lora": "https://github.com/google/fonts/tree/main/ofl/lora",
-  "fraunces": "https://github.com/google/fonts/tree/main/ofl/fraunces"
+  "fraunces": "https://github.com/google/fonts/tree/main/ofl/fraunces",
+  "ia-writer-quattro": "https://github.com/iaolo/iA-Fonts/tree/master/iA%20Writer%20Quattro/Webfonts",
+  "ia-writer-mono": "https://github.com/iaolo/iA-Fonts/tree/master/iA%20Writer%20Mono/Webfonts"
 }

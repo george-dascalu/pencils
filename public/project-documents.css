@@ -108,7 +108,7 @@
   display: flex; flex-direction: column; height: 100%; min-height: 0;
 }
 #document-form[data-document-width="full"] { --document-page-width: 100%; }
-#document-form :is(.document-codemirror, .document-reading) { font-family: var(--style-document-font, var(--app-font)); }
+#document-form :is(.document-codemirror, .document-reading) { font-family: var(--style-document-font, var(--theme-document-font, var(--app-font))); }
 .document-heading {
   display: flex;
   align-items: center;
@@ -197,6 +197,8 @@
 .document-codemirror .cm-gutters { min-width: var(--document-gutter-width); background: var(--surface); border: 0; color: var(--muted); }
 /* CodeMirror already offsets gutter rows by the content's top padding. */
 .document-codemirror .cm-activeLine { background: var(--surface-soft); }
+/* Live preview marks the line you're on only when a theme asks (themes.css: Typewriter). */
+.document-codemirror:not([data-mode="source"]) .cm-activeLine { background: var(--active-line-live, transparent); }
 .document-codemirror .cm-selectionBackground, .document-codemirror .cm-focused .cm-selectionBackground { background: color-mix(in srgb, var(--green) 24%, transparent) !important; }
 .document-codemirror .cm-cursor { border-left-color: var(--ink); }
 .document-codemirror .cm-placeholder { color: var(--muted); }
@@ -306,6 +308,8 @@
 .document-callout > strong, .document-callout > summary { font-weight: 600; }
 /* List callouts ("- ! item", Obsidian's List Callouts): the item's own line is tinted in its colour. */
 .document-list-callout { background: color-mix(in srgb, var(--list-callout-color, var(--muted)) 14%, transparent); border-radius: 4px; }
+/* The tint stays on the line you're on, over any active-line background. */
+.document-codemirror .cm-content .cm-line.document-list-callout { background: color-mix(in srgb, var(--list-callout-color, var(--muted)) 14%, transparent); }
 span.document-list-callout { display: block; }
 :is(span, p).document-list-callout { padding-inline: 4px; }
 .document-list-callout-char { display: none; }

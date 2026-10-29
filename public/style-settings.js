@@ -20,7 +20,7 @@ const rendered = (token, attributes = {}) => {
   return /^#[0-9a-f]{6}$/i.test(value) ? value : "#808080";
 };
 const ranges = [["textSize", "Document text size"], ["lineWidth", "Readable line width"], ["lineHeight", "Line height"], ["roundness", "Corner roundness"]];
-const codeFonts = [["", "System monospace"], ["modern", "Modern monospace"], ["courier", "Courier"]];
+const codeFonts = [["", "Default"], ["system", "System monospace"], ["modern", "Modern monospace"], ["courier", "Courier"]];
 
 export function styleSettings({ esc, colorPicker, toast }) {
   const prefs = window.PencilsAppearance;
@@ -28,14 +28,14 @@ export function styleSettings({ esc, colorPicker, toast }) {
   const reset = (name, label) => `<button type="button" class="button small" data-style-reset="${name}" aria-label="Reset ${label.toLowerCase()}">Reset</button>`;
   const option = (name, label, control, initial) => `<div class="style-option">${control}<span class="field-hint">Default: ${esc(initial)}</span>${reset(name, label)}</div>`;
   const colour = (style, name, label, initial, described) => option(name, label, `<div class="field">${esc(label)}${colorPicker({ value: style[name] || initial, name: `style-${name}`, label })}</div>`, described);
-  const select = (style, name, label, choices) => option(name, label, `<label class="field">${label}<select data-style-option="${name}">${choices.map(([value, text]) => `<option value="${esc(value)}" ${(style[name] || "") === value ? "selected" : ""}>${esc(text)}</option>`).join("")}</select></label>`, choices[0][1]);
+  const select = (style, name, label, choices, described) => option(name, label, `<label class="field">${label}<select data-style-option="${name}">${choices.map(([value, text]) => `<option value="${esc(value)}" ${(style[name] || "") === value ? "selected" : ""}>${esc(text)}</option>`).join("")}</select></label>`, described);
   function html() {
     const style = prefs.read().style;
     return `<fieldset class="appearance-group style-settings" data-style-settings><legend>Style</legend><p class="field-hint">Fine-tune colours, documents and corners. These choices stay in this browser.</p>${colours.map(([name, label, token, described]) => colour(style, name, label, rendered(token), described)).join("")}${ranges.map(([name, label]) => {
       const r = prefs.styles[name], value = style[name] ?? r.initial;
       // Touch screens keep text you edit at 16px or more, so iOS doesn't zoom into it.
       return option(name, label, `<label class="field">${label} <output>${shown(name, value)}</output><input type="range" data-style-option="${name}" aria-label="${label}" min="${r.min}" max="${r.max}" step="${r.step}" value="${value}"></label>`, shown(name, r.initial) + (name === "textSize" && matchMedia("(pointer: coarse)").matches ? ", never below 16px on this screen" : ""));
-    }).join("")}${select(style, "documentFont", "Document font", [["", "Workspace font"], ...prefs.fonts.map(([id, name]) => [id, name])])}${select(style, "codeFont", "Code font", codeFonts)}<details class="style-list-callouts"><summary>List callout colours</summary>${listCallouts.map((c) => colour(style, `list-${c.name}`, c.label, rendered("--list-callout-color", { "data-list-callout": c.name }), listTints[c.name])).join("")}</details><div class="style-actions"><button type="button" class="button" data-style-reset-all aria-label="Reset all style options">Reset all</button></div></fieldset>`;
+    }).join("")}${select(style, "documentFont", "Document font", [["", "Default"], ["workspace", "Workspace font"], ...prefs.fonts.map(([id, name]) => [id, name])], "the theme's font, or the workspace font")}${select(style, "codeFont", "Code font", codeFonts, "the theme's font, or system monospace")}<details class="style-list-callouts"><summary>List callout colours</summary>${listCallouts.map((c) => colour(style, `list-${c.name}`, c.label, rendered("--list-callout-color", { "data-list-callout": c.name }), listTints[c.name])).join("")}</details><div class="style-actions"><button type="button" class="button" data-style-reset-all aria-label="Reset all style options">Reset all</button></div></fieldset>`;
   }
   const save = (change) => {
     try {

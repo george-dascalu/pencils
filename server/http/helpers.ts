@@ -14,6 +14,7 @@ export function displayName(req: RequestContext["req"]): string {
 }
 export const mime: Record<string, string> = {
   ".ttf": "font/ttf",
+  ".woff2": "font/woff2",
   ".html": "text/html; charset=utf-8",
   ".js": "text/javascript; charset=utf-8",
   ".css": "text/css; charset=utf-8",

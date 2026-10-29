@@ -2,6 +2,16 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.20.10 — 2026-10-29
+
+### Added
+
+- Themes adapted from Obsidian: **Settings → You → Appearance** offers Minimal (neutral greys, a slate accent, small headings and round checkboxes), Paper (warm cream and gold, with the page as a floating card), Catppuccin (Latte in light, Mocha in dark, with optional rainbow headings) and Typewriter (warm paper, the bundled iA Writer Quattro and Mono fonts, faded Markdown marks and the current line highlighted), beside the original Pencils look. Each works in light and dark, Style settings still apply on top, and text, links and buttons keep at least 4.5:1 contrast.
+
+### Fixed
+
+- A heading colour chosen in Style settings now also colours headings in Live preview, not only in Reading view.
+
 ## 0.20.9 — 2026-10-29
 
 ### Added

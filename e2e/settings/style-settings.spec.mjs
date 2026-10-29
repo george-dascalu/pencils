@@ -9,6 +9,11 @@ const app = useApp(async (store) => {
   const doc = await store.createDocument(project.id, { title: "Notes", body: "# Plan\n\n- ! Ship it\n\n> [!note] Remember\n> This" });
   return { project, doc };
 });
+// The colour the words themselves are drawn in (CodeMirror wraps them in highlight spans).
+const textColor = (locator) => locator.evaluate((el) => {
+  const walk = document.createTreeWalker(el, NodeFilter.SHOW_TEXT);
+  for (let node = walk.nextNode(); node; node = walk.nextNode()) if (node.textContent.trim()) return getComputedStyle(node.parentElement).color;
+});
 const rootStyle = (page, name) => page.evaluate((n) => getComputedStyle(document.documentElement).getPropertyValue(n).trim(), name);
 async function openStyle(page) {
   await page.goto(`${app.base}/#project/${app.project.id}/list`);
@@ -58,7 +63,7 @@ test("heading, callout and list callout colours apply in light and dark, one res
   await page.locator(".cm-content").waitFor();
   for (const theme of ["light", "dark"]) {
     await page.evaluate((t) => window.PencilsAppearance.write({ theme: t }), theme);
-    expect(await page.locator(".cm-content .document-heading-1").first().evaluate((el) => getComputedStyle(el).color), theme).toBe("rgb(174, 215, 220)");
+    expect(await textColor(page.locator(".cm-content .document-heading-1").first()), theme).toBe("rgb(174, 215, 220)");
     expect(await page.locator(".cm-content .document-list-callout-mark").first().evaluate((el) => getComputedStyle(el).color), theme).toBe("rgb(214, 228, 211)");
   }
   expect(await rootStyle(page, "--style-callout-color"), "reset on its own").toBe("");

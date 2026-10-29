@@ -78,3 +78,40 @@
 :root[data-font="fraunces"] {
   --app-font: "Fraunces", Georgia, serif;
 }
+/* iA Writer Quattro S and Mono S (SIL OFL), unmodified from github.com/iaolo/iA-Fonts, for the
+   Typewriter theme (themes.css). */
+@font-face {
+  font-family: "iA Writer Quattro S";
+  src: url("/fonts/ia-writer-quattro/iAWriterQuattroS-Regular.woff2") format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "iA Writer Quattro S";
+  src: url("/fonts/ia-writer-quattro/iAWriterQuattroS-Bold.woff2") format("woff2");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "iA Writer Quattro S";
+  src: url("/fonts/ia-writer-quattro/iAWriterQuattroS-Italic.woff2") format("woff2");
+  font-weight: 400;
+  font-style: italic;
+  font-display: swap;
+}
+@font-face {
+  font-family: "iA Writer Mono S";
+  src: url("/fonts/ia-writer-mono/iAWriterMonoS-Regular.woff2") format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "iA Writer Mono S";
+  src: url("/fonts/ia-writer-mono/iAWriterMonoS-Bold.woff2") format("woff2");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}

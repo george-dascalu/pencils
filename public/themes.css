@@ -1,0 +1,190 @@
+/* Themes adapted from Obsidian (owner request, 29 Oct 2026; public/appearance.js sets data-look).
+   Our own CSS from each theme's design facts, not their code: Minimal (kepano, MIT), Paper
+   (inspired by Primary), Catppuccin (palette from github.com/catppuccin/palette, MIT) and
+   Typewriter (iA Writer Quattro S and Mono S, SIL OFL, in public/fonts). Each sets the shared
+   tokens for light and dark, and the dark block repeats every token so none leaks from light.
+   Style settings still win: they're set on the root element itself, and theme fonts are only the
+   fallback (--theme-*-font). Text, links and accents keep 4.5:1 contrast (test/themes.test.js). */
+
+/* Minimal: neutral greys, a slate accent, small headings, round checkboxes, almost no shadows. */
+:root[data-look="minimal"] {
+  --ink: #222222;
+  --muted: #5e5e5e;
+  --line: #e6e6e6;
+  --green: var(--style-accent, #4f6a78);
+  --accent: #dde5ea;
+  --paper: #fafafa;
+  --side: #2b2b2b;
+  --surface: #ffffff;
+  --surface-soft: #f2f2f2;
+  --control-border: #dcdcdc;
+  --button-primary: #4f6a78;
+  --shadow-popover: 0 4px 16px #0000001a;
+  --shadow-raised: 0 1px 3px #00000014;
+  color: var(--ink);
+  background: var(--paper);
+}
+:root[data-look="minimal"][data-theme="dark"] {
+  --ink: #dadada;
+  --muted: #a8a8a8;
+  --line: #3a3a3a;
+  --green: var(--style-accent, #889eaa);
+  --accent: #b9c9d2;
+  --paper: #1e1e1e;
+  --side: #161616;
+  --surface: #262626;
+  --surface-soft: #2f2f2f;
+  --control-border: #444444;
+  --button-primary: #4f6a78;
+  --button-primary-border: #6f8a98;
+  --shadow-popover: 0 4px 16px #0006;
+  --shadow-raised: 0 1px 3px #0005;
+}
+:root[data-look="minimal"] :is(.document-codemirror .document-heading-1, .document-prose h1) { font-size: 1.4em; }
+:root[data-look="minimal"] :is(.document-codemirror .document-heading-2, .document-prose h2) { font-size: 1.25em; }
+:root[data-look="minimal"] :is(.document-codemirror .document-heading-3, .document-prose h3) { font-size: 1.1em; }
+:root[data-look="minimal"] .document-checkbox {
+  appearance: none;
+  width: 1em;
+  height: 1em;
+  border: 1.5px solid var(--muted);
+  border-radius: 50%;
+}
+:root[data-look="minimal"] .document-checkbox:checked {
+  border-color: var(--green);
+  background: var(--green);
+  box-shadow: inset 0 0 0 2px var(--surface);
+}
+:root[data-look="minimal"] .document-tag { border-radius: calc(4px * var(--style-roundness, 1)); }
+
+/* Paper (inspired by Primary): warm cream and brown, gold links, the page as a floating card, pill tags. */
+:root[data-look="paper"] {
+  --ink: #3a2e22;
+  --muted: #6b5c4b;
+  --line: #e2d6c2;
+  --green: var(--style-accent, #85600f);
+  --accent: #ecd9a8;
+  --paper: #f3ede2;
+  --side: #3a2e22;
+  --surface: #fbf8f1;
+  --surface-soft: #ede4d4;
+  --control-border: #d8cab3;
+  --button-primary: #7a5512;
+  color: var(--ink);
+  background: var(--paper);
+}
+:root[data-look="paper"][data-theme="dark"] {
+  --ink: #efe6d8;
+  --muted: #bba98f;
+  --line: #45392b;
+  --green: var(--style-accent, #e0b45c);
+  --accent: #e8cf8f;
+  --paper: #1d1813;
+  --side: #15110d;
+  --surface: #28211a;
+  --surface-soft: #322a21;
+  --control-border: #54463a;
+  --button-primary: #8a6416;
+  --button-primary-border: #b08a3a;
+}
+:root[data-look="paper"] .document-codemirror .cm-editor,
+:root[data-look="paper"] .document-reading { background: var(--paper); }
+:root[data-look="paper"] .document-codemirror .cm-content,
+:root[data-look="paper"] .document-reading > .document-prose {
+  margin-block: 16px;
+  border-radius: calc(12px * var(--style-roundness, 1));
+  background: var(--surface);
+  box-shadow: 0 2px 14px color-mix(in srgb, var(--ink) 10%, transparent);
+}
+:root[data-look="paper"] .document-tag {
+  border-color: transparent;
+  background: color-mix(in srgb, var(--green) 16%, transparent);
+}
+
+/* Catppuccin: Latte in light, Mocha in dark, a rosewater accent and optional rainbow headings. */
+:root[data-look="catppuccin"] {
+  --ink: #4c4f69;
+  --muted: #5c5f77;
+  --line: #ccd0da;
+  --green: var(--style-accent, #9a4535);
+  --accent: #f2d5cf;
+  --paper: #e6e9ef;
+  --side: #4c4f69;
+  --surface: #eff1f5;
+  --surface-soft: #dce0e8;
+  --control-border: #bcc0cc;
+  --button-primary: #9a4535;
+  --rainbow-1: #d20f39;
+  --rainbow-2: #fe640b;
+  --rainbow-3: #df8e1d;
+  --rainbow-4: #40a02b;
+  --rainbow-5: #1e66f5;
+  --rainbow-6: #8839ef;
+  color: var(--ink);
+  background: var(--paper);
+}
+:root[data-look="catppuccin"][data-theme="dark"] {
+  --ink: #cdd6f4;
+  --muted: #a6adc8;
+  --line: #313244;
+  --green: var(--style-accent, #f5e0dc);
+  --accent: #f2cdcd;
+  --paper: #181825;
+  --side: #11111b;
+  --surface: #1e1e2e;
+  --surface-soft: #313244;
+  --control-border: #45475a;
+  --button-primary: #9a4535;
+  --button-primary-border: #c27a6a;
+  --rainbow-1: #f38ba8;
+  --rainbow-2: #fab387;
+  --rainbow-3: #f9e2af;
+  --rainbow-4: #a6e3a1;
+  --rainbow-5: #89b4fa;
+  --rainbow-6: #cba6f7;
+}
+:root[data-look="catppuccin"][data-rainbow] :is(.document-codemirror .document-heading-1, .document-prose h1) { color: var(--style-heading-color, var(--rainbow-1)); }
+:root[data-look="catppuccin"][data-rainbow] :is(.document-codemirror .document-heading-2, .document-prose h2) { color: var(--style-heading-color, var(--rainbow-2)); }
+:root[data-look="catppuccin"][data-rainbow] :is(.document-codemirror .document-heading-3, .document-prose h3) { color: var(--style-heading-color, var(--rainbow-3)); }
+:root[data-look="catppuccin"][data-rainbow] :is(.document-codemirror .document-heading-4, .document-prose h4) { color: var(--style-heading-color, var(--rainbow-4)); }
+:root[data-look="catppuccin"][data-rainbow] :is(.document-codemirror .document-heading-5, .document-prose h5) { color: var(--style-heading-color, var(--rainbow-5)); }
+:root[data-look="catppuccin"][data-rainbow] :is(.document-codemirror .document-heading-6, .document-prose h6) { color: var(--style-heading-color, var(--rainbow-6)); }
+
+/* Typewriter: warm paper, a green accent, iA Writer fonts, faded Markdown marks, the line you're on highlighted. */
+:root[data-look="typewriter"] {
+  --ink: #2b2a26;
+  --muted: #66604f;
+  --line: #e8dcc0;
+  --green: var(--style-accent, #2f6b3a);
+  --accent: #cfe3b4;
+  --paper: #fcf5e4;
+  --side: #2f2b22;
+  --surface: #fffbf0;
+  --surface-soft: #f3ead3;
+  --control-border: #dccfaf;
+  --button-primary: #2f6b3a;
+  --theme-document-font: "iA Writer Quattro S", serif;
+  --theme-code-font: "iA Writer Mono S", monospace;
+  --markdown-mark: #6f6957;
+  --active-line-live: color-mix(in srgb, var(--accent) 35%, transparent);
+  color: var(--ink);
+  background: var(--paper);
+}
+:root[data-look="typewriter"][data-theme="dark"] {
+  --ink: #ece4d0;
+  --muted: #b5ab93;
+  --line: #3f392d;
+  --green: var(--style-accent, #8fc79a);
+  --accent: #b9d99c;
+  --paper: #1d1b16;
+  --side: #14120e;
+  --surface: #26231c;
+  --surface-soft: #2f2b22;
+  --control-border: #4d4637;
+  --button-primary: #3b6b44;
+  --button-primary-border: #5f9468;
+  --theme-document-font: "iA Writer Quattro S", serif;
+  --theme-code-font: "iA Writer Mono S", monospace;
+  --markdown-mark: #9c937c;
+  --active-line-live: color-mix(in srgb, var(--accent) 10%, transparent);
+}

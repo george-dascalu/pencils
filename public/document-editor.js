@@ -278,7 +278,7 @@ export function markdownDocumentEditor({ parent, text, mode = "live", renderer, 
   };
   const liveExtensions = () => mode === "source"
     ? [lineNumbers(), highlightActiveLine()]
-    : [previewField];
+    : [previewField, highlightActiveLine()];
   const shortcut = (key, command) => ({ key, run: () => { format(command); return true; } });
   view = new EditorView({
     parent,
@@ -287,14 +287,15 @@ export function markdownDocumentEditor({ parent, text, mode = "live", renderer, 
       extensions: [
         revealField, history(), drawSelection(), bracketMatching(), EditorView.lineWrapping,
         markdown({ base: markdownLanguage, codeLanguages: languages }), syntaxHighlighting(HighlightStyle.define([
-          { tag: tags.heading, fontWeight: "650", color: "var(--ink)" },
+          // Headings take their line's colour (project-documents.css), which Style settings and themes may set.
+          { tag: tags.heading, fontWeight: "650", color: "inherit" },
           { tag: tags.strong, fontWeight: "700" },
           { tag: tags.emphasis, fontStyle: "italic" },
           { tag: tags.strikethrough, textDecoration: "line-through" },
           { tag: [tags.link, tags.url], color: "var(--green)", textDecoration: "underline" },
           { tag: [tags.monospace, tags.literal], fontFamily: "var(--font-mono, monospace)" },
           { tag: [tags.keyword, tags.tagName, tags.attributeName], color: "var(--green)" },
-          { tag: [tags.comment, tags.processingInstruction, tags.meta], color: "var(--muted)" },
+          { tag: [tags.comment, tags.processingInstruction, tags.meta], color: "var(--markdown-mark, var(--muted))" },
         ])),
         foldGutter(), autocompletion({
           override: [completion, slash], icons: false,

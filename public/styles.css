@@ -29,10 +29,12 @@
   --radius-md: calc(8px * var(--style-roundness, 1));
   --radius-lg: calc(12px * var(--style-roundness, 1));
   --radius-popover: calc(10px * var(--style-roundness, 1));
-  /* Style settings (public/appearance.js) may choose the code font. */
-  --font-mono: var(--style-code-font, monospace);
+  /* Style settings (public/appearance.js) may choose the code font, and themes (themes.css) set their own. */
+  --font-mono: var(--style-code-font, var(--theme-code-font, monospace));
   --popover-padding: 8px;
   --control-border: #dce0d5;
+  /* The primary button's fill, which themes (themes.css) change. */
+  --button-primary: #3f5e48;
   --control-radius: calc(7px * var(--style-roundness, 1));
   --placeholder: var(--muted);
   --field-gap: 6px;
@@ -418,13 +420,13 @@ button svg {
   background: #f0f3e9;
 }
 .button.primary {
-  background: #3f5e48;
+  background: var(--button-primary);
   color: #fff;
-  border-color: #3f5e48;
+  border-color: var(--button-primary);
   box-shadow: 0 2px 2px #253d3310;
 }
 .button.primary:hover {
-  background: #2e4d38;
+  background: color-mix(in srgb, var(--button-primary) 80%, #000);
 }
 .button.primary svg {
   width: 15px;
