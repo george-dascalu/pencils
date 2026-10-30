@@ -2,6 +2,12 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.20.53 — 2026-10-30
+
+### Added
+
+- Choose the active sort again to reverse it. The Sort button and its menu show the direction with ↑ or ↓, as Table's column headers do.
+
 ## 0.20.52 — 2026-10-30
 
 ### Changed

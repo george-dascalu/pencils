@@ -146,7 +146,7 @@ export function installSelectMenus({ esc, icon, taskColor = () => "" }) {
     if (changed) {
       target.dispatchEvent(new Event("input", { bubbles: true }));
       target.dispatchEvent(new Event("change", { bubbles: true }));
-    }
+    } else target.dispatchEvent(new Event("reselect", { bubbles: true })); // as a sort reverses (app.js)
   }
   // Cancel the platform picker before it opens, including touch and Firefox mousedown.
   for (const type of ["pointerdown", "mousedown"])

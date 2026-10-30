@@ -71,10 +71,11 @@ export function projectLayout(ctx) {
     // other controls, or beside View options on phones.
     const sort = $("#sort"), sortButton = toolbar.classList.contains("toolbar-left") && taskViews.includes(state.view) && sort && !sort.closest("[hidden]") ? document.createElement("button") : null;
     if (sortButton) {
-      // The button wears the active sort's icon, with an arrow for its (ascending) direction;
-      // Manual order is no sort.
-      const active = sort.value !== "order";
-      const name = `Sort: ${sort.selectedOptions[0]?.text || ""}`;
+      // The button wears the active sort's icon, with an arrow for its direction, which the menu
+      // shows too, as Table's column headers do; Manual order is no sort.
+      const active = sort.value !== "order", up = state.sortDir === 1;
+      const name = `Sort: ${sort.selectedOptions[0]?.text || ""}${active && !up ? ", reversed" : ""}`;
+      for (const option of sort.options) option.label = option.selected && active ? `${option.text} ${up ? "↑" : "↓"}` : option.text;
       sortButton.type = "button";
       sortButton.id = "sort-button"; // keeps focus here when choosing a sort rebuilds the toolbar
       sortButton.className = `icon-button${active ? " sort-active" : ""}`;
@@ -83,7 +84,7 @@ export function projectLayout(ctx) {
       sortButton.title = name;
       sortButton.setAttribute("aria-haspopup", "listbox");
       sortButton.innerHTML = active
-        ? `${icon(sortIcons[sort.value] || "sort")}<span class="sort-direction" aria-hidden="true">${icon("up")}</span>`
+        ? `${icon(sortIcons[sort.value] || "sort")}<span class="sort-direction" aria-hidden="true">${icon(up ? "up" : "down")}</span>`
         : icon("sort");
       sortButton.addEventListener("click", () => {
         const select = $("#sort");

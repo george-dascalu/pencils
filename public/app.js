@@ -2672,6 +2672,12 @@ document.addEventListener("change", async (event) => {
     }
   }
 });
+// Choosing the active sort again reverses it (select-menu.js); Manual order has no direction.
+document.addEventListener("reselect", (event) => {
+  if (event.target.id !== "sort" || event.target.value !== state.sort || state.sort === "order") return;
+  state.sortDir *= -1;
+  renderView(true);
+});
 document.addEventListener("dblclick", (event) => {
   const node = event.target.closest("[data-node]");
   if (node) {
