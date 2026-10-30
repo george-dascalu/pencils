@@ -34,18 +34,22 @@ const axe = async (page, selector) => {
   expect(results.violations.map((v) => ({ id: v.id, nodes: v.nodes.map((n) => n.target) })), `${selector} accessibility`).toEqual([]);
 };
 
-test("the save state names the running version and flags a newer one without covering project navigation", async ({ page }) => {
+// Owner request, 30 October 2026: the top bar shows no version or update notice; the sidebar, which
+// already shows the version, flags a newer one.
+test("the sidebar names the running version and flags a newer one; the top bar shows neither", async ({ page }) => {
   expect((await (await fetch(`${app.base}/api/health`)).json()).version).toBe(APP_VERSION);
   await openBoard(page);
-  await expect(page.locator("#save-state")).toContainText(`v${APP_VERSION}`);
+  await expect(page.locator(".side-footer .app-version")).toContainText(`v${APP_VERSION}`);
+  await expect(page.locator("#save-state")).not.toContainText(`v${APP_VERSION}`);
   await expect(page.locator("#save-state")).not.toContainText("Connected to local server");
   await page.route("**/api/health", (route) => route.fulfill({ json: { ok: true, version: "99.0.0" } }));
   await page.evaluate(() => dispatchEvent(new Event("focus")));
-  await page.locator(".app-update-available").waitFor();
-  await expect(page.locator("#save-state")).toContainText("Update available");
-  const nav = await page.locator(".board-project-tools").boundingBox();
-  const status = await page.locator(".top-actions").boundingBox();
-  expect(nav.x + nav.width, "The update indicator does not overlap project navigation").toBeLessThanOrEqual(status.x);
+  await expect(page.locator(".side-footer .app-update-available")).toBeAttached();
+  await expect(page.locator("#save-state")).not.toContainText("Update available");
+  await page.locator(".topbar .mobile-menu").click();
+  await expect(page.locator(".side-footer").getByText("Update available")).toBeVisible();
+  const [sidebar, notice] = [await page.locator(".sidebar").boundingBox(), await page.locator(".side-footer .app-update-available").boundingBox()];
+  expect(notice.x + notice.width, "the notice fits in the sidebar").toBeLessThanOrEqual(sidebar.x + sidebar.width);
 });
 
 test("a collapsed board card shows assignee, status, priority and due in order with a one-line title", async ({ page }) => {

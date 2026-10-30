@@ -36,7 +36,7 @@ const details = (page) => page.locator("#save-warning-details");
 
 test("the warning stays compact and opens on hover and focus, closing with Escape", async ({ page }) => {
   await openWarning(page);
-  await expect(page.locator("#save-state .app-version")).toContainText(APP_VERSION);
+  await expect(page.locator(".side-footer .app-version")).toContainText(APP_VERSION);
   expect((await page.locator("#save-state").boundingBox()).width, "Header status stays compact").toBeLessThan(110);
   await expect(details(page)).toBeHidden();
   await trigger(page).hover();
@@ -103,6 +103,6 @@ test("removing the extra frame saves the board and clears the warning, and an up
   await trigger(page).waitFor({ state: "hidden" });
   await page.route("**/api/health", (route) => route.fulfill({ json: { ok: true, version: "99.0.0" } }));
   await page.evaluate(() => window.dispatchEvent(new Event("focus")));
-  await page.getByText("Update available", { exact: true }).waitFor();
-  await expect(page.locator("#save-state .app-version")).toContainText(APP_VERSION);
+  await expect(page.locator(".side-footer .app-update-available")).toBeAttached();
+  await expect(page.locator(".side-footer .app-version")).toContainText(APP_VERSION);
 });

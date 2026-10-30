@@ -331,6 +331,9 @@ button svg {
   color: #a6b7ac;
   font-size: 10px;
 }
+/* A newer version's notice takes the line below when it doesn't fit beside the workspace. */
+.side-footer { flex-wrap: wrap; }
+@media (pointer: coarse) { .side-footer .version { font-size: 12px; } }
 .main {
   min-width: 0;
   width: 100%;

@@ -6,10 +6,11 @@ export function appStatus({ state, sync, version, icon, esc }) {
   const panel = () => document.querySelector("#save-warning-details");
   const trigger = () => document.querySelector("#save-warning-toggle");
   let closeTimer, pinned = false;
+  // In the sidebar's footer (owner request, 30 Oct 2026: not in the top bar).
   function versionHTML() {
     const outdated = state.serverAppVersion && state.serverAppVersion !== version;
     const title = outdated ? `Version ${state.serverAppVersion} is available. Refresh when your changes are saved.` : `Pencils ${version}${state.serverAppVersion ? " · Up to date" : ""}`;
-    return `<span class="app-version" title="${esc(title)}" aria-label="${esc(title)}">v${version}${outdated ? `<span class="app-update-available">${icon("refresh")}<span class="app-update-label">Update available</span></span>` : ""}</span>`;
+    return `<span class="version app-version" title="${esc(title)}" aria-label="${esc(title)}">v${version}${outdated ? `<span class="app-update-available">${icon("refresh")}<span class="app-update-label">Update available</span></span>` : ""}</span>`;
   }
   function details(issue) {
     return `<header><strong id="save-warning-title">${esc(issue.title)}</strong><button type="button" class="icon-button" data-save-warning-close aria-label="Close save warning">${icon("close")}</button></header><p id="save-warning-cause">${esc(issue.cause)}</p><p><strong>How to resolve it</strong><br>${esc(issue.action)}</p><button type="button" class="button" data-feature="recovery">${icon("clock")}Recovery & backups</button>`;
@@ -76,15 +77,16 @@ export function appStatus({ state, sync, version, icon, esc }) {
   }, true);
   window.addEventListener("resize", position);
   return {
+    versionHTML,
     html() {
       const issue = getIssue();
-      return `${versionHTML()}<div class="app-save-warning" ${issue ? "" : "hidden"}><button type="button" class="icon-button app-save-warning-toggle" id="save-warning-toggle" popovertarget="save-warning-details" aria-controls="save-warning-details" aria-expanded="false" aria-label="${esc(issue ? `Save warning: ${issue.title}` : "Save warning")}" aria-describedby="save-warning-cause">${icon("warning")}</button><section id="save-warning-details" class="app-save-warning-panel" popover="auto" aria-labelledby="save-warning-title">${issue ? details(issue) : ""}</section></div><span class="sr-only" data-save-announcement role="status">${esc(issue?.title || "")}</span>`;
+      return `<div class="app-save-warning" ${issue ? "" : "hidden"}><button type="button" class="icon-button app-save-warning-toggle" id="save-warning-toggle" popovertarget="save-warning-details" aria-controls="save-warning-details" aria-expanded="false" aria-label="${esc(issue ? `Save warning: ${issue.title}` : "Save warning")}" aria-describedby="save-warning-cause">${icon("warning")}</button><section id="save-warning-details" class="app-save-warning-panel" popover="auto" aria-labelledby="save-warning-title">${issue ? details(issue) : ""}</section></div><span class="sr-only" data-save-announcement role="status">${esc(issue?.title || "")}</span>`;
     },
     update() {
       const root = document.querySelector("#save-state");
       if (!root) return;
-      const issue = getIssue(), versionEl = root.querySelector(".app-version");
-      if (versionEl?.outerHTML !== versionHTML()) versionEl.outerHTML = versionHTML();
+      const issue = getIssue(), versionEl = document.querySelector(".side-footer .app-version");
+      if (versionEl && versionEl.outerHTML !== versionHTML()) versionEl.outerHTML = versionHTML();
       const warning = root.querySelector(".app-save-warning");
       if (!issue) hide();
       warning.hidden = !issue;

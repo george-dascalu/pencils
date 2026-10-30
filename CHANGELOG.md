@@ -2,6 +2,12 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.20.49 — 2026-10-30
+
+### Changed
+
+- The top bar no longer shows the version or "Update available"; the sidebar shows the version at its bottom, and flags a newer one there.
+
 ## 0.20.48 — 2026-10-30
 
 ### Added

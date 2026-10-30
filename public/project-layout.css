@@ -935,7 +935,6 @@ html.table-viewport-view body {
   .topbar .top-actions { gap: 2px; flex: 0 0 auto; }
   .topbar .phone-new-task { display: inline-flex; }
   .topbar .phone-new-task > summary { justify-content: center; }
-  .topbar .app-version { display: none; }
   .toolbar-left:has(.mobile-view-options) { grid-auto-columns: var(--control-height); }
   .mobile-view-options > summary { justify-content: center; width: var(--control-height); }
   .list-group > .section-title, #view-content[data-layout-view="tree"] > .section-title { min-height: var(--control-height); margin-block: 6px; font-size: 13px; }
@@ -1059,10 +1058,6 @@ html.table-viewport-view body {
 }
 .dialog.compact-dialog { width: min(420px, calc(100vw - 32px)); }
 
-/* The topbar version repeats the sidebar footer while the sidebar is visible,
-   unless it carries the Update available notice. */
-/* The version shows at the bottom of the sidebar; the top bar shows it only to offer an update. */
-.topbar .app-version:not(:has(.app-update-available)) { display: none; }
 /* Task types as chips. */
 .type-list-field { display: flex; flex-direction: column; gap: 8px; }
 .type-chips { display: flex; flex-wrap: wrap; gap: 6px; margin: 0; padding: 0; list-style: none; }
