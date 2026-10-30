@@ -62,7 +62,15 @@
   background: transparent;
 }
 /* Search follows the view tabs after a divider at every width (also Ctrl/⌘ K). */
-.topbar .tabs > .tabs-divider { flex: none; align-self: center; width: 1px; height: 20px; margin: 0 4px; background: var(--line); }
+.topbar .tabs .tabs-divider { flex: none; align-self: center; width: 1px; height: 20px; margin: 0 4px; background: var(--line); }
+/* The bar's scroller only acts as one in the bottom bar; your own buttons (bottom-bar.js) show only there. */
+.topbar .tabs > .tabs-scroll { display: contents; }
+.topbar .tabs .bar-buttons { display: none; }
+.bar-editor-list { margin: 0 0 8px; padding: 0; list-style: none; }
+.bar-editor-item { display: flex; align-items: center; gap: 8px; min-height: var(--control-height); }
+.bar-editor-item > span { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.bar-editor-add { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 8px; }
+.bar-editor-add .field { margin: 0; }
 .topbar .tabs .tab {
   width: var(--control-height);
   min-width: var(--control-height);
@@ -143,18 +151,32 @@
   .topbar .tabs .view-tab-group::after { display: none; }
   .topbar .tabs .tab { flex: 1; width: auto; min-width: 0; margin: 0; padding: 0 !important; border: 0; border-radius: 12px; }
   .topbar .tabs .tab.active { background: var(--surface-soft); color: var(--green); }
-  .topbar .tabs > .tab-search { display: flex; }
-  .topbar .tabs > .tabs-divider { display: block; flex: none; width: 1px; margin: 8px 2px; background: var(--line); }
+  .topbar .tabs .tab-search { display: flex; }
+  .topbar .tabs .tabs-divider { display: block; flex: none; width: 1px; margin: 8px 2px; background: var(--line); }
+  /* Your own buttons sit between the views and Search, and the views and buttons scroll sideways
+     when they don't fit, with Search staying put. Trays above the bar position against the bar,
+     outside the scroller, so it doesn't clip them. */
+  /* Search is as wide as a tab: the scroller grows by its number of tabs and buttons, Search by one,
+     and the scroller's own 2px gaps come on top. */
+  .topbar .tabs > .tabs-scroll { display: flex; flex: var(--bar-items, 5) 1 calc((var(--bar-items, 5) - 1) * 2px); min-width: 0; gap: 2px; overflow-x: auto; scrollbar-width: none; overscroll-behavior-x: contain; }
+  .topbar .tabs > .tabs-scroll::-webkit-scrollbar { display: none; }
+  .topbar .tabs .bar-buttons { display: contents; }
+  .topbar .tabs :is(.view-tab-group, .bar-button) { flex: 1 0 var(--control-height); }
+  .topbar .tabs > .tab-search { flex: 1 1 0; min-width: var(--control-height); }
+  .topbar .tabs .bar-button { -webkit-touch-callout: none; user-select: none; }
   .main:has(:is(input:not([type="checkbox"], [type="radio"], [type="range"], [type="color"], [type="button"], [type="submit"]), textarea, [contenteditable]:not([contenteditable="false"])):focus) .topbar .tabs { display: none; }
   :root:has(.main.project-main) #toasts { bottom: calc(var(--tabbar-space) + env(safe-area-inset-bottom) + 8px); }
   /* Tapping the open Tasks or Planning tab again shows its layouts in a tray that rises above the
      bar; a small chevron on the tab turns over while it is open. */
-  .layout-tray {
+  .layout-tray, .bar-tray {
     position: absolute; inset: auto 0 calc(100% + 8px); padding: 4px;
     border: 1px solid var(--line); border-radius: 16px; background: var(--surface); box-shadow: 0 6px 20px rgb(0 0 0 / 0.12);
     transform-origin: 50% 100%; opacity: 0; transform: translateY(8px) scale(0.97); visibility: hidden;
     transition: opacity 160ms ease, transform 160ms ease, visibility 0s 160ms;
   }
+  .bar-tray { max-height: min(60dvh, 480px); padding: 8px 12px; overflow-y: auto; overscroll-behavior: contain; }
+  .bar-tray-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 8px; }
+  .bar-tray[data-open] { opacity: 1; transform: none; visibility: visible; transition: opacity 160ms ease, transform 220ms cubic-bezier(0.2, 0.9, 0.3, 1.15); }
   .layout-tray[data-open] { opacity: 1; transform: none; visibility: visible; transition: opacity 160ms ease, transform 220ms cubic-bezier(0.2, 0.9, 0.3, 1.15); }
   .layout-tray .view-layout-switcher { display: flex; width: 100%; box-shadow: none; }
   /* Each choice stacks its icon over a short label, so four fit across a phone. */
@@ -180,7 +202,7 @@
 }
 @keyframes layout-tray-item { from { opacity: 0; transform: translateY(6px); } }
 @media (prefers-reduced-motion: reduce) {
-  .layout-tray, .layout-tray .view-layout-switcher button, .topbar .tabs .tab::before { transition: none !important; animation: none !important; }
+  .layout-tray, .bar-tray, .layout-tray .view-layout-switcher button, .topbar .tabs .tab::before { transition: none !important; animation: none !important; }
 }
 @media (min-width: 601px) {
   .topbar .mobile-view-switcher { display: none; }

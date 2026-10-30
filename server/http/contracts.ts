@@ -22,6 +22,7 @@ export interface Services {
   diagnostics: LegacyService;
   capture: LegacyService;
   bookmarks: LegacyService;
+  bar: LegacyService;
   rooms: Map<string, Map<string, any>>;
 }
 export interface RequestContext extends Services {

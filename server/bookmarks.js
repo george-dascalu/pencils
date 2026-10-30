@@ -6,17 +6,18 @@ import { sourceAccess } from "./sources.js";
 // Bookmarks (owner request, 30 Oct 2026): each person's starred cards, documents, boards and
 // project views, kept on the server so search lists the same ones first on every device.
 const KINDS = { card: "tasks", doc: "documents", board: "boards" };
-const VIEWS = ["list", "tree", "table", "kanban", "calendar", "timeline", "capacity"];
+export const VIEWS = ["list", "tree", "table", "kanban", "calendar", "timeline", "capacity"];
 const LIMIT = 200;
 const same = (a, b) => a.kind === b.kind && a.project === b.project && a.id === b.id;
 // A username such as "constructor" must not find Object's own members.
-const own = (all, username) => (Object.hasOwn(all, username) ? all[username] : []);
+export const own = (all, username) => (Object.hasOwn(all, username) ? all[username] : []);
 
-export class Bookmarks {
-  constructor(store, auth) {
+// A file of per-person lists ({ username: [...] }) outside the vault records, such as bookmarks and
+// the bottom bar's buttons (server/bar.js).
+export class PersonalLists {
+  constructor(store, name) {
     this.store = store;
-    this.auth = auth;
-    this.file = path.join(store.root, ".pencils", "bookmarks.json");
+    this.file = path.join(store.root, ".pencils", name);
     this.queue = Promise.resolve();
   }
   async all() {
@@ -40,11 +41,18 @@ export class Bookmarks {
     }
     await fs.rename(temporary, this.file);
   }
-  // One change at a time, outside the vault's write queue: bookmarks aren't vault records.
+  // One change at a time, outside the vault's write queue: these aren't vault records.
   serial(fn) {
     const next = this.queue.then(fn);
     this.queue = next.catch(() => {});
     return next;
+  }
+}
+
+export class Bookmarks extends PersonalLists {
+  constructor(store, auth) {
+    super(store, "bookmarks.json");
+    this.auth = auth;
   }
   // The bookmarked item with its current name, or null if it's gone or this person can't open it.
   async resolve(user, { kind, project: id, id: item }) {

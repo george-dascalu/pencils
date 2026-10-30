@@ -18,6 +18,7 @@ import { RecordIndex } from "../record-index.js";
 import { Diagnostics } from "../diagnostics.js";
 import { Capture } from "../capture.js";
 import { Bookmarks } from "../bookmarks.js";
+import { Bar } from "../bar.js";
 import { Problem } from "../problem.js";
 import { staticAssets } from "../static-assets.js";
 import { BACKUP_BYTES } from "../../public/backup-limits.js";
@@ -39,6 +40,7 @@ import { attachmentsRoutes } from "./routes/attachments.js";
 import { recordsRoutes } from "./routes/records.js";
 import { captureRoutes } from "./routes/capture.js";
 import { bookmarksRoutes } from "./routes/bookmarks.js";
+import { barRoutes } from "./routes/bar.js";
 
 interface ServerOptions {
   auth?: LegacyService;
@@ -92,6 +94,7 @@ export function createServer(
       options.productionAssets ?? process.env.NODE_ENV === "production",
   });
   const auth = options.auth || new Auth(store);
+  const bookmarks = new Bookmarks(store, auth);
   const services: Services = {
     store,
     auth,
@@ -101,7 +104,8 @@ export function createServer(
     index: new RecordIndex(store),
     diagnostics: new Diagnostics(),
     capture: new Capture(store, auth),
-    bookmarks: new Bookmarks(store, auth),
+    bookmarks,
+    bar: new Bar(store, bookmarks),
     rooms: new Map(),
   };
   store.watch();
@@ -309,6 +313,7 @@ export function createServer(
   route(["/api/capture"], captureRoutes, true, 64_000);
   route(["/api/capture-tokens", "/api/capture-tokens/:project"], captureRoutes);
   route(["/api/bookmarks"], bookmarksRoutes);
+  route(["/api/bar"], barRoutes);
   route(
     ["/api/projects", "/api/projects/:project", "/api/demo"],
     projectsRoutes,

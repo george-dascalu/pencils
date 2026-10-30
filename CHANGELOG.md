@@ -2,6 +2,12 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.20.48 — 2026-10-30
+
+### Added
+
+- Your own buttons in the bottom bar on phones and iPad, between the views and Search: commands such as New card, Today's note or a view, and your bookmarked cards, documents, boards and views. Add, order and remove them in Settings → You → Bottom bar, or press and hold the bar to change them in place. They're saved for you on every device, and the bar scrolls sideways when they don't fit.
+
 ## 0.20.47 — 2026-10-30
 
 ### Changed

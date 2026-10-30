@@ -10,6 +10,7 @@ import {projectSources} from "./project-sources.js";
 import { showSchedulePreview } from "./schedule-preview.js";
 import { localDate } from "./task-visibility.js";
 import { draftAutosave } from "./draft-autosave.js";
+import { installBottomBar } from "./bottom-bar.js";
 import { taskAutosave } from "./task-autosave.js";
 import { boardComments } from "./board-comments.js";
 import { workflowEditor } from "./workflow-editor.js";
@@ -77,6 +78,7 @@ export function installFeatures(ctx) {
     layout = projectLayout(ctx),
     canvasFeature = deferredController(() => import("./canvas.js").then(m => m.canvasFeatures({ ...ctx, layout, openBoard: drawings.enter })), { visible: () => [], edges: "", busy: false, click: false }),
     canvas = canvasFeature.controller,
+    bottomBar = (ctx.bottomBar = installBottomBar({ ...ctx, commands })),
     personal = personalSettings(ctx);
   taskReorder(ctx, sheet);
   taskRowEditor(ctx);
@@ -532,6 +534,7 @@ export function installFeatures(ctx) {
     }
     sync.load(state.session.user?.username || "shared");
     ctx.bookmarks.load();
+    bottomBar.load();
     return true;
   }
   function start(fn) {
@@ -667,10 +670,11 @@ export function installFeatures(ctx) {
     clearTimeout(searchTimer); // a search typed in the last dialog doesn't fill this one
     searchResults("");
   }
-  function commands() {
+  // The commands that work here, or all of them (for choosing the bottom bar's buttons).
+  function commands(all = false) {
     return [
       { id: "today", title: "Today's note", run: () => document.querySelector('.sidebar [data-action="today"]')?.click() },
-      ...(state.project && !state.project.personal
+      ...(all || (state.project && !state.project.personal)
         ? [
             { id: "new-task", title: "New card", run: () => taskDialog(null) },
             ...[["workflow", "Statuses & workflow"], ["import", "Import notes"], ["templates", "Task templates"], ["quick-capture", "Quick capture"]].map(([id, title]) => ({ id, title, run: () => click(id) })),
@@ -1240,6 +1244,7 @@ export function installFeatures(ctx) {
     }
   });
   return {
+    bottomBar,
     viewReady: () => state.view === "documents" ? documentFeature.ready()
       : ["board", "drawing"].includes(state.view) ? canvasFeature.ready() && drawingFeature.ready() : true,
     prepareView: () => state.view === "documents" ? documentFeature.load()
