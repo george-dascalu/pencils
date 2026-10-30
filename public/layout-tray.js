@@ -24,7 +24,8 @@ export function mountLayoutTray(content, open) {
   tray.id = "layout-tray";
   tray.toggleAttribute("data-open", open);
   tray.append(content);
-  tab.closest(".view-tab-group").after(tray);
+  // After the bar's scroller, not in it: iOS Safari draws a tray inside it behind the page.
+  tab.closest(".tabs-scroll").after(tray);
   tab.setAttribute("aria-controls", tray.id);
   tab.setAttribute("aria-expanded", String(open));
 }

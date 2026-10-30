@@ -2,6 +2,12 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.20.55 — 2026-10-30
+
+### Fixed
+
+- On iPhone and iPad, the layouts tray above the bottom bar (such as Calendar, Timeline and Capacity) shows in front of the page again, instead of behind it.
+
 ## 0.20.54 — 2026-10-30
 
 ### Added

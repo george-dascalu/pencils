@@ -78,7 +78,16 @@ onDevices(["phone", "small", "ipad", "ipad-portrait"], () => test("tapping the o
   expect(last.x + last.width, `${device}: the choices fill the tray`).toBeGreaterThan(trayBox.x + trayBox.width - 12);
   for (const b of await tray.locator("button").all()) expect((await b.boundingBox()).height).toBeGreaterThanOrEqual(44);
   await expect(tray.locator('[aria-pressed="true"]')).toHaveAttribute("data-view", "list");
-  expect(await tray.evaluate((el) => el.previousElementSibling.contains(document.querySelector('.tabs [data-view="tasks"]'))), "right after its tab, for keyboard order").toBe(true);
+  // Right after the bar's views and buttons, for keyboard order, but outside their scroller: iOS
+  // Safari drew a tray inside it behind the page (owner report, 30 October 2026).
+  expect(await tray.evaluate((el) => el.previousElementSibling.matches(".tabs-scroll")), "after the tabs").toBe(true);
+  const scroller = await tray.evaluate((el) => {
+    for (let p = el.parentElement; p; p = p.parentElement) {
+      if (getComputedStyle(p).overflowX !== "visible") return p.className;
+      if (p.matches(".tabs")) return null;
+    }
+  });
+  expect(scroller, `${device}: no scroller around the tray`).toBeNull();
   // Choosing the open layout just closes the tray; choosing another opens it and closes the tray.
   await tray.locator('[data-view="list"]').click();
   await expect(tray).toBeHidden();
