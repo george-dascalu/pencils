@@ -3,6 +3,7 @@ import { gfm } from "/vendor/turndown-gfm.js";
 import { codeLanguages, codeLanguageName, codeLanguageEntry, highlightCode } from "./document-code.js";
 import { TABLE_SCROLL_MARKER } from "./document-markdown.js";
 import { focusOnOpen } from "./open-focus.js";
+import { parseTabSeparated } from "./document-tables.js";
 
 const converter = new TurndownService({ headingStyle: "atx", codeBlockStyle: "fenced", bulletListMarker: "-" });
 converter.use(gfm);
@@ -291,6 +292,11 @@ export function editableDocumentComponent({ element, raw, from, kind, editor, re
     // line), Tab past the last cell adds a row, and the arrows cross into the next cell at a cell's
     // edges. On phones the keyboard's return key moves down the same way.
     const addRow = () => { const row = insertRow(table.rows.length); relabel(); commit(); return row; };
+    const moveTo = (cell, start) => {
+      cell.focus();
+      const place = document.createRange(); place.selectNodeContents(cell); place.collapse(start);
+      window.getSelection().removeAllRanges(); window.getSelection().addRange(place);
+    };
     const caret = () => { const selection = window.getSelection(); return selection.rangeCount && selection.isCollapsed ? selection.getRangeAt(0) : null; };
     const sideText = (cell, range, start) => {
       const side = document.createRange(); side.selectNodeContents(cell);
@@ -317,9 +323,28 @@ export function editableDocumentComponent({ element, raw, from, kind, editor, re
       else if (range && event.key === "ArrowLeft" && !event.shiftKey && textSide(cell, range, true)) next = cells[cells.indexOf(cell) - 1];
       if (!next) return;
       event.preventDefault(); event.stopPropagation();
-      next.focus();
-      const place = document.createRange(); place.selectNodeContents(next); place.collapse(start);
-      window.getSelection().removeAllRanges(); window.getSelection().addRange(place);
+      moveTo(next, start);
+    }, true);
+    // Cells copied from a spreadsheet (tab-separated) fill the table from the cell you're in, adding
+    // rows and columns. Other text pastes into the cell, without the line break spreadsheets end a
+    // copy with.
+    table.addEventListener("paste", event => {
+      const cell = event.target.closest?.("th, td");
+      if (!cell) return;
+      const text = event.clipboardData.getData("text/plain").replace(/\r\n?/g, "\n").replace(/\n$/, "");
+      event.preventDefault(); event.stopPropagation();
+      if (!text.includes("\t")) { document.execCommand("insertText", false, text); commit(cell); return; }
+      const rows = parseTabSeparated(text), top = cell.parentElement.rowIndex, left = cell.cellIndex;
+      while (columns() < left + Math.max(...rows.map(row => row.length))) {
+        for (const row of table.rows) addCell(row, row.cells.length);
+        aligns.push(null);
+      }
+      let last = cell;
+      rows.forEach((values, i) => {
+        const row = table.rows[top + i] || insertRow(table.rows.length);
+        values.forEach((value, j) => { last = row.cells[left + j]; last.textContent = value; });
+      });
+      relabel(); commit(); moveTo(last, false);
     }, true);
     function tableOptions() {
       const button = document.createElement("button"); button.type = "button"; button.className = "button small";

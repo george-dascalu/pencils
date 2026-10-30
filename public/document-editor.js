@@ -10,6 +10,7 @@ import {
 import { documentReference } from "./document-model.js";
 import { editableDocumentComponent } from "./document-components.js";
 import { focusOnOpen } from "./open-focus.js";
+import { spreadsheetRows, markdownTable } from "./document-tables.js";
 import { insertCategories } from "./document-insert.js";
 import { highlightCodeBlocks } from "./document-code.js";
 import { listCallouts, listCalloutAfterMarker, setListCallout, listCalloutLabel } from "./document-list-callouts.js";
@@ -337,6 +338,18 @@ export function markdownDocumentEditor({ parent, text, mode = "live", renderer, 
             hoverTimer = setTimeout(() => {
               if (alive) view.dispatch({ effects: hoverEffect.of(word ? { from: word.from, to: word.to } : null) });
             }, 80);
+          },
+          paste(event) {
+            // Cells copied from a spreadsheet become a table, on lines of its own.
+            const rows = mode === "live" && spreadsheetRows(event.clipboardData?.getData("text/plain") || "");
+            if (!rows) return false;
+            event.preventDefault();
+            const { from, to } = view.state.selection.main, doc = view.state.doc, start = doc.lineAt(from), end = doc.lineAt(to);
+            const before = doc.sliceString(start.from, from).trim() ? "\n\n" : start.number > 1 && doc.line(start.number - 1).text.trim() ? "\n" : "";
+            const after = doc.sliceString(to, end.to).trim() ? "\n\n" : end.number < doc.lines && doc.line(end.number + 1).text.trim() ? "\n" : "";
+            const table = markdownTable(rows);
+            view.dispatch({ changes: { from, to, insert: before + table + after }, selection: { anchor: from + before.length + table.length }, userEvent: "input.paste", scrollIntoView: true });
+            return true;
           },
           mouseleave() {
             clearTimeout(hoverTimer);

@@ -2,6 +2,16 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.20.37 — 2026-10-30
+
+### Added
+
+- Cells copied from a spreadsheet (Excel, Google Sheets, Numbers) paste into a document table from the cell you're in, adding rows and columns as needed. Pasted into the text in Live preview, they become a new table.
+
+### Fixed
+
+- Pasting a single spreadsheet cell into a table cell no longer adds the line break spreadsheets end a copy with.
+
 ## 0.20.36 — 2026-10-30
 
 ### Added

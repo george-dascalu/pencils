@@ -81,3 +81,33 @@ onDevices(["desktop", "phone"], () => test("spreadsheet keys move between cells 
   await expect(cell(page, "Row 3, column 1"), `${device}: Tab past the last cell adds a row`).toBeFocused();
   await expect.poll(saved, device).toBe(lines("| A | B |", "| --- | --- |", "| 1 | 2 |", "| x<br>y | <br>z |", "|  |  |"));
 }));
+
+// Paste from spreadsheets: cells copied from Excel, Sheets or Numbers arrive as tab-separated text.
+// In a cell they fill the cells from there, adding rows and columns; in the text they become a table.
+const paste = (page, text) => page.evaluate(text => {
+  const data = new DataTransfer(); data.setData("text/plain", text);
+  document.activeElement.dispatchEvent(new ClipboardEvent("paste", { clipboardData: data, bubbles: true, cancelable: true }));
+}, text);
+
+test("cells pasted from a spreadsheet fill the table from the cell you are in", async ({ page }) => {
+  const saved = await open(page);
+  await cell(page, "Row 2, column 2").click();
+  await paste(page, "x\ty\tz\r\nu\tv\tw\r\n");
+  await expect.poll(saved).toBe(lines("| A | B |  |  |", "| --- | --- | --- | --- |", "| 1 | 2 |  |  |", "| 3 | x | y | z |", "|  | u | v | w |"));
+  await expect(cell(page, "Row 3, column 4"), "the last pasted cell has focus").toBeFocused();
+  await page.keyboard.type("!");
+  await expect.poll(saved, "typing continues after the pasted value").toContain("| u | v | w! |");
+  await cell(page, "Row 1, column 1").click();
+  await paste(page, "p\nq\r\n");
+  await expect.poll(saved, "text without tabs stays in one cell, without a spreadsheet's final line break").toContain("| 1p<br>q | 2 |  |  |");
+});
+
+test("spreadsheet cells pasted into the text become a table", async ({ page }) => {
+  const record = await app.store.createDocument(app.project.id, { title: `Paste ${Date.now()}`, body: "Intro\n" });
+  await page.goto(`${app.base}/#project/${app.project.id}/documents/${record.id}`);
+  await page.getByRole("textbox", { name: "Document content" }).click();
+  await page.keyboard.press("Control+End");
+  await paste(page, "Name\tQty\nApples\t3\n");
+  await expect(cell(page, "Row 1, column 1")).toHaveText("Apples");
+  await expect.poll(async () => (await app.store.getDocument(app.project.id, record.id)).body).toContain("Intro\n\n| Name | Qty |\n| --- | --- |\n| Apples | 3 |");
+});
