@@ -2,6 +2,12 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.20.15 — 2026-10-30
+
+### Changed
+
+- On phones, pages run behind the floating bottom bar instead of stopping above it; the end of each page, Help and the teams and people pages still scrolls clear of the bar. Boards keep their space above it.
+
 ## 0.20.14 — 2026-10-30
 
 ### Changed

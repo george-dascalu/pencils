@@ -37,9 +37,9 @@ onDevices(["phone", "small"], () => test("five icon tabs float at the bottom in 
     expect((await t.textContent()).trim(), "no text labels").toBe("");
   }
   await expect(tab(page, "tasks")).toHaveAttribute("aria-current", "page");
-  // The content ends above the bar instead of under it.
+  // The content runs behind the bar (bottom-bar.spec.mjs checks its end scrolls clear of it).
   const content = await page.locator("#view-content").boundingBox();
-  expect(content.y + content.height).toBeLessThanOrEqual(box.y + 1);
+  expect(content.y + content.height).toBeGreaterThan(box.y + box.height / 2);
   for (const [view, layout] of [["overview", "overview"], ["documents", "documents"], ["planning", "calendar"], ["board", "board"], ["tasks", "list"]]) {
     await tab(page, view).click();
     await page.locator(`.main[data-layout-view="${layout}"]`).waitFor();

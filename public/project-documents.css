@@ -462,9 +462,13 @@ span.document-list-callout { display: block; }
   .document-mode-picker { display: inline-flex; }
 }
 
-/* Keep the last line clear of the word-count chip. */
-.document-codemirror .cm-editor .cm-content { padding-bottom: 40px; }
-.document-reading .document-page { padding-bottom: 40px; }
+/* Keep the last line clear of the word-count chip; on phones also clear of the floating bottom bar,
+   which the document runs behind (project-layout.css). */
+.document-codemirror .cm-editor .cm-content { padding-bottom: calc(40px + var(--tabbar-clearance, 0px)); }
+.document-reading .document-page { padding-bottom: calc(40px + var(--tabbar-clearance, 0px)); }
+@media (max-width: 600px) {
+  .main.project-main .document-save { bottom: calc(var(--tabbar-clearance) + 2px); }
+}
 
 /* Code blocks: a language menu above the code and syntax colours painted with
    the CSS Custom Highlight API (document-code.js). */

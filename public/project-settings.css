@@ -286,7 +286,7 @@
   /* Phones keep the shell's fixed height and scroll the stacked page inside it. */
   .main > #view-content.project-settings-layout.project-settings-page {
     display: block;
-    padding: 16px;
+    padding: 16px 16px calc(16px + var(--tabbar-clearance, 0px));
     overflow: auto;
   }
   .project-settings-layout > :is(.settings-navigation, .settings-content) {

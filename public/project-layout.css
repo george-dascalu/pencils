@@ -136,8 +136,16 @@
    ends typing. */
 @media (max-width: 600px) {
   /* The bar (control height, 4px padding, 1px border) floats 8px above the bottom, with 8px above it. */
-  :root { --tabbar-space: calc(var(--control-height) + 26px); }
-  .main.project-main { padding-bottom: calc(var(--tabbar-space) + env(safe-area-inset-bottom)); }
+  :root { --tabbar-space: calc(var(--control-height) + 26px); --tabbar-clearance: calc(var(--tabbar-space) + env(safe-area-inset-bottom)); }
+  /* Content runs behind the bar, and each page's scroller ends with room to lift its last item
+     clear of it. Boards keep the bar's space, so their own controls at the bottom stay in reach.
+     Views that scroll inside a component (table, kanban, timeline, tree) pad that scroller instead.
+     Sticky footers, such as the settings Save bar, stop at the padding, so they stay above the bar too. */
+  .main.project-main:is([data-layout-view="board"], [data-layout-view="drawing"]) { padding-bottom: var(--tabbar-clearance); }
+  .main.project-main:not([data-layout-view="board"], [data-layout-view="drawing"], [data-layout-view="table"], [data-layout-view="kanban"], [data-layout-view="timeline"], [data-layout-view="tree"]) > :is(#view-content, .help-page, .directory-page) { padding-bottom: calc(var(--tabbar-clearance) + 6px); }
+  .main.project-main > #view-content > :is(.table-scroll, .tree-wrapper, .kanban-swimlanes),
+  .main.project-main > #view-content > .task-timeline > .timeline-scroll,
+  .main.project-main > #view-content > .kanban > .kanban-column { padding-bottom: var(--tabbar-clearance); }
   .topbar .board-project-tools { display: contents; }
   .topbar .board-project-tools > :not(.tabs) { display: none; }
   .topbar .tabs { position: fixed; inset: auto 12px calc(8px + env(safe-area-inset-bottom)); z-index: 10; display: flex; gap: 2px; padding: 4px; border: 1px solid var(--line); border-radius: 16px; background: var(--surface); box-shadow: 0 6px 20px rgb(0 0 0 / 0.12); }
