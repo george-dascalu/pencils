@@ -7,6 +7,11 @@ const app = useApp(async (store) => {
   const project = await store.createProject({ title: "Phone fields", key: "PF" });
   const task = await store.createTask(project.id, { title: "Tap my fields", status: "todo", priority: "low", assignee: "Alex" });
   await store.createTask(project.id, { title: "A very long card title that keeps going well past the width of any phone screen", status: "todo", priority: "low" });
+  // Keys of different lengths, statuses, assignees and dates for the aligned boxes.
+  for (let i = 0; i < 10; i++) await store.createTask(project.id, { title: `Row ${i}`, status: i % 2 ? "in-progress" : "todo", assignee: i % 3 ? "Alexandra" : "", due: i % 2 ? "2026-11-28" : "" });
+  // A deep Tree branch with next year's dates.
+  let parent = null;
+  for (let depth = 0; depth < 5; depth++) parent = await store.createTask(project.id, { title: `Depth ${depth}`, status: "in-progress", assignee: "Alexandra", due: "2027-02-03", ...(parent ? { parent: parent.id } : {}) });
   return { project, task };
 });
 const saved = async () => (await app.store.snapshot(app.project.id)).tasks.find((t) => t.id === app.task.id);
@@ -34,4 +39,41 @@ onDevices(["phone"], () => test("row fields change from their own picker; the re
   const key = await row.locator(".phone-task-meta > span:not([class])").boundingBox();
   await page.mouse.click(key.x + key.width / 2, key.y + key.height / 2);
   await expect(page.locator("#task-form")).toBeVisible();
+}));
+
+// Owner request, 30 October 2026: the assignee, status and priority box has one width on every
+// row, centred, so the boxes line up down the list.
+onDevices(["phone", "small"], () => test("every row's field box has the same width and position, centred in the row", async ({ page, device }) => {
+  await page.goto(`${app.base}/#project/${app.project.id}/list`);
+  await page.locator(".task-row .phone-task-fields").first().waitFor();
+  const boxes = await page.locator(".task-row .phone-task-fields").evaluateAll((els) => els.map((el) => {
+    const box = el.getBoundingClientRect(), meta = el.closest(".phone-task-meta").getBoundingClientRect();
+    return { left: box.left, width: box.width, centre: box.left + box.width / 2 - (meta.left + meta.width / 2) };
+  }));
+  expect(boxes.length).toBeGreaterThan(10);
+  for (const box of boxes) {
+    expect(Math.abs(box.left - boxes[0].left), `${device}: boxes share a left edge`).toBeLessThanOrEqual(0.5);
+    expect(Math.abs(box.width - boxes[0].width), `${device}: boxes share a width`).toBeLessThanOrEqual(0.5);
+    expect(Math.abs(box.centre), `${device}: centred in the row`).toBeLessThanOrEqual(1);
+  }
+  // Every row, also cramped ones (320px, deep Tree rows, next year's dates), keeps the key, box
+  // and date apart, and the status inside its box.
+  for (const [view, width] of [["list", null], ["tree", null], ["list", 320], ["tree", 320]]) {
+    if (width) await page.setViewportSize({ width, height: 800 });
+    await page.goto(`${app.base}/#project/${app.project.id}/${view}`);
+    await page.locator(".task-row .phone-task-fields").first().waitFor();
+    // Below 360px, Tree rows three levels down have less room than the three 44px targets need.
+    const rows = await page.locator(width === 320 && view === "tree" ? ".task-row:not([style*='--depth:3'], [style*='--depth:4']) .phone-task-meta" : ".task-row .phone-task-meta").evaluateAll((els) => els.map((meta) => ({
+      parts: [...meta.children].map((el) => el.getBoundingClientRect().toJSON()),
+      box: meta.querySelector(".phone-task-fields").getBoundingClientRect().toJSON(),
+      status: meta.querySelector(".phone-task-status").getBoundingClientRect().toJSON(),
+      meta: meta.getBoundingClientRect().toJSON(),
+    })));
+    const where = `${device} ${view} ${width || ""}`;
+    for (const row of rows) {
+      for (let i = 1; i < row.parts.length; i++) expect(row.parts[i].left, `${where}: meta parts don't overlap ${JSON.stringify(row.parts)}`).toBeGreaterThanOrEqual(row.parts[i - 1].right - 0.5);
+      expect(row.status.left >= row.box.left - 0.5 && row.status.right <= row.box.right + 0.5, `${where}: the status stays in its box`).toBe(true);
+      expect(row.parts.at(-1).right, `${where}: the line fits its row`).toBeLessThanOrEqual(row.meta.right + 0.5);
+    }
+  }
 }));

@@ -2,6 +2,12 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.20.27 — 2026-10-30
+
+### Changed
+
+- On phones the assignee, status and priority box has one width on every List and Tree row and relationship row, centred under the title, so the boxes line up down the list.
+
 ## 0.20.26 — 2026-10-30
 
 ### Changed

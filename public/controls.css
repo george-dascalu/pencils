@@ -407,8 +407,8 @@ textarea,
   width: var(--list-field-icon);
   height: var(--list-field-icon);
 }
-/* The phone summary line sizes its status to the text so the line fits. */
-.phone-task-meta > .field-box { flex: 0 1 auto; min-width: 0; max-width: 65%; }
+/* The phone summary line gives its box one centred width (task-tools.css); the status shrinks within it. */
+.phone-task-meta > .field-box { min-width: 0; }
 .phone-field > .field-chip-status { flex: 0 1 auto; width: auto; min-width: 0; }
 /* The targets around the chips stay transparent and full height. */
 .row-fields > :is(.row-status, .row-priority) { padding: 0 !important; background: transparent !important; border: 0 !important; }

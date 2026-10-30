@@ -265,6 +265,14 @@ onDevices(["phone"], () => test("on phones relationship rows match the List rows
   expect(relation.key.x, `ID before the fields ${facts}`).toBeLessThan(relation.box.x);
   expect(Math.abs(relation.box.w - list.box.w), `field box width ${facts}`).toBeLessThanOrEqual(2);
   expect([relation.due.text, relation.due.font], `due date ${facts}`).toEqual([list.due.text, list.due.font]);
+  // On a 320px phone the ID, box and date still keep apart inside the row.
+  await page.setViewportSize({ width: 320, height: 700 });
+  const narrow = await page.locator(rel).evaluate((row) => {
+    const link = row.querySelector(".task-relationship-link").getBoundingClientRect();
+    const parts = [".task-relationship-key", ".task-relationship-metadata", ".due"].map((s) => row.querySelector(s).getBoundingClientRect());
+    return { apart: parts.every((p, i) => !i || p.left >= parts[i - 1].right - 0.5), fits: parts.at(-1).right <= link.right + 0.5 };
+  });
+  expect(narrow, "320px: ID, box and date keep apart and fit").toEqual({ apart: true, fits: true });
 }));
 
 // The phone layout above is for relationship rows only: a document's linked cards keep the card

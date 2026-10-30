@@ -1385,6 +1385,14 @@ html.task-page-open,
   .task-relationship-metadata { grid-template-columns: 44px minmax(44px, auto) 44px; gap: 0; justify-items: center; }
   .task-relationship-metadata > .task-relationship-status { width: auto; }
   .task-relationship-link > .due { display: inline; margin-inline-start: auto; font-size: var(--type-meta); }
+  /* As in List rows, the field box has one width centred under the title, so the boxes line up. */
+  .task-relationship-row > .task-relationship-link:has(> .task-relationship-metadata) { display: grid; grid-template-columns: 1fr minmax(132px, 168px) 1fr; align-items: center; }
+  .task-relationship-row > .task-relationship-link:has(> .task-relationship-metadata) > .task-relationship-title { grid-area: 1 / 1 / 2 / -1; }
+  .task-relationship-row > .task-relationship-link:has(> .task-relationship-metadata) > .icon:first-child { grid-area: 2 / 1; }
+  .task-relationship-row > .task-relationship-link:has(> .task-relationship-metadata) > .task-relationship-key { grid-area: 2 / 1; min-width: 0; margin-inline-start: 18px; }
+  .task-relationship-row > .task-relationship-link > .task-relationship-metadata { grid-area: 2 / 2; grid-template-columns: 44px minmax(44px, 1fr) 44px; }
+  .task-relationship-row > .task-relationship-link > .task-relationship-metadata > .task-relationship-status { max-width: 100%; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+  .task-relationship-row > .task-relationship-link > .due { grid-area: 2 / 3; justify-self: end; margin: 0; white-space: normal; text-align: end; }
 }
 @media (max-width: 600px) {
   .task-dialog.board-task-editor .task-editor-header-row .task-editor-actions { justify-content: flex-end; overflow: visible; }
@@ -1446,7 +1454,6 @@ html.task-page-open,
   /* The fields' targets reach 6px above the meta line, so the summary's gap keeps them off the title. */
   .phone-field { display: grid; place-items: center; flex: none; min-width: 44px; min-height: 44px; margin-block: -6px; padding: 0; border: 0; background: transparent; color: inherit; pointer-events: auto; }
   .phone-field:disabled { pointer-events: none; }
-  .phone-task-fields > [data-field="status"] { flex: 0 1 auto; }
   .task-row.tree-row > .task-reorder-handle { grid-area: 1 / 3; }
   .phone-task-title { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 14px; line-height: 1.4; }
   .phone-task-title.done { text-decoration: line-through; color: var(--muted); }
@@ -1456,6 +1463,15 @@ html.task-page-open,
   .phone-task-meta .task-assignee { font-size: var(--type-initials); flex-shrink: 0; }
   .phone-task-status { overflow: hidden; text-overflow: ellipsis; }
   .phone-task-meta .due { font-size: 10px; margin-inline-start: auto; }
+  /* The type and key on the left, the field box at one width centred in the row (so the boxes
+     line up down the list), the date on the right. Short of room, the key shortens, the date wraps
+     and the box narrows to its three 44px targets. */
+  .phone-task-meta { display: grid; grid-template-columns: 1fr minmax(132px, 168px) 1fr; gap: 4px; }
+  .phone-task-meta > .icon { grid-area: 1 / 1; }
+  .phone-task-meta > span:not([class]) { grid-area: 1 / 1; min-width: 0; margin-inline-start: 16px; overflow: hidden; text-overflow: ellipsis; }
+  .phone-task-meta > .phone-task-fields { grid-column: 2; display: flex; }
+  .phone-task-fields > [data-field="status"] { display: flex; flex: 1 1 auto; justify-content: center; }
+  .phone-task-meta > .due { grid-column: 3; justify-self: end; margin-inline-start: 0; white-space: normal; text-align: end; }
 }
 @media (max-width: 600px) {
   .list-group > .section-title, #view-content[data-layout-view="tree"] > .section-title {
