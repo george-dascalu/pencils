@@ -159,6 +159,7 @@
 }
 #board-settings-form > .dialog-body {
   overflow-y: auto;
+  overscroll-behavior: contain;
   min-height: 0;
 }
 #board-settings-form > :is(.dialog-head, .dialog-foot) {

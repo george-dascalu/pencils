@@ -1580,6 +1580,7 @@ const features = installFeatures({
   $,
   $$,
   assigneeHTML,
+  dueHTML,
   toast,
   task,
   board,

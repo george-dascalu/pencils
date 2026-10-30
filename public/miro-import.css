@@ -14,6 +14,7 @@
 .miro-import .dialog-body {
   min-height: 0;
   overflow: auto;
+  overscroll-behavior: contain;
   padding: 16px;
 }
 .miro-import form,

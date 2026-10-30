@@ -31,6 +31,11 @@ function assertIncreasing(values, names, label) {
 async function assertRelationshipOrder(locator, selectors, label) {
   const names = ["type", "ID", "title", "assignee", "status", "priority"];
   const boxes = await locator.evaluate((root, selectors) => selectors.map((s) => { const el = root.querySelector(s); const r = el.getBoundingClientRect(); return { left: Math.round(r.left), top: Math.round(r.top) }; }), selectors);
+  // Phones lay a relationship out like a List row: the title, then the type, ID and fields (30 Oct).
+  if (boxes[2].top + 4 < boxes[0].top) {
+    const rest = [0, 1, 3, 4, 5];
+    return assertIncreasing(rest.map((i) => boxes[i].left), rest.map((i) => names[i]), `${label} below the title`);
+  }
   const twoLines = boxes[3].top > boxes[2].top + 4;
   if (!twoLines) return assertIncreasing(boxes.map((b) => b.left), names, label);
   assertIncreasing(boxes.slice(0, 3).map((b) => b.left), names.slice(0, 3), `${label} first line`);

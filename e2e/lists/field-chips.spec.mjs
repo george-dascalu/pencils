@@ -145,7 +145,9 @@ onDevices(["desktop", "ipad", "phone"], () => test("relationship rows use the li
   }, "relationship");
   const widths = await page.locator(".task-relationship-row .task-relationship-status").evaluateAll((els) => els.map((el) => Math.round(el.getBoundingClientRect().width)));
   expect(widths).toHaveLength(4);
-  expect([...new Set(widths)], `status widths ${widths}`).toEqual([list.status]);
+  // Phones size each status to its text, as List rows do there (owner request, 30 Oct).
+  if (device === "phone") expect(widths.every((w) => w <= list.status) && new Set(widths).size > 1, `status widths follow their text ${widths}`).toBe(true);
+  else expect([...new Set(widths)], `status widths ${widths}`).toEqual([list.status]);
   const space = await room(page, ".task-relationship-row .task-relationship-status", ".task-relationship-row");
   expect(space.top >= 4 && space.bottom >= 4, `room above and below ${JSON.stringify(space)}`).toBe(true);
   const rows = await page.locator(".task-relationship-row").evaluateAll((els) => els.map((row) => {
@@ -236,4 +238,46 @@ onDevices(["desktop", "ipad"], () => test("Kanban cards use the list chips", asy
   const card = `[data-drag-task="${app.children[1].id}"]`;
   await openView(page, "kanban", card);
   listChips(ref, LIST[device], { assignee: await look(page, `${card} .task-assignee`), priority: await look(page, `${card} .priority`) }, "kanban");
+}));
+
+// Owner request, 30 October 2026: on phones, relationship rows look like List rows: the title
+// first, then the type icon, ID, the field box at the same size and the due date.
+onDevices(["phone"], () => test("on phones relationship rows match the List rows' layout and sizes", async ({ page }) => {
+  const child = app.children[1];
+  const current = (await app.store.snapshot(app.project.id)).tasks.find((t) => t.id === child.id);
+  if (!current.due) await app.store.updateTask(app.project.id, child.id, { revision: current.revision, due: "2026-11-05" });
+  const part = (selector) => page.evaluate((selector) => {
+    const el = [...document.querySelectorAll(selector)].find((e) => e.getClientRects().length);
+    const r = el.getBoundingClientRect(), cs = getComputedStyle(el);
+    return { x: Math.round(r.x), y: Math.round(r.y), w: Math.round(r.width), h: Math.round(r.height), font: cs.fontSize, text: el.textContent.trim() };
+  }, selector);
+  const row = `.task-row[data-task-order-row="${child.id}"]`;
+  await openView(page, "list", row);
+  const list = { title: await part(`${row} .phone-task-title`), key: await part(`${row} .phone-task-meta > span:not(.field-box, .due)`), box: await part(`${row} .phone-task-fields`), due: await part(`${row} .phone-task-meta > .due`) };
+  await page.locator(`[data-action="task-open"][data-id="${app.parent.id}"]:visible`).first().click();
+  const rel = `#task-form .task-relationship-row:has([data-relationship-open="${child.id}"])`;
+  await expect(page.locator(rel)).toBeVisible();
+  const relation = { title: await part(`${rel} .task-relationship-title`), key: await part(`${rel} .task-relationship-key`), box: await part(`${rel} .task-relationship-metadata`), due: await part(`${rel} .due`) };
+  const facts = JSON.stringify({ list, relation });
+  expect(relation.title.font, `title size ${facts}`).toBe(list.title.font);
+  expect(relation.key.font, `ID size ${facts}`).toBe(list.key.font);
+  expect(relation.title.y + relation.title.h, `title on its own line above the fields ${facts}`).toBeLessThanOrEqual(relation.box.y + 1);
+  expect(relation.key.x, `ID before the fields ${facts}`).toBeLessThan(relation.box.x);
+  expect(Math.abs(relation.box.w - list.box.w), `field box width ${facts}`).toBeLessThanOrEqual(2);
+  expect([relation.due.text, relation.due.font], `due date ${facts}`).toEqual([list.due.text, list.due.font]);
+}));
+
+// The phone layout above is for relationship rows only: a document's linked cards keep the card
+// type, ID and title on one line in that order.
+onDevices(["phone", "desktop"], () => test("a document's linked cards keep type, ID and title on one line", async ({ page, device }) => {
+  const doc = await app.store.createDocument(app.project.id, { title: `Linked ${device}`, body: "Notes" });
+  const child = (await app.store.snapshot(app.project.id)).tasks.find((t) => t.id === app.children[2].id);
+  await app.store.updateTask(app.project.id, child.id, { revision: child.revision, documents: [...(child.documents || []), doc.id] });
+  await page.goto(url(`documents/${doc.id}`));
+  const link = page.locator(".document-linked-cards [data-action='task-open']").first();
+  await expect(link).toBeVisible();
+  const parts = await link.evaluate((el) => [":scope > .icon", ".task-relationship-key", ".task-relationship-title"].map((s) => { const r = el.querySelector(s).getBoundingClientRect(); return { left: Math.round(r.left), right: Math.round(r.right), middle: Math.round(r.top + r.height / 2) }; }));
+  const facts = JSON.stringify(parts);
+  expect(parts[0].left < parts[1].left && parts[1].left < parts[2].left, `type, ID, title left to right ${facts}`).toBe(true);
+  expect(Math.max(...parts.map((p) => p.middle)) - Math.min(...parts.map((p) => p.middle)), `one line ${facts}`).toBeLessThanOrEqual(4);
 }));

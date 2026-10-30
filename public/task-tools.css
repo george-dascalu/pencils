@@ -1394,10 +1394,18 @@ html.task-page-open,
 @container (max-width: 640px) {
   .task-relationship-key { max-width: 58px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: var(--type-meta); }
 }
-/* Narrow panels keep the full fields on a second line instead of shrinking them. */
+/* Wide rows keep one line without dates; narrow panels (phones) lay a relationship out like a
+   List row on a phone: the title first, then the type, ID, fields and due date at the list's sizes. */
+.task-relationship-link > .due { display: none; }
 @container (max-width: 440px) {
   .task-relationship-link { flex-wrap: wrap; row-gap: 6px; padding-block: 6px; }
-  .task-relationship-metadata { flex: 0 0 calc(100% - 24px); margin-inline-start: 24px; }
+  /* Only card rows, which hold the field box; document links keep type, ID and title on one line. */
+  .task-relationship-link:has(> .task-relationship-metadata) { column-gap: 6px; padding: 4px 6px; }
+  .task-relationship-link:has(> .task-relationship-metadata) > .task-relationship-title { order: -1; flex: 0 0 100%; font-size: 14px; line-height: 1.4; }
+  .task-relationship-link:has(> .task-relationship-metadata) > .icon:first-child { flex-basis: 12px; width: 12px; height: 12px; color: var(--muted); }
+  .task-relationship-metadata { grid-template-columns: 44px minmax(44px, auto) 44px; gap: 0; justify-items: center; }
+  .task-relationship-metadata > .task-relationship-status { width: auto; }
+  .task-relationship-link > .due { display: inline; margin-inline-start: auto; font-size: var(--type-meta); }
 }
 @media (max-width: 600px) {
   .task-dialog.board-task-editor .task-editor-header-row .task-editor-actions { justify-content: flex-end; overflow: visible; }

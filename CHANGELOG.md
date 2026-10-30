@@ -2,6 +2,16 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## Unreleased
+
+### Changed
+
+- On phones, relationship rows in the card editor look like List rows: the title first, then the type, ID, the same-sized field box and the due date.
+
+### Fixed
+
+- Scrolling Board settings or Miro import no longer scrolls the page behind them.
+
 ## 0.20.20 — 2026-10-30
 
 ### Fixed
