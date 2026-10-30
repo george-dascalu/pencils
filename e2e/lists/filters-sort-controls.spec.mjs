@@ -18,7 +18,7 @@ const filters = (page) => page.locator('[data-board-menu="filters"]');
 onDevices(["ipad", "desktop"], () => {
   test("Filters and Sort are icon buttons; the Filters badge counts active filters", async ({ page }) => {
     await open(page, "kanban");
-    const summary = filters(page).locator("> summary"), sort = page.locator(".toolbar-right [data-sort-menu]");
+    const summary = filters(page).locator("> summary"), sort = page.locator("[data-sort-menu]");
     for (const control of [summary, sort]) {
       await expect(control.locator(":scope > .icon")).toHaveCount(1);
       expect((await control.textContent()).trim(), "no text label").toBe("");
@@ -30,7 +30,7 @@ onDevices(["ipad", "desktop"], () => {
     await expect(sort).toHaveAttribute("aria-label", "Sort: Date created");
     await sort.click();
     await page.locator("#shared-select-menu").getByRole("option", { name: "Title A–Z" }).click();
-    await expect(page.locator(".toolbar-right [data-sort-menu]")).toHaveAttribute("aria-label", "Sort: Title A–Z");
+    await expect(page.locator("[data-sort-menu]")).toHaveAttribute("aria-label", "Sort: Title A–Z");
     await summary.click();
     await filters(page).locator("#filter-blocked").check();
     await expect(filters(page).locator("> summary")).toHaveAttribute("aria-label", "Filters (1 active)");

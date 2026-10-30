@@ -679,7 +679,7 @@ html.table-viewport-view body {
 .main.project-main .toolbar :is(input, select) {
   font-size: 12px;
 }
-.main.project-main .toolbar select,
+.main.project-main :is(.toolbar, .topbar-view-tools) select,
 .mobile-view-switcher select {
   appearance: none;
   padding-right: 26px;
@@ -1109,3 +1109,15 @@ html.table-viewport-view body {
 #sort-button.sort-active > .icon { translate: -3px -2px; }
 #sort-button > .sort-direction { position: absolute; right: 2px; bottom: 2px; display: flex; }
 #sort-button > .sort-direction > .icon { width: 9px; height: 9px; stroke-width: 2.5; }
+
+/* iPad: a task view's search, filters and sort sit in the middle of the top bar, and the bookmark
+   star before the title (project-layout.js topBarTools); the toolbar row goes when it's left empty. */
+@media (min-width: 601px) and (pointer: coarse) {
+  .main.project-main > .topbar:has(> .topbar-view-tools) { grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr) auto; }
+  .main.project-main > .topbar > .topbar-view-tools { grid-column: 2; grid-row: 1; display: flex; align-items: center; gap: 8px; min-width: 0; }
+  .main.project-main > .topbar:has(> .topbar-view-tools) > .board-project-tools { grid-column: 3; justify-self: end; }
+  .main.project-main > .topbar:has(> .topbar-view-tools) > .top-actions { grid-column: 4; }
+  .topbar .topbar-view-tools > .search { flex: 0 1 260px; min-width: 160px; }
+  .topbar .breadcrumb > .bookmark-button { flex: none; }
+  .main.project-main > #view-toolbar[data-empty] { display: none; }
+}

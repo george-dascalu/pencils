@@ -6,10 +6,26 @@ export function projectLayout(ctx) {
   const { $, state, icon, label, viewLabel, taskViews, planningViews, openView, openSelectMenu } = ctx;
   const narrow = matchMedia("(max-width: 600px)");
   const phoneBoard = phoneBoardTools({ icon, state });
-  let moved = [], compact = null;
+  let moved = [], compact = null, keep = null;
+  // Moving a control takes the keyboard off it: remember it, and its caret, for compactToolbar to put
+  // back within this repaint.
+  function remember() {
+    const active = document.activeElement;
+    if (!active || active === document.body || keep) return;
+    keep = { active, range: active.matches?.("input") ? [active.selectionStart, active.selectionEnd] : null };
+    setTimeout(() => (keep = null));
+  }
   function restoreToolbar() {
+    if (moved.some(([element]) => element.contains(document.activeElement))) remember();
     if (compact?.isConnected) state.mobileViewOptions = compact.open;
+    const tools = $(".topbar-view-tools"), kept = [];
     for (const [element, slot] of moved) {
+      // The iPad's top-bar search stays put while it's being typed in, as each key repaints the
+      // view: moving it would put the on-screen keyboard away (topBarTools).
+      if (tools?.contains(element) && element.matches(".search") && element.contains(document.activeElement) && slot.isConnected) {
+        kept.push([element, slot]);
+        continue;
+      }
       if (element.matches("details[data-expanded]")) {
         element.removeAttribute("data-expanded");
         element.open = false;
@@ -17,15 +33,37 @@ export function projectLayout(ctx) {
       if (slot.isConnected) slot.replaceWith(element);
       else element.remove();
     }
-    moved = [];
+    moved = kept;
     compact?.remove();
     compact = null;
     $("[data-sort-menu]")?.remove();
     removeLayoutTray();
+    if (!kept.length) lowerTools();
+  }
+  // Puts back what the top bar still holds, once it no longer shows a view's tools.
+  function lowerTools() {
+    for (const [element, slot] of moved) slot.isConnected ? slot.replaceWith(element) : element.remove();
+    moved = [];
+    $(".topbar-view-tools")?.remove();
+    $("#view-toolbar")?.removeAttribute("data-empty");
   }
   const sortIcons = { created: "clock", title: "case-sensitive", priority: "flag", due: "calendar", status: "status" };
+  // Focus (and the caret) go back where they were: on the control itself or, if a repaint replaced
+  // it, on its replacement.
   function compactToolbar() {
+    remember();
+    arrangeToolbar();
+    const { active, range } = keep || {};
+    keep = null;
+    const target = active?.isConnected ? active : active?.id && document.getElementById(active.id);
+    if (target && document.activeElement !== target) {
+      target.focus({ preventScroll: true });
+      if (range?.[0] != null && target.value?.length >= range[1]) target.setSelectionRange(...range);
+    }
+  }
+  function arrangeToolbar() {
     restoreToolbar();
+    if (!(tabBar.matches && !narrow.matches && taskViews.includes(state.view))) lowerTools();
     phoneBoard.sync();
     const toolbar = $(".toolbar-left") || $(".board-toolbar");
     if (!toolbar) return;
@@ -54,8 +92,10 @@ export function projectLayout(ctx) {
     }
     if (!narrow.matches) {
       if (sortButton) sort.after(sortButton);
-      if (tabBar.matches) trayLayouts();
-      else state.layoutTray = null;
+      if (tabBar.matches) {
+        trayLayouts();
+        if (taskViews.includes(state.view)) topBarTools(toolbar, sortButton);
+      } else state.layoutTray = null;
       return;
     }
     compact = document.createElement("details");
@@ -87,6 +127,32 @@ export function projectLayout(ctx) {
     });
     panel.querySelector("header button").onclick = closeCompact;
     positionCompact();
+  }
+  // iPad (owner request, 30 Oct 2026): a task view's search, filters and sort sit in the middle of
+  // the top bar, which the bottom bar's view tabs leave empty, and the bookmark star before the
+  // title. The toolbar row keeps the view's other controls, or goes when none are left.
+  function topBarTools(toolbar, sortButton) {
+    const title = $(".topbar .breadcrumb strong");
+    if (!title) return;
+    let tools = $(".topbar .topbar-view-tools");
+    if (!tools) {
+      tools = document.createElement("div");
+      tools.className = "topbar-view-tools";
+      title.closest(".breadcrumb").after(tools);
+    }
+    const move = (element, place) => {
+      if (!element) return;
+      const slot = document.createComment("view control position");
+      element.before(slot);
+      moved.push([element, slot]);
+      place(element);
+    };
+    move(toolbar.querySelector(":scope > .search"), (el) => tools.append(el));
+    move(toolbar.querySelector(':scope > details.board-menu[data-board-menu="filters"]'), (el) => tools.append(el));
+    if (sortButton) tools.append(sortButton);
+    move(toolbar.querySelector(":scope > .bookmark-button"), (el) => title.before(el));
+    const row = $("#view-toolbar");
+    row?.toggleAttribute("data-empty", ![...row.querySelectorAll(".toolbar > * > *")].some((el) => el.getClientRects().length));
   }
   // Tasks and Planning layouts move to a tray above the bottom bar, opened by tapping the open
   // tab again.

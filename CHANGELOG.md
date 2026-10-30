@@ -2,6 +2,12 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.20.52 — 2026-10-30
+
+### Changed
+
+- On iPad, List, Tree, Table and Kanban put their search, filters and sort in the middle of the top bar, and the bookmark star before the title, leaving more room for the cards.
+
 ## 0.20.51 — 2026-10-30
 
 ### Added
