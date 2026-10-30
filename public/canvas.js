@@ -113,7 +113,8 @@ export function canvasFeatures(ctx) {
     place: (event) => controls.place(event),
     cancel: () => { gridControls.cancel(); lasso.cancel(); pro.cancelPointer(); end(null, true, true); },
     action: (action) => {
-      if (action === "toggle-eraser") pen.toggleEraser();
+      // Switching pen and eraser applies while drawing; elsewhere it would open the pen tools.
+      if (action === "toggle-eraser") { if (penActive(state.tool)) pen.toggleEraser(); }
       else $(action === "fit" ? '[data-action="board-fit"]' : `[data-action="board-${action}"]`)?.click();
     },
   });

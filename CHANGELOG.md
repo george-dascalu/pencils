@@ -2,6 +2,12 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.20.19 — 2026-10-30
+
+### Fixed
+
+- Double-tapping the board no longer opens the pen tools; the double-tap and pen side-button gestures switch between pen and eraser only while a drawing tool is open.
+
 ## 0.20.18 — 2026-10-30
 
 ### Changed
