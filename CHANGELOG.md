@@ -2,6 +2,12 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.20.42 — 2026-10-30
+
+### Changed
+
+- The Sort button shows the active sort's own icon (a clock for Date created, Aa for Title, a flag for Priority, a calendar for Due date, a status dot for Status) with a small arrow for its ascending direction, tinted. Manual order, which is no sort, keeps the plain icon.
+
 ## 0.20.41 — 2026-10-30
 
 ### Changed

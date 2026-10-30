@@ -20,7 +20,7 @@ onDevices(["ipad", "desktop"], () => {
     await open(page, "kanban");
     const summary = filters(page).locator("> summary"), sort = page.locator(".toolbar-right [data-sort-menu]");
     for (const control of [summary, sort]) {
-      await expect(control.locator(".icon")).toHaveCount(1);
+      await expect(control.locator(":scope > .icon")).toHaveCount(1);
       expect((await control.textContent()).trim(), "no text label").toBe("");
       const box = await control.boundingBox();
       expect(Math.abs(box.width - box.height), "square").toBeLessThanOrEqual(1);
@@ -92,3 +92,26 @@ test("a dragged Kanban card's preview has no tilt or shadow, which Safari paints
   expect(shadow).toBe("none");
   expect(background, "opaque").not.toMatch(/rgba\(.*, 0\)|transparent/);
 });
+
+// Owner request, 30 October 2026: the Sort button shows the active sort's own icon with its
+// direction, tinted, and the plain sort icon for Manual order, which is no sort.
+onDevices(["desktop", "phone"], () => test("the Sort button shows which sort is active, or none", async ({ page, device }) => {
+  await open(page, "list");
+  const sort = page.locator("[data-sort-menu]");
+  const glyphs = [];
+  for (const name of ["Date created", "Title A–Z", "Priority", "Due date", "Status"]) {
+    await sort.click();
+    await page.locator("#shared-select-menu").getByRole("option", { name, exact: true }).click();
+    await expect(sort, `${device}: ${name}`).toHaveAttribute("aria-label", `Sort: ${name}`);
+    await expect(sort, `${device}: ${name} is active`).toHaveClass(/sort-active/);
+    await expect(sort.locator(".sort-direction .icon"), `${device}: ${name} shows its direction`).toHaveCount(1);
+    glyphs.push(await sort.locator(":scope > .icon").evaluate((el) => el.innerHTML));
+  }
+  expect(new Set(glyphs).size, `${device}: each sort has its own icon`).toBe(glyphs.length);
+  await sort.click();
+  await page.locator("#shared-select-menu").getByRole("option", { name: "Manual order", exact: true }).click();
+  await expect(sort).toHaveAttribute("aria-label", "Sort: Manual order");
+  await expect(sort, `${device}: manual order is no sort`).not.toHaveClass(/sort-active/);
+  await expect(sort.locator(".icon"), `${device}: the plain icon, no direction`).toHaveCount(1);
+  expect(glyphs, `${device}: unlike any sort`).not.toContain(await sort.locator(":scope > .icon").evaluate((el) => el.innerHTML));
+}));

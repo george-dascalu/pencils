@@ -155,7 +155,7 @@ onDevices(["phone"], () => test("PEN-9 phone view options list the filters direc
   await open(page, "list", ".task-row");
   const sort = page.locator(".toolbar-left > [data-sort-menu]");
   await expect(sort, "sort icon button in the toolbar").toBeVisible();
-  await expect(sort.locator(".icon")).toHaveCount(1);
+  await expect(sort.locator(":scope > .icon"), "one icon (and a direction arrow when sorted)").toHaveCount(1);
   await sort.click();
   await expect(page.locator("#shared-select-menu"), "sort menu opens from the icon button").toContainText("Manual order");
   await page.keyboard.press("Escape");

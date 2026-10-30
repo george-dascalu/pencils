@@ -1084,3 +1084,11 @@ html.table-viewport-view body {
 .view-controls label { display: inline-flex; align-items: center; }
 #view-toolbar .toolbar-left .search { flex: 1 1 160px; min-width: 120px; max-width: 260px; }
 .view-controls select { width: auto; max-width: 220px; }
+
+/* The Sort button wears the active sort's icon, tinted, with a small direction arrow; Manual order
+   (no sort) keeps the plain icon (project-layout.js). */
+#sort-button { position: relative; }
+#sort-button.sort-active { color: var(--green); }
+#sort-button.sort-active > .icon { translate: -3px -2px; }
+#sort-button > .sort-direction { position: absolute; right: 2px; bottom: 2px; display: flex; }
+#sort-button > .sort-direction > .icon { width: 9px; height: 9px; stroke-width: 2.5; }
