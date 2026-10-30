@@ -611,11 +611,56 @@ export function installFeatures(ctx) {
       }
     }, 700);
   }
-  async function searchDialog() {
+  let searchViewport;
+  // Search is for typing, so its field takes focus at once, on touch screens too: opened within the
+  // tap, so phones show the keyboard. Phones get a compact sheet with the field at the bottom.
+  function searchDialog() {
     showDialog(
-      `<dialog class="dialog wide-dialog">${dialogHead("Search and commands")}<div class="dialog-body"><label class="field">Search<input id="global-search-input" type="search" placeholder="Cards, documents, boards or commands…" autofocus></label><div id="bookmark-results"></div><div id="command-results"></div><div id="global-search-results"></div></div><div class="dialog-foot"><button class="button" data-action="dialog-close">Close</button></div></dialog>`,
+      `<dialog class="dialog wide-dialog search-dialog" aria-label="Search and commands">${dialogHead("Search and commands")}<div class="dialog-body"><div class="search-dialog-field"><label class="field"><span>Search</span><input id="global-search-input" type="search" placeholder="Search or type a command…" autofocus></label><button type="button" class="icon-button search-dialog-clear" aria-label="Close search" title="Close search">${icon("close")}</button></div><div class="search-dialog-results"><div id="bookmark-results"></div><div id="command-results"></div><div id="global-search-results"></div></div></div><div class="dialog-foot"><button class="button" data-action="dialog-close">Close</button></div></dialog>`,
       "search",
     );
+    const dialog = $("dialog.search-dialog");
+    if (!dialog) return; // the open card kept its dialog (for example, a cleared title)
+    const input = $("#global-search-input"), clear = dialog.querySelector(".search-dialog-clear");
+    input.focus();
+    // The ✕ clears the text, or closes the sheet when there is none.
+    const name = () => {
+      const label = input.value ? "Clear search" : "Close search";
+      clear.setAttribute("aria-label", label);
+      clear.title = label;
+    };
+    input.addEventListener("input", name);
+    clear.addEventListener("click", () => {
+      if (!input.value) return closeDialog();
+      input.value = "";
+      name();
+      input.focus();
+      clearTimeout(searchTimer);
+      searchResults("");
+    });
+    // A press that starts and ends outside closes it; a drag out of the field (selecting text) doesn't.
+    const outside = (event) => {
+      const r = dialog.getBoundingClientRect();
+      return event.target === dialog && (event.clientX < r.left || event.clientX > r.right || event.clientY < r.top || event.clientY > r.bottom);
+    };
+    let pressedOutside = false;
+    dialog.addEventListener("pointerdown", (event) => { pressedOutside = outside(event); });
+    dialog.addEventListener("click", (event) => { if (pressedOutside && outside(event)) closeDialog(); });
+    // iOS keeps the layout viewport tall under the keyboard: keep the sheet in the visible part.
+    // The listeners end with the next search or once the sheet is gone.
+    const viewport = window.visualViewport;
+    searchViewport?.abort();
+    searchViewport = new AbortController();
+    const fit = () => {
+      if (!dialog.isConnected) return searchViewport.abort();
+      dialog.style.setProperty("--search-bottom", `${Math.max(0, innerHeight - viewport.height - viewport.offsetTop)}px`);
+      dialog.style.setProperty("--search-height", `${viewport.height}px`);
+    };
+    if (viewport) {
+      fit();
+      viewport.addEventListener("resize", fit, { signal: searchViewport.signal });
+      viewport.addEventListener("scroll", fit, { signal: searchViewport.signal });
+    }
     bookmarked = ctx.bookmarks.list().catch(() => []);
     clearTimeout(searchTimer); // a search typed in the last dialog doesn't fill this one
     searchResults("");
@@ -726,10 +771,9 @@ export function installFeatures(ctx) {
       results[0].click();
     } else if (event.key !== "Enter") {
       event.preventDefault();
-      results[
-        (index + (event.key === "ArrowDown" ? 1 : -1) + results.length) %
-          results.length
-      ].focus();
+      // From the field, ArrowDown goes to the first result and ArrowUp to the last.
+      const step = event.key === "ArrowDown" ? 1 : -1;
+      results[index < 0 ? (step > 0 ? 0 : results.length - 1) : (index + step + results.length) % results.length].focus();
     }
   });
   function templates() {
@@ -747,6 +791,8 @@ export function installFeatures(ctx) {
     state.accounts = data.accounts;
   }
   async function click(action, el) {
+    // Before any wait, so the field's focus stays within the tap that opened it.
+    if (action === "global-search") return searchDialog();
     if (
       (await recovery.click(action, el)) ||
       (await sheet.click(action, el)) ||
@@ -769,7 +815,6 @@ export function installFeatures(ctx) {
       closeDialog();
       if (!state.dialog) await command?.run();
     }
-    if (action === "global-search") await searchDialog();
     if (action === "search-open") {
       closeDialog();
       if (state.dialog) return;

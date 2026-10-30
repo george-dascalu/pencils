@@ -2,6 +2,17 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.20.28 — 2026-10-30
+
+### Changed
+
+- On phones Search is a compact sheet like Obsidian's: one-line results above the field at the bottom, kept above the keyboard, without a title or Close bar. Its ✕ clears the text, or closes the sheet when it is empty.
+- Search's field takes focus as soon as it opens, so phones and iPad open the keyboard straight away, and a click or tap outside it closes it on every screen.
+
+### Fixed
+
+- In Search, ArrowUp from the field goes to the last result instead of the one before it.
+
 ## 0.20.27 — 2026-10-30
 
 ### Changed

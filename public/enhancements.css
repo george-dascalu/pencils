@@ -365,6 +365,36 @@ summary:focus-visible,
   color: var(--ink);
   padding: 0 1px;
 }
+/* The ✕ in the search field only shows on phones, where the sheet has no title bar. */
+.search-dialog-clear { display: none; }
+/* Phones search from a compact sheet at the bottom, like Obsidian: the results above and the field
+   last, kept above the on-screen keyboard (features.js sets --search-bottom and --search-height
+   from the visual viewport). */
+@media (max-width: 600px) {
+  dialog.search-dialog[open] {
+    inset: auto 8px calc(8px + var(--search-bottom, 0px));
+    display: flex; flex-direction: column;
+    width: auto; max-width: none; margin: 0;
+    max-height: calc(var(--search-height, 100dvh) - 72px - env(safe-area-inset-top));
+    border-radius: 20px;
+  }
+  .search-dialog > :is(.dialog-head, .dialog-foot) { display: none; }
+  .search-dialog > .dialog-body { display: flex; flex-direction: column-reverse; gap: 4px; min-height: 0; padding: 6px; overflow: hidden; }
+  .search-dialog-results { min-height: 0; overflow-y: auto; overscroll-behavior: contain; }
+  .search-dialog-field { position: relative; flex: none; }
+  .search-dialog-field > .field { margin: 0; }
+  .search-dialog-field > .field > span { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+  .search-dialog-field input { border-radius: 999px; padding-inline: 16px 48px; }
+  .search-dialog-clear { display: inline-flex; position: absolute; top: 50%; right: 0; transform: translateY(-50%); }
+  .search-dialog .field-hint { margin: 8px 12px 2px; font-size: var(--type-meta); }
+  /* One line a result: its name, then where it lives; the search syntax hint stays on wider screens. */
+  .search-dialog .search-result { display: flex; align-items: center; gap: 8px; min-height: 44px; padding: 4px 12px; border: 0; border-radius: 12px; }
+  .search-dialog .search-result > strong { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: block; }
+  .search-dialog .search-result > strong > .icon { vertical-align: -3px; margin-inline-end: 6px; }
+  .search-dialog .search-result > span { flex: 0 1 auto; min-width: 0; max-width: 40%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .search-dialog .search-result > :not(strong, span:first-of-type) { display: none; }
+  #global-search-results > .field-hint:last-child, #command-results:not(:has(button)) { display: none; }
+}
 .planning-head {
   display: flex;
   justify-content: space-between;
