@@ -20,6 +20,10 @@
   display: flex; flex-wrap: wrap; gap: 8px; padding: 0; margin: 0; width: 100%;
 }
 .mobile-view-options-panel .caption { display: none; }
+/* The star shows its name in View options. */
+/* Over the icon-button square in controls.css, whose :is() counts as (0,2,1). */
+.mobile-view-options-panel > button.bookmark-button[aria-label] { width: auto !important; flex: none !important; justify-content: flex-start; gap: 8px; padding-inline: 8px !important; }
+.mobile-view-options-panel > .bookmark-button::after { content: attr(aria-label); }
 /* Filters show as a plain list on phones; sorting opens from its own icon button. */
 .mobile-view-options-panel .board-menu[data-expanded] > summary { display: none; }
 .mobile-view-options-panel .board-menu[data-expanded] > .board-menu-panel {
@@ -129,6 +133,8 @@
   .main.project-main:is([data-layout-view="board"], [data-layout-view="drawing"], [data-layout-view="documents"]) > #view-content { padding-bottom: 0; }
   .main.project-main .canvas:not(.board-expanded), .main.project-main .documents-workspace { border-bottom: 0; border-end-start-radius: 0; border-end-end-radius: 0; }
   .canvas:not(.board-expanded) { --board-bottom-clear: var(--tabbar-clearance); }
+  /* Below 656px the centred bar (at most 480px wide) reaches under the tools on the left. */
+  @media (max-width: 655px) { .board-tools { max-height: calc(100% - 36px - var(--board-bottom-clear, 0px)); } }
   .main.project-main > #view-content > :is(.table-scroll, .tree-wrapper, .kanban-swimlanes),
   .main.project-main > #view-content > .task-timeline > .timeline-scroll,
   .main.project-main > #view-content > .kanban > .kanban-column { padding-bottom: var(--tabbar-clearance); }

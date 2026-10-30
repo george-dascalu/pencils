@@ -99,3 +99,16 @@ onDevices(["desktop"], () => test("dragging from the field to outside keeps Sear
   await expect(page.locator("#task-form")).toBeVisible();
   expect(errors).toEqual([]);
 }));
+
+// Owner report, 30 October 2026: with the keyboard put away (the ✓ above it on iPhone) the sheet's
+// field sat on the home indicator. Like the bottom bar, the sheet keeps above the safe area.
+onDevices(["phone"], () => test("with the keyboard away the sheet keeps above the home indicator", async ({ page }) => {
+  const cdp = await page.context().newCDPSession(page);
+  await cdp.send("Emulation.setSafeAreaInsetsOverride", { insets: { bottom: 34 } });
+  await page.goto(`${app.base}/#project/${app.project.id}/list`);
+  await page.locator(".task-row").first().waitFor();
+  const bar = await page.locator(".topbar .tabs").boundingBox();
+  await openSearch(page);
+  const box = await sheet(page).boundingBox();
+  expect(box.y + box.height, "the sheet clears the safe area as the bar does").toBeLessThanOrEqual(bar.y + bar.height + 0.5);
+}));

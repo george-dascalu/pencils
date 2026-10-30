@@ -10,7 +10,7 @@ const app = useApp(async (store) => {
   const children = [];
   for (const [i, status] of ["done", "todo", "in-progress", "review"].entries())
     children.push(await store.createTask(project.id, { title: `Child task ${i}`, status, priority: ["low", "medium", "high", "urgent"][i], assignee: i % 2 ? "Alex" : "", parent: parent.id }));
-  await store.createTask(project.id, { title: "Loose task", status: "todo", priority: "medium", assignee: "Alex" });
+  await store.createTask(project.id, { title: "Loose task with a title long enough to reach the picker's plus button", status: "todo", priority: "medium", assignee: "Alex" });
   return { project, parent, children };
 });
 const url = (view) => `${app.base}/#project/${app.project.id}/${view}`;
@@ -165,6 +165,12 @@ onDevices(["desktop", "ipad", "phone"], () => test("relationship rows use the li
   await page.locator("[data-relationship-options] .task-relationship-option").first().waitFor();
   const result = await look(page, "[data-relationship-options] .task-relationship-priority");
   expect([result.h, result.w], "search results use the same chips").toEqual([list.size, list.priority]);
+  // Each result's title stops short of its plus (phones lost the room for it).
+  const plus = await page.locator("[data-relationship-options] .task-relationship-option").first().evaluate((el) => ({
+    icon: el.querySelector(".task-relationship-link > .icon:last-child").getBoundingClientRect().left,
+    title: el.querySelector(".task-relationship-title").getBoundingClientRect().right,
+  }));
+  expect(plus.title, `${device}: the title clears the plus ${JSON.stringify(plus)}`).toBeLessThanOrEqual(plus.icon + 0.5);
 }));
 
 onDevices(["desktop", "ipad"], () => test("List and Tree rows use the list chips, keep touch targets and put the title after the ID", async ({ page, device }) => {

@@ -11,8 +11,9 @@ converter.addRule("documentSource", {
   replacement: (_content, node) => node.dataset.documentSource,
 });
 converter.addRule("documentHighlight", { filter: "mark", replacement: content => `==${content}==` });
+// Turndown tries the last added rule first, so a wiki link (which also has an href) keeps its source.
 converter.addRule("documentLink", {
-  filter: node => node.tagName === "A" && node.hasAttribute("data-document-href"),
+  filter: node => node.tagName === "A" && node.hasAttribute("data-document-href") && !node.hasAttribute("data-document-source"),
   replacement: (content, node) => `[${content}](${node.dataset.documentHref})`,
 });
 converter.addRule("documentImage", {
@@ -31,6 +32,9 @@ converter.addRule("documentCallout", {
   },
 });
 const trim = raw => raw.replace(/\n+$/, "");
+// A pipe that ends a table cell: one after an even run of backslashes (`\\|` is a backslash, then
+// the next cell; `\|` is a pipe inside the cell).
+const CELL_PIPE = /(?<=(?<!\\)(?:\\\\)*)\|/;
 const toMarkdown = element => converter.turndown(element).trim();
 const callout = raw => /^>\s*\[!([\w-]+)\]([+-])?(?:[ \t]+([^\n]*))?(?:\n|$)/.exec(raw);
 
@@ -204,18 +208,22 @@ export function editableDocumentComponent({ element, raw, from, kind, editor, re
     let frame = table.parentElement.matches(".document-table-scroll") ? table.parentElement : null;
     if (!frame) { frame = document.createElement("div"); table.before(frame); frame.append(table); }
     const aligns = tableToken.align || [];
-    const originalRows = [tableToken.header, ...tableToken.rows].map(row => row.map(cell => cell.text));
+    // Untouched cells keep their own Markdown from the source rows (not the separator): marked's cell
+    // text has already turned an escaped `\|` back into `|`, which would split the cell on save.
+    const originalRows = tableToken.raw.trim().split(/\r?\n/).filter((_, i) => i !== 1).map(line =>
+      line.trim().replace(/^\|/, "").replace(new RegExp(`${CELL_PIPE.source}$`), "").split(CELL_PIPE).map(cell => cell.trim()));
     for (const row of table.rows) for (const cell of row.cells) {
       const rowIndex = row.rowIndex, column = cell.cellIndex;
-      cell.dataset.originalHtml = cell.innerHTML;
       cell.dataset.originalMarkdown = originalRows[rowIndex]?.[column] || "";
       field(cell, `${rowIndex ? `Row ${rowIndex}` : "Header"}, column ${column + 1}`);
+      // After field(), which locks links and other protected parts, so an untouched cell compares equal.
+      cell.dataset.originalHtml = cell.innerHTML;
       if (aligns[column]) cell.style.textAlign = aligns[column];
     }
     serialize = () => {
       const rows = [...table.rows].map(row => [...row.cells].map(cell =>
         cell.innerHTML === cell.dataset.originalHtml ? cell.dataset.originalMarkdown
-          : toMarkdown(cell).replace(/\r?\n+/g, "<br>").replace(/(?<!\\)\|/g, "\\|")));
+          : toMarkdown(cell).replace(/\r?\n+/g, "<br>").replace(new RegExp(CELL_PIPE, "g"), "\\|")));
       const line = cells => `| ${cells.join(" | ")} |`;
       const separators = rows[0].map((_, i) => aligns[i] === "center" ? ":---:" : aligns[i] === "right" ? "---:" : aligns[i] === "left" ? ":---" : "---");
       const markdown = [line(rows[0]), line(separators), ...rows.slice(1).map(line)].join("\n");

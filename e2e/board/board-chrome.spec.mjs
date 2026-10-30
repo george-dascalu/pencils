@@ -40,6 +40,15 @@ onDevices(["desktop", "ipad"], () => test("the view controls stand on the right,
   expect((await box(page, "#canvas-presence")).right, `${device}: presence clears the controls`).toBeLessThanOrEqual(controls.left);
 }));
 
+// On touch screens just over phone width the centred bar reaches under the tools on the left.
+onDevices(["ipad"], () => test("the tools on the left stop above the bottom bar on narrow touch screens", async ({ page }) => {
+  await page.setViewportSize({ width: 620, height: 900 });
+  await openBoard(page);
+  const [bar, tools] = [await box(page, ".topbar .tabs"), await box(page, ".board-tools")];
+  expect(bar.left, "the bar reaches under the tools").toBeLessThan(tools.right);
+  expect(tools.bottom, "the tools stop above the bar").toBeLessThanOrEqual(bar.top);
+}));
+
 onDevices(["desktop", "ipad", "phone"], () => test("double-clicking the zoom level fits the board", async ({ page, device }) => {
   await openBoard(page);
   const label = page.locator("#zoom-label");

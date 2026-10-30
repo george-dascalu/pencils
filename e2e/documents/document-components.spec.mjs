@@ -77,6 +77,36 @@ test("table cells, undo, rows and columns save as Markdown", async ({ page }) =>
   await expect.poll(saved).toContain("| Name | State | Owner |");
 });
 
+// Tables research, 30 October 2026: a pipe inside a cell is escaped as `\|` (Obsidian link aliases
+// and image sizes need it), and editing another cell used to save it unescaped, splitting the cell.
+// `\\|` is an escaped backslash before the next cell. Both table layouts behave the same.
+test("editing a table cell keeps escaped pipes and the other cells as written", async ({ page }) => {
+  let saved;
+  for (const layout of ["fit", "scroll"]) {
+    const rows = ["| Name | Link | Note |", "| --- | --- | --- |", "| Editor | [[Notebook\\|alias]] | x |", "| Pipe | a \\| b | y |", "| Dir | C:\\\\| z |"];
+    const body = `${layout === "scroll" ? "<!-- table: scroll -->\n" : ""}${rows.join("\n")}\n`;
+    const record = await app.store.createDocument(app.project.id, { title: `Pipes ${layout}`, body });
+    saved = async () => (await app.store.getDocument(app.project.id, record.id)).body;
+    await page.goto(`${app.base}/#project/${app.project.id}/documents/${record.id}`);
+    await textbox(page, "Row 1, column 1").fill("Writer");
+    await expect.poll(saved, layout).toContain("| Writer | [[Notebook\\|alias]] | x |");
+    expect(await saved(), layout).toContain("| Pipe | a \\| b | y |");
+    expect(await saved(), layout).toContain("| Dir | C:\\\\ | z |");
+    // Editing the link's own cell keeps the link.
+    const link = textbox(page, "Row 1, column 2"), { width, height } = await link.boundingBox();
+    await link.click({ position: { x: width - 4, y: height / 2 } }); // after the link, not on it
+    await page.keyboard.type(" now");
+    // The typed space may save as a no-break space.
+    await expect.poll(saved, layout).toMatch(/\| Writer \| \[\[Notebook\\\|alias\]\]\s+now \| x \|/);
+  }
+  // A typed backslash before a pipe stays in its cell after a reload.
+  await textbox(page, "Row 2, column 3").fill("q\\|r");
+  await expect.poll(saved).toMatch(/q\\+\|r/);
+  await page.reload();
+  await expect(textbox(page, "Row 2, column 3")).toHaveText("q\\|r");
+  await expect(textbox(page, "Row 2, column 4")).toHaveCount(0);
+});
+
 test("quote edits and toolbar formatting save, and search keeps Live preview", async ({ page }) => {
   const { saved } = await open(page);
   await textbox(page, "Quote content").fill("Edited in the quote.");

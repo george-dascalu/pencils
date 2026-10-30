@@ -373,7 +373,7 @@ summary:focus-visible,
    from the visual viewport). */
 @media (max-width: 600px) {
   dialog.search-dialog[open] {
-    inset: auto 8px calc(8px + var(--search-bottom, 0px));
+    inset: auto 8px calc(8px + max(var(--search-bottom, 0px), env(safe-area-inset-bottom)));
     display: flex; flex-direction: column;
     width: auto; max-width: none; margin: 0;
     max-height: calc(var(--search-height, 100dvh) - 72px - env(safe-area-inset-top));

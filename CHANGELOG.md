@@ -2,6 +2,20 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.20.34 — 2026-10-30
+
+### Changed
+
+- On phones the bookmark star for a view or board sits in View options, so the search field shows its whole placeholder, also on 360px screens.
+
+### Fixed
+
+- Editing one cell of a document table no longer rewrites another cell's escaped pipe (`\|`, as in `[[Note\|alias]]`) as a plain `|`, which split that cell into an extra column. An untouched link cell also stays as written, and a backslash typed before a pipe stays in its cell.
+- Editing a table cell, quote or callout that holds a `[[wiki link]]` keeps the link instead of saving it as `[alias](#)`.
+- With the keyboard put away, the phone search sheet stays above the iPhone's home indicator.
+- On phones the plus beside each search result in a card's relationship picker no longer covers the end of the title.
+- On touch screens just wider than a phone, the board's left toolbar stops above the bottom bar.
+
 ## 0.20.33 — 2026-10-30
 
 ### Changed

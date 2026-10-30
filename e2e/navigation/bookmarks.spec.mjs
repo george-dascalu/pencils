@@ -20,7 +20,35 @@ const star = async (page, scope) => {
   const button = page.locator(`${scope} [data-bookmark]`);
   await clickControl(button);
   await expect(button).toHaveAttribute("aria-pressed", "true");
+  // Phones star from View options, which stays open like its filters.
+  const close = page.getByRole("button", { name: "Close view options", exact: true });
+  if (await close.isVisible()) await close.click();
 };
+
+// Owner request, 30 October 2026: on phones the star sits in View options, leaving the search field
+// room for its whole placeholder, also on 360px screens.
+onDevices(["small"], () => test("on phones the star sits in View options and the search field shows its placeholder", async ({ page }) => {
+  await page.goto(`${app.base}/#project/${app.project.id}/list`);
+  const field = page.locator("#view-toolbar #search");
+  await field.waitFor();
+  await expect(page.locator("#view-toolbar .toolbar-left > [data-bookmark]")).toHaveCount(0);
+  await expect(page.locator("#view-toolbar .mobile-view-options-panel [data-bookmark]")).toHaveCount(1);
+  const fit = await field.evaluate((input) => {
+    const style = getComputedStyle(input), context = document.createElement("canvas").getContext("2d");
+    context.font = `${style.fontWeight} ${style.fontSize} ${style.fontFamily}`;
+    return { text: context.measureText(input.placeholder).width, room: input.clientWidth - parseFloat(style.paddingLeft) - parseFloat(style.paddingRight) };
+  });
+  expect(fit.text, `the placeholder fits ${JSON.stringify(fit)}`).toBeLessThanOrEqual(fit.room);
+  // The star shows its name inside its own button there.
+  await page.locator("#view-toolbar .mobile-view-options > summary").click();
+  const star = await page.locator("#view-toolbar .mobile-view-options-panel [data-bookmark]").evaluate((el) => ({ width: el.clientWidth, content: el.scrollWidth, height: el.clientHeight }));
+  expect(star.content <= star.width && star.width > star.height, `the label fits the button ${JSON.stringify(star)}`).toBe(true);
+  await page.getByRole("button", { name: "Close view options", exact: true }).click();
+  await page.goto(`${app.base}/#project/${app.project.id}/board`);
+  await page.locator(".board-toolbar").waitFor();
+  await expect(page.locator(".board-toolbar > [data-bookmark]")).toHaveCount(0);
+  await expect(page.locator(".board-toolbar .mobile-view-options-panel [data-bookmark]")).toHaveCount(1);
+}));
 
 onDevices(["desktop", "phone"], () => test("bookmarks made from each bar come first in search and open what they mark", async ({ page }) => {
   await fs.rm(path.join(app.store.root, ".pencils", "bookmarks.json"), { force: true });
