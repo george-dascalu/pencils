@@ -2,6 +2,16 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.20.26 — 2026-10-30
+
+### Changed
+
+- On phones the view's own row (search or board, star, sort and View options) moves up between the floating menu and New buttons, so lists start higher.
+
+### Fixed
+
+- The shadows of the phone's floating menu and New buttons are round again instead of clipped square.
+
 ## 0.20.25 — 2026-10-30
 
 ### Changed

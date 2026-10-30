@@ -231,3 +231,54 @@ onDevices(["phone", "small"], () => test("the phone header has no title, only fl
     expect(style.shadow, "it floats").not.toBe("none");
   }
 }));
+
+// Owner request, 30 Oct: the floating buttons' shadows were clipped square, and the view's own row
+// (search or board, star, sort, View options) moves up between the menu and New buttons.
+onDevices(["phone", "small"], () => test("the view's row sits between the floating menu and New buttons, whose shadows aren't clipped", async ({ page, device }) => {
+  for (const view of ["list", "table", "timeline", "board"]) {
+    await open(page, view);
+    for (const button of [page.locator(".topbar .mobile-menu"), page.locator(".topbar .phone-new-task > summary")]) {
+      const clipped = await button.evaluate((el) => {
+        const out = [];
+        for (let node = el.parentElement; node && !node.matches(".main"); node = node.parentElement) {
+          const cs = getComputedStyle(node);
+          if (cs.overflowX !== "visible" || cs.overflowY !== "visible") out.push(node.className);
+        }
+        return out;
+      });
+      expect(clipped, `${device} ${view}: nothing clips the button's shadow`).toEqual([]);
+    }
+    const [menu, create] = await Promise.all([page.locator(".topbar .mobile-menu").boundingBox(), page.locator(".topbar .phone-new-task > summary").boundingBox()]);
+    const first = page.locator(view === "board" ? "#board-select" : "#view-toolbar .search");
+    const options = page.locator("#view-toolbar .mobile-view-options > summary");
+    const row = await page.locator(view === "board" ? "#view-toolbar .board-toolbar > :visible" : "#view-toolbar .toolbar-left > *").evaluateAll((els) => els.map((el) => el.getBoundingClientRect().toJSON()));
+    for (let i = 1; i < row.length; i++) expect(row[i].left, `${device} ${view}: the row's controls don't overlap`).toBeGreaterThanOrEqual(row[i - 1].right - 1);
+    for (const control of [first, options]) {
+      const box = await control.boundingBox();
+      expect(Math.abs(box.y + box.height / 2 - (menu.y + menu.height / 2)), `${device} ${view}: on the buttons' row`).toBeLessThanOrEqual(2);
+      expect(box.x, `${device} ${view}: after the menu button`).toBeGreaterThanOrEqual(menu.x + menu.width + 4);
+      expect(box.x + box.width, `${device} ${view}: before New`).toBeLessThanOrEqual(create.x - 4);
+      const hit = await page.evaluate(({ x, y }) => document.elementFromPoint(x, y)?.closest("#view-toolbar") !== null, { x: box.x + box.width / 2, y: box.y + box.height / 2 });
+      expect(hit, `${device} ${view}: the control takes taps`).toBe(true);
+    }
+    await options.click();
+    await expect(page.locator(".mobile-view-options[open]")).toHaveCount(1);
+    // The panel opens over the view's sticky headers and the bottom bar.
+    await expect(page.locator(".mobile-view-options-panel")).toHaveAttribute("style", /top:/);
+    const panel = await page.locator(".mobile-view-options-panel").boundingBox();
+    for (const y of [panel.y + 12, panel.y + panel.height - 12]) {
+      const hit = await page.evaluate(({ x, y }) => !!document.elementFromPoint(x, y)?.closest(".mobile-view-options-panel"), { x: panel.x + panel.width / 2, y });
+      expect(hit, `${device} ${view}: the panel takes taps`).toBe(true);
+    }
+    await page.keyboard.press("Escape");
+    await page.locator(".topbar .mobile-menu").click();
+    await expect(page.locator(".sidebar.open")).toHaveCount(1);
+    await page.keyboard.press("Escape");
+  }
+  // The period under the row keeps its title between its arrows.
+  await open(page, "capacity");
+  const [prev, title, next] = await Promise.all(["[data-feature$='-prev']", "h2", "[data-feature$='-next']"].map((s) => page.locator(`#view-toolbar .planning-period > ${s}`).boundingBox()));
+  expect(title.x >= prev.x + prev.width - 1 && title.x + title.width <= next.x + 1, `${device}: the period title fits between its arrows`).toBe(true);
+  const text = await page.locator("#view-toolbar .planning-period > h2").evaluate((el) => { const r = document.createRange(); r.selectNodeContents(el); return r.getBoundingClientRect().toJSON(); });
+  expect(text.right, `${device}: the title's text stops before the next arrow`).toBeLessThanOrEqual(next.x + 1);
+}));

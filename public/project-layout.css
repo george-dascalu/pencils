@@ -27,7 +27,7 @@
 }
 @media (max-width: 600px) {
   .toolbar:has(.mobile-view-options) { padding-block: 6px; }
-  .toolbar-left:has(.mobile-view-options) { display: grid; grid-template-columns: minmax(0, 1fr); grid-auto-flow: column; grid-auto-columns: auto; gap: 6px; width: 100%; }
+  .toolbar-left:has(.mobile-view-options) { display: grid; grid-template-columns: minmax(0, 1fr); grid-auto-flow: column; grid-auto-columns: auto; gap: 4px; width: 100%; }
   .toolbar-left > .search { min-width: 0; width: 100%; max-width: none; }
 }
 .main.project-main {
@@ -893,6 +893,13 @@ html.table-viewport-view body {
     width: var(--control-height); height: var(--control-height); border: 1px solid var(--line); border-radius: 50%;
     background: var(--surface); box-shadow: 0 6px 20px rgb(0 0 0 / 0.12);
   }
+  .main.project-main .topbar .breadcrumb { overflow: visible; }
+  /* The view's own row (search or board, then its buttons) sits in the header's row, between the
+     menu and New buttons. */
+  .main.project-main > :is(.topbar, #view-toolbar) { grid-row: 1; grid-column: 1; align-self: start; }
+  .main.project-main:not(.project-warning) > #view-toolbar { min-width: 0; margin-inline: calc(var(--control-height) + 16px); }
+  .main.project-main > #view-toolbar > :is(.toolbar, .board-toolbar) { padding-inline: 0; }
+  .main.project-main > #view-toolbar .toolbar-left > .search { min-width: 0; }
   .topbar .top-actions { gap: 2px; flex: 0 0 auto; }
   .topbar .phone-new-task { display: inline-flex; }
   .topbar .phone-new-task > summary { justify-content: center; }
@@ -927,6 +934,8 @@ html.table-viewport-view body {
   .planning-head { margin: 0 0 8px; padding: 0; gap: 0; }
   .planning-period { display: grid; grid-template-columns: var(--control-height) minmax(0, 1fr) var(--control-height); width: 100%; gap: 4px; }
   .planning-period > h2 { text-align: center; font-size: 14px; line-height: 1.4; }
+  /* Between the floating buttons the period is narrow, so a long one wraps. */
+  #view-toolbar .planning-period > h2 { white-space: normal; text-wrap: balance; }
   .mobile-view-options-panel :is(.planning-options, .planning-head, .timeline-options) { display: flex; flex-direction: column; align-items: stretch; gap: 12px; width: 100%; }
   .mobile-view-options-panel :is(.planning-options, .timeline-options) > label { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
   .mobile-view-options-panel :is(.planning-options, .timeline-options) select { min-width: 0; max-width: 70%; }
