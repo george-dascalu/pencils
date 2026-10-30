@@ -739,7 +739,7 @@ export function installFeatures(ctx) {
     let data;try{data=await api(`/search?q=${encodeURIComponent(query)}`);}catch(error){if(sequence===searchSequence && $("#global-search-results"))$("#global-search-results").textContent=error.message;return;}
     if(sequence!==searchSequence || !$("#global-search-results"))return;
     $("#global-search-results").innerHTML = `<p class="field-hint">Cards, documents and boards</p>${
-      data.results.map(resultHTML).join("") || (data.suggestion ? `<p>Nothing found. Did you mean <button type="button" class="text-link" data-feature="search-suggestion" data-query="${esc(data.suggestion)}">${esc(data.suggestion)}</button>?</p>` : "<p>Nothing found.</p>")
+      data.results.map(resultHTML).join("") || (data.suggestion ? `<p class="search-suggestion">No results. Did you mean <button type="button" class="text-link" data-feature="search-suggestion" data-query="${esc(data.suggestion)}">${esc(data.suggestion)}</button>?</p>` : "<p>No results.</p>")
     }<p class="field-hint">Enter opens · Alt+Enter links it in the open document · "phrase", -word, #tag, in:cards, in:docs, in:boards</p>`;
   }
   document.addEventListener("keydown", (event) => {

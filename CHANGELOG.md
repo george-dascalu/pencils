@@ -2,6 +2,12 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.20.40 — 2026-10-30
+
+### Changed
+
+- When a search finds nothing, "No results. Did you mean …?" reads as one line on phones, and the suggestion prefers a word that starts with the same letter as yours (for "Shocas", *showcase* rather than *thomas*).
+
 ## 0.20.39 — 2026-10-30
 
 ### Changed

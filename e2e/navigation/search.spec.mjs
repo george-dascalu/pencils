@@ -8,6 +8,8 @@ const app = useApp(async (store) => {
   await store.createTask(project.id, { title: "Lighthouse review" });
   await store.createDocument(project.id, { title: "Harbour notes", body: "The lighthouse keeper writes daily." });
   await store.createBoard(project.id, { title: "Beacon board" });
+  await store.createDocument(project.id, { title: "Markdown showcase", body: "Every element." });
+  for (const title of ["Call", "Email"]) await store.createTask(project.id, { title, body: "Ask Thomas first." });
   return { project };
 });
 const dialog = (page) => page.locator("dialog[open]");
@@ -57,4 +59,16 @@ onDevices(["phone"], () => test("on phones the search popup keeps its scrolling 
   await page.goto(`${app.base}/#project/${app.project.id}/list`);
   await page.locator(".topbar .tabs").getByRole("button", { name: "Search", exact: true }).click();
   await expect(dialog(page)).toHaveCSS("overscroll-behavior-y", "contain");
+}));
+
+// Owner request, 30 October 2026: the suggestion reads as one line on phones, and comes from the
+// word you most likely meant (a missed letter keeps the first letter, unlike a different name).
+onDevices(["desktop", "phone"], () => test("a misspelt search suggests the likely word on one line", async ({ page, device }) => {
+  await page.goto(`${app.base}/#project/${app.project.id}/list`);
+  await page.locator(".topbar .tabs").getByRole("button", { name: "Search", exact: true }).click();
+  await page.locator("#global-search-input").fill("Shocas");
+  const suggestion = dialog(page).locator(".search-suggestion");
+  await expect(suggestion).toHaveText("No results. Did you mean showcase?");
+  const [line, link] = [await suggestion.boundingBox(), await suggestion.getByRole("button", { name: "showcase", exact: true }).boundingBox()];
+  expect(line.height, `${device}: one line ${JSON.stringify({ line, link })}`).toBeLessThanOrEqual(link.height + 4);
 }));

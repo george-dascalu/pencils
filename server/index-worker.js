@@ -25,15 +25,17 @@ function indexEntry(kind, project, entry) {
   insertEntry.run(kind, project, entry.id, JSON.stringify(entry.info), clean(entry.title), clean(entry.headings), clean(entry.tags), clean(entry.body));
 }
 const fold = (text) => text.normalize("NFD").replace(/\p{M}/gu, "").toLowerCase();
-// Indexed terms near a word that matched nothing (one edit away, two for longer words), nearest
-// and commonest first. The index spans every project, so callers check each against their own.
+// Indexed terms near a word that matched nothing (one edit away, two for longer words): nearest
+// first, then those keeping the word's first letter (a slip rarely changes it), then commonest. The
+// index spans every project, so callers check each against their own.
 function nearby(word) {
   const target = fold(word), max = target.length > 5 ? 2 : 1, found = [];
   for (const { term, doc } of db.prepare("SELECT term, doc FROM search_terms WHERE length(term) BETWEEN ? AND ?").all(target.length - max, target.length + max)) {
     const distance = editDistance(target, term, max);
     if (distance && distance <= max) found.push({ term, doc, distance });
   }
-  return found.sort((a, b) => a.distance - b.distance || b.doc - a.doc).map((c) => c.term);
+  const first = (term) => (term[0] === target[0] ? 0 : 1);
+  return found.sort((a, b) => a.distance - b.distance || first(a.term) - first(b.term) || b.doc - a.doc).map((c) => c.term);
 }
 parentPort.on("message", ({ id, action, data }) => {
   try {

@@ -335,6 +335,9 @@ summary:focus-visible,
   display: block;
   margin-top: 4px;
 }
+/* "Did you mean" reads as one sentence, the suggestion a link within it. */
+.search-suggestion .text-link { display: inline-flex; justify-content: center; vertical-align: middle; font-size: inherit; text-decoration: underline; }
+@media (pointer: coarse) { .search-suggestion .text-link { min-width: var(--control-height); } }
 .search-result {
   width: 100%;
   border: 0;

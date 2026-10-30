@@ -57,6 +57,9 @@ test("search ranks cards, documents and boards together, with excerpts, query sy
   assert.deepEqual(typo.results, []);
   assert.equal(typo.suggestion, "receipts");
   assert.equal((await search("zebracorm")).suggestion, null, "suggestions never come from projects you can't open");
+  await store.createDocument(project.id, { title: "Markdown showcase", body: "Every element." });
+  for (const title of ["Call", "Email"]) await store.createTask(project.id, { title, body: "Ask Thomas first." });
+  assert.equal((await search("Shocas")).suggestion, "showcase", "of two words as near, the one keeping the first letter");
   assert.deepEqual(await titles("zebracorn"), []);
   await store.createDocument(project.id, { title: "Bestiary", body: "A zebracornish beast." });
   assert.equal((await search("zebracorm")).suggestion, null, "not even when the hidden word starts a visible one");
