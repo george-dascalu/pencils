@@ -427,7 +427,7 @@ textarea,
 }
 /* Components that lay the fields out in a grid say so with their own class. */
 :where(.field-box) { display: flex; flex: none; align-items: center; }
-.field-box :is(.field-chip, .task-assignee, select, .task-picker-trigger, .canvas-task-priority, .due, .row-due, .canvas-task-due) { border-color: transparent !important; background-color: transparent !important; }
+.field-box :is(.field-chip, .task-assignee, select, .task-picker-trigger, .canvas-task-priority, .due, .row-due, .canvas-task-dates) { border-color: transparent !important; background-color: transparent !important; }
 /* List and Tree targets (and the phone summary's) are taller than the fields, so their box is drawn at list-chip height behind them. */
 .field-box:is(.row-fields, .phone-task-fields) { position: relative; isolation: isolate; border: 0; background: none; }
 .field-box:is(.row-fields, .phone-task-fields)::before,

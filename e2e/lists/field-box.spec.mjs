@@ -45,7 +45,7 @@ test("rows, Kanban and board cards and the card editor hold the fields in one bo
   await page.goto(url("kanban"));
   await boxed(page.locator(`[data-drag-task="${app.high.id}"] .field-box`), [".task-assignee", ".field-chip-priority", ".due"], HIGH, "kanban");
   await page.goto(url(`board/${app.board.id}`));
-  await boxed(page.locator('[data-node="card-a"] .live-card-state .field-box'), [".task-assignee", ".canvas-task-status", ".canvas-task-priority", ".canvas-task-due"], HIGH, "board card");
+  await boxed(page.locator('[data-node="card-a"] .live-card-state .field-box'), [".task-assignee", ".canvas-task-status", ".canvas-task-priority", ".canvas-task-dates"], HIGH, "board card");
   await page.goto(url("list"));
   await row(page, app.high).locator('[data-action="task-open"]').first().click();
   const editor = page.locator("#task-form");

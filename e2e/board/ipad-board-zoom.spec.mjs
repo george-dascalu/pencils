@@ -140,7 +140,7 @@ onDevices(["ipad"], () => {
     expect(result.writes, "persist at gesture completion").toBeLessThanOrEqual(2);
     expect(result.transformChanges, "coalesce touch updates into frames").toBeLessThan(result.moves / 2);
     expect(Math.abs(result.stored.z - result.zoom), "final camera saved").toBeLessThan(0.00001);
-    const fields = await page.locator('[data-node="card-0"]').evaluate((el) => [".canvas-task-assignee", ".canvas-task-priority", ".canvas-task-status", ".canvas-task-due"].map((s) => el.querySelector(s).offsetHeight));
+    const fields = await page.locator('[data-node="card-0"]').evaluate((el) => [".canvas-task-assignee", ".canvas-task-priority", ".canvas-task-status", ".canvas-task-dates"].map((s) => el.querySelector(s).offsetHeight));
     expect(fields, "all card fields align at compact height").toEqual(Array(4).fill(boardControl));
     expect(await page.locator(".board-tools button").first().evaluate((el) => el.offsetHeight), "unscaled touch tools retain full targets").toBe(44);
     expect((await savedBoard()).revision, "pinch changes no board content").toBe(app.board.revision);

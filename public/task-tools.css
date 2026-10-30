@@ -1276,13 +1276,22 @@ html.task-page-open,
 .board-node.task .canvas-task-identity { display: flex; flex-direction: column; align-items: center; justify-content: center; flex: 0 0 auto; gap: 2px; max-width: 76px; }
 .board-node.task .canvas-task-identity .canvas-task-type { display: flex; align-items: center; justify-content: center; }
 .board-node.task .canvas-task-identity .canvas-task-key { max-width: 100%; font-size: 9px; line-height: 1.2; }
-.board-node.task .canvas-task-due { display: inline-flex; align-items: center; justify-content: center; gap: 5px; min-width: 0; height: var(--card-control-size) !important; min-height: var(--card-control-size) !important; padding-inline: 7px !important; font-size: 11px !important; white-space: nowrap; }
-.board-node.task .canvas-task-due > .icon { width: 14px; height: 14px; }
-.board-node.task.overdue .canvas-task-due { color: #b34438; }
-[data-theme="dark"] .board-node.task.overdue .canvas-task-due { color: #f0a199; }
+.board-node.task .canvas-task-dates { display: inline-flex; align-items: center; justify-content: center; gap: 4px; min-width: 0; height: var(--card-control-size); padding-inline: 7px; font-size: 11px; white-space: nowrap; }
+.board-node.task .canvas-task-dates > .icon { width: 14px; height: 14px; flex: none; }
+/* Each date's shared calendar field lies invisibly over its text, so a tap on the date opens the calendar. */
+.board-node.task .canvas-task-date { position: relative; display: inline-flex; align-items: center; height: 100%; padding-inline: 2px; }
+.board-node.task .canvas-task-date.unset { color: var(--muted); }
+.board-node.task .canvas-task-date > .date-field { position: absolute; inset: 0; width: auto; }
+.board-node.task .canvas-task-date :is(input, .date-picker-trigger) { position: absolute; inset: 0; width: 100% !important; min-width: 0 !important; height: 100% !important; min-height: 0 !important; margin: 0; padding: 0 !important; border: 0; opacity: 0; }
+.board-node.task .canvas-task-date input { pointer-events: none; }
+.board-node.task .canvas-task-date .date-picker-trigger { cursor: pointer; }
+.board-node.task .canvas-task-date:focus-within { outline: var(--focus-ring); border-radius: 4px; }
+.board-node.task.overdue .canvas-task-date:last-of-type { color: #b34438; }
+[data-theme="dark"] .board-node.task.overdue .canvas-task-date:last-of-type { color: #f0a199; }
 @container task-card-fields (max-width: 260px) {
-  .canvas-task-due > span { display: none; }
-  .board-node.task .canvas-task-due { width: var(--card-control-size); padding-inline: 0 !important; }
+  /* Narrow cards keep the due date, leaving the status room. */
+  .board-node.task .canvas-task-dates > :is(.icon, .canvas-task-date-arrow, .canvas-task-date:first-of-type) { display: none; }
+  .board-node.task .canvas-task-dates { padding-inline: 4px; }
 }
 .board-node.task .canvas-task-priority { width: calc(var(--card-control-size) + 12px); height: var(--card-control-size); }
 

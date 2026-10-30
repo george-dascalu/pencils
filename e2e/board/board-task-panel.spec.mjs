@@ -150,7 +150,7 @@ test("linked card fields follow the shared order in one box coloured by priority
     "canvas-task-assignee",
     "canvas-task-status",
     "canvas-task-priority priority high",
-    "button small canvas-task-due",
+    "canvas-task-dates",
   ]);
   // Status values differ by text colour; the shared box takes the priority's colour (29 Oct, item 15).
   const status = card(page).locator(".canvas-task-status"), box = card(page).locator(".live-card-state > .field-box");

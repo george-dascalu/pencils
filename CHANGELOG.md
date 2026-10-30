@@ -2,6 +2,12 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.20.45 — 2026-10-30
+
+### Changed
+
+- Board cards show both the start and due dates in the field box; tap either to change it in the calendar, right on the card.
+
 ## 0.20.44 — 2026-10-30
 
 ### Fixed

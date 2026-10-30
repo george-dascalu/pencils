@@ -15,7 +15,6 @@ import { dependencyStyle } from "./dependency-style.js";
 import { edgeDependency } from "./dependency-model.js";
 import { draftTaskData, validDraftTask } from "./draft-task.js";
 import { boardComments } from "./board-comments.js";
-import { taskDateEditor } from "./task-date-editor.js";
 import { attachmentPreview } from "./attachment-preview.js";
 import { assigneeOptions, assigneeHint, projectPeople } from "./teams.js";
 import {
@@ -484,15 +483,15 @@ export function canvasPro(ctx, basic) {
   function cardAssignee(data, attributes) {
     return `<label class="canvas-task-assignee" title="${esc(data.assignee || "Unassigned")}">${ctx.assigneeHTML(data)}<select ${taskColorAttributes(state, "assignee", data.assignee)} data-canvas-task-field="assignee" ${data.source?"disabled":""} ${attributes} aria-label="Assignee for ${esc(data.title)}" title="${esc(assigneeHint(state) || data.assignee || "Unassigned")}">${assigneeOptions(state, data.assignee, esc)}</select></label>`;
   }
-  const cardDates = taskDateEditor({ ...ctx, patchTask: async (id, changes) => {
-    await patchTask(id, changes, false);
-    enhance();
-  } });
   const cardDateFormat = new Intl.DateTimeFormat(undefined, { day: "numeric", month: "short" });
-  function cardEndDate(data, node, overdue) {
-    const date = data.due ? cardDateFormat.format(new Date(`${data.due}T12:00:00`)) : "End date";
-    const label = `End date: ${data.due || "Not set"}${overdue ? " · Overdue" : ""}`;
-    return `<button type="button" class="button small canvas-task-due" data-pro="task-dates" data-id="${esc(node.id)}" data-task="${esc(data.id)}" aria-label="${esc(label)} for ${esc(data.title)}" title="${esc(label)}" aria-haspopup="dialog" aria-expanded="false">${icon("calendar")}<span>${esc(date)}</span></button>`;
+  // The start and end dates sit in the field box; each opens the shared calendar in place.
+  function cardDates(data) {
+    const part = (field, name) => {
+      const value = data[field] || "";
+      const limit = field === "start" ? `max="${esc(data.due || "")}"` : `min="${esc(data.start || "")}"`;
+      return `<span class="canvas-task-date${value ? "" : " unset"}" title="${esc(`${name}: ${value || "Not set"}`)}"><span>${esc(value ? cardDateFormat.format(new Date(`${value}T12:00:00`)) : name)}</span><input type="date" inert data-canvas-task-date="${field}" data-task="${esc(data.id)}" value="${esc(value)}" ${limit} aria-label="${name} date for ${esc(data.title)}" ${data.source && field === "due" ? "disabled" : ""}></span>`;
+    };
+    return `<span class="canvas-task-dates">${icon("calendar")}${part("start", "Start")}<span class="canvas-task-date-arrow" aria-hidden="true">→</span>${part("due", "Due")}</span>`;
   }
   function enhance(only = null) {
     if (!board()) return;
@@ -584,7 +583,7 @@ export function canvasPro(ctx, basic) {
             )
             .join(
               "",
-            )}</select>${cardPriority(t, `data-task="${esc(t.id)}"`)}${cardEndDate(t, n, flags.overdue)}</span></div>${t.source?`<small class="source-badge">${esc(sourceLabel(t))} · Source fields are read-only</small>`:""}${flags.blocked ? '<div class="canvas-task-flags"><b>Blocked</b></div>' : ""}<div class="canvas-markdown task-card-description" ${n.taskCollapsed ? "hidden" : ""}>${section ? (section.text ? markdown(section.text) : '<span class="is-placeholder">Add task notes…</span>') : "<p>Heading or block not found.</p>"}</div>${n.subpath ? `<small class="embed-label">${esc(n.subpath)}</small>` : ""}`;
+            )}</select>${cardPriority(t, `data-task="${esc(t.id)}"`)}${cardDates(t)}</span></div>${t.source?`<small class="source-badge">${esc(sourceLabel(t))} · Source fields are read-only</small>`:""}${flags.blocked ? '<div class="canvas-task-flags"><b>Blocked</b></div>' : ""}<div class="canvas-markdown task-card-description" ${n.taskCollapsed ? "hidden" : ""}>${section ? (section.text ? markdown(section.text) : '<span class="is-placeholder">Add task notes…</span>') : "<p>Heading or block not found.</p>"}</div>${n.subpath ? `<small class="embed-label">${esc(n.subpath)}</small>` : ""}`;
         }
       } else if (n.type === "file") {
         const attachment = localAttachment(n);
@@ -2065,9 +2064,6 @@ export function canvasPro(ctx, basic) {
       outline();
       $("#canvas-outline").scrollTop = 0;
       $(`#canvas-outline [data-pro="${action}"]`)?.focus({preventScroll:true});
-    } else if (action === "task-dates" && n?.type === "task") {
-      const nodeId = n.id;
-      cardDates.open(n.task, () => $(`[data-node="${CSS.escape(nodeId)}"] .canvas-task-due`));
     } else if (action === "task-collapse" && n && !n.locked) {
       const card = el.closest("[data-node]");
       const collapsed = !n.taskCollapsed;
@@ -2493,6 +2489,25 @@ export function canvasPro(ctx, basic) {
     }
   });
   document.addEventListener("change", (event) => {
+    const date = event.target.dataset?.canvasTaskDate;
+    if (date) {
+      const current = task(event.target.dataset.task), value = event.target.value || null;
+      if (!current || (current[date] || null) === value) return;
+      // The calendar returns focus to the date, which the repaint replaces.
+      const refocus = event.target.closest(".canvas-task-date").contains(document.activeElement);
+      patchTask(current.id, { [date]: value }, false)
+        .then(() => {
+          const pending = sync.entries.get(route("tasks", current.id));
+          if (pending?.blocked || pending?.conflict) toast(pending.error || "The date change needs review in Recovery.", true);
+        })
+        .catch((e) => toast(e.message, true))
+        .finally(() => {
+          enhance();
+          if (refocus)
+            requestAnimationFrame(() => $(`[data-canvas-task-date="${date}"][data-task="${CSS.escape(current.id)}"]`)?.parentElement.querySelector("[data-date-picker]")?.focus({ preventScroll: true }));
+        });
+      return;
+    }
     if (event.target.id === "canvas-status") {
       status = event.target.value;
       updateSearchButton();
