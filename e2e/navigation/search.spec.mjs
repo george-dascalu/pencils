@@ -110,3 +110,33 @@ onDevices(["phone"], () => test("on phones the search sheet moves smoothly, unle
   });
   expect(gone, "reduced motion: it closes at once").toBe(true);
 }));
+
+// Owner requests, 30 October 2026 (iPad): the search window has no title, the field at its top
+// instead, and keeps one size while you type and while results come and go.
+onDevices(["desktop", "ipad"], () => test("the search window opens with its field at the top and keeps its size", async ({ page, device }) => {
+  await page.goto(`${app.base}/#project/${app.project.id}/list`);
+  await page.locator(".topbar .tabs").getByRole("button", { name: "Search", exact: true }).click();
+  const box = dialog(page);
+  await expect(box.locator(".dialog-head:visible"), `${device}: no title`).toHaveCount(0);
+  const [frame, field] = [await box.boundingBox(), await page.locator("#global-search-input").boundingBox()];
+  expect(field.y - frame.y, `${device}: the field is at the top`).toBeLessThanOrEqual(32);
+  await expect(box.getByRole("button", { name: "Close search", exact: true }), `${device}: the field's ✕ closes`).toBeVisible();
+  const sizes = [frame];
+  for (const [text, shown] of [["zzzzqx", /No results/], ["lighthouse", /Lighthouse review/], ["", ""]]) {
+    await page.locator("#global-search-input").fill(text);
+    await expect(page.locator("#global-search-results")).toHaveText(shown);
+    sizes.push(await box.boundingBox());
+  }
+  for (const size of sizes) expect([size.x, size.y, size.width, size.height], `${device}: one size ${JSON.stringify(sizes)}`).toEqual([frame.x, frame.y, frame.width, frame.height]);
+  // With the on-screen keyboard up (the visible part of the screen 360px tall), it fits above it.
+  const keyboard = await box.evaluate((el) => {
+    el.style.setProperty("--search-height", "360px");
+    el.style.setProperty("--search-top", "0px");
+    const r = el.getBoundingClientRect();
+    return { top: r.top, bottom: r.bottom };
+  });
+  expect(keyboard.top, `${device}: ${JSON.stringify(keyboard)}`).toBeGreaterThanOrEqual(0);
+  expect(keyboard.bottom, `${device}: above the keyboard ${JSON.stringify(keyboard)}`).toBeLessThanOrEqual(360);
+  await box.getByRole("button", { name: "Close search", exact: true }).click();
+  await expect(box).toHaveCount(0);
+}));

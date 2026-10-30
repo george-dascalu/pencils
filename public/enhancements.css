@@ -369,8 +369,24 @@ summary:focus-visible,
   color: var(--ink);
   padding: 0 1px;
 }
-/* The ✕ in the search field only shows on phones, where the sheet has no title bar. */
-.search-dialog-clear { display: none; }
+/* The search window has no title: the field sits at its top, its ✕ clearing the text or closing
+   the window, and the window keeps one size while results come and go (phones use a sheet). */
+.search-dialog-field { position: relative; }
+.search-dialog-field > .field { margin: 0; }
+.search-dialog-field > .field > span { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+.search-dialog-field input { padding-inline-end: 48px; }
+.search-dialog-clear { position: absolute; top: 50%; right: 0; transform: translateY(-50%); }
+@media (min-width: 601px) {
+  /* Centred in the visible part of the screen, above an on-screen keyboard (features.js). */
+  dialog.search-dialog[open] {
+    --search-box: min(640px, calc(var(--search-height, 100dvh) - 32px));
+    display: flex; flex-direction: column; height: var(--search-box);
+    margin: calc(var(--search-top, 0px) + (var(--search-height, 100dvh) - var(--search-box)) / 2) auto auto;
+  }
+  .search-dialog > .dialog-body { display: flex; flex-direction: column; flex: 1; min-height: 0; overflow: hidden; }
+  .search-dialog-field { flex: none; margin-bottom: 12px; }
+  .search-dialog-results { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; }
+}
 /* Phones search from a compact sheet at the bottom, like Obsidian: the results above and the field
    last, kept above the on-screen keyboard (features.js sets --search-bottom and --search-height
    from the visual viewport). */
@@ -382,14 +398,11 @@ summary:focus-visible,
     max-height: calc(var(--search-height, 100dvh) - 72px - env(safe-area-inset-top));
     border-radius: 20px;
   }
-  .search-dialog > :is(.dialog-head, .dialog-foot) { display: none; }
+  .search-dialog > .dialog-foot { display: none; }
   .search-dialog > .dialog-body { display: flex; flex-direction: column-reverse; gap: 4px; min-height: 0; padding: 6px; overflow: hidden; }
   .search-dialog-results { min-height: 0; overflow-y: auto; overscroll-behavior: contain; }
-  .search-dialog-field { position: relative; flex: none; }
-  .search-dialog-field > .field { margin: 0; }
-  .search-dialog-field > .field > span { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+  .search-dialog-field { flex: none; }
   .search-dialog-field input { border-radius: 999px; padding-inline: 16px 48px; }
-  .search-dialog-clear { display: inline-flex; position: absolute; top: 50%; right: 0; transform: translateY(-50%); }
   .search-dialog .field-hint { margin: 8px 12px 2px; font-size: var(--type-meta); }
   /* One line a result: its name, then where it lives; the search syntax hint stays on wider screens. */
   .search-dialog .search-result { display: flex; align-items: center; gap: 8px; min-height: 44px; padding: 4px 12px; border: 0; border-radius: 12px; }

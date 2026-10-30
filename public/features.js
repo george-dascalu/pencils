@@ -616,7 +616,7 @@ export function installFeatures(ctx) {
   // tap, so phones show the keyboard. Phones get a compact sheet with the field at the bottom.
   function searchDialog() {
     showDialog(
-      `<dialog class="dialog wide-dialog search-dialog" aria-label="Search and commands">${dialogHead("Search and commands")}<div class="dialog-body"><div class="search-dialog-field"><label class="field"><span>Search</span><input id="global-search-input" type="search" placeholder="Search or type a command…" autofocus></label><button type="button" class="icon-button search-dialog-clear" aria-label="Close search" title="Close search">${icon("close")}</button></div><div class="search-dialog-results"><div id="bookmark-results"></div><div id="command-results"></div><div id="global-search-results"></div></div></div><div class="dialog-foot"><button class="button" data-action="dialog-close">Close</button></div></dialog>`,
+      `<dialog class="dialog wide-dialog search-dialog" aria-label="Search and commands"><div class="dialog-body"><div class="search-dialog-field"><label class="field"><span>Search</span><input id="global-search-input" type="search" placeholder="Search or type a command…" autofocus></label><button type="button" class="icon-button search-dialog-clear" aria-label="Close search" title="Close search">${icon("close")}</button></div><div class="search-dialog-results"><div id="bookmark-results"></div><div id="command-results"></div><div id="global-search-results"></div></div></div><div class="dialog-foot"><button class="button" data-action="dialog-close">Close</button></div></dialog>`,
       "search",
     );
     const dialog = $("dialog.search-dialog");
@@ -656,6 +656,7 @@ export function installFeatures(ctx) {
       if (!dialog.isConnected) return searchViewport.abort();
       dialog.style.setProperty("--search-bottom", `${Math.max(0, innerHeight - viewport.height - viewport.offsetTop)}px`);
       dialog.style.setProperty("--search-height", `${viewport.height}px`);
+      dialog.style.setProperty("--search-top", `${viewport.offsetTop}px`);
     };
     if (viewport) {
       fit();

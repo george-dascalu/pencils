@@ -51,12 +51,13 @@ onDevices(["phone", "small"], () => test("Search opens a compact sheet with the 
   await expect(page).toHaveURL(new RegExp(`/documents/${app.doc.id}$`));
 }));
 
-onDevices(["desktop"], () => test("wider screens keep the search dialog with its title, field at the top", async ({ page }) => {
+onDevices(["desktop"], () => test("wider screens keep the search dialog, untitled, with the field at the top", async ({ page }) => {
   await page.goto(`${app.base}/#project/${app.project.id}/list`);
   await page.locator(".task-row").first().waitFor();
   await page.locator('.topbar .tabs [data-feature="global-search"]').click();
   await expect(page.locator("#global-search-input")).toBeFocused();
-  await expect(sheet(page).locator(".dialog-head")).toBeVisible();
+  await expect(sheet(page).locator(".dialog-head"), "no title: the field takes its place (owner, 30 Oct 2026)").toHaveCount(0);
+  await expect(page.getByRole("dialog", { name: "Search and commands", exact: true }), "named for screen readers").toBeVisible();
   const field = await page.locator("#global-search-input").boundingBox(), body = await sheet(page).locator(".dialog-body").boundingBox();
   expect(field.y, "the field leads the dialog").toBeLessThan(body.y + 60);
   await page.mouse.click(5, 5);
@@ -81,7 +82,7 @@ onDevices(["desktop"], () => test("dragging from the field to outside keeps Sear
   await expect(sheet(page).locator("#global-search-results .search-result").first()).toBeVisible();
   // Selecting the text with a drag that ends outside the dialog doesn't close it.
   const field = await input.boundingBox();
-  await page.mouse.move(field.x + field.width - 4, field.y + field.height / 2);
+  await page.mouse.move(field.x + field.width - 60, field.y + field.height / 2); // clear of the ✕
   await page.mouse.down();
   await page.mouse.move(5, 5, { steps: 4 });
   await page.mouse.up();

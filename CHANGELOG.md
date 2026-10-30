@@ -2,6 +2,16 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.20.47 — 2026-10-30
+
+### Changed
+
+- The search window has no "Search and commands" title: the search field sits at its top, with a ✕ that clears the text or closes the window.
+
+### Fixed
+
+- On iPad and the web, the search window keeps one size while you type and while results come and go.
+
 ## 0.20.46 — 2026-10-30
 
 ### Fixed
