@@ -2,6 +2,12 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.20.16 — 2026-10-30
+
+### Changed
+
+- Document tools group their actions under Document, View, History and Obsidian headings instead of one long list.
+
 ## 0.20.15 — 2026-10-30
 
 ### Changed
