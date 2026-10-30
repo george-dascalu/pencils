@@ -2,6 +2,16 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.20.36 — 2026-10-30
+
+### Added
+
+- Tables in Live preview take spreadsheet keys: Enter moves down a row and adds one after the last, Shift+Enter starts a new line in the cell, Tab past the last cell adds a row, and the arrow keys cross into the next cell at a cell's edges. On phones the keyboard's return key moves down the same way.
+
+### Fixed
+
+- A line break typed in a table cell saves as `<br>` instead of turning into a space.
+
 ## 0.20.35 — 2026-10-30
 
 ### Added

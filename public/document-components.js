@@ -36,6 +36,16 @@ const trim = raw => raw.replace(/\n+$/, "");
 // the next cell; `\|` is a pipe inside the cell).
 const CELL_PIPE = /(?<=(?<!\\)(?:\\\\)*)\|/;
 const toMarkdown = element => converter.turndown(element).trim();
+// A cell's contents, not the cell, whose GFM rule turns line breaks into spaces. Typed line breaks
+// are newlines in the cell's text (it keeps white space); written as <br> text they survive the
+// trim at a cell's start or end.
+const cellMarkdown = cell => {
+  const contents = document.createElement("div");
+  contents.append(...[...cell.childNodes].map(node => node.cloneNode(true)));
+  const walker = document.createTreeWalker(contents, NodeFilter.SHOW_TEXT);
+  while (walker.nextNode()) walker.currentNode.data = walker.currentNode.data.replaceAll("\n", "<br>");
+  return toMarkdown(contents);
+};
 const callout = raw => /^>\s*\[!([\w-]+)\]([+-])?(?:[ \t]+([^\n]*))?(?:\n|$)/.exec(raw);
 
 // A rendered block owns editable DOM, while every edit remains a CodeMirror
@@ -86,6 +96,8 @@ export function editableDocumentComponent({ element, raw, from, kind, editor, re
       commit(node);
     });
     node.addEventListener("keydown", event => {
+      // Keys that confirm IME text (Safari reports them after compositionend, as key code 229).
+      if (event.isComposing || event.keyCode === 229) return;
       // Ctrl/Cmd+Home/End and Cmd+Up/Down move within this block. Left to the
       // browser they jump to the editor's ends, which CodeMirror cannot place
       // inside a block and resolves to the start of the document.
@@ -224,7 +236,7 @@ export function editableDocumentComponent({ element, raw, from, kind, editor, re
     serialize = () => {
       const rows = [...table.rows].map(row => [...row.cells].map(cell =>
         cell.innerHTML === cell.dataset.originalHtml ? cell.dataset.originalMarkdown
-          : toMarkdown(cell).replace(/\r?\n+/g, "<br>").replace(new RegExp(CELL_PIPE, "g"), "\\|")));
+          : cellMarkdown(cell).replace(/ *\r?\n+/g, "<br>").replace(new RegExp(CELL_PIPE, "g"), "\\|")));
       const line = cells => `| ${cells.join(" | ")} |`;
       const separators = rows[0].map((_, i) => aligns[i] === "center" ? ":---:" : aligns[i] === "right" ? "---:" : aligns[i] === "left" ? ":---" : "---");
       const markdown = [line(rows[0]), line(separators), ...rows.slice(1).map(line)].join("\n");
@@ -275,6 +287,40 @@ export function editableDocumentComponent({ element, raw, from, kind, editor, re
         }],
       ]],
     ];
+    // Spreadsheet keys: Enter moves down a row, adding one after the last (Shift+Enter breaks the
+    // line), Tab past the last cell adds a row, and the arrows cross into the next cell at a cell's
+    // edges. On phones the keyboard's return key moves down the same way.
+    const addRow = () => { const row = insertRow(table.rows.length); relabel(); commit(); return row; };
+    const caret = () => { const selection = window.getSelection(); return selection.rangeCount && selection.isCollapsed ? selection.getRangeAt(0) : null; };
+    const sideText = (cell, range, start) => {
+      const side = document.createRange(); side.selectNodeContents(cell);
+      if (start) side.setEnd(range.startContainer, range.startOffset); else side.setStart(range.endContainer, range.endOffset);
+      return side.toString();
+    };
+    const textSide = (cell, range, start) => sideText(cell, range, start) === "";
+    const edgeLine = (cell, range, up) => {
+      const at = range.getClientRects()[0], lines = (() => { const all = document.createRange(); all.selectNodeContents(cell); return all.getClientRects(); })();
+      // A caret between elements has no box; count typed line breaks instead.
+      if (!at || !lines.length) return !sideText(cell, range, up).includes("\n");
+      return up ? at.top < lines[0].bottom - 1 : at.bottom > lines[lines.length - 1].top + 1;
+    };
+    table.addEventListener("keydown", event => {
+      const cell = event.target.closest?.("th, td"), range = caret();
+      if (!cell || event.isComposing || event.keyCode === 229 || event.ctrlKey || event.metaKey || event.altKey) return;
+      const row = cell.parentElement, column = cell.cellIndex, cells = [...table.querySelectorAll("th, td")];
+      let next = null, start = false;
+      if (event.key === "Enter" && !event.shiftKey) next = (table.rows[row.rowIndex + 1] || addRow()).cells[column];
+      else if (event.key === "Tab" && !event.shiftKey && cell === cells.at(-1)) { next = addRow().cells[0]; start = true; }
+      else if (range && event.key === "ArrowDown" && !event.shiftKey && edgeLine(cell, range, false)) { next = table.rows[row.rowIndex + 1]?.cells[column]; start = true; }
+      else if (range && event.key === "ArrowUp" && !event.shiftKey && edgeLine(cell, range, true)) next = table.rows[row.rowIndex - 1]?.cells[column];
+      else if (range && event.key === "ArrowRight" && !event.shiftKey && textSide(cell, range, false)) { next = cells[cells.indexOf(cell) + 1]; start = true; }
+      else if (range && event.key === "ArrowLeft" && !event.shiftKey && textSide(cell, range, true)) next = cells[cells.indexOf(cell) - 1];
+      if (!next) return;
+      event.preventDefault(); event.stopPropagation();
+      next.focus();
+      const place = document.createRange(); place.selectNodeContents(next); place.collapse(start);
+      window.getSelection().removeAllRanges(); window.getSelection().addRange(place);
+    }, true);
     function tableOptions() {
       const button = document.createElement("button"); button.type = "button"; button.className = "button small";
       button.textContent = "Table options";

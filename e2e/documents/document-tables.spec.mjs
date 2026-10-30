@@ -47,3 +47,37 @@ onDevices(["desktop", "phone"], () => test("Table options inserts, moves, aligns
   await page.keyboard.press("Escape");
   await expect(tableMenu(page)).toBeHidden();
 }));
+
+// Spreadsheet keys: Enter moves down a row and adds one after the last (Shift+Enter breaks the line),
+// Tab past the last cell adds a row, and the arrows cross into the next cell at a cell's edges.
+// On phones the keyboard's return key moves down the same way.
+onDevices(["desktop", "phone"], () => test("spreadsheet keys move between cells and add rows", async ({ page, device }) => {
+  const saved = await open(page, lines("| A | B |", "| --- | --- |", "| 1 | 2 |"));
+  await cell(page, "Header, column 1").click();
+  await page.keyboard.press("Enter");
+  await expect(cell(page, "Row 1, column 1"), device).toBeFocused();
+  await page.keyboard.press("Enter");
+  await expect(cell(page, "Row 2, column 1"), `${device}: Enter on the last row adds one`).toBeFocused();
+  await expect.poll(saved, device).toBe(lines("| A | B |", "| --- | --- |", "| 1 | 2 |", "|  |  |"));
+  await page.keyboard.type("x");
+  await page.keyboard.press("Shift+Enter");
+  await page.keyboard.type("y");
+  await expect.poll(saved, `${device}: Shift+Enter breaks the line`).toContain("| x<br>y |  |");
+  await page.keyboard.press("ArrowRight");
+  await expect(cell(page, "Row 2, column 2"), `${device}: right from the end of a cell`).toBeFocused();
+  await page.keyboard.press("ArrowLeft");
+  await expect(cell(page, "Row 2, column 1"), `${device}: left from the start of a cell`).toBeFocused();
+  await page.keyboard.press("ArrowUp");
+  await expect(cell(page, "Row 2, column 1"), `${device}: up within a two-line cell stays in it`).toBeFocused();
+  await page.keyboard.press("ArrowUp");
+  await expect(cell(page, "Row 1, column 1"), `${device}: up from the first line`).toBeFocused();
+  await page.keyboard.press("ArrowDown");
+  await expect(cell(page, "Row 2, column 1"), device).toBeFocused();
+  await cell(page, "Row 2, column 2").click();
+  await page.keyboard.press("Shift+Enter");
+  await page.keyboard.type("z");
+  await expect.poll(saved, `${device}: a line break at the start of a cell`).toContain("| x<br>y | <br>z |");
+  await page.keyboard.press("Tab");
+  await expect(cell(page, "Row 3, column 1"), `${device}: Tab past the last cell adds a row`).toBeFocused();
+  await expect.poll(saved, device).toBe(lines("| A | B |", "| --- | --- |", "| 1 | 2 |", "| x<br>y | <br>z |", "|  |  |"));
+}));
