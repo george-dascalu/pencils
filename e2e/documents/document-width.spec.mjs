@@ -5,7 +5,7 @@
 // tools. Live preview hides escaping backslashes away from the cursor and shows
 // dividers.
 import { test, expect, useApp } from "../fixtures.mjs";
-import { documentName, noHorizontalScroll, setTheme } from "../helpers/documents.mjs";
+import { chooseDocumentView, documentName, noHorizontalScroll, setTheme } from "../helpers/documents.mjs";
 
 const body = "# A consistent page\n\nFirst paragraph with **bold**, _italic_ and `code`.\n\nSecond paragraph with escaped \\*asterisks\\* and \\[brackets\\].\n\n---\n\n## A section\n\nA paragraph underneath the section heading.\n\n### Smaller heading\n\nMore details.\n\n#### Small heading\n\nLast paragraph.";
 const app = useApp(async (store) => {
@@ -102,15 +102,13 @@ test("tablet and phone widths keep the width switch on screen", async ({ page })
   await open(page);
   for (const viewport of [1024, 390]) {
     await page.setViewportSize({ width: viewport, height: 1000 });
-    // Since 0.18.35 narrow editors (phones) switch views from the Document view
-    // picker and keep the width switch in the Document tools menu.
+    // Phones switch views from the Documents tab's tray and keep the width switch in the
+    // Document tools menu.
     const narrow = viewport === 390;
     if (narrow) await expect(toggle(page)).toBeHidden();
     for (const mode of ["Live preview", "Reading"]) {
-      if (narrow) {
-        await page.locator('[data-document-action="mode-menu"]').click();
-        await page.getByRole("dialog", { name: "Document view", exact: true }).getByRole("button", { name: mode, exact: true }).click();
-      } else await choose(page, mode);
+      if (narrow) await chooseDocumentView(page, mode);
+      else await choose(page, mode);
       for (const full of [false, true]) {
         if (narrow) {
           if (((await form(page).getAttribute("data-document-width")) === "full") !== full) {

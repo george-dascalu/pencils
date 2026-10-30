@@ -2,6 +2,16 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.20.17 — 2026-10-30
+
+### Changed
+
+- On phones, tapping the open Documents tab shows a tray above the bottom bar with **Documents** (the document list) and the Live preview, Source and Reading views, which leave the document bar. Tray choices stack their icon above the label so four fit across.
+
+### Fixed
+
+- A phone layout tray left open no longer reopens when you come back to its view after leaving it some other way than a tap, such as Back.
+
 ## 0.20.16 — 2026-10-30
 
 ### Changed

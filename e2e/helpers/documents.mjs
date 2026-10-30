@@ -52,3 +52,17 @@ export async function renameDocument(page, name) {
   await panel.getByRole("button", { name: "Rename", exact: true }).click();
   await panel.waitFor({ state: "hidden" });
 }
+// Chooses a document's view (Live preview, Source or Reading). Phones use the Documents tab's
+// tray above the bottom bar (owner request, 30 October 2026), after dismissing the keyboard,
+// which hides the bar; other narrow editors use the Document view menu; wider ones the bar.
+export async function chooseDocumentView(page, name, { tap = false } = {}) {
+  const press = (locator) => (tap ? locator.tap() : locator.click());
+  if (page.viewportSize().width <= 600) {
+    await page.evaluate(() => document.activeElement?.blur());
+    await press(page.locator('.tabs [data-view="documents"]'));
+    await press(page.locator(".layout-tray").getByRole("button", { name, exact: true }));
+  } else if (await page.locator("#document-form .document-mode-picker").isVisible()) {
+    await press(page.locator("#document-form .document-mode-picker"));
+    await press(page.getByRole("dialog", { name: "Document view", exact: true }).getByRole("button", { name, exact: true }));
+  } else await press(page.locator("#document-form").getByRole("button", { name, exact: true }));
+}

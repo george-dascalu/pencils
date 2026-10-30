@@ -5,7 +5,7 @@
 // the text; Ctrl/Cmd+F reopen with the last query. Live preview and Source keep
 // the editor's search. Searching never changes the Markdown or its version.
 import { test, expect, onDevices, useApp } from "../fixtures.mjs";
-import { axeViolations, noHorizontalScroll, setTheme } from "../helpers/documents.mjs";
+import { axeViolations, chooseDocumentView, noHorizontalScroll, setTheme } from "../helpers/documents.mjs";
 
 const app = useApp(async (store) => {
   const project = await store.createProject({ title: "Reading search" });
@@ -165,19 +165,18 @@ test.describe("desktop", () => {
   });
 });
 
-onDevices(["phone"], () => test("on phones Reading search works from the view picker and fits the screen", async ({ page }) => {
+onDevices(["phone"], () => test("on phones Reading search works from the Documents tray and fits the screen", async ({ page }) => {
   await page.goto(`${app.base}/#project/${app.project.id}/documents/${app.doc.id}`);
   await page.locator(".cm-content").waitFor();
-  // Since 0.18.35 narrow editors switch views from the Document view picker.
-  const picker = page.locator('[data-document-action="mode-menu"]');
-  await picker.tap();
-  await page.getByRole("dialog", { name: "Document view", exact: true }).getByRole("button", { name: "Reading", exact: true }).tap();
-  await expect(picker).toHaveAttribute("aria-label", "Document view: Reading");
+  // Phones switch views from the Documents tab's tray (owner request, 30 Oct).
+  const form = page.locator("#document-form");
+  await chooseDocumentView(page, "Reading", { tap: true });
+  await expect(form).toHaveAttribute("data-document-mode", "reading");
   await page.getByRole("button", { name: "Find in document", exact: true }).tap();
   await input(page).fill("alpha");
   await page.getByRole("button", { name: "Next match", exact: true }).tap();
   await expect(page.locator(".document-find-count")).toHaveText("2 of 3");
-  await expect(picker).toHaveAttribute("aria-label", "Document view: Reading");
+  await expect(form).toHaveAttribute("data-document-mode", "reading");
   await expect(page.locator(".document-codemirror")).toBeHidden();
   expect(await noHorizontalScroll(page)).toBe(true);
   await setTheme(page, "dark");

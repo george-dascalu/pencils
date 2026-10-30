@@ -463,6 +463,10 @@ span.document-list-callout { display: block; }
   .document-modes, .document-secondary-control { display: none; }
   .document-mode-picker { display: inline-flex; }
 }
+/* Phones choose the view from the Documents tab's tray above the bottom bar (layout-tray.js). */
+@media (max-width: 600px) {
+  #document-form .document-mode-picker { display: none; }
+}
 
 /* Keep the last line clear of the word-count chip; on phones also clear of the floating bottom bar,
    which the document runs behind (project-layout.css). */

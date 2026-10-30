@@ -14,7 +14,7 @@ import { command, projectRoot } from "./deploy.mjs";
 
 const NONE = [/\.md$/, /^test\//, /^reports\//, /^artifacts\//, /^\.claude\//, /^scripts\/(release|deploy|affected)\.mjs$/];
 const SHARED = [
-  /^public\/(app|features|navigation|project-layout|sync|save-state|open-focus|editable-controls|app-status|app-version|appearance|layout-width|popover-position|deferred-controller|uuid)\.js$/,
+  /^public\/(app|features|navigation|project-layout|sync|save-state|open-focus|editable-controls|app-status|app-version|appearance|layout-width|popover-position|deferred-controller|uuid|layout-tray)\.js$/,
   /^public\/(controls|styles|appearance|enhancements|project-layout|fonts|themes)\.css$/,
   /^public\/[^/]+\.html$/,
   /^server\//, /^e2e\/fixtures\.mjs$/, /^e2e\/helpers\//, /^playwright\.config/, /^package(-lock)?\.json$/,

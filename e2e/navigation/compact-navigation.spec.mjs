@@ -8,6 +8,7 @@
 // before deleting (merged from the phone document checks of test/mobile-layout.mjs).
 import { test, expect, useApp } from "../fixtures.mjs";
 import { newCard } from "../helpers/new-card.mjs";
+import { chooseDocumentView } from "../helpers/documents.mjs";
 
 const app = useApp(async (store) => {
   const project = await store.createProject({ title: "A project with a longer title for compact navigation" });
@@ -77,18 +78,13 @@ for (const [device, width] of sizes) {
             expect(fits(box), `Document controls fit their container: ${name} ${JSON.stringify(box)} in ${JSON.stringify(heading)}`).toBe(true);
           expect(box.y >= heading.y && box.y + box.height <= heading.y + heading.height + 1, `Document actions share the document bar: ${name}`).toBe(true);
         }
-        const picker = page.locator(".document-mode-picker");
-        if (await picker.isVisible()) {
-          await click(picker);
-          await click(page.getByRole("button", { name: "Reading", exact: true }));
-        } else await click(page.getByRole("button", { name: "Reading", exact: true }));
+        await chooseDocumentView(page, "Reading", { tap: touch });
         await expect(page.locator(".document-formatting"), "Reading hides the text toolbar").toBeHidden();
         await click(page.getByRole("button", { name: "Find in document", exact: true }));
         await page.getByRole("searchbox", { name: "Find in document", exact: true }).fill("toolbar");
         await expect(page.locator("#document-form")).toHaveAttribute("data-document-mode", "reading");
         await click(page.getByRole("button", { name: "Close search", exact: true }));
-        if (await picker.isVisible()) await click(picker);
-        await click(page.getByRole("button", { name: "Live preview", exact: true }));
+        await chooseDocumentView(page, "Live preview", { tap: touch });
         const formatting = page.locator(".document-formatting");
         if (!(await formatting.isVisible())) await click(page.getByRole("button", { name: "Show formatting", exact: true }));
         await expect(formatting).toBeVisible();

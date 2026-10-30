@@ -5,7 +5,7 @@
 // focused or hovered word. Phones keep the search panel inside the screen with
 // 44px targets, and Reading mode keeps its own search.
 import { test, expect, onDevices, useApp } from "../fixtures.mjs";
-import { axeViolations, editorSource, noHorizontalScroll, openNewDocument, setTheme } from "../helpers/documents.mjs";
+import { axeViolations, chooseDocumentView, editorSource, noHorizontalScroll, openNewDocument, setTheme } from "../helpers/documents.mjs";
 
 const app = useApp(async (store) => ({ project: await store.createProject({ title: "Document controls" }) }));
 const body = "# Notebook\n\n- [ ] Switch to **Source** and find `inline code` with *emphasis*.\n\nAnother **bold** word.\n\n| One | Two |\n| --- | --- |\n| Alpha | Beta |\n";
@@ -130,8 +130,7 @@ onDevices(["phone"], () => test("on phones search fits the screen with 44px targ
   expect(await noHorizontalScroll(page)).toBe(true);
   expect((await button(page, "Close search").boundingBox()).height).toBeGreaterThanOrEqual(44);
   expect(await page.locator(".cm-panels").evaluate((el) => el.scrollWidth <= el.clientWidth)).toBe(true);
-  await page.locator(".document-mode-picker").tap();
-  await button(page, "Reading").tap();
+  await chooseDocumentView(page, "Reading", { tap: true });
   await button(page, "Find in document").tap();
   await page.getByRole("searchbox", { name: "Find in document", exact: true }).fill("preview");
   expect(await noHorizontalScroll(page)).toBe(true);

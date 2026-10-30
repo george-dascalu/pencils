@@ -2220,9 +2220,10 @@ document.addEventListener("click", async (event) => {
         break;
       case "view": {
         const fromLayout = el.closest(".view-layout-switcher"), fromTray = el.closest(".layout-tray");
-        // On phones, tapping Documents again opens the document list (the drawer's Documents level).
+        // On phones, tapping Documents again shows its tray (project-layout.js), or, with no
+        // document open, the document list (the drawer's Documents level).
         if (el.dataset.view === "documents" && state.view === "documents" && el.closest(".tabs") && matchMedia("(max-width: 600px)").matches) {
-          setSidebarOpen(true);
+          if (!el.hasAttribute("aria-controls")) setSidebarOpen(true);
           break;
         }
         // The phone layout tray closes with the new view, so focus returns to its tab.

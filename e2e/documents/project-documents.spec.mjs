@@ -5,7 +5,7 @@
 // (view picker and Document tools for narrow editors).
 import fs from "node:fs/promises";
 import { test, expect, onDevices, useApp } from "../fixtures.mjs";
-import { documentName, noHorizontalScroll, renameDocument, setTheme } from "../helpers/documents.mjs";
+import { chooseDocumentView, documentName, noHorizontalScroll, renameDocument, setTheme } from "../helpers/documents.mjs";
 
 const app = useApp(async (store) => {
   const project = await store.createProject({ title: "Documents studio" });
@@ -28,14 +28,7 @@ async function open(page, id = app.starter.id) {
   await page.locator("#document-form").waitFor();
   if (page.viewportSize().width <= 780) await page.waitForFunction(() => document.querySelector(".sidebar").getBoundingClientRect().right <= 1);
 }
-// Since 0.18.35 narrow editors (phones) switch views from the Document view picker.
-async function chooseMode(page, name) {
-  if (page.viewportSize().width > 560) await page.getByRole("button", { name, exact: true }).click();
-  else {
-    await page.locator('[data-document-action="mode-menu"]').click();
-    await page.getByRole("dialog", { name: "Document view", exact: true }).getByRole("button", { name, exact: true }).click();
-  }
-}
+const chooseMode = (page, name) => chooseDocumentView(page, name);
 // Since 0.19.27 the document list is in the main sidebar; on narrow screens the one
 // menu button opens the drawer on the document list while Documents is open.
 async function browse(page) {

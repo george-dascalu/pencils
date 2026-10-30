@@ -148,10 +148,42 @@ onDevices(["phone"], () => test("the drawer lists Personal, Today, projects, tea
   await expect(sidebar.locator("[data-view]")).toHaveCount(0);
 }));
 
-onDevices(["phone"], () => test("tapping Documents again opens the document list", async ({ page }) => {
-  await page.goto(`${app.base}/#project/${app.project.id}/documents/${app.doc.id}`);
-  await page.locator('.main[data-layout-view="documents"]').waitFor();
+onDevices(["phone"], () => test("tapping Documents again shows a tray with the document list and the document's views (owner request, 30 Oct)", async ({ page }) => {
+  await page.goto(`${app.base}/#project/${app.project.id}/list`);
+  await page.locator(".task-row").first().waitFor();
   await tab(page, "documents").click();
+  await page.locator("#document-form .cm-content").waitFor();
+  await expect(page.locator("#document-form .document-mode-picker"), "the views moved out of the document bar").toBeHidden();
+  const docs = tab(page, "documents"), tray = page.locator(".layout-tray");
+  await docs.click();
+  await expect(tray).toHaveAttribute("data-open", "");
+  await expect(docs).toHaveAttribute("aria-expanded", "true");
+  expect(await tray.getByRole("button").evaluateAll((els) => els.map((el) => el.getAttribute("aria-label")))).toEqual(["Documents", "Live preview", "Source", "Reading"]);
+  const [trayBox, barBox] = [await tray.boundingBox(), await bar(page).boundingBox()];
+  expect(trayBox.y + trayBox.height, "the tray sits above the bar").toBeLessThanOrEqual(barBox.y);
+  for (const button of await tray.getByRole("button").all()) expect((await button.boundingBox()).height).toBeGreaterThanOrEqual(44);
+  await expect(tray.getByRole("button", { name: "Live preview" })).toHaveAttribute("aria-pressed", "true");
+  await tray.getByRole("button", { name: "Source" }).click();
+  await expect(tray).not.toHaveAttribute("data-open", "");
+  await expect(docs, "focus returns to the tab, leaving the keyboard closed").toBeFocused();
+  await docs.click();
+  await tray.getByRole("button", { name: "Reading" }).click();
+  await expect(page.locator("#document-form .document-reading")).toBeVisible();
+  await docs.click();
+  await expect(tray.getByRole("button", { name: "Reading" })).toHaveAttribute("aria-pressed", "true");
+  await page.keyboard.press("Escape");
+  await expect(tray).not.toHaveAttribute("data-open", "");
+  await expect(docs).toBeFocused();
+  // Leaving with the tray open other than by a tap (here by the address, like Back) closes it
+  // for the next visit.
+  await docs.click();
+  await page.evaluate((hash) => { location.hash = hash; }, `#project/${app.project.id}/list`);
+  await page.locator(".task-row").first().waitFor();
+  await tab(page, "documents").click();
+  await page.locator("#document-form .document-reading").waitFor();
+  await expect(page.locator(".layout-tray")).not.toHaveAttribute("data-open", "");
+  await docs.click();
+  await tray.getByRole("button", { name: "Documents" }).click();
   await page.locator(".sidebar.open").waitFor();
   await expect(page.locator(".sidebar")).toHaveAttribute("data-drawer-level", "documents");
   await expect(page.locator(".sidebar .sidebar-documents [data-document-open]", { hasText: "Notes" })).toBeVisible();

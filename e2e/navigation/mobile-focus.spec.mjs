@@ -73,7 +73,12 @@ for (const [device, width] of [["phone", 390], ["ipad-portrait", 834], ["desktop
       await focused(search);
       if (drawer) await click(page.locator(".phone-drawer-close"));
       async function mode(name) {
-        if (width <= 600) await click(page.locator(".document-mode-picker"));
+        // Phones choose the view from the Documents tab's tray (owner request, 30 Oct); the bar
+        // steps aside while typing, so the keyboard is dismissed first.
+        if (width <= 600) {
+          await page.evaluate(() => document.activeElement?.blur());
+          await click(page.locator('.tabs [data-view="documents"]'));
+        }
         await click(page.getByRole("button", { name, exact: true }));
       }
       await passive(page, () => mode("Source"), "Document Source mode");

@@ -19,6 +19,7 @@ import { richToolbar } from "./canvas-rich-text.js";
 import { installToolbarScroll, floatMenuPanel } from "./rich-toolbar-scroll.js";
 import { randomUUID } from "./uuid.js";
 import { allowsTextAutofocus, focusOnOpen } from "./open-focus.js";
+import { mountLayoutTray, removeLayoutTray } from "./layout-tray.js";
 
 export function projectDocuments(ctx) {
   const { state, api, sync, storage, esc, icon, renderView, toast } = ctx;
@@ -389,7 +390,7 @@ export function projectDocuments(ctx) {
     host.hidden = mode === "reading";
     reading.hidden = mode !== "reading";
     form.querySelector(".document-formatting").hidden = mode === "reading";
-    for (const button of form.querySelectorAll("[data-document-mode]"))
+    for (const button of document.querySelectorAll("#document-form [data-document-mode], .layout-tray [data-document-mode]"))
       button.setAttribute("aria-pressed", String(button.dataset.documentMode === mode));
     if (mode === "reading") {
       reading.innerHTML = `<div class="document-page document-prose">${renderer.render(form.elements.body.value)}</div>`;
@@ -400,7 +401,8 @@ export function projectDocuments(ctx) {
       editor.setMode(mode);
       if (focus) {
         if (allowsTextAutofocus()) editor.focus();
-        else (picker?.getClientRects().length ? picker : form.querySelector(`[data-document-mode="${mode}"]`))?.focus({ preventScroll: true });
+        // Otherwise the view's own control keeps focus: the picker, the button or, on phones, the Documents tab.
+        else [picker, form.querySelector(`[data-document-mode="${mode}"]`), document.querySelector(".tabs .tab.active")].find((el) => el?.getClientRects().length)?.focus({ preventScroll: true });
       }
     }
   }
@@ -851,6 +853,18 @@ export function projectDocuments(ctx) {
       paneEditor.hydrate(reading);
     } else paneEditor.setMode(next);
   }
+  // Phones: tapping the open Documents tab again shows a tray above the bottom bar with the
+  // document list and the document's views.
+  const phone = matchMedia("(max-width: 600px)");
+  function syncTray() {
+    if (!selected() || !phone.matches) return removeLayoutTray();
+    const tray = document.createElement("template");
+    tray.innerHTML = `<div class="view-layout-switcher" role="group" aria-label="Document view"><button type="button" data-action="menu" aria-label="Documents" title="Documents">${icon("folder")}<span>Documents</span></button>${MODES.map(([key, label, glyph]) => `<button type="button" data-document-mode="${key}" aria-label="${label}" aria-pressed="${mode === key}" title="${label}">${icon(glyph)}<span>${label}</span></button>`).join("")}</div>`;
+    mountLayoutTray(tray.content.firstElementChild, state.layoutTray === state.view);
+  }
+  // Registered after project-layout.js's own breakpoint listener (this module loads later), so
+  // its toolbar reset, which removes any tray, runs first.
+  phone.addEventListener("change", () => { if (state.view === "documents") syncTray(); });
   function render() {
     // A refresh of the same open document (for example after a save's change
     // notice rebuilds the app) keeps its scroll position instead of jumping
@@ -882,6 +896,7 @@ export function projectDocuments(ctx) {
 `;
       host.closest(".sidebar")?.setAttribute("data-documents", "shown");
     }
+    syncTray();
     content.innerHTML = `<div class="documents-workspace" data-has-document="${!!doc}">${doc && !narrow() ? tabsHTML() : ""}
       <section class="document-editor" aria-label="Document content">${doc ? `
         <form id="document-form" data-document-width="${documentWidth}">

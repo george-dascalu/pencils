@@ -72,13 +72,14 @@ onDevices(["phone"], () => {
     await expect.poll(() => shown(page, ".sidebar .sidebar-documents")).toBe(0);
   });
 
-  test("from another view, the Documents tab opens Documents and a second tap lists them", async ({ page }) => {
+  test("from another view, the Documents tab opens Documents and a second tap lists them from its tray", async ({ page }) => {
     await page.goto(`${base()}/list`);
     await page.locator(".task-row").first().waitFor();
     const tab = page.locator('.topbar .tabs [data-view="documents"]');
     await tab.click();
-    await page.locator('.main[data-layout-view="documents"]').waitFor();
+    await page.locator('#document-form .cm-content').waitFor();
     await tab.click();
+    await page.locator(".layout-tray[data-open]").getByRole("button", { name: "Documents", exact: true }).click();
     await page.locator(".sidebar .sidebar-documents [data-document-open]").first().waitFor();
     await expect(page.locator(".sidebar.open"), "the drawer stays open on the document list").toHaveCount(1);
     await page.locator(".sidebar .sidebar-documents [data-document-open]", { hasText: "Project brief" }).click();
