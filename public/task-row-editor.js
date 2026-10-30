@@ -101,8 +101,9 @@ export function taskRowEditor(ctx) {
     const button = event.target.closest("[data-row-dates]");
     if (!button) return;
     const id = button.dataset.rowDates;
+    // A row has the date in its field box and in its phone summary; the visible one anchors the editor.
     dates.open(id, () =>
-      document.querySelector(`[data-row-dates="${CSS.escape(id)}"]`),
+      [...document.querySelectorAll(`[data-row-dates="${CSS.escape(id)}"]`)].find((el) => el.getClientRects().length),
     );
   });
   async function commit(input) {

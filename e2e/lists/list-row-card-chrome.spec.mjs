@@ -87,7 +87,8 @@ onDevices(["narrow"], () => test("in a narrow window the two-line row keeps ever
   const row = taskRow(page, app.tasks[1].id);
   const boxes = await row.evaluate((el) => [...el.children].filter((c) => c.getClientRects().length && getComputedStyle(c).display !== "none").map((c) => ({ name: ["task-reorder-handle", "tree-toggle", "tree-toggle-spacer", "check-button", "row-open", "task-type", "task-id", "row-title", "row-fields", "row-due", "phone-task-open"].find((n) => c.classList.contains(n)) || c.className, ...c.getBoundingClientRect().toJSON() })));
   const names = boxes.map((b) => b.name);
-  for (const name of ["task-reorder-handle", "task-type", "task-id", "row-title", "row-fields", "row-due"]) expect(names, `${name} visible`).toContain(name);
+  for (const name of ["task-reorder-handle", "task-type", "task-id", "row-title", "row-fields"]) expect(names, `${name} visible`).toContain(name);
+  await expect(row.locator(".row-fields > .row-due"), "the date sits in the field box").toBeVisible();
   expect(!names.includes("check-button") && !names.includes("row-open"), `removed controls stay hidden: ${names}`).toBe(true);
   for (let i = 0; i < boxes.length; i++) for (let j = i + 1; j < boxes.length; j++) {
     const a = boxes[i], b = boxes[j];

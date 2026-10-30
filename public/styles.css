@@ -1045,11 +1045,16 @@ button svg {
 .card-bottom .priority {
   flex-shrink: 0;
 }
-/* The due date follows the fields, at the card's end (on its own line in a narrow card). */
+/* The due date follows the fields inside their box, wrapping in a narrow card. */
+.card-bottom > .field-box {
+  flex: 0 1 auto;
+  min-width: 0;
+}
 .card-bottom .due {
-  margin-inline-start: auto;
+  min-width: 0;
+  padding-inline: 4px 8px;
   font-size: var(--type-meta);
-  white-space: nowrap;
+  line-height: 1.15;
 }
 .kanban-assignee {
   display: inline-flex;

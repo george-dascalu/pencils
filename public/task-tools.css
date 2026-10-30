@@ -118,9 +118,9 @@ body.task-reordering, body.task-reordering * { cursor: grabbing !important; user
   color: var(--muted);
 }
 
-/* The field box is exactly its three fields wide (assignee, status, priority), so every row's box
-   has one width and holds them: Firefox and Safari otherwise size it from the fields' text. */
-.task-row > .row-fields { flex: none; width: calc(var(--control-height) + var(--list-field-status-width) + max(var(--control-height), var(--list-field-priority-width))); }
+/* The field box is exactly its fields wide (assignee, status, priority and the date), so every row's
+   box has one width and holds them: Firefox and Safari otherwise size it from the fields' text. */
+.task-row > .row-fields { flex: none; width: calc(var(--control-height) + var(--list-field-status-width) + max(var(--control-height), var(--list-field-priority-width)) + 68px); }
 .row-fields > .row-priority { display: flex; align-items: center; justify-content: center; }
 .row-due { flex: 0 0 68px; }
 .task-row .due { font-size: 11px; }
@@ -158,9 +158,9 @@ body.task-reordering, body.task-reordering * { cursor: grabbing !important; user
 .row-choice:has(select:disabled) { cursor: default; }
 .row-choice:has(select:disabled) select { cursor: default; }
 .row-choice:has(select:enabled):hover,
-.task-row > :is(.row-due, .row-task-link):hover { background-color: var(--surface-soft); }
+.task-row > .row-task-link:hover { background-color: var(--surface-soft); }
 .row-choice:focus-within,
-.task-row > :is(.row-due, .row-task-link):focus-visible { outline: var(--focus-ring); outline-offset: 1px; }
+.task-row :is(.row-due, .row-task-link):focus-visible { outline: var(--focus-ring); outline-offset: 1px; }
 .row-status {
   display: flex;
   align-items: center;
@@ -168,7 +168,10 @@ body.task-reordering, body.task-reordering * { cursor: grabbing !important; user
   min-width: 0;
 }
 .row-status > span { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
-.task-row > .row-due { min-height: 28px; padding: 0 4px; border-radius: 4px; text-align: left; }
+.row-fields > .row-due { min-height: 28px; padding: 0 4px; border-radius: 4px; }
+/* As for the other fields in the box, hover shades the date rather than its full-height target. */
+.row-fields > .row-due > .due { padding: 2px 4px; border-radius: var(--field-radius); }
+.row-fields > .row-due:hover > .due { background-color: var(--surface-soft); }
 .task-row input.task-title {
   width: 100%;
   height: 28px;
@@ -198,7 +201,7 @@ body.task-reordering, body.task-reordering * { cursor: grabbing !important; user
     height: 44px;
     min-height: 44px;
   }
-  .task-row > .row-fields { width: calc(88px + var(--list-field-status-width)); }
+  .task-row > .row-fields { width: calc(88px + var(--list-field-status-width) + 68px); }
   .task-row :is(input.task-title, .row-choice, .row-due, .row-task-link) { height: 44px; min-height: 44px; }
 }
 
@@ -219,10 +222,10 @@ body.task-reordering, body.task-reordering * { cursor: grabbing !important; user
   /* Toggle, handle, type, ID and title fill the first line; the fields wrap
      onto a second line that starts at the same left edge. */
   .task-row::after { content: ""; order: 1; flex: 0 0 100%; height: 0; }
-  .task-row > :is(.row-fields, .row-due) { order: 2; }
+  .task-row > .row-fields { order: 2; }
   .task-row > .task-id { flex: 0 0 auto; width: auto; min-width: 56px; }
   .task-row > .row-title { flex: 1 1 0; width: auto; min-width: 0; }
-  .task-row > :is(.row-fields, .row-due), .row-fields > .row-status { min-width: 0; }
+  .task-row > .row-fields, .row-fields > .row-status { min-width: 0; }
   .task-row .task-title { font-size: 16px; }
   .task-row .due,
   .task-row .row-status { font-size: 13px; }
@@ -491,7 +494,7 @@ body.task-reordering, body.task-reordering * { cursor: grabbing !important; user
 }
 .board-node.task .live-card-state {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-columns: minmax(0, 1fr);
   container-type: inline-size;
   container-name: task-card-fields;
   align-items: center;
@@ -501,7 +504,7 @@ body.task-reordering, body.task-reordering * { cursor: grabbing !important; user
 .board-node.task .live-card-state > .field-box {
   overflow: visible;
   display: grid;
-  grid-template-columns: var(--card-control-size) minmax(0, 1fr) calc(var(--card-control-size) + 12px);
+  grid-template-columns: var(--card-control-size) minmax(0, 1fr) calc(var(--card-control-size) + 12px) auto;
   align-items: center;
   min-width: 0;
 }
@@ -1392,8 +1395,9 @@ html.task-page-open,
   .task-relationship-key { max-width: 58px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: var(--type-meta); }
 }
 /* Wide rows keep one line without dates; narrow panels (phones) lay a relationship out like a
-   List row on a phone: the title first, then the type, ID, fields and due date at the list's sizes. */
-.task-relationship-link > .due { display: none; }
+   List row on a phone: the title first, then the type, ID and the fields with the due date at the
+   list's sizes. */
+.task-relationship-metadata > .due { display: none; }
 @container (max-width: 440px) {
   .task-relationship-link { flex-wrap: wrap; row-gap: 6px; padding-block: 6px; }
   /* Only card rows, which hold the field box; document links keep type, ID and title on one line. */
@@ -1401,17 +1405,16 @@ html.task-page-open,
   .task-relationship-option .task-relationship-link:has(> .task-relationship-metadata) { padding-right: 24px; } /* the plus */
   .task-relationship-link:has(> .task-relationship-metadata) > .task-relationship-title { order: -1; flex: 0 0 100%; font-size: 14px; line-height: 1.4; }
   .task-relationship-link:has(> .task-relationship-metadata) > .icon:first-child { flex-basis: 12px; width: 12px; height: 12px; color: var(--muted); }
-  .task-relationship-metadata { grid-template-columns: 44px minmax(44px, auto) 44px; gap: 0; justify-items: center; }
+  .task-relationship-metadata { grid-template-columns: 44px minmax(44px, auto) 44px 44px; gap: 0; justify-items: center; }
   .task-relationship-metadata > .task-relationship-status { width: auto; }
-  .task-relationship-link > .due { display: inline; margin-inline-start: auto; font-size: var(--type-meta); }
-  /* As in List rows, the field box has one width centred under the title, so the boxes line up. */
-  .task-relationship-row > .task-relationship-link:has(> .task-relationship-metadata) { display: grid; grid-template-columns: 1fr minmax(132px, 168px) 1fr; align-items: center; }
+  .task-relationship-metadata > .due { display: inline; font-size: var(--type-meta); line-height: 1.15; white-space: normal; text-align: center; }
+  /* As in List rows, the field box has one width at the row's end under the title, so the boxes line up. */
+  .task-relationship-row > .task-relationship-link:has(> .task-relationship-metadata) { display: grid; grid-template-columns: minmax(16px, 1fr) minmax(176px, 216px); align-items: center; }
   .task-relationship-row > .task-relationship-link:has(> .task-relationship-metadata) > .task-relationship-title { grid-area: 1 / 1 / 2 / -1; }
   .task-relationship-row > .task-relationship-link:has(> .task-relationship-metadata) > .icon:first-child { grid-area: 2 / 1; }
   .task-relationship-row > .task-relationship-link:has(> .task-relationship-metadata) > .task-relationship-key { grid-area: 2 / 1; min-width: 0; margin-inline-start: 18px; }
-  .task-relationship-row > .task-relationship-link > .task-relationship-metadata { grid-area: 2 / 2; grid-template-columns: 44px minmax(44px, 1fr) 44px; }
+  .task-relationship-row > .task-relationship-link > .task-relationship-metadata { grid-area: 2 / 2; grid-template-columns: 44px minmax(44px, 1fr) 44px 44px; }
   .task-relationship-row > .task-relationship-link > .task-relationship-metadata > .task-relationship-status { max-width: 100%; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
-  .task-relationship-row > .task-relationship-link > .due { grid-area: 2 / 3; justify-self: end; margin: 0; white-space: normal; text-align: end; }
 }
 @media (max-width: 600px) {
   .task-dialog.board-task-editor .task-editor-header-row .task-editor-actions { justify-content: flex-end; overflow: visible; }
@@ -1481,16 +1484,18 @@ html.task-page-open,
   .phone-task-priority { color: var(--task-color-ink, var(--muted)); }
   .phone-task-meta .task-assignee { font-size: var(--type-initials); flex-shrink: 0; }
   .phone-task-status { overflow: hidden; text-overflow: ellipsis; }
-  .phone-task-meta .due { font-size: 10px; margin-inline-start: auto; }
-  /* The type and key on the left, the field box at one width centred in the row (so the boxes
-     line up down the list), the date on the right. Short of room, the key shortens, the date wraps
-     and the box narrows to its three 44px targets. */
-  .phone-task-meta { display: grid; grid-template-columns: 1fr minmax(132px, 168px) 1fr; gap: 4px; }
+  /* The date has one 44px target, so the priority lines up down the list; a date with its year
+     wraps onto two lines. */
+  .phone-task-meta .due { font-size: 10px; line-height: 1.15; white-space: normal; text-align: center; }
+  .phone-task-fields > .phone-due { flex: 0 0 44px; width: 44px; }
+  /* The type and key on the left and the field box, with the date, at one width at the row's end
+     (so the boxes line up down the list). Short of room, the key shortens and the box narrows to
+     its four 44px targets. */
+  .phone-task-meta { display: grid; grid-template-columns: minmax(16px, 1fr) minmax(176px, 216px); gap: 4px; }
   .phone-task-meta > .icon { grid-area: 1 / 1; }
   .phone-task-meta > span:not([class]) { grid-area: 1 / 1; min-width: 0; margin-inline-start: 16px; overflow: hidden; text-overflow: ellipsis; }
   .phone-task-meta > .phone-task-fields { grid-column: 2; display: flex; }
   .phone-task-fields > [data-field="status"] { display: flex; flex: 1 1 auto; justify-content: center; }
-  .phone-task-meta > .due { grid-column: 3; justify-self: end; margin-inline-start: 0; white-space: normal; text-align: end; }
 }
 @media (max-width: 600px) {
   .list-group > .section-title, #view-content[data-layout-view="tree"] > .section-title {

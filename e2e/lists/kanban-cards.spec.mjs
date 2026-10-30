@@ -12,14 +12,15 @@ const app = useApp(async (store) => {
 });
 const card = (page, task) => page.locator(`[data-drag-task="${task.id}"]`);
 
-onDevices(["desktop", "phone"], () => test("cards show their due date after the fields, and each column adds cards from its header", async ({ page, device }) => {
+onDevices(["desktop", "phone"], () => test("cards show their due date in the field box after the priority, and each column adds cards from its header", async ({ page, device }) => {
   await page.goto(`${app.base}/#project/${app.project.id}/kanban`);
   await card(page, app.dated).waitFor();
   const due = card(page, app.dated).locator(".card-bottom .due");
   await expect(due, `${device}: the due date shows`).toHaveText(/^5 Dec/);
   await expect(card(page, app.dated).locator(".card-bottom"), "screen readers hear it as the due date").toContainText(/Due\s*5 Dec/);
-  const [box, date] = [await card(page, app.dated).locator(".card-bottom .field-box").boundingBox(), await due.boundingBox()];
-  expect(date.x, `${device}: after the fields`).toBeGreaterThanOrEqual(box.x + box.width);
+  const [box, priority, date] = await Promise.all([".card-bottom .field-box", ".card-bottom .field-chip-priority"].map((s) => card(page, app.dated).locator(s).boundingBox()).concat(due.boundingBox()));
+  expect(date.x, `${device}: after the priority`).toBeGreaterThanOrEqual(priority.x + priority.width - 0.5);
+  expect(date.x + date.width, `${device}: inside the box`).toBeLessThanOrEqual(box.x + box.width + 0.5);
   await expect(card(page, app.late).locator(".due"), "overdue dates are marked").toHaveClass(/overdue/);
   await expect(card(page, app.plain).locator(".due"), "no date, no label").toHaveCount(0);
   // In a narrow column a long date drops onto its own line instead of leaving the card.

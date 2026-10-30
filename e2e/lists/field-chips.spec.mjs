@@ -259,11 +259,11 @@ onDevices(["phone"], () => test("on phones relationship rows match the List rows
   }, selector);
   const row = `.task-row[data-task-order-row="${child.id}"]`;
   await openView(page, "list", row);
-  const list = { title: await part(`${row} .phone-task-title`), key: await part(`${row} .phone-task-meta > span:not(.field-box, .due)`), box: await part(`${row} .phone-task-fields`), due: await part(`${row} .phone-task-meta > .due`) };
+  const list = { title: await part(`${row} .phone-task-title`), key: await part(`${row} .phone-task-meta > span:not(.field-box, .due)`), box: await part(`${row} .phone-task-fields`), due: await part(`${row} .phone-task-fields .due`) };
   await page.locator(`[data-action="task-open"][data-id="${app.parent.id}"]:visible`).first().click();
   const rel = `#task-form .task-relationship-row:has([data-relationship-open="${child.id}"])`;
   await expect(page.locator(rel)).toBeVisible();
-  const relation = { title: await part(`${rel} .task-relationship-title`), key: await part(`${rel} .task-relationship-key`), box: await part(`${rel} .task-relationship-metadata`), due: await part(`${rel} .due`) };
+  const relation = { title: await part(`${rel} .task-relationship-title`), key: await part(`${rel} .task-relationship-key`), box: await part(`${rel} .task-relationship-metadata`), due: await part(`${rel} .task-relationship-metadata > .due`) };
   const facts = JSON.stringify({ list, relation });
   expect(relation.title.font, `title size ${facts}`).toBe(list.title.font);
   expect(relation.key.font, `ID size ${facts}`).toBe(list.key.font);
@@ -275,10 +275,10 @@ onDevices(["phone"], () => test("on phones relationship rows match the List rows
   await page.setViewportSize({ width: 320, height: 700 });
   const narrow = await page.locator(rel).evaluate((row) => {
     const link = row.querySelector(".task-relationship-link").getBoundingClientRect();
-    const parts = [".task-relationship-key", ".task-relationship-metadata", ".due"].map((s) => row.querySelector(s).getBoundingClientRect());
-    return { apart: parts.every((p, i) => !i || p.left >= parts[i - 1].right - 0.5), fits: parts.at(-1).right <= link.right + 0.5 };
+    const parts = [".task-relationship-key", ".task-relationship-metadata"].map((s) => row.querySelector(s).getBoundingClientRect());
+    return { apart: parts[1].left >= parts[0].right - 0.5, fits: parts[1].right <= link.right + 0.5 };
   });
-  expect(narrow, "320px: ID, box and date keep apart and fit").toEqual({ apart: true, fits: true });
+  expect(narrow, "320px: ID and box (with the date) keep apart and fit").toEqual({ apart: true, fits: true });
 }));
 
 // The phone layout above is for relationship rows only: a document's linked cards keep the card

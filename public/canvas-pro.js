@@ -584,7 +584,7 @@ export function canvasPro(ctx, basic) {
             )
             .join(
               "",
-            )}</select>${cardPriority(t, `data-task="${esc(t.id)}"`)}</span>${cardEndDate(t, n, flags.overdue)}</div>${t.source?`<small class="source-badge">${esc(sourceLabel(t))} · Source fields are read-only</small>`:""}${flags.blocked ? '<div class="canvas-task-flags"><b>Blocked</b></div>' : ""}<div class="canvas-markdown task-card-description" ${n.taskCollapsed ? "hidden" : ""}>${section ? (section.text ? markdown(section.text) : '<span class="is-placeholder">Add task notes…</span>') : "<p>Heading or block not found.</p>"}</div>${n.subpath ? `<small class="embed-label">${esc(n.subpath)}</small>` : ""}`;
+            )}</select>${cardPriority(t, `data-task="${esc(t.id)}"`)}${cardEndDate(t, n, flags.overdue)}</span></div>${t.source?`<small class="source-badge">${esc(sourceLabel(t))} · Source fields are read-only</small>`:""}${flags.blocked ? '<div class="canvas-task-flags"><b>Blocked</b></div>' : ""}<div class="canvas-markdown task-card-description" ${n.taskCollapsed ? "hidden" : ""}>${section ? (section.text ? markdown(section.text) : '<span class="is-placeholder">Add task notes…</span>') : "<p>Heading or block not found.</p>"}</div>${n.subpath ? `<small class="embed-label">${esc(n.subpath)}</small>` : ""}`;
         }
       } else if (n.type === "file") {
         const attachment = localAttachment(n);

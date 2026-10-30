@@ -146,7 +146,7 @@ test.describe("desktop", () => {
 
     test(`${view}: the date editor checks the order, saves as you type and clears; source tasks keep dates locked`, async ({ page }) => {
       await open(page, view);
-      await row(page).locator("[data-row-dates]").click();
+      await row(page).locator(".row-due").click();
       await dates(page).locator("[name=start]").fill("2026-10-20");
       await dates(page).locator("[name=due]").fill("2026-10-19");
       await expect(dates(page).locator(".form-error")).toHaveText(/on or after/);
@@ -158,7 +158,7 @@ test.describe("desktop", () => {
       await dates(page).getByRole("button", { name: "Close date editor" }).click();
       await dates(page).waitFor({ state: "detached" });
       await expect(row(page).locator(".row-due")).toContainText("24");
-      await row(page).locator("[data-row-dates]").click();
+      await row(page).locator(".row-due").click();
       await dates(page).getByRole("button", { name: "Clear dates" }).click();
       await expect.poll(async () => { const t = await saved(); return !t.due && !t.start; }).toBe(true);
       await idle(page);
@@ -166,7 +166,7 @@ test.describe("desktop", () => {
       await dates(page).waitFor({ state: "detached" });
       // The repaint held back while the editor was open shows the cleared dates.
       await expect(row(page).locator(".row-due")).toHaveAttribute("title", "Start: Not set · Due: Not set");
-      await row(page, app.remote.id).locator("[data-row-dates]").click();
+      await row(page, app.remote.id).locator(".row-due").click();
       await expect(dates(page).locator("[name=due]")).toBeDisabled();
       await dates(page).getByRole("button", { name: "Close date editor" }).click();
       await dates(page).waitFor({ state: "detached" });
@@ -264,6 +264,17 @@ onDevices(["phone", "ipad"], () => {
       if (device === "phone") {
         await page.waitForFunction(() => document.querySelector(".sidebar").getBoundingClientRect().right <= 1);
         await phoneTaskFields(page, taskRow);
+        // The date sits in the field box and opens the date editor in place, like the other fields (30 Oct).
+        const due = taskRow.locator(".phone-task-fields [data-row-dates]");
+        await due.tap();
+        await dates(page).locator("[name=due]").fill("2026-11-12");
+        await expect.poll(async () => (await saved()).due).toBe("2026-11-12");
+        const panel = await page.locator("#task-dates-popover").boundingBox();
+        expect(panel.x >= 0 && panel.x + panel.width <= width + 1, `date editor fits ${JSON.stringify(panel)}`).toBe(true);
+        await page.locator("#task-dates-form [data-task-dates-close]").tap();
+        await dates(page).waitFor({ state: "detached" });
+        await expect(due).toContainText("12");
+        await expect(due, "focus returns to the date").toBeFocused();
         const height = (await taskRow.boundingBox()).height;
         expect(height >= 44 && height <= 76, `phone row height ${height}`).toBe(true);
         expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), "no page overflow").toBe(true);
@@ -285,7 +296,7 @@ onDevices(["phone", "ipad"], () => {
       expect(height >= 44 && height <= (reflowed ? 150 : 48), `Touch row fits its responsive layout: ${height}px`).toBe(true);
       const titleBox = await taskRow.locator(".row-title").boundingBox();
       if (width <= 900) expect(titleBox.x < width - 100 && titleBox.width >= 100).toBe(true);
-      await taskRow.locator("[data-row-dates]").tap();
+      await taskRow.locator(".row-due").tap();
       await page.locator("#task-dates-form [data-task-dates-close]").tap();
       await dates(page).waitFor({ state: "detached" });
       for (const selector of [".task-type", ".task-id"]) {

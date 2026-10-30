@@ -1,12 +1,13 @@
 // Owner request, 29 October 2026 (note-taking item 15): assignee, status and priority sit in one
 // box whose border takes the priority's colour wherever they appear together, and each project
-// sets its priority colours in Settings → Workflow.
+// sets its priority colours in Settings → Workflow. Owner request, 30 October 2026: the box holds
+// the date too, after the priority, everywhere.
 import { test, expect, onDevices, useApp } from "../fixtures.mjs";
 
 const app = useApp(async (store) => {
   const project = await store.createProject({ title: "Field box", key: "FB" });
-  const high = await store.createTask(project.id, { title: "High card", status: "in-progress", priority: "high", assignee: "Alex" });
-  const low = await store.createTask(project.id, { title: "Low card", status: "todo", priority: "low", assignee: "Alex", parent: high.id });
+  const high = await store.createTask(project.id, { title: "High card", status: "in-progress", priority: "high", assignee: "Alex", due: "2026-11-05" });
+  const low = await store.createTask(project.id, { title: "Low card", status: "todo", priority: "low", assignee: "Alex", parent: high.id, due: "2026-11-06" });
   const board = (await store.snapshot(project.id)).boards[0];
   await store.updateBoard(project.id, board.id, { revision: board.revision, nodes: [{ id: "card-a", type: "task", task: high.id, x: 200, y: 160, w: 320, h: 240 }] });
   return { project, high, low, board };
@@ -39,17 +40,17 @@ test("rows, Kanban and board cards and the card editor hold the fields in one bo
   for (const view of ["list", "tree"]) {
     await page.goto(url(view));
     for (const [task, color] of [[app.high, HIGH], [app.low, LOW]])
-      await boxed(row(page, task).locator(".row-fields.field-box"), [".row-assignee .task-assignee", ".row-status .field-chip", ".row-priority .field-chip"], color, `${view} ${task.title}`);
+      await boxed(row(page, task).locator(".row-fields.field-box"), [".row-assignee .task-assignee", ".row-status .field-chip", ".row-priority .field-chip", ".row-due .due"], color, `${view} ${task.title}`);
   }
   await page.goto(url("kanban"));
-  await boxed(page.locator(`[data-drag-task="${app.high.id}"] .field-box`), [".task-assignee", ".field-chip-priority"], HIGH, "kanban");
+  await boxed(page.locator(`[data-drag-task="${app.high.id}"] .field-box`), [".task-assignee", ".field-chip-priority", ".due"], HIGH, "kanban");
   await page.goto(url(`board/${app.board.id}`));
-  await boxed(page.locator('[data-node="card-a"] .live-card-state .field-box'), [".task-assignee", ".canvas-task-status", ".canvas-task-priority"], HIGH, "board card");
+  await boxed(page.locator('[data-node="card-a"] .live-card-state .field-box'), [".task-assignee", ".canvas-task-status", ".canvas-task-priority", ".canvas-task-due"], HIGH, "board card");
   await page.goto(url("list"));
   await row(page, app.high).locator('[data-action="task-open"]').first().click();
   const editor = page.locator("#task-form");
   await boxed(editor.locator(".task-metadata-main .field-box"), [".task-assignee", 'select[name="status"]', ".task-picker-trigger"], HIGH, "card editor");
-  await boxed(editor.locator(".task-relationship-metadata.field-box"), [".task-assignee", ".task-relationship-status", ".task-relationship-priority"], LOW, "relationship row");
+  await boxed(editor.locator(".task-relationship-metadata.field-box"), [".task-assignee", ".task-relationship-status", ".task-relationship-priority", ".due"], LOW, "relationship row");
   await editor.locator('[data-task-picker="priority"] .task-picker-trigger').click();
   await editor.locator('[data-task-picker="priority"] [data-picker-value="urgent"]').click();
   await boxed(editor.locator(".task-metadata-main .field-box"), [".task-assignee", 'select[name="status"]', ".task-picker-trigger"], URGENT, "card editor after a priority change");
@@ -57,7 +58,7 @@ test("rows, Kanban and board cards and the card editor hold the fields in one bo
 
 onDevices(["phone"], () => test("phone summaries hold the fields in one box", async ({ page }) => {
   await page.goto(url("list"));
-  await boxed(row(page, app.low).locator(".phone-task-meta .field-box"), [".task-assignee", ".phone-task-status", ".phone-task-priority"], LOW, "phone summary");
+  await boxed(row(page, app.low).locator(".phone-task-meta .field-box"), [".task-assignee", ".phone-task-status", ".phone-task-priority", "[data-row-dates] .due"], LOW, "phone summary");
 }));
 
 test("each project sets its priority colours in Settings → Workflow", async ({ page }) => {

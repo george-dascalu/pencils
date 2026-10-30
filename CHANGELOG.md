@@ -2,6 +2,17 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.20.39 — 2026-10-30
+
+### Changed
+
+- A card's due date sits inside the assignee, status and priority box, after the priority, in List and Tree rows, phone summaries, relationship rows and Kanban and board cards.
+- On phones the field box sits at the end of List and Tree rows (and relationship rows) instead of the middle, so the card ID shows in full.
+
+### Added
+
+- On phones, tapping a List or Tree row's date opens the date editor in place, like its assignee, status and priority.
+
 ## 0.20.38 — 2026-10-30
 
 ### Added
