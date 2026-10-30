@@ -219,7 +219,7 @@ onDevices(["phone", "desktop"], () => test("a dragged Kanban card's image looks 
   const card = page.locator("[data-drag-task]").first();
   await card.waitFor();
   const look = await card.evaluate((el) => {
-    const style = (node) => { const cs = getComputedStyle(node); return { border: cs.borderTopColor, radius: cs.borderTopLeftRadius, title: getComputedStyle(node.querySelector(".task-title")).fontSize, shadow: cs.boxShadow }; };
+    const style = (node) => { const cs = getComputedStyle(node); return { border: cs.borderTopColor, radius: cs.borderTopLeftRadius, title: getComputedStyle(node.querySelector(".task-title")).fontSize, overflow: cs.overflowY }; };
     const data = new DataTransfer();
     el.dispatchEvent(new DragEvent("dragstart", { bubbles: true, cancelable: true, dataTransfer: data, clientX: 10, clientY: 10 }));
     const image = document.querySelector(".kanban-drag-image");
@@ -231,6 +231,7 @@ onDevices(["phone", "desktop"], () => test("a dragged Kanban card's image looks 
   expect(look.image.border, `${device}: the card's light border, not a dark frame`).toBe(look.card.border);
   expect(look.image.radius, `${device}: the card's corners`).toBe(look.card.radius);
   expect(look.image.title, `${device}: the card's text size`).toBe(look.card.title);
+  expect(look.image.overflow, `${device}: no scrolling inside the image`).toBe(look.card.overflow);
   expect(look.inPage, `${device}: made in the page, so its styles apply`).toBe(true);
   expect(look.left, `${device}: gone once the drag ends`).toBe(0);
 }));

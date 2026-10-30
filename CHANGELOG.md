@@ -2,6 +2,12 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.20.30 — 2026-10-30
+
+### Changed
+
+- Reordering List and Tree rows feels more direct: the row lifts as a copy of itself that moves up and down with the pointer, the insertion line (now with a dot) glides between rows, a drop slides the rows into place and briefly highlights the moved one, and a cancelled drag glides back. Alt+Up/Down moves (also in Table) animate the same way. With reduced motion nothing animates.
+
 ## 0.20.29 — 2026-10-30
 
 ### Fixed

@@ -1766,7 +1766,7 @@ input[type="search"]:not(.search input) {
   .main { height: 100dvh; min-height: 0; overflow: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; }
   .main.project-main { overflow: hidden; }
   /* Any page body under the header (view content, help, settings) scrolls on its own, so header rows keep their height. */
-  .main.project-main > :not(.topbar, #view-toolbar, .hero, .stats-strip) { min-height: 0; overflow: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; }
+  .main.project-main > :not(.topbar, #view-toolbar, .hero, .stats-strip, .task-reorder-ghost) { min-height: 0; overflow: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; }
   .breadcrumb {
     gap: 8px;
   }

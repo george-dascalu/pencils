@@ -15,6 +15,23 @@ export function taskReorder(ctx, tableTools) {
   const group = row => row?.dataset.taskOrderGroup || "";
   const handle = id => document.querySelector(`[data-task-reorder="${CSS.escape(id)}"]`);
   const scroller = () => document.querySelector("#view-content > .table-scroll, #view-content > .tree-wrapper") || document.querySelector("#view-content");
+  const still = () => matchMedia("(prefers-reduced-motion: reduce)").matches;
+  // Rows slide from where they were to where they are now, and the moved one is highlighted.
+  // Only rows in view move, all measured before any starts.
+  function settle(id, before) {
+    if (!still()) {
+      const view = scroller().getBoundingClientRect();
+      const shifts = rows().map(r => {
+        const top = r.getBoundingClientRect().top, was = before.get(r.dataset.taskOrderRow);
+        const seen = [top, was].some(y => y != null && y > view.top - r.offsetHeight && y < view.bottom);
+        return [r, seen && was != null ? was - top : 0];
+      });
+      for (const [r, dy] of shifts) if (Math.abs(dy) > 1) r.animate([{ transform: `translateY(${dy}px)` }, { transform: "none" }], { duration: 180, easing: "cubic-bezier(.2, .8, .2, 1)" });
+    }
+    const moved = rows().find(r => r.dataset.taskOrderRow === id);
+    moved?.classList.add("task-reorder-moved");
+    setTimeout(() => moved?.classList.remove("task-reorder-moved"), 1200);
+  }
   function announce(message) {
     let live = document.querySelector("#task-reorder-status");
     if (!live) {
@@ -48,7 +65,8 @@ export function taskReorder(ctx, tableTools) {
     }
     return tasks.map(t => t.id);
   }
-  async function move(id, target, after) {
+  // from: where the moved row's copy was dropped, so it settles from there.
+  async function move(id, target, after, from) {
     if (saving || !siblings(id, target)) return;
     const all = rows(), source = all.find(r => r.dataset.taskOrderRow === id), destination = all.find(r => r.dataset.taskOrderRow === target);
     if (!source || !destination) return;
@@ -57,6 +75,8 @@ export function taskReorder(ctx, tableTools) {
     if (!changes.length) return;
     const project = state.project.id;
     const scroll = scroller(), position = { top: scroll.scrollTop, left: scroll.scrollLeft };
+    const before = new Map(all.map(r => [r.dataset.taskOrderRow, r.getBoundingClientRect().top]));
+    if (from != null) before.set(id, from);
     state.sort = "order";
     state.sortDir = 1;
     storage.set(`sort:${project}`, "order");
@@ -76,6 +96,7 @@ export function taskReorder(ctx, tableTools) {
       scroller()?.scrollTo(position);
       handle(id)?.focus({ preventScroll: true });
       handle(id)?.scrollIntoView({ block: "nearest", inline: "nearest" });
+      settle(id, before);
       const message = crossGroup ? "Task moved. Grouping cleared to keep your manual order." : "Task moved. Manual order selected.";
       announce(message);
       if (crossGroup) toast(message);
@@ -119,7 +140,9 @@ export function taskReorder(ctx, tableTools) {
     }
     d.marker.hidden = !d.valid || markerY == null || markerY < top || markerY > bottom;
     Object.assign(d.marker.style, { left: `${left}px`, top: `${markerY}px`, width: `${right - left}px` });
-    Object.assign(d.ghost.style, {
+    // A lifted row moves up and down with the pointer where it was grabbed; Table's title follows it.
+    if (d.grab != null) d.ghost.style.top = `${Math.max(8, Math.min(innerHeight - d.ghost.offsetHeight - 8, d.y - d.grab))}px`;
+    else Object.assign(d.ghost.style, {
       left: `${Math.max(8, Math.min(innerWidth - d.ghost.offsetWidth - 8, d.x + 16))}px`,
       top: `${Math.max(8, Math.min(innerHeight - d.ghost.offsetHeight - 8, d.y + 16))}px`,
     });
@@ -144,14 +167,32 @@ export function taskReorder(ctx, tableTools) {
     const d = drag;
     d.active = suppressClick = true;
     state.taskReordering = true;
-    d.row.classList.add("task-reorder-source");
     document.body.classList.add("task-reordering");
-    d.ghost = document.createElement("div");
-    d.ghost.className = "task-reorder-ghost";
-    d.ghost.textContent = task(d.id)?.title || "Task";
+    // List and Tree rows lift as a copy of themselves; a table row can't stand alone, so Table
+    // shows the title.
+    if (state.view === "table") {
+      d.ghost = document.createElement("div");
+      d.ghost.className = "task-reorder-ghost";
+      d.ghost.textContent = task(d.id)?.title || "Task";
+    } else {
+      const r = d.row.getBoundingClientRect();
+      d.ghost = d.row.cloneNode(true);
+      d.ghost.removeAttribute("data-task-order-row");
+      // Nothing in the copy answers to the row's actions or lookups.
+      for (const el of d.ghost.querySelectorAll("[id], [data-action], [data-id], [data-row-field], [data-row-dates], [data-task-reorder]"))
+        for (const name of ["id", "data-action", "data-id", "data-row-field", "data-row-dates", "data-task-reorder"]) el.removeAttribute(name);
+      d.ghost.inert = true;
+      d.ghost.classList.add("task-reorder-ghost", "task-reorder-lifted");
+      Object.assign(d.ghost.style, { left: `${r.left}px`, width: `${r.width}px` });
+      d.grab = d.startY - r.top;
+    }
+    d.row.classList.add("task-reorder-source");
     d.marker = document.createElement("div");
     d.marker.className = "task-reorder-marker";
-    for (const el of [d.ghost, d.marker]) { el.setAttribute("aria-hidden", "true"); document.body.append(el); }
+    // The copy stays in the page, so its styles apply, outside the rows; the line needs no page styles.
+    for (const el of [d.ghost, d.marker]) el.setAttribute("aria-hidden", "true");
+    (d.row.closest(".main") || document.body).append(d.ghost);
+    document.body.append(d.marker);
     announce(hierarchy() ? "Reorder among sibling tasks. Escape cancels." : "Drag to the desired position. Escape cancels.");
     paint();
     d.frame = requestAnimationFrame(tick);
@@ -162,12 +203,23 @@ export function taskReorder(ctx, tableTools) {
     drag = null;
     cancelAnimationFrame(d.frame);
     d.row.classList.remove("task-reorder-source");
-    d.ghost?.remove(); d.marker?.remove();
+    d.marker?.remove();
     document.body.classList.remove("task-reordering");
     if (d.button.hasPointerCapture(d.pointer)) d.button.releasePointerCapture(d.pointer);
     state.taskReordering = false;
-    if (commit && d.active && d.valid && d.target) void move(d.id, d.target, d.after);
-    else if (d.active) announce("Reordering cancelled.");
+    const dropped = d.ghost?.getBoundingClientRect().top;
+    const ghost = d.ghost;
+    if (commit && d.active && d.valid && d.target) {
+      ghost?.remove();
+      void move(d.id, d.target, d.after, d.grab != null ? dropped : undefined);
+    } else {
+      // A cancelled copy glides back to its row before it goes.
+      if (ghost && d.grab != null && d.row.isConnected && !still()) {
+        const back = ghost.animate([{ transform: "none" }, { transform: `translateY(${d.row.getBoundingClientRect().top - dropped}px)` }], { duration: 160, easing: "ease-out" });
+        back.onfinish = back.oncancel = () => ghost.remove();
+      } else ghost?.remove();
+      if (d.active) announce("Reordering cancelled.");
+    }
     setTimeout(() => { suppressClick = false; }, 0);
   }
   document.addEventListener("pointerdown", e => {
