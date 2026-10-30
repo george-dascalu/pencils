@@ -1,6 +1,6 @@
 {
   "name": "pencils",
-  "version": "0.20.28",
+  "version": "0.20.29",
   "private": true,
   "type": "module",
   "description": "An offline, Markdown-backed project workspace",

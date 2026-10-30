@@ -106,7 +106,7 @@ export function kanbanDrag(ctx) {
   }
   document.addEventListener("dragstart", (e) => {
     const card = e.target.closest("[data-drag-task]");
-    if (!card || state.view !== "kanban") return;
+    if (!card || e.defaultPrevented || state.view !== "kanban") return;
     clean();
     const r = card.getBoundingClientRect(),
       ghost = card.cloneNode(true),
@@ -116,7 +116,9 @@ export function kanbanDrag(ctx) {
     ghost.classList.add("kanban-drag-image");
     ghost.style.width = `${r.width}px`;
     ghost.setAttribute("aria-hidden", "true");
-    document.body.append(ghost);
+    // In the page, so its styles (such as touch text sizes) still apply to the copy, but outside
+    // the scrolling columns, whose drag images Safari can draw wrongly.
+    (card.closest(".main") || document.body).append(ghost);
     placeholder.className = "kanban-drop-placeholder";
     placeholder.style.height = `${r.height}px`;
     placeholder.textContent = "Drop here";

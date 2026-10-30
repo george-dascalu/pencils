@@ -211,3 +211,26 @@ test.describe("Kanban cards", () => {
     });
   });
 });
+
+// Owner request, 30 October 2026: on phones a dragged Kanban card showed a dark frame. The drag
+// image is a copy of the card that looks like it: the same light border and text sizes.
+onDevices(["phone", "desktop"], () => test("a dragged Kanban card's image looks like the card", async ({ page, device }) => {
+  await page.goto(`${app.base}/#project/${app.project.id}/kanban`);
+  const card = page.locator("[data-drag-task]").first();
+  await card.waitFor();
+  const look = await card.evaluate((el) => {
+    const style = (node) => { const cs = getComputedStyle(node); return { border: cs.borderTopColor, radius: cs.borderTopLeftRadius, title: getComputedStyle(node.querySelector(".task-title")).fontSize, shadow: cs.boxShadow }; };
+    const data = new DataTransfer();
+    el.dispatchEvent(new DragEvent("dragstart", { bubbles: true, cancelable: true, dataTransfer: data, clientX: 10, clientY: 10 }));
+    const image = document.querySelector(".kanban-drag-image");
+    const result = { card: style(el), image: image && style(image), inPage: !!image?.closest(".main") };
+    el.dispatchEvent(new DragEvent("dragend", { bubbles: true, dataTransfer: data }));
+    return { ...result, left: document.querySelectorAll(".kanban-drag-image").length };
+  });
+  expect(look.image, `${device}: a drag image`).toBeTruthy();
+  expect(look.image.border, `${device}: the card's light border, not a dark frame`).toBe(look.card.border);
+  expect(look.image.radius, `${device}: the card's corners`).toBe(look.card.radius);
+  expect(look.image.title, `${device}: the card's text size`).toBe(look.card.title);
+  expect(look.inPage, `${device}: made in the page, so its styles apply`).toBe(true);
+  expect(look.left, `${device}: gone once the drag ends`).toBe(0);
+}));

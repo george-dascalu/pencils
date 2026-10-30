@@ -2,6 +2,12 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.20.29 — 2026-10-30
+
+### Fixed
+
+- A Kanban card being dragged looks like the card, with its light border and text sizes, instead of a copy in a dark frame with larger text (seen on iPhone).
+
 ## 0.20.28 — 2026-10-30
 
 ### Changed

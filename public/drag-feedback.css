@@ -48,8 +48,9 @@
   overflow: hidden;
   pointer-events: none;
 }
-/* The drag preview is a plain, opaque copy of the card: Safari draws drag images of
-   transformed elements wrongly (WebKit bug 246734), which showed as black boxes on iPad. */
+/* The drag preview is a plain, opaque copy of the card with its own light border: Safari draws
+   drag images of transformed elements wrongly (WebKit bug 246734), which showed as black boxes on
+   iPad, and a dark border read as a dark frame on iPhone. */
 .kanban-drag-image {
   position: fixed;
   top: 0;
@@ -59,7 +60,6 @@
   box-shadow: none;
   background: var(--surface);
   color: var(--ink);
-  border-color: var(--green);
 }
 .kanban-drop-placeholder {
   border: 2px dashed var(--green);
