@@ -531,6 +531,7 @@ export function installFeatures(ctx) {
       return false;
     }
     sync.load(state.session.user?.username || "shared");
+    ctx.bookmarks.load();
     return true;
   }
   function start(fn) {
@@ -612,9 +613,11 @@ export function installFeatures(ctx) {
   }
   async function searchDialog() {
     showDialog(
-      `<dialog class="dialog wide-dialog">${dialogHead("Search and commands")}<div class="dialog-body"><label class="field">Search<input id="global-search-input" type="search" placeholder="Cards, documents, boards or commands…" autofocus></label><div id="command-results"></div><div id="global-search-results"></div></div><div class="dialog-foot"><button class="button" data-action="dialog-close">Close</button></div></dialog>`,
+      `<dialog class="dialog wide-dialog">${dialogHead("Search and commands")}<div class="dialog-body"><label class="field">Search<input id="global-search-input" type="search" placeholder="Cards, documents, boards or commands…" autofocus></label><div id="bookmark-results"></div><div id="command-results"></div><div id="global-search-results"></div></div><div class="dialog-foot"><button class="button" data-action="dialog-close">Close</button></div></dialog>`,
       "search",
     );
+    bookmarked = ctx.bookmarks.list().catch(() => []);
+    clearTimeout(searchTimer); // a search typed in the last dialog doesn't fill this one
     searchResults("");
   }
   function commands() {
@@ -659,10 +662,16 @@ export function installFeatures(ctx) {
       },
     ];
   }
-  let searchSequence=0;
+  let searchSequence=0, bookmarked=Promise.resolve([]);
   const searchKinds = { card: ["Card", "task"], doc: ["Document", "file"], board: ["Board", "board"] };
   // Excerpts arrive with \u0002 and \u0003 around each match; everything else is escaped.
   const excerptHTML = (text) => esc(text).replace(/\u0002/g, "<mark>").replace(/\u0003/g, "</mark>");
+  const where = (r) => [state.organisations.find((o) => o.id === r.organisation)?.title, r.project_title].filter(Boolean).map(esc).join(" / ");
+  const resultTitle = (r) => r.kind === "view" ? viewLabel(r.id) : r.title;
+  function resultHTML(r) {
+    const [kind, glyph] = searchKinds[r.kind] || ["View", r.id];
+    return `<button class="search-result" data-feature="search-open" data-kind="${r.kind}" data-id="${esc(r.id)}" data-project="${esc(r.project)}" data-key="${esc(r.key || "")}" data-title="${esc(resultTitle(r))}"><strong>${icon(glyph)}${r.key ? `${esc(r.key)} ` : ""}${esc(resultTitle(r))}</strong><span>${kind} · ${where(r)}${r.status ? ` · ${esc(r.status)}` : ""}${r.archived ? " · Archived" : ""}</span>${r.excerpt ? `<span class="search-excerpt">${excerptHTML(r.excerpt)}</span>` : ""}</button>`;
+  }
   async function searchResults(query) {
     if (!$("#command-results")) return; // closed while the search waited
     const words = query.toLowerCase().trim().split(/\s+/);
@@ -671,16 +680,21 @@ export function installFeatures(ctx) {
     $("#command-results").innerHTML =
       `<p class="field-hint">Commands</p>${matches.map((command) => `<button class="search-result command-result" data-feature="command-run" data-command="${esc(command.id)}">${esc(command.title)}</button>`).join("") || "<p>No matching commands.</p>"}`;
     const sequence=++searchSequence;
+    // Bookmarks first, in their own list as soon as they arrive: all of them before typing, the
+    // ones matching the query's plain words as you type (quotes dropped; -word, #tag and in: are
+    // left to the server).
+    const plain = query.toLowerCase().replace(/"/g, " ").split(/\s+/).filter((word) => word && !/^(-|#|in:)/.test(word));
+    void bookmarked.then((all) => {
+      if (sequence !== searchSequence || !$("#bookmark-results")) return;
+      const marks = all.filter((b) => plain.every((word) => `${b.key || ""} ${resultTitle(b)} ${b.project_title}`.toLowerCase().includes(word)));
+      $("#bookmark-results").innerHTML = marks.length ? `<p class="field-hint">Bookmarks</p>${marks.map(resultHTML).join("")}` : "";
+    });
     if (!query.trim()) { $("#global-search-results").innerHTML = ""; return; }
     // One ranked list from the server: cards, documents and boards in every project you can open.
     let data;try{data=await api(`/search?q=${encodeURIComponent(query)}`);}catch(error){if(sequence===searchSequence && $("#global-search-results"))$("#global-search-results").textContent=error.message;return;}
     if(sequence!==searchSequence || !$("#global-search-results"))return;
-    const where = (r) => [state.organisations.find((o) => o.id === r.organisation)?.title, r.project_title].filter(Boolean).map(esc).join(" / ");
     $("#global-search-results").innerHTML = `<p class="field-hint">Cards, documents and boards</p>${
-      data.results.map((r) => {
-        const [kind, glyph] = searchKinds[r.kind];
-        return `<button class="search-result" data-feature="search-open" data-kind="${r.kind}" data-id="${esc(r.id)}" data-project="${esc(r.project)}" data-key="${esc(r.key || "")}" data-title="${esc(r.title)}"><strong>${icon(glyph)}${r.key ? `${esc(r.key)} ` : ""}${esc(r.title)}</strong><span>${kind} · ${where(r)}${r.status ? ` · ${esc(r.status)}` : ""}${r.archived ? " · Archived" : ""}</span>${r.excerpt ? `<span class="search-excerpt">${excerptHTML(r.excerpt)}</span>` : ""}</button>`;
-      }).join("") || (data.suggestion ? `<p>Nothing found. Did you mean <button type="button" class="text-link" data-feature="search-suggestion" data-query="${esc(data.suggestion)}">${esc(data.suggestion)}</button>?</p>` : "<p>Nothing found.</p>")
+      data.results.map(resultHTML).join("") || (data.suggestion ? `<p>Nothing found. Did you mean <button type="button" class="text-link" data-feature="search-suggestion" data-query="${esc(data.suggestion)}">${esc(data.suggestion)}</button>?</p>` : "<p>Nothing found.</p>")
     }<p class="field-hint">Enter opens · Alt+Enter links it in the open document · "phrase", -word, #tag, in:cards, in:docs, in:boards</p>`;
   }
   document.addEventListener("keydown", (event) => {
@@ -691,7 +705,7 @@ export function installFeatures(ctx) {
       return;
     const results = [
       ...document.querySelectorAll(
-        "#command-results button, #global-search-results button",
+        "#bookmark-results button, #command-results button, #global-search-results button",
       ),
     ];
     if (!results.length) return;
@@ -703,7 +717,7 @@ export function installFeatures(ctx) {
       event.preventDefault();
       const { kind, id, project, key, title } = chosen.dataset;
       // Documents resolve links to cards and documents of their own project only.
-      if (kind === "board" || project !== state.project?.id) { toast("Alt+Enter links cards and documents of this project.", true); return; }
+      if (kind === "board" || kind === "view" || project !== state.project?.id) { toast("Alt+Enter links cards and documents of this project.", true); return; }
       const link = kind === "card" ? `[[${key || id}]]` : `[[Projects/${project}/documents/${id}|${title.replace(/[[\]|]/g, "")}]]`;
       closeDialog();
       if (!documents.insertText(link)) toast("Open a document to insert a link.", true);
@@ -762,6 +776,7 @@ export function installFeatures(ctx) {
       const { kind, id, project } = el.dataset;
       if (state.project?.id !== project && !(await openProject(project))) return;
       if (kind === "card") taskDialog(id);
+      else if (kind === "view") ctx.openView(id);
       else if (kind === "board") await drawings.enter(id);
       else {
         await documentFeature.load();

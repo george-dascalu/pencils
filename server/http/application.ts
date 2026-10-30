@@ -17,6 +17,7 @@ import { Automations } from "../automations.js";
 import { RecordIndex } from "../record-index.js";
 import { Diagnostics } from "../diagnostics.js";
 import { Capture } from "../capture.js";
+import { Bookmarks } from "../bookmarks.js";
 import { Problem } from "../problem.js";
 import { staticAssets } from "../static-assets.js";
 import { BACKUP_BYTES } from "../../public/backup-limits.js";
@@ -37,6 +38,7 @@ import { boardsRoutes } from "./routes/boards.js";
 import { attachmentsRoutes } from "./routes/attachments.js";
 import { recordsRoutes } from "./routes/records.js";
 import { captureRoutes } from "./routes/capture.js";
+import { bookmarksRoutes } from "./routes/bookmarks.js";
 
 interface ServerOptions {
   auth?: LegacyService;
@@ -99,6 +101,7 @@ export function createServer(
     index: new RecordIndex(store),
     diagnostics: new Diagnostics(),
     capture: new Capture(store, auth),
+    bookmarks: new Bookmarks(store, auth),
     rooms: new Map(),
   };
   store.watch();
@@ -305,6 +308,7 @@ export function createServer(
   route(["/api/backups/upload"], workspaceRoutes, false, BACKUP_BYTES);
   route(["/api/capture"], captureRoutes, true, 64_000);
   route(["/api/capture-tokens", "/api/capture-tokens/:project"], captureRoutes);
+  route(["/api/bookmarks"], bookmarksRoutes);
   route(
     ["/api/projects", "/api/projects/:project", "/api/demo"],
     projectsRoutes,

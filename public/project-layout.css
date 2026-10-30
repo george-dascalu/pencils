@@ -27,7 +27,7 @@
 }
 @media (max-width: 600px) {
   .toolbar:has(.mobile-view-options) { padding-block: 6px; }
-  .toolbar-left:has(.mobile-view-options) { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; gap: 6px; width: 100%; }
+  .toolbar-left:has(.mobile-view-options) { display: grid; grid-template-columns: minmax(0, 1fr); grid-auto-flow: column; grid-auto-columns: auto; gap: 6px; width: 100%; }
   .toolbar-left > .search { min-width: 0; width: 100%; max-width: none; }
 }
 .main.project-main {
@@ -915,7 +915,7 @@ html.table-viewport-view body {
   .topbar .phone-new-task { display: inline-flex; }
   .topbar .phone-new-task > summary { justify-content: center; }
   .topbar .app-version { display: none; }
-  .toolbar-left:has(.mobile-view-options) { grid-template-columns: minmax(0, 1fr) var(--control-height) var(--control-height); }
+  .toolbar-left:has(.mobile-view-options) { grid-auto-columns: var(--control-height); }
   .mobile-view-options > summary { justify-content: center; width: var(--control-height); }
   .list-group > .section-title, #view-content[data-layout-view="tree"] > .section-title { min-height: var(--control-height); margin-block: 6px; font-size: 13px; }
 }

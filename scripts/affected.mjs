@@ -29,7 +29,7 @@ const AREAS = {
   lists: /^(grid(?!-merge)|table-|kanban-|view-layout|drag-feedback|task-row-editor|task-order-model|task-reorder|task-colors)/,
   planning: /^(calendar|capacity|planning|timeline-|task-timeline|schedule-|teams)/,
   settings: /^(project-settings|personal-settings|capture-settings|style-settings|project-sources|source-model|project-automations|workflow-|teams|recovery-ui|backup-limits)/,
-  navigation: /^(help|topbar-title)/,
+  navigation: /^(help|topbar-title|bookmarks)/,
   ui: /^(color-|select-menu|date-picker|confirm-popover|format-date|in-place-editing)/,
 };
 const shared = (file) => SHARED.some((rule) => rule.test(file));

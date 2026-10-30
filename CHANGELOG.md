@@ -2,6 +2,12 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.20.23 — 2026-10-30
+
+### Added
+
+- Bookmarks: the star beside a card's ID in the card editor, in the document bar, beside the board name and after a view's filters bookmarks that card, document, board or view. Search lists your bookmarks first, all of them before you type and the matching ones as you do. Bookmarks belong to your account, so every device shows the same ones, with their current names.
+
 ## 0.20.22 — 2026-10-30
 
 ### Fixed

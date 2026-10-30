@@ -365,6 +365,11 @@ button svg {
   background: #ecefe5;
   color: #354c36;
 }
+/* A bookmarked item's star is filled (public/bookmarks.js). */
+.bookmark-button[aria-pressed="true"] .icon {
+  fill: currentColor;
+  color: var(--green);
+}
 .hero {
   padding: 35px 38px 26px;
   display: flex;

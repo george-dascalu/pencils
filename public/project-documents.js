@@ -914,6 +914,7 @@ export function projectDocuments(ctx) {
             </div>
             <a class="icon-button document-file-action" href="#" data-document-action="obsidian" aria-label="Open in Obsidian" title="Open in Obsidian">${icon("external")}</a>
             <button type="button" class="icon-button document-file-action" data-document-action="versions" aria-label="Page versions" title="Page versions · Version ${doc.version || 1}" data-version="${doc.version || 1}">${icon("clock")}</button>
+            ${ctx.bookmarks.button("doc", state.project.id, doc.id)}
             <button type="button" class="icon-button" data-document-action="tools" aria-label="Document tools" title="Document tools">${icon("more")}</button>
             <button type="button" class="icon-button document-file-action" data-document-action="export" aria-label="Export Markdown" title="Export Markdown">${icon("download")}</button>
             <details class="board-menu document-delete document-file-action"><summary aria-label="Delete document" title="Delete document">${icon("trash")}</summary><div class="board-menu-panel"><p>Move this document to Trash?</p><button type="button" class="button small danger" data-document-action="delete">Move to Trash</button></div></details>

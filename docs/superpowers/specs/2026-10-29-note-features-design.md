@@ -89,7 +89,7 @@ Decisions (owner, 29 Oct): captures land in a chosen project tagged `inbox`; Tod
 
 ### 26. Bookmarks (owner request, 30 Oct)
 - A card, a project view (List, Kanban, Timeline…), a board or a document can be bookmarked. Bookmarks belong to the signed-in person and are saved on the server (`.pencils/bookmarks.json`, one list per person, at most 200), so every device shows the same ones.
-- A star button, filled when bookmarked, sits in each place's own bar: the card editor's header, the document bar, the board toolbar and the toolbar of a project view. It toggles at once (optimistically) and reverts with a message if the save fails.
+- A star button, filled when bookmarked, sits in each place's own bar: beside the card's ID in the card editor's title row (the header's button groups already fill a 360px phone), the document bar, beside the board name in the board toolbar, and at the end of a task or planning view's left toolbar group (after the filters; Overview has no toolbar and isn't bookmarked). It toggles at once (optimistically), saves in order, and reverts with a message if the save fails.
 - The search popup (bottom bar's Search on phones, the Search button elsewhere) lists bookmarks first: all of them before you type, the matching ones above other results as you type. Choosing one opens it.
 - The server returns bookmarks with their current names (renames show at once) and leaves out ones that were deleted or that the person can no longer open; adding checks that the person can open the item.
 
