@@ -2,6 +2,12 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.20.46 — 2026-10-30
+
+### Fixed
+
+- On iPad and other touch screens, only the list or page scrolls; the top bar and toolbar stay put instead of the whole app moving up and down.
+
 ## 0.20.45 — 2026-10-30
 
 ### Changed

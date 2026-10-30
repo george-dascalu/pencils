@@ -1786,14 +1786,16 @@ input[type="search"]:not(.search input) {
     display: none;
   }
 }
-@media (max-width: 780px) {
-  /* The shell never scrolls on phones: lists and panels scroll inside the view. */
+@media (max-width: 780px), (pointer: coarse) {
+  /* The shell never scrolls on phones and touch screens such as iPad: lists and panels scroll inside the view. */
   html, body { height: 100%; overflow: hidden; overscroll-behavior: none; }
   .shell { height: 100dvh; min-height: 0; }
   .main { height: 100dvh; min-height: 0; overflow: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; }
   .main.project-main { overflow: hidden; }
   /* Any page body under the header (view content, help, settings) scrolls on its own, so header rows keep their height. */
-  .main.project-main > :not(.topbar, #view-toolbar, .hero, .stats-strip, .task-reorder-ghost) { min-height: 0; overflow: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; }
+  .main.project-main > :not(.topbar, #view-toolbar, .hero, .stats-strip, .task-reorder-ghost, .kanban-drag-image) { min-height: 0; overflow: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; }
+}
+@media (max-width: 780px) {
   .breadcrumb {
     gap: 8px;
   }

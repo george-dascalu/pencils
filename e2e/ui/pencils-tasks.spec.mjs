@@ -58,8 +58,8 @@ onDevices(["phone"], () => test("PEN-8 every text field on touch is at least 16p
   expect(await small(), "documents").toEqual([]);
 }));
 
-// ----- PEN-10: only content scrolls on phones -----
-onDevices(["phone"], () => test("PEN-10 the phone shell does not scroll; the view content does", async ({ page }) => {
+// ----- PEN-10: only content scrolls on phones and touch screens such as iPad (owner, 30 Oct 2026) -----
+onDevices(["phone", "ipad", "ipad-portrait"], () => test("PEN-10 the shell does not scroll on phones and iPad; the view content does", async ({ page }) => {
   await open(page, "list", ".task-row");
   const shell = await page.evaluate(() => ({
     bodyOverflow: getComputedStyle(document.body).overflowY,
