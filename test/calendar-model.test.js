@@ -36,3 +36,12 @@ test("agenda includes ongoing and start-only cards without duplicating them", ()
   assert.equal(calendarRange(tasks[3]), null);
   assert.deepEqual(agendaGroups(tasks, "2026-10-24", "2026-10-25", false), []);
 });
+
+// Owner request, 30 October 2026: a Week layout shows the anchor's week alone.
+test("the week layout holds the anchor's week, with the part of a longer card inside it", () => {
+  const tasks = [{ id: "span", start: "2026-10-23", due: "2026-10-28" }, { id: "in", due: "2026-10-30" }, { id: "out", due: "2026-11-03" }];
+  const weeks = calendarWeeks(tasks, "2026-10-28", true, { week: true });
+  assert.equal(weeks.length, 1);
+  assert.deepEqual(weeks[0].days, ["2026-10-26", "2026-10-27", "2026-10-28", "2026-10-29", "2026-10-30", "2026-10-31", "2026-11-01"]);
+  assert.deepEqual(weeks[0].segments.map((s) => [s.task.id, s.from, s.to]), [["span", 0, 2], ["in", 4, 4]]);
+});

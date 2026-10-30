@@ -19,9 +19,10 @@ export function calendarDateChange(task, grabbed, target, handle = null) {
   };
 }
 
-export function calendarWeeks(tasks, month, weekends = true) {
-  const first = dateKey(weekStart(`${month.slice(0, 7)}-01`));
-  const weeks = Array.from({ length: 6 }, (_, week) => {
+// The six weeks of the month holding `anchor`, or with { week: true } the anchor's own week.
+export function calendarWeeks(tasks, anchor, weekends = true, { week: one = false } = {}) {
+  const first = dateKey(weekStart(one ? anchor : `${anchor.slice(0, 7)}-01`));
+  const weeks = Array.from({ length: one ? 1 : 6 }, (_, week) => {
     const days = Array.from({ length: weekends ? 7 : 5 }, (_, day) => shiftDate(first, week * 7 + day));
     const lanes = [], segments = [];
     for (const task of tasks) {

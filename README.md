@@ -58,7 +58,7 @@ The task editor keeps Start and Due dates together. **Relationships** contains p
 - Set assignees, priorities, tags, start/due dates, estimates, parents and prerequisites. Dependency cycles and hierarchy cycles are rejected. Progress uses leaf tasks, weighted by estimate when positive, otherwise weight 1; parent tasks are not counted twice.
 - Repeat a task after completion by days, weeks or months. Each occurrence creates one successor, and dates at the end of a month are clamped to the last valid day. Reopening and recompleting an occurrence does not create another successor.
 - Capture tasks inline, duplicate tasks, save task templates, add comments, import Markdown notes and attach files. Archive tasks/projects, and recover deleted tasks, boards or whole projects from Trash.
-- Search tasks across all permitted organisations and projects. Organisation dashboards show deadlines, blocked tasks, overdue work and project progress. Calendar shows due dates; timeline shows start/due windows.
+- Search tasks across all permitted organisations and projects. Organisation dashboards show deadlines, blocked tasks, overdue work and project progress. Calendar shows due dates by Month, Week (one week, with room for each day's cards) or Agenda; timeline shows start/due windows.
 
 ### Kanban
 

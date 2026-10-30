@@ -2,6 +2,12 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.20.51 — 2026-10-30
+
+### Added
+
+- A Week layout in Calendar, beside Month and Agenda: one week with room for each day's cards; the arrows move a week at a time.
+
 ## 0.20.50 — 2026-10-30
 
 ### Added

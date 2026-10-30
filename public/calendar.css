@@ -29,6 +29,12 @@
   min-height: calc(var(--control-height) * 3);
   padding-bottom: 8px;
 }
+/* The Week layout's one week fills the space, its cards in rows at the top of each day. */
+.calendar[data-layout="week"] .calendar-week {
+  grid-template-rows: var(--control-height) repeat(var(--calendar-lanes), minmax(var(--control-height), auto)) 1fr;
+  min-height: min(60dvh, 560px);
+}
+.calendar[data-layout="week"] .calendar-day { grid-row: 1 / -1 !important; }
 .calendar-day {
   min-height: 0;
   padding: 0;
