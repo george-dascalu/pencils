@@ -112,11 +112,11 @@
   .board-project-tools { grid-column: 1 / -1; grid-row: 2; }
   .topbar .tabs .tab { padding-block: 12px; }
 }
-/* Phones switch views from a bottom tab bar: the top bar's view tabs as icons in a floating,
-   rounded bar at the bottom, at the shared control height. It steps aside while typing, when the
-   keyboard covers the bottom of the screen; its space stays so nothing moves under a tap that
-   ends typing. */
-@media (max-width: 600px) {
+/* Phones and touch screens such as iPad switch views from a bottom tab bar: the top bar's view tabs
+   as icons in a floating, rounded bar at the bottom, at the shared control height. It steps aside
+   while typing, when the keyboard covers the bottom of the screen; its space stays so nothing moves
+   under a tap that ends typing. layout-tray.js's tabBar matches the same query. */
+@media (max-width: 600px), (pointer: coarse) {
   /* The bar (control height, 4px padding, 1px border) floats 8px above the bottom, with 8px above it. */
   :root { --tabbar-space: calc(var(--control-height) + 26px); --tabbar-clearance: calc(var(--tabbar-space) + env(safe-area-inset-bottom)); }
   /* Content runs behind the bar, and each page's scroller ends with room to lift its last item
@@ -128,8 +128,6 @@
   .main.project-main > #view-content > :is(.table-scroll, .tree-wrapper, .kanban-swimlanes),
   .main.project-main > #view-content > .task-timeline > .timeline-scroll,
   .main.project-main > #view-content > .kanban > .kanban-column { padding-bottom: var(--tabbar-clearance); }
-  .topbar .board-project-tools { display: contents; }
-  .topbar .board-project-tools > :not(.tabs) { display: none; }
   .topbar .tabs { position: fixed; inset: auto 12px calc(8px + env(safe-area-inset-bottom)); z-index: 10; display: flex; gap: 2px; padding: 4px; border: 1px solid var(--line); border-radius: 16px; background: var(--surface); box-shadow: 0 6px 20px rgb(0 0 0 / 0.12); }
   .topbar .tabs .view-tab-group { flex: 1 1 0; min-width: 0; padding: 0; margin: 0; }
   .topbar .tabs .view-tab-group::after { display: none; }
@@ -163,6 +161,12 @@
     transform: translateX(-50%) rotate(45deg); transition: transform 200ms ease;
   }
   .topbar .tabs .tab[aria-expanded="true"]::before { transform: translateX(-50%) translateY(-2px) rotate(225deg); }
+}
+/* Phones keep only the bar from the top bar's tools (New floats on its own); wider touch screens
+   keep New in the top bar and centre a phone-sized bar (after the tablet rules below). */
+@media (max-width: 600px) {
+  .topbar .board-project-tools { display: contents; }
+  .topbar .board-project-tools > :not(.tabs) { display: none; }
 }
 @keyframes layout-tray-item { from { opacity: 0; transform: translateY(6px); } }
 @media (prefers-reduced-motion: reduce) {
@@ -902,6 +906,14 @@ html.table-viewport-view body {
   .board-project-tools { max-width: 100%; }
   .topbar .board-project-tools > .tabs { min-width: 0; flex: 1; overflow-x: auto; }
   .board-project-tools > .button { flex-shrink: 0; }
+}
+/* Touch screens wider than phones centre a phone-sized bottom bar, whose tray rises out of it, and
+   New moves to the top bar's right. */
+@media (min-width: 601px) and (pointer: coarse) {
+  .topbar .board-project-tools > .tabs { max-width: 480px; margin-inline: auto; overflow: visible; }
+  .main.project-main > .topbar { grid-template-columns: minmax(0, 1fr) auto auto; }
+  .main.project-main > .topbar > .board-project-tools { grid-column: 2; grid-row: 1; }
+  .main.project-main > .topbar > .top-actions { grid-column: 3; }
 }
 .kanban-id-control { min-height: var(--control-height); cursor: pointer; }
 

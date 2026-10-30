@@ -2,6 +2,12 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.20.25 — 2026-10-30
+
+### Changed
+
+- iPad switches views from the same floating bar at the bottom as phones, narrower and centred. Tapping the open Tasks, Planning or Documents tab again shows its layouts, or the document list button and the Live preview, Source and Reading views, in a tray above the bar. New moves to the right of the top bar.
+
 ## 0.20.24 — 2026-10-30
 
 ### Changed

@@ -19,7 +19,7 @@ import { richToolbar } from "./canvas-rich-text.js";
 import { installToolbarScroll, floatMenuPanel } from "./rich-toolbar-scroll.js";
 import { randomUUID } from "./uuid.js";
 import { allowsTextAutofocus, focusOnOpen } from "./open-focus.js";
-import { mountLayoutTray, removeLayoutTray } from "./layout-tray.js";
+import { mountLayoutTray, removeLayoutTray, tabBar } from "./layout-tray.js";
 
 export function projectDocuments(ctx) {
   const { state, api, sync, storage, esc, icon, renderView, toast } = ctx;
@@ -853,18 +853,20 @@ export function projectDocuments(ctx) {
       paneEditor.hydrate(reading);
     } else paneEditor.setMode(next);
   }
-  // Phones: tapping the open Documents tab again shows a tray above the bottom bar with the
-  // document list and the document's views.
-  const phone = matchMedia("(max-width: 600px)");
+  // Phones and touch screens: tapping the open Documents tab again shows a tray above the bottom
+  // bar with the document list and the document's views.
   function syncTray() {
-    if (!selected() || !phone.matches) return removeLayoutTray();
+    if (!selected() || !tabBar.matches) return removeLayoutTray();
     const tray = document.createElement("template");
     tray.innerHTML = `<div class="view-layout-switcher" role="group" aria-label="Document view"><button type="button" data-action="menu" aria-label="Documents" title="Documents">${icon("folder")}<span>Documents</span></button>${MODES.map(([key, label, glyph]) => `<button type="button" data-document-mode="${key}" aria-label="${label}" aria-pressed="${mode === key}" title="${label}">${icon(glyph)}<span>${label}</span></button>`).join("")}</div>`;
     mountLayoutTray(tray.content.firstElementChild, state.layoutTray === state.view);
   }
-  // Registered after project-layout.js's own breakpoint listener (this module loads later), so
-  // its toolbar reset, which removes any tray, runs first.
-  phone.addEventListener("change", () => { if (state.view === "documents") syncTray(); });
+  // Re-sync after project-layout.js's toolbar reset, which removes any tray. Media query lists
+  // report changes oldest first and this module loads later, so the width list made here fires
+  // after project-layout.js's own; on tabBar, listeners run in the order they were added.
+  const resyncTray = () => { if (state.view === "documents") syncTray(); };
+  tabBar.addEventListener("change", resyncTray);
+  matchMedia("(max-width: 600px)").addEventListener("change", resyncTray);
   function render() {
     // A refresh of the same open document (for example after a save's change
     // notice rebuilds the app) keeps its scroll position instead of jumping

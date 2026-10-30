@@ -57,7 +57,8 @@ export async function renameDocument(page, name) {
 // which hides the bar; other narrow editors use the Document view menu; wider ones the bar.
 export async function chooseDocumentView(page, name, { tap = false } = {}) {
   const press = (locator) => (tap ? locator.tap() : locator.click());
-  if (page.viewportSize().width <= 600) {
+  // The bottom bar (phones and touch screens) holds the views in the Documents tab's tray.
+  if (await page.evaluate(() => matchMedia("(max-width: 600px), (pointer: coarse)").matches)) {
     await page.evaluate(() => document.activeElement?.blur());
     await press(page.locator('.tabs [data-view="documents"]'));
     await press(page.locator(".layout-tray").getByRole("button", { name, exact: true }));

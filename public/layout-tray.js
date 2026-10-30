@@ -1,6 +1,8 @@
-// Phones: a tray above the bottom bar, opened by tapping the open tab again, holds Tasks and
-// Planning layouts or the Documents list and document views. project-layout.js toggles it and
-// closes it on a choice, a tap elsewhere or Escape.
+// Phones and touch screens such as iPad: a tray above the bottom bar, opened by tapping the open
+// tab again, holds Tasks and Planning layouts or the Documents list and document views.
+// project-layout.js toggles it and closes it on a choice, a tap elsewhere or Escape.
+// Matches the bottom bar's media query in project-layout.css.
+export const tabBar = matchMedia("(max-width: 600px), (pointer: coarse)");
 export function mountLayoutTray(content, open) {
   removeLayoutTray();
   const tab = document.querySelector(".tabs .tab.active");

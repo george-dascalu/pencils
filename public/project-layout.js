@@ -1,6 +1,6 @@
 import { positionPopover } from "./popover-position.js";
 import { phoneBoardTools } from "./phone-board-tools.js";
-import { mountLayoutTray, removeLayoutTray } from "./layout-tray.js";
+import { mountLayoutTray, removeLayoutTray, tabBar } from "./layout-tray.js";
 // Group the existing controls without replacing their handlers or save state.
 export function projectLayout(ctx) {
   const { $, state, icon, label, viewLabel, taskViews, planningViews, openView, openSelectMenu } = ctx;
@@ -48,7 +48,8 @@ export function projectLayout(ctx) {
     }
     if (!narrow.matches) {
       if (sortButton) sort.after(sortButton);
-      state.layoutTray = null;
+      if (tabBar.matches) trayLayouts();
+      else state.layoutTray = null;
       return;
     }
     compact = document.createElement("details");
@@ -65,15 +66,7 @@ export function projectLayout(ctx) {
       moved.push([element, slot]);
       panel.append(element);
     }
-    // Tasks and Planning layouts move to a tray above the bottom bar, opened by tapping the
-    // open tab again.
-    const switcher = $(".toolbar-left > .view-layout-switcher");
-    if (switcher && $(".tabs .tab.active")) {
-      const slot = document.createComment("view control position");
-      switcher.before(slot);
-      moved.push([switcher, slot]);
-      mountLayoutTray(switcher, trayOpen());
-    }
+    trayLayouts();
     // Phones list the filters directly instead of behind a Filters dropdown (PEN-9).
     for (const details of panel.querySelectorAll('details.board-menu[data-board-menu="filters"]')) {
       details.open = true;
@@ -88,6 +81,16 @@ export function projectLayout(ctx) {
     });
     panel.querySelector("header button").onclick = closeCompact;
     positionCompact();
+  }
+  // Tasks and Planning layouts move to a tray above the bottom bar, opened by tapping the open
+  // tab again.
+  function trayLayouts() {
+    const switcher = $(".toolbar-left > .view-layout-switcher");
+    if (!switcher || !$(".tabs .tab.active")) return;
+    const slot = document.createComment("view control position");
+    switcher.before(slot);
+    moved.push([switcher, slot]);
+    mountLayoutTray(switcher, trayOpen());
   }
   // The tray belongs to the view it was opened on, so leaving that view (or going Back) closes it.
   const trayOpen = () => !!state.layoutTray && state.layoutTray === state.view;
@@ -118,6 +121,7 @@ export function projectLayout(ctx) {
     if (compact?.open) positionPopover(compact.lastElementChild, compact.querySelector("summary").getBoundingClientRect(), { width: 360, maxHeight: 600 });
   }
   narrow.addEventListener("change", compactToolbar);
+  tabBar.addEventListener("change", compactToolbar);
   window.addEventListener("resize", positionCompact);
   document.addEventListener("click", event => {
     const inside = event.composedPath().some(el => el.classList?.contains("mobile-view-options"));

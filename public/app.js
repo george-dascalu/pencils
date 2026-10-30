@@ -41,6 +41,7 @@ import { smoothZoom } from "./camera-motion.js";
 import { paintBoardBackground } from "./board-background.js";
 import { installColorPickers } from "./color-picker.js";
 import { installBookmarks } from "./bookmarks.js";
+import { tabBar } from "./layout-tray.js";
 import { kanbanDrag } from "./kanban-drag.js";
 import { observeKanbanLayout } from "./kanban-layout.js";
 import { kanbanGroup, kanbanLanes, laneKey } from "./kanban-model.js";
@@ -2223,9 +2224,9 @@ document.addEventListener("click", async (event) => {
         break;
       case "view": {
         const fromLayout = el.closest(".view-layout-switcher"), fromTray = el.closest(".layout-tray");
-        // On phones, tapping Documents again shows its tray (project-layout.js), or, with no
-        // document open, the document list (the drawer's Documents level).
-        if (el.dataset.view === "documents" && state.view === "documents" && el.closest(".tabs") && matchMedia("(max-width: 600px)").matches) {
+        // With the bottom bar, tapping Documents again shows its tray (project-layout.js), or,
+        // with no document open, the document list (the drawer's Documents level).
+        if (el.dataset.view === "documents" && state.view === "documents" && el.closest(".tabs") && tabBar.matches) {
           if (!el.hasAttribute("aria-controls")) setSidebarOpen(true);
           break;
         }
