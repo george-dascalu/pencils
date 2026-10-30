@@ -135,7 +135,7 @@ test("a drag held near a long column's bottom scrolls that column, not the page"
   expect(await status(app.long, app.done.id)).toBe("todo");
   await fits(page);
   await page.setViewportSize({ width: 390, height: 700 });
-  await column(page, "todo").locator(".add-row").scrollIntoViewIfNeeded();
+  await column(page, "todo").locator("[data-drag-task]").last().scrollIntoViewIfNeeded();
   await fits(page);
 });
 

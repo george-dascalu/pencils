@@ -62,7 +62,7 @@ The task editor keeps Start and Due dates together. **Relationships** contains p
 
 ### Kanban
 
-Drag cards between statuses or reorder them within a column. A card-sized insertion marker shows the drop position, neighbouring cards move aside, and hovering near the edge scrolls toward offscreen columns. Drops switch to manual order and save it to task frontmatter. Press Escape or drop outside the columns to cancel.
+Cards show their due date after the assignee and priority; the + at the top right of a column adds a card to it. Drag cards between statuses or reorder them within a column. A card-sized insertion marker shows the drop position, neighbouring cards move aside, and hovering near the edge scrolls toward offscreen columns. Drops switch to manual order and save it to task frontmatter. Press Escape or drop outside the columns to cancel.
 
 ### Spreadsheet
 

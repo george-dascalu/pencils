@@ -2,6 +2,13 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.20.31 — 2026-10-30
+
+### Changed
+
+- Kanban cards show their due date after the assignee and priority, marked when overdue.
+- A Kanban column adds cards from the + at the top right of its header only; the Add card button below the cards is gone. Swimlane cells keep theirs, which also sets the lane.
+
 ## 0.20.30 — 2026-10-30
 
 ### Changed
