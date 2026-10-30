@@ -96,7 +96,7 @@ test("the tree fills the window at desktop and phone width with sparse, collapse
     await toggle(page, app.parent.id).click();
     await expect(area(page).locator(".tree-row")).toHaveCount(1);
     await fits(page);
-    await page.locator('[data-action="expand-all"]').click();
+    await page.locator('[data-action="tree-cycle"]').click();
     await expect(area(page).locator(".tree-row")).toHaveCount(2);
     await page.locator("#search").fill("Nothing matches");
     await area(page).locator(".empty").waitFor();

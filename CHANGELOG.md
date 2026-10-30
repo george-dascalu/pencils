@@ -2,6 +2,12 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.20.57 — 2026-10-30
+
+### Changed
+
+- Tree's Expand all button is now one icon button that cycles through all expanded, all collapsed and back to normal, the rows you opened and closed yourself. It skips a step that would look the same, and doesn't show when there's nothing to expand.
+
 ## 0.20.56 — 2026-10-30
 
 ### Changed

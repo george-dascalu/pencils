@@ -112,7 +112,7 @@ test("the Tree collapses a parent, expands everything again, and search narrows 
   const row = page.locator(`[data-action="task-open"][data-id="${created.id}"]`);
   await page.locator(`[data-action="collapse"][data-id="${epic.id}"]`).click();
   await expect(row).toHaveCount(0);
-  await click(page, "expand-all");
+  await click(page, "tree-cycle");
   await expect(row).not.toHaveCount(0);
   await page.locator("#search").fill("Edited in the grid");
   await expect(page.locator(".task-row:not(.tree-context)")).toHaveCount(1);

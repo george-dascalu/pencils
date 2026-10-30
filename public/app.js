@@ -300,6 +300,10 @@ const state = {
   sort: "created",
   sortDir: 1,
   collapsed: new Set(),
+  // Tree's button: "normal" (rows opened and closed by hand, kept in treeNormal while away),
+  // "expanded" or "collapsed".
+  treeMode: "normal",
+  treeNormal: null,
   selectedBoard: null,
   camera: { x: 0, y: 0, z: 1 },
   selectedNode: null,
@@ -524,6 +528,7 @@ function clearProject() {
   state.status = "all";
   state.type = "all";
   state.collapsed.clear();
+  state.treeMode = "normal";
   state.menu = false;
   state.signature = "";
 }
@@ -1275,7 +1280,8 @@ function treeView(tasks) {
     .filter((t) => !seen.has(t.id))
     .map((t) => walk(t, 0))
     .join("");
-  return `<div class="section-title">${icon("tree")}The big picture<span class="line"></span><button class="button small" data-action="expand-all">Expand all</button></div><div class="tree-wrapper">${html}</div>`;
+  const [glyph, name] = { normal: ["tree", "normal"], expanded: ["expand", "all expanded"], collapsed: ["shrink", "all collapsed"] }[state.treeMode];
+  return `<div class="section-title">${icon("tree")}The big picture<span class="line"></span>${flat ? "" : `<button type="button" class="icon-button" data-action="tree-cycle" aria-label="Subtasks: ${name}" title="Subtasks: ${name}">${icon(glyph)}</button>`}</div><div class="tree-wrapper">${html}</div>`;
 }
 function parentOptions(current, exclude) {
   return `<option value="">No parent</option>${state.tasks
@@ -1477,7 +1483,8 @@ function navigationSnapshot() {
       structuredClone(state[key] ?? fallback),
     ]),
   );
-  preferences.collapsed = [...state.collapsed];
+  // Back, Forward and reload come back to Tree's normal layout, the rows opened and closed by hand.
+  preferences.collapsed = [...(state.treeMode === "normal" ? state.collapsed : state.treeNormal)];
   preferences.tableCollapsed = [...(state.tableCollapsed || [])];
   return { route, preferences };
 }
@@ -1530,6 +1537,7 @@ async function restoreNavigation(entry, stillCurrent = () => true) {
         if (entry.preferences && key in entry.preferences)
           state[key] = structuredClone(entry.preferences[key]);
       state.collapsed = new Set(entry.preferences?.collapsed || []);
+      state.treeMode = "normal";
       state.tableCollapsed = new Set(entry.preferences?.tableCollapsed || []);
       state.tableFilterSearch = {};
       state.headerMenu = null;
@@ -2292,14 +2300,29 @@ document.addEventListener("click", async (event) => {
         state.collapsed.has(id)
           ? state.collapsed.delete(id)
           : state.collapsed.add(id);
+        state.treeMode = "normal"; // the rows as they are now become normal
         renderView(true);
         $(`.tree-toggle[data-id="${CSS.escape(id)}"]`)?.focus({ preventScroll: true });
         break;
-      case "expand-all":
-        state.collapsed.clear();
+      case "tree-cycle": {
+        // All expanded, all collapsed, then normal again, skipping a step that would look the same.
+        const order = ["normal", "expanded", "collapsed"];
+        const layouts = {
+          normal: state.treeMode === "normal" ? state.collapsed : state.treeNormal,
+          expanded: new Set(),
+          collapsed: new Set(state.tasks.map((t) => t.parent).filter(Boolean)),
+        };
+        const same = (x, y) => x.size === y.size && [...x].every((v) => y.has(v));
+        let next = state.treeMode;
+        do next = order[(order.indexOf(next) + 1) % order.length];
+        while (next !== state.treeMode && same(layouts[next], state.collapsed));
+        if (state.treeMode === "normal") state.treeNormal = new Set(state.collapsed);
+        state.collapsed = new Set(layouts[next]);
+        state.treeMode = next;
         renderView(true);
-        $('[data-action="expand-all"]')?.focus({ preventScroll: true });
+        $('[data-action="tree-cycle"]')?.focus({ preventScroll: true });
         break;
+      }
       case "sort-column":
         if (state.sort === el.dataset.field) state.sortDir *= -1;
         else {
