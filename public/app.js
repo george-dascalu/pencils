@@ -168,6 +168,7 @@ const paths = {
   help: "M9 8a3 3 0 1 1 5 2c-1 1-2 1-2 4m0 3h.01M22 12a10 10 0 1 1-20 0 10 10 0 0 1 20 0",
   external: "M14 3h7v7m0-7L10 14M10 3H3v18h18v-7",
   down: "M12 4v16m-6-6 6 6 6-6",
+  up: "M12 20V4m-6 6 6-6 6 6",
   sticky: "M3 3h18v12l-6 6H3V3Zm12 18v-6h6",
   text: "M3 5h18M12 5v16M8 21h8",
   shape: "M4 4h16v16H4z",

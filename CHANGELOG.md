@@ -2,6 +2,12 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.20.35 — 2026-10-30
+
+### Added
+
+- Tables in Live preview have **Table options** beside Add row and Add column: insert a row above or below, move a row up or down, delete it, insert a column left or right, move a column, align it left, centre or right, or delete it, at the cell you're in, without switching to Source.
+
 ## 0.20.34 — 2026-10-30
 
 ### Changed

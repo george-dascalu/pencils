@@ -9,6 +9,7 @@ Keep the interface consistent across all project views: Overview, Documents, Lis
 - Use the same spacing, typography, colours and interaction patterns, including light/dark themes and responsive layouts.
 - Check affected views on desktop and mobile when changing shared UI. Preserve access to existing actions and settings.
 - Use the shared sizing tokens in `public/controls.css` for buttons, fields and menu controls. Preserve Compact mode and 44px touch targets instead of introducing local heights.
+- `controls.css` makes icon buttons square with `!important` in an `:is()` whose specificity is (0,2,1). A wider icon button, such as one with a text label, needs `!important` and a selector above (0,2,1), and a test that its content fits inside it.
 
 - Use the shared colour picker from `public/color-picker.js` for every colour field: circular swatch, dropdown palette and custom hex editor.
 - The top bar names only the open board or document, or the project when nothing is open, with no organisation or project crumbs (`public/topbar-title.js`, synced on navigation and renames). Phones show no title (the heading stays for screen readers) and no bar: the menu and New buttons float as round buttons, like Obsidian, with the toolbar row (`#view-toolbar`) between them.
@@ -43,6 +44,7 @@ Keep the interface consistent across all project views: Overview, Documents, Lis
 - Keep every test passing. When a change in intended behaviour breaks a test, update it in the same change. Never leave a test failing; a known bug may be marked `test.fail()` with its reason until fixed.
 - Write tests with `e2e/fixtures.mjs` (`useApp`, `onDevices`, device presets) as described in `e2e/README.md`. Wait for page state with web-first assertions instead of fixed delays.
 - Specs started with `productionAssets` serve the built `dist/`: run `npm run build` before `npm run e2e` or `npm run release` after changing `public/`, or they test the old build.
+- When splitting or escaping Markdown by hand (table cells, links), check edge cases such as `\|` and `\\|` against marked's own output, and test them.
 - Before moving a container's edge (such as letting content run under the bottom bar), grep for what is anchored to that edge (`bottom:` rules, `clientHeight -` sums) and move it too.
 - Audits, which report findings instead of guarding a change (such as `ui-assessment`), are tagged `@audit` and run only with `--project=audit`.
 

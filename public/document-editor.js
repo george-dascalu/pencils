@@ -14,7 +14,7 @@ import { insertCategories } from "./document-insert.js";
 import { highlightCodeBlocks } from "./document-code.js";
 import { listCallouts, listCalloutAfterMarker, setListCallout, listCalloutLabel } from "./document-list-callouts.js";
 
-export function markdownDocumentEditor({ parent, text, mode = "live", renderer, documents, cards = () => [], hidden = [], taskQueries, onChange, onError, onLink, onInsert, onComment, onSketch, icon }) {
+export function markdownDocumentEditor({ parent, text, mode = "live", renderer, documents, cards = () => [], hidden = [], taskQueries, onChange, onError, onLink, onInsert, onComment, onSketch, icon, panel }) {
   const presentation = new Compartment();
   let view, alive = true, focusedComponent = null;
   const hoverEffect = StateEffect.define();
@@ -69,7 +69,7 @@ export function markdownDocumentEditor({ parent, text, mode = "live", renderer, 
       element.innerHTML = renderer.render(this.raw, !this.block);
       if (["table", "blockquote", "code", "documentMathBlock", "html"].includes(this.kind)) {
         editableDocumentComponent({
-          element, raw: this.raw, from: this.from, kind: this.kind, editor, renderer, onError, hydrate, icon, onLink,
+          element, raw: this.raw, from: this.from, kind: this.kind, editor, renderer, onError, hydrate, icon, panel, onLink,
           onSearch: () => openSearchPanel(editor),
           onFocus: component => { focusedComponent = component; },
           history: backwards => backwards ? redo(editor) : undo(editor),

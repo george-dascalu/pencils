@@ -800,7 +800,7 @@ export function projectDocuments(ctx) {
     </section>`);
     const section = workspace.querySelector(".document-pane"), pid = project;
     paneEditor = markdownDocumentEditor({
-      icon, parent: section.querySelector(".document-codemirror"), text: all().find(d => d.id === split.id).body || "",
+      icon, panel: showPanel, parent: section.querySelector(".document-codemirror"), text: all().find(d => d.id === split.id).body || "",
       mode: split.mode === "source" ? "source" : "live", renderer, documents: all, hidden: ["attach", "card", "comment", "sketch"],
       cards: () => (state.tasks || []).filter(t => !t.archived), taskQueries: renderTaskQueries,
       onChange(body) {
@@ -936,7 +936,7 @@ export function projectDocuments(ctx) {
     form = document.querySelector("#document-form");
     renderer = documentMarkdown({ documents: all, project: () => project, esc, icon, cards: () => state.tasks || [], cardHTML });
     editor = markdownDocumentEditor({
-      icon,
+      icon, panel: showPanel,
       parent: form.querySelector(".document-codemirror"), text: doc.body || "",
       mode: mode === "source" ? "source" : "live", renderer, documents: all, hidden: state.project.personal ? ["card"] : [], cards: () => (state.tasks || []).filter((t) => !t.archived), taskQueries: renderTaskQueries,
       onChange(value) {
