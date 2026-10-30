@@ -196,3 +196,22 @@ onDevices(["ipad", "desktop"], () => test("wider screens keep the view tabs in t
   const [boards, search] = await Promise.all([tab(page, "board").boundingBox(), bar(page).getByRole("button", { name: "Search", exact: true }).boundingBox()]);
   expect(search.x, "Search follows the view tabs").toBeGreaterThan(boards.x + boards.width);
 }));
+
+onDevices(["phone", "small"], () => test("the phone header has no title, only floating menu and New buttons (owner request, 30 Oct)", async ({ page }) => {
+  await open(page);
+  const title = page.locator(".topbar .breadcrumb strong");
+  await expect(title, "screen readers still hear the project's name").toHaveText("Tab bar");
+  expect((await title.boundingBox()).width, "the title is visually hidden").toBeLessThanOrEqual(1);
+  await expect(page.locator(".topbar .breadcrumb > :not(strong, button)"), "no second line").toHaveCount(0);
+  expect(await page.locator(".topbar").evaluate((el) => [getComputedStyle(el).backgroundColor, getComputedStyle(el).borderBottomWidth]), "the bar itself is invisible").toEqual(["rgba(0, 0, 0, 0)", "0px"]);
+  for (const button of [page.locator(".topbar .mobile-menu"), page.locator(".topbar .phone-new-task > summary")]) {
+    await expect(button).toBeVisible();
+    const box = await button.boundingBox();
+    expect(box.width).toBeGreaterThanOrEqual(44);
+    expect(box.height).toBeGreaterThanOrEqual(44);
+    const style = await button.evaluate((el) => { const cs = getComputedStyle(el); return { radius: cs.borderTopLeftRadius, border: cs.borderTopWidth, shadow: cs.boxShadow }; });
+    expect(style.radius, "a round button").toBe("50%");
+    expect(style.border, "with the bottom bar's border").toBe("1px");
+    expect(style.shadow, "it floats").not.toBe("none");
+  }
+}));

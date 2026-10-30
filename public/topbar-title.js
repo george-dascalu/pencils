@@ -1,9 +1,5 @@
-// The header names only what is open: the board or document, or else the project.
-// Phones name the view on a second line.
-let labelFor = (view) => view;
-export function installTopbarTitle({ viewLabel }) {
-  labelFor = viewLabel;
-}
+// The header names only what is open: the board or document, or else the project. Phones keep
+// the name for screen readers only (project-layout.css).
 
 export function openItemTitle(state) {
   if (!state.project || state.helpArticle || state.directoryPage) return null;
@@ -17,7 +13,7 @@ export function openItemTitle(state) {
 export function syncTopbarTitle(state) {
   const crumb = document.querySelector(".topbar .breadcrumb");
   if (!crumb || !state.project || state.helpArticle || state.directoryPage) return;
-  const item = openItemTitle(state), project = state.project.title || "", view = labelFor(state.view);
+  const item = openItemTitle(state), project = state.project.title || "";
   const heading = crumb.querySelector("strong");
   if (heading) {
     const title = item || project;
@@ -25,6 +21,4 @@ export function syncTopbarTitle(state) {
     if (item) heading.title = `${project} / ${item}`;
     else heading.removeAttribute("title");
   }
-  const second = crumb.querySelector(".phone-current-view");
-  if (second) second.textContent = view;
 }

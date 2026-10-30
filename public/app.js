@@ -1,7 +1,6 @@
 import { APP_VERSION, watchAppVersion } from "./app-version.js";
 import { DEFAULT_TASK_TYPES } from "./task-types.js";
 import { updateViewLayout } from "./view-layout.js";
-import { installTopbarTitle } from "./topbar-title.js";
 import { installEditableControlGuard } from "./editable-controls.js";
 import { taskFocus } from "./task-focus.js";
 import { focusOnOpen, prepareDialogFocus } from "./open-focus.js";
@@ -260,7 +259,6 @@ const views = [
 const label = (str) => String(str || "").replace(/^./, (c) => c.toUpperCase());
 const viewLabels = { board: "Boards" };
 const viewLabel = (view) => viewLabels[view] || label(view);
-installTopbarTitle({ viewLabel });
 const storage = {
   get(key, fallback) {
     try {
@@ -812,7 +810,7 @@ function renderAppNow() {
       <div class="side-footer"><span class="dot"></span>Local workspace<span class="version">v${APP_VERSION}</span></div></div>
     </aside>
     <main class="main">
-      <header class="topbar"><div class="breadcrumb"><button class="icon-button desktop-sidebar-toggle" data-personal="sidebar" aria-controls="workspace-sidebar" aria-expanded="true" aria-label="Collapse sidebar">${icon("menu")}</button><button class="icon-button mobile-menu" data-action="menu" aria-label="Toggle sidebar" aria-controls="workspace-sidebar" aria-expanded="${state.menu}">${icon("menu")}</button><strong ${p ? 'role="heading" aria-level="1"' : ""}>${esc(p?.title || (state.helpArticle ? "Help" : state.directoryPage ? label(state.directoryPage) : "Projects"))}</strong>${p ? `<span class="phone-current-view">${state.helpArticle ? "Help" : viewLabel(state.view)}</span>` : ""}</div>${p ? projectNavigationHTML() : ""}<div class="top-actions">${p ? newMenuHTML("icon") : ""}<div class="save-state" id="save-state">${appStatusHTML()}</div><button class="icon-button" data-action="settings" aria-label="Settings" title="Settings" ${(p ? state.view === "settings" : state.directoryPage === "settings") ? 'aria-current="page"' : ""}>${icon("settings")}</button><button class="icon-button" data-action="help" aria-label="Help & keyboard shortcuts" ${state.helpArticle ? 'aria-current="page"' : ""}>${icon("help")}</button></div></header>
+      <header class="topbar"><div class="breadcrumb"><button class="icon-button desktop-sidebar-toggle" data-personal="sidebar" aria-controls="workspace-sidebar" aria-expanded="true" aria-label="Collapse sidebar">${icon("menu")}</button><button class="icon-button mobile-menu" data-action="menu" aria-label="Toggle sidebar" aria-controls="workspace-sidebar" aria-expanded="${state.menu}">${icon("menu")}</button><strong ${p ? 'role="heading" aria-level="1"' : ""}>${esc(p?.title || (state.helpArticle ? "Help" : state.directoryPage ? label(state.directoryPage) : "Projects"))}</strong></div>${p ? projectNavigationHTML() : ""}<div class="top-actions">${p ? newMenuHTML("icon") : ""}<div class="save-state" id="save-state">${appStatusHTML()}</div><button class="icon-button" data-action="settings" aria-label="Settings" title="Settings" ${(p ? state.view === "settings" : state.directoryPage === "settings") ? 'aria-current="page"' : ""}>${icon("settings")}</button><button class="icon-button" data-action="help" aria-label="Help & keyboard shortcuts" ${state.helpArticle ? 'aria-current="page"' : ""}>${icon("help")}</button></div></header>
       ${!state.online ? '<div class="connection-banner">Local server unavailable. Reconnect to its network to save changes.</div>' : ""}
       ${state.helpArticle ? helpPageHTML(state.helpArticle, { esc, icon }) : state.directoryPage === "settings" ? '<div id="view-toolbar"></div><section id="view-content" class="content"></section>' : state.directoryPage ? directoryPageHTML() : p ? projectPage() : welcomePage()}
     </main></div>`;

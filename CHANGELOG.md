@@ -2,6 +2,12 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.20.18 — 2026-10-30
+
+### Changed
+
+- On phones the header no longer shows a title or a bar: the menu and New buttons float as round buttons over the page, as in Obsidian.
+
 ## 0.20.17 — 2026-10-30
 
 ### Changed

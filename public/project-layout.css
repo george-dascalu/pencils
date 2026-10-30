@@ -842,9 +842,9 @@ html.table-viewport-view body {
 #quick-capture.dialog-body > button { align-self: flex-end; }
 #view-toolbar > .shared-query-controls { padding: 7px 16px; }
 
-/* Phones keep projects, teams, Settings and Help in one drawer; the active view stays in the header. */
+/* Phones keep projects, teams, Settings and Help in one drawer; the bottom bar shows the active view. */
 .phone-drawer-utilities, .phone-drawer-close,
-.phone-current-view, .phone-new-task { display: none; }
+.phone-new-task { display: none; }
 @media (max-width: 780px) {
   .sidebar { overflow-y: auto; overscroll-behavior: contain; padding: 8px 12px 16px; }
   .sidebar .brand { padding: 4px 8px 8px; margin-right: 52px; }
@@ -902,8 +902,14 @@ html.table-viewport-view body {
   }
   .topbar .breadcrumb { display: grid; grid-template-columns: var(--control-height) minmax(0, 1fr); grid-template-rows: auto auto; column-gap: 8px; row-gap: 0; flex: 1; min-width: 0; }
   .topbar .breadcrumb .mobile-menu { grid-row: 1 / 3; }
-  .topbar .breadcrumb strong { grid-area: 1 / 2; font-size: 13px; align-self: end; line-height: 1.35; }
-  .phone-current-view { display: block; grid-area: 2 / 2; color: var(--muted); font-size: 11px; align-self: start; }
+  /* Like Obsidian, the header shows no title (the heading stays for screen readers) and its menu
+     and New buttons float as round buttons over the page, styled like the bottom bar. */
+  :root .main > .topbar { background: transparent; border-bottom: 0; }
+  .topbar .breadcrumb strong { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+  .topbar :is(.mobile-menu, .phone-new-task > summary.icon-button) {
+    width: var(--control-height); height: var(--control-height); border: 1px solid var(--line); border-radius: 50%;
+    background: var(--surface); box-shadow: 0 6px 20px rgb(0 0 0 / 0.12);
+  }
   .topbar .top-actions > :is([data-action="settings"], [data-action="help"]) { display: none; }
   .topbar .top-actions { gap: 2px; flex: 0 0 auto; }
   .topbar .phone-new-task { display: inline-flex; }

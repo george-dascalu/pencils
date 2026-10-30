@@ -1,6 +1,6 @@
 // Owner requests, 28 and 29 October 2026: the top bar title is only the open board or
 // document, or the project when nothing is open, with no organisation or project crumbs.
-// Phones name the view on the second line.
+// Since 30 October phones show no title at all; the heading stays for screen readers.
 import { test, expect, onDevices, useApp } from "../fixtures.mjs";
 import { renameDocument } from "../helpers/documents.mjs";
 
@@ -17,14 +17,12 @@ const base = () => `${app.base}/#project/${app.project.id}`;
 const heading = (page) => page.locator('.topbar [role="heading"][aria-level="1"]');
 // The visible text of the header's breadcrumb, part by part.
 const header = (page) => page.locator(".topbar .breadcrumb").evaluate((crumb) => {
-  const visible = (el) => !!el && el.getClientRects().length > 0 && getComputedStyle(el).visibility !== "hidden";
+  const visible = (el) => !!el && el.getBoundingClientRect().width > 1 && getComputedStyle(el).visibility !== "hidden";
   const heading = crumb.querySelector('[role="heading"][aria-level="1"]');
-  const second = crumb.querySelector(".phone-current-view");
   return {
     heading: heading?.textContent.trim(),
     headingVisible: visible(heading),
-    second: visible(second) ? second.textContent.trim() : null,
-    trail: [...crumb.children].filter((el) => visible(el) && !el.matches("button.icon-button, .phone-current-view")).map((el) => el.textContent.trim()),
+    trail: [...crumb.children].filter((el) => visible(el) && !el.matches("button.icon-button")).map((el) => el.textContent.trim()),
     tooltip: heading?.title || "",
   };
 });
@@ -38,10 +36,9 @@ onDevices(["phone", "ipad", "desktop"], () => test("a board names itself in the 
   await openBoard(page);
   const h = await header(page);
   expect(h.heading, JSON.stringify(h)).toBe("Test Project canvas");
-  expect(h.headingVisible, "the board name is visible").toBe(true);
+  expect(h.headingVisible, "the board name is visible, except on phones").toBe(device !== "phone");
   expect(h.tooltip, "the tooltip keeps the project").toMatch(/A little more possibility/);
-  if (device === "phone") expect(h.second, "the second line names the view").toBe("Boards");
-  expect(h.trail, "only the board name").toEqual(["Test Project canvas"]);
+  expect(h.trail, "only the board name").toEqual(device === "phone" ? [] : ["Test Project canvas"]);
 }));
 
 onDevices(["phone", "desktop"], () => test("switching boards renames the header", async ({ page }) => {
@@ -70,8 +67,7 @@ onDevices(["phone", "ipad", "desktop"], () => test("an open document names itsel
   expect(current).toMatch(/notes/);
   await expect(heading(page)).toHaveText(current);
   const h = await header(page);
-  if (device === "phone") expect(h.second).toBe("Documents");
-  expect(h.trail).toEqual([current]);
+  expect(h.trail).toEqual(device === "phone" ? [] : [current]);
   // Renaming the document (Document tools → Rename) renames the header.
   await renameDocument(page, `Weekly ${device} notes`);
   await expect(heading(page)).toHaveText(`Weekly ${device} notes`);
@@ -83,8 +79,7 @@ onDevices(["phone", "ipad", "desktop"], () => test("other views still name the p
   await page.locator(".task-row").first().waitFor();
   const h = await header(page);
   expect(h.heading).toBe("A little more possibility");
-  if (device === "phone") expect(h.second).toBe("List");
-  expect(h.trail, "only the project name").toEqual(["A little more possibility"]);
+  expect(h.trail, "only the project name").toEqual(device === "phone" ? [] : ["A little more possibility"]);
   // Leaving a board returns the header to the project.
   await openBoard(page);
   await page.goto(`${base()}/table`);
