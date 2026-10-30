@@ -2,6 +2,16 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.20.43 — 2026-10-30
+
+### Fixed
+
+- Dragging a Kanban card by touch works: a long press lifts the card, a full-size copy follows your finger over a placeholder (also in an empty column) and the card lands where you let go, instead of iOS's tiny framed copy that didn't place it. Moving your finger first still scrolls.
+
+### Added
+
+- A light haptic tick when a Kanban card is lifted and dropped by touch, on Android and on iPhone with iOS 18 or later (where iOS allows it).
+
 ## 0.20.42 — 2026-10-30
 
 ### Changed

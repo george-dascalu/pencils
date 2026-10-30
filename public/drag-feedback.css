@@ -61,6 +61,19 @@
   background: var(--surface);
   color: var(--ink);
 }
+/* A card lifted by touch (a long press) is raised a little and follows the finger (kanban-drag.js). */
+.kanban-drag-image.kanban-touch-lift {
+  box-shadow: var(--shadow-popover);
+  scale: 1.03;
+}
+/* The long press lifts the card, so it brings up no callout or text selection. */
+@media (pointer: coarse) {
+  .kanban-card {
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    user-select: none;
+  }
+}
 .kanban-drop-placeholder {
   border: 2px dashed var(--green);
   border-radius: 8px;

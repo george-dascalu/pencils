@@ -1,10 +1,29 @@
 import { kanbanDropChanges, kanbanDropError, laneValue } from "./kanban-model.js";
 import { reorderTasks } from "./task-order-model.js";
 import { snapKanbanColumns } from "./kanban-layout.js";
+// A light tick: Android vibrates; Safari on iOS 18 ticks when a switch toggles, here a hidden one.
+function haptic() {
+  if (navigator.vibrate) {
+    navigator.vibrate(10);
+    return;
+  }
+  const label = document.createElement("label"),
+    input = document.createElement("input");
+  input.type = "checkbox";
+  input.setAttribute("switch", "");
+  label.style.display = "none";
+  label.append(input);
+  // The switch's own events stay out of the app's listeners.
+  for (const type of ["click", "input", "change"]) label.addEventListener(type, (event) => event.stopPropagation());
+  document.head.append(label);
+  label.click();
+  label.remove();
+}
 export function kanbanDrag(ctx) {
   const { state, task, patchTask, renderView, storage, toast } = ctx;
   let drag = null,
-    frame = null;
+    frame = null,
+    press = null;
   function changesFor(t, column) {
     return kanbanDropChanges(t, column.dataset.dropStatus, column.dataset.kanbanField, column.dataset.kanbanValue);
   }
@@ -104,9 +123,9 @@ export function kanbanDrag(ctx) {
     if (horizontal || vertical) update(drag.x, drag.y);
     frame = requestAnimationFrame(scroll);
   }
-  document.addEventListener("dragstart", (e) => {
-    const card = e.target.closest("[data-drag-task]");
-    if (!card || e.defaultPrevented || state.view !== "kanban") return;
+  // Mouse (native drag and drop) and touch (a long press) start a drag the same way: a copy of the
+  // card to drag, a placeholder where it will land, and the columns it can't enter marked.
+  function begin(card, x, y) {
     clean();
     const r = card.getBoundingClientRect(),
       ghost = card.cloneNode(true),
@@ -123,13 +142,6 @@ export function kanbanDrag(ctx) {
     placeholder.style.height = `${r.height}px`;
     placeholder.textContent = "Drop here";
     placeholder.setAttribute("aria-hidden", "true");
-    e.dataTransfer.setData("text/plain", card.dataset.dragTask);
-    e.dataTransfer.effectAllowed = "move";
-    e.dataTransfer.setDragImage(
-      ghost,
-      Math.max(12, Math.min(r.width - 12, e.clientX - r.left)),
-      Math.max(12, Math.min(r.height - 12, e.clientY - r.top)),
-    );
     for (const col of document.querySelectorAll("[data-drop-status]")) {
       const error = dropError(task(card.dataset.dragTask), col);
       if (error) {
@@ -137,37 +149,18 @@ export function kanbanDrag(ctx) {
         col.title = error;
       }
     }
-    drag = {
-      card,
-      id: card.dataset.dragTask,
-      ghost,
-      placeholder,
-      x: e.clientX,
-      y: e.clientY,
-    };
+    drag = { card, id: card.dataset.dragTask, ghost, placeholder, x, y, dx: x - r.left, dy: y - r.top };
     state.kanbanDragging = true;
     document.body.classList.add("kanban-dragging");
-    requestAnimationFrame(() => {
-      if (!drag) return;
-      ghost.remove();
-      card.classList.add("kanban-drag-source");
-      update(drag.x, drag.y);
-      scroll();
-    });
-  });
-  document.addEventListener("dragenter", (e) => {
-    if (drag && e.target.closest("[data-drop-status]")) e.preventDefault();
-  });
-  document.addEventListener("dragover", (e) => {
-    if (!drag) return;
-    e.preventDefault();
-    update(e.clientX, e.clientY);
-    e.dataTransfer.dropEffect = drag.column ? "move" : "none";
-  });
-  document.addEventListener("drop", async (e) => {
-    if (!drag) return;
-    e.preventDefault();
-    update(e.clientX, e.clientY);
+  }
+  // The card leaves its place for the placeholder, and the board scrolls near its edges.
+  function lift() {
+    drag.card.classList.add("kanban-drag-source");
+    update(drag.x, drag.y);
+    scroll();
+  }
+  async function drop(x, y) {
+    update(x, y);
     const { id, column, before, card, placeholder } = drag;
     if (!column) {
       clean();
@@ -212,8 +205,113 @@ export function kanbanDrag(ctx) {
       toast(error.message, true);
       renderView();
     }
+  }
+  document.addEventListener("dragstart", (e) => {
+    const card = e.target.closest("[data-drag-task]");
+    if (!card || e.defaultPrevented || state.view !== "kanban") return;
+    begin(card, e.clientX, e.clientY);
+    const { ghost, dx, dy } = drag;
+    e.dataTransfer.setData("text/plain", card.dataset.dragTask);
+    e.dataTransfer.effectAllowed = "move";
+    e.dataTransfer.setDragImage(
+      ghost,
+      Math.max(12, Math.min(ghost.offsetWidth - 12, dx)),
+      Math.max(12, Math.min(card.offsetHeight - 12, dy)),
+    );
+    requestAnimationFrame(() => {
+      if (!drag) return;
+      ghost.remove();
+      lift();
+    });
+  });
+  document.addEventListener("dragenter", (e) => {
+    if (drag && e.target.closest("[data-drop-status]")) e.preventDefault();
+  });
+  document.addEventListener("dragover", (e) => {
+    if (!drag) return;
+    e.preventDefault();
+    update(e.clientX, e.clientY);
+    e.dataTransfer.dropEffect = drag.column ? "move" : "none";
+  });
+  document.addEventListener("drop", (e) => {
+    if (!drag) return;
+    e.preventDefault();
+    void drop(e.clientX, e.clientY);
   });
   document.addEventListener("dragend", clean);
+  // Touch: a long press lifts the card, which then follows the finger and lands where it is let
+  // go; moving first scrolls as usual. Native drag and drop is off for touches, as iOS draws a tiny
+  // framed copy and drops unreliably.
+  const follow = () => {
+    drag.ghost.style.transform = `translate(${drag.x - drag.dx}px, ${drag.y - drag.dy}px)`;
+  };
+  // Only the finger that pressed the card moves and drops it.
+  const ours = (touches) => [...touches].find((touch) => touch.identifier === press?.id);
+  function move(e) {
+    const touch = ours(e.touches);
+    if (!touch) return;
+    if (!press.lifted) {
+      if (Math.hypot(touch.clientX - press.x, touch.clientY - press.y) > 8) wait();
+      return;
+    }
+    if (!drag) return; // Escape or a lost window ended it
+    e.preventDefault(); // the card moves, not the page
+    drag.moved = true;
+    update(touch.clientX, touch.clientY);
+    follow();
+  }
+  // A moving finger scrolls instead; the card stays out of native drag until that finger lifts.
+  function wait() {
+    clearTimeout(press?.timer);
+    document.removeEventListener("touchmove", move);
+  }
+  function release() {
+    if (!press) return;
+    wait();
+    press.card.draggable = true;
+    press = null;
+  }
+  document.addEventListener("touchstart", (e) => {
+    if (press && e.touches.length > 1) return; // another finger doesn't start or end a drag
+    if (press) { // a press whose end never arrived (its card was redrawn)
+      if (press.lifted) clean();
+      release();
+    }
+    const card = e.target.closest?.("[data-drag-task]");
+    if (!card || e.touches.length > 1 || state.view !== "kanban") return;
+    const touch = e.changedTouches[0];
+    card.draggable = false;
+    press = { card, id: touch.identifier, x: touch.clientX, y: touch.clientY };
+    press.timer = setTimeout(() => {
+      // A refresh may have redrawn the board under the finger.
+      if (!card.isConnected || state.view !== "kanban") return wait();
+      press.lifted = true;
+      begin(card, press.x, press.y);
+      drag.ghost.classList.add("kanban-touch-lift");
+      follow();
+      lift();
+      haptic();
+    }, 350);
+    // Added for this touch only, so scrolling elsewhere never waits on it.
+    document.addEventListener("touchmove", move, { passive: false });
+  }, { passive: true });
+  document.addEventListener("touchend", (e) => {
+    const touch = ours(e.changedTouches);
+    if (!touch) return;
+    const lifted = press.lifted && drag;
+    release();
+    if (!lifted) return;
+    e.preventDefault(); // no click on the card after a drop
+    haptic();
+    // Let go where it was lifted, nothing changes (not even the sort).
+    if (!lifted.moved) return clean();
+    void drop(touch.clientX, touch.clientY);
+  });
+  document.addEventListener("touchcancel", (e) => {
+    if (!ours(e.changedTouches)) return;
+    if (press.lifted) clean();
+    release();
+  });
   document.addEventListener(
     "keydown",
     (e) => {
@@ -239,6 +337,9 @@ export function kanbanDrag(ctx) {
     },
     true,
   );
-  window.addEventListener("blur", clean);
+  window.addEventListener("blur", () => {
+    release();
+    clean();
+  });
   return { cancel: clean };
 }
