@@ -120,11 +120,15 @@
   /* The bar (control height, 4px padding, 1px border) floats 8px above the bottom, with 8px above it. */
   :root { --tabbar-space: calc(var(--control-height) + 26px); --tabbar-clearance: calc(var(--tabbar-space) + env(safe-area-inset-bottom)); }
   /* Content runs behind the bar, and each page's scroller ends with room to lift its last item
-     clear of it. Boards keep the bar's space, so their own controls at the bottom stay in reach.
-     Views that scroll inside a component (table, kanban, timeline, tree) pad that scroller instead.
-     Sticky footers, such as the settings Save bar, stop at the padding, so they stay above the bar too. */
-  .main.project-main:is([data-layout-view="board"], [data-layout-view="drawing"]) { padding-bottom: var(--tabbar-clearance); }
-  .main.project-main:not([data-layout-view="board"], [data-layout-view="drawing"], [data-layout-view="table"], [data-layout-view="kanban"], [data-layout-view="timeline"], [data-layout-view="tree"]) > :is(#view-content, .help-page, .directory-page) { padding-bottom: calc(var(--tabbar-clearance) + 6px); }
+     clear of it. Views that scroll inside a component (table, kanban, timeline, tree) pad that
+     scroller instead. Sticky footers, such as the settings Save bar, stop at the padding, so they
+     stay above the bar too. Boards and documents run to the bottom of the screen; their controls at
+     the bottom (the phone board dock, the minimap, the word count) sit above the bar, except on the
+     expanded board, which covers it. */
+  .main.project-main:not([data-layout-view="board"], [data-layout-view="drawing"], [data-layout-view="documents"], [data-layout-view="table"], [data-layout-view="kanban"], [data-layout-view="timeline"], [data-layout-view="tree"]) > :is(#view-content, .help-page, .directory-page) { padding-bottom: calc(var(--tabbar-clearance) + 6px); }
+  .main.project-main:is([data-layout-view="board"], [data-layout-view="drawing"], [data-layout-view="documents"]) > #view-content { padding-bottom: 0; }
+  .main.project-main .canvas:not(.board-expanded), .main.project-main .documents-workspace { border-bottom: 0; border-end-start-radius: 0; border-end-end-radius: 0; }
+  .canvas:not(.board-expanded) { --board-bottom-clear: var(--tabbar-clearance); }
   .main.project-main > #view-content > :is(.table-scroll, .tree-wrapper, .kanban-swimlanes),
   .main.project-main > #view-content > .task-timeline > .timeline-scroll,
   .main.project-main > #view-content > .kanban > .kanban-column { padding-bottom: var(--tabbar-clearance); }

@@ -132,7 +132,7 @@ test("a draft card leads with its type icon and Draft badge, then Finalise, coll
 
 test("a draft converts to a note and back without losing its fields or place", { tag: "@gate" }, async ({ page }) => {
   await openBoard(page);
-  await page.locator("[data-action=board-fit]").click();
+  await page.locator("#zoom-label").dblclick();
   await card(page).locator(".task-title").click();
   await page.locator("[data-selection-menu=convert] > summary").click();
   await page.locator("#selection-tools [data-pro=convert-note]").click();
@@ -203,7 +203,7 @@ test("finalising creates the task and its subtask once in the draft's place, and
   expect(retry.id).toBe(parent.id);
   expect((await snap()).tasks).toHaveLength(2);
   await page.setViewportSize({ width: 390, height: 900 });
-  await page.locator("[data-action=board-fit]").click();
+  await page.locator("#zoom-label").dblclick();
   await page.evaluate(() => window.PencilsAppearance.write({ theme: "dark" }));
   const glyph = await card(page).locator(".canvas-task-type").boundingBox();
   const heading = await card(page).locator(".task-title").boundingBox();

@@ -49,7 +49,7 @@ async function open(page, nodes = app.nodes) {
   await seedBoard(app.store, app.project.id, { nodes, edges: [] }, app.board.id);
   await page.goto(`${app.base}/#project/${app.project.id}/board`);
   await node(page, "note").waitFor();
-  await page.locator("[data-action=board-fit]").click();
+  await page.locator("#zoom-label").dblclick();
 }
 
 test("hovering an unselected object shows its points, and dragging joins exact points with a curved preview", async ({ page }) => {

@@ -198,7 +198,7 @@ test("dragging a frame by its title moves nested frames and notes, and keyboard 
 
 test("dragging a note out of its frame detaches it, and dropping it in another frame attaches it", async ({ page }) => {
   await open(page);
-  await page.locator('[data-action="board-fit"]').click();
+  await page.locator("#zoom-label").dblclick();
   await boardSettled(page);
   await node(page, "note").click();
   await move(page, "note", 600, 210);
@@ -318,7 +318,7 @@ onDevices(["phone"], () => {
 
   test("untitled and locked frames are selectable by touch, and locked ones do not move from their interior", async ({ page }) => {
     await open(page, [{ ...fixtures[0], text: "", locked: true, x: 100, y: 100, w: 300, h: 300 }]);
-    await page.locator('[data-action="board-fit"]').click();
+    await page.locator("#zoom-label").dblclick();
     await boardSettled(page);
     const touchPoint = await worldPoint(page, 250, 250), touchBoard = await current();
     await page.touchscreen.tap(touchPoint.x, touchPoint.y);
@@ -332,7 +332,7 @@ onDevices(["phone"], () => {
 
   test("an untitled frame moves from its interior on a narrow screen, and the move persists", async ({ page }) => {
     await open(page, [{ ...fixtures[0], text: "", x: 100, y: 100, w: 300, h: 300 }]);
-    await page.locator('[data-action="board-fit"]').click();
+    await page.locator("#zoom-label").dblclick();
     await boardSettled(page);
     const unlockedTouch = await worldPoint(page, 250, 250);
     await page.touchscreen.tap(unlockedTouch.x, unlockedTouch.y);

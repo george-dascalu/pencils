@@ -87,8 +87,9 @@ test("board card fields use the shared menu, which board zoom does not scale", a
   await card.waitFor();
   await pick(page, card.locator("[data-canvas-task-field=priority]"), "High");
   await page.locator(".canvas-task-priority.high").first().waitFor();
-  await page.locator("[data-action=zoom-in]").click();
-  await page.locator("[data-action=zoom-in]").click();
+  await page.locator("#canvas").focus();
+  await page.keyboard.press("Control+=");
+  await page.keyboard.press("Control+=");
   const boardStatus = card.locator("[data-canvas-status]");
   await boardStatus.click();
   const box = await menu(page).boundingBox();

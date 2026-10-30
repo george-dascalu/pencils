@@ -143,7 +143,7 @@ test("templates insert frames that the outline collapses and presentation steps 
   await clickControl(pro(page, "templates"));
   await page.locator("[data-pro=template-insert][data-id=roadmap]").click();
   await poll(async () => (await current()).nodes.filter((n) => n.type === "frame").length).toBe(3);
-  await page.locator("[data-action=board-fit]").click();
+  await page.locator("#zoom-label").dblclick();
   await clickControl(pro(page, "outline"));
   const frame = (await current()).nodes.find((n) => n.type === "frame" && n.text === "Now");
   await page.locator(`#canvas-outline [data-pro=collapse][data-id="${frame.id}"]`).click();

@@ -121,7 +121,7 @@ test("the Tree collapses a parent, expands everything again, and search narrows 
 
 test("a canvas note edits on double-click, and dragging it saves its new position", async ({ page }) => {
   await openDemo(page, "board");
-  await click(page, "board-fit");
+  await page.locator("#zoom-label").dblclick();
   const sticky = page.locator('[data-node="n-note"]');
   await sticky.dblclick();
   await page.locator("#canvas-inline-form").waitFor();
@@ -149,7 +149,7 @@ test("a new sticky note and connector persist, with undo and redo, across a relo
   await expect(page.locator("#board-save")).toHaveText("Saved automatically");
   const added = (await snapshot()).boards[0].nodes.find((n) => n.text === "New persistent sticky");
   expect(added).toBeTruthy();
-  await click(page, "board-fit");
+  await page.locator("#zoom-label").dblclick();
   await page.locator('[data-action="board-tool"][data-tool="connect"]').click();
   await page.locator('[data-node="n-note2"]').click();
   await saved(page, () => page.locator(`[data-node="${added.id}"]`).click());

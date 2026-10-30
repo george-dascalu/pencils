@@ -222,7 +222,8 @@
 .canvas-presence {
   position: absolute;
   top: 12px;
-  right: 14px;
+  /* Beside the view controls on the right (styles.css). */
+  right: 86px;
   z-index: 8;
   display: flex;
   gap: 7px;
@@ -321,7 +322,7 @@
 #canvas-minimap {
   position: absolute;
   right: 14px;
-  bottom: 64px;
+  bottom: max(14px, var(--board-bottom-clear, 0px));
   z-index: 7;
   border: 1px solid #c4cfb8;
   border-radius: 7px;
@@ -399,7 +400,7 @@
 }
 #presentation-controls {
   position: absolute;
-  bottom: 20px;
+  bottom: max(20px, var(--board-bottom-clear, 0px));
   left: 50%;
   transform: translateX(-50%);
   display: flex;
@@ -550,7 +551,6 @@
   #canvas-minimap {
     transform: scale(0.7);
     transform-origin: bottom right;
-    bottom: 64px;
   }
   #canvas-performance {
     display: none;
@@ -911,7 +911,7 @@ html.board-expanded-view .shell {
 .phone-board-palette[hidden] { display: none !important; }
 @media (max-width: 600px) {
   .phone-board-dock {
-    position: absolute; z-index: 15; left: 8px; right: 8px; width: max-content; margin-inline: auto; bottom: max(8px, env(safe-area-inset-bottom));
+    position: absolute; z-index: 15; left: 8px; right: 8px; width: max-content; margin-inline: auto; bottom: max(8px, env(safe-area-inset-bottom), var(--board-bottom-clear, 0px));
     max-width: calc(100% - 16px); gap: 4px; padding: 4px; align-items: center;
     border: 1px solid var(--line); border-radius: 8px; background: var(--surface);
     box-shadow: var(--shadow-popover); touch-action: manipulation;
@@ -943,7 +943,7 @@ html.board-expanded-view .shell {
   .phone-board-palette button > .icon { flex: 0 0 var(--control-icon-size); }
   .phone-board-palette button[aria-pressed="true"], .board-tools:has(.phone-board-palette .active) > .phone-board-more { background: var(--surface-soft); color: var(--green); }
   .canvas-presence { top: 8px; right: 8px; max-width: calc(100% - 16px); }
-  #canvas-minimap { bottom: calc(var(--control-height) + 24px + env(safe-area-inset-bottom)); }
+  #canvas-minimap { bottom: calc(max(8px, env(safe-area-inset-bottom), var(--board-bottom-clear, 0px)) + var(--control-height) + 16px); }
   #canvas-search-panel { left: 8px; right: 8px; top: 8px; max-width: calc(100% - 16px); }
   .presenting .phone-board-dock { display: none; }
 }

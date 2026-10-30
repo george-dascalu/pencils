@@ -1,5 +1,6 @@
 // Board capacity gauge: a compact percentage of the 80,000-object and 10,000-frame limits that
-// counts hidden frame children, explains itself in a popover above the gauge (click, Space or
+// counts hidden frame children, explains itself in a popover beside the gauge (above it in the phone
+// dock; click, Space or
 // Enter; dismissed by click, Escape or outside), updates live on delete and undo, works on the
 // expanded board, keeps 44px targets on phones and passes axe checks in light and dark.
 import AxeBuilder from "@axe-core/playwright";
@@ -42,7 +43,7 @@ test("capacity percentages show <1% for tiny boards and the bar stops at 100%", 
 });
 
 onDevices(["desktop", "phone"], () => {
-  test("the gauge counts hidden frame children and explains itself above the gauge, dismissed by click, Escape or outside", async ({ page }) => {
+  test("the gauge counts hidden frame children and explains itself next to the gauge, dismissed by click, Escape or outside", async ({ page, device }) => {
     await openBoard(page);
     const width = page.viewportSize().width;
     await expect(page.locator(".board-footer,.board-help,#canvas-performance")).toHaveCount(0);
@@ -57,7 +58,8 @@ onDevices(["desktop", "phone"], () => {
     await expect(info(page).locator(".capacity-count")).toHaveText("3 / 80,000 objects");
     await expect(info(page).locator(".capacity-frame-count")).toHaveText("1 / 10,000 frames");
     const anchor = await gauge(page).boundingBox(), popup = await info(page).boundingBox();
-    expect(popup.y + popup.height, "the explanation appears above the gauge").toBeLessThanOrEqual(anchor.y);
+    if (device === "phone") expect(popup.y + popup.height, "the explanation appears above the gauge in the dock").toBeLessThanOrEqual(anchor.y);
+    else expect(popup.x + popup.width <= anchor.x && Math.abs(popup.y - anchor.y) <= 1, `the explanation appears beside the gauge ${JSON.stringify({ popup, anchor })}`).toBe(true);
     expect(popup.x >= 0 && popup.x + popup.width <= width, JSON.stringify(popup)).toBe(true);
     await gauge(page).click();
     await expect(info(page)).toBeHidden();
@@ -95,7 +97,7 @@ onDevices(["desktop", "phone"], () => {
   });
 });
 
-test("deleting and undoing objects and frames update the counts live, and the explanation opens above the gauge on the expanded board", async ({ page }) => {
+test("deleting and undoing objects and frames update the counts live, and the explanation opens beside the gauge on the expanded board", async ({ page }) => {
   await openBoard(page);
   const capacity = page.locator(".board-capacity");
   await page.locator("[data-node=other]").click();
@@ -116,5 +118,6 @@ test("deleting and undoing objects and frames update the counts live, and the ex
   await page.locator(".board-expanded").waitFor();
   await gauge(page).click();
   await info(page).waitFor();
-  expect((await info(page).boundingBox()).y).toBeLessThan((await gauge(page).boundingBox()).y);
+  const [popup, anchor] = [await info(page).boundingBox(), await gauge(page).boundingBox()];
+  expect(popup.x + popup.width, "beside the gauge").toBeLessThanOrEqual(anchor.x);
 });

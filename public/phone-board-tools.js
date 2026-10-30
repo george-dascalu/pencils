@@ -65,7 +65,7 @@ export function phoneBoardTools({ icon, state }) {
     view.className = "phone-board-view-tools";
     view.setAttribute("role", "group"); view.setAttribute("aria-label", "View");
     palette.append(view);
-    for (const button of controls.querySelectorAll('[data-action="zoom-in"], [data-action="zoom-out"], [data-board-display], #expanded-board-settings')) move(button, view);
+    for (const button of controls.querySelectorAll('[data-board-display], #expanded-board-settings')) move(button, view);
     view.insertAdjacentHTML("beforeend", `<button type="button" class="icon-button" data-board-display="minimap" aria-label="Minimap" aria-pressed="${!canvas.querySelector('#canvas-minimap')?.classList.contains('hidden')}">${icon("board")}</button>`);
     trigger.onclick = () => {
       interaction++;

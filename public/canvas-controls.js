@@ -1,5 +1,6 @@
 import { boardCapacity } from "./board-capacity.js";
 import { setBoardExpanded } from "./view-layout.js";
+import { boardFloor } from "./layout-tray.js";
 import { newGrid, syncGrid, cellAt, GRID_DEFAULT_SIZE } from "./grid-model.js";
 import { routeEdge, bounds } from "./canvas-geometry.js";
 import { canvasToolDrag } from "./canvas-tool-drag.js";
@@ -33,7 +34,7 @@ export function canvasControls(ctx, basic) {
   const capacity = boardCapacity();
   const placement = ["sticky", "text", "shape", "grid"];
   const editable = "input,textarea,select,[contenteditable],.inline-editing";
-  const chrome = `${editable},.board-tools,#pen-tools,.inline-floating-tools,#selection-tools,button,a,.canvas-panel,.canvas-find,.canvas-filters,#canvas-presence,#presentation-controls`;
+  const chrome = `${editable},.board-tools,.board-controls,#pen-tools,.inline-floating-tools,#selection-tools,button,a,.canvas-panel,.canvas-find,.canvas-filters,#canvas-presence,#presentation-controls`;
   const stop = (e) => {
     e.preventDefault();
     e.stopImmediatePropagation();
@@ -89,7 +90,7 @@ export function canvasControls(ctx, basic) {
     if (!$("#board-expand"))
       $(".board-controls")?.insertAdjacentHTML(
         "beforeend",
-        `<button id="board-expand" type="button" class="icon-button" data-board-display="expand"></button><button type="button" class="icon-button" data-board-display="fullscreen" aria-label="Full screen" title="Full screen">${icon("fullscreen")}</button>`,
+        `<button id="board-expand" type="button" class="icon-button" data-board-display="expand"></button>`,
       );
     if (!$("#expanded-board-settings"))
       $(".board-controls")?.insertAdjacentHTML(
@@ -97,11 +98,10 @@ export function canvasControls(ctx, basic) {
         `<button id="expanded-board-settings" type="button" class="icon-button" data-feature="board-settings" aria-label="Board settings" title="Board settings">${icon("settings")}</button>`,
       );
     const expandButton = $("#board-expand");
-    const expandLabel = expanded ? "Exit expanded view" : "Expand board";
-    expandButton.innerHTML = icon(expanded ? "shrink" : "expand");
-    expandButton.setAttribute("aria-label", expandLabel);
+    expandButton.innerHTML = icon(expanded ? "shrink" : "fullscreen");
+    expandButton.setAttribute("aria-label", "Full screen");
     expandButton.setAttribute("aria-pressed", String(expanded));
-    expandButton.title = expandLabel;
+    expandButton.title = expanded ? "Exit full screen" : "Full screen";
     position();
     const keys = {
       cursor: "V",
@@ -195,7 +195,8 @@ export function canvasControls(ctx, basic) {
     const safeTop = canvas.clientWidth < 600 ? 160 : 110;
     if (y < safeTop) y = bottom + handleGap;
     toolbar.style.left = `${Math.max(12, Math.min(canvas.clientWidth - width - 12, (left + right - width) / 2))}px`;
-    toolbar.style.top = `${Math.max(safeTop, Math.min(canvas.clientHeight - height - 70, y))}px`;
+    const floor = Math.min(canvas.clientHeight - 70, boardFloor(canvas) - 8);
+    toolbar.style.top = `${Math.max(safeTop, Math.min(floor - height, y))}px`;
     basic.positionMenus?.();
   }
   document.addEventListener("click", async (e) => {
@@ -205,27 +206,23 @@ export function canvasControls(ctx, basic) {
       minimap = !minimap;
       saveDisplay(); render(); return;
     }
-    if (
-      button.dataset.boardDisplay === "fullscreen" &&
-      !document.fullscreenElement
-    ) {
-      expanded = true;
-      saveDisplay();
-      render();
-      try {
-        await document.documentElement.requestFullscreen();
-        nativeFull = true;
-      } catch {
-        toast(
-          "Expanded to fill the window. Browser full screen is unavailable here.",
-        );
-      }
-    } else {
-      expanded = !expanded;
-      saveDisplay();
+    // One toggle: the board fills the window and, where the browser allows it (not on iPhone),
+    // the whole screen. Escape or the toggle leaves both.
+    expanded = !expanded;
+    saveDisplay();
+    render();
+    if (!expanded) {
       if (document.fullscreenElement) await document.exitFullscreen();
-      render();
+      return;
     }
+    try {
+      await document.documentElement.requestFullscreen();
+      nativeFull = true;
+    } catch {
+      // The board still fills the window.
+    }
+    // Toggled off again while the browser was still entering full screen.
+    if (!expanded && document.fullscreenElement) await document.exitFullscreen();
   });
   document.addEventListener("fullscreenchange", () => {
     if (nativeFull && !document.fullscreenElement) {

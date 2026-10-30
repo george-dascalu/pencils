@@ -133,7 +133,7 @@ onDevices(["phone"], () => {
     const { url } = await seed();
     await page.goto(url);
     // The board opens at the default 85% camera, where this 440px-wide card's Comments button sits past a 390px screen; fit the board first.
-    await page.getByRole("button", { name: "Fit canvas to screen", exact: true }).click();
+    await page.locator("#zoom-label").dblclick();
     await page.locator("[data-node=card] [data-pro=comments]").click();
     const panel = page.locator(".board-comments");
     await oneLine(panel, { icon: 16, target: 44 });

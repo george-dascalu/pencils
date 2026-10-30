@@ -135,7 +135,7 @@ test("cards preload during an animated zoom without rebuilding the cards already
 
 test("fit shows every object in a lightweight overview with bounded editable detail", async ({ page }) => {
   await open(page);
-  await page.locator("[data-action=board-fit]").click();
+  await page.locator("#zoom-label").dblclick();
   // The overview swaps detailed cards for a bitmap over a few frames.
   await expect.poll(() => page.locator(".board-node").count(), { message: "Fit uses lightweight overview with bounded editable detail" }).toBeLessThanOrEqual(80);
 });

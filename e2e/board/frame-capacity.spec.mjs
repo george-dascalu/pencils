@@ -74,7 +74,7 @@ for (const name of cases) {
     result.panP95Ms = Math.round(pan[18]);
 
     const fit = performance.now();
-    await page.locator("[data-action=board-fit]").click();
+    await page.locator("#zoom-label").dblclick();
     await boardSettled(page);
     result.fitMs = Math.round(performance.now() - fit);
 

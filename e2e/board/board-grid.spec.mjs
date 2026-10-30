@@ -243,14 +243,10 @@ onDevices(["phone"], () => {
   test("on a phone the toolbar fits, resize targets stay 8px and the title stays 24px high and editable at any zoom", async ({ page }) => {
     await openGrid(page);
     await page.evaluate(() => (document.documentElement.dataset.theme = "dark"));
-    // Since 0.18.26 phones keep zoom buttons in the More canvas tools palette.
-    const tool = async (action) => {
-      const button = page.locator(`[data-action="${action}"]`);
-      if (!(await button.isVisible())) await page.getByRole("button", { name: "More canvas tools", exact: true }).click();
-      await button.click();
-      await page.waitForFunction(() => !document.querySelector("#canvas").classList.contains("zooming"));
-    };
-    await tool("board-fit");
+    // Since 0.20.33 the board has no zoom buttons: double-tap the zoom level to fit, Ctrl+-/= to zoom.
+    const settle = () => page.waitForFunction(() => !document.querySelector("#canvas").classList.contains("zooming"));
+    await page.locator("#zoom-label").dblclick();
+    await settle();
     await expect.poll(async () => {
       const box = await page.locator("#selection-tools").boundingBox();
       return box && box.x >= 0 && box.x + box.width <= 391;
@@ -262,8 +258,10 @@ onDevices(["phone"], () => {
     await page.keyboard.press("Enter");
     await expect.poll(async () => (await grid()).title).toBe("Mobile planning");
     await expect(page.locator(".grid-title")).toHaveText("Mobile planning");
-    for (const action of ["zoom-out", "zoom-out", "zoom-in"]) {
-      await tool(action);
+    for (const key of ["Control+-", "Control+-", "Control+="]) {
+      await page.locator("#canvas").focus();
+      await page.keyboard.press(key);
+      await settle();
       const header = await page.locator(".grid-grip").boundingBox();
       const pencil = await page.locator(".grid-title-edit").boundingBox();
       expect(Math.abs(header.height - 24), "title bar stays 24 screen pixels high").toBeLessThan(0.2);

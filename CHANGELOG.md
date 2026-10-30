@@ -2,6 +2,16 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.20.33 — 2026-10-30
+
+### Changed
+
+- On iPad and phones the bottom bar floats over the board and the open document, which now run to the bottom of the screen instead of stopping above a band of page behind the bar. The phone board's tool dock, the minimap, the presentation controls and the word count sit just above the bar, and fitting the board or focusing a frame keeps it clear of the bar.
+- On iPad and desktop the board's view controls stand in a vertical bar on the right, level with the tools on the left: board capacity, zoom level and full screen.
+- The board's zoom and fit buttons are gone: double-click (or double-tap) the zoom level to fit the board. Pinch, Ctrl/Cmd+wheel, Ctrl/Cmd+−/= and Alt+1 still zoom and fit.
+- Expand board and Full screen are one toggle: it fills the window and, where the browser allows (not on iPhone), the whole screen; Escape or the toggle returns. Its corners nudge outwards on hover.
+- The board capacity explanation opens beside the gauge.
+
 ## 0.20.32 — 2026-10-30
 
 ### Fixed

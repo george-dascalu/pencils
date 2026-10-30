@@ -1,4 +1,5 @@
 import { readableText } from "./node-layout.js";
+import { boardFloor } from "./layout-tray.js";
 import { inkPreview } from "./ink-preview.js";
 import { boardImages } from "./board-images.js";
 import { drawingInput, canvasPointerTool } from "./drawing-input.js";
@@ -115,7 +116,8 @@ export function canvasFeatures(ctx) {
     action: (action) => {
       // Switching pen and eraser applies while drawing; elsewhere it would open the pen tools.
       if (action === "toggle-eraser") { if (penActive(state.tool)) pen.toggleEraser(); }
-      else $(action === "fit" ? '[data-action="board-fit"]' : `[data-action="board-${action}"]`)?.click();
+      else if (action === "fit") ctx.fitBoard();
+      else $(`[data-action="board-${action}"]`)?.click();
     },
   });
   const snapEnabled = () => board()?.settings?.snap !== false;
@@ -1119,15 +1121,16 @@ export function canvasFeatures(ctx) {
   });
   function focusNode(n) {
     const canvas = $("#canvas"),
+      height = boardFloor(canvas),
       z = Math.min(
         1.5,
         (canvas.clientWidth - 140) / n.w,
-        (canvas.clientHeight - 100) / n.h,
+        (height - 100) / n.h,
       );
     state.camera = {
       z,
       x: (canvas.clientWidth - n.w * z) / 2 - n.x * z,
-      y: (canvas.clientHeight - n.h * z) / 2 - n.y * z,
+      y: (height - n.h * z) / 2 - n.y * z,
     };
     updateCamera();
   }

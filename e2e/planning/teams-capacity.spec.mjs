@@ -151,7 +151,7 @@ test("board task cards edit the shared task without moving the camera, fit their
   // On a phone-width window in the dark theme.
   await page.setViewportSize({ width: 390, height: 844 });
   await page.evaluate(() => (document.documentElement.dataset.theme = "dark"));
-  await page.locator('[data-action="board-fit"]').click();
+  await page.locator("#zoom-label").dblclick();
   await page.waitForFunction(() => !document.querySelector("#canvas").classList.contains("zooming"));
   await expect(assignee).toBeVisible();
   const { narrowBounds, selectBounds } = await card.evaluate((el) => ({

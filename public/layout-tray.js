@@ -3,6 +3,18 @@
 // project-layout.js toggles it and closes it on a choice, a tap elsewhere or Escape.
 // Matches the bottom bar's media query in project-layout.css.
 export const tabBar = matchMedia("(max-width: 600px), (pointer: coarse)");
+// How much of the bottom of `el`, which runs under the floating bottom bar, the bar covers: none on
+// desktop, while typing (the bar steps aside) or when something, such as the expanded board, lies over it.
+export function bottomBarCover(el) {
+  const r = tabBar.matches && document.querySelector(".topbar .tabs")?.getBoundingClientRect();
+  if (!r?.height || !document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2)?.closest(".topbar .tabs")) return 0;
+  return Math.max(0, el.getBoundingClientRect().bottom - r.top);
+}
+// The lowest point, in the board's own coordinates, clear of the bottom bar and the phone dock.
+export function boardFloor(canvas) {
+  const dock = canvas.querySelector(".phone-board-dock");
+  return Math.min(canvas.clientHeight - bottomBarCover(canvas), dock?.offsetParent ? dock.offsetTop - 8 : Infinity);
+}
 export function mountLayoutTray(content, open) {
   removeLayoutTray();
   const tab = document.querySelector(".tabs .tab.active");

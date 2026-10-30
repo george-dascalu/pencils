@@ -16,8 +16,11 @@ export function boardCapacity() {
   function position() {
     const panel = document.querySelector('#board-capacity-info');
     const trigger = document.querySelector('#board-capacity-toggle');
-    if (panel?.matches(':popover-open') && trigger)
-      positionPopover(panel, trigger.getBoundingClientRect(), { width: 220, maxHeight: 100, gap: 10 });
+    if (!panel?.matches(':popover-open') || !trigger) return;
+    const r = trigger.getBoundingClientRect();
+    // Beside the gauge at the top of the view controls on the right; above it in the phone dock.
+    const anchor = trigger.closest('.phone-board-dock') ? r : { left: r.left - 230, top: r.top - 10, bottom: r.top - 10 };
+    positionPopover(panel, anchor, { width: 220, maxHeight: 100, gap: 10 });
   }
   // Keep Space/Enter and Escape native instead of invoking canvas shortcuts.
   document.addEventListener('keydown', event => {

@@ -1534,9 +1534,11 @@ input[type="search"]:not(.search input) {
   overflow: hidden;
   pointer-events: none;
 }
-.board-tools {
+/* The tools stand on the left of the board and its view controls (capacity, zoom level, full
+   screen) level with them on the right, in the same bar. Phones dock both at the bottom. */
+.board-tools,
+.board-controls {
   position: absolute;
-  left: 18px;
   top: 18px;
   display: flex;
   flex-direction: column;
@@ -1548,6 +1550,9 @@ input[type="search"]:not(.search input) {
   box-shadow: 0 4px 16px #3c4f3010;
   z-index: 5;
   width: 58px;
+}
+.board-tools {
+  left: 18px;
   max-height: calc(100% - 36px);
   overflow-y: auto;
   overscroll-behavior: contain;
@@ -1596,27 +1601,37 @@ input[type="search"]:not(.search input) {
   margin: 3px;
 }
 .board-controls {
-  position: absolute;
-  bottom: 17px;
   right: 18px;
-  display: flex;
-  gap: 4px;
-  align-items: center;
-  background: white;
-  border: 1px solid #e0e5d7;
-  padding: 4px;
-  border-radius: calc(7px * var(--style-roundness, 1));
   font-size: 10px;
   color: #889b75;
-  z-index: 5;
 }
-.board-controls span {
-  min-width: 36px;
-  text-align: center;
+.board-controls .icon-button {
+  width: 100%;
 }
 .board-controls svg {
   width: 15px;
   height: 15px;
+}
+.board-controls .board-zoom {
+  color: inherit;
+  font-size: inherit;
+  font-variant-numeric: tabular-nums;
+  touch-action: manipulation;
+}
+/* The full-screen corners nudge outwards on hover, and inwards when leaving full screen. */
+#board-expand .icon {
+  transition: transform 160ms ease-out;
+}
+#board-expand:hover .icon {
+  transform: scale(1.15);
+}
+#board-expand[aria-pressed="true"]:hover .icon {
+  transform: scale(0.85);
+}
+@media (prefers-reduced-motion: reduce) {
+  #board-expand .icon {
+    transition: none;
+  }
 }
 .board-footer {
   position: absolute;

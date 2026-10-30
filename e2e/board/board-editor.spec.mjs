@@ -158,7 +158,7 @@ test("rich text keeps the card's bounds, formats in place and persists Markdown 
   await expect(page.locator("[data-node=note] h2 em").first()).toBeAttached();
 });
 
-test("the expanded board fills the window, survives re-render, and full screen exits", async ({ page, browserName }) => {
+test("the full-screen toggle fills the window, survives re-render, and exits with Escape or the toggle", async ({ page, browserName }) => {
   await openBoard(page);
   await page.locator("#board-expand").click();
   const canvas = page.locator("#canvas");
@@ -172,10 +172,14 @@ test("the expanded board fills the window, survives re-render, and full screen e
   await page.keyboard.press("Escape");
   await expect(canvas).not.toHaveClass(/board-expanded/);
   if (browserName !== "firefox") {
-    await page.getByRole("button", { name: "Full screen", exact: true }).click();
+    // One toggle also takes the browser full screen where it can, and leaves it again.
+    const toggle = page.getByRole("button", { name: "Full screen", exact: true });
+    await toggle.click();
+    await expect(toggle).toHaveAttribute("aria-pressed", "true");
     await page.waitForFunction(() => !!document.fullscreenElement);
-    await page.locator("#board-expand").click();
+    await toggle.click();
     await page.waitForFunction(() => !document.fullscreenElement);
+    await expect(canvas).not.toHaveClass(/board-expanded/);
   }
 });
 

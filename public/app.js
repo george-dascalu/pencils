@@ -41,7 +41,7 @@ import { smoothZoom } from "./camera-motion.js";
 import { paintBoardBackground } from "./board-background.js";
 import { installColorPickers } from "./color-picker.js";
 import { installBookmarks } from "./bookmarks.js";
-import { tabBar } from "./layout-tray.js";
+import { tabBar, boardFloor } from "./layout-tray.js";
 import { kanbanDrag } from "./kanban-drag.js";
 import { observeKanbanLayout } from "./kanban-layout.js";
 import { kanbanGroup, kanbanLanes, laneKey } from "./kanban-model.js";
@@ -1549,15 +1549,16 @@ function focusLinkedFrame(id) {
   const n = board()?.nodes.find((n) => n.id === id),
     c = $("#canvas");
   if (!n || !c) return;
+  const height = boardFloor(c);
   const z = Math.min(
     1.5,
     (c.clientWidth - 140) / n.w,
-    (c.clientHeight - 100) / n.h,
+    (height - 100) / n.h,
   );
   state.camera = {
     z,
     x: c.clientWidth / 2 - (n.x + n.w / 2) * z,
-    y: c.clientHeight / 2 - (n.y + n.h / 2) * z,
+    y: height / 2 - (n.y + n.h / 2) * z,
   };
   updateCamera();
 }
@@ -1794,7 +1795,7 @@ function boardView() {
   return `<div class="canvas ${state.tool === "hand" ? "pan-mode" : state.tool === "connect" ? "connect-mode" : ""}" id="canvas" tabindex="0" aria-label="Freeform project canvas. Use tools to add objects, drag to move them, and double-click to edit.">
     <div class="canvas-world" id="canvas-world"><svg class="canvas-lines" id="canvas-lines">${edgesHTML(b)}</svg>${features.canvasNodes(b).map(nodeHTML).join("")}</div>
     ${boardToolsHTML()}
-    ${boardTaskPanelHTML()}${selectionHTML()}<div class="board-controls"><button class="icon-button" data-action="zoom-out" aria-label="Zoom out">${icon("minus")}</button><span id="zoom-label">${Math.round(state.camera.z * 100)}%</span><button class="icon-button" data-action="zoom-in" aria-label="Zoom in">${icon("plus")}</button><button class="icon-button" data-action="board-fit" aria-label="Fit canvas to screen">${icon("fit")}</button></div>
+    ${boardTaskPanelHTML()}${selectionHTML()}<div class="board-controls"><button type="button" class="icon-button board-zoom" id="zoom-label" data-action="board-zoom" title="Zoom level: double-click to fit the board (Alt+1)" aria-keyshortcuts="Alt+1">${Math.round(state.camera.z * 100)}%</button></div>
     ${!b.nodes.length ? '<div class="board-empty"><h3>Give your ideas a little room.</h3><p>Add notes, tasks, images or shapes.<br>Drop image files here to get started.</p></div>' : ""}</div>`;
 }
 function selectionHTML() {
@@ -1852,6 +1853,7 @@ function zoom(multiplier, px, py) {
     py ?? canvas.clientHeight / 2,
   );
 }
+let zoomClickedAt = -Infinity;
 function fitBoard() {
   const b = board(),
     canvas = $("#canvas");
@@ -1865,18 +1867,20 @@ function fitBoard() {
     minY = Math.min(...b.nodes.map((n) => n.y)),
     maxX = Math.max(...b.nodes.map((n) => n.x + n.w)),
     maxY = Math.max(...b.nodes.map((n) => n.y + n.h));
+  // Fit above the bottom bar and the phone dock, which float over the board.
+  const height = boardFloor(canvas);
   const z = Math.max(
     0.001,
     Math.min(
       1.25,
       (canvas.clientWidth - 160) / (maxX - minX),
-      (canvas.clientHeight - 100) / (maxY - minY),
+      (height - 100) / (maxY - minY),
     ),
   );
   state.camera = {
     z,
     x: (canvas.clientWidth - (maxX - minX) * z) / 2 - minX * z + 20,
-    y: (canvas.clientHeight - (maxY - minY) * z) / 2 - minY * z,
+    y: (height - (maxY - minY) * z) / 2 - minY * z,
   };
   updateCamera();
 }
@@ -2335,14 +2339,12 @@ document.addEventListener("click", async (event) => {
           }
         });
         break;
-      case "zoom-in":
-        zoom(1.2);
-        break;
-      case "zoom-out":
-        zoom(1 / 1.2);
-        break;
-      case "board-fit":
-        fitBoard();
+      case "board-zoom":
+        // Double-clicking or double-tapping the zoom level fits the board, like Alt+1.
+        if (event.timeStamp - zoomClickedAt < 400) {
+          zoomClickedAt = -Infinity;
+          fitBoard();
+        } else zoomClickedAt = event.timeStamp;
         break;
       case "board-reload":
         if (

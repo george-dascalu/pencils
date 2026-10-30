@@ -223,7 +223,7 @@ test("panning with the hand tool keeps the selection, and a background click cle
 
 test("pressing a connector shows its two endpoints until a background click", async ({ page }) => {
   await open(page);
-  await page.locator('[data-action="board-fit"]').click();
+  await page.locator("#zoom-label").dblclick();
   await boardSettled(page);
   await page.locator('path.canvas-edge[data-edge="edge"]').dispatchEvent("pointerdown", { button: 0 });
   await expect(page.locator(".connector-endpoint[data-edge-end]")).toHaveCount(2);

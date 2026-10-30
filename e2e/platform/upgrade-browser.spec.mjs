@@ -165,7 +165,7 @@ test("attachment links resolve in both the web preview and the Markdown vault", 
 
 test("failed canvas saves survive reload and retry without discarding edits", async ({ page }) => {
   await openProject(page, "board");
-  await page.locator("[data-action=board-fit]").click();
+  await page.locator("#zoom-label").dblclick();
   let fail = true;
   await page.route("**/api/projects/*/boards/*", (route) => (route.request().method() === "PATCH" && fail ? route.abort() : route.continue()));
   await page.locator("[data-node=n-note]").dblclick();
@@ -182,7 +182,7 @@ test("failed canvas saves survive reload and retry without discarding edits", as
 test("multiselection, grouping, frames, resize, JSON Canvas and PNG export", async ({ page }) => {
   const node = async (id) => (await snap()).boards[0].nodes.find((n) => n.id === id);
   await openProject(page, "board");
-  await page.locator("[data-action=board-fit]").click();
+  await page.locator("#zoom-label").dblclick();
   await page.locator("[data-node=n-note]").click();
   await page.locator("[data-node=n-note2]").click({ modifiers: ["Shift"] });
   await expect(page.locator(".board-node.selected")).toHaveCount(2);
@@ -190,7 +190,7 @@ test("multiselection, grouping, frames, resize, JSON Canvas and PNG export", asy
   await expect.poll(async () => { const [a, b] = [await node("n-note"), await node("n-note2")]; return !!a.group && a.group === b.group; }).toBe(true);
   await clickControl(feature(page, "frame-selection"));
   await expect.poll(async () => (await snap()).boards[0].nodes.some((n) => n.type === "frame")).toBe(true);
-  await page.locator("[data-action=board-fit]").click();
+  await page.locator("#zoom-label").dblclick();
   const selectedNode = page.locator("[data-node=n-note]");
   await selectedNode.click();
   await clickControl(feature(page, "ungroup"));

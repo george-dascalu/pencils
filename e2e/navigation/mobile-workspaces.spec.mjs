@@ -163,6 +163,6 @@ onDevices(["phone"], () => {
     await expect(page.locator(".phone-board-dock")).toHaveCount(0);
     await expect(page.locator(".board-tools")).toHaveAttribute("aria-orientation", "vertical");
     await expect(page.getByRole("button", { name: "Add sticky note", exact: true })).toBeVisible();
-    await expect(page.getByRole("button", { name: "Zoom in", exact: true })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Full screen", exact: true })).toBeVisible();
   });
 });

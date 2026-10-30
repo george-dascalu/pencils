@@ -84,7 +84,8 @@ test("the fine grid previews five minor squares per major one and follows zoom a
     expect(Math.abs(position[0] - values.x) < 0.02 && Math.abs(position[1] - values.y) < 0.02, JSON.stringify(values)).toBe(true);
   };
   await expectGridInStep();
-  await page.locator('[data-action="zoom-in"]').click();
+  await page.locator("#canvas").focus();
+  await page.keyboard.press("Control+=");
   await page.waitForFunction(() => !document.querySelector("#canvas").classList.contains("zooming"));
   await expectGridInStep();
   const bounds = await page.locator("#canvas").boundingBox();

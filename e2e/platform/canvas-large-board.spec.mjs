@@ -103,7 +103,7 @@ test("the fit overview stays bounded and its bitmap cards stay selectable", { ta
   await open(page);
   await fs.mkdir("artifacts", { recursive: true });
   await page.screenshot({ path: "artifacts/board-100k-detail.png" });
-  await page.locator("[data-action=board-fit]").click();
+  await page.locator("#zoom-label").dblclick();
   await expect.poll(() => page.locator(".board-node").count()).toBeLessThanOrEqual(24);
   await expect.poll(() => page.locator("#canvas-lines > g[data-edge]").count()).toBeLessThanOrEqual(240);
   const view = await page.evaluate(() => ({

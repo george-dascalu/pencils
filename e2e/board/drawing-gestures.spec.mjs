@@ -152,7 +152,7 @@ onDevices(["ipad"], () => {
     await g.oneStroke();
     const saved = await note();
     // Fit keeps the test coordinates on screen.
-    await page.locator('[data-action="board-fit"]').click();
+    await page.locator("#zoom-label").dblclick();
     await g.doubleTap(await g.world(650, 350));
     await expect(penMode(page, "erase")).toHaveAttribute("aria-pressed", "true");
     const p = await g.world(saved.x + 100, saved.y + 80);

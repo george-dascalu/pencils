@@ -129,7 +129,7 @@ test("turning snap back on persists across reload, and settings open in full scr
   await expect.poll(async () => (await boardRecord()).settings.snap).toBe(true);
   await page.reload();
   await expectSnap(page, true);
-  await page.locator('[data-board-display="fullscreen"]').click();
+  await page.locator("#board-expand").click();
   await page.waitForFunction(() => !!document.fullscreenElement);
   await trigger(page).click();
   await expect(popup(page)).toBeVisible();

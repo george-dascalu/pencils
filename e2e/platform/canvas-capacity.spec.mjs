@@ -103,7 +103,7 @@ for (const scenario of cases.filter((s) => !selectedCases || selectedCases.inclu
     });
     const zoom = await page.locator("#zoom-label").textContent();
     const fit = performance.now();
-    await page.locator("[data-action=board-fit]").click();
+    await page.locator("#zoom-label").dblclick();
     // The overview is in place once the zoom changes and two frames have painted.
     await expect(page.locator("#zoom-label")).not.toHaveText(zoom, { timeout: 30000 });
     await page.evaluate(() => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve))));
