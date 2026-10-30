@@ -331,6 +331,14 @@ button svg {
   color: #a6b7ac;
   font-size: 10px;
 }
+/* A thin bar at the top of the screen while a project or organisation loads (setLoading in app.js),
+   after a moment, so quick switches don't flash it. */
+#loading-bar { position: fixed; inset: env(safe-area-inset-top) 0 auto; z-index: 1000; height: 3px; overflow: hidden; pointer-events: none; opacity: 0; visibility: hidden; transition: opacity 120ms ease, visibility 0s 120ms; }
+#loading-bar::before { content: ""; position: absolute; inset: 0 auto 0 0; width: 40%; border-radius: 3px; background: var(--green); }
+#loading-bar[data-active] { opacity: 1; visibility: visible; transition: opacity 120ms ease 150ms, visibility 0s 150ms; }
+#loading-bar[data-active]::before { animation: loading-bar 1.1s ease-in-out infinite; }
+@keyframes loading-bar { from { transform: translateX(-100%); } to { transform: translateX(250%); } }
+@media (prefers-reduced-motion: reduce) { #loading-bar::before, #loading-bar[data-active]::before { width: 100%; opacity: 0.6; animation: none; } }
 /* A newer version's notice takes the line below when it doesn't fit beside the workspace. */
 .side-footer { flex-wrap: wrap; }
 @media (pointer: coarse) { .side-footer .version { font-size: 12px; } }

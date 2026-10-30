@@ -2,6 +2,12 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.20.50 — 2026-10-30
+
+### Added
+
+- A thin loading bar at the top of the screen while another project or organisation loads, or Back and Forward take a moment.
+
 ## 0.20.49 — 2026-10-30
 
 ### Changed

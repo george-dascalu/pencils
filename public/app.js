@@ -565,6 +565,14 @@ function openView(view) {
 function setLoading(value) {
   state.loading = value;
   document.querySelector(".main")?.setAttribute("aria-busy", String(value));
+  // A thin bar at the top of the screen while a project or organisation loads (styles.css).
+  let bar = document.querySelector("#loading-bar");
+  if (!bar) {
+    bar = Object.assign(document.createElement("div"), { id: "loading-bar" });
+    bar.setAttribute("aria-hidden", "true");
+    document.body.append(bar);
+  }
+  bar.toggleAttribute("data-active", value);
   for (const control of document.querySelectorAll('[data-action="view"],#project-view-switcher'))
     control.disabled = value;
 }
