@@ -992,6 +992,11 @@ function projectPage() {
 
     <div id="view-toolbar"></div><section id="view-content"></section>`;
 }
+// The Sort menu: Manual order, then the sorts grouped by what they compare.
+const sortGroups = [["", ["order"]], ["Card", ["key", "title", "parent", "assignee"]], ["Progress", ["status", "priority"]], ["Dates", ["due", "created"]]];
+const sortNames = { order: "Manual order", key: "Card ID", title: "Title A–Z", parent: "Parent", assignee: "Assignee", status: "Status", priority: "Priority", due: "Due date", created: "Date created" };
+// Text in natural order (PEN-9 before PEN-10), with empty values last.
+const byText = (a, b) => !a - !b || String(a || "").localeCompare(String(b || ""), undefined, { numeric: true });
 function filteredTasks() {
   const query = state.search.toLowerCase().trim();
   const list = state.tasks.filter(
@@ -1014,9 +1019,12 @@ function filteredTasks() {
             .includes(query),
         )),
   );
+  const parentKeys = state.sort === "parent" && new Map(state.tasks.map((t) => [t.id, t.key]));
   return list.sort((a, b) => {
     let result;
     if (state.sort === "order") result = (a.order || 0) - (b.order || 0);
+    else if (state.sort === "parent") result = byText(parentKeys.get(a.parent), parentKeys.get(b.parent));
+    else if (state.sort === "key" || state.sort === "assignee") result = byText(a[state.sort], b[state.sort]);
     else if (state.sort === "priority")
       result = priorities.indexOf(a.priority) - priorities.indexOf(b.priority);
     else if (state.sort === "status")
@@ -1079,7 +1087,7 @@ function renderViewNow(onlyContent) {
         ? boardToolbar()
         : state.view === "overview"
           ? ""
-          : `<div class="toolbar"><div class="toolbar-left"><label class="search">${icon("search")}<input id="search" type="search" aria-label="Search tasks" placeholder="Find a task…" value="${esc(state.search)}"></label><select id="filter-status" class="filter" aria-label="Filter by status"><option value="all">All statuses</option>${options(statuses, state.status, statusNames)}</select><select id="filter-type" class="filter" aria-label="Filter by task type"><option value="all">All types</option>${options(types, state.type)}</select>${bookmarks.button("view", state.project.id, state.view)}</div><div class="toolbar-right"><span class="caption">A place for every little detail</span><select id="sort" class="filter" aria-label="Sort tasks">${options(["created", "order", "title", "priority", "due", "status"], state.sort, { created: "Date created", order: "Manual order", title: "Title A–Z", priority: "Priority", due: "Due date", status: "Status" })}</select></div><div class="view-controls"></div></div>`;
+          : `<div class="toolbar"><div class="toolbar-left"><label class="search">${icon("search")}<input id="search" type="search" aria-label="Search tasks" placeholder="Find a task…" value="${esc(state.search)}"></label><select id="filter-status" class="filter" aria-label="Filter by status"><option value="all">All statuses</option>${options(statuses, state.status, statusNames)}</select><select id="filter-type" class="filter" aria-label="Filter by task type"><option value="all">All types</option>${options(types, state.type)}</select>${bookmarks.button("view", state.project.id, state.view)}</div><div class="toolbar-right"><span class="caption">A place for every little detail</span><select id="sort" class="filter" aria-label="Sort tasks">${sortGroups.map(([group, values]) => (group ? `<optgroup label="${group}">${options(values, state.sort, sortNames)}</optgroup>` : options(values, state.sort, sortNames))).join("")}</select></div><div class="view-controls"></div></div>`;
   }
   const content = $("#view-content");
   const previousKanban = onlyContent && state.view === "kanban" ? content.querySelector(".kanban") : null;

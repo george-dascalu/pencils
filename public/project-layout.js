@@ -47,7 +47,7 @@ export function projectLayout(ctx) {
     $(".topbar-view-tools")?.remove();
     $("#view-toolbar")?.removeAttribute("data-empty");
   }
-  const sortIcons = { created: "clock", title: "case-sensitive", priority: "flag", due: "calendar", status: "status" };
+  const sortIcons = { created: "clock", key: "task", title: "case-sensitive", parent: "tree", assignee: "person", priority: "flag", due: "calendar", status: "status" };
   // Focus (and the caret) go back where they were: on the control itself or, if a repaint replaced
   // it, on its replacement.
   function compactToolbar() {

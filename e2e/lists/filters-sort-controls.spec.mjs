@@ -99,7 +99,7 @@ onDevices(["desktop", "phone"], () => test("the Sort button shows which sort is 
   await open(page, "list");
   const sort = page.locator("[data-sort-menu]");
   const glyphs = [];
-  for (const name of ["Title A–Z", "Priority", "Due date", "Status", "Date created"]) {
+  for (const name of ["Card ID", "Title A–Z", "Parent", "Assignee", "Priority", "Due date", "Status", "Date created"]) {
     await sort.click();
     await page.locator("#shared-select-menu").getByRole("option", { name, exact: true }).click();
     await expect(sort, `${device}: ${name}`).toHaveAttribute("aria-label", `Sort: ${name}`);

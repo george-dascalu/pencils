@@ -2,6 +2,12 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.20.54 — 2026-10-30
+
+### Added
+
+- Sort cards by Card ID, Parent or Assignee. The Sort menu starts with Manual order, then groups the sorts under Card, Progress and Dates.
+
 ## 0.20.53 — 2026-10-30
 
 ### Added
