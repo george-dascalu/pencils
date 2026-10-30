@@ -50,3 +50,12 @@ test("Alt+Enter links the chosen result into the open document", async ({ page }
   await expect(page.locator("#toasts")).toContainText("Alt+Enter links cards and documents of this project.");
   expect(await editorSource(page)).toBe("See [[SR-1]]");
 });
+
+// Owner report, 30 October 2026: on phones, scrolling the search popup also scrolled the page
+// behind it. Popups keep their scrolling to themselves.
+onDevices(["phone"], () => test("on phones the search popup keeps its scrolling to itself", async ({ page }) => {
+  await page.goto(`${app.base}/#project/${app.project.id}/list`);
+  await page.locator(".topbar .tabs").getByRole("button", { name: "Search", exact: true }).click();
+  await expect(dialog(page)).toBeVisible();
+  expect(await dialog(page).evaluate((el) => getComputedStyle(el).overscrollBehaviorY)).toBe("contain");
+}));

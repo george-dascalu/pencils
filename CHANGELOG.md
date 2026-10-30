@@ -2,6 +2,12 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.20.20 — 2026-10-30
+
+### Fixed
+
+- On phones, scrolling the search popup (or any dialog) no longer scrolls the page behind it.
+
 ## 0.20.19 — 2026-10-30
 
 ### Fixed

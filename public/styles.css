@@ -1113,6 +1113,8 @@ button svg {
   padding: 0;
   width: min(540px, calc(100vw - 32px));
   max-height: 90dvh;
+  /* Scrolling a dialog never carries on into the page behind it (phones). */
+  overscroll-behavior: contain;
   background: #fcfcf8;
   color: var(--ink);
   box-shadow: 0 25px 100px #1e382730;
