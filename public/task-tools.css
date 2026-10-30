@@ -98,6 +98,8 @@ body.task-reordering, body.task-reordering * { cursor: grabbing !important; user
   min-height: 28px;
 }
 .task-row > :is(.tree-toggle, .tree-toggle-spacer) { width: 24px; height: 28px; flex: 0 0 24px; }
+/* A tree without subtasks has nothing to expand: no expand column, so its rows line up with List's. */
+.task-row.tree-flat > .tree-toggle { display: none; }
 .task-row > .task-type { flex: 0 0 24px; justify-content: center; }
 .task-row > .row-task-link { height: 28px; padding: 0; border-radius: 4px; }
 .task-row > .task-id {
@@ -1481,6 +1483,9 @@ html.task-page-open,
   .phone-field { display: grid; place-items: center; flex: none; min-width: 44px; min-height: 44px; margin-block: -6px; padding: 0; border: 0; background: transparent; color: inherit; pointer-events: auto; }
   .phone-field:disabled { pointer-events: none; }
   .task-row.tree-row > .task-reorder-handle { grid-area: 1 / 3; }
+  .task-row.tree-row.tree-flat { grid-template-columns: minmax(0, 1fr) var(--control-height); }
+  .task-row.tree-row.tree-flat > .phone-task { grid-area: 1 / 1; }
+  .task-row.tree-row.tree-flat > .task-reorder-handle { grid-area: 1 / 2; }
   .phone-task-title { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 14px; line-height: 1.4; }
   .phone-task-title.done { text-decoration: line-through; color: var(--muted); }
   .phone-task-meta { display: flex; align-items: center; gap: 6px; min-width: 0; overflow-x: clip; overflow-y: visible; color: var(--muted); font-size: 10px; white-space: nowrap; }

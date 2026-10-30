@@ -1203,7 +1203,7 @@ function dueHTML(t) {
     ? `<span class="due ${t.due < local && !state.config.done.includes(t.status) ? "overdue" : ""}">${esc(formatDay(t.due))}</span>`
     : "";
 }
-function taskRow(t, depth = null, hasChildren = false) {
+function taskRow(t, depth = null, hasChildren = false, flat = false) {
   const done = state.config.done.includes(t.status);
   const priority = t.priority || "none";
   const assignee = t.assignee || "Unassigned";
@@ -1212,7 +1212,7 @@ function taskRow(t, depth = null, hasChildren = false) {
   // The date follows the fields in their box and opens the date editor, in rows and phone summaries.
   const dates = className => `<button type="button" class="${className}" data-row-dates="${esc(t.id)}" aria-label="${esc(t.due ? new Date(`${t.due}T12:00:00`).toLocaleDateString(undefined, { day: "numeric", month: "short" }) : "Set dates")} — edit dates for ${esc(t.title)}" aria-haspopup="dialog" aria-expanded="false" title="${esc(`Start: ${t.start || "Not set"} · Due: ${t.due || "Not set"}`)}">${dueHTML(t) || '<span class="due">—</span>'}</button>`;
   const phoneField = (field, name, value, chip) => `<button type="button" class="phone-field" data-action="phone-field" data-field="${field}" data-id="${esc(t.id)}" aria-haspopup="listbox" aria-label="${name} for ${esc(t.title)}: ${esc(value)}" ${t.source ? "disabled" : ""}>${chip}</button>`;
-  return `<div data-task-order-row="${esc(t.id)}" data-task-order-group="${esc(depth !== null || state.groupBy === "none" ? "" : t[state.groupBy || "status"] || "")}" class="task-row ${depth !== null ? "tree-row" : ""} ${t.contextOnly ? "tree-context" : ""}" ${depth !== null ? `style="--depth:${Math.min(depth, 12)}"` : ""}>
+  return `<div data-task-order-row="${esc(t.id)}" data-task-order-group="${esc(depth !== null || state.groupBy === "none" ? "" : t[state.groupBy || "status"] || "")}" class="task-row ${depth !== null ? "tree-row" : ""}${flat ? " tree-flat" : ""} ${t.contextOnly ? "tree-context" : ""}" ${depth !== null ? `style="--depth:${Math.min(depth, 12)}"` : ""}>
     ${depth !== null ? `<button class="tree-toggle ${state.collapsed.has(t.id) ? "collapsed" : ""}" data-action="collapse" data-id="${esc(t.id)}" aria-label="${state.collapsed.has(t.id) ? "Expand" : "Collapse"} subtasks" ${hasChildren ? `aria-expanded="${!state.collapsed.has(t.id)}" title="${state.tasks.filter(c => c.parent === t.id).length} subtasks"` : "disabled"}>${hasChildren ? icon("chevron") : ""}</button>` : ""}
     ${taskReorderHandle(t, esc)}
     <button type="button" class="task-type row-task-link ${esc(t.type)}" data-action="task-open" data-id="${esc(t.id)}" aria-label="Open ${esc(t.title)} (${esc(label(t.type))})" title="${esc(label(t.type))} · Open task details">${icon(t.type)}</button>
@@ -1246,11 +1246,13 @@ function treeView(tasks) {
     childMap.get(t.parent).push(t);
   }
   const children = (id) => childMap.get(id) || [];
+  // With no subtasks in the project there's nothing to expand, and the rows line up with List's.
+  const ids = new Set(state.tasks.map((t) => t.id)), flat = !state.tasks.some((t) => t.parent && ids.has(t.parent));
   function walk(t, depth) {
     if (seen.has(t.id)) return "";
     seen.add(t.id);
     const subs = children(t.id);
-    let out = taskRow(t, depth, !!subs.length);
+    let out = taskRow(t, depth, !!subs.length, flat);
     if (!state.collapsed.has(t.id))
       out += subs.map((s) => walk(s, depth + 1)).join("");
     else {

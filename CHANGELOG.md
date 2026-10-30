@@ -2,6 +2,12 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.20.56 — 2026-10-30
+
+### Changed
+
+- Tree lines its cards up with List when none has subtasks, instead of leaving an empty column for the expand button.
+
 ## 0.20.55 — 2026-10-30
 
 ### Fixed
