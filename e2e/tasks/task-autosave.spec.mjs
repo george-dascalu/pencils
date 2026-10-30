@@ -141,8 +141,9 @@ test("comments and history share one pane clear of the sidebar at desktop, lapto
   }
   await page.setViewportSize({ width: 1400, height: 1000 });
   await expect(page.locator("#task-form")).toHaveCount(1);
-  // Since 0.19.0 History is a pane without its own close button; Details returns.
-  await page.locator("[data-feature=task-details]").click();
+  // Since 0.19.0 History is a pane without its own close button; since 0.20.14 a second tap on it
+  // returns to the details, as wide screens have no Info button.
+  await page.locator("[data-feature=task-history]").click();
   await expect(page.locator(".task-history-panel")).toBeHidden();
 });
 
@@ -190,8 +191,8 @@ test("the board's task panel updates its card live, keeps its header actions in 
         expect(box.x).toBeGreaterThanOrEqual(p.x + p.width);
       }
       expect(await comments(page).evaluate((el) => el.scrollWidth <= el.clientWidth + 1)).toBe(true);
-      // Since 0.19.0 Comments is a pane without its own close button.
-      await page.locator("[data-feature=task-details]").click();
+      // Since 0.19.0 Comments is a pane without its own close button; a second tap returns to the details (0.20.14).
+      await page.locator("[data-feature=task-comments]").click();
       await expect(comments(page)).toHaveCount(0);
     }
   await page.setViewportSize({ width: 1400, height: 1000 });

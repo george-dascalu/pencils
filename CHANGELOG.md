@@ -2,6 +2,12 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.20.14 — 2026-10-30
+
+### Changed
+
+- Where the card editor shows History and Comments beside the details (the board's panel from 1100px wide, the card editor in other views from 1320px), its pane buttons show only History and Comments; tapping the open pane's button again closes it. Narrower screens keep the Info button to switch back to the details.
+
 ## 0.20.13 — 2026-10-30
 
 ### Added

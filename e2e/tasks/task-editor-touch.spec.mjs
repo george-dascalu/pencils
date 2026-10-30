@@ -50,6 +50,12 @@ const reviewTests = (device, phone) => {
     await tapOrClick(device, form(page).locator('[data-editor-pane="history"]'));
     await expect(dialog).toHaveClass(/\bwith-task-history\b/);
     await expect(dialog).not.toHaveClass(/\bwith-task-comments\b/);
+    // From 1100px the details stay beside the other panes, so Info is hidden there (29 Oct, item 17).
+    if (page.viewportSize().width >= 1100) {
+      await expect(form(page).locator('[data-editor-pane="details"]')).toBeHidden();
+      await expect(form(page).locator(".task-metadata")).toBeVisible();
+      return;
+    }
     await tapOrClick(device, form(page).locator('[data-editor-pane="details"]'));
     await form(page).locator(".task-metadata").waitFor();
   });

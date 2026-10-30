@@ -1103,6 +1103,15 @@ button.dependency-row:hover {
 /* The pane switcher and the duplicate/archive/delete actions are two groups of icon buttons. */
 .task-pane-switcher, .task-secondary-actions { display: flex; flex: none; align-items: center; border: 1px solid var(--line); border-radius: 6px; }
 .task-pane-switcher [aria-pressed="true"] { color: var(--green); background: var(--surface-soft); box-shadow: inset 0 0 0 1px var(--green); }
+/* Where History and Comments sit beside the details, Info has nothing to switch to: from 1100px in
+   the board's panel (board-task-editor.js), from 1320px in the project editor, which docks them over
+   its right edge until then. */
+@media (min-width: 1100px) {
+  .board-task-editor:not(.project-task-editor) .task-pane-switcher [data-editor-pane="details"] { display: none; }
+}
+@media (min-width: 1320px) {
+  .task-pane-switcher [data-editor-pane="details"] { display: none; }
+}
 @media (max-width: 1099px) {
   .board-task-editor:is(.with-task-comments, .with-task-history) .task-editor-content { display: flex; min-height: 0; }
   .board-task-editor .task-editor-content > :is(.task-comments-panel, .task-history-panel) {

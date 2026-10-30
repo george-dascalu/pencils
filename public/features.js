@@ -857,6 +857,9 @@ export function installFeatures(ctx) {
       storage.set(activeDraft, null);
       $(".draft-notice")?.remove();
     }
+    // A second tap on the open pane returns to the details: wide screens have no Info button.
+    // Read before the save below, which may wait, and skip it when only closing the pane.
+    if (["task-comments", "task-history"].includes(action) && el?.getAttribute("aria-pressed") === "true") action = "task-details";
     if (
       [
         "task-duplicate",
@@ -879,7 +882,8 @@ export function installFeatures(ctx) {
     if (action === "task-details" && currentTask) {
       taskComments?.close();
       taskModal?.hideHistory();
-      $("[data-feature=task-details]")?.focus({ preventScroll: true });
+      const info = $("[data-feature=task-details]");
+      (info?.getClientRects().length ? info : el)?.focus({ preventScroll: true });
     }
     if (action === "task-comments" && currentTask) {
       taskModal?.hideHistory();

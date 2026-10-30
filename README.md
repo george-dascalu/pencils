@@ -353,7 +353,7 @@ Open **People** in the sidebar’s **Teams** section to add people with optional
 
 People and teams are stored in organisation Markdown frontmatter; projects store team IDs, and tasks retain the readable assignee name plus a stable `assignee_id`. These remain available offline and in Obsidian. Opening and saving a legacy task preserves its prior assignment and tags.
 
-Existing task editors save changes automatically while you work. The header groups Details, Version history and Comments; narrow screens switch between them in the same panel, while wide screens show comments/history alongside the details. On phones, type and ID precede a smaller title. Duplicate, Archive and Delete form a group of icons before Close on every screen. Failed saves stay in the browser queue and retry when the server is reachable. Closing flushes pending edits; incomplete required fields remain recoverable as a browser draft. New tasks still use Create task.
+Existing task editors save changes automatically while you work. The header groups Details, Version history and Comments; narrow screens switch between them in the same panel, while wide screens show comments/history alongside the details (the board's panel from 1100px, other views from 1320px) and leave out the Details button; tapping the open pane's button again closes it. On phones, type and ID precede a smaller title. Duplicate, Archive and Delete form a group of icons before Close on every screen. Failed saves stay in the browser queue and retry when the server is reachable. Closing flushes pending edits; incomplete required fields remain recoverable as a browser draft. New tasks still use Create task.
 
 ## Project workflows
 

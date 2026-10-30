@@ -195,7 +195,9 @@ onDevices(["ipad-portrait", "desktop"], () => {
       await expectStill(page, frozen, "Header swipes at boundaries stay in the panel");
     }
     for (const pane of ["comments", "history", "details"]) {
-      await tapOrClick(device, form(page).locator(`[data-editor-pane="${pane}"]`));
+      // Wide screens have no Info button; a second tap on the open pane returns to the details (0.20.14).
+      const button = form(page).locator(`[data-editor-pane="${pane}"]`);
+      await tapOrClick(device, (await button.isVisible()) ? button : form(page).locator('[data-editor-pane="history"]'));
       await expect(form(page).locator(`[data-editor-pane="${pane}"]`)).toHaveAttribute("aria-pressed", "true");
       await page.mouse.move(x, y);
       await page.mouse.wheel(0, 400);

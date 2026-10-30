@@ -197,7 +197,6 @@ test("history opens beside the editor and restores a version in the same dialog"
 test("Escape closes the type picker without closing the editor", { tag: "@gate" }, async ({ page }) => {
   const card = await createCard();
   await visit(page, card.id);
-  await page.locator('.task-pane-switcher [data-feature="task-details"]').first().click();
   await page.locator("[data-task-picker=type] .task-picker-trigger").click();
   await page.keyboard.press("Escape");
   await expect(page.locator("dialog")).toBeVisible();
