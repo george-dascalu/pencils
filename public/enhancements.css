@@ -323,6 +323,7 @@ summary:focus-visible,
 }
 .dashboard-deadlines small {
   display: block;
+  width: fit-content;
   color: var(--muted);
   margin-top: 4px;
 }

@@ -2,6 +2,12 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.20.32 — 2026-10-30
+
+### Fixed
+
+- In Overview's Upcoming and overdue list, each assignee box is as wide as its name instead of stretching to the card's title.
+
 ## 0.20.31 — 2026-10-30
 
 ### Changed
