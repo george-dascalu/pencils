@@ -67,7 +67,7 @@ export function taskRowEditor(ctx) {
           : active.dataset.taskReorder
             ? "[data-task-reorder]"
             : active.dataset.action
-              ? `[data-action="${CSS.escape(active.dataset.action)}"]`
+              ? `[data-action="${CSS.escape(active.dataset.action)}"]${active.dataset.field ? `[data-field="${CSS.escape(active.dataset.field)}"]` : ""}`
               : ".phone-task-open, .task-id",
     ) || [])].find(el => el.getClientRects().length && !el.closest("[inert]"));
     if (next) {

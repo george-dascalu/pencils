@@ -228,7 +228,7 @@ onDevices(Object.keys(widths), (device) => {
         test("phone card comments fill the width and the panes switch between details, comments and history", async ({ page }) => {
           await openView(page, "list");
           // Phone rows open the card from their summary button (0.18.23).
-          await page.locator(".task-row > .phone-task-open").first().click();
+          await page.locator(".task-row .phone-task-open").first().click();
           await page.locator('[data-editor-pane="comments"]').click();
           await page.locator(".task-comments-panel").waitFor();
           await expect(page.locator(".task-editor-content > .dialog-body")).toBeHidden();

@@ -1189,6 +1189,8 @@ function taskRow(t, depth = null, hasChildren = false) {
   const priority = t.priority || "none";
   const assignee = t.assignee || "Unassigned";
   const control = (field, name) => `name="${field}" data-row-field="${field}" data-id="${esc(t.id)}" aria-label="${name} for ${esc(t.title)}" ${t.source ? 'disabled title="Managed by the connected source"' : ""}`;
+  // Phones show a summary that opens the card; its fields open their own picker (the row's select).
+  const phoneField = (field, name, value, chip) => `<button type="button" class="phone-field" data-action="phone-field" data-field="${field}" data-id="${esc(t.id)}" aria-haspopup="listbox" aria-label="${name} for ${esc(t.title)}: ${esc(value)}" ${t.source ? "disabled" : ""}>${chip}</button>`;
   return `<div data-task-order-row="${esc(t.id)}" data-task-order-group="${esc(depth !== null || state.groupBy === "none" ? "" : t[state.groupBy || "status"] || "")}" class="task-row ${depth !== null ? "tree-row" : ""} ${t.contextOnly ? "tree-context" : ""}" ${depth !== null ? `style="--depth:${Math.min(depth, 12)}"` : ""}>
     ${depth !== null ? `<button class="tree-toggle ${state.collapsed.has(t.id) ? "collapsed" : ""}" data-action="collapse" data-id="${esc(t.id)}" aria-label="${state.collapsed.has(t.id) ? "Expand" : "Collapse"} subtasks" ${hasChildren ? `aria-expanded="${!state.collapsed.has(t.id)}" title="${state.tasks.filter(c => c.parent === t.id).length} subtasks"` : "disabled"}>${hasChildren ? icon("chevron") : ""}</button>` : ""}
     ${taskReorderHandle(t, esc)}
@@ -1199,7 +1201,7 @@ function taskRow(t, depth = null, hasChildren = false) {
     <label class="row-status row-choice" ${taskColorAttributes(state, "status", t.status)} title="${esc(statusNames[t.status] || t.status)}"><span class="field-chip field-chip-status" aria-hidden="true">${esc(statusNames[t.status] || t.status)}</span><select ${control("status", "Status")}>${options(nextStatuses(state.config, t.status), t.status, statusNames)}</select></label>
     <label class="row-priority row-choice" ${taskColorAttributes(state, "priority", priority)} title="${esc(priorityLabel(priority))} priority"><span class="field-chip field-chip-priority priority ${esc(priority)}" aria-hidden="true">${icon(`priority-${priority}`)}</span><select ${control("priority", "Priority")}>${options(priorities, priority, priorityLabels)}</select></label></div>
     <button type="button" class="row-due" data-row-dates="${esc(t.id)}" aria-label="${esc(t.due ? new Date(`${t.due}T12:00:00`).toLocaleDateString(undefined, { day: "numeric", month: "short" }) : "Set dates")} — edit dates for ${esc(t.title)}" aria-haspopup="dialog" aria-expanded="false" title="${esc(`Start: ${t.start || "Not set"} · Due: ${t.due || "Not set"}`)}">${dueHTML(t) || '<span class="due">—</span>'}</button>
-    <button type="button" class="phone-task-open" data-action="task-open" data-id="${esc(t.id)}" aria-label="Open ${esc(t.key || t.id)}: ${esc(t.title)}"><span class="phone-task-title ${done ? "done" : ""}">${esc(t.title)}</span><span class="phone-task-meta">${icon(t.type)}<span>${esc(t.key || t.id)}</span><span class="field-box" ${fieldBoxStyle(state, priority)}>${assigneeHTML(t)}<span class="field-chip field-chip-status phone-task-status" ${taskColorAttributes(state, "status", t.status)}>${esc(statusNames[t.status] || t.status)}</span><span class="field-chip field-chip-priority phone-task-priority" ${taskColorAttributes(state, "priority", priority)} title="${esc(priorityLabel(priority))}">${icon(`priority-${priority}`)}</span></span>${dueHTML(t)}</span></button></div>`;
+    <div class="phone-task"><button type="button" class="phone-task-open" data-action="task-open" data-id="${esc(t.id)}" aria-label="Open ${esc(t.key || t.id)}: ${esc(t.title)}"><span class="phone-task-title ${done ? "done" : ""}">${esc(t.title)}</span></button><span class="phone-task-meta">${icon(t.type)}<span>${esc(t.key || t.id)}</span><span class="field-box phone-task-fields" ${fieldBoxStyle(state, priority)}>${phoneField("assignee", "Assignee", assignee, assigneeHTML(t))}${phoneField("status", "Status", statusNames[t.status] || t.status, `<span class="field-chip field-chip-status phone-task-status" ${taskColorAttributes(state, "status", t.status)}>${esc(statusNames[t.status] || t.status)}</span>`)}${phoneField("priority", "Priority", priorityLabel(priority), `<span class="field-chip field-chip-priority phone-task-priority" ${taskColorAttributes(state, "priority", priority)}>${icon(`priority-${priority}`)}</span>`)}</span>${dueHTML(t)}</span></div></div>`;
 }
 function listView(tasks) {
   return statuses
@@ -2189,6 +2191,11 @@ document.addEventListener("click", async (event) => {
       case "task-open":
         taskDialog(id);
         break;
+      case "phone-field": {
+        const select = el.closest(".task-row")?.querySelector(`select[data-row-field="${el.dataset.field}"]`);
+        if (select) selectMenus.open(select, el);
+        break;
+      }
       case "wiki-open":
         closeDialog();
         if (!state.dialog) taskDialog(id);

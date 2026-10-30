@@ -205,7 +205,8 @@ onDevices(["phone"], () => test("phone List and Tree summaries use the list chip
     };
     listChips(ref, LIST.phone, chips, `${view} phone summary`);
     const surface = await surfaceColor(page);
-    await expect(page.locator(`${meta} .field-box`), "neutral fill like the other lists").toHaveCSS("background-color", surface);
+    // The box is drawn behind the 44px field targets (29 Oct, item 16).
+    expect(await page.locator(`${meta} .field-box`).evaluate((el) => getComputedStyle(el, "::before").backgroundColor), "neutral fill like the other lists").toBe(surface);
     await expect(page.locator(`.task-row[data-task-order-row="${app.children[0].id}"] .phone-task-meta .task-assignee`), "unassigned cards show the empty avatar like other lists").toHaveCount(1);
     const row = await page.locator(`.task-row[data-task-order-row="${app.children[1].id}"]`).boundingBox();
     expect(row.height, `rows stay compact: ${row.height}`).toBeLessThanOrEqual(76);

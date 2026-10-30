@@ -30,8 +30,8 @@ async function boxed(box, fields, color, label) {
     await expect(box.locator(field), `${label}: ${field} has no border of its own`).toHaveCSS("border-top-color", "rgba(0, 0, 0, 0)");
   }
   const expected = await mixed(box.page(), color);
-  // List and Tree rows draw their box at chip height behind taller targets (::after); other boxes are the element itself.
-  await expect.poll(() => box.evaluate((el) => getComputedStyle(el, el.matches(".row-fields") ? "::after" : null).borderTopColor), `${label}: border in the priority colour`).toBe(expected);
+  // List and Tree rows and phone summaries draw their box at chip height behind taller targets (::after); other boxes are the element itself.
+  await expect.poll(() => box.evaluate((el) => getComputedStyle(el, el.matches(".row-fields, .phone-task-fields") ? "::after" : null).borderTopColor), `${label}: border in the priority colour`).toBe(expected);
 }
 const row = (page, task) => page.locator(`.task-row[data-task-order-row="${task.id}"]`);
 

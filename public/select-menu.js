@@ -175,7 +175,8 @@ export function installSelectMenus({ esc, icon, taskColor = () => "" }) {
           if (event.pointerType !== "touch") control.focus({ preventScroll: true });
         } else if (menu?.contains(event.target)) {
           event.stopImmediatePropagation();
-        } else if (type === "pointerdown") close();
+        } else if (type === "pointerdown" && !anchorEl?.contains(event.target)) close();
+        // A tap on the menu's own anchor reaches open(), which toggles it closed.
       },
       true,
     );

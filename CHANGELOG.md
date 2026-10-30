@@ -2,6 +2,12 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.20.13 — 2026-10-30
+
+### Added
+
+- On phones, tapping a List or Tree row's assignee, status or priority opens that field's picker and saves your choice without opening the card; tapping anywhere else on the row still opens the card.
+
 ## 0.20.12 — 2026-10-29
 
 ### Changed

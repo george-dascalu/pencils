@@ -64,7 +64,7 @@ onDevices(["phone"], () => test("phone list summary reads type, ID, assignee, st
   await page.goto(url("list"));
   const meta = page.locator(`.task-row[data-task-order-row="${app.tasks[1].id}"] .phone-task-meta`);
   await meta.waitFor();
-  assertIncreasing(await lefts(meta, [":scope > .icon", ":scope > span:not([class])", ":scope > .field-box > .task-assignee", ":scope > .field-box > .phone-task-status", ":scope > .field-box > .phone-task-priority"]), ["type", "ID", "assignee", "status", "priority"], "phone summary");
+  assertIncreasing(await lefts(meta, [":scope > .icon", ":scope > span:not([class])", ":scope > .field-box .task-assignee", ":scope > .field-box .phone-task-status", ":scope > .field-box .phone-task-priority"]), ["type", "ID", "assignee", "status", "priority"], "phone summary");
 }));
 
 onDevices(["desktop", "ipad", "phone"], () => {

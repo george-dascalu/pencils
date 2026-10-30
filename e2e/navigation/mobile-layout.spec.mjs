@@ -56,7 +56,8 @@ onDevices(["phone"], () => {
     await expect(page.locator(".mobile-menu")).toHaveAttribute("aria-expanded", "false");
     const row = page.locator(".task-row").first();
     expect((await row.boundingBox()).height).toBeLessThanOrEqual(76);
-    expect((await row.locator(".phone-task-open").boundingBox()).height).toBeGreaterThanOrEqual(44);
+    // Since 29 Oct (item 16) the open button's tap area stretches over the whole summary.
+    expect((await row.locator(".phone-task").boundingBox()).height).toBeGreaterThanOrEqual(44);
     await row.locator(".phone-task-open").click();
     await page.locator("#task-form").waitFor();
     await expect(page.locator("#task-form [name=title]")).toBeVisible();

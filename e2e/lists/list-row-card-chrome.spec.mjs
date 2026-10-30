@@ -102,7 +102,8 @@ onDevices(["phone"], () => test("phone list rows show the task summary and the d
   await open(page, "list");
   const row = taskRow(page, app.tasks[1].id);
   await expect(row.locator(".check-button"), "no completion checkbox on the phone row").toHaveCount(0);
-  const summary = row.locator(".phone-task-open");
+  // The summary's tap area (the open button stretched over it, 29 Oct item 16).
+  const summary = row.locator(".phone-task");
   const handle = row.locator(".task-reorder-handle");
   await expect(summary).toBeVisible();
   await expect(handle).toBeVisible();
@@ -110,7 +111,7 @@ onDevices(["phone"], () => test("phone list rows show the task summary and the d
   expect(s.height >= 44 && h.height >= 44, "touch targets keep 44px").toBe(true);
   expect(s.x, `summary starts at the row edge: ${s.x} vs ${r.x}`).toBeLessThanOrEqual(r.x + 8);
   expect(s.x + s.width, "summary ends before the handle").toBeLessThanOrEqual(h.x + 1);
-  await summary.click();
+  await row.locator(".phone-task-open").click();
   await page.locator(`#task-form[data-id="${app.tasks[1].id}"]`).waitFor();
 }));
 

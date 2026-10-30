@@ -1425,7 +1425,7 @@ html.task-page-open,
 
 .task-card-description li:has(> input[type="checkbox"]) { list-style: none; }
 
-.phone-task-open { display: none; }
+.phone-task { display: none; }
 @media (max-width: 600px) {
   .task-row, .task-row.tree-row {
     display: grid;
@@ -1436,13 +1436,25 @@ html.task-page-open,
   .task-row.tree-row { grid-template-columns: var(--control-height) minmax(0, 1fr) var(--control-height); padding-inline-start: calc(2px + min(var(--depth, 0), 4) * 8px); }
   .task-row > :is(.task-type, .task-id, .row-title, .row-fields, .row-due, .tree-toggle-spacer) { display: none; }
   .task-row > .task-reorder-handle { grid-area: 1 / 2; align-self: center; opacity: .65; }
-  .task-row > .phone-task-open { display: flex; grid-area: 1 / 1; flex-direction: column; align-items: stretch; justify-content: center; text-align: left; min-width: 0; min-height: calc(var(--control-height) + 16px); gap: 3px; padding: 4px 6px; border-radius: 4px; }
+  .task-row > .phone-task { position: relative; display: flex; grid-area: 1 / 1; flex-direction: column; align-items: stretch; justify-content: center; text-align: left; min-width: 0; min-height: calc(var(--control-height) + 16px); gap: 6px; padding: 4px 6px; border-radius: 4px; }
   .task-row.tree-row > .tree-toggle { grid-area: 1 / 1; align-self: center; }
-  .task-row.tree-row > .phone-task-open { grid-area: 1 / 2; }
+  .task-row.tree-row > .phone-task { grid-area: 1 / 2; }
+  /* The title is the open button, and its ::after stretches the tap area over the whole summary;
+     the meta line lets taps through except on the fields, which open their own pickers and have
+     44px targets that overlap the row's padding. */
+  .phone-task-open { display: block; min-width: 0; margin: 0; padding: 0; border: 0; background: transparent; color: inherit; font: inherit; text-align: left; }
+  .phone-task-open::after { content: ""; position: absolute; inset: 0; border-radius: 4px; }
+  .phone-task-open:focus-visible { outline: none; }
+  .phone-task-open:focus-visible::after { outline: var(--focus-ring); }
+  .phone-task-meta { position: relative; pointer-events: none; }
+  /* The fields' targets reach 6px above the meta line, so the summary's gap keeps them off the title. */
+  .phone-field { display: grid; place-items: center; flex: none; min-width: 44px; min-height: 44px; margin-block: -6px; padding: 0; border: 0; background: transparent; color: inherit; pointer-events: auto; }
+  .phone-field:disabled { pointer-events: none; }
+  .phone-task-fields > [data-field="status"] { flex: 0 1 auto; }
   .task-row.tree-row > .task-reorder-handle { grid-area: 1 / 3; }
-  .phone-task-title { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 14px; line-height: 1.4; }
+  .phone-task-title { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 14px; line-height: 1.4; }
   .phone-task-title.done { text-decoration: line-through; color: var(--muted); }
-  .phone-task-meta { display: flex; align-items: center; gap: 6px; min-width: 0; overflow: hidden; color: var(--muted); font-size: 10px; white-space: nowrap; }
+  .phone-task-meta { display: flex; align-items: center; gap: 6px; min-width: 0; overflow-x: clip; overflow-y: visible; color: var(--muted); font-size: 10px; white-space: nowrap; }
   .phone-task-meta > .icon { width: 12px; height: 12px; flex-shrink: 0; }
   .phone-task-priority { color: var(--task-color-ink, var(--muted)); }
   .phone-task-meta .task-assignee { font-size: var(--type-initials); flex-shrink: 0; }
