@@ -309,3 +309,25 @@ onDevices(["phone", "ipad"], () => {
     });
   }
 });
+
+// Owner request, 30 October 2026 (iPad): one picker at a time, the date editor opens below its
+// date like the other menus when it fits, and it has no "Dates" title.
+onDevices(["desktop", "ipad"], () => test("the date editor and the field menus close each other, and it opens below without a title", async ({ page, device }) => {
+  await open(page, "list");
+  const menu = page.locator("#shared-select-menu");
+  const tap = (locator) => (device === "ipad" ? locator.tap() : locator.click());
+  await tap(field(page, "priority"));
+  await expect(menu).toBeVisible();
+  const due = row(page).locator(".row-due");
+  await tap(due);
+  await expect(dates(page)).toBeVisible();
+  await expect(menu, `${device}: opening the dates closes the menu`).toBeHidden();
+  const [trigger, panel] = [await due.boundingBox(), await page.locator("#task-dates-popover").boundingBox()];
+  expect(panel.y, `${device}: below its date ${JSON.stringify({ trigger, panel })}`).toBeGreaterThanOrEqual(trigger.y + trigger.height);
+  await expect(page.locator("#task-dates-popover").getByRole("heading"), `${device}: no title`).toHaveCount(0);
+  await expect(page.locator("#task-dates-popover").getByRole("button", { name: "Close date editor" })).toBeVisible();
+  await tap(field(page, "priority"));
+  await expect(menu).toBeVisible();
+  await expect(dates(page), `${device}: opening a menu closes the dates`).toHaveCount(0);
+  await page.keyboard.press("Escape");
+}));

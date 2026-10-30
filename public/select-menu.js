@@ -126,6 +126,8 @@ export function installSelectMenus({ esc, icon, taskColor = () => "" }) {
       anchor.setAttribute("aria-expanded", "true");
     }
     menu.showPopover();
+    // One picker at a time: the date editor closes when a menu opens (task-date-editor.js).
+    document.dispatchEvent(new CustomEvent("picker-open", { detail: menu }));
     paint();
     const current =
       menu.querySelector('[aria-selected="true"]:not(:disabled)') ||

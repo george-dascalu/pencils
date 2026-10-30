@@ -2,6 +2,17 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.20.44 — 2026-10-30
+
+### Fixed
+
+- Only one picker is open at a time: opening a board card's dates closes its assignee, status or priority menu, and the other way round.
+- The date editor, like the other menus and popovers, opens below what you tapped whenever it fits there, instead of above it when there's more room above.
+
+### Changed
+
+- The date editor has no "Dates" title; Clear dates and the close button stay.
+
 ## 0.20.43 — 2026-10-30
 
 ### Fixed
