@@ -2,7 +2,7 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
-## Unreleased
+## 0.20.21 — 2026-10-30
 
 ### Changed
 

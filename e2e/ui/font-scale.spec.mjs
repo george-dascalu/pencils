@@ -101,7 +101,10 @@ onDevices(["desktop", "ipad", "phone"], (device) => {
       relationship: await px(page, ".task-relationship-title"),
     };
     expect(sizes.title, `title ${JSON.stringify(sizes)}`).toBe(s.title);
-    for (const key of ["description", "status", "start", "due", "relationship"]) expect(sizes[key], `${key} ${JSON.stringify(sizes)}`).toBe(s.body);
+    for (const key of ["description", "status", "start", "due"]) expect(sizes[key], `${key} ${JSON.stringify(sizes)}`).toBe(s.body);
+    // On phones relationship rows match the List rows' phone title instead (owner request, 30 Oct).
+    const listTitle = device === "phone" ? 14 : s.body;
+    expect(sizes.relationship, `relationship ${JSON.stringify(sizes)}`).toBe(listTitle);
     await page.locator('[data-editor-pane="comments"]').click();
     await page.locator(".task-comments-panel .comment-body").first().waitFor();
     expect(await px(page, ".task-comments-panel .comment-body"), "posted comment matches the description").toBe(s.body);
