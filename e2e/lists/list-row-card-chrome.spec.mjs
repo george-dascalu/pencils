@@ -68,7 +68,9 @@ test("Tree rows use a narrow toggle", async ({ page }) => {
   }
 });
 
-onDevices(["ipad"], () => test("two-line rows start the second line flush left and keep 44px targets", async ({ page }) => {
+// Rows wrap at 900px and below; since the sidebar opens over the content (0.20.24), that is iPad
+// portrait rather than landscape.
+onDevices(["ipad-portrait"], () => test("two-line rows start the second line flush left and keep 44px targets", async ({ page }) => {
   for (const view of ["list", "tree"]) {
     await open(page, view);
     const row = await lead(page, app.tasks[1].id);

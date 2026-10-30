@@ -5,6 +5,7 @@
 // desktop sidebar.
 import assert from "node:assert/strict";
 import { test, expect, onDevices, useApp } from "../fixtures.mjs";
+import { openSidebar } from "../helpers/menu-controls.mjs";
 
 const app = useApp(async (store) => {
   const project = await store.createProject({ title: "A little more possibility", key: "PD" });
@@ -82,8 +83,9 @@ onDevices(["phone"], () => test("without a project the drawer lists projects str
   assert.equal(await visible(page, "[data-view]"), 0, "no project views");
 }));
 
-onDevices(["desktop"], () => test("the desktop sidebar keeps organisation, projects and teams on view", async ({ page }) => {
+onDevices(["desktop"], () => test("the desktop sidebar holds organisation, projects and teams", async ({ page }) => {
   await open(page);
+  await openSidebar(page);
   for (const selector of [".organisation-switch", ".project-links", ".sidebar-directory"]) assert.ok(await visible(page, selector) > 0, `${selector} shown`);
   assert.equal(await visible(page, "[data-view]"), 0, "no view tiles");
 }));

@@ -4,7 +4,7 @@
 // edits autosave on Back and an invalid open editor is never discarded. Compact phone-width
 // controls and legacy drawing links use the same router. Part of the cross-browser release gate.
 import { test, expect, useApp } from "../fixtures.mjs";
-import { selectProjectView, clickControl } from "../helpers/menu-controls.mjs";
+import { selectProjectView, clickControl, openSettingsPage, openSidebar } from "../helpers/menu-controls.mjs";
 
 const app = useApp(async (store) => {
   const project = await store.createProject({ title: "Navigation project", default_view: "overview" });
@@ -104,23 +104,24 @@ test("settings, directory pages, home and organisation switches join the history
   const { project, other } = app;
   await start(page, projectRoute("kanban"));
   // Since 0.19.31 the top bar's single Settings button opens the project's General first.
-  await page.locator(".topbar [data-action=settings]").click();
+  await openSettingsPage(page);
   await at(page, projectRoute("settings/general"));
   await back(page, projectRoute("kanban"));
   await forward(page, projectRoute("settings/general"));
   await page.locator("[data-action=settings-close]").click();
   await at(page, projectRoute("kanban"));
-  await page.locator(".directory-link[data-page=people]").click();
+  await clickControl(page.locator(".directory-link[data-page=people]"));
   await at(page, `#organisation/${project.organisation}/people`);
-  await page.locator(".directory-link[data-page=teams]").click();
+  await clickControl(page.locator(".directory-link[data-page=teams]"));
   await at(page, `#organisation/${project.organisation}/teams`);
   await back(page, `#organisation/${project.organisation}/people`);
   await back(page, projectRoute("kanban"));
-  await page.locator("[data-action=home]").first().click();
+  await clickControl(page.locator("[data-action=home]").first());
   await at(page, `#organisation/${project.organisation}/home`);
   await reload(page);
   await at(page, `#organisation/${project.organisation}/home`);
   await back(page, projectRoute("kanban"));
+  await openSidebar(page);
   await page.locator("#organisation-select").selectOption(other.id);
   await at(page, `#organisation/${other.id}/home`);
   await back(page, projectRoute("kanban"));
@@ -161,9 +162,9 @@ test("Back saves task edits and never discards an invalid open editor", { tag: "
 test("the latest destination wins when a second Back arrives during a project request", { tag: "@gate" }, async ({ page }) => {
   const { project, second } = app;
   await start(page);
-  await page.locator(`.project-link[data-id="${second.id}"]`).click();
+  await clickControl(page.locator(`.project-link[data-id="${second.id}"]`));
   await at(page, projectRoute("list", second.id));
-  await page.locator(`.project-link[data-id="${project.id}"]`).click();
+  await clickControl(page.locator(`.project-link[data-id="${project.id}"]`));
   await at(page, projectRoute("overview"));
   // A slow response for the second project keeps its request in flight while Back is pressed again.
   await page.route(`**/api/projects/${second.id}`, async (route) => {
@@ -181,7 +182,7 @@ test("the latest destination wins when a second Back arrives during a project re
 test("a missing destination keeps the current page and Forward history", { tag: "@gate" }, async ({ page }) => {
   const { project, second } = app;
   await start(page);
-  await page.locator(`.project-link[data-id="${second.id}"]`).click();
+  await clickControl(page.locator(`.project-link[data-id="${second.id}"]`));
   await at(page, projectRoute("list", second.id));
   await page.route(`**/api/projects/${project.id}`, (route) =>
     route.fulfill({ status: 404, contentType: "application/json", body: JSON.stringify({ error: "Project no longer available" }) }),

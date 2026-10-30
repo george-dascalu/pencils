@@ -2580,6 +2580,7 @@ export function canvasPro(ctx, basic) {
       if (
         !["board", "drawing"].includes(state.view) ||
         state.dialog ||
+        state.menu ||
         (event.key === "Tab" && (event.ctrlKey || event.metaKey || event.altKey)) ||
         event.target.closest(".board-task-editor")
       )

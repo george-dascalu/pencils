@@ -1,6 +1,6 @@
 // Compact navigation (AGENTS.md, Consistency): the header's project navigation is icon-only
 // with labels and tooltips, New stays a labelled menu, and the header groups never overlap,
-// with the sidebar open or collapsed, from desktop down to phones. In Documents one bar holds
+// from desktop down to phones (the sidebar opens over the page, so it never narrows them). In Documents one bar holds
 // the formatting toolbar and the document actions (since 0.19.31, with no title field and no
 // separate formatting row); Reading hides the text toolbar and keeps search; Live preview
 // brings the formatting back into that bar; Insert, the outline and Page versions open
@@ -37,11 +37,9 @@ for (const [device, width] of sizes) {
       await page.locator(".cm-content").waitFor();
     };
 
-    test("the header is icon-only and the document controls fit, with the sidebar open or collapsed", async ({ page }) => {
+    test("the header is icon-only and the document controls fit", async ({ page }) => {
       await openDocument(page);
-      for (const collapsed of [false, true]) {
-        await page.evaluate((collapsed) => window.PencilsAppearance.write({ collapsed }), collapsed);
-        await expect(page.locator("html")).toHaveAttribute("data-sidebar", collapsed ? "collapsed" : "expanded");
+      {
         // Header layout listeners (resize observers) run before the next paint.
         await nextFrame(page);
         expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);

@@ -47,7 +47,7 @@
 .sidebar-documents .document-explorer-empty { color: #a1b1a4; }
 .sidebar-documents .document-explorer > footer { padding: 8px 0 0; border-top: 1px solid #ffffff13; }
 .sidebar-documents .document-explorer > footer .button { background: transparent; border-color: #ffffff24; color: #c7d3c8; }
-.document-empty-browse { display: none; }
+.document-empty-browse { display: inline-flex; }
 .document-explorer > header {
   display: flex;
   align-items: center;
@@ -418,11 +418,6 @@ span.document-list-callout { display: block; }
   .document-heading { gap: 4px; padding: 8px; }
   #document-form .document-rich-tools { padding: 4px; }
   .document-writing { padding: 16px; }
-}
-@media (min-width: 781px) and (max-width: 990px) {
-  :where(:root:not([data-sidebar="collapsed"])) .document-heading { gap: 4px; padding: 8px; }
-  :where(:root:not([data-sidebar="collapsed"])) #document-form .document-rich-tools { padding: 4px; }
-  :where(:root:not([data-sidebar="collapsed"])) .document-writing { padding: 16px; }
 }
 
 

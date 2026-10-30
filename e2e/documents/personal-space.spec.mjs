@@ -1,6 +1,7 @@
 // Owner request, 29 October 2026 (note-taking research, idea 6): a personal space outside every
 // project, holding documents only, with a Today note in its Daily folder from a "Daily" template.
 import { test, expect, onDevices, useApp } from "../fixtures.mjs";
+import { openSidebar } from "../helpers/menu-controls.mjs";
 import { openNewDocument } from "../helpers/documents.mjs";
 
 const today = new Date().toLocaleDateString("en-CA");
@@ -15,7 +16,7 @@ const app = useApp(async (store) => {
 
 onDevices(["desktop", "phone"], () => test("Today opens the day's note in the personal space, which lists cards from other projects", async ({ page, device }) => {
   await page.goto(`${app.base}/#project/${app.project.id}/list`);
-  if (device === "phone") await page.locator(".mobile-menu").click();
+  await openSidebar(page);
   const todayButton = page.locator(".sidebar").getByRole("button", { name: "Today", exact: true });
   // A double click still makes one note.
   if (device === "desktop") await todayButton.dblclick(); else await todayButton.click();
@@ -35,6 +36,7 @@ test("the personal space stays out of organisation project lists", async ({ page
   await page.goto(`${app.base}/#project/${app.project.id}/list`);
   await expect(page.locator(".project-links")).toContainText("Shared work");
   await expect(page.locator(".project-links")).not.toContainText("Personal");
+  await openSidebar(page);
   await page.locator(".sidebar").getByRole("button", { name: "Personal", exact: true }).click();
   await expect(page.locator(".topbar strong")).toHaveText("Personal");
   await expect(page.locator(".documents-workspace")).toBeVisible();

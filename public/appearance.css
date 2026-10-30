@@ -133,24 +133,6 @@ body {
 .field .title-input {
   font-family: var(--app-font) !important;
 }
-.desktop-sidebar-toggle {
-  flex-shrink: 0;
-}
-@media (min-width: 781px) {
-  :root[data-sidebar="collapsed"] .sidebar {
-    transform: translateX(-100%);
-    visibility: hidden;
-  }
-  :root[data-sidebar="collapsed"] .main {
-    margin-left: 0;
-    width: 100%;
-  }
-}
-@media (max-width: 780px) {
-  .desktop-sidebar-toggle {
-    display: none;
-  }
-}
 .personal-dialog {
   width: min(740px, calc(100vw - 32px));
 }

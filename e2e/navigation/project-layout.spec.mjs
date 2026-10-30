@@ -4,7 +4,7 @@
 // tabs and project actions on desktop and phone widths, and the header columns never overlap.
 // Part of the cross-browser release gate.
 import { test, expect, useApp } from "../fixtures.mjs";
-import { reveal, selectProjectView, selectSettingsPage } from "../helpers/menu-controls.mjs";
+import { reveal, selectProjectView, selectSettingsPage, openSettingsPage, clickControl } from "../helpers/menu-controls.mjs";
 
 const app = useApp(async (store) => {
   const project = await store.demo();
@@ -16,11 +16,9 @@ const app = useApp(async (store) => {
 
 const openProject = async (page) => {
   await page.goto(app.base);
-  await page.locator(`.project-link[data-id="${app.project.id}"]`).click();
-  await page.locator(`.project-link.active[data-id="${app.project.id}"]`).waitFor();
+  await clickControl(page.locator(`.project-link[data-id="${app.project.id}"]`));
+  await page.locator(`.project-link.active[data-id="${app.project.id}"]`).waitFor({ state: "attached" });
 };
-const collapseSidebar = (page) => page.getByRole("button", { name: "Collapse sidebar", exact: true }).click();
-const expandSidebar = (page) => page.getByRole("button", { name: "Expand sidebar", exact: true }).click();
 const pressedTaskLayout = (page) => page.locator('.task-view-switcher [aria-pressed="true"]');
 async function boxOf(page, selector) {
   const handle = await page.waitForFunction((selector) => {
@@ -37,7 +35,6 @@ async function boardSettled(page) {
 
 test("one Tasks tab owns every task layout, with shared search and keyboard selection", { tag: "@gate" }, async ({ page }) => {
   await openProject(page);
-  await collapseSidebar(page);
   expect(await page.locator(".view-tab-group").evaluateAll((groups) => groups.map((g) => [...g.querySelectorAll("[data-view]")].map((el) => el.dataset.view))))
     .toEqual([["overview"], ["documents"], ["planning"], ["tasks"], ["board"]]);
   await selectProjectView(page, "table");
@@ -71,19 +68,18 @@ test("one Tasks tab owns every task layout, with shared search and keyboard sele
 test("each project remembers its own layout, including across reloads", { tag: "@gate" }, async ({ page }) => {
   await openProject(page);
   await selectProjectView(page, "table");
-  await page.locator(`.project-link[data-id="${app.otherProject.id}"]`).click();
-  await page.locator(`.project-link.active[data-id="${app.otherProject.id}"]`).waitFor();
+  await clickControl(page.locator(`.project-link[data-id="${app.otherProject.id}"]`));
+  await page.locator(`.project-link.active[data-id="${app.otherProject.id}"]`).waitFor({ state: "attached" });
   await expect(pressedTaskLayout(page)).toHaveAttribute("data-view", "tree");
   await selectProjectView(page, "list");
   await selectProjectView(page, "board");
   await page.reload();
   await page.locator('.tabs [data-view="tasks"]').click();
   await expect(pressedTaskLayout(page)).toHaveAttribute("data-view", "list");
-  await page.locator(`.project-link[data-id="${app.project.id}"]`).click();
-  await page.locator(`.project-link.active[data-id="${app.project.id}"]`).waitFor();
+  await clickControl(page.locator(`.project-link[data-id="${app.project.id}"]`));
+  await page.locator(`.project-link.active[data-id="${app.project.id}"]`).waitFor({ state: "attached" });
   await expect(pressedTaskLayout(page)).toHaveAttribute("data-view", "table");
   // The command palette switches layouts as well.
-  await collapseSidebar(page);
   await selectProjectView(page, "board");
   await page.keyboard.press("Control+k");
   await page.locator('[data-command="view-tree"]').click();
@@ -118,7 +114,7 @@ async function everyViewSharesTheHeader(page, size) {
     expect(actions, `${view}: shared project actions`).toEqual(header.actions);
     await expect(page.locator(".hero")).toBeHidden();
     // Since 0.19.31 one Settings button replaces the project gear and the avatar.
-    await expect(page.locator(".top-actions [data-action=settings]")).toHaveCount(1);
+    await expect(page.locator(".sidebar [data-action=settings]")).toHaveCount(1);
     await page.locator("#view-content").waitFor({ state: "visible" });
     const content = await boxOf(page, "#view-content");
     expect(content.height, `${view}: content has a visible box`).toBeGreaterThan(0);
@@ -126,18 +122,15 @@ async function everyViewSharesTheHeader(page, size) {
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), `${view}: horizontal overflow`).toBe(true);
     await expect(page.locator('[data-board-menu="project"]')).toHaveCount(0);
     await expect(page.locator(".topbar .new-menu > summary:visible")).toHaveCount(1);
-    await expect(page.locator('.topbar .top-actions [data-action="settings"]')).toHaveCount(1);
+    await expect(page.locator('.topbar [data-action="settings"]'), "Settings is at the bottom of the sidebar (0.20.24)").toHaveCount(0);
     await expect(page.locator(".topbar .tabs")).toHaveCount(1);
     const create = await boxOf(page, size.width > 600 ? "#board-project-tools .new-menu > summary" : ".phone-new-task");
-    const settings = size.width > 600 ? await boxOf(page, '.top-actions [data-action="settings"]') : null;
     if (size.width > 1150) {
       expect(Math.abs(actions.x + actions.width / 2 - (box.x + box.width / 2)), "Project navigation, including New task, is centred in the header").toBeLessThan(1);
       const breadcrumb = await boxOf(page, ".breadcrumb");
-      const topActions = await boxOf(page, ".top-actions");
-      expect(breadcrumb.right <= actions.left && actions.right <= topActions.left, "Project navigation fits between the breadcrumb and version controls").toBe(true);
+      expect(breadcrumb.right <= actions.left && actions.right <= box.right, "Project navigation fits between the breadcrumb and the header's end").toBe(true);
       const nav = await boxOf(page, ".tabs");
       expect(create.x >= nav.right && create.y >= box.y && create.bottom <= box.bottom, "New task follows the navigation in the top row").toBe(true);
-      expect(settings.x, "Settings is on the right").toBeGreaterThanOrEqual(actions.right);
     }
     if (["board", "drawing"].includes(view)) {
       await reveal(page.locator("#saved-view"));
@@ -163,7 +156,6 @@ async function everyViewSharesTheHeader(page, size) {
 
 test("all nine views share the top bar, tabs, actions and filters on desktop", { tag: "@gate" }, async ({ page }) => {
   await openProject(page);
-  await collapseSidebar(page);
   await everyViewSharesTheHeader(page, page.viewportSize());
 });
 
@@ -182,7 +174,7 @@ test("long views scroll, settings lists its sections and table headers share one
   await page.locator(".task-row").last().scrollIntoViewIfNeeded();
   await expect(page.locator(".task-row").last(), "Long views remain scrollable").toBeVisible();
   await page.evaluate(() => window.scrollTo(0, 0));
-  await page.locator('.top-actions [data-action="settings"]').click();
+  await openSettingsPage(page);
   for (const section of ["workflow", "import", "sources", "automation"]) await expect(page.locator(`.settings-navigation [data-settings-section="${section}"]`)).toBeVisible();
   await expect(page.locator('.settings-navigation [data-feature="templates"]')).toHaveCount(0);
   await selectSettingsPage(page, "workflow");
@@ -195,19 +187,17 @@ test("long views scroll, settings lists its sections and table headers share one
   }
 });
 
-test("header columns never overlap at any width with the sidebar open", { tag: "@gate" }, async ({ page }) => {
+// The sidebar opens over the page (0.20.24), so it never narrows the header.
+test("header columns never overlap at any width", { tag: "@gate" }, async ({ page }) => {
   await openProject(page);
   await selectProjectView(page, "table");
-  await collapseSidebar(page);
-  await expandSidebar(page);
   for (const width of [1920, 1440, 1280, 1024, 768, 390]) {
     await page.setViewportSize({ width, height: 900 });
-    const left = await boxOf(page, ".breadcrumb"), middle = await boxOf(page, width <= 600 ? ".phone-new-task" : "#board-project-tools"), right = await boxOf(page, ".top-actions");
-    if (width > 1400) expect(left.right <= middle.left && middle.right <= right.left, `${width}: header columns never overlap with sidebar open`).toBe(true);
-    else expect(left.right, `${width}: breadcrumb and actions never overlap`).toBeLessThanOrEqual(right.left);
+    const left = await boxOf(page, ".breadcrumb"), middle = await boxOf(page, width <= 600 ? ".phone-new-task" : "#board-project-tools");
+    expect(left.right, `${width}: breadcrumb and navigation never overlap`).toBeLessThanOrEqual(middle.left);
     const headerBox = await boxOf(page, ".topbar");
-    if (width > 600) expect(Math.abs(middle.x + middle.width / 2 - headerBox.x - headerBox.width / 2), `${width}: navigation stays centred with the sidebar open`).toBeLessThan(1);
-    expect(right.right <= width && middle.right <= width).toBe(true);
+    if (width > 600) expect(Math.abs(middle.x + middle.width / 2 - headerBox.x - headerBox.width / 2), `${width}: navigation stays centred`).toBeLessThan(1);
+    expect(middle.right).toBeLessThanOrEqual(width);
   }
 });
 

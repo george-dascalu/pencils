@@ -2,7 +2,7 @@
 // anchored right-to-left; a card whose task no longer exists can be detached into a note; and an
 // automation rule is previewed and applied from Project settings.
 import { test, expect, useApp } from "../fixtures.mjs";
-import { clickControl, selectSettingsPage } from "../helpers/menu-controls.mjs";
+import { clickControl, selectSettingsPage, openSettingsPage } from "../helpers/menu-controls.mjs";
 
 const app = useApp(async (store) => {
   const project = await store.createProject({ title: "Review workflows" });
@@ -50,7 +50,7 @@ test("a card whose task is missing can be detached into a note", { tag: "@gate" 
 test("an automation rule is previewed and applied from Project settings", { tag: "@gate" }, async ({ page }) => {
   await openBoard(page);
   // Since 0.19.31 the top bar's single Settings button replaces the project gear.
-  await page.locator('.top-actions [data-action="settings"]').click();
+  await openSettingsPage(page);
   await selectSettingsPage(page, "automation");
   await page.locator('[data-automation="add"]').click();
   await page.locator('#automation-form [name="name"]').fill("Set important");

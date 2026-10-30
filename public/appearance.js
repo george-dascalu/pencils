@@ -57,7 +57,6 @@
       theme: ["light", "dark", "system"].includes(raw.theme)
         ? raw.theme
         : "system",
-      collapsed: raw.collapsed === true,
       density: raw.density === "compact" ? "compact" : "comfortable",
       navigation: raw.navigation === "trackpad" ? "trackpad" : "mouse",
       singleKeys: raw.singleKeys !== false,
@@ -79,7 +78,6 @@
     root.dataset.look = value.look;
     root.toggleAttribute("data-rainbow", value.rainbow);
     root.dataset.density = value.density;
-    root.dataset.sidebar = value.collapsed ? "collapsed" : "expanded";
     root.style.colorScheme = root.dataset.theme;
     for (const name of [...root.style].filter((p) => p.startsWith("--style-"))) root.style.removeProperty(name);
     for (const [name, choice] of Object.entries(value.style)) {

@@ -15,8 +15,6 @@ for (const width of [1000, 1440])
     await page.setViewportSize({ width, height: 800 });
     await page.goto(`${app.base}/#project/${app.project.id}/list`);
     await expect(page.locator(".task-row")).toHaveCount(5);
-    await page.locator(".desktop-sidebar-toggle").click();
-    await expect(page.locator(":root")).toHaveAttribute("data-sidebar", "collapsed");
     const rows = await page.locator(".task-row").evaluateAll((rows) => rows.map((row) => {
       const box = (s) => row.querySelector(s).getBoundingClientRect();
       const fields = box(".row-fields");

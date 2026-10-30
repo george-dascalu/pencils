@@ -2,6 +2,7 @@
 // full page, opened from a single Settings button in the top bar (and the phone drawer).
 // Without an open project the page shows your own and the organisation's sections.
 import { test, expect, onDevices, useApp } from "../fixtures.mjs";
+import { openSettingsPage, clickControl, openSidebar } from "../helpers/menu-controls.mjs";
 
 const app = useApp(async (store) => ({
   project: await store.createProject({ title: "Settings lab", key: "SL" }),
@@ -12,9 +13,9 @@ const nav = (page) => page.locator(".settings-navigation nav");
 
 onDevices(["desktop", "ipad"], () => test("one top bar button opens a full Settings page with You, Project and Organisation", async ({ page }) => {
   await page.goto(`${app.base}/#project/${app.project.id}/list`);
-  await expect(page.locator(".topbar [data-action=settings]")).toHaveCount(1);
+  await expect(page.locator(".sidebar [data-action=settings]")).toHaveCount(1);
   await expect(page.locator(".topbar .avatar, .topbar [data-personal=settings]")).toHaveCount(0);
-  await page.locator(".topbar [data-action=settings]").click();
+  await openSettingsPage(page);
   await expect(page.locator(".settings-navigation h1")).toHaveText("Settings");
   await expect(page.locator("dialog[open]")).toHaveCount(0);
   for (const group of ["You", "Project", "Organisation"]) await expect(nav(page).locator(".settings-nav-group", { hasText: group })).toHaveCount(1);
@@ -40,13 +41,13 @@ test("the organisation is edited on the Settings page", async ({ page }) => {
 
 test("the sidebar's organisation button opens the Organisation section", async ({ page }) => {
   await page.goto(`${app.base}/#project/${app.project.id}/list`);
-  await page.locator('.sidebar [data-action="organisation-edit"]').click();
+  await clickControl(page.locator('.sidebar [data-action="organisation-edit"]'));
   await expect(page.locator("#settings-page-title")).toHaveText("Organisation");
 });
 
 test("without a project open, Settings shows You and Organisation", async ({ page }) => {
   await page.goto(`${app.base}/#home`);
-  await page.locator(".topbar [data-action=settings]").click();
+  await openSettingsPage(page);
   await expect(page.locator(".settings-navigation h1")).toHaveText("Settings");
   await expect(nav(page).locator("a")).toHaveText(["Appearance & workspace", "Organisation"]);
   await page.locator("[data-action=settings-close]").click();
@@ -55,7 +56,7 @@ test("without a project open, Settings shows You and Organisation", async ({ pag
 
 test("without a project, unsaved organisation edits ask before leaving Settings", async ({ page }) => {
   await page.goto(`${app.base}/#home`);
-  await page.locator(".topbar [data-action=settings]").click();
+  await openSettingsPage(page);
   await nav(page).locator("a", { hasText: "Organisation" }).click();
   await page.locator('#organisation-form [name="title"]').fill("Unsaved name");
   let asked = "";
@@ -67,11 +68,12 @@ test("without a project, unsaved organisation edits ask before leaving Settings"
 
 test("switching organisation from Settings without a project opens that organisation", async ({ page }) => {
   await page.goto(`${app.base}/#home`);
-  await page.locator(".topbar [data-action=settings]").click();
+  await openSettingsPage(page);
   await expect(page.locator(".settings-navigation h1")).toHaveText("Settings");
+  await openSidebar(page);
   await page.locator("#organisation-select").selectOption(app.other.id);
   await expect(page.locator("#organisation-select")).toHaveValue(app.other.id);
-  await expect(page.locator(".topbar [data-action=settings]")).not.toHaveAttribute("aria-current", "page");
+  await expect(page.locator(".sidebar [data-action=settings]")).not.toHaveAttribute("aria-current", "page");
 });
 
 onDevices(["phone"], () => test("the phone drawer opens Settings from its settings row", async ({ page }) => {

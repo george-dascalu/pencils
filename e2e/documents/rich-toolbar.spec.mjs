@@ -2,6 +2,7 @@
 // text): grouped controls, the same control set, horizontal scrolling with snap
 // and edge indicators on narrow screens.
 import { test, expect, onDevices, useApp } from "../fixtures.mjs";
+import { openSidebar } from "../helpers/menu-controls.mjs";
 
 const app = useApp(async (store) => {
   const project = await store.createProject({ title: "Toolbar project", key: "TB" });
@@ -38,6 +39,7 @@ test("the description, comments and documents share one formatting control set",
   expect((await names(page, ".comment-rich-tools")).slice(0, FORMATTING.length), "comment composer").toEqual(FORMATTING);
   await page.keyboard.press("Escape"); await page.keyboard.press("Escape");
   await open(page, "documents", ".documents-workspace");
+  await openSidebar(page);
   await page.locator(`[data-document-open="${app.doc.id}"]`).first().click();
   // Since 0.19.31 the title is a hidden field; the document's formatting bar marks it open.
   await page.locator("#document-form .document-formatting .rich-toolbar").waitFor();

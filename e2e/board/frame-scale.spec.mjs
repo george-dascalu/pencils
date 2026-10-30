@@ -66,7 +66,6 @@ test("after a reload the outline pages through 10,000 frames, the vault keeps ev
   await page.getByRole("button", { name: "Previous frames", exact: true }).click();
   await page.locator('[data-frame-row="frame-0"]').waitFor();
   // The large board also lays out at phone width.
-  await page.getByRole("button", { name: "Collapse sidebar", exact: true }).click();
   await page.setViewportSize({ width: 390, height: 844 });
   await expect(page.locator(".phone-board-dock")).toBeVisible();
   await page.setViewportSize({ width: 1500, height: 1000 });

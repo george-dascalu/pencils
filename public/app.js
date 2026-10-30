@@ -50,10 +50,10 @@ import { SaveQueue } from "./sync.js";
 import { createMarkdown } from "./markdown.js";
 import { installFeatures } from "./features.js";
 const $ = (selector, root = document) => root.querySelector(selector);
-// Where the sidebar is a drawer, the swipe in from the left edge opens it.
+// The sidebar opens over the content, so the swipe in from the left edge opens it.
 installEdgeSwipeGuard({
   onSwipeFromLeft: () => {
-    if (matchMedia("(max-width: 780px)").matches && !state.menu && !state.dialog && $(".sidebar")) setSidebarOpen(true);
+    if (!state.menu && !state.dialog && $(".sidebar")) setSidebarOpen(true);
   },
 });
 installPageZoomGuard();
@@ -795,7 +795,7 @@ function renderAppNow() {
     <button class="sidebar-overlay ${state.menu ? "visible" : ""}" data-action="menu" aria-label="Close sidebar"></button>
     <aside id="workspace-sidebar" class="sidebar ${state.menu ? "open" : ""}" data-drawer-level="${p && state.drawerLevel === "documents" ? "documents" : "menu"}">
       <button class="brand" data-action="home" aria-label="Pencils home"><img src="/icon.svg" alt=""><span class="wordmark">pencils<span style="color:#b9d18c">.</span></span></button>
-      <button class="icon-button phone-drawer-close" data-action="menu" aria-label="Close navigation">${icon("close")}</button>
+      <button class="icon-button phone-drawer-close" id="sidebar-close" data-action="menu" aria-label="Close navigation">${icon("close")}</button>
       <nav class="personal-links" aria-label="Personal"><button class="directory-link ${p?.personal ? "active" : ""}" data-action="personal-open" ${p?.personal ? 'aria-current="page"' : ""}>${icon("person")}<span>Personal</span></button><button class="directory-link" data-action="today">${icon("calendar")}<span>Today</span></button></nav>
       <div class="organisation-switch"><div class="organisation-switch-row"><span class="workspace-icon" style="color:${safeColor(state.organisation?.color)}">${icon("folder")}</span><label class="organisation-choice"><span>ORGANISATION</span><select id="organisation-select" aria-label="Switch organisation">${state.organisations.map((o) => `<option value="${esc(o.id)}" ${o.id === state.organisation?.id ? "selected" : ""}>${esc(o.title)}</option>`).join("")}</select></label></div><div class="organisation-actions"><button data-action="organisation-new">${icon("plus")}New organisation</button><button data-action="organisation-edit" aria-label="Organisation settings" ${state.organisation ? "" : "disabled"}>${icon("settings")}</button></div></div>
       <div class="side-label">PROJECTS<button data-action="project-new" aria-label="Create project">${icon("plus")}</button></div>
@@ -808,12 +808,12 @@ function renderAppNow() {
       <button class="side-new" data-action="project-new">${icon("plus")}New project</button>
       ${p ? '<section id="sidebar-documents" class="sidebar-documents" aria-label="Documents"></section>' : ""}
       ${state.organisation ? `<section class="sidebar-directory"><div class="side-label">TEAMS</div><nav class="directory-links" aria-label="Teams and people">${["teams", "people"].map((page) => `<button class="directory-link ${state.directoryPage === page ? "active" : ""}" data-action="directory-open" data-page="${page}" ${state.directoryPage === page ? 'aria-current="page"' : ""}>${icon(page === "teams" ? "group" : "people")}<span>${label(page)}</span><span class="directory-count">${state.organisation[page]?.length || 0}</span></button>`).join("")}</nav></section>` : ""}
-      <div class="phone-drawer-utilities" role="group" aria-label="Settings and help" style="--tiles:2"><button class="button" data-action="settings" aria-label="Settings">${icon("settings")}<span>Settings</span></button><button class="button" data-action="help" aria-label="Help & guides">${icon("help")}<span>Help</span></button></div>
+      <div class="phone-drawer-utilities" role="group" aria-label="Settings and help" style="--tiles:2"><button class="button" data-action="settings" aria-label="Settings" ${(p ? state.view === "settings" : state.directoryPage === "settings") ? 'aria-current="page"' : ""}>${icon("settings")}<span>Settings</span></button><button class="button" data-action="help" aria-label="Help & guides" ${state.helpArticle ? 'aria-current="page"' : ""}>${icon("help")}<span>Help</span></button></div>
       <div class="side-bottom">
       <div class="side-footer"><span class="dot"></span>Local workspace<span class="version">v${APP_VERSION}</span></div></div>
     </aside>
     <main class="main">
-      <header class="topbar"><div class="breadcrumb"><button class="icon-button desktop-sidebar-toggle" data-personal="sidebar" aria-controls="workspace-sidebar" aria-expanded="true" aria-label="Collapse sidebar">${icon("menu")}</button><button class="icon-button mobile-menu" data-action="menu" aria-label="Toggle sidebar" aria-controls="workspace-sidebar" aria-expanded="${state.menu}">${icon("menu")}</button><strong ${p ? 'role="heading" aria-level="1"' : ""}>${esc(p?.title || (state.helpArticle ? "Help" : state.directoryPage ? label(state.directoryPage) : "Projects"))}</strong></div>${p ? projectNavigationHTML() : ""}<div class="top-actions">${p ? newMenuHTML("icon") : ""}<div class="save-state" id="save-state">${appStatusHTML()}</div><button class="icon-button" data-action="settings" aria-label="Settings" title="Settings" ${(p ? state.view === "settings" : state.directoryPage === "settings") ? 'aria-current="page"' : ""}>${icon("settings")}</button><button class="icon-button" data-action="help" aria-label="Help & keyboard shortcuts" ${state.helpArticle ? 'aria-current="page"' : ""}>${icon("help")}</button></div></header>
+      <header class="topbar"><div class="breadcrumb"><button class="icon-button mobile-menu" data-action="menu" aria-label="Toggle sidebar" aria-controls="workspace-sidebar" aria-expanded="${state.menu}">${icon("menu")}</button><strong ${p ? 'role="heading" aria-level="1"' : ""}>${esc(p?.title || (state.helpArticle ? "Help" : state.directoryPage ? label(state.directoryPage) : "Projects"))}</strong></div>${p ? projectNavigationHTML() : ""}<div class="top-actions">${p ? newMenuHTML("icon") : ""}<div class="save-state" id="save-state">${appStatusHTML()}</div></div></header>
       ${!state.online ? '<div class="connection-banner">Local server unavailable. Reconnect to its network to save changes.</div>' : ""}
       ${state.helpArticle ? helpPageHTML(state.helpArticle, { esc, icon }) : state.directoryPage === "settings" ? '<div id="view-toolbar"></div><section id="view-content" class="content"></section>' : state.directoryPage ? directoryPageHTML() : p ? projectPage() : welcomePage()}
     </main></div>`;
@@ -913,7 +913,7 @@ document.addEventListener("click", event => {
 });
 function setSidebarOpen(open, focus = true) {
   state.menu = open;
-  const sidebar = $(".sidebar"), mobile = matchMedia("(max-width: 780px)").matches;
+  const sidebar = $(".sidebar");
   // In Documents each opening starts on the document list.
   if (open && state.project) {
     state.drawerLevel = state.view === "documents" ? "documents" : "menu";
@@ -921,19 +921,19 @@ function setSidebarOpen(open, focus = true) {
   }
   sidebar?.classList.toggle("open", open);
   $(".sidebar-overlay")?.classList.toggle("visible", open);
-  if (sidebar && mobile) sidebar.inert = !open;
-  if ($(".main")) $(".main").inert = mobile && open;
+  if (sidebar) sidebar.inert = !open;
+  if ($(".main")) $(".main").inert = open;
   $(".mobile-menu")?.setAttribute("aria-expanded", String(open));
   if (focus) (open ? sidebar?.querySelector(".phone-drawer-close") : $(".mobile-menu"))?.focus({ preventScroll: true });
 }
 // The drawer uses the same action handlers as the desktop navigation.
 document.addEventListener("click", event => {
   // Choosing or creating a document in the drawer also closes it.
-  const button = event.target.closest('.sidebar [data-action], .sidebar [data-personal], .sidebar [data-document-open], .sidebar [data-document-action="create"]');
+  const button = event.target.closest('.sidebar [data-action], .sidebar [data-document-open], .sidebar [data-document-action="create"]');
   if (state.menu && button && button.dataset.action !== "menu") setSidebarOpen(false, false);
 }, true);
 document.addEventListener("keydown", event => {
-  if (!state.menu || !matchMedia("(max-width: 780px)").matches || event.defaultPrevented) return;
+  if (!state.menu || state.dialog || event.defaultPrevented) return;
   if (event.key === "Escape") { event.preventDefault(); event.stopImmediatePropagation(); setSidebarOpen(false); }
   if (event.key === "Tab") {
     const items = [...$(".sidebar").querySelectorAll('button,select,a[href],input')].filter(el => !el.disabled && el.getClientRects().length);
@@ -2802,7 +2802,8 @@ document.addEventListener("keydown", (event) => {
     }
     return;
   }
-  if (typing) return;
+  // The page behind an open sidebar takes no shortcuts.
+  if (typing || state.menu) return;
   if (
     event.key === "n" &&
     !event.ctrlKey &&

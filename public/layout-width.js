@@ -1,7 +1,5 @@
-// Width of the workspace column (.main) rather than the window, so JavaScript
-// layout decisions account for an open sidebar. The matching CSS expresses the
-// same thresholds as viewport media queries combined with the sidebar state
-// (:root[data-sidebar]), which keeps style changes synchronous with resizes.
+// Width of the workspace column (.main) rather than the window. The sidebar opens over the
+// content, so this follows the window except where the page sets its own width.
 export function mainWidth() {
   const main = document.querySelector(".main");
   return main ? main.getBoundingClientRect().width || innerWidth : innerWidth;

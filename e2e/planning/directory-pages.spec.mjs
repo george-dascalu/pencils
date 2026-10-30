@@ -4,6 +4,7 @@
 // overwrite changes saved elsewhere, fit desktop and phone widths in both themes, and work from
 // the phone drawer. Choosing a project leaves the directory.
 import { test, expect, useApp } from "../fixtures.mjs";
+import { clickControl, openSidebar } from "../helpers/menu-controls.mjs";
 
 const people = (name) => [{ id: "george", name, task_capacity: 7 }];
 const team = (name) => [{ id: "product", name, members: ["george"] }];
@@ -23,7 +24,7 @@ const app = useApp(async (store) => ({
 
 test.use({ viewportSize: { width: 1440, height: 1000 } });
 
-const navigate = (page, kind) => page.locator(`.directory-link[data-page="${kind}"]`).click();
+const navigate = (page, kind) => clickControl(page.locator(`.directory-link[data-page="${kind}"]`));
 const save = (page, kind) =>
   Promise.all([
     page.waitForResponse((r) => r.request().method() === "PATCH" && r.url().includes("/organisations/")),
@@ -38,8 +39,10 @@ const openDirectory = async (page, { organisation }, kind) => {
 test("the sidebar opens Teams and People as pages that create and save the directory, and survive a reload", async ({ page }) => {
   const { project } = app;
   await page.goto(app.base);
+  await openSidebar(page);
   await page.locator("#organisation-select").selectOption(project.organisation);
-  await page.locator(`.project-link[data-id="${project.id}"]`).click();
+  await clickControl(page.locator(`.project-link[data-id="${project.id}"]`));
+  await openSidebar(page);
   expect(await page.getByRole("navigation", { name: "Teams and people" }).locator("button").evaluateAll((els) => els.map((el) => el.dataset.page))).toEqual(["teams", "people"]);
   await navigate(page, "people");
   await expect(heading(page, "People")).toBeVisible();
@@ -73,12 +76,14 @@ test("switching organisations keeps the directory page but changes its scope", a
   const { organisation } = app.scoped;
   await openDirectory(page, app.scoped, "teams");
   await expect(page.getByLabel("Team name", { exact: true })).toHaveValue("Product");
+  await openSidebar(page);
   await page.locator("#organisation-select").selectOption(app.other.id);
   await page.getByText("No teams yet.", { exact: false }).waitFor();
   expect(page.url()).toContain(app.other.id);
   await navigate(page, "people");
   await heading(page, "People").waitFor();
   await expect(page.locator(".person-row")).toHaveCount(0);
+  await openSidebar(page);
   await page.locator("#organisation-select").selectOption(organisation.id);
   await expect(page.getByLabel("Person name", { exact: true })).toHaveValue("George");
 });
@@ -151,7 +156,7 @@ test.describe("phone drawer", () => {
 test("choosing a project leaves the directory, also after a reload", async ({ page }) => {
   const { project } = app.layout;
   await openDirectory(page, app.layout, "people");
-  await page.locator(`.project-link[data-id="${project.id}"]`).click();
+  await clickControl(page.locator(`.project-link[data-id="${project.id}"]`));
   await page.waitForURL((url) => !url.hash.startsWith("#organisation/"));
   await page.reload();
   await page.locator(".tabs [data-view=tasks]").waitFor();

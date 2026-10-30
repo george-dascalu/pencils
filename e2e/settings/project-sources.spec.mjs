@@ -7,7 +7,7 @@ import os from "node:os";
 import path from "node:path";
 import { test, expect } from "../fixtures.mjs";
 import { useCustomApp } from "../helpers/custom-server.mjs";
-import { selectSettingsPage } from "../helpers/menu-controls.mjs";
+import { selectSettingsPage, clickControl, openSettingsPage } from "../helpers/menu-controls.mjs";
 import { Auth } from "../../server/auth.js";
 
 const app = useCustomApp({
@@ -32,13 +32,13 @@ async function signIn(page) {
   await page.locator('[name="username"]').fill("owner");
   await page.locator('[name="password"]').fill("test-long-password");
   await page.locator('#login-form [type="submit"]').click();
-  await page.locator(".project-link").click();
+  await clickControl(page.locator(".project-link"));
 }
 
 test("a signed-in administrator previews an Obsidian source without changing tasks, then syncs it", { tag: "@gate" }, async ({ page }) => {
   await signIn(page);
   // Since 0.19.31 one Settings button in the top bar opens the Settings page.
-  await page.locator(".topbar").getByRole("button", { name: "Settings", exact: true }).click();
+  await openSettingsPage(page);
   await selectSettingsPage(page, "sources");
   await page.locator('[data-source-action="new"]').click();
   await page.locator('#source-config [name="name"]').fill("Notes");

@@ -6,7 +6,7 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import { test, expect, onDevices, useApp } from "../fixtures.mjs";
-import { clickControl, selectProjectView, selectSettingsPage } from "../helpers/menu-controls.mjs";
+import { clickControl, selectProjectView, selectSettingsPage, openSettingsPage, openSidebar } from "../helpers/menu-controls.mjs";
 import { newCard } from "../helpers/new-card.mjs";
 
 const app = useApp();
@@ -198,7 +198,7 @@ test("Markdown edited outside the app shows live, and a conflicting edit keeps t
   await click(page, "dialog-close");
   // Since 0.19.31 Personal settings is the "You" section of the Settings page, opened from
   // the top bar's single Settings button.
-  await page.locator(".topbar").getByRole("button", { name: "Settings", exact: true }).click();
+  await openSettingsPage(page);
   await selectSettingsPage(page, "personal");
   // The header save warning also links to Recovery; use the Settings page's one.
   await page.locator('.personal-workspace-actions [data-feature="recovery"]').click();
@@ -235,9 +235,11 @@ test("organisations are created and renamed, scope their projects, and are remem
   await expect(selected).toHaveText("Acme Collective");
   expect((await app.store.getOrganisation(studio.id)).title).toBe("Acme Collective");
   // Each organisation remembers its last project, also after a reload.
+  await openSidebar(page);
   await page.locator("#organisation-select").selectOption("o-default");
   await expect(page.getByRole("heading", { name: original.title, exact: true })).toBeVisible();
   await expect(page.locator(".project-link")).toHaveCount(1);
+  await openSidebar(page);
   await page.locator("#organisation-select").selectOption(studio.id);
   await expect(page.getByRole("heading", { name: "Marketing launch", exact: true })).toBeVisible();
   await page.reload();
@@ -249,9 +251,8 @@ test("moving a project to another organisation keeps its tasks and canvases, and
   await openDemo(page);
   await expect(page.locator("#organisation-select")).toHaveValue("o-default");
   const beforeMove = await snapshot();
-  // Since 0.19.26 the phone drawer's settings row also has Settings, earlier in the page and
-  // hidden on desktop; use the top bar's Settings button (0.19.31, was the project gear).
-  await clickControl(page.locator('.topbar [data-action="settings"]'));
+  // One Settings button, at the bottom of the sidebar (0.20.24; the top bar's before).
+  await openSettingsPage(page);
   await selectSettingsPage(page, "teams");
   await page.locator('#project-form [name="organisation"]').selectOption(studio.id);
   await page.locator('#project-form [type="submit"]').click();
@@ -264,6 +265,7 @@ test("moving a project to another organisation keeps its tasks and canvases, and
   expect(afterMove.tasks).toEqual(beforeMove.tasks);
   expect(afterMove.boards).toEqual(beforeMove.boards);
   // The default organisation is now empty, also after a reload.
+  await openSidebar(page);
   await page.locator("#organisation-select").selectOption("o-default");
   await expect(page.getByRole("heading", { name: /A little space for your/ })).toBeVisible();
   await expect(page.locator(".project-link")).toHaveCount(0);
@@ -271,6 +273,7 @@ test("moving a project to another organisation keeps its tasks and canvases, and
   await page.reload();
   await expect(page.getByRole("heading", { name: /A little space for your/ })).toBeVisible();
   await expect(page.locator("#organisation-select")).toHaveValue("o-default");
+  await openSidebar(page);
   await page.locator("#organisation-select").selectOption(studio.id);
   await expect(page.getByRole("heading", { name: demo.title, exact: true })).toBeVisible();
   await click(page, "home");

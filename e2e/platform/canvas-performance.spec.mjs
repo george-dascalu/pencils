@@ -4,7 +4,7 @@
 // animated zoom without rebuilding existing cards, the fit overview stays bounded, two fingers
 // pinch-zoom, and a pen stroke keeps its pressure samples.
 import { test, expect, useApp } from "../fixtures.mjs";
-import { openBoardSearch } from "../helpers/menu-controls.mjs";
+import { openBoardSearch, clickControl } from "../helpers/menu-controls.mjs";
 
 const app = useApp(async (store) => {
   const project = await store.createProject({ title: "5,000 object board" });
@@ -57,7 +57,7 @@ async function open(page) {
   const count = await objects();
   const start = performance.now();
   await page.goto(app.base);
-  await page.locator(".project-link").click();
+  await clickControl(page.locator(".project-link"));
   await page.locator(".tabs [data-view=board]").click();
   await page.waitForFunction((count) => document.querySelector("#canvas")?.dataset.objectCount === String(count), count);
   return { load: performance.now() - start, cdp, beats };

@@ -3,7 +3,7 @@
 // the hierarchy mode can be enforced, edits persist through Save changes and a reload,
 // and the diagram fits desktop and phone widths in light and dark themes.
 import { test, expect, useApp } from "../fixtures.mjs";
-import { selectSettingsPage } from "../helpers/menu-controls.mjs";
+import { selectSettingsPage, openSettingsPage } from "../helpers/menu-controls.mjs";
 
 const app = useApp(async (store) => ({
   project: await store.createProject({
@@ -21,7 +21,7 @@ const saved = async () => (await app.store.snapshot(app.project.id)).project.sch
 async function openSettings(page, section) {
   await page.goto(`${app.base}/#project/${app.project.id}/list`);
   // Since 0.19.31 the top bar's single Settings button replaces the project gear.
-  await page.locator(".top-actions [data-action=settings]").click();
+  await openSettingsPage(page);
   await selectSettingsPage(page, section);
 }
 
@@ -64,7 +64,7 @@ test("hierarchy links are edited on the diagram, the enforced mode saves, and bo
   expect(stored.hierarchy.roots).not.toContain("bug");
   await page.reload();
   await page.getByRole("button", { name: "Back to project", exact: true }).click();
-  await page.locator(".top-actions [data-action=settings]").click();
+  await openSettingsPage(page);
   await selectSettingsPage(page, "hierarchy");
   expect((await schema(page)).transitions.todo).not.toContain("done");
   expect((await schema(page)).hierarchy.roots).not.toContain("bug");

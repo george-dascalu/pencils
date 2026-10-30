@@ -4,7 +4,7 @@
 // and Board, and the Board shows the saved status after a reload. The editor fits desktop and
 // phone widths in both themes.
 import { test, expect, useApp } from "../fixtures.mjs";
-import { selectProjectView, selectSettingsPage } from "../helpers/menu-controls.mjs";
+import { selectProjectView, selectSettingsPage, clickControl, openSettingsPage } from "../helpers/menu-controls.mjs";
 import { newCard } from "../helpers/new-card.mjs";
 
 const app = useApp(async (store) => {
@@ -28,14 +28,14 @@ const patched = (page) => page.waitForResponse((r) => r.request().method() === "
 async function openWorkflow(page) {
   await page.goto(`${app.base}/#project/${app.project.id}/list`);
   // Since 0.19.31 the top bar's single Settings button replaces the project gear.
-  await page.locator(".top-actions [data-action=settings]").click();
+  await openSettingsPage(page);
   await selectSettingsPage(page, "workflow");
 }
 
 test("the workflow editor renames, restricts and protects statuses, and guards unsaved changes", async ({ page }) => {
   await page.goto(app.base);
-  await page.locator(".project-link").click();
-  await page.locator(".top-actions [data-action=settings]").click();
+  await clickControl(page.locator(".project-link"));
+  await openSettingsPage(page);
   await selectSettingsPage(page, "workflow");
   await row(page, "todo").locator("[data-status-name]").fill("Ready queue");
   await page.locator("[data-workflow-rules]").check();

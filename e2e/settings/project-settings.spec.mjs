@@ -9,7 +9,7 @@ import path from "node:path";
 import AxeBuilder from "@axe-core/playwright";
 import { test, expect } from "../fixtures.mjs";
 import { useCustomApp } from "../helpers/custom-server.mjs";
-import { showSettingsSection } from "../helpers/menu-controls.mjs";
+import { showSettingsSection, openSettingsPage } from "../helpers/menu-controls.mjs";
 import { Auth } from "../../server/auth.js";
 import { settingsPages } from "../../public/project-settings.js";
 
@@ -46,7 +46,7 @@ const title = (page) => page.locator('#project-form [name="title"]');
 test("Project settings opens on General as a page, and saving General keeps the workflow and teams", { tag: "@gate" }, async ({ page }) => {
   await page.goto(`${app.base}/#project/${app.project.id}/list`);
   // Since 0.19.31 one Settings button in the top bar opens the Settings page on the project's General.
-  await page.locator(".topbar").getByRole("button", { name: "Settings", exact: true }).click();
+  await openSettingsPage(page);
   await title(page).waitFor();
   expect(new URL(page.url()).hash).toBe(hash("general"));
   await expect(page.locator(".project-settings-tools, dialog")).toHaveCount(0);

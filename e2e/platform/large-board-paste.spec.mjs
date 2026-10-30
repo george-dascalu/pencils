@@ -57,11 +57,13 @@ test.use({ viewportSize: { width: 1500, height: 1000 } });
 
 const current = async () => (await app.store.snapshot(app.project.id)).boards[0];
 
-// Opens the board at 3% zoom and waits for its objects. Presence heartbeats run one at a time, so
+// Opens the board at 3% zoom and waits for its objects. Pasting lands at the canvas centre; the
+// camera keeps that point in empty space now that the sidebar no longer narrows the canvas, so the
+// pasted notes don't drop into an original grid. Presence heartbeats run one at a time, so
 // after the second one the first heartbeat's snapshot refresh has finished and the board will not
 // be rebuilt under the selection.
 async function open(page, count) {
-  await page.addInitScript((id) => localStorage.setItem(`pencils:camera:${id}`, JSON.stringify({ x: 160, y: 100, z: 0.03 })), app.board.id);
+  await page.addInitScript((id) => localStorage.setItem(`pencils:camera:${id}`, JSON.stringify({ x: 278, y: 100, z: 0.03 })), app.board.id);
   let beats = 0;
   page.on("response", (r) => {
     if (r.url().endsWith("/presence") && r.request().method() === "POST") beats++;
@@ -216,7 +218,6 @@ test("with thousands of objects selected, the selection toolbar fits a phone wid
   await open(page, 6912);
   await selectAll(page);
   await expect(page.locator(".selection-filter-total")).toHaveText("10080");
-  await page.getByRole("button", { name: "Collapse sidebar", exact: true }).click();
   await page.setViewportSize({ width: 390, height: 844 });
   await page.waitForFunction(() => document.querySelector(".sidebar").getBoundingClientRect().right <= 1);
   const toolbar = await page.locator("#selection-tools").boundingBox();

@@ -5,6 +5,7 @@
 // expanding the description is saved, keeps the plan flow and focus, survives a
 // reload and can be undone, for task and draft cards.
 import { test, expect, startApp } from "../fixtures.mjs";
+import { openSidebar, closeSidebar } from "../helpers/menu-controls.mjs";
 import { updateProjectFrame } from "../../public/project-frame.js";
 import { noHorizontalScroll, setTheme } from "../helpers/documents.mjs";
 
@@ -72,19 +73,18 @@ test("the outline tree folds sections and jumps to headings without changing the
   expect((await s.current()).body).toBe(markdown);
 });
 
-test("collapsing the sidebar hides the document explorer, also after a reload", async ({ page }) => {
+test("the document explorer opens with the sidebar over the document, and starts closed after a reload", async ({ page }) => {
   const s = await seedNotebook();
   await openNotebook(page, s);
-  // Since 0.19.27 the document explorer lives in the main sidebar, so the main
-  // sidebar's collapse control hides and restores it (no separate Documents pane).
+  // Since 0.19.27 the document explorer lives in the main sidebar (no separate Documents pane),
+  // which since 0.20.24 opens over the page.
   const explorer = page.getByRole("complementary", { name: "Document explorer" });
-  await page.getByRole("button", { name: "Collapse sidebar", exact: true }).click();
   await expect(explorer).toBeHidden();
+  await openSidebar(page);
+  await expect(explorer).toBeVisible();
   await page.reload();
   await page.locator(".cm-content").waitFor();
   await expect(explorer).toBeHidden();
-  await page.getByRole("button", { name: "Expand sidebar", exact: true }).click();
-  await expect(explorer).toBeVisible();
   expect((await s.current()).body, "the source stays untouched").toBe(markdown);
 });
 
@@ -92,6 +92,7 @@ test("new folders nest, and Move to folder files the document", async ({ page })
   const s = await seedNotebook();
   await openNotebook(page, s);
   for (const [name, count] of [["Research", 1], ["Meetings", 2]]) {
+    await openSidebar(page);
     await page.getByRole("button", { name: "New folder", exact: true }).click();
     await page.getByRole("textbox", { name: "Folder name", exact: true }).fill(name);
     await page.getByRole("button", { name: "Create folder", exact: true }).click();
@@ -99,6 +100,7 @@ test("new folders nest, and Move to folder files the document", async ({ page })
   }
   const nested = (await s.folderList()).find((f) => f.title === "Meetings");
   expect(nested.parent, "the second folder nests in the first").toBeTruthy();
+  await closeSidebar(page);
   await page.getByRole("button", { name: "Document tools", exact: true }).click();
   await page.getByRole("button", { name: "Move to folder", exact: true }).click();
   // Native selects are upgraded by the shared menu.
@@ -146,6 +148,7 @@ test("documents drag to the root and back into a folder", async ({ page }) => {
 test("a folder is renamed from its Edit panel", async ({ page }) => {
   const s = await seedNotebook({ folders: nestedFolders, folder: "meetings" });
   await openNotebook(page, s);
+  await openSidebar(page);
   await page.getByRole("button", { name: "Edit Meetings folder", exact: true }).click();
   await page.getByRole("textbox", { name: "Folder name", exact: true }).fill("Team meetings");
   await page.getByRole("dialog", { name: "Edit folder" }).getByRole("button", { name: "Save", exact: true }).click();

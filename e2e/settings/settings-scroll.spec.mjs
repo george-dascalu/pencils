@@ -2,6 +2,7 @@
 // scrolled the page beside it, and the other way round. The rail and the page now scroll on
 // their own; narrow screens stack them in one scroller as before.
 import { test, expect, onDevices, useApp } from "../fixtures.mjs";
+import { openSettingsPage } from "../helpers/menu-controls.mjs";
 
 const app = useApp(async (store) => ({ project: await store.createProject({ title: "Scroll", key: "SC" }) }));
 const rail = (page) => page.locator(".settings-navigation");
@@ -53,7 +54,7 @@ onDevices(["ipad", "desktop"], () => {
   test("without a project, the organisation settings scroll the same way", async ({ page }) => {
     await page.setViewportSize({ width: page.viewportSize().width, height: 560 });
     await page.goto(`${app.base}/#home`);
-    await page.locator(".topbar [data-action=settings]").click();
+    await openSettingsPage(page);
     await rail(page).locator("nav a", { hasText: "Organisation" }).click();
     await expect(page.locator("#settings-page-title")).toHaveText("Organisation");
     const railTop = await top(rail(page).locator("h1"));
@@ -78,10 +79,11 @@ onDevices(["phone"], () => test("phones stack the sections above the page and sc
   }
 }));
 
-onDevices(["narrow"], () => test("with the sidebar open at tablet width, the sections stack above the page and the window scrolls", async ({ page }) => {
+// Since 0.20.24 the sidebar opens over the page, so it no longer narrows Settings: a tablet-width
+// window keeps the sections beside the page.
+onDevices(["narrow"], () => test("at tablet width the sections stay beside the page", async ({ page }) => {
   await page.goto(`${app.base}/#project/${app.project.id}/settings/organisation`);
   await expect(page.locator("#settings-page-title")).toHaveText("Organisation");
-  await expect(page.locator("#settings-section-select"), "stacked: sections in a menu").toBeVisible();
-  await wheel(page, page.locator("#settings-panel"), 400);
-  await expect.poll(() => page.evaluate(() => document.scrollingElement.scrollTop)).toBeGreaterThan(0);
+  await expect(page.locator(".settings-navigation nav")).toBeVisible();
+  await expect(page.locator("#settings-section-select")).toBeHidden();
 }));

@@ -45,7 +45,6 @@ test.describe("wide desktop", () => {
 
   test("a compact header leaves the canvas most of the screen, and the board menus work from the keyboard", async ({ page }) => {
     await openBoard(page);
-    await page.getByRole("button", { name: "Collapse sidebar", exact: true }).click();
     const rect = await page.locator("#canvas").boundingBox();
     expect(rect.y, "compact header").toBeLessThan(160);
     expect(rect.height, "canvas height").toBeGreaterThan(750);

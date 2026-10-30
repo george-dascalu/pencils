@@ -1,6 +1,7 @@
 // Owner request, 29 October 2026 (note-taking research, idea 8): properties and tags as
 // frontmatter, edited in a Properties section at the top of the document, and #tag in the finder.
 import { test, expect, onDevices, useApp } from "../fixtures.mjs";
+import { openSidebar } from "../helpers/menu-controls.mjs";
 
 const today = new Date().toLocaleDateString("en-CA");
 const app = useApp(async (store) => ({ project: await store.createProject({ title: "Properties", key: "PR" }) }));
@@ -44,6 +45,7 @@ test("the document finder matches #tags", async ({ page }) => {
   const tagged = await app.store.createDocument(app.project.id, { title: "Tagged note", body: "About #harbour things" });
   await app.store.createDocument(app.project.id, { title: "Harbour without tag", body: "harbour" });
   await page.goto(`${app.base}/#project/${app.project.id}/documents/${tagged.id}`);
+  await openSidebar(page);
   await page.locator("#document-search").fill("#harbour");
   await expect(page.locator("#document-list [data-document-open]")).toHaveText(["Tagged note"]);
 });

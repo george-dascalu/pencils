@@ -5,6 +5,7 @@
 // Part of the cross-browser release gate.
 import AxeBuilder from "@axe-core/playwright";
 import { test, expect, useApp } from "../fixtures.mjs";
+import { openHelp, clickControl } from "../helpers/menu-controls.mjs";
 import { helpArticles } from "../../public/help-content.js";
 import { newCard } from "../helpers/new-card.mjs";
 
@@ -34,7 +35,7 @@ const title = (page, text) => expect(page.locator("#help-title")).toHaveText(tex
 async function helpFromTable(page) {
   await page.goto(`${app.base}/#project/${app.project.id}/table`);
   await page.locator(".spreadsheet").waitFor();
-  await page.locator('.top-actions [data-action="help"]').click();
+  await openHelp(page);
   await title(page, "Help & guides");
 }
 
@@ -43,7 +44,7 @@ test("Help opens as a page in the project header, and Back restores the filtered
   await page.locator(".spreadsheet").waitFor();
   const originalHeader = await page.locator(".topbar").boundingBox();
   await page.locator("#search").fill("Keep this filter");
-  await page.locator('.top-actions [data-action="help"]').click();
+  await openHelp(page);
   await title(page, "Help & guides");
   expect(await page.locator(".topbar").boundingBox(), "Opening Help retains the project header geometry").toEqual(originalHeader);
   await expect(page.locator(".breadcrumb strong")).toHaveText(app.project.title);
@@ -51,7 +52,7 @@ test("Help opens as a page in the project header, and Back restores the filtered
   await expect(page.locator('.tabs [aria-current="page"]')).toHaveCount(0);
   await expect(page.locator(".topbar .new-menu > summary:visible")).toHaveCount(1);
   // Since 0.19.31 one Settings button replaces the project gear and the avatar.
-  await expect(page.locator('.topbar [data-action="settings"]')).toHaveCount(1);
+  await expect(page.locator(".sidebar [data-action=settings]")).toHaveCount(1);
   await expect(page.locator("dialog"), "Help is a page, not a modal").toHaveCount(0);
   expect(new URL(page.url()).hash).toBe("#help/start");
   await page.goBack();
@@ -102,19 +103,18 @@ for (const width of [1600, 1180, 390]) {
     test.use({ viewportSize: { width, height: 900 } });
     test("project navigation, New and settings stay usable from Help", { tag: "@gate" }, async ({ page }) => {
       const phone = width <= 600;
-      // In Documents the drawer opens on the document list (0.19.27); go back to the menu first.
-      const openHelp = async () => {
-        if (phone) {
-          await page.locator(".mobile-menu").click();
-          if (await page.locator(".sidebar [data-drawer-back]").isVisible()) await page.locator(".sidebar [data-drawer-back]").click();
-          await page.locator('.phone-drawer-utilities [data-action="help"]').click();
-        } else await page.locator('.top-actions [data-action="help"]').click();
+      // Help is at the bottom of the sidebar, which opens over the page (0.20.24). In Documents
+      // the phone drawer opens on the document list (0.19.27); go back to the menu first.
+      const showHelp = async () => {
+        await page.locator(".mobile-menu").click();
+        if (await page.locator(".sidebar [data-drawer-back]").isVisible()) await clickControl(page.locator(".sidebar [data-drawer-back]"));
+        await page.locator('.phone-drawer-utilities [data-action="help"]').click();
         await title(page, "Help & guides");
       };
       await page.goto(`${app.base}/#project/${app.project.id}/settings/general`);
       await page.locator("[data-settings-form]").waitFor();
       const settingsHeader = await page.locator(".topbar").boundingBox();
-      await openHelp();
+      await showHelp();
       expect(await page.locator(".topbar").boundingBox()).toEqual(settingsHeader);
       const switcher = page.locator("#project-view-switcher");
       if (!phone && await switcher.isVisible()) {
@@ -123,15 +123,13 @@ for (const width of [1600, 1180, 390]) {
       } else await page.locator('.tabs [data-view="documents"]').click();
       await page.locator(".documents-workspace").waitFor();
       await expect(page.locator(".help-page")).toHaveCount(0);
-      await openHelp();
+      await showHelp();
       await newCard(page);
       await page.locator("#task-form").waitFor();
       await page.locator('[data-action="dialog-close"]').click();
       await title(page, "Help & guides");
-      if (phone) {
-        await page.locator(".mobile-menu").click();
-        await page.locator('.phone-drawer-utilities [data-action="settings"]').click();
-      } else await page.locator('.topbar [data-action="settings"]').click();
+      await page.locator(".mobile-menu").click();
+      await page.locator('.phone-drawer-utilities [data-action="settings"]').click();
       await page.locator("[data-settings-form]").waitFor();
       await expect(page.locator(".help-page")).toHaveCount(0);
     });

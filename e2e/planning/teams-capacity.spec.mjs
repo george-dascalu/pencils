@@ -5,7 +5,7 @@
 // desktop and phone screens in both themes and opens tasks in the shared editor.
 // Part of the cross-browser release gate.
 import { test, expect, useApp } from "../fixtures.mjs";
-import { selectProjectView, selectSettingsPage } from "../helpers/menu-controls.mjs";
+import { selectProjectView, selectSettingsPage, clickControl, openSettingsPage } from "../helpers/menu-controls.mjs";
 import { newCard } from "../helpers/new-card.mjs";
 
 const today = new Date().toLocaleDateString("en-CA");
@@ -44,7 +44,7 @@ test("people and teams are created in the organisation editor, and a team withou
   await page.goto(`${app.base}/#project/${project.id}/list`);
   // Since 0.19.31 the sidebar's organisation button opens the Organisation section of the
   // Settings page (no dialog), which also edits people and teams.
-  await page.locator("[data-action=organisation-edit]").click();
+  await clickControl(page.locator("[data-action=organisation-edit]"));
   await page.locator(".settings-loading").waitFor({ state: "detached" });
   await page.getByRole("button", { name: "Add person", exact: true }).click();
   await page.getByLabel("Person name", { exact: true }).fill("Alice");
@@ -57,7 +57,7 @@ test("people and teams are created in the organisation editor, and a team withou
   expect(org.people[0].task_capacity).toBe(0);
   expect(org.teams[0].members).toEqual([]);
   // The single top-bar Settings button replaces the project gear (0.19.31).
-  await page.locator('.topbar [data-action="settings"]').click();
+  await openSettingsPage(page);
   await selectSettingsPage(page, "teams");
   await page.locator("[data-project-team]").check();
   await page.getByRole("button", { name: "Save changes", exact: true }).click();
@@ -72,13 +72,13 @@ test("people and teams are created in the organisation editor, and a team withou
 test("adding a member to the project's team makes them assignable on a new card", { tag: "@gate" }, async ({ page }) => {
   const project = app.membership;
   await page.goto(`${app.base}/#project/${project.id}/list`);
-  await page.locator('.directory-link[data-page="teams"]').click();
+  await clickControl(page.locator('.directory-link[data-page="teams"]'));
   await page.locator("[data-member]").check();
   await page.getByRole("button", { name: "Save teams", exact: true }).click();
   await page.getByText("Teams saved.", { exact: true }).waitFor();
   const org = await app.store.getOrganisation(project.organisation);
   expect(org.teams[0].members).toEqual([org.people[0].id]);
-  await page.locator(`.project-link[data-id="${project.id}"]`).click();
+  await clickControl(page.locator(`.project-link[data-id="${project.id}"]`));
   await newCard(page);
   await expect(page.locator("#task-assignee-help")).toHaveCount(0);
   await page.locator("#task-form [name=title]").fill("Planned work");

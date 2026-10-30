@@ -168,6 +168,32 @@ button svg {
   padding: 30px 18px 18px;
   z-index: 30;
 }
+/* The sidebar opens over the content on every device (owner request, 30 Oct 2026), sliding in
+   from the left; on iPad it is half as wide again as before. */
+.sidebar {
+  z-index: 120;
+  transform: translateX(-100%);
+  visibility: hidden;
+  transition: transform 0.2s ease, visibility 0s 0.2s;
+}
+.sidebar.open {
+  transform: none;
+  visibility: visible;
+  box-shadow: var(--shadow-drawer);
+  transition: transform 0.2s ease;
+}
+.sidebar-overlay.visible {
+  display: block;
+  position: fixed;
+  inset: 0;
+  background: #17332570;
+  z-index: 119;
+}
+@media (min-width: 781px) and (pointer: coarse) {
+  .sidebar {
+    width: 315px;
+  }
+}
 .sidebar > * {
   flex-shrink: 0;
 }
@@ -306,9 +332,8 @@ button svg {
   font-size: 10px;
 }
 .main {
-  margin-left: 236px;
   min-width: 0;
-  width: calc(100% - 236px);
+  width: 100%;
 }
 .topbar {
   height: 71px;
@@ -349,9 +374,6 @@ button svg {
 .save-state svg {
   width: 13px;
   height: 13px;
-}
-.icon-button.mobile-menu {
-  display: none;
 }
 .icon-button {
   display: inline-flex;
@@ -1706,13 +1728,6 @@ input[type="search"]:not(.search input) {
   .row-meta .tags {
     display: none;
   }
-  .sidebar {
-    width: 210px;
-  }
-  .main {
-    margin-left: 210px;
-    width: calc(100% - 210px);
-  }
   .hero,
   .toolbar,
   .stats-strip,
@@ -1752,28 +1767,6 @@ input[type="search"]:not(.search input) {
   .main.project-main { overflow: hidden; }
   /* Any page body under the header (view content, help, settings) scrolls on its own, so header rows keep their height. */
   .main.project-main > :not(.topbar, #view-toolbar, .hero, .stats-strip) { min-height: 0; overflow: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; }
-  .sidebar {
-    transform: translateX(-100%);
-    transition: transform 0.2s;
-    width: 236px;
-  }
-  .sidebar.open {
-    transform: translateX(0);
-  }
-  .sidebar-overlay.visible {
-    display: block;
-    position: fixed;
-    inset: 0;
-    background: #17332570;
-    z-index: 29;
-  }
-  .main {
-    margin-left: 0;
-    width: 100%;
-  }
-  .icon-button.mobile-menu {
-    display: inline-flex;
-  }
   .breadcrumb {
     gap: 8px;
   }

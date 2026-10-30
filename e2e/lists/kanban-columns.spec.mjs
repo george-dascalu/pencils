@@ -5,7 +5,7 @@
 // rotation, sidebar changes, rerenders and Back, and never traps the edge auto-scroll
 // of a card drag.
 import { test, expect, useApp } from "../fixtures.mjs";
-import { reveal, selectProjectView } from "../helpers/menu-controls.mjs";
+import { reveal, selectProjectView, openSidebar, closeSidebar } from "../helpers/menu-controls.mjs";
 
 const app = useApp(async (store) => {
   const project = await store.createProject({ title: "Whole Kanban columns" });
@@ -108,9 +108,8 @@ for (const group of ["none", "assignee"]) {
     await page.setViewportSize({ width: 1194, height: 834 });
     const landscape = await wholeColumns(page);
     expect(landscape.first).toBe(Math.min(portrait.first, landscape.total - landscape.visible));
-    await page.locator(".desktop-sidebar-toggle").click();
-    await wholeColumns(page);
-    await page.locator(".desktop-sidebar-toggle").click();
+    await openSidebar(page);
+    await closeSidebar(page);
     await wholeColumns(page);
 
     await page.setViewportSize({ width: 834, height: 1000 });

@@ -184,8 +184,7 @@ body.task-reordering, body.task-reordering * { cursor: grabbing !important; user
   .task-row :is(input.task-title, .row-choice, .row-due, .row-task-link) { height: 44px; min-height: 44px; }
 }
 
-/* Reflow shared rows before their metadata pushes the task name off screen.
-   The query follows the width of .main, so an open sidebar counts. */
+/* Reflow shared rows before their metadata pushes the task name off screen. */
 @media (max-width: 900px) {
   .list-group { min-width: 0; }
   .task-row,
@@ -209,30 +208,6 @@ body.task-reordering, body.task-reordering * { cursor: grabbing !important; user
   .task-row .task-title { font-size: 16px; }
   .task-row .due,
   .task-row .row-status { font-size: 13px; }
-}
-@media (min-width: 901px) and (max-width: 1110px) {
-  :where(:root:not([data-sidebar="collapsed"])) .list-group { min-width: 0; }
-  :where(:root:not([data-sidebar="collapsed"])) .task-row,
-  :where(:root:not([data-sidebar="collapsed"])) .task-row.tree-row {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    min-width: 0;
-    width: 100%;
-    gap: 2px 4px;
-    padding: 4px;
-    padding-inline-start: calc(4px + min(var(--depth, 0), 3) * 8px);
-  }
-  /* Toggle, handle, type, ID and title fill the first line; the fields wrap
-     onto a second line that starts at the same left edge. */
-  :where(:root:not([data-sidebar="collapsed"])) .task-row::after { content: ""; order: 1; flex: 0 0 100%; height: 0; }
-  :where(:root:not([data-sidebar="collapsed"])) .task-row > :is(.row-fields, .row-due) { order: 2; }
-  :where(:root:not([data-sidebar="collapsed"])) .task-row > .task-id { flex: 0 0 auto; width: auto; min-width: 56px; }
-  :where(:root:not([data-sidebar="collapsed"])) .task-row > .row-title { flex: 1 1 0; width: auto; min-width: 0; }
-  :where(:root:not([data-sidebar="collapsed"])) .task-row > :is(.row-fields, .row-due), :where(:root:not([data-sidebar="collapsed"])) .row-fields > .row-status { min-width: 0; }
-  :where(:root:not([data-sidebar="collapsed"])) .task-row .task-title { font-size: 16px; }
-  :where(:root:not([data-sidebar="collapsed"])) .task-row .due,
-  :where(:root:not([data-sidebar="collapsed"])) .task-row .row-status { font-size: 13px; }
 }
 
 
@@ -1189,7 +1164,7 @@ html.task-page-open,
     transition-duration: 0.01ms !important;
   }
 }
-/* Wide screens float the pane beside the editor, aligned with its top and clear of the sidebar. */
+/* Wide screens float the pane beside the editor, aligned with its top. */
 @media (min-width: 1320px) {
   .project-task-editor:is(.with-task-history, .with-task-comments) {
     z-index: 31;

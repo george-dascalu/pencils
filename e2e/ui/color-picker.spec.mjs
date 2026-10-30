@@ -4,6 +4,7 @@
 // invalid hex is rejected, visual picking previews locally until applied, recent colours are
 // shared and persist, and the panel stays on screen with keyboard access on desktop and phone.
 import { test, expect, useApp } from "../fixtures.mjs";
+import { clickControl, openSettingsPage } from "../helpers/menu-controls.mjs";
 
 const app = useApp(async (store) => {
   const project = await store.createProject({ title: "Colours" });
@@ -45,7 +46,7 @@ const openProject = (page) => page.goto(`${app.base}/#project/${app.project.id}/
 test("projects and organisations take palette and validated custom colours", async ({ page }) => {
   await openProject(page);
   // Since 0.19.31 the top bar's single Settings button replaces the project gear.
-  await page.locator(".top-actions [data-action=settings]").click();
+  await openSettingsPage(page);
   await choose(page, "Peach", page.locator("#project-form"));
   // Since 0.15.18 Project settings is a page with its own save bar ("Save changes").
   await page.locator("#project-form [type=submit]").click();
@@ -55,7 +56,7 @@ test("projects and organisations take palette and validated custom colours", asy
   // Since 0.19.31 the sidebar's organisation button opens the Organisation section of the
   // Settings page instead of a dialog.
   const organisation = page.locator("#organisation-form");
-  await page.locator("[data-action=organisation-edit]").click();
+  await clickControl(page.locator("[data-action=organisation-edit]"));
   await custom(page, "oops", organisation);
   await expect(page.locator(".color-error")).toBeVisible();
   await page.locator("[data-color-hex]").fill("#123abc");
@@ -65,7 +66,7 @@ test("projects and organisations take palette and validated custom colours", asy
   await expect(page.locator("#toasts")).toContainText("Organisation saved.");
   expect(await recents(page), "invalid hex never becomes a recent colour").not.toContain("oops");
   await page.locator("[data-action=settings-close]").click();
-  await page.locator("[data-action=organisation-edit]").click();
+  await clickControl(page.locator("[data-action=organisation-edit]"));
   await expect(organisation.locator("[name=color]")).toHaveValue("#123abc");
   await page.locator("[data-action=settings-close]").click();
 });
@@ -152,7 +153,7 @@ test("visual picking previews locally; applying saves one colour that recent lis
   await page.getByRole("button", { name: "Close board settings", exact: true }).click();
   await expect.poll(async () => (await current()).settings.background.color).toBe(picked);
   await page.reload();
-  await page.locator(".top-actions [data-action=settings]").click();
+  await openSettingsPage(page);
   await expect(page.locator("[name=color]")).toHaveValue("#edc48b");
   await expect(page.locator(`[data-color-recent="${picked}"]`), "recent colours persist across a reload").toHaveCount(1);
 });

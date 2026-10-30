@@ -5,6 +5,7 @@
 // saves leave folders where they were, and open edits survive a move. Edit
 // folder offers the same choices without dragging, on desktop and phones.
 import { test, expect, startApp } from "../fixtures.mjs";
+import { openSidebar } from "../helpers/menu-controls.mjs";
 import { setTheme, noHorizontalScroll } from "../helpers/documents.mjs";
 
 test.use({ viewportSize: { width: 1500, height: 1000 } });
@@ -48,6 +49,7 @@ test("dragging a folder moves its whole tree into a collapsed folder and opens i
   const s = await seed();
   await open(page, s);
   await expect(folder(page, "research")).toHaveAttribute("draggable", "true");
+  await openSidebar(page);
   await folder(page, "archive").click();
   await expect(folder(page, "archive")).toHaveAttribute("aria-expanded", "false");
   await folder(page, "research").dragTo(folder(page, "archive"));
@@ -64,6 +66,7 @@ test("dragging a folder moves its whole tree into a collapsed folder and opens i
 test("the root is a drop target, and the move survives a reload", async ({ page }) => {
   const s = await seed({ researchParent: "archive" });
   await open(page, s);
+  await openSidebar(page);
   await folder(page, "research").dragTo(page.locator("[data-document-root]"));
   await expect.poll(() => s.parent("research")).toBeNull();
   await page.reload();
@@ -107,7 +110,10 @@ test("leaving or cancelling a valid drag clears the highlight", async ({ page })
 
 test("documents still drag into folders", async ({ page }) => {
   const s = await seed();
+  // Settings and Help share the sidebar (0.20.24): a taller window keeps the whole tree in view.
+  await page.setViewportSize({ width: 1440, height: 1200 });
   await open(page, s);
+  await openSidebar(page);
   await page.locator(`[data-document-open="${s.loose.id}"]`).dragTo(folder(page, "archive"));
   await expect.poll(async () => (await app.store.getDocument(s.project.id, s.loose.id)).folder).toBe("archive");
 });
@@ -115,6 +121,7 @@ test("documents still drag into folders", async ({ page }) => {
 test("a duplicate folder name is refused with a message, leaving folders in place", async ({ page }) => {
   const s = await seed();
   await open(page, s);
+  await openSidebar(page);
   await folder(page, "duplicate").dragTo(folder(page, "research"));
   await page.locator("#toasts").getByText("A folder with this name already exists here.", { exact: true }).waitFor();
   expect(await s.parent("duplicate")).toBeNull();
@@ -128,6 +135,7 @@ test("a failed save moves nothing, and a later attempt succeeds", async ({ page 
   await page.route(route, (request) => request.request().method() === "PATCH"
     ? request.fulfill({ status: 503, contentType: "application/json", body: JSON.stringify({ error: "Could not save this folder move. Try again." }) })
     : request.continue());
+  await openSidebar(page);
   await folder(page, "research").dragTo(folder(page, "archive"));
   await page.locator("#toasts").getByText("Could not save this folder move. Try again.", { exact: true }).waitFor();
   expect(await s.parent("research")).toBeNull();
@@ -142,6 +150,7 @@ test("moving a folder while editing keeps the editor and Markdown intact", async
   await page.getByRole("button", { name: "Source", exact: true }).click();
   const revised = "# Notes\n\nKeep these notes.\n\nAn unsaved thought.";
   await page.locator(".cm-content").fill(revised);
+  await openSidebar(page);
   await folder(page, "research").dragTo(folder(page, "archive"));
   await expect.poll(() => s.parent("research")).toBe("archive");
   await expect.poll(async () => (await app.store.getDocument(s.project.id, s.doc.id)).body).toBe(revised);
@@ -154,8 +163,9 @@ test("Edit folder offers the same destinations, without descendants, on desktop 
   await open(page, s);
   for (const width of [1500, 390]) {
     await page.setViewportSize({ width, height: 1000 });
-    // At phone width the document list is the drawer's Documents level (0.19.27).
-    if (width === 390) await page.locator(".mobile-menu").click();
+    // The document list is in the sidebar, which opens over the page; at phone width as the
+    // drawer's Documents level (0.19.27).
+    await openSidebar(page);
     await page.getByRole("button", { name: "Edit Research folder", exact: true }).click();
     const panel = page.getByRole("dialog", { name: "Edit folder", exact: true });
     const values = await panel.locator('select[name="parent"] option').evaluateAll((els) => els.map((el) => el.value));

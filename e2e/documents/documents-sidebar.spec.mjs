@@ -3,6 +3,7 @@
 // the main sidebar under the projects while Documents is open; on phones the
 // Documents tile drills the drawer down to the same tree, with a way back.
 import { test, expect, onDevices, useApp } from "../fixtures.mjs";
+import { clickControl, openSidebar } from "../helpers/menu-controls.mjs";
 
 const app = useApp(async (store) => {
   const project = await store.createProject({ title: "Docs sidebar", key: "DSB" });
@@ -19,6 +20,7 @@ onDevices(["desktop", "ipad-portrait"], () => test("the document tree sits in th
   await page.goto(`${base()}/documents/${app.notes.id}`);
   await page.locator(".documents-workspace #document-form").waitFor();
   const tree = page.locator(".sidebar .sidebar-documents");
+  await openSidebar(page);
   await tree.locator("[data-document-open]").first().waitFor();
   await expect(tree.locator("[data-document-open]")).toHaveText(["Meeting notes", "Project brief"]);
   await expect(page.locator(".documents-workspace .document-explorer"), "no explorer column in the workspace").toHaveCount(0);
@@ -31,12 +33,14 @@ onDevices(["desktop", "ipad-portrait"], () => test("the document tree sits in th
   await expect(heading(page)).toHaveText("Project brief");
   await expect(tree.locator('[data-document-open][aria-current="page"]')).toHaveText("Project brief");
   // Search filters the sidebar tree.
+  await openSidebar(page);
   await tree.locator("#document-search").fill("brief");
   await expect(tree.locator("[data-document-open]")).toHaveText(["Project brief"]);
 }));
 
 test("other views hide the document tree", async ({ page }) => {
   await page.goto(`${base()}/documents/${app.notes.id}`);
+  await openSidebar(page);
   await page.locator(".sidebar .sidebar-documents [data-document-open]").first().waitFor();
   await page.goto(`${base()}/list`);
   await page.locator(".task-row").first().waitFor();
@@ -49,6 +53,7 @@ test("New document and New folder live in the sidebar tree", async ({ page }) =>
   const doc = await app.store.createDocument(project.id, { title: "Meeting notes", body: "# Meeting notes\n\nAgenda." });
   await page.goto(`${app.base}/#project/${project.id}/documents/${doc.id}`);
   const tree = page.locator(".sidebar .sidebar-documents");
+  await openSidebar(page);
   await tree.locator('[data-document-action="create"]').click();
   await expect(heading(page)).toHaveText("Untitled document");
   await expect(tree.locator("[data-document-open]", { hasText: "Untitled document" })).toHaveCount(1);
@@ -66,7 +71,7 @@ onDevices(["phone"], () => {
     await expect.poll(() => shown(page, ".sidebar .sidebar-documents [data-document-open]"), "the document list shows").toBeGreaterThanOrEqual(2);
     expect(await shown(page, ".sidebar .project-links"), "projects wait on the first level").toBe(0);
     // Back returns to the menu.
-    await page.locator(".sidebar [data-drawer-back]").click();
+    await clickControl(page.locator(".sidebar [data-drawer-back]"));
     await expect(page.locator(".sidebar")).toHaveAttribute("data-drawer-level", "menu");
     await expect.poll(() => shown(page, ".sidebar .project-links")).toBeGreaterThan(0);
     await expect.poll(() => shown(page, ".sidebar .sidebar-documents")).toBe(0);

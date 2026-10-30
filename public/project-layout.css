@@ -112,24 +112,6 @@
   .board-project-tools { grid-column: 1 / -1; grid-row: 2; }
   .topbar .tabs .tab { padding-block: 12px; }
 }
-/* With the sidebar open, give centred navigation its own row before the side
-   controls run out of room. Wide headers keep equal space on either side. */
-@media (min-width: 781px) and (max-width: 950px) {
-  :root:not([data-sidebar="collapsed"]) .main.project-main > .topbar {
-    grid-template-columns: minmax(0, 1fr) auto;
-    gap: 0 12px;
-    padding-top: 6px;
-  }
-  :root:not([data-sidebar="collapsed"]) .main.project-main .top-actions {
-    grid-column: 2;
-    grid-row: 1;
-  }
-  :root:not([data-sidebar="collapsed"]) .board-project-tools {
-    grid-column: 1 / -1;
-    grid-row: 2;
-  }
-  :root:not([data-sidebar="collapsed"]) .topbar .tabs .tab { padding-block: 12px; }
-}
 /* Phones switch views from a bottom tab bar: the top bar's view tabs as icons in a floating,
    rounded bar at the bottom, at the shared control height. It steps aside while typing, when the
    keyboard covers the bottom of the screen; its space stays so nothing moves under a tap that
@@ -842,19 +824,22 @@ html.table-viewport-view body {
 #quick-capture.dialog-body > button { align-self: flex-end; }
 #view-toolbar > .shared-query-controls { padding: 7px 16px; }
 
-/* Phones keep projects, teams, Settings and Help in one drawer; the bottom bar shows the active view. */
-.phone-drawer-utilities, .phone-drawer-close,
+/* The sidebar holds projects, teams and, at its bottom, Settings and Help above the version; it
+   closes with its close button. Phones show the active view in the bottom bar. */
 .phone-new-task { display: none; }
+.sidebar .brand { margin-right: 52px; }
+.phone-drawer-close { display: inline-flex; position: absolute; top: 12px; right: 12px; flex-shrink: 0; color: inherit; }
+.sidebar .phone-drawer-utilities { display: grid; grid-template-columns: repeat(var(--tiles, 4), minmax(0, 1fr)); gap: 4px; margin-top: auto; padding-top: 8px; border-top: 1px solid #ffffff24; }
+.sidebar .phone-drawer-utilities .button { justify-content: flex-start; min-width: 0; background: transparent; border-color: transparent; color: inherit; }
+.sidebar .phone-drawer-utilities + .side-bottom { margin-top: 0; }
 @media (max-width: 780px) {
   .sidebar { overflow-y: auto; overscroll-behavior: contain; padding: 8px 12px 16px; }
-  .sidebar .brand { padding: 4px 8px 8px; margin-right: 52px; }
-  .phone-drawer-close { display: inline-flex; position: absolute; top: 12px; right: 12px; flex-shrink: 0; }
+  .sidebar .brand { padding: 4px 8px 8px; }
 }
 @media (max-width: 600px) {
   /* The drawer: organisation, projects, teams and one row of settings. Rows share one left
      edge and the shared touch type sizes. */
-  .sidebar { width: min(320px, calc(100vw - 36px)); z-index: 120; padding: 8px 12px 12px; }
-  .sidebar-overlay.visible { z-index: 119; }
+  .sidebar { width: min(320px, calc(100vw - 36px)); padding: 8px 12px 12px; }
   .sidebar .brand { padding: 4px 4px 10px; }
   .sidebar .organisation-switch { margin: 8px 0 0; padding: 0; border: 0; }
   .sidebar .organisation-switch .workspace-icon { display: none; }
@@ -873,15 +858,11 @@ html.table-viewport-view body {
   .sidebar .organisation-choice > span { margin: 0; padding: 12px 12px 0; }
   .sidebar .phone-drawer-utilities .button {
     /* 48px tiles (PEN-1: drawer rows stay compact), still 44px+ targets. */
-    flex-direction: column; justify-content: center; gap: 2px; min-width: 0; height: 48px !important; min-height: 48px;
-    padding: 2px !important; font-size: var(--type-small) !important; line-height: 1.15; background: transparent; border-color: transparent; color: inherit;
+    flex-direction: column; justify-content: center; gap: 2px; height: 48px !important; min-height: 48px;
+    padding: 2px !important; font-size: var(--type-small) !important; line-height: 1.15;
   }
   .sidebar .phone-drawer-utilities .button > span { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .sidebar .phone-drawer-utilities .button > .icon { width: 18px; height: 18px; flex-shrink: 0; }
-  /* Settings and Help sit at the bottom, within thumb reach. */
-  .phone-drawer-utilities { margin-top: auto !important; }
-  .sidebar .side-bottom { margin-top: 0; }
-  .phone-drawer-utilities { display: grid; grid-template-columns: repeat(var(--tiles, 4), minmax(0, 1fr)); gap: 4px; margin-top: 8px; padding-top: 8px; border-top: 1px solid #ffffff24; }
   /* The Documents level: the document list replaces the menu, with a way back. */
   .sidebar:not([data-drawer-level="documents"]) > .sidebar-documents { display: none !important; }
   .sidebar[data-drawer-level="documents"] > :not(.brand, .phone-drawer-close, .sidebar-documents) { display: none !important; }
@@ -892,11 +873,9 @@ html.table-viewport-view body {
   .sidebar .sidebar-documents .document-explorer h2 { font-size: var(--type-body); letter-spacing: 0; text-transform: none; color: #e3e9df; }
   .sidebar .sidebar-documents .document-link { min-height: 44px; padding-inline: 12px; font-size: var(--type-body); }
   .sidebar .sidebar-documents .document-search input { font-size: var(--type-body); }
-  .document-empty-browse { display: inline-flex; }
   .sidebar .side-bottom { padding: 8px 12px 0; }
   .sidebar .side-footer { margin: 0; font-size: var(--type-meta); }
-  .main > .topbar, .main.project-main > .topbar,
-  :root:not([data-sidebar="collapsed"]) .main.project-main > .topbar {
+  .main > .topbar, .main.project-main > .topbar {
     display: flex; align-items: center; justify-content: space-between;
     min-height: 56px; gap: 8px; padding: 4px 8px;
   }
@@ -910,7 +889,6 @@ html.table-viewport-view body {
     width: var(--control-height); height: var(--control-height); border: 1px solid var(--line); border-radius: 50%;
     background: var(--surface); box-shadow: 0 6px 20px rgb(0 0 0 / 0.12);
   }
-  .topbar .top-actions > :is([data-action="settings"], [data-action="help"]) { display: none; }
   .topbar .top-actions { gap: 2px; flex: 0 0 auto; }
   .topbar .phone-new-task { display: inline-flex; }
   .topbar .phone-new-task > summary { justify-content: center; }
@@ -1030,9 +1008,8 @@ html.table-viewport-view body {
 
 /* The topbar version repeats the sidebar footer while the sidebar is visible,
    unless it carries the Update available notice. */
-@media (min-width: 781px) {
-  :root:not([data-sidebar="collapsed"]) .topbar .app-version:not(:has(.app-update-available)) { display: none; }
-}
+/* The version shows at the bottom of the sidebar; the top bar shows it only to offer an update. */
+.topbar .app-version:not(:has(.app-update-available)) { display: none; }
 /* Task types as chips. */
 .type-list-field { display: flex; flex-direction: column; gap: 8px; }
 .type-chips { display: flex; flex-wrap: wrap; gap: 6px; margin: 0; padding: 0; list-style: none; }

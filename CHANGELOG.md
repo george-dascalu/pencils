@@ -2,6 +2,13 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.20.24 — 2026-10-30
+
+### Changed
+
+- The sidebar opens over the page on every device instead of moving it, sliding in from the menu button at the left of the top bar. On iPad it is half as wide again. Escape, its close button, a click outside it or choosing something closes it.
+- Settings, Help and the version are at the bottom of the sidebar on iPad and desktop too; the top bar no longer shows them.
+
 ## 0.20.23 — 2026-10-30
 
 ### Added

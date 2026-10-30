@@ -7,7 +7,7 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import { test, expect, useApp } from "../fixtures.mjs";
-import { clickControl, reveal, selectProjectView, selectSettingsPage } from "../helpers/menu-controls.mjs";
+import { clickControl, reveal, selectProjectView, selectSettingsPage, openSettingsPage } from "../helpers/menu-controls.mjs";
 import { newCard } from "../helpers/new-card.mjs";
 
 const app = useApp(async (store) => {
@@ -80,7 +80,7 @@ test("range paste fills title and type, and current view filters persist across 
 test("a custom type and a typed field reach new cards, the table, calendar and timeline", async ({ page }) => {
   await openProject(page);
   // Since 0.19.31 one top-bar Settings button opens the Settings page (project sections included).
-  await page.locator('.topbar [data-action="settings"]').click();
+  await openSettingsPage(page);
   await selectSettingsPage(page, "hierarchy");
   await page.locator("#workflow-form [data-type-input]").fill("research");
   await page.locator("#workflow-form [data-type-add]").click();

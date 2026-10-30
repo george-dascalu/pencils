@@ -5,7 +5,7 @@
 // its own workflow. On phones the drawer opens and closes and the Settings page fits the screen.
 // Nothing is requested from outside the local server.
 import { test, expect, onDevices, useApp } from "../fixtures.mjs";
-import { openSettingsPage, selectProjectView } from "../helpers/menu-controls.mjs";
+import { openSettingsPage, selectProjectView, clickControl, openSidebar } from "../helpers/menu-controls.mjs";
 import { newCard } from "../helpers/new-card.mjs";
 
 const app = useApp(async (store) => ({
@@ -46,15 +46,20 @@ async function setStatuses(page, names, done) {
 }
 const statusOptions = (page) => page.locator("#task-form [name=status] option").evaluateAll((els) => els.map((el) => el.value));
 
-test("collapsing the sidebar hides it from assistive technology and survives a reload", async ({ page }) => {
+// Since 0.20.24 the sidebar opens over the page on every device and starts closed.
+test("the closed sidebar is hidden from assistive technology, and opening it leaves the page in place", async ({ page }) => {
   await page.goto(app.base);
-  await page.locator(`[data-action=project-open][data-id="${app.project.id}"]`).click();
-  await page.getByRole("button", { name: "Collapse sidebar", exact: true }).click();
+  await clickControl(page.locator(`[data-action=project-open][data-id="${app.project.id}"]`));
   await expect(page.locator(".sidebar")).toBeHidden();
   expect(await page.locator(".sidebar").evaluate((el) => el.inert)).toBe(true);
-  await expect.poll(async () => (await page.locator(".main").boundingBox()).x).toBe(0);
+  await expect(page.locator(".main")).toBeVisible();
+  expect((await page.locator(".main").boundingBox()).x).toBe(0);
+  await openSidebar(page);
+  expect(await page.locator(".sidebar").evaluate((el) => el.inert)).toBe(false);
+  expect(await page.locator(".main").evaluate((el) => el.inert), "the page behind waits").toBe(true);
+  expect((await page.locator(".main").boundingBox()).x, "the page doesn't move").toBe(0);
   await page.reload();
-  await expect(page.getByRole("button", { name: "Expand sidebar", exact: true })).toBeVisible();
+  await expect(page.locator(".sidebar"), "it starts closed after a reload").toBeHidden();
 });
 
 test("all eight fonts load from the local server and apply to the page", async ({ page }) => {
@@ -132,7 +137,7 @@ test("a project's workflow is its own: new cards and Kanban use it, and a status
 
 test("a new project can start with its own workflow", async ({ page }) => {
   await openProject(page);
-  await page.locator('.side-new[data-action="project-new"]').click();
+  await clickControl(page.locator('.side-new[data-action="project-new"]'));
   await page.locator("#project-form [name=title]").fill("Independent workflow");
   await setStatuses(page, ["queued", "complete"], "complete");
   await page.locator("#project-form [type=submit]").click();

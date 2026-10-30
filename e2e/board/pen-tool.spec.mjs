@@ -197,7 +197,6 @@ test("the pen toolbar fits a phone in dark mode", async ({ page }) => {
   await open(page);
   await page.keyboard.press("p");
   await expect(page.locator("#pen-tools")).toBeVisible();
-  await page.locator('[data-personal="sidebar"]').click();
   await page.setViewportSize({ width: 390, height: 844 });
   await page.evaluate(() => (document.documentElement.dataset.theme = "dark"));
   await expect.poll(async () => {

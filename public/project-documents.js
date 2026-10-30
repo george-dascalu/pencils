@@ -1194,13 +1194,9 @@ export function projectDocuments(ctx) {
         }
       }
       else if (action === "browse") {
-        // The document list is in the main sidebar: open the phone drawer on it,
-        // or show a collapsed desktop sidebar, then offer the search field.
-        if (document.querySelector(".mobile-menu")?.getClientRects().length) document.querySelector(".mobile-menu").click();
-        else {
-          if (document.documentElement.dataset.sidebar === "collapsed") document.querySelector('.desktop-sidebar-toggle')?.click();
-          focusOnOpen(document.querySelector("#document-search"), button);
-        }      } else if (action === "create") {
+        // The document list is in the sidebar: open it there.
+        document.querySelector(".mobile-menu")?.click();
+      } else if (action === "create") {
         button.disabled = true;
         await create();
       } else if (action === "import") document.querySelector("#document-import").click();

@@ -65,8 +65,7 @@ textarea,
 
 /* Shared chrome uses the same density as its controls, in every workspace. */
 .main > .topbar,
-.main.project-main > .topbar,
-:root:not([data-sidebar="collapsed"]) .main.project-main > .topbar {
+.main.project-main > .topbar {
   min-height: var(--control-bar-height);
   padding-block: var(--control-bar-padding);
 }

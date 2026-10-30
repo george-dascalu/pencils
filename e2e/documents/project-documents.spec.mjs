@@ -5,6 +5,7 @@
 // (view picker and Document tools for narrow editors).
 import fs from "node:fs/promises";
 import { test, expect, onDevices, useApp } from "../fixtures.mjs";
+import { openSidebar } from "../helpers/menu-controls.mjs";
 import { chooseDocumentView, documentName, noHorizontalScroll, renameDocument, setTheme } from "../helpers/documents.mjs";
 
 const app = useApp(async (store) => {
@@ -56,13 +57,14 @@ function documentTests() {
       expect(await noHorizontalScroll(page), theme).toBe(true);
       const bounds = await page.locator(".documents-workspace").boundingBox();
       expect(bounds.y + bounds.height <= height + 1 && bounds.height > 600, `${theme} workspace fills the screen ${JSON.stringify(bounds)}`).toBe(true);
-      if (width > 780) await expect(page.getByRole("complementary", { name: "Document explorer" })).toBeVisible();
+      await expect(page.getByRole("complementary", { name: "Document explorer" }), "the explorer waits in the closed sidebar").toBeHidden();
     }
   });
 
   test("Find a document filters the list, and Back returns to the previous document", async ({ page }) => {
     await open(page);
     await browse(page);
+    await openSidebar(page);
     await page.getByLabel("Find a document").fill("Decisions");
     await expect(page.locator("[data-document-open]")).toHaveCount(1);
     await page.locator(`[data-document-open="${app.second.id}"]`).click();
@@ -74,6 +76,7 @@ function documentTests() {
   test("a new document saves its title, rich text and Markdown, exports, and reloads", async ({ page }) => {
     await open(page);
     await browse(page);
+    await openSidebar(page);
     await page.getByRole("button", { name: "New document", exact: true }).first().click();
     await expect(title(page)).toHaveText("Untitled document");
     // Since 0.19.31 a new document opens the Rename panel with its name ready to change.

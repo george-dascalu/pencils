@@ -1,6 +1,8 @@
-// Open the containing disclosure through its visible, keyboard-accessible control.
+// Open the containing disclosure through its visible, keyboard-accessible control. The sidebar
+// opens over the content on every device (0.20.24), from the top bar's menu button.
 export async function reveal(locator) {
   await locator.waitFor({ state: "attached" });
+  if (await locator.evaluate((el) => !!el.closest(".sidebar:not(.open)"))) await openSidebar(locator.page());
   const options = locator.locator('xpath=ancestor::details[contains(@class,"mobile-view-options")]');
   if ((await options.count()) && !(await options.evaluate(el => el.open)))
     await options.locator(":scope > summary").click();
@@ -83,15 +85,23 @@ export async function cancelConfirm(page) {
   await page.locator(".confirm-popover").waitFor({ state: "detached" });
 }
 
-// Since 0.19.31 one Settings button (the top bar's, or the phone drawer's settings row) opens
-// the Settings page: the project's sections (General first), "You" ("personal", the former
-// Personal settings) and Organisation. Pass a section to show it. Leave with
+export async function openSidebar(page) {
+  if (!(await page.locator(".sidebar.open").count())) await page.locator(".topbar .mobile-menu").click();
+  await page.locator(".sidebar.open").waitFor();
+}
+export async function closeSidebar(page) {
+  if (await page.locator(".sidebar.open").count()) await page.locator(".sidebar .phone-drawer-close").click();
+  await page.locator(".sidebar.open").waitFor({ state: "detached" });
+}
+// One Settings button, at the bottom of the sidebar (0.20.24; the top bar's before), opens the
+// Settings page: the project's sections (General first), "You" ("personal", the former Personal
+// settings) and Organisation. Pass a section to show it. Leave with
 // `[data-action=settings-close]`, which returns to the view Settings was opened from.
 export async function openSettingsPage(page, section) {
-  if (await page.locator(".mobile-menu").isVisible()) {
-    await page.locator(".mobile-menu").click();
-    await page.locator(".phone-drawer-utilities").getByRole("button", { name: "Settings", exact: true }).click();
-  } else await page.locator(".topbar [data-action=settings]").click();
+  await clickControl(page.locator(".sidebar .phone-drawer-utilities [data-action=settings]"));
   await page.locator(".settings-navigation h1").waitFor();
   if (section) await showSettingsSection(page, section);
+}
+export async function openHelp(page) {
+  await clickControl(page.locator(".sidebar .phone-drawer-utilities [data-action=help]"));
 }
