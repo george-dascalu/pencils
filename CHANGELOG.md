@@ -2,6 +2,12 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.20.41 — 2026-10-30
+
+### Changed
+
+- On phones the search sheet rises in, follows the keyboard as it opens and closes instead of jumping, and slides away when closed, and the page behind it no longer pans to the search field. With Reduce motion it stays still.
+
 ## 0.20.40 — 2026-10-30
 
 ### Changed

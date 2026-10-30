@@ -622,7 +622,8 @@ export function installFeatures(ctx) {
     const dialog = $("dialog.search-dialog");
     if (!dialog) return; // the open card kept its dialog (for example, a cleared title)
     const input = $("#global-search-input"), clear = dialog.querySelector(".search-dialog-clear");
-    input.focus();
+    // Without preventScroll iOS pans the page to the field while the sheet moves above the keyboard.
+    input.focus({ preventScroll: true });
     // The ✕ clears the text, or closes the sheet when there is none.
     const name = () => {
       const label = input.value ? "Clear search" : "Close search";

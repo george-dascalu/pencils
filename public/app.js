@@ -1353,6 +1353,19 @@ function showDialog(html, kind, { boardPanel = false, nodeId = null } = {}) {
   $("[autofocus]", dialog)?.focus();
 }
 function closeDialog(force = false, { confirmDirty = true, keepDraft = false } = {}) {
+  // The phone search sheet closes at once, so whatever was chosen opens; an inert copy slides away
+  // unless motion is reduced.
+  const sheet = $("#dialogs > dialog.search-dialog[open]");
+  if (sheet && matchMedia("(max-width: 600px) and (prefers-reduced-motion: no-preference)").matches) {
+    const box = sheet.getBoundingClientRect(), copy = sheet.cloneNode(true);
+    for (const el of [copy, ...copy.querySelectorAll("[id]")]) el.removeAttribute("id");
+    Object.assign(copy.style, { position: "fixed", inset: "auto", left: `${box.left}px`, top: `${box.top}px`, width: `${box.width}px`, height: `${box.height}px`, margin: "0" });
+    copy.inert = true;
+    document.body.append(copy);
+    copy.show();
+    copy.animate([{ transform: "none", opacity: 1 }, { transform: "translateY(24px)", opacity: 0 }], { duration: 160, easing: "ease-in", fill: "forwards" })
+      .finished.catch(() => {}).then(() => copy.remove());
+  }
   const form = $("#task-form");
   if (form?.dataset.id || form?.dataset.draftNode) {
     void features.flushTask();

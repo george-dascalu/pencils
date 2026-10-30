@@ -72,3 +72,41 @@ onDevices(["desktop", "phone"], () => test("a misspelt search suggests the likel
   const [line, link] = [await suggestion.boundingBox(), await suggestion.getByRole("button", { name: "showcase", exact: true }).boundingBox()];
   expect(line.height, `${device}: one line ${JSON.stringify({ line, link })}`).toBeLessThanOrEqual(link.height + 4);
 }));
+
+// Owner request, 30 October 2026 (screen recording): the phone search sheet rises in, follows the
+// keyboard as it opens and closes instead of jumping, and slides away when closed. Reduced motion
+// keeps it still.
+onDevices(["phone"], () => test("on phones the search sheet moves smoothly, unless motion is reduced", async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: "no-preference" }); // the fixtures reduce motion
+  await page.goto(`${app.base}/#project/${app.project.id}/list`);
+  const open = async () => {
+    await page.locator(".topbar .tabs").getByRole("button", { name: "Search", exact: true }).click();
+    await expect(dialog(page)).toBeVisible();
+  };
+  await open();
+  expect(await dialog(page).evaluate((el) => el.getAnimations().length), "it rises in").toBeGreaterThan(0);
+  const moves = await dialog(page).evaluate((el) => getComputedStyle(el).transitionProperty);
+  expect(moves, "it follows the keyboard").toMatch(/bottom/);
+  expect(moves, "and the room above it").toMatch(/max-height/);
+  const leaving = await page.evaluate(() => {
+    document.querySelector(".search-dialog-clear").click();
+    return !!document.querySelector("dialog.search-dialog");
+  });
+  expect(leaving, "it slides away before it goes").toBe(true);
+  await expect(page.locator("dialog.search-dialog")).toHaveCount(0);
+  // Choosing a result opens it at once, while the sheet slides away.
+  await open();
+  await page.locator("#global-search-input").fill("lighthouse review");
+  await dialog(page).locator("#global-search-results .search-result").first().click();
+  await expect(page.locator("#task-form [name=title]"), "the chosen card opens").toHaveValue("Lighthouse review");
+  await page.locator("[data-action=dialog-close]").first().click();
+  await expect(page.locator("dialog.search-dialog"), "only the one copy slid away").toHaveCount(0);
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await open();
+  expect(await dialog(page).evaluate((el) => el.getAnimations().length), "reduced motion: no animation").toBe(0);
+  const gone = await page.evaluate(() => {
+    document.querySelector(".search-dialog-clear").click();
+    return !document.querySelector("dialog.search-dialog");
+  });
+  expect(gone, "reduced motion: it closes at once").toBe(true);
+}));

@@ -399,6 +399,15 @@ summary:focus-visible,
   .search-dialog .search-result > :not(strong, span:first-of-type) { display: none; }
   #global-search-results > .field-hint:last-child, #command-results:not(:has(button)) { display: none; }
 }
+/* The sheet rises in and follows the keyboard as it opens and closes, instead of jumping (features.js
+   moves it with the visual viewport; app.js slides it away on close). */
+@media (max-width: 600px) and (prefers-reduced-motion: no-preference) {
+  dialog.search-dialog[open] {
+    animation: search-sheet-in 220ms cubic-bezier(0.2, 0.8, 0.2, 1);
+    transition: bottom 200ms cubic-bezier(0.2, 0.8, 0.2, 1), max-height 200ms cubic-bezier(0.2, 0.8, 0.2, 1);
+  }
+}
+@keyframes search-sheet-in { from { transform: translateY(24px); opacity: 0; } }
 .planning-head {
   display: flex;
   justify-content: space-between;
