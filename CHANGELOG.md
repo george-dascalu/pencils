@@ -2,6 +2,20 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.20.38 — 2026-10-30
+
+### Added
+
+- **Table options → Copy as CSV** copies a document table for a spreadsheet or another app.
+
+### Changed
+
+- Insert → Table (or `/table`) adds an empty two-column table with the caret in its first cell, instead of placeholder text to replace.
+
+### Fixed
+
+- Inserting a divider, table or other block under a line of text adds a blank line first, so a divider no longer turns that text into a heading.
+
 ## 0.20.37 — 2026-10-30
 
 ### Added

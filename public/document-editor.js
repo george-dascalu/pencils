@@ -15,7 +15,7 @@ import { insertCategories } from "./document-insert.js";
 import { highlightCodeBlocks } from "./document-code.js";
 import { listCallouts, listCalloutAfterMarker, setListCallout, listCalloutLabel } from "./document-list-callouts.js";
 
-export function markdownDocumentEditor({ parent, text, mode = "live", renderer, documents, cards = () => [], hidden = [], taskQueries, onChange, onError, onLink, onInsert, onComment, onSketch, icon, panel }) {
+export function markdownDocumentEditor({ parent, text, mode = "live", renderer, documents, cards = () => [], hidden = [], taskQueries, onChange, onError, onLink, onInsert, onComment, onSketch, icon, panel, toast }) {
   const presentation = new Compartment();
   let view, alive = true, focusedComponent = null;
   const hoverEffect = StateEffect.define();
@@ -70,7 +70,7 @@ export function markdownDocumentEditor({ parent, text, mode = "live", renderer, 
       element.innerHTML = renderer.render(this.raw, !this.block);
       if (["table", "blockquote", "code", "documentMathBlock", "html"].includes(this.kind)) {
         editableDocumentComponent({
-          element, raw: this.raw, from: this.from, kind: this.kind, editor, renderer, onError, hydrate, icon, panel, onLink,
+          element, raw: this.raw, from: this.from, kind: this.kind, editor, renderer, onError, hydrate, icon, panel, toast, onLink,
           onSearch: () => openSearchPanel(editor),
           onFocus: component => { focusedComponent = component; },
           history: backwards => backwards ? redo(editor) : undo(editor),
@@ -393,7 +393,7 @@ export function markdownDocumentEditor({ parent, text, mode = "live", renderer, 
       view.dispatch({ changes: { from: range.from, to: range.to, insert: before + inside + after }, selection: { anchor: range.from + before.length, head: range.from + before.length + inside.length } });
     } else {
       const inserts = {
-        table: "| Column | Column |\n| --- | --- |\n| Value | Value |",
+        table: "|  |  |\n| --- | --- |\n|  |  |",
         codeblock: "```text\nCode\n```",
         mermaid: "```mermaid\nflowchart LR\n  Start --> Finish\n```",
         taskquery: "```tasks\nnot done\nsort by due\n```",
@@ -402,8 +402,13 @@ export function markdownDocumentEditor({ parent, text, mode = "live", renderer, 
         rule: "---",
       };
       if (inserts[command]) {
-        const from = view.state.doc.lineAt(range.from).from;
-        view.dispatch({ changes: { from, insert: inserts[command] + "\n\n" }, selection: { anchor: from } });
+        const line = view.state.doc.lineAt(range.from);
+        // A blank line after text above, which would otherwise take a divider as a heading underline.
+        const gap = line.number > 1 && view.state.doc.line(line.number - 1).text.trim() ? "\n" : "", from = line.from + gap.length;
+        view.dispatch({ changes: { from: line.from, insert: gap + inserts[command] + "\n\n" }, selection: { anchor: from } });
+        // A new table starts empty, with the caret in its first cell (Live preview, not on touch).
+        const first = command === "table" && view.dom.querySelector(`[data-component-from="${from}"] th`);
+        if (first) return void focusOnOpen(first, view.contentDOM);
       } else {
         const prefix = command === "bullet" ? "- " : command === "number" ? "1. " : command === "check" ? "- [ ] " : command === "quote" ? "> " : /^h[1-6]$/.test(command) ? "#".repeat(Number(command[1])) + " " : "";
         const start = view.state.doc.lineAt(range.from).number, end = view.state.doc.lineAt(range.to).number;

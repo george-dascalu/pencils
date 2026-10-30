@@ -53,7 +53,7 @@ test("typing after / filters, and Enter inserts the element in place of /query",
   await page.keyboard.type("/tab");
   await readyToChoose(page, "Table");
   await page.keyboard.press("Enter");
-  await expect.poll(() => editorSource(page), "a table is inserted").toMatch(/\| Column \| Column \|\n\| --- \| --- \|/);
+  await expect.poll(() => editorSource(page), "a table is inserted").toMatch(/\|  \|  \|\n\| --- \| --- \|\n\|  \|  \|/);
   expect(await editorSource(page), "the /query is removed").not.toMatch(/\/tab/);
 });
 

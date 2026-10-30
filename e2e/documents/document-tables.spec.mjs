@@ -111,3 +111,25 @@ test("spreadsheet cells pasted into the text become a table", async ({ page }) =
   await expect(cell(page, "Row 1, column 1")).toHaveText("Apples");
   await expect.poll(async () => (await app.store.getDocument(app.project.id, record.id)).body).toContain("Intro\n\n| Name | Qty |\n| --- | --- |\n| Apples | 3 |");
 });
+
+// Insert → Table starts an empty table with the caret in its first cell, and Table options copies
+// the table as CSV.
+test("Insert → Table adds an empty table with the caret in its first cell", async ({ page }) => {
+  const record = await app.store.createDocument(app.project.id, { title: `Insert ${Date.now()}`, body: "Intro\n" });
+  await page.goto(`${app.base}/#project/${app.project.id}/documents/${record.id}`);
+  await page.getByRole("textbox", { name: "Document content" }).click();
+  await page.keyboard.press("Control+End");
+  await page.getByRole("button", { name: "Insert", exact: true }).click();
+  await page.getByRole("dialog", { name: "Insert", exact: true }).getByRole("button", { name: "Table", exact: true }).click();
+  await expect(cell(page, "Header, column 1")).toBeFocused();
+  await page.keyboard.type("Name");
+  await expect.poll(async () => (await app.store.getDocument(app.project.id, record.id)).body).toContain("Intro\n\n| Name |  |\n| --- | --- |\n|  |  |");
+});
+
+test("Table options copies the table as CSV", async ({ page }) => {
+  await page.context().grantPermissions(["clipboard-read", "clipboard-write"]);
+  await open(page, lines("| Name | Note |", "| --- | --- |", "| Smith, J | a<br>b |"));
+  await choose(page, "Row 1, column 1", "Copy as CSV");
+  await expect.poll(() => page.evaluate(() => navigator.clipboard.readText())).toBe('Name,Note\n"Smith, J","a\nb"');
+  await expect(page.getByText("Table copied as CSV.")).toBeVisible();
+});

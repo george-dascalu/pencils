@@ -3,7 +3,7 @@ import { gfm } from "/vendor/turndown-gfm.js";
 import { codeLanguages, codeLanguageName, codeLanguageEntry, highlightCode } from "./document-code.js";
 import { TABLE_SCROLL_MARKER } from "./document-markdown.js";
 import { focusOnOpen } from "./open-focus.js";
-import { parseTabSeparated } from "./document-tables.js";
+import { parseTabSeparated, csv } from "./document-tables.js";
 
 const converter = new TurndownService({ headingStyle: "atx", codeBlockStyle: "fenced", bulletListMarker: "-" });
 converter.use(gfm);
@@ -51,7 +51,7 @@ const callout = raw => /^>\s*\[!([\w-]+)\]([+-])?(?:[ \t]+([^\n]*))?(?:\n|$)/.ex
 
 // A rendered block owns editable DOM, while every edit remains a CodeMirror
 // transaction. Only this block changes; the rest of the Markdown is untouched.
-export function editableDocumentComponent({ element, raw, from, kind, editor, renderer, onError, onFocus, onLink, onSearch, history, hydrate, icon, panel }) {
+export function editableDocumentComponent({ element, raw, from, kind, editor, renderer, onError, onFocus, onLink, onSearch, history, hydrate, icon, panel, toast }) {
   let source = trim(raw), position = from, writing = false, composing = false;
   let savedRange = null, focusedField = null;
   const token = renderer.tokens(source)[0];
@@ -287,6 +287,13 @@ export function editableDocumentComponent({ element, raw, from, kind, editor, re
           return row.cells[Math.min(column, columns() - 1)];
         }],
       ]],
+      ["Export", [
+        // Copying changes nothing, so it returns no cell.
+        ["Copy as CSV", "duplicate", false, () => {
+          const rows = [...table.rows].map(r => [...r.cells].map(cell => cell.innerText.replace(/\n$/, "")));
+          (async () => navigator.clipboard.writeText(csv(rows)))().then(() => toast?.("Table copied as CSV."), error => onError(error.message));
+        }],
+      ]],
     ];
     // Spreadsheet keys: Enter moves down a row, adding one after the last (Shift+Enter breaks the
     // line), Tab past the last cell adds a row, and the arrows cross into the next cell at a cell's
@@ -360,8 +367,9 @@ export function editableDocumentComponent({ element, raw, from, kind, editor, re
           if (!choice) return;
           const [group, index] = choice.dataset.tableAction.split(":");
           const next = groups.find(([name]) => name === group)[1][index][3]();
-          relabel(); commit(); editor.requestMeasure();
           box.querySelector("[data-document-panel-close]").click();
+          if (!next) return;
+          relabel(); commit(); editor.requestMeasure();
           // On touch focus stays on the button; the toolbar and the next choice still act on this cell.
           current = focusedField = next;
           focusOnOpen(next, button);
