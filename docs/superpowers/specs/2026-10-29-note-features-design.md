@@ -87,6 +87,12 @@ Decisions (owner, 29 Oct): captures land in a chosen project tagged `inbox`; Tod
 ### 17. No Info button where details always show (owner request, 29 Oct)
 - In the card editor's Info / History / Comments group, the Info button shows only where it switches panes (phones); on iPad and desktop, where the details are always visible, the group holds History and Comments.
 
+### 26. Bookmarks (owner request, 30 Oct)
+- A card, a project view (List, Kanban, Timeline…), a board or a document can be bookmarked. Bookmarks belong to the signed-in person and are saved on the server (`.pencils/bookmarks.json`, one list per person, at most 200), so every device shows the same ones.
+- A star button, filled when bookmarked, sits in each place's own bar: the card editor's header, the document bar, the board toolbar and the toolbar of a project view. It toggles at once (optimistically) and reverts with a message if the save fails.
+- The search popup (bottom bar's Search on phones, the Search button elsewhere) lists bookmarks first: all of them before you type, the matching ones above other results as you type. Choosing one opens it.
+- The server returns bookmarks with their current names (renames show at once) and leaves out ones that were deleted or that the person can no longer open; adding checks that the person can open the item.
+
 ## Out of scope (for later)
 Natural-language dates, Day Planner time blocks, weekly notes, `.base` export, client-side search index, arbitrary template scripts.
 

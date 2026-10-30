@@ -121,7 +121,7 @@
   display: flex;
   position: sticky;
   top: 0;
-  z-index: 3;
+  z-index: 4;
   height: 60px;
   background: var(--surface-soft);
   border-bottom: 1px solid var(--line);
@@ -213,7 +213,8 @@
   font-size: 12px;
   position: sticky;
   left: 0;
-  z-index: 2;
+  /* Above the bars (2), which pass under it when the timeline scrolls sideways; below the header (4). */
+  z-index: 3;
   height: 100%;
   padding: 8px 12px;
   background: var(--surface);

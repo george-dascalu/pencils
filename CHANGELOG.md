@@ -2,6 +2,13 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.20.22 — 2026-10-30
+
+### Fixed
+
+- Scrolling the Timeline sideways no longer draws task bars over the Task column.
+- In List and Tree rows on iPad (Safari) and in Firefox, the assignee, status and priority box has one width on every row and holds the priority, which no longer sits over the due date.
+
 ## 0.20.21 — 2026-10-30
 
 ### Changed

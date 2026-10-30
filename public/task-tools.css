@@ -100,7 +100,9 @@ body.task-reordering, body.task-reordering * { cursor: grabbing !important; user
   color: var(--muted);
 }
 
-.task-row > .row-fields { flex: 0 1 auto; }
+/* The field box is exactly its three fields wide (assignee, status, priority), so every row's box
+   has one width and holds them: Firefox and Safari otherwise size it from the fields' text. */
+.task-row > .row-fields { flex: none; width: calc(var(--control-height) + var(--list-field-status-width) + max(var(--control-height), var(--list-field-priority-width))); }
 .row-fields > .row-priority { display: flex; align-items: center; justify-content: center; }
 .row-due { flex: 0 0 68px; }
 .task-row .due { font-size: 11px; }
@@ -145,6 +147,7 @@ body.task-reordering, body.task-reordering * { cursor: grabbing !important; user
   display: flex;
   align-items: center;
   flex: 0 0 var(--list-field-status-width);
+  min-width: 0;
 }
 .row-status > span { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
 .task-row > .row-due { min-height: 28px; padding: 0 4px; border-radius: 4px; text-align: left; }
@@ -177,6 +180,7 @@ body.task-reordering, body.task-reordering * { cursor: grabbing !important; user
     height: 44px;
     min-height: 44px;
   }
+  .task-row > .row-fields { width: calc(88px + var(--list-field-status-width)); }
   .task-row :is(input.task-title, .row-choice, .row-due, .row-task-link) { height: 44px; min-height: 44px; }
 }
 
