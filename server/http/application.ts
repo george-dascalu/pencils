@@ -40,6 +40,9 @@ import { attachmentsRoutes } from "./routes/attachments.js";
 import { recordsRoutes } from "./routes/records.js";
 import { captureRoutes } from "./routes/capture.js";
 import { bookmarksRoutes } from "./routes/bookmarks.js";
+import { homeRoutes } from "./routes/home.js";
+import { Home } from "../home.js";
+import { Visits } from "../visits.js";
 import { barRoutes } from "./routes/bar.js";
 
 interface ServerOptions {
@@ -106,6 +109,9 @@ export function createServer(
     capture: new Capture(store, auth),
     bookmarks,
     bar: new Bar(store, bookmarks),
+    home: new Home(store),
+    visits: new Visits(store, bookmarks),
+    embed: (options as { home?: Record<string, unknown> }).home || {},
     rooms: new Map(),
   };
   store.watch();
@@ -313,6 +319,8 @@ export function createServer(
   route(["/api/capture"], captureRoutes, true, 64_000);
   route(["/api/capture-tokens", "/api/capture-tokens/:project"], captureRoutes);
   route(["/api/bookmarks"], bookmarksRoutes);
+  route(["/api/home", "/api/home/embed"], homeRoutes);
+  route(["/api/visits"], homeRoutes, false, 64e3);
   route(["/api/bar"], barRoutes);
   route(
     ["/api/projects", "/api/projects/:project", "/api/demo"],
@@ -415,7 +423,7 @@ function securityHeaders(req: http.IncomingMessage): Record<string, string> {
     "Referrer-Policy": "same-origin",
     "X-Frame-Options": "DENY",
     "Content-Security-Policy":
-      "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self'; object-src 'none'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'",
+      "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self'; object-src 'none'; base-uri 'none'; frame-ancestors 'none'; frame-src https: http:; form-action 'self'",
     ...((req.socket as TLSSocket).encrypted
       ? { "Strict-Transport-Security": "max-age=31536000" }
       : {}),

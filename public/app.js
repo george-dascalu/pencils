@@ -109,6 +109,7 @@ const paths = {
   capacity: "M4 20V10h4v10M10 20V4h4v16M16 20v-7h4v7",
   documents: "M5 3h9l5 5v13H5zM14 3v6h5M8 13h8M8 17h6",
   overview: "M3 3h7v7H3zM14 3h7v7h-7zM3 14h7v7H3zM14 14h7v7h-7z",
+  home: "M3 11 12 3l9 8M5 10v10h5v-6h4v6h5V10",
   star: "M12 3l2.8 5.7 6.2.9-4.5 4.4 1.1 6.2L12 17.3l-5.6 2.9 1.1-6.2L3 9.6l6.2-.9z",
   comment: "M4 4h16v12H9l-5 4V4ZM8 8h8M8 12h5",
   send: "M22 2 11 13M22 2l-7 20-4-9-9-4z",
@@ -789,7 +790,7 @@ function renderAppNow() {
     <aside id="workspace-sidebar" class="sidebar ${state.menu ? "open" : ""}" data-drawer-level="${p && state.drawerLevel === "documents" ? "documents" : "menu"}">
       <button class="brand" data-action="home" aria-label="Pencils home"><img src="/icon.svg" alt=""><span class="wordmark">pencils<span style="color:#b9d18c">.</span></span></button>
       <button class="icon-button phone-drawer-close" id="sidebar-close" data-action="menu" aria-label="Close navigation">${icon("close")}</button>
-      <nav class="personal-links" aria-label="Personal"><button class="directory-link ${p?.personal ? "active" : ""}" data-action="personal-open" ${p?.personal ? 'aria-current="page"' : ""}>${icon("person")}<span>Personal</span></button><button class="directory-link" data-action="today">${icon("calendar")}<span>Today</span></button></nav>
+      <nav class="personal-links" aria-label="Personal"><button class="directory-link ${!p && !state.helpArticle && !state.directoryPage ? "active" : ""}" data-action="home" ${!p && !state.helpArticle && !state.directoryPage ? 'aria-current="page"' : ""}>${icon("home")}<span>Home</span></button><button class="directory-link ${p?.personal ? "active" : ""}" data-action="personal-open" ${p?.personal ? 'aria-current="page"' : ""}>${icon("person")}<span>Personal</span></button><button class="directory-link" data-action="today">${icon("calendar")}<span>Today</span></button></nav>
       <section class="sidebar-switch organisation-switch" aria-label="Organisation"><div class="side-label">ORGANISATION<button data-action="organisation-new" aria-label="New organisation" title="New organisation">${icon("plus")}</button></div><div class="sidebar-choice"><select id="organisation-select" aria-label="Switch organisation">${state.organisations.map((o) => `<option value="${esc(o.id)}" ${o.id === state.organisation?.id ? "selected" : ""}>${esc(o.title)}</option>`).join("")}</select></div></section>
       <section class="sidebar-switch project-switch" aria-label="Projects"><div class="side-label">PROJECTS<button data-action="project-new" aria-label="New project" title="New project">${icon("plus")}</button></div><div class="sidebar-choice">${projectSelectHTML(p)}</div></section>
       ${p ? '<section id="sidebar-documents" class="sidebar-documents" aria-label="Documents"></section>' : ""}
@@ -798,13 +799,14 @@ function renderAppNow() {
       <div class="side-footer"><span class="dot"></span>Local workspace${headerStatus.versionHTML()}</div></div>
     </aside>
     <main class="main">
-      <header class="topbar"><div class="breadcrumb"><button class="icon-button mobile-menu" data-action="menu" aria-label="Toggle sidebar" aria-controls="workspace-sidebar" aria-expanded="${state.menu}">${icon("menu")}</button><strong ${p ? 'role="heading" aria-level="1"' : ""}>${esc(p?.title || (state.helpArticle ? "Help" : state.directoryPage ? label(state.directoryPage) : "Projects"))}</strong></div>${p ? projectNavigationHTML() : ""}<div class="top-actions">${p ? newMenuHTML("icon") : ""}<div class="save-state" id="save-state">${appStatusHTML()}</div></div></header>
+      <header class="topbar"><div class="breadcrumb"><button class="icon-button mobile-menu" data-action="menu" aria-label="Toggle sidebar" aria-controls="workspace-sidebar" aria-expanded="${state.menu}">${icon("menu")}</button><strong ${p ? 'role="heading" aria-level="1"' : ""}>${esc(p?.title || (state.helpArticle ? "Help" : state.directoryPage ? label(state.directoryPage) : "Home"))}</strong></div>${p ? projectNavigationHTML() : ""}<div class="top-actions">${p ? newMenuHTML("icon") : ""}<div class="save-state" id="save-state">${appStatusHTML()}</div></div></header>
       ${!state.online ? '<div class="connection-banner">Local server unavailable. Reconnect to its network to save changes.</div>' : ""}
-      ${state.helpArticle ? helpPageHTML(state.helpArticle, { esc, icon }) : state.directoryPage === "settings" ? '<div id="view-toolbar"></div><section id="view-content" class="content"></section>' : p ? projectPage() : welcomePage()}
+      ${state.helpArticle ? helpPageHTML(state.helpArticle, { esc, icon }) : state.directoryPage === "settings" ? '<div id="view-toolbar"></div><section id="view-content" class="content"></section>' : p ? projectPage() : features.homeHTML()}
     </main></div>`;
   updateViewLayout(state);
   if (p) renderView();
   if (state.directoryPage === "settings") void features.settingsRender();
+  if (!p && !state.helpArticle && !state.directoryPage) features.homeMount();
   features.afterRender();
   setLoading(state.loading);
   if (dateOpener && !dateOpener.isConnected) {
@@ -937,7 +939,7 @@ function projectNavigationHTML() {
     ["Visual views", ["board"]],
   ].filter(([name]) => !state.project.personal || name === "Documents");
   return `<div id="board-project-tools" class="board-project-tools">
-    <nav class="tabs" aria-label="Project views"><div class="tabs-scroll" style="--bar-items: ${groups.length + features.bottomBar.count()}">${groups
+    <nav class="tabs" aria-label="Project views"><div class="tabs-scroll" style="--bar-items: ${groups.length + 1 + features.bottomBar.count()}"><div class="view-tab-group" role="group" aria-label="Home"><button class="tab tab-home" data-action="home" aria-label="Home" title="Home">${icon("home")}</button></div>${groups
       .map(
         ([name, group]) =>
           `<div class="view-tab-group" role="group" aria-label="${name}">${group.map((view) => {
@@ -1017,6 +1019,7 @@ function renderView(onlyContent = false) {
 function renderViewNow(onlyContent) {
   observeKanbanLayout(null);
   navigation.schedule();
+  features.homeVisitCurrent();
   updateViewLayout(state);
   if (
     state.boardTaskEditor &&
@@ -1573,7 +1576,7 @@ const navigation = browserNavigation({
   restore: restoreNavigation,
   onError: (error) => toast(error.message, true),
 });
-const features = installFeatures({
+const features = installFeatures({ welcomePage,
   state,
   taskViews,
   planningViews,
@@ -1672,6 +1675,7 @@ function draftTaskDialog(nodeId = "new") {
 }
 
 function taskDialog(id = null, defaults = {}, replace = false) {
+  if (id && state.project) features.homeVisit("card", state.project.id, id);
   if (!id && state.boardTaskEditor && !$("#task-form")?.dataset.id) {
     focusOnOpen($("#task-form [name=title]"), $('.task-dialog [data-action="dialog-close"]'));
     return;
@@ -3037,10 +3041,19 @@ async function boot() {
       state.organisations.find((o) => o.id === lastOrganisation) ||
       state.organisations[0];
     const destination = navigation.initial();
+    const bare = /^#project\/([\w-]+)$/.exec(location.hash);
     if (destination) {
       if (!(await restoreNavigation(destination))) renderApp();
-    } else if (organisation) await openOrganisation(organisation.id);
-    else renderApp();
+    } else if (bare && state.projects.some((p) => p.id === bare[1])) {
+      await openProject(bare[1]);
+    } else {
+      // The app starts on Home (0.20.93), in the last organisation.
+      if (organisation) {
+        state.organisation = organisation;
+        storage.set("organisation", organisation.id);
+      }
+      renderApp();
+    }
     navigation.start();
   } catch (error) {
     renderApp();

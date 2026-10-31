@@ -22,7 +22,8 @@ test.beforeEach(async ({ page }) => {
   traffic.set(page, seen);
   page.on("request", (r) => {
     if (r.url().startsWith("http") && !r.url().startsWith(app.base)) seen.external.push(r.url());
-    if (["POST", "PUT", "PATCH", "DELETE"].includes(r.method()) && !r.url().endsWith("/presence")) seen.mutations.push(r.url());
+    // Presence and the person's own visits (Home's Recent panel) aren't project data.
+    if (["POST", "PUT", "PATCH", "DELETE"].includes(r.method()) && !r.url().endsWith("/presence") && !r.url().endsWith("/visits")) seen.mutations.push(r.url());
   });
 });
 test.afterEach(async ({ page }) => {

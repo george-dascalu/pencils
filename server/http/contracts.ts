@@ -23,6 +23,9 @@ export interface Services {
   capture: LegacyService;
   bookmarks: LegacyService;
   bar: LegacyService;
+  home: LegacyService;
+  visits: LegacyService;
+  embed: Record<string, unknown>;
   rooms: Map<string, Map<string, any>>;
 }
 export interface RequestContext extends Services {

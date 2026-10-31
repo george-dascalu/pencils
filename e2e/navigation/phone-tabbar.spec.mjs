@@ -43,7 +43,7 @@ onDevices(["phone", "small", "ipad", "ipad-portrait"], () => test("five icon tab
     await page.setViewportSize({ width, height });
   }
   expect(parseFloat(await bar(page).evaluate((el) => getComputedStyle(el).borderTopLeftRadius))).toBeGreaterThan(8);
-  expect(await bar(page).locator(".tab").evaluateAll((els) => els.map((el) => el.getAttribute("aria-label")))).toEqual(["Overview", "Documents", "Planning", "Tasks", "Boards", "Search"]);
+  expect(await bar(page).locator(".tab").evaluateAll((els) => els.map((el) => el.getAttribute("aria-label")))).toEqual(["Home", "Overview", "Documents", "Planning", "Tasks", "Boards", "Search"]);
   for (const t of await bar(page).locator(".tab").all()) {
     expect((await t.boundingBox()).height).toBeGreaterThanOrEqual(44);
     await expect(t.locator(".icon"), "icons only").toBeVisible();
@@ -167,7 +167,7 @@ onDevices(["phone"], () => test("the drawer lists Personal, Today, projects, Set
   await page.locator(".sidebar.open").waitFor();
   const sidebar = page.locator(".sidebar");
   await expect(sidebar.locator("#project-select")).toContainText("Tab bar");
-  await expect(sidebar.locator(".personal-links .directory-link")).toHaveText(["Personal", "Today"]);
+  await expect(sidebar.locator(".personal-links .directory-link")).toHaveText(["Home", "Personal", "Today"]);
   await expect(sidebar.locator(".phone-drawer-utilities button")).toHaveText(["Settings", "Roadmap", "Help"]);
   await expect(sidebar.locator("[data-view]")).toHaveCount(0);
 }));

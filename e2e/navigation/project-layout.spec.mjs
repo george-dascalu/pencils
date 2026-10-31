@@ -36,7 +36,7 @@ async function boardSettled(page) {
 test("one Tasks tab owns every task layout, with shared search and keyboard selection", { tag: "@gate" }, async ({ page }) => {
   await openProject(page);
   expect(await page.locator(".view-tab-group").evaluateAll((groups) => groups.map((g) => [...g.querySelectorAll("[data-view]")].map((el) => el.dataset.view))))
-    .toEqual([["overview"], ["documents"], ["planning"], ["tasks"], ["board"]]);
+    .toEqual([[], ["overview"], ["documents"], ["planning"], ["tasks"], ["board"]]); // the first group is the touch bars' Home tab (0.20.93)
   await selectProjectView(page, "table");
   await expect(page.locator('.tabs [aria-current="page"]')).toHaveAttribute("data-view", "tasks");
   await expect(page.locator(".tabs [data-view=table],.tabs [data-view=list],.tabs [data-view=tree]")).toHaveCount(0);

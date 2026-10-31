@@ -112,7 +112,7 @@ onDevices(["phone"], () => test("without a project the drawer offers the project
   await openDrawer(page);
   await page.locator(".sidebar .brand").click();
   await page.waitForFunction(() => !document.querySelector(".sidebar.open"));
-  await expect(page.locator(".topbar strong")).toHaveText("Projects");
+  await expect(page.locator(".topbar strong")).toHaveText("Home");
   await openDrawer(page);
   expect(await page.locator("#project-select option").evaluateAll((els) => els.map((o) => [o.textContent.trim(), o.selected, o.disabled]))).toEqual([["Choose a project", true, true], ["A little more possibility", false, false], ["Second project", false, false]]);
   assert.equal(await visible(page, "[data-view]"), 0, "no project views");

@@ -1152,3 +1152,5 @@ html.table-viewport-view body {
   .topbar .breadcrumb > .bookmark-button { flex: none; }
   .main.project-main > #view-toolbar[data-empty] { display: none; }
 }
+/* The phone bar's Home tab (home.js); desktop reaches Home from the brand and the sidebar. */
+@media (min-width: 601px) and (pointer: fine) { .topbar .tabs .view-tab-group:has(> .tab-home) { display: none; } }

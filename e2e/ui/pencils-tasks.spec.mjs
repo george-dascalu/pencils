@@ -74,8 +74,8 @@ onDevices(["phone", "ipad", "ipad-portrait"], () => test("PEN-10 the shell does 
   await open(page, "documents", ".documents-workspace");
   expect(await page.evaluate(() => document.scrollingElement.scrollHeight - innerHeight), "documents page does not scroll").toBeLessThanOrEqual(1);
   await page.goto(app.base);
-  // The app reopens the last project view from the home address.
-  await page.locator("#view-content > *").first().waitFor();
+  // Home opens from the app's address (0.20.93) and scrolls inside the content like a view.
+  await page.locator(".home-grid").waitFor();
   expect(await page.evaluate(() => document.scrollingElement.scrollHeight - innerHeight), "home page does not scroll").toBeLessThanOrEqual(1);
 }));
 

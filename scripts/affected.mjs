@@ -30,6 +30,7 @@ const AREAS = {
   planning: /^(calendar|capacity|planning|timeline-|task-timeline|schedule-|teams)/,
   settings: /^(project-settings|personal-settings|capture-settings|style-settings|project-sources|source-model|project-automations|workflow-|teams|recovery-ui|backup-limits)/,
   navigation: /^(help|topbar-title|bookmarks|bottom-bar|roadmap)/,
+  home: /^home/,
   ui: /^(color-|select-menu|date-picker|confirm-popover|format-date|in-place-editing)/,
 };
 const shared = (file) => SHARED.some((rule) => rule.test(file));

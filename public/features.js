@@ -6,6 +6,7 @@ import { priorityLabel } from "./task-priority.js";
 import { randomUUID } from "./uuid.js";
 import {projectAutomations} from "./project-automations.js";
 import { projectSettings } from "./project-settings.js";
+import { installHome } from "./home.js";
 import {projectSources} from "./project-sources.js";
 import { showSchedulePreview } from "./schedule-preview.js";
 import { localDate } from "./task-visibility.js";
@@ -71,6 +72,7 @@ export function installFeatures(ctx) {
     drawingFeature = deferredController(() => import("./drawing-view.js").then(m => m.drawingView(ctx)), { ready: false }, ["enter", "settled"]),
     drawings = drawingFeature.controller;
   settings = projectSettings(ctx, { sources, automations, personal: () => personal, organisationEditor: (form) => dialogOpened("organisation", form) });
+  const home = installHome({ ...ctx, commands });
   const plan = planning(ctx),
     sheet = grid(ctx),
     recovery = recoveryUI(ctx),
@@ -1121,6 +1123,10 @@ export function installFeatures(ctx) {
     documentsRender: documents.render,
     documentsReset: documents.reset,
     documentsSyncChanged: documents.syncChanged,
+    homeHTML: home.html,
+    homeMount: home.mount,
+    homeVisit: home.visit,
+    homeVisitCurrent: home.visitCurrent,
     settingsRender: settings.render,
     settingsOpen: settings.open,
     settingsCanLeave: settings.canLeave,

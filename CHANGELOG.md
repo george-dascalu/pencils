@@ -2,6 +2,16 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.20.93 — 2026-10-31
+
+### Added
+
+- Home: each person's own page of panels, opened at start, from the brand, the Home row at the top of the sidebar and the phone bar's first tab. Panels sit on a 12-column grid; Edit layout drags and resizes them (overlapped panels move down), adds from a catalogue and removes, and every change saves for you on every device. Phones stack the panels in reading order. Panels: Projects, Bookmarks, Commands, Recent, Most visited, Web page (a page that refuses to be embedded shows a link card instead), Task list, Stat, Breakdown, Note and Document.
+
+### Changed
+
+- The app opens on Home instead of the last project; the projects you had are one tap away in Home's Projects panel, the sidebar's Projects dropdown or the bottom bar.
+
 ## 0.20.92 — 2026-10-31
 
 ### Added

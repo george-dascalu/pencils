@@ -142,8 +142,9 @@ test("offline drawing survives a reload without the server, and pending edits gu
     await expect(page.locator("#offline-content > g > g"), "both strokes come back from the device").toHaveCount(2);
 
     await gateway.restart();
-    // Restoring Board from local preferences must guard pending edits too.
+    // Opening the project from Home restores its last view, the board, which must guard pending edits too.
     await page.goto(gateway.base);
+    await page.locator(`.home-grid .project-card[data-id="${project.id}"]`).click();
     await pendingGuard(page).waitFor();
     await expect(page.locator("#canvas")).toHaveCount(0);
     await page.locator('[data-action="dialog-close"]').click();
