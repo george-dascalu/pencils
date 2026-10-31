@@ -883,6 +883,13 @@ html.table-viewport-view body {
 .sidebar .phone-drawer-utilities { display: grid; grid-template-columns: repeat(var(--tiles, 4), minmax(0, 1fr)); gap: 4px; margin-top: auto; padding-top: 8px; border-top: 1px solid #ffffff24; }
 .sidebar .phone-drawer-utilities .button { justify-content: flex-start; min-width: 0; background: transparent; border-color: transparent; color: inherit; }
 .sidebar .phone-drawer-utilities + .side-bottom { margin-top: 0; }
+/* 48px tiles at every width (PEN-1: drawer rows stay compact; three tiles since 0.20.92), still 44px+ targets. */
+.sidebar .phone-drawer-utilities .button {
+  flex-direction: column; justify-content: center; gap: 2px; height: 48px !important; min-height: 48px;
+  padding: 2px !important; font-size: var(--type-small) !important; line-height: 1.15;
+}
+.sidebar .phone-drawer-utilities .button > span { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sidebar .phone-drawer-utilities .button > .icon { flex-shrink: 0; }
 @media (max-width: 780px) {
   .sidebar { overflow-y: auto; overscroll-behavior: contain; padding: 8px 12px 16px; }
   .sidebar .brand { padding: 4px 8px 8px; }
@@ -901,13 +908,6 @@ html.table-viewport-view body {
   .sidebar .side-label {
     font-size: var(--type-meta); font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: #a1b1a4;
   }
-  .sidebar .phone-drawer-utilities .button {
-    /* 48px tiles (PEN-1: drawer rows stay compact), still 44px+ targets. */
-    flex-direction: column; justify-content: center; gap: 2px; height: 48px !important; min-height: 48px;
-    padding: 2px !important; font-size: var(--type-small) !important; line-height: 1.15;
-  }
-  .sidebar .phone-drawer-utilities .button > span { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .sidebar .phone-drawer-utilities .button > .icon { width: 18px; height: 18px; flex-shrink: 0; }
   /* The Documents level: the document list replaces the menu, with a way back. */
   .sidebar:not([data-drawer-level="documents"]) > .sidebar-documents { display: none !important; }
   .sidebar[data-drawer-level="documents"] > :not(.brand, .phone-drawer-close, .sidebar-documents) { display: none !important; }

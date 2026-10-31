@@ -74,7 +74,7 @@ onDevices(["phone"], () => test("the phone drawer opens Settings from its settin
   await page.goto(`${app.base}/#project/${app.project.id}/list`);
   await page.locator(".mobile-menu").click();
   const row = page.locator(".sidebar .phone-drawer-utilities");
-  await expect(row.locator("button")).toHaveText(["Settings", "Help"]);
+  await expect(row.locator("button")).toHaveText(["Settings", "Roadmap", "Help"]);
   await row.getByRole("button", { name: "Settings" }).click();
   await expect(page.locator("#settings-page-title")).toBeVisible();
 }));

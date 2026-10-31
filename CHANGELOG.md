@@ -2,6 +2,16 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.20.92 — 2026-10-31
+
+### Added
+
+- A Roadmap page, opened from a Roadmap tile between Settings and Help at the bottom of the sidebar: every feature request with its status (in progress, requested, done), when it was requested, started and done, and the release it shipped in. It is updated with every release.
+
+### Changed
+
+- The sidebar's bottom row (Settings, Roadmap, Help) uses the same compact tiles at every width.
+
 ## 0.20.91 — 2026-10-31
 
 ### Changed

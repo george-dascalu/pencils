@@ -1,4 +1,28 @@
 // Bundled guides work locally. External links are references, not loaded resources.
+import { roadmap } from "./roadmap.js";
+
+// The Roadmap page: the requests under each status, done ones newest first, in reference tables.
+const escapeHtml = (value) => String(value ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
+const byId = (a, b) => a.id.localeCompare(b.id, undefined, { numeric: true });
+const roadmapTable = (items) =>
+  items.length
+    ? `<div class="help-table"><table><thead><tr><th>ID</th><th>Request</th><th>Requested</th><th>Started</th><th>Done</th><th>Release</th></tr></thead><tbody>${items
+        .map((i) => `<tr data-roadmap="${escapeHtml(i.id)}"><td>${escapeHtml(i.id)}</td><td>${escapeHtml(i.title)}</td><td>${escapeHtml(i.requested)}</td><td>${escapeHtml(i.started || "")}</td><td>${escapeHtml(i.done || "")}</td><td>${escapeHtml(i.version || "")}</td></tr>`)
+        .join("")}</tbody></table></div>`
+    : "<p>Nothing here at the moment.</p>";
+const roadmapArticle = {
+  id: "roadmap",
+  title: "Roadmap",
+  group: "Pencils",
+  summary: "Every feature request, its status and when it was started and done. Updated with each release.",
+  sections: [
+    { id: "in-progress", title: "In progress", html: roadmapTable(roadmap.filter((i) => i.status === "in progress").sort(byId)) },
+    { id: "requested", title: "Requested", html: roadmapTable(roadmap.filter((i) => i.status === "requested").sort(byId)) },
+    { id: "done", title: "Done", html: roadmapTable(roadmap.filter((i) => i.status === "done").sort((a, b) => String(b.version ?? "").localeCompare(String(a.version ?? ""), undefined, { numeric: true }) || byId(b, a))) },
+  ],
+  footer: "Updated with each release",
+};
+
 export const helpArticles = [
   {
     id: "start",
@@ -252,6 +276,7 @@ export const helpArticles = [
       },
     ],
   },
+  roadmapArticle,
 ];
 
 export function helpArticle(id) {

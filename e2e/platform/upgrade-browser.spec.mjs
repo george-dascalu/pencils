@@ -221,7 +221,7 @@ test("phones reach Project settings from the drawer and the page does not overfl
   // that row holds only Settings (the one Settings page, project sections included) and Help.
   await page.locator(".mobile-menu").click();
   await expect(page.locator(".phone-drawer-utilities [data-action=settings]")).toBeVisible();
-  await expect(page.locator(".phone-drawer-utilities button")).toHaveText(["Settings", "Help"]);
+  await expect(page.locator(".phone-drawer-utilities button")).toHaveText(["Settings", "Roadmap", "Help"]);
   await page.locator(".phone-drawer-close").click();
   await page.locator(".sidebar.open").waitFor({ state: "detached" });
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);

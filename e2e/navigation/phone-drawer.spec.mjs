@@ -36,8 +36,8 @@ onDevices(["phone", "small"], () => test("the drawer lists organisation and proj
   for (const selector of [".organisation-switch", ".project-switch"]) assert.ok(await visible(page, selector) > 0, `${selector} shown`);
   assert.equal(await visible(page, "[data-view]"), 0, "no view tiles");
   const row = await page.locator(".sidebar .phone-drawer-utilities :is(button, [data-personal])").evaluateAll((els) => els.filter((el) => el.getClientRects().length).map((el) => [el.getAttribute("aria-label") || el.textContent.trim(), Math.round(el.getBoundingClientRect().top), el.getBoundingClientRect().height]));
-  assert.ok(row.length === 2 && new Set(row.map(([, top]) => top)).size === 1, `settings share one row ${JSON.stringify(row)}`);
-  assert.deepEqual(row.map(([name]) => name), ["Settings", "Help & guides"]);
+  assert.ok(row.length === 3 && new Set(row.map(([, top]) => top)).size === 1, `settings share one row ${JSON.stringify(row)}`);
+  assert.deepEqual(row.map(([name]) => name), ["Settings", "Roadmap", "Help & guides"]);
   assert.ok(row.every(([, , h]) => h >= 44), "44px tap targets");
   const [projects, settings, sidebar] = await Promise.all([page.locator(".sidebar .project-switch").boundingBox(), page.locator(".sidebar .phone-drawer-utilities").boundingBox(), page.locator(".sidebar").boundingBox()]);
   assert.ok(settings.y >= projects.y + projects.height, "settings below the projects");

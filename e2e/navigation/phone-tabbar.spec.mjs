@@ -168,7 +168,7 @@ onDevices(["phone"], () => test("the drawer lists Personal, Today, projects, Set
   const sidebar = page.locator(".sidebar");
   await expect(sidebar.locator("#project-select")).toContainText("Tab bar");
   await expect(sidebar.locator(".personal-links .directory-link")).toHaveText(["Personal", "Today"]);
-  await expect(sidebar.locator(".phone-drawer-utilities button")).toHaveText(["Settings", "Help"]);
+  await expect(sidebar.locator(".phone-drawer-utilities button")).toHaveText(["Settings", "Roadmap", "Help"]);
   await expect(sidebar.locator("[data-view]")).toHaveCount(0);
 }));
 

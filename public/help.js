@@ -36,7 +36,7 @@ export function helpPageHTML(id, { esc, icon }) {
         <h1 id="help-title" tabindex="-1">${esc(article.title)}</h1><p class="help-intro">${esc(article.summary)}</p>
         <nav class="help-contents" aria-label="On this page"><strong>On this page</strong>${article.sections.map((s) => `<button type="button" data-help-section="${s.id}">${esc(s.title)}</button>`).join("")}</nav>
         ${article.sections.map((s) => `<section class="help-section"><h2 id="help-section-${s.id}" tabindex="-1">${esc(s.title)}</h2>${content(s.html)}</section>`).join("")}
-        <footer class="help-article-footer">Guides for this installation · Documentation checked ${esc(article.updated || "17 October 2026")}</footer>
+        <footer class="help-article-footer">${esc(article.footer || `Guides for this installation · Documentation checked ${article.updated || "17 October 2026"}`)}</footer>
       </article>
     </div>
   </section>`;
