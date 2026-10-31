@@ -2,6 +2,13 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.20.90 — 2026-10-31
+
+### Changed
+
+- Dropdowns open and close with a short fade when the device allows motion: the shared select menu fades in and out, and board menus, View options and selection menus fade in.
+- Attachments adds files with a + beside its title, like Relationships and the sidebar's lists, instead of an Add attachments button under the description.
+
 ## 0.20.89 — 2026-10-31
 
 ### Changed

@@ -18,13 +18,17 @@ export function taskAttachments(
     preview = attachmentPreview({ esc, icon }, dialog);
   list.className = "task-attachments";
   list.setAttribute("aria-label", "Attachments");
-  list.innerHTML = '<h3>Attachments</h3><ul class="task-attachment-list"></ul>';
+  // The + beside the title adds files, as Relationships' controls and the sidebar's lists do.
+  list.innerHTML = '<div class="task-attachments-heading"><h3>Attachments</h3></div><ul class="task-attachment-list"></ul>';
   form.querySelector(".task-description").append(list);
   status.className = "field-hint task-attachment-status";
   status.setAttribute("role", "status");
   choose.type = "button";
-  choose.className = "task-attachment-choose button";
-  choose.innerHTML = `${icon("attachment")}<span>Add attachments</span>`;
+  choose.className = "task-attachment-choose icon-button";
+  choose.setAttribute("aria-label", "Add attachments");
+  choose.title = "Add attachments";
+  choose.innerHTML = icon("plus");
+  list.querySelector(".task-attachments-heading").append(choose);
   input.type = "file";
   input.multiple = true;
   input.hidden = true;
@@ -35,7 +39,7 @@ export function taskAttachments(
     enqueue([...input.files]);
     input.value = "";
   });
-  form.querySelector(".task-description").append(choose, input, status);
+  form.querySelector(".task-description").append(input, status);
   overlay.className = "task-file-drop-overlay";
   overlay.textContent = "Drop files to attach";
   overlay.hidden = true;
@@ -63,7 +67,7 @@ export function taskAttachments(
       list.querySelector("ul").innerHTML = html;
       rendered = html;
     }
-    list.hidden = !files.length;
+    list.querySelector("ul").hidden = !files.length;
   }
   function bodyChanged(event) {
     if (event.target === form.elements.body) refresh();

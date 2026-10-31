@@ -1,13 +1,18 @@
 .task-attachments {
   margin-top: 20px;
 }
-.task-attachment-choose { margin-top: 12px; max-width: 100%; }
-.task-attachments[hidden] {
-  display: none;
+.task-attachments-heading {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 8px;
 }
 .task-attachments h3 {
-  margin: 0 0 8px;
+  margin: 0 auto 0 0;
   font-size: 14px;
+}
+.task-attachment-list[hidden] {
+  display: none;
 }
 .task-attachment-list {
   list-style: none;

@@ -29,6 +29,24 @@
   --green: #b3c891;
   --focus-ring: 1px solid #b3c891;
 }
+/* A short fade in and out when the device allows motion (select-menu.js keeps a closing menu
+   until its fade ends). */
+@media (prefers-reduced-motion: no-preference) {
+  .select-menu {
+    transition: opacity 0.12s ease, translate 0.12s ease;
+  }
+  @starting-style {
+    .select-menu:popover-open {
+      opacity: 0;
+      translate: 0 -4px;
+    }
+  }
+  .select-menu.closing {
+    opacity: 0;
+    translate: 0 -4px;
+    pointer-events: none;
+  }
+}
 .select-menu::backdrop {
   background: transparent;
   pointer-events: none;

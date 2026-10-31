@@ -35,10 +35,19 @@ export function installSelectMenus({ esc, icon, taskColor = () => "" }) {
     select.title ||
     select.name ||
     "Choose an option";
+  // A closing menu fades out when the device allows motion (select-menu.css), then goes.
+  function remove(closing) {
+    if (parseFloat(getComputedStyle(closing).transitionDuration) < 0.05) return closing.remove();
+    // Fading, it is no longer the open menu that the rest of the app looks for by id.
+    closing.removeAttribute("id");
+    closing.classList.add("closing");
+    closing.addEventListener("transitionend", (event) => { if (event.target === closing) closing.remove(); });
+    setTimeout(() => closing.remove(), 300);
+  }
   function close(focus = false) {
     if (!menu) return;
     const target = source, anchor = anchorEl || source;
-    menu.remove();
+    remove(menu);
     menu = source = anchorEl = null;
     cancelAnimationFrame(frame);
     target.removeAttribute("aria-controls");
@@ -111,6 +120,8 @@ export function installSelectMenus({ esc, icon, taskColor = () => "" }) {
     source = select;
     anchorEl = anchor;
     query = "";
+    // One menu at a time: a menu still fading out goes at once.
+    for (const stale of document.querySelectorAll("#shared-select-menu, .select-menu.closing")) stale.remove();
     menu = document.createElement("div");
     // A menu opened from the sidebar takes the sidebar's dark colours (select-menu.css).
     menu.className = `select-menu${select.closest(".sidebar") ? " sidebar-select-menu" : ""}`;

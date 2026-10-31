@@ -304,3 +304,22 @@ test("the editor layout and the attachment preview fit desktop, tablet and phone
     }
   }
 });
+
+// Owner request (T19, 31 October 2026): Attachments adds files with a + beside its title, like
+// Relationships' controls and the sidebar's lists, instead of a text button under the description.
+test("Attachments adds files with a + beside its title", async ({ page }) => {
+  await page.goto(`${app.base}/#project/${app.project.id}/list`);
+  await open(page, app.other.id);
+  const heading = page.locator("#task-form .task-attachments-heading");
+  await expect(heading.locator("h3")).toHaveText("Attachments");
+  const add = heading.getByRole("button", { name: "Add attachments", exact: true });
+  await expect(add, "an icon, no text").toHaveText("");
+  await expect(add.locator("svg")).toHaveCount(1);
+  const [title, button] = [await heading.locator("h3").boundingBox(), await add.boundingBox()];
+  expect(button.x, "to the right of the title").toBeGreaterThan(title.x + title.width);
+  expect(Math.abs(button.y + button.height / 2 - (title.y + title.height / 2)), "on the title's row").toBeLessThanOrEqual(2);
+  await expect(page.locator("#task-form .task-attachment-choose:not(.icon-button)"), "no text button below the description").toHaveCount(0);
+  const chooser = page.waitForEvent("filechooser");
+  await add.click();
+  expect((await chooser).isMultiple(), "several files at once").toBe(true);
+});

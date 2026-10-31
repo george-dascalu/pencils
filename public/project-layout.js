@@ -375,6 +375,11 @@ export function projectLayout(ctx) {
       switcher.focus({ preventScroll: true });
     }
   });
+  // A disclosure opened by hand fades in (project-layout.css); one a re-render recreates open does not.
+  document.addEventListener("click", (event) => {
+    const menu = event.target.closest("summary")?.parentElement;
+    if (menu?.matches(".board-menu, .mobile-view-options, .selection-menu")) menu.setAttribute("data-user-open", "");
+  }, true);
   // Native disclosures support keyboard activation and keep controls reachable.
   document.addEventListener(
     "click",
@@ -427,6 +432,7 @@ export function projectLayout(ctx) {
           event.stopImmediatePropagation();
           for (const other of document.querySelectorAll(".board-menu[open]:not([data-expanded])"))
             if (other !== menu) other.open = false;
+          menu.setAttribute("data-user-open", "");
           menu.open = true;
           state.headerMenu = menu.dataset.boardMenu || null;
           positionMenus();
