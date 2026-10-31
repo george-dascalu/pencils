@@ -133,12 +133,12 @@ test.describe("short iPad window", () => {
     await expect(page.locator(".phone-board-dock .board-tools")).toHaveCount(1);
     await page.setViewportSize({ width: 1024, height: 600 });
     await page.locator(".phone-board-dock").waitFor({ state: "detached" });
-    const tools = page.locator(".board-tools");
+    const tools = page.locator(".board-tools-scroll");
     const cameraBeforeScroll = await page.locator("#canvas-world").getAttribute("style");
     await tools.evaluate((el) => (el.scrollTop = 0));
     await tools.hover();
     await page.mouse.wheel(0, 300);
-    await page.waitForFunction(() => document.querySelector(".board-tools").scrollTop > 0);
+    await page.waitForFunction(() => document.querySelector(".board-tools-scroll").scrollTop > 0);
     await expect(page.locator("#canvas-world"), "scrolling the tool categories does not zoom or pan the board").toHaveAttribute("style", cameraBeforeScroll);
     await tools.getByRole("button", { name: "Connect two objects", exact: true }).click();
     expect(await tools.evaluate((el) => el.scrollTop), "selecting a tool keeps the toolbar scroll position").toBeGreaterThan(0);

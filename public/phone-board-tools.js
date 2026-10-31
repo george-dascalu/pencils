@@ -60,7 +60,7 @@ export function phoneBoardTools({ icon, state }) {
     tools.append(palette);
     const navigation = palette.querySelector(".phone-board-extra-navigation");
     move(tools.querySelector('[data-pro="search-toggle"]'), navigation);
-    for (const group of tools.querySelectorAll(':scope > .board-tool-group:not([aria-label="Navigate"])')) move(group, palette);
+    for (const group of dock.querySelectorAll('.board-tool-group:not([aria-label="Navigate"])')) move(group, palette);
     const view = document.createElement("div");
     view.className = "phone-board-view-tools";
     view.setAttribute("role", "group"); view.setAttribute("aria-label", "View");

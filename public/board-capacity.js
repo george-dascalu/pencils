@@ -18,8 +18,8 @@ export function boardCapacity() {
     const trigger = document.querySelector('#board-capacity-toggle');
     if (!panel?.matches(':popover-open') || !trigger) return;
     const r = trigger.getBoundingClientRect();
-    // Beside the gauge at the top of the view controls on the right; above it in the phone dock.
-    const anchor = trigger.closest('.phone-board-dock') ? r : { left: r.left - 230, top: r.top - 10, bottom: r.top - 10 };
+    // To the right of the gauge at the foot of the tool bar; above it in the phone dock.
+    const anchor = trigger.closest('.phone-board-dock') ? r : { left: r.right + 10, top: r.top - 10, bottom: r.top - 10 };
     positionPopover(panel, anchor, { width: 220, maxHeight: 100, gap: 10 });
   }
   // Keep Space/Enter and Escape native instead of invoking canvas shortcuts.
@@ -33,7 +33,7 @@ export function boardCapacity() {
       const controls = canvas.querySelector('.board-controls');
       if (!controls) return;
       if (!controls.querySelector('.board-capacity')) {
-        controls.insertAdjacentHTML('afterbegin', `<div class="board-capacity"><button type="button" class="icon-button board-capacity-toggle" id="board-capacity-toggle" popovertarget="board-capacity-info" aria-controls="board-capacity-info" aria-expanded="false" title="Board capacity"><svg viewBox="0 0 36 36" aria-hidden="true"><circle class="capacity-track" cx="18" cy="18" r="15.5"/><circle class="capacity-progress" cx="18" cy="18" r="15.5" pathLength="100"/></svg><span class="capacity-percent" aria-hidden="true"></span></button><div class="board-capacity-info canvas-panel" id="board-capacity-info" popover="auto" role="note"><strong class="capacity-count"></strong><strong class="capacity-frame-count"></strong></div></div>`);
+        controls.querySelector('#zoom-label').insertAdjacentHTML('beforebegin', `<div class="board-capacity"><button type="button" class="icon-button board-capacity-toggle" id="board-capacity-toggle" popovertarget="board-capacity-info" aria-controls="board-capacity-info" aria-expanded="false" title="Board capacity"><svg viewBox="0 0 36 36" aria-hidden="true"><circle class="capacity-track" cx="18" cy="18" r="15.5"/><circle class="capacity-progress" cx="18" cy="18" r="15.5" pathLength="100"/></svg><span class="capacity-percent" aria-hidden="true"></span></button><div class="board-capacity-info canvas-panel" id="board-capacity-info" popover="auto" role="note"><strong class="capacity-count"></strong><strong class="capacity-frame-count"></strong></div></div>`);
         const panel = controls.querySelector('#board-capacity-info');
         panel.addEventListener('toggle', () => {
           controls.querySelector('#board-capacity-toggle').setAttribute('aria-expanded', String(panel.matches(':popover-open')));

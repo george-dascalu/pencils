@@ -1106,7 +1106,7 @@ function renderViewNow(onlyContent) {
   };
   content.className = ["board", "drawing"].includes(state.view) ? "board-content" : "content";
   const previousTools = content.querySelector(".board-tools");
-  const toolScroll = previousTools && previousTools.dataset.board === board()?.id ? previousTools.scrollTop : 0;
+  const toolScroll = previousTools && previousTools.dataset.board === board()?.id ? previousTools.querySelector(".board-tools-scroll").scrollTop : 0;
   const allTasks = filteredTasks();
   state.statusTotals = Object.fromEntries(state.config.statuses.map((status) => [status, allTasks.filter((t) => t.status === status).length]));
   const page =
@@ -1122,7 +1122,7 @@ function renderViewNow(onlyContent) {
     features.canvasRender();
     features.drawingRender();
     features.timelineRender();
-    const tools = $(".board-tools");
+    const tools = $(".board-tools-scroll");
     if (tools) tools.scrollTop = toolScroll;
     taskPanelController?.position();
     return;
@@ -1821,9 +1821,12 @@ function boardToolsHTML() {
     ["Tasks", `<button type="button" data-action="board-task" aria-label="Project tasks" title="Project tasks" aria-expanded="${!!state.boardTaskPanel}" aria-controls="board-task-panel">${icon("task")}</button><button type="button" data-feature="project-frame-add" data-tool="project-frame" title="Project frame" aria-label="Add Project frame">${icon("project-frame")}</button>`],
     ["Create", tool("sticky", "Add sticky note") + tool("text", "Add text") + tool("shape", "Add shape") + `<button type="button" data-feature="image-add" aria-label="Add images or GIFs" title="Images / GIFs · PNG, JPG, WebP or GIF · Up to 10 MB each">${icon("image")}</button><button type="button" data-feature="draw-tool" data-tool="draw" aria-label="Pen" title="Pen (P)">${icon("pencil")}</button>`],
     ["Arrange", `<button type="button" data-feature="frame-add" data-tool="frame" title="Frame (F)" aria-label="Draw frame">${icon("frame")}</button>` + tool("grid", "Add grid", "board-add", "table") + tool("connect", "Connect two objects", "board-tool")],
-    ["History", `<button type="button" data-action="board-undo" title="Undo" aria-label="Undo canvas change" ${state.history.length ? "" : "disabled"}>${icon("undo")}</button><button type="button" data-action="board-redo" title="Redo" aria-label="Redo canvas change" ${state.future.length ? "" : "disabled"}>${icon("redo")}</button>`],
   ];
-  return `<div class="board-tools" role="toolbar" aria-label="Canvas tools" aria-orientation="vertical" data-board="${esc(board().id)}">${groups.map(([name, buttons]) => `<div class="board-tool-group" role="group" aria-label="${name}"><span class="board-tool-category" aria-hidden="true">${name}</span>${buttons}</div>`).join("")}</div>`;
+  // Undo, redo and the view controls (capacity, zoom level, full screen) stay at the foot of the bar
+  // while the tools above them scroll.
+  const historyGroup = ["History", `<button type="button" data-action="board-undo" title="Undo" aria-label="Undo canvas change" ${state.history.length ? "" : "disabled"}>${icon("undo")}</button><button type="button" data-action="board-redo" title="Redo" aria-label="Redo canvas change" ${state.future.length ? "" : "disabled"}>${icon("redo")}</button>`];
+  const group = ([name, buttons]) => `<div class="board-tool-group" role="group" aria-label="${name}"><span class="board-tool-category" aria-hidden="true">${name}</span>${buttons}</div>`;
+  return `<div class="board-tools" role="toolbar" aria-label="Canvas tools" aria-orientation="vertical" data-board="${esc(board().id)}"><div class="board-tools-scroll">${groups.map(group).join("")}</div><div class="board-controls">${group(historyGroup)}<button type="button" class="icon-button board-zoom" id="zoom-label" data-action="board-zoom" title="Zoom level: double-click to fit the board (Alt+1)" aria-keyshortcuts="Alt+1">${Math.round(state.camera.z * 100)}%</button></div></div>`;
 }
 function boardView() {
   const b = board();
@@ -1832,7 +1835,7 @@ function boardView() {
   return `<div class="canvas ${state.tool === "hand" ? "pan-mode" : state.tool === "connect" ? "connect-mode" : ""}" id="canvas" tabindex="0" aria-label="Freeform project canvas. Use tools to add objects, drag to move them, and double-click to edit.">
     <div class="canvas-world" id="canvas-world"><svg class="canvas-lines" id="canvas-lines">${edgesHTML(b)}</svg>${features.canvasNodes(b).map(nodeHTML).join("")}</div>
     ${boardToolsHTML()}
-    ${boardTaskPanelHTML()}${selectionHTML()}<div class="board-controls"><button type="button" class="icon-button board-zoom" id="zoom-label" data-action="board-zoom" title="Zoom level: double-click to fit the board (Alt+1)" aria-keyshortcuts="Alt+1">${Math.round(state.camera.z * 100)}%</button></div>
+    ${boardTaskPanelHTML()}${selectionHTML()}
     ${!b.nodes.length ? '<div class="board-empty"><h3>Give your ideas a little room.</h3><p>Add notes, tasks, images or shapes.<br>Drop image files here to get started.</p></div>' : ""}</div>`;
 }
 function selectionHTML() {

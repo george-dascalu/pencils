@@ -2,6 +2,12 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.20.63 — 2026-10-31
+
+### Changed
+
+- On desktop and iPad, the board's capacity gauge, zoom level and full-screen toggle move from the right of the board to the foot of the tool bar on the left, together with Undo and Redo. They stay in place while the tools above them scroll. The capacity explanation opens to the right of the gauge, the people on the board move to the top right corner, and presenting hides these controls with the tools.
+
 ## 0.20.62 — 2026-10-31
 
 ### Added

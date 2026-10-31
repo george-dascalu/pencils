@@ -1,7 +1,6 @@
 // Owner requests, 30 October 2026: the bottom bar floats over the board and the open document with
-// no band of page behind it; the board's view controls form a vertical bar on the right, level with
-// the tools on the left, without zoom or fit buttons (double-click the zoom level to fit), and one
-// toggle takes the board full screen.
+// no band of page behind it; the board has no zoom or fit buttons (double-click the zoom level to
+// fit), and one toggle takes the board full screen.
 import { test, expect, onDevices, useApp } from "../fixtures.mjs";
 
 const app = useApp(async (store) => {
@@ -26,18 +25,37 @@ async function openBoard(page) {
   await expect(page.locator("#zoom-label")).toHaveText("85%");
 }
 
-onDevices(["desktop", "ipad"], () => test("the view controls stand on the right, level with the tools, without zoom buttons", async ({ page, device }) => {
+// Owner request, 31 October 2026: the view controls (capacity, zoom level, full screen) and undo/redo
+// sit at the foot of the tool bar on the left, fixed while the rest of the tools scroll.
+onDevices(["desktop", "ipad"], () => test("undo, redo and the view controls stay at the foot of the tools while the tools scroll", async ({ page, device }) => {
+  await page.setViewportSize({ width: page.viewportSize().width, height: 640 });
   await openBoard(page);
-  const [tools, controls, canvas] = await Promise.all([box(page, ".board-tools"), box(page, ".board-controls"), box(page, "#canvas")]);
-  expect(Math.abs(controls.top - tools.top), `${device}: level with the tools`).toBeLessThanOrEqual(0.5);
-  expect(Math.abs(canvas.right - controls.right - (tools.left - canvas.left)), `${device}: the same inset as the tools`).toBeLessThanOrEqual(0.5);
-  expect(Math.abs(controls.width - tools.width), `${device}: as wide as the tools`).toBeLessThanOrEqual(0.5);
-  const items = await page.locator(".board-controls > *").evaluateAll((els) => els.map((el) => el.getBoundingClientRect().toJSON()).filter((r) => r.width));
-  expect(items.length).toBeGreaterThanOrEqual(3);
+  const tools = page.locator(".board-tools"), scroller = tools.locator(".board-tools-scroll"), controls = tools.locator(".board-controls");
+  await expect(page.locator(".board-controls"), `${device}: one set of view controls, in the tool bar`).toHaveCount(1);
+  for (const name of ["Undo canvas change", "Redo canvas change", "Full screen"]) await expect(controls.getByRole("button", { name, exact: true }), `${device}: ${name}`).toBeVisible();
+  await expect(controls.locator("#zoom-label, .board-capacity-toggle")).toHaveCount(2);
+  await expect(scroller.locator('[data-action="board-undo"]')).toHaveCount(0);
+  expect(await scroller.evaluate((el) => el.scrollHeight > el.clientHeight), `${device}: the tools scroll`).toBe(true);
+  const [bar, before] = [await box(page, ".board-tools"), await box(page, ".board-controls")];
+  expect(bar.bottom - before.bottom, `${device}: at the foot of the bar`).toBeLessThanOrEqual(8);
+  expect(before.bottom, `${device}: inside the bar's foot`).toBeLessThanOrEqual(bar.bottom);
+  expect(before.left >= bar.left && before.right <= bar.right, `${device}: inside the bar`).toBe(true);
+  await scroller.evaluate((el) => (el.scrollTop = el.scrollHeight));
+  await expect.poll(() => scroller.evaluate((el) => el.scrollTop), `${device}: scrolled`).toBeGreaterThan(0);
+  expect(await box(page, ".board-controls"), `${device}: the controls do not scroll`).toEqual(before);
+  const items = await controls.locator(":scope > *").evaluateAll((els) => els.map((el) => el.getBoundingClientRect().toJSON()).filter((r) => r.width));
   for (let i = 1; i < items.length; i++) expect(items[i].top, `${device}: stacked ${JSON.stringify(items)}`).toBeGreaterThanOrEqual(items[i - 1].bottom - 0.5);
   await expect(page.locator('[data-action="zoom-in"], [data-action="zoom-out"], [data-action="board-fit"], [data-board-display="fullscreen"]')).toHaveCount(0);
-  await expect(page.getByRole("button", { name: "Full screen", exact: true })).toHaveCount(1);
-  expect((await box(page, "#canvas-presence")).right, `${device}: presence clears the controls`).toBeLessThanOrEqual(controls.left);
+  const [canvas, presence] = [await box(page, "#canvas"), await box(page, "#canvas-presence")];
+  expect(canvas.right - presence.right, `${device}: presence moves to the free right edge`).toBeLessThanOrEqual(bar.left - canvas.left);
+}));
+
+// Phones dock the cursor, hand, + and the view controls; undo and redo stay under the +.
+onDevices(["phone"], () => test("phones keep undo and redo under the dock's +", async ({ page }) => {
+  await openBoard(page);
+  for (const action of ["board-undo", "board-redo"]) await expect(page.locator(`#phone-board-palette [data-action="${action}"]`), action).toHaveCount(1);
+  expect(await page.locator(".phone-board-dock button:visible").evaluateAll((els) => els.map((el) => el.dataset.tool || el.id || el.className)))
+    .toEqual(["cursor", "hand", "phone-board-more icon-button", "board-capacity-toggle", "zoom-label"]);
 }));
 
 // On touch screens just over phone width the centred bar reaches under the tools on the left.

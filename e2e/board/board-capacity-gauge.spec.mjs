@@ -59,7 +59,7 @@ onDevices(["desktop", "phone"], () => {
     await expect(info(page).locator(".capacity-frame-count")).toHaveText("1 / 10,000 frames");
     const anchor = await gauge(page).boundingBox(), popup = await info(page).boundingBox();
     if (device === "phone") expect(popup.y + popup.height, "the explanation appears above the gauge in the dock").toBeLessThanOrEqual(anchor.y);
-    else expect(popup.x + popup.width <= anchor.x && Math.abs(popup.y - anchor.y) <= 1, `the explanation appears beside the gauge ${JSON.stringify({ popup, anchor })}`).toBe(true);
+    else expect(popup.x >= anchor.x + anchor.width && Math.abs(popup.y - anchor.y) <= 1, `the explanation appears beside the gauge, to its right ${JSON.stringify({ popup, anchor })}`).toBe(true);
     expect(popup.x >= 0 && popup.x + popup.width <= width, JSON.stringify(popup)).toBe(true);
     await gauge(page).click();
     await expect(info(page)).toBeHidden();
@@ -119,5 +119,5 @@ test("deleting and undoing objects and frames update the counts live, and the ex
   await gauge(page).click();
   await info(page).waitFor();
   const [popup, anchor] = [await info(page).boundingBox(), await gauge(page).boundingBox()];
-  expect(popup.x + popup.width, "beside the gauge").toBeLessThanOrEqual(anchor.x);
+  expect(popup.x, "beside the gauge, to its right").toBeGreaterThanOrEqual(anchor.x + anchor.width);
 });

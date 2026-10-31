@@ -1554,12 +1554,13 @@ input[type="search"]:not(.search input) {
   overflow: hidden;
   pointer-events: none;
 }
-/* The tools stand on the left of the board and its view controls (capacity, zoom level, full
-   screen) level with them on the right, in the same bar. Phones dock both at the bottom. */
-.board-tools,
-.board-controls {
+/* The tools stand on the left of the board, with undo, redo and the view controls (capacity, zoom
+   level, full screen) fixed at the foot of the bar while the tools above them scroll. Phones dock
+   them at the bottom. */
+.board-tools {
   position: absolute;
   top: 18px;
+  left: 18px;
   display: flex;
   flex-direction: column;
   gap: 5px;
@@ -1570,10 +1571,19 @@ input[type="search"]:not(.search input) {
   box-shadow: 0 4px 16px #3c4f3010;
   z-index: 5;
   width: 58px;
-}
-.board-tools {
-  left: 18px;
   max-height: calc(100% - 36px);
+}
+.board-tools-scroll,
+.board-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+/* The scrolling part reaches the bar's edges, as the whole bar did, so focus rings aren't clipped. */
+.board-tools-scroll {
+  min-height: 0;
+  margin: -6px -6px 0;
+  padding: 6px 6px 0;
   overflow-y: auto;
   overscroll-behavior: contain;
   touch-action: pan-y;
@@ -1621,7 +1631,9 @@ input[type="search"]:not(.search input) {
   margin: 3px;
 }
 .board-controls {
-  right: 18px;
+  flex: none;
+  padding-top: 6px;
+  border-top: 1px solid var(--line);
   font-size: 10px;
   color: #889b75;
 }

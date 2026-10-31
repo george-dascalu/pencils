@@ -222,8 +222,8 @@
 .canvas-presence {
   position: absolute;
   top: 12px;
-  /* Beside the view controls on the right (styles.css). */
-  right: 86px;
+  /* At the top right, clear of the tools on the left (styles.css). */
+  right: 18px;
   z-index: 8;
   display: flex;
   gap: 7px;
@@ -738,10 +738,6 @@
     max-width: calc(100% - 100px);
     top: 100px;
   }
-  .board-controls {
-    right: 8px;
-    gap: 1px;
-  }
   .board-help {
     display: none;
   }
@@ -903,7 +899,6 @@ html.board-expanded-view .shell {
 .board-capacity-info > strong { display: block; font-variant-numeric: tabular-nums; }
 .board-capacity-info > strong + strong { margin-top: 4px; }
 @media (max-width: 600px) {
-  .board-controls { max-width: calc(100% - 16px); flex-wrap: wrap; justify-content: flex-end; }
   #canvas-minimap { bottom: calc(var(--board-controls-height, 54px) + 25px); }
 }
 
@@ -921,6 +916,7 @@ html.board-expanded-view .shell {
     position: static; width: auto; max-width: none; max-height: none; flex-direction: row; flex-wrap: nowrap;
     padding: 0; margin: 0; border: 0; border-radius: 0; background: transparent; box-shadow: none; overflow: visible; gap: 2px;
   }
+  .phone-board-dock .board-tools-scroll { display: contents; }
   .phone-board-dock .board-tool-group[aria-label="Navigate"] { flex-direction: row; gap: 2px; }
   .phone-board-dock .board-tool-group[aria-label="Navigate"] > .board-tool-category { display: none; }
   .phone-board-dock #zoom-label { min-width: 30px; font-variant-numeric: tabular-nums; color: var(--ink); }
