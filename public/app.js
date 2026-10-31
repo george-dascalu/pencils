@@ -1073,6 +1073,7 @@ function renderViewNow(onlyContent) {
   if (state.view === "documents") {
     $("#view-toolbar").innerHTML = "";
     features.documentsRender();
+    features.documentStar();
     return;
   }
   if (state.view === "settings") {

@@ -2,6 +2,12 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.20.64 — 2026-10-31
+
+### Changed
+
+- On iPad, Board, Calendar, Timeline, Capacity and an open document put their bookmark star before the title in the top bar, as List, Tree, Table and Kanban do.
+
 ## 0.20.63 — 2026-10-31
 
 ### Changed

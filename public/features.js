@@ -1265,6 +1265,7 @@ export function installFeatures(ctx) {
     drawingCheckpoint: drawings.checkpoint,
     viewToolbar,
     adaptToolbar: layout.compactToolbar,
+    documentStar: layout.documentStar,
     pagination,
     filter,
     progress,

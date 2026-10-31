@@ -63,8 +63,10 @@ export function projectLayout(ctx) {
   }
   function arrangeToolbar() {
     restoreToolbar();
-    if (!(tabBar.matches && !narrow.matches && taskViews.includes(state.view))) lowerTools();
+    const ipad = tabBar.matches && !narrow.matches;
+    if (!(ipad && taskViews.includes(state.view))) lowerTools();
     phoneBoard.sync();
+    if (ipad && !taskViews.includes(state.view)) starBeforeTitle();
     const toolbar = $(".toolbar-left") || $(".board-toolbar");
     if (!toolbar) return;
     // Sorting is an icon button that opens the (hidden) select's options: beside the view's
@@ -141,19 +143,32 @@ export function projectLayout(ctx) {
       tools.className = "topbar-view-tools";
       title.closest(".breadcrumb").after(tools);
     }
-    const move = (element, place) => {
-      if (!element) return;
-      const slot = document.createComment("view control position");
-      element.before(slot);
-      moved.push([element, slot]);
-      place(element);
-    };
-    move(toolbar.querySelector(":scope > .search"), (el) => tools.append(el));
-    move(toolbar.querySelector(':scope > details.board-menu[data-board-menu="filters"]'), (el) => tools.append(el));
+    moveTo(toolbar.querySelector(":scope > .search"), (el) => tools.append(el));
+    moveTo(toolbar.querySelector(':scope > details.board-menu[data-board-menu="filters"]'), (el) => tools.append(el));
     if (sortButton) tools.append(sortButton);
-    move(toolbar.querySelector(":scope > .bookmark-button"), (el) => title.before(el));
+    moveTo(toolbar.querySelector(":scope > .bookmark-button"), (el) => title.before(el));
     const row = $("#view-toolbar");
     row?.toggleAttribute("data-empty", ![...row.querySelectorAll(".toolbar > * > *")].some((el) => el.getClientRects().length));
+  }
+  // iPad (owner request, 31 Oct 2026): Board, Planning and an open document put their star before
+  // the title too.
+  function starBeforeTitle() {
+    const title = $(".topbar .breadcrumb strong");
+    if (title) moveTo($("#view-toolbar .bookmark-button, .board-toolbar > .bookmark-button, .document-heading > .bookmark-button"), (el) => title.before(el));
+  }
+  // Documents skip the toolbar pass, which would remove their tray, so they place their star here;
+  // an earlier document's star goes with its heading.
+  function documentStar() {
+    lowerTools();
+    if (tabBar.matches && !narrow.matches) starBeforeTitle();
+  }
+  // Moves a control, leaving a marker for restoreToolbar to put it back.
+  function moveTo(element, place) {
+    if (!element) return;
+    const slot = document.createComment("view control position");
+    element.before(slot);
+    moved.push([element, slot]);
+    place(element);
   }
   // Tasks and Planning layouts move to a tray above the bottom bar, opened by tapping the open
   // tab again.
@@ -452,5 +467,5 @@ export function projectLayout(ctx) {
     },
     true,
   );
-  return { render, projectHeader, compactToolbar };
+  return { render, projectHeader, compactToolbar, documentStar };
 }
