@@ -113,8 +113,8 @@ test("the dependency arrow style is set in Board settings, undone with Ctrl+Z, k
   await page.reload();
   await expect(arrow(page)).toHaveAttribute("stroke", "#f1a9a0");
   await expect(arrow(page)).toHaveAttribute("style", /stroke-width:5;stroke-dasharray:1 5/);
-  const more = page.locator(".board-toolbar details").filter({ has: page.locator('[data-feature="canvas-svg"]') });
-  await more.locator("summary").click();
+  const tools = page.locator(".board-toolbar details").filter({ has: page.locator('[data-feature="canvas-svg"]') });
+  await tools.locator("summary").click();
   const download = page.waitForEvent("download");
   await page.locator('[data-feature="canvas-svg"]').click();
   const svg = await fs.readFile(await (await download).path(), "utf8");

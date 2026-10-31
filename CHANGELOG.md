@@ -2,6 +2,16 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.20.71 — 2026-10-31
+
+### Changed
+
+- The board bar's right side holds Session (Present and Board session), Version history (Activity, History and Local checkpoints), the bookmark star and Board tools (⋯: Rename, Copy board link, Link tasks, exports, the offline pad and Delete board), each action in one place, with icons and dividers. More keeps the board's inserting and navigating tools. Jump to frame (Outline covers it) and the Keyboard shortcuts entry (Help, or F1, has them) are gone.
+
+### Added
+
+- Board tools → Rename names the board.
+
 ## 0.20.70 — 2026-10-31
 
 ### Changed

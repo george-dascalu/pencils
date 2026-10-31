@@ -139,8 +139,8 @@ test.describe("desktop", () => {
     await open(page, { label: "Saved on click outside", fromEnd: "diamond", toEnd: "triangle", lineStyle: "dashed", width: 3, color: "#f1a9a0" });
     // A selected connector's highlight is not exported.
     await selectEdge(page);
-    const more = page.locator(".board-toolbar details").filter({ has: page.locator('[data-feature="canvas-svg"]') });
-    await more.locator("summary").click();
+    const tools = page.locator(".board-toolbar details").filter({ has: page.locator('[data-feature="canvas-svg"]') });
+    await tools.locator("summary").click();
     const downloadPromise = page.waitForEvent("download");
     await page.locator('[data-feature="canvas-svg"]').click();
     const svg = await fs.readFile(await (await downloadPromise).path(), "utf8");
@@ -148,7 +148,7 @@ test.describe("desktop", () => {
     expect(svg).toMatch(/stroke-dasharray:8 5/);
     expect(svg).toMatch(/fill="#f1a9a0"/);
     expect(svg).toMatch(/M1 5L5 1L9 5L5 9Z/);
-    if ((await more.getAttribute("open")) === null) await more.locator("summary").click();
+    if ((await tools.getAttribute("open")) === null) await tools.locator("summary").click();
     const pngPromise = page.waitForEvent("download");
     await page.locator('[data-feature="canvas-png"]').click();
     expect((await fs.stat(await (await pngPromise).path())).size).toBeGreaterThan(1000);

@@ -235,6 +235,18 @@ export function projectLayout(ctx) {
     }
     return el.querySelector(".board-menu-panel");
   }
+  // A board menu whose summary is an icon, named for screen readers and in its tooltip.
+  function iconMenu(host, key, title, glyph) {
+    const panel = menu(host, key, title), summary = panel.parentElement.querySelector("summary");
+    if (!summary.classList.contains("icon-summary")) {
+      summary.className = "icon-summary";
+      summary.setAttribute("aria-label", title);
+      summary.title = title;
+      summary.innerHTML = icon(glyph);
+    }
+    host.append(panel.parentElement);
+    return panel;
+  }
   function move(panel, selector) {
     const el = $(selector);
     if (el) panel.append(el);
@@ -290,22 +302,26 @@ export function projectLayout(ctx) {
     if (!$("#canvas") || !toolbar) return;
     const boards = menu(toolbar, "board", viewLabel("board"));
     move(boards, '[data-action="board-new"]');
-
     const more = menu(toolbar, "more", "More");
-    // Dynamic tools are recreated on each board render; remove their old copies.
-    for (const panel of [boards, more])
-      for (const el of [...panel.children]) if (!el.dataset.action && !el.dataset.boardPersistent) el.remove();
-    const extras = $("#canvas-extras");
-    if (extras)
-      for (const el of [...extras.children]) {
-        if (el.dataset.pro === "shortcuts") el.textContent = "Keyboard shortcuts";
-        (el.dataset.feature === "canvas-delete" ? boards : more).append(el);
-      }
-    extras?.remove();
-    toolbar.querySelector(".spacer")?.remove();
     const settings = toolbar.querySelector(".board-settings-button");
     if (settings) toolbar.append(settings);
     if ($("#board-save")) toolbar.append($("#board-save"));
+    // The right side matches the document bar: Session, Version history, the star and Board tools (⋯).
+    const session = iconMenu(toolbar, "session", "Session", "person");
+    const history = iconMenu(toolbar, "history", "Version history", "clock");
+    const star = toolbar.querySelector(":scope > .bookmark-button");
+    if (star) toolbar.append(star);
+    const tools = iconMenu(toolbar, "tools", "Board tools", "more");
+    move(tools, '[data-action="board-rename"]');
+    const panels = { session, history, tools };
+    // Dynamic tools are recreated on each board render; remove their old copies.
+    for (const panel of [boards, more, session, history, tools])
+      for (const el of [...panel.children]) if (!el.dataset.action && !el.dataset.boardPersistent) el.remove();
+    const extras = $("#canvas-extras");
+    if (extras) for (const el of [...extras.children]) (panels[el.dataset.menuHome] || more).append(el);
+    extras?.remove();
+    // Items kept across renders (data-board-persistent) stay at the end of their menu.
+    for (const panel of [boards, history]) panel.append(...panel.querySelectorAll(":scope > [data-board-persistent]"));
     const recovery = toolbar.querySelector('[data-feature="recovery"]');
     if (recovery) toolbar.append(recovery);
     restoreMenus();
@@ -398,11 +414,11 @@ export function projectLayout(ctx) {
         });
       }
       const summary = event.target.matches(".board-menu > summary");
-      const actions = menu ? [...menu.querySelectorAll(":scope > .board-menu-panel > button:not(:disabled), :scope > .board-menu-panel > .menu-footer > button:not(:disabled)")].filter((el) => !el.hidden && el.getClientRects().length) : [];
+      const actions = menu ? [...menu.querySelectorAll(":scope > .board-menu-panel > :is(button, a):not(:disabled), :scope > .board-menu-panel > .menu-footer > button:not(:disabled)")].filter((el) => !el.hidden && el.getClientRects().length) : [];
       // Arrow keys navigate action rows, while form fields keep their native keys.
       if (menu && (summary || actions.includes(event.target)) &&
           ["ArrowDown", "ArrowUp", "Home", "End"].includes(event.key)) {
-        const buttons = menu.querySelectorAll(":scope > .board-menu-panel > button:not(:disabled):not([hidden]), :scope > .board-menu-panel > .menu-footer > button:not(:disabled):not([hidden])");
+        const buttons = menu.querySelectorAll(":scope > .board-menu-panel > :is(button, a):not(:disabled):not([hidden]), :scope > .board-menu-panel > .menu-footer > button:not(:disabled):not([hidden])");
         if (buttons.length && (menu.open || ["ArrowDown", "ArrowUp"].includes(event.key))) {
           event.preventDefault();
           event.stopImmediatePropagation();

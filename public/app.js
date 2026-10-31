@@ -1767,7 +1767,7 @@ async function patchTask(id, changes, rerender = true) {
 }
 
 function boardToolbar() {
-  return `<div class="board-toolbar"><select id="board-select" aria-label="Select board">${state.boards.filter(b=>!b.archived).map((b) => `<option value="${esc(b.id)}" ${b.id === state.selectedBoard ? "selected" : ""}>${esc(b.title)}</option>`).join("")}</select><button class="button small" data-action="board-new">${icon("plus")}New board</button><span class="spacer"></span>${state.selectedBoard ? bookmarks.button("board", state.project.id, state.selectedBoard) : ""}<button type="button" class="button small board-settings-button" data-feature="board-settings">${icon("settings")}Board settings</button><span class="board-save" id="board-save">${esc(saveIssue([...sync.entries.values()], {storageError:sync.storageError,online:state.online}) ? "" : saveState([...sync.entries.values()],{storageError:sync.storageError,online:state.online}))}</span>${state.boardConflict ? '<button class="button small" data-feature="recovery">Resolve</button>' : ""}</div>`;
+  return `<div class="board-toolbar"><select id="board-select" aria-label="Select board">${state.boards.filter(b=>!b.archived).map((b) => `<option value="${esc(b.id)}" ${b.id === state.selectedBoard ? "selected" : ""}>${esc(b.title)}</option>`).join("")}</select><button class="button small" data-action="board-new">${icon("plus")}New board</button>${state.selectedBoard ? `<button class="button small" data-action="board-rename">${icon("pencil")}Rename</button>` : ""}${state.selectedBoard ? bookmarks.button("board", state.project.id, state.selectedBoard) : ""}<button type="button" class="button small board-settings-button" data-feature="board-settings">${icon("settings")}Board settings</button><span class="board-save" id="board-save">${esc(saveIssue([...sync.entries.values()], {storageError:sync.storageError,online:state.online}) ? "" : saveState([...sync.entries.values()],{storageError:sync.storageError,online:state.online}))}</span>${state.boardConflict ? '<button class="button small" data-feature="recovery">Resolve</button>' : ""}</div>`;
 }
 function boardToolsHTML() {
   const tool = (name, title, action = "board-add", glyph = name) =>
@@ -2295,6 +2295,9 @@ document.addEventListener("click", async (event) => {
         break;
       case "board-new":
         boardNameDialog();
+        break;
+      case "board-rename":
+        boardNameDialog(true);
         break;
       case "board-tool":
         state.tool = el.dataset.tool;

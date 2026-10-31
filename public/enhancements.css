@@ -74,9 +74,6 @@ summary:focus-visible,
   align-items: center;
   gap: 5px;
 }
-.spacer {
-  flex: 1;
-}
 #quick-capture {
   display: flex;
   gap: 4px;

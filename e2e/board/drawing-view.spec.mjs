@@ -31,6 +31,8 @@ const boards = async (project) => (await app.store.snapshot(project.id)).boards;
 const boardNamed = async (project, title) => (await boards(project)).find((b) => b.title === title);
 const draws = (board) => board.nodes.filter((n) => n.type === "draw");
 const boardMenu = (page) => page.locator('[data-board-menu="board"] summary');
+// Board tools (⋯) holds Link tasks, Copy board link and the offline pad (0.20.71).
+const toolsMenu = (page) => page.locator('[data-board-menu="tools"] summary');
 const activeTab = (page) => page.locator('.tabs [aria-current="page"]');
 const pendingGuard = (page) => page.locator('[data-drawing-action="sync"]');
 
@@ -100,7 +102,7 @@ test("a pencil stroke on a new board saves to the server and this device, and th
   await expect.poll(async () => draws((await boardNamed(project, "Fresh sketch")) || { nodes: [] }).length).toBe(1);
   expect((await boardNamed(project, "Fresh sketch")).settings?.drawing, "ordinary boards receive all drawing tools").toBeFalsy();
   // Normal boards can be linked to tasks, not only old Drawing canvases.
-  await boardMenu(page).click();
+  await toolsMenu(page).click();
   await page.locator('[data-drawing-action="link-task"]').click();
   await page.locator(`#drawing-links [value="${linkedTask.id}"]`).check();
   await page.locator("#drawing-links .dialog-foot button").click();

@@ -58,15 +58,16 @@ test.describe("wide desktop", () => {
     await page.keyboard.press("Escape");
     await expect(summary(page, "more")).toBeFocused();
     await summary(page, "more").click();
+    await expect(page.locator(".board-toolbar [data-board-menu=more] [data-pro=outline]")).toBeVisible();
+    // Exports, Rename and the board's other actions live in Board tools (⋯) since 0.20.71.
+    await summary(page, "tools").click();
     await expect(page.locator("[data-feature=canvas-json]")).toBeVisible();
     await summary(page, "board").click();
     await expect(page.locator("[data-feature=canvas-json]")).toBeHidden();
     await expect(summary(page, "navigate")).toHaveCount(0);
-    await expect(page.locator('[data-action="board-rename"]')).toHaveCount(0);
-    await summary(page, "more").click();
-    await expect(page.locator(".board-toolbar [data-pro=outline]")).toBeVisible();
+    await expect(page.locator(".board-toolbar [data-board-menu=tools] [data-action=board-rename]")).toHaveCount(1);
+    await summary(page, "session").click();
     await expect(page.locator(".board-toolbar [data-pro=present]")).toBeVisible();
-    await expect(page.locator("#frame-nav")).toBeVisible();
     await page.locator(".breadcrumb strong").click();
     await expect(page.locator(".board-menu[open]")).toHaveCount(0);
   });
@@ -84,7 +85,7 @@ test.describe("wide desktop", () => {
     await expect(page.locator("#board-project-tools")).toHaveCount(1);
     await page.locator(".tabs [data-view=board]").click();
     await page.locator("#canvas").waitFor();
-    for (const selector of [".board-settings-button", "[data-action=board-new]", ".board-menu [data-pro=outline]"])
+    for (const selector of [".board-settings-button", "[data-action=board-new]", ".board-menu [data-pro=outline]", "[data-action=board-rename]", ".board-menu [data-pro=present]", "[data-feature=canvas-json]", "[data-drawing-action=gallery]", "[data-drawing-save]"])
       await expect(page.locator(selector), selector).toHaveCount(1);
   });
 });
@@ -105,13 +106,14 @@ onDevices(["ipad", "phone"], () => {
     // Since 0.19.2 the header New control is a menu offering a card or a document.
     await newCard(page);
     await page.locator("[data-action=dialog-close]").first().click();
-    for (const key of ["board", "more"]) {
+    for (const key of ["board", "more", "session", "history", "tools"]) {
       // Since 0.18.26 phones keep the board menus in the View options panel;
       // reveal opens it, then the menu, as summary(key).click() does elsewhere.
       const menuPanel = page.locator(`[data-board-menu=${key}] .board-menu-panel`);
       await reveal(menuPanel);
-      const box = await menuPanel.boundingBox();
-      expect(box.x >= 0 && box.x + box.width <= viewport.width, `${key} menu within the width`).toBe(true);
+      // Menus are placed in the frame after they open, before they paint.
+      let box;
+      await expect.poll(async () => { box = await menuPanel.boundingBox(); return box.x >= 0 && box.x + box.width <= viewport.width; }, { message: `${key} menu within the width` }).toBe(true);
       // There the menu flows inline and View options scrolls, so it must fit.
       const options = page.locator(".mobile-view-options-panel");
       const fit = (await options.isVisible()) ? await options.boundingBox() : box;

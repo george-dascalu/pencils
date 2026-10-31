@@ -1420,9 +1420,6 @@ input[type="search"]:not(.search input) {
   padding: 8px 10px;
   max-width: 200px;
 }
-.board-toolbar .spacer {
-  flex: 1;
-}
 .board-save {
   font-size: 10px;
   color: var(--muted);

@@ -193,14 +193,14 @@ export function drawingView(ctx) {
     const b = ctx.board(),
       toolbar = document.querySelector(".board-toolbar");
     if (!b || !toolbar) return;
-    const menu = toolbar.querySelector(
-      '[data-board-menu="board"] .board-menu-panel',
-    );
-    if (menu && !menu.querySelector("[data-board-persistent]"))
-      menu.insertAdjacentHTML(
-        "beforeend",
-        `<div class="canvas-library-tools" data-board-persistent="true"><button type="button" class="button small" data-drawing-action="gallery">${icon("board")}Boards</button><button type="button" class="button small" data-drawing-action="link-task">${icon("task")}Link tasks</button><button type="button" class="button small" data-drawing-action="link" data-id="${esc(b.id)}">${icon("link")}Copy board link</button><button type="button" class="button small" data-drawing-action="recover">${icon("clock")}Local checkpoints</button><button type="button" class="button small" data-drawing-action="offline">${icon("download")}Prepare offline drawing</button><a class="button small" href="/drawing-offline.html">${icon("external")}Open offline pad</a><small class="field-hint" data-drawing-save>Device checkpoint available</small></div>`,
-      );
+    // The Boards menu opens the gallery; Version history shows the device checkpoint. Both stay
+    // across board renders (project-layout.js keeps data-board-persistent items).
+    const boards = toolbar.querySelector('[data-board-menu="board"] .board-menu-panel'),
+      history = toolbar.querySelector('[data-board-menu="history"] .board-menu-panel');
+    if (boards && !boards.querySelector("[data-board-persistent]"))
+      boards.insertAdjacentHTML("beforeend", `<button type="button" class="button small" data-board-persistent="true" data-drawing-action="gallery">${icon("board")}Boards</button>`);
+    if (history && !history.querySelector("[data-drawing-save]"))
+      history.insertAdjacentHTML("beforeend", '<small class="field-hint" data-board-persistent="true" data-drawing-save>Device checkpoint available</small>');
     document.querySelector("#canvas")?.classList.add("drawing-canvas");
   }
   async function checkpoint(

@@ -946,7 +946,7 @@ export function canvasPro(ctx, basic) {
     updateUndo();
     $("#canvas-extras")?.insertAdjacentHTML(
       "afterbegin",
-      `<span class="board-menu-heading">Insert</span>${btn("note-add", "Live note")}${btn("query-add", "Live task view")}${btn("templates", "Templates")}<span class="board-menu-heading">Navigate</span>${btn("outline", "Outline")}${btn("connections", "Connections")}${btn("present", "Present")}<span class="board-menu-heading">Collaborate</span><button type="button" class="button small" data-session="open">Board session</button>${btn("activity", "Activity")}${btn("shortcuts", "Keyboard shortcuts")}<span class="board-menu-heading">Tools</span>`,
+      `<span class="board-menu-heading">Insert</span>${btn("note-add", "Live note")}${btn("query-add", "Live task view")}${btn("templates", "Templates")}<span class="board-menu-heading">Navigate</span>${btn("outline", "Outline")}${btn("connections", "Connections")}<span class="board-menu-heading">Organise</span>${btn("present", `${icon("fullscreen")}Present`, 'data-menu-home="session"')}<button type="button" class="button small" data-session="open" data-menu-home="session">${icon("person")}Board session</button>${btn("activity", `${icon("activity")}Activity`, 'data-menu-home="history"')}`,
     );
     $("#canvas").insertAdjacentHTML(
       "beforeend",

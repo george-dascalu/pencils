@@ -435,10 +435,11 @@ test.describe("Group 7: polish and dead code (findings 32–36)", { tag: "@audit
   });
   test("controls.css loads last and dead code is gone", async ({ page }) => {
     await open(page, "list", ".task-row");
-    const last = await page.evaluate(() => [...document.querySelectorAll('link[rel="stylesheet"]')].pop().getAttribute("href"));
-    expect(last).toBe("/controls.css");
+    // Themes (0.20.10) load after controls.css on purpose, to restyle everything.
+    const last = await page.evaluate(() => [...document.querySelectorAll('link[rel="stylesheet"]')].slice(-2).map((l) => l.getAttribute("href")));
+    expect(last).toEqual(["/controls.css", "/themes.css"]);
     const source = await fs.readFile(new URL("../../public/app.js", import.meta.url), "utf8");
-    expect(!/function nodeDialog/.test(source) && !/case "board-rename"/.test(source) && !/matches\(":modal"\)/.test(source), "dead code remains in app.js").toBe(true);
+    expect(!/function nodeDialog/.test(source) && !/matches\(":modal"\)/.test(source), "dead code remains in app.js").toBe(true);
     const controls = await fs.readFile(new URL("../../public/controls.css", import.meta.url), "utf8");
     expect((controls.match(/--table-selection-width:/g) || []).length, "duplicate selection width").toBe(2);
   });

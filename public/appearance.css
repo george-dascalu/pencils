@@ -677,8 +677,6 @@ body {
 .drawing-cards article > button:first-child {display:flex;flex-direction:column;gap:8px;width:100%;text-align:left;padding:12px;background:var(--surface);}
 .drawing-cards svg {width:100%;height:160px;background:var(--board-paper);}
 .drawing-gallery header > button {margin:4px;}
-.canvas-library-tools {display:flex;flex-direction:column;gap:4px;border-top:1px solid var(--line);padding-top:8px;}
-.canvas-library-tools .button {justify-content:flex-start;}
 .canvas-gallery-actions {display:flex;flex-wrap:wrap;gap:8px;}
 
 .board-menu-panel {overflow:auto;z-index:140}

@@ -113,7 +113,7 @@ textarea,
   .board-menu > summary, .selection-menu > summary, .color-picker > summary,
   .view-layout-switcher button, .selection-action, .symbol-select,
   .board-tools button,
-  .board-menu-panel > button, .selection-popover > button,
+  .board-menu-panel > :is(button, a), .selection-popover > button,
   .select-menu [role="option"], .task-picker-popover [role="option"],
   .date-picker-head button, .date-picker-foot button, .date-picker-popover td button,
   .document-link, .document-panel-item, .cm-search .cm-button, .row-choice, .row-due, .row-task-link,
@@ -128,7 +128,7 @@ textarea,
 }
 :is(
   .button, .tab, .task-picker-trigger, .board-menu > summary,
-  .view-layout-switcher button, .board-menu-panel > button,
+  .view-layout-switcher button, .board-menu-panel > :is(button, a),
   .select-menu [role="option"], .task-picker-popover [role="option"],
   .date-picker-foot button, .document-link, .document-panel-item, .cm-search .cm-button
 ) {
@@ -136,7 +136,7 @@ textarea,
   font-size: var(--control-font-size) !important;
 }
 /* Options may wrap without clipping translated or long labels. */
-:is(.board-menu-panel > button, .selection-popover > button,
+:is(.board-menu-panel > :is(button, a), .selection-popover > button,
     .select-menu [role="option"], .task-picker-popover [role="option"], .document-link, .document-panel-item) {
   height: auto !important;
   padding-block: var(--control-option-padding, 5px) !important;
