@@ -306,22 +306,24 @@ export function projectLayout(ctx) {
     // Boards are chosen and created in the sidebar (board-explorer.js), so the bar starts with the save state.
     if ($("#board-save")) toolbar.append($("#board-save"));
     if ($("#canvas-presence")) toolbar.append($("#canvas-presence"));
-    // The right side matches the document bar: Session, Version history, the star and Board tools (⋯).
-    const session = iconMenu(toolbar, "session", "Session", "person");
-    const history = iconMenu(toolbar, "history", "Version history", "clock");
+    // The right side matches the document bar: the star and Board tools (⋯), which leads with
+    // Present and Board session, then Activity, History and Local checkpoints (T28).
     const star = toolbar.querySelector(":scope > .bookmark-button");
     if (star) toolbar.append(star);
     const tools = iconMenu(toolbar, "tools", "Board tools", "more");
     move(tools, '[data-action="board-rename"]');
-    const panels = { session, history, tools };
     // Dynamic tools are recreated on each board render; remove their old copies.
-    for (const panel of [session, history, tools])
-      for (const el of [...panel.children]) if (!el.dataset.action && !el.dataset.boardPersistent) el.remove();
+    for (const el of [...tools.children]) if (!el.dataset.action && !el.dataset.boardPersistent) el.remove();
     const extras = $("#canvas-extras");
-    if (extras) for (const el of [...extras.children]) (panels[el.dataset.menuHome] || tools).append(el);
+    if (extras) {
+      const group = (home) => [...extras.children].filter((el) => el.dataset.menuHome === home);
+      const divider = () => { const el = document.createElement("span"); el.className = "board-menu-divider"; el.setAttribute("role", "separator"); return el; };
+      tools.prepend(...group("session"), divider(), ...group("history"), divider());
+      for (const el of [...extras.children]) tools.append(el);
+    }
     extras?.remove();
-    // Items kept across renders (data-board-persistent) stay at the end of their menu.
-    history.append(...history.querySelectorAll(":scope > [data-board-persistent]"));
+    // Items kept across renders (data-board-persistent) stay at the end of the menu.
+    tools.append(...tools.querySelectorAll(":scope > [data-board-persistent]"));
     const recovery = toolbar.querySelector('[data-feature="recovery"]');
     if (recovery) toolbar.append(recovery);
     restoreMenus();

@@ -83,18 +83,14 @@ for (const [device, width] of sizes) {
         await expect(page.locator("#document-form")).toHaveAttribute("data-document-mode", "reading");
         await click(page.getByRole("button", { name: "Close search", exact: true }));
         await chooseDocumentView(page, "Live preview", { tap: touch });
+        // The formatting is always on screen outside Reading view (0.20.94).
         const formatting = page.locator(".document-formatting");
-        if (!(await formatting.isVisible())) await click(page.getByRole("button", { name: "Show formatting", exact: true }));
         await expect(formatting).toBeVisible();
         // The formatting comes back inside the document bar, not in a row of its own.
         const bar = await page.locator(".document-heading").boundingBox(), format = await formatting.boundingBox();
         expect(format.y >= bar.y && format.y + format.height <= bar.y + bar.height + 1, `formatting sits in the document bar ${JSON.stringify({ bar, format })}`).toBe(true);
         if (device === "phone") {
           expect(await formatting.evaluate((el) => getComputedStyle(el).flexWrap), "the phone formatting bar stays on one line").toBe("nowrap");
-          await click(page.getByRole("button", { name: "Hide formatting", exact: true }));
-          await expect(formatting).toBeHidden();
-          await click(page.getByRole("button", { name: "Show formatting", exact: true }));
-          await expect(formatting).toBeVisible();
         }
         await click(page.getByRole("button", { name: "Insert", exact: true }));
         await page.getByRole("dialog", { name: "Insert", exact: true }).waitFor();

@@ -14,7 +14,6 @@ onDevices(["desktop", "phone"], () => test("selected text gets a comment thread,
     const { EditorView } = await import("/vendor/editor/deps.js");
     EditorView.findFromDOM(document.querySelector(".cm-editor")).dispatch({ selection: { anchor: 6, head: 10 } });
   });
-  if (device === "phone") await page.getByRole("button", { name: "Show formatting", exact: true }).click();
   await page.locator('#document-form [data-document-action="insert"]').click();
   await page.getByRole("button", { name: "Comment on text", exact: true }).click();
   const panel = page.locator(".board-comments");

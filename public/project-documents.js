@@ -27,7 +27,7 @@ export function projectDocuments(ctx) {
   let editor = null, form = null, current = null, project = null, renderer = null, paneEditor = null;
   let readingSearch = null;
   let mode = storage.get("document-mode", "live");
-  let editMode = mode === "source" ? "source" : "live"; // where the bar's Reading view toggle returns
+  let editMode = mode === "source" ? "source" : "live"; // where Reading view returns to
   let documentWidth = storage.get("document-width", "page") === "full" ? "full" : "page";
   if (!["live", "source", "reading"].includes(mode)) mode = "live";
   const all = () => state.documents || [];
@@ -227,7 +227,6 @@ export function projectDocuments(ctx) {
     mode = next; storage.set("document-mode", next);
     if (next !== "reading") editMode = next;
     form.dataset.documentMode = mode;
-    form.querySelector('[data-document-action="reading-toggle"]')?.setAttribute("aria-pressed", String(mode === "reading"));
     const reading = form.querySelector(".document-reading"), host = form.querySelector(".document-codemirror");
     host.hidden = mode === "reading";
     reading.hidden = mode !== "reading";
@@ -243,8 +242,8 @@ export function projectDocuments(ctx) {
       editor.setMode(mode);
       if (focus) {
         if (allowsTextAutofocus()) editor.focus();
-        // Otherwise the bar's Reading view toggle keeps focus, or the Documents tab takes it (from its tray or ⋯).
-        else if (!document.activeElement?.matches('[data-document-action="reading-toggle"]')) document.querySelector(".tabs .tab.active")?.focus({ preventScroll: true });
+        // Otherwise the Documents tab takes focus (the view was chosen from its tray or ⋯).
+        else document.querySelector(".tabs .tab.active")?.focus({ preventScroll: true });
       }
     }
   }
@@ -760,10 +759,6 @@ export function projectDocuments(ctx) {
                shows in the top bar and changes through Document tools → Rename. -->
           <header class="document-heading">
             <div id="document-formatting" class="document-formatting task-rich-tools" role="toolbar" aria-label="Format document">${richToolbar(icon, { adapter: "document", alignment: null, modes: false, idPrefix: "document", extra: `<div class="selection-group" role="group" aria-label="Insert more"><button type="button" class="selection-action" data-document-action="insert" aria-label="Insert" title="Insert a table, code, callout or more">${icon("plus")}<span class="selection-action-label">Insert</span></button></div>` })}</div>
-            <div class="document-view-controls" role="toolbar" aria-label="Document navigation">
-              <button type="button" class="icon-button document-format-toggle" data-document-action="format-toggle" aria-label="Show formatting" title="Show formatting" aria-expanded="false" aria-controls="document-formatting">${icon("heading")}</button>
-              <button type="button" class="icon-button" data-document-action="reading-toggle" aria-label="Reading view" title="Reading view" aria-pressed="${mode === "reading"}">${icon("preview")}</button>
-            </div>
             <a class="document-obsidian-link" href="#" data-document-action="obsidian" hidden>Open in Obsidian</a>
             ${ctx.bookmarks.button("doc", state.project.id, doc.id)}
             <button type="button" class="icon-button" data-document-action="tools" aria-label="Document tools" title="Document tools">${icon("more")}</button>
@@ -939,15 +934,7 @@ export function projectDocuments(ctx) {
     const action = button.dataset.documentAction;
     event.preventDefault();
     try {
-      if (action === "reading-toggle") setMode(mode === "reading" ? editMode : "reading");
-      else if (action === "format-toggle") {
-        const open = form.dataset.formatOpen !== "true";
-        form.dataset.formatOpen = String(open);
-        button.setAttribute("aria-expanded", String(open));
-        button.setAttribute("aria-label", open ? "Hide formatting" : "Show formatting");
-        button.title = open ? "Hide formatting" : "Show formatting";
-        editor.view.requestMeasure();
-      } else if (action === "new-folder") explorer.panel(button);
+      if (action === "new-folder") explorer.panel(button);
       else if (action === "width") setDocumentWidth(documentWidth === "full" ? "page" : "full");
       else if (action === "move") movePanel(button);
       else if (action === "versions") await versionsPanel(form.querySelector('[data-document-action="tools"]'));

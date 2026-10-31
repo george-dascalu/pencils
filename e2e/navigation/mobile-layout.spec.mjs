@@ -138,6 +138,6 @@ test("desktop documents keep the tabs, formatting bar and view controls", async 
   await page.locator(".cm-content").waitFor();
   await expect(page.locator(".tabs")).toBeVisible();
   await expect(page.locator(".document-formatting")).toBeVisible();
-  await expect(page.locator(".document-view-controls")).toBeVisible();
+  await expect(page.locator('.document-heading [data-document-action="tools"]')).toBeVisible();
   await expect(page.locator(".phone-new-task")).toBeHidden();
 });

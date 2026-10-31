@@ -3,6 +3,15 @@ import { focusOnOpen } from "./open-focus.js";
 
 // A small panel beside the button that opened it, one at a time: light dismiss, Escape and a close
 // button, with focus back on the button. Documents and the sidebar's board list share it.
+// The last control pressed, during its click only: a panel's opener pressed again closes the panel,
+// while a panel shown from inside the open one (such as Rename from Document tools, anchored to the
+// same button) opens as before (owner request T26).
+let pressed = null;
+document.addEventListener("click", (event) => {
+  pressed = event.target;
+  setTimeout(() => { if (pressed === event.target) pressed = null; }, 0);
+}, true);
+
 export function anchoredPanel({ state, esc, icon }) {
   let panel = null, opener = null;
   function close(focus = false) {
@@ -15,6 +24,9 @@ export function anchoredPanel({ state, esc, icon }) {
     if (focus && opener?.isConnected) opener.focus({ preventScroll: true });
   }
   function show(button, title, html, width = 360) {
+    // Pressed again, its opener closes this panel; it opens another panel (one shown from inside
+    // this one, such as Backlinks) as before.
+    if (panel && button === opener && panel.getAttribute("aria-label") === title && pressed instanceof Node && button.contains(pressed)) return close(true);
     if (panel?.contains(button)) button = opener;
     close();
     opener = button;
@@ -40,6 +52,8 @@ export function anchoredPanel({ state, esc, icon }) {
       if (panel === openedPanel) {
         if (button.hasAttribute("aria-expanded")) button.setAttribute("aria-expanded", "false");
         if (state.dialog === "document-panel") state.dialog = null;
+        // Dismissed from outside: forgotten, so its button opens it again next time.
+        panel = null; opener = null;
       }
     });
     panel.querySelector("[data-document-panel-close]").addEventListener("click", () => close(true));

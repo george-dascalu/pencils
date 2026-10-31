@@ -194,9 +194,9 @@ export function drawingView(ctx) {
     const b = ctx.board(),
       toolbar = document.querySelector(".board-toolbar");
     if (!b || !toolbar) return;
-    // Version history shows the device checkpoint; it stays across board renders (project-layout.js
+    // Board tools shows the device checkpoint; it stays across board renders (project-layout.js
     // keeps data-board-persistent items).
-    const history = toolbar.querySelector('[data-board-menu="history"] .board-menu-panel');
+    const history = toolbar.querySelector('[data-board-menu="tools"] .board-menu-panel');
     if (history && !history.querySelector("[data-drawing-save]"))
       history.insertAdjacentHTML("beforeend", '<small class="field-hint" data-board-persistent="true" data-drawing-save>Device checkpoint available</small>');
     document.querySelector("#canvas")?.classList.add("drawing-canvas");

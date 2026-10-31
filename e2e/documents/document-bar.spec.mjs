@@ -41,10 +41,9 @@ test("a new document opens with its name ready to type", async ({ page }) => {
   await expect(page.getByLabel("Document name")).toBeFocused();
 });
 
-onDevices(["phone"], () => test("on phones formatting opens in the same bar", async ({ page }) => {
+onDevices(["phone"], () => test("on phones the formatting shows in the same bar, with no toggle", async ({ page }) => {
   await page.goto(`${app.base}/#project/${app.project.id}/documents/${app.doc.id}`);
-  await expect(bar(page).locator(".document-formatting")).toBeHidden();
-  await bar(page).locator('[data-document-action="format-toggle"]').click();
   await expect(bar(page).locator(".document-formatting")).toBeVisible();
+  await expect(bar(page).locator('[data-document-action="format-toggle"]')).toHaveCount(0);
   await expect(page.locator("#document-form > .document-heading")).toHaveCount(1);
 }));

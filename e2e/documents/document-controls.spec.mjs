@@ -25,16 +25,15 @@ test.describe("desktop", () => {
     await open(page);
     const positioning = await page.evaluate(() => {
       const box = (s) => document.querySelector(s).getBoundingClientRect().toJSON();
-      return { format: box(".document-formatting"), views: box(".document-view-controls"), footer: box(".document-save"), tools: box(".document-heading [data-document-action=tools]") };
+      return { format: box(".document-formatting"), footer: box(".document-save"), tools: box(".document-heading [data-document-action=tools]") };
     });
     const middle = (r) => r.y + r.height / 2;
-    expect(Math.abs(middle(positioning.views) - middle(positioning.format)), "Document controls share the formatting bar's row").toBeLessThan(8);
-    expect(positioning.format.x + positioning.format.width, "Formatting comes before the document controls").toBeLessThanOrEqual(positioning.views.x + 1);
-    await expect(page.locator(".document-heading .document-view-controls")).toHaveCount(1);
+    expect(Math.abs(middle(positioning.tools) - middle(positioning.format)), "Document tools shares the formatting bar's row").toBeLessThan(8);
+    expect(positioning.format.x + positioning.format.width, "Formatting comes before the document controls").toBeLessThanOrEqual(positioning.tools.x + 1);
+    await expect(page.locator(".document-heading [data-document-action=tools]")).toHaveCount(1);
     await expect(page.locator(".document-heading > .document-formatting")).toHaveCount(1);
     await expect(page.locator("#document-form .document-controls"), "no separate formatting bar remains").toHaveCount(0);
     await expect(page.locator(".document-formatting [data-document-action]:not([data-document-action=insert])"), "The formatting toolbar contains only text controls").toHaveCount(0);
-    expect(positioning.views.x, "⋯ comes after the view controls").toBeLessThan(positioning.tools.x);
     expect(positioning.footer.height <= 24 && positioning.footer.width < 250, JSON.stringify(positioning.footer)).toBe(true);
     await expect(page.locator(".document-save")).not.toHaveText(/Saved|Version/);
   });

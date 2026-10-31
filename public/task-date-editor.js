@@ -41,6 +41,8 @@ export function taskDateEditor(ctx) {
     frame = requestAnimationFrame(position);
   }
   function open(id, anchor, { chooseOnTimeline } = {}) {
+    // The dates button closes its own editor when pressed again (owner request T26).
+    if (active && active.id === id && active.anchor() && active.anchor() === anchor()) return close(true);
     close();
     const value = task(id);
     if (!value) return;
@@ -163,7 +165,8 @@ export function taskDateEditor(ctx) {
   document.addEventListener(
     "pointerdown",
     (event) => {
-      if (active && !active.panel.contains(event.target)) close();
+      // A press on the editor's own button leaves it to the click, which toggles the editor (T26).
+      if (active && !active.panel.contains(event.target) && !active.anchor()?.contains(event.target)) close();
     },
     true,
   );

@@ -60,12 +60,12 @@ test.describe("wide desktop", () => {
     // Exports, Rename and the board's other actions live in Board tools (⋯) since 0.20.71.
     await summary(page, "tools").click();
     await expect(page.locator("[data-feature=canvas-json]")).toBeVisible();
-    await summary(page, "history").click();
-    await expect(page.locator("[data-feature=canvas-json]")).toBeHidden();
+    // Present and the history actions lead Board tools since 0.20.94; the Session and History menus are gone.
+    await expect(page.locator(".board-toolbar [data-board-menu=tools] [data-pro=present]")).toBeVisible();
+    await expect(summary(page, "history")).toHaveCount(0);
+    await expect(summary(page, "session")).toHaveCount(0);
     await expect(summary(page, "navigate")).toHaveCount(0);
     await expect(page.locator(".board-toolbar [data-board-menu=tools] [data-action=board-rename]")).toHaveCount(1);
-    await summary(page, "session").click();
-    await expect(page.locator(".board-toolbar [data-pro=present]")).toBeVisible();
     await page.locator(".breadcrumb strong").click();
     await expect(page.locator(".board-menu[open]")).toHaveCount(0);
   });
@@ -104,7 +104,7 @@ onDevices(["ipad", "phone"], () => {
     // Since 0.19.2 the header New control is a menu offering a card or a document.
     await newCard(page);
     await page.locator("[data-action=dialog-close]").first().click();
-    for (const key of ["session", "history", "tools"]) {
+    for (const key of ["tools"]) {
       // Since 0.18.26 phones keep the board menus in the View options panel;
       // reveal opens it, then the menu, as summary(key).click() does elsewhere.
       const menuPanel = page.locator(`[data-board-menu=${key}] .board-menu-panel`);

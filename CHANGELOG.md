@@ -2,6 +2,14 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.20.94 — 2026-10-31
+
+### Changed
+
+- A popup's own button closes it when pressed again: Document tools (⋯), the sidebar's folder and move panels and a card's date editor.
+- The document bar keeps the formatting on screen at every width, except in Reading view, and drops the Reading view and Show formatting buttons; choose Reading view, Live preview or Source in ⋯.
+- Board tools (⋯) now holds Present and Board session, then Activity, History and Local checkpoints, ahead of the board's actions; the bar's Session and Version history menus are gone.
+
 ## 0.20.93 — 2026-10-31
 
 ### Added

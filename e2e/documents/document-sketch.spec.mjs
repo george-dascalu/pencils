@@ -21,7 +21,6 @@ async function open(page, doc) {
 onDevices(["desktop", "phone"], () => test("a sketch is drawn, embedded and reopened from the document", async ({ page, device }) => {
   const doc = await app.store.createDocument(app.project.id, { title: `Sketch ${device}`, body: "Intro\n" });
   await open(page, doc);
-  if (device === "phone") await page.getByRole("button", { name: "Show formatting", exact: true }).click();
   await page.locator('#document-form [data-document-action="insert"]').click();
   await page.getByRole("button", { name: "Sketch", exact: true }).click();
   const pad = page.getByRole("dialog", { name: "Sketch" });

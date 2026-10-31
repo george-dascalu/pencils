@@ -3,7 +3,7 @@
 // list in groups split by dividers (no headings) that holds every other action once. Properties
 // show only once a document has some; ⋯ adds the first.
 import { test, expect, onDevices, useApp } from "../fixtures.mjs";
-import { documentTool } from "../helpers/documents.mjs";
+import { documentTool, chooseDocumentView } from "../helpers/documents.mjs";
 
 const app = useApp(async (store) => {
   const project = await store.createProject({ title: "Tools", key: "TL" });
@@ -20,8 +20,11 @@ const barControls = (page) => page.locator("#document-form .document-heading").e
 onDevices(["phone", "ipad", "desktop"], () => test("the document bar holds its view toggle, the star and ⋯, which holds the rest once", async ({ page, device }) => {
   await open(page);
   const phone = device === "phone";
-  // iPad puts the star before the title in the top bar; phones keep the formatting behind a toggle.
-  expect(await barControls(page), device).toEqual([...(phone ? ["Show formatting"] : []), "Reading view", ...(device === "ipad" ? [] : ["Bookmark"]), "Document tools"]);
+  // iPad puts the star before the title in the top bar. Since 0.20.94 the formatting is always
+  // on screen outside Reading view, and Reading view lives in ⋯ with the other views (T27).
+  expect(await barControls(page), device).toEqual([...(device === "ipad" ? [] : ["Bookmark"]), "Document tools"]);
+  await expect(page.locator("#document-formatting"), `${device}: formatting shown`).toBeVisible();
+
   await page.locator('#document-form [data-document-action="tools"]').click();
   const tools = page.getByRole("dialog", { name: "Document tools" });
   await expect(tools.locator("h3"), "dividers, not headings").toHaveCount(0);
@@ -44,16 +47,27 @@ onDevices(["phone", "ipad", "desktop"], () => test("the document bar holds its v
   await expect(page.getByRole("dialog", { name: "Rename document" })).toBeVisible();
 }));
 
-test("the bar's Reading view toggle switches between reading and editing", async ({ page }) => {
+test("Reading view, chosen in ⋯, hides the formatting; Live preview brings it back", async ({ page }) => {
   await open(page);
-  const toggle = page.getByRole("button", { name: "Reading view", exact: true });
-  await toggle.click();
+  await chooseDocumentView(page, "Reading");
   await expect(page.locator("#document-form")).toHaveAttribute("data-document-mode", "reading");
-  await expect(toggle).toHaveAttribute("aria-pressed", "true");
-  await toggle.click();
+  await expect(page.locator("#document-formatting")).toBeHidden();
+  await expect(page.getByRole("button", { name: "Reading view", exact: true }), "no toggle in the bar").toHaveCount(0);
+  await chooseDocumentView(page, "Live preview");
   await expect(page.locator("#document-form")).toHaveAttribute("data-document-mode", "live");
-  await expect(toggle).toHaveAttribute("aria-pressed", "false");
+  await expect(page.locator("#document-formatting")).toBeVisible();
 });
+
+// Owner request (T26, 31 October 2026): a popup's own button closes it when pressed again.
+onDevices(["desktop", "phone"], () => test("pressing ⋯ again closes Document tools", async ({ page }) => {
+  await open(page);
+  const tools = page.locator('[data-document-action="tools"]');
+  await tools.click();
+  await expect(page.getByRole("dialog", { name: "Document tools" })).toBeVisible();
+  await tools.click();
+  await expect(page.getByRole("dialog", { name: "Document tools" })).toHaveCount(0);
+  await expect(tools).toBeFocused();
+}));
 
 test("Properties show once a document has some, and ⋯ adds the first", async ({ page }) => {
   const doc = await app.store.createDocument(app.project.id, { title: "Bare", body: "Text\n" });

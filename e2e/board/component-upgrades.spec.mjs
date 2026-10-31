@@ -176,8 +176,8 @@ test("frames export locally as a PDF", async ({ page }) => {
 test("a board session's timer and votes persist", async ({ page }) => {
   await openBoard(page);
   await find(page, "note", "Typography");
-  // Board session lives in the board bar's Session menu (0.20.71).
-  await page.locator("[data-board-menu=session] > summary").click();
+  // Board session lives in Board tools (0.20.94).
+  await page.locator("[data-board-menu=tools] > summary").click();
   await page.locator("[data-session=open]").first().click();
   await page.locator("[data-session=timer]").click();
   await poll(async () => (await current()).settings?.session?.timerEnd > Date.now()).toBe(true);
@@ -207,8 +207,8 @@ test("a frame deep link opens on another device, which follows the presenter onl
   await other.locator("#canvas").waitFor();
   // Invite once both devices are on the board.
   await expect(page.locator("#canvas-presence [data-pro=participant]")).toHaveAttribute("aria-label", /· 2 here: /, { timeout: 12000 });
-  // Board session lives in the board bar's Session menu (0.20.71).
-  await page.locator("[data-board-menu=session] > summary").click();
+  // Board session lives in Board tools (0.20.94).
+  await page.locator("[data-board-menu=tools] > summary").click();
   await page.locator("[data-session=open]").first().click();
   await page.locator("[data-session=invite]").click();
   await page.locator("[data-action=dialog-close]").click();

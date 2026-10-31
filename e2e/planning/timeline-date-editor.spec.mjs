@@ -245,3 +245,13 @@ test("an embedded Timeline schedules a due date without moving the board camera 
   expect((await current(seed, work.id)).start ?? null).toBeNull();
   await panel(page).getByRole("button", { name: "Close date editor" }).click();
 });
+
+// Owner request (T26, 31 October 2026): the dates button closes its editor when pressed again.
+test("pressing a card's dates button again closes the date editor", async ({ page }) => {
+  const seed = app.clearing;
+  await openTimeline(page, seed);
+  await trigger(page, seed.work).click();
+  await expect(panel(page)).toBeVisible();
+  await trigger(page, seed.work).click();
+  await expect(panel(page)).toHaveCount(0);
+});

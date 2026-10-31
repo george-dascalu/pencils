@@ -53,12 +53,14 @@ export async function renameDocument(page, name) {
   await panel.getByRole("button", { name: "Rename", exact: true }).click();
   await panel.waitFor({ state: "hidden" });
 }
-// Since 0.20.68 the document bar holds only its Reading view toggle, the star and ⋯ (Document
+// Since 0.20.94 the document bar holds only the formatting, the star and ⋯ (Document
 // tools), which holds every other document action. Opens ⋯ and chooses `name`.
 export async function documentTool(page, name, { tap = false } = {}) {
   const press = (locator) => (tap ? locator.tap() : locator.click());
-  await press(page.locator('#document-form .document-heading [data-document-action="tools"]'));
-  await press(page.getByRole("dialog", { name: "Document tools", exact: true }).getByRole("button", { name, exact: true }));
+  // Pressing ⋯ again closes it (0.20.94), so open it only when it isn't already open.
+  const dialog = page.getByRole("dialog", { name: "Document tools", exact: true });
+  if (!(await dialog.isVisible())) await press(page.locator('#document-form .document-heading [data-document-action="tools"]'));
+  await press(dialog.getByRole("button", { name, exact: true }));
 }
 // Chooses a document's view (Live preview, Source or Reading). Phones and touch screens use the
 // Documents tab's tray above the bottom bar (owner request, 30 October 2026), after dismissing the

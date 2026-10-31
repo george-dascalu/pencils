@@ -63,7 +63,8 @@ onDevices(["desktop", "ipad", "phone"], () => test("the board bar shows who is h
   expect(button.width, `${device}: compact`).toBeLessThanOrEqual(44);
   expect(avatar.x >= button.x && avatar.x + avatar.width <= button.x + button.width, `${device}: the avatar fits inside`).toBe(true);
   if (device === "phone") await expect(page.locator(".board-toolbar > .mobile-view-options")).toBeVisible();
-  else expect(await page.locator("#canvas-presence").evaluate((el) => el.nextElementSibling?.dataset.boardMenu), "before Session").toBe("session");
+  // Before the star (which iPad moves to the title) and Board tools; Session went into Board tools in 0.20.94.
+  else expect(await page.locator("#canvas-presence").evaluate((el) => el.nextElementSibling?.matches('.bookmark-button, [data-board-menu="tools"]')), "before the star and Board tools").toBe(true);
   // One, kept by a content-only render (choosing a tool) and back after another view.
   await clickControl(page.locator('[data-tool="hand"]'));
   await expect(page.locator(".board-tools [data-tool=hand]")).toHaveClass(/active/);
