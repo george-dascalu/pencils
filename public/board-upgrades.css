@@ -327,6 +327,8 @@
   background: var(--surface-soft);
   border-bottom: 1px solid var(--line);
 }
+/* The band runs the timeline's width; its words stay at the left as it scrolls sideways. */
+.timeline-section-label > span { display: inline-block; position: sticky; left: 12px; }
 .timeline-schedule {
   margin: 0 4px 0 0;
   padding: 6px;

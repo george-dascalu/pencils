@@ -2,6 +2,12 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.20.61 — 2026-10-31
+
+### Fixed
+
+- Timeline's "Unplanned" heading stays at the left when the timeline scrolls sideways, as the task names do, instead of scrolling off screen.
+
 ## 0.20.60 — 2026-10-31
 
 ### Changed
