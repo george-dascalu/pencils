@@ -67,7 +67,8 @@ export function installDatePickers({ icon, esc }) {
     target.dispatchEvent(new Event("input", { bubbles: true }));
     target.dispatchEvent(new Event("change", { bubbles: true }));
   }
-  function open(target) {
+  // A pointer opens the calendar without taking focus: a mouse leaves it in the field to type.
+  function open(target, focus = true) {
     if (target.disabled || target.readOnly) return;
     if (popup && input === target) return close(true);
     close();
@@ -89,7 +90,7 @@ export function installDatePickers({ icon, esc }) {
     trigger.setAttribute("aria-expanded", "true");
     trigger.setAttribute("aria-controls", popup.id);
     popup.showPopover();
-    paint();
+    paint(focus);
     popup.addEventListener("click", (e) => {
       const b = e.target.closest("button");
       if (!b) return;
@@ -152,6 +153,63 @@ export function installDatePickers({ icon, esc }) {
         !e.target.closest(".date-field")
       )
         close();
+    },
+    true,
+  );
+  // A tap or click on the field, or its label's text, opens this calendar, never the platform's
+  // picker (iOS wheels, Firefox's popup), as select-menu.js does for selects. A mouse still
+  // focuses the field, so the keyboard types a date; a tap or pen leaves it unfocused, as iOS
+  // opens its wheels on focus.
+  const field = (target) => {
+    if (!(target instanceof Element)) return null;
+    const date = target.matches('input[type="date"]') ? target : target.closest("input, button, select, textarea, a") ? null : target.closest("label")?.control;
+    return date?.matches('.date-field > input[type="date"]') && !date.disabled && !date.readOnly ? date : null;
+  };
+  let tap = null, tapped = null;
+  for (const type of ["pointerdown", "mousedown"])
+    document.addEventListener(
+      type,
+      (e) => {
+        const date = field(e.target);
+        if (!date || (e.button != null && e.button !== 0)) return;
+        e.preventDefault();
+        if (type !== "pointerdown") return;
+        const mouse = !e.pointerType || e.pointerType === "mouse";
+        tap = mouse ? null : { date, x: e.clientX, y: e.clientY, id: e.pointerId };
+        if (mouse) date.focus({ preventScroll: true });
+      },
+      true,
+    );
+  document.addEventListener("pointercancel", () => (tap = null), true);
+  // WebKit may omit the click after a cancelled pointerdown: open on a completed tap instead.
+  document.addEventListener(
+    "pointerup",
+    (e) => {
+      const start = tap;
+      tap = null;
+      if (!start || start.id !== e.pointerId || Math.hypot(e.clientX - start.x, e.clientY - start.y) > 12) return;
+      tapped = { date: start.date, until: performance.now() + 700 };
+      open(start.date, false);
+    },
+    true,
+  );
+  document.addEventListener(
+    "touchend",
+    (e) => {
+      if (tapped && field(e.target) === tapped.date && performance.now() < tapped.until && e.cancelable) e.preventDefault();
+    },
+    { capture: true, passive: false },
+  );
+  document.addEventListener(
+    "click",
+    (e) => {
+      const date = field(e.target);
+      if (!date) return;
+      e.preventDefault();
+      // A double click's second click leaves the calendar open.
+      if (e.detail > 1) return;
+      if (tapped?.date === date && performance.now() < tapped.until) return void (tapped = null);
+      open(date, false);
     },
     true,
   );

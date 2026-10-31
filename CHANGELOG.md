@@ -2,6 +2,12 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.20.87 — 2026-10-31
+
+### Changed
+
+- A tap or click on a date field opens the app's calendar instead of the device's own date picker (iOS wheels, Firefox's popup). The keyboard still types a date.
+
 ## 0.20.86 — 2026-10-31
 
 ### Changed

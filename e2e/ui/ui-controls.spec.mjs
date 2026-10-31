@@ -168,6 +168,55 @@ test("sliders use the shared range styling with a live value", async ({ page }) 
   expect(valuetext, "slider lacks aria-valuetext").toBeTruthy();
 });
 
+// Owner request (T15, 31 October 2026): a tap or click on a date field opens the app's calendar,
+// never the platform's picker (iOS wheels, Firefox's popup); a tap leaves the field unfocused, as
+// iOS opens its wheels on focus, and the keyboard still types a date.
+onDevices(["desktop", "phone"], (device) => test("a tap or click on a date field opens only the app's calendar", device === "desktop" ? { tag: "@gate" } : {}, async ({ page, device }) => {
+  await open(page, "list", ".task-row");
+  await page.locator('.task-row [data-action="task-open"]:visible').first().click();
+  await page.locator("#task-form").waitFor();
+  const date = page.locator('#task-form .date-field > input[type="date"]:visible').first();
+  await page.evaluate(() => {
+    window.__dateFocus = 0;
+    window.__dateDefault = [];
+    document.addEventListener("focusin", (e) => { if (e.target.type === "date") window.__dateFocus++; }, true);
+    for (const type of ["pointerdown", "mousedown", "click"])
+      window.addEventListener(type, (e) => { if (e.target.type === "date") window.__dateDefault.push([type, e.defaultPrevented]); });
+  });
+  await (device === "phone" ? date.tap() : date.click());
+  await page.locator("#shared-date-picker").waitFor();
+  const [focus, defaults] = await page.evaluate(() => [window.__dateFocus, window.__dateDefault]);
+  expect(defaults.length && defaults.every(([, prevented]) => prevented), `the platform's own handling is cancelled ${JSON.stringify(defaults)}`).toBe(true);
+  if (device === "phone") expect(focus, "a tap leaves the field unfocused").toBe(0);
+  const day = page.locator("#shared-date-picker table [data-date-value]").nth(15);
+  const value = await day.getAttribute("data-date-value");
+  await day.click();
+  await expect(page.locator("#shared-date-picker")).toHaveCount(0);
+  await expect(date).toHaveValue(value);
+  if (device === "desktop") {
+    // A click leaves the field focused, so typing still enters a date (en-GB: day, month, year).
+    await date.click();
+    await page.locator("#shared-date-picker").waitFor();
+    await page.keyboard.type("24122026");
+    await expect(date).toHaveValue("2026-12-24");
+    await page.keyboard.press("Escape");
+    await expect(page.locator("#shared-date-picker")).toHaveCount(0);
+    // A double click leaves the calendar open.
+    await date.dblclick();
+    await expect(page.locator("#shared-date-picker")).toHaveCount(1);
+    return;
+  }
+  // A tap on a date field's label text opens the calendar too, and focuses nothing.
+  await open(page, "timeline", "[data-task-dates]");
+  await page.locator("[data-task-dates]:visible").first().tap();
+  const label = page.locator("#task-dates-popover label", { hasText: "Start date" });
+  await label.waitFor();
+  await page.evaluate(() => (window.__dateFocus = 0));
+  await label.tap({ position: { x: 4, y: 4 } });
+  await page.locator("#shared-date-picker").waitFor();
+  expect(await page.evaluate(() => window.__dateFocus), "a label tap leaves the field unfocused").toBe(0);
+}));
+
 // Menus of rows use the tighter menu padding; popovers that hold fields keep the popover padding.
 test("popovers share padding and radius tokens", async ({ page }) => {
   await open(page, "list", ".task-row");
