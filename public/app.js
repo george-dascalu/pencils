@@ -1584,6 +1584,7 @@ const navigation = browserNavigation({
   onError: (error) => toast(error.message, true),
 });
 const features = installFeatures({ welcomePage,
+  closeList: () => lists.close(false),
   state,
   taskViews,
   planningViews,

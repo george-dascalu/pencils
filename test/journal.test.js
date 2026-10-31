@@ -92,3 +92,28 @@ test("a write staged while its transaction ends does not crash", async (t) => {
   assert.equal(store.journal.active, null);
   assert.equal(await fs.readFile(moved, "utf8"), "before", "the move still happens");
 });
+// T35: a write that starts while its transaction is closing goes unjournaled, and does not bring
+// back the record its commit removed.
+test("a write that starts while the transaction closes leaves no record behind", async (t) => {
+  const { store } = await fixture(t),
+    file = path.join(store.root, "closing.md");
+  await fs.writeFile(file, "before");
+  await store.journal.start();
+  const id = store.journal.active.id, finishing = store.journal.finish(true);
+  const staged = store.journal.stage(file, "after");
+  await finishing;
+  await assert.doesNotReject(staged);
+  await assert.rejects(fs.stat(path.join(store.journal.root, id)), /ENOENT/, "the committed record stays gone");
+});
+// T35: writes staged at once in one transaction keep their own backups.
+test("files staged at once keep their own backups", async (t) => {
+  const { store } = await fixture(t),
+    files = ["one.md", "two.md", "three.md"].map((name) => path.join(store.root, name));
+  for (const [i, file] of files.entries()) await fs.writeFile(file, `before ${i}`);
+  await store.journal.start();
+  await Promise.all(files.map((file) => store.journal.stage(file, "after")));
+  const backups = store.journal.active.files.map((f) => f.backup);
+  assert.equal(new Set(backups).size, files.length, backups.join(", "));
+  await store.journal.finish(false);
+  for (const [i, file] of files.entries()) assert.equal(await fs.readFile(file, "utf8"), `before ${i}`);
+});

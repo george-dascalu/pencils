@@ -10,6 +10,7 @@
 :root:is([data-fields-off~="start"], [data-fields-off~="due"]) :is(.task-date-range > span[aria-hidden], .canvas-task-date-arrow),
 :root[data-fields-off~="start"][data-fields-off~="due"] :is([data-row-dates], #task-form .task-dates, .canvas-task-dates),
 :root[data-fields-off~="tags"] label.field:has(> #filter-tag),
+:root[data-fields-off~="estimate"] label:has(> #capacity-unit),
 /* Document task rows and card chips, and the board's Live task view filters. */
 :root[data-fields-off~="assignee"] :is(.document-task-fields .task-assignee, #canvas-query-form label.field:has(> [name="assignee"])),
 :root[data-fields-off~="status"] :is(.document-task-fields .field-chip-status, .document-card-title ~ .field-chip-status, #canvas-query-form label.field:has(> [name="status"])),

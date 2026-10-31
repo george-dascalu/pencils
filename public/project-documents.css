@@ -34,11 +34,13 @@
   box-shadow: var(--shadow-drawer);
 }
 .main.project-main > #list-panel[hidden] { display: none; }
+/* The page stays in its column under the list, or auto-placement moves it into a new one beside it. */
+.main.project-main:has(> #list-panel:not([hidden])) > :is(#view-toolbar, #view-content) { grid-column: 1; }
 .list-panel:not([hidden]) ~ :is(#view-toolbar, #view-content) { filter: blur(3px); pointer-events: none; user-select: none; }
 .list-panel .document-explorer > header { padding: 10px 8px 10px 16px; }
 /* The New board menu (board-explorer.js) matches the icon buttons beside it. */
 .list-panel .board-menu > summary { background: transparent; border-color: transparent; }
-@media (max-width: 600px) {
+@media (max-width: 600px), (max-height: 500px) and (pointer: coarse) {
   .main.project-main > #list-panel { width: 100%; border-right: 0; box-shadow: none; }
 }
 @media (max-width: 600px), (pointer: coarse) {

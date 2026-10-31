@@ -1,5 +1,6 @@
 import { taskColorAttributes, taskColorDot } from "./task-colors.js";
 import { projectPeople } from "./teams.js";
+import { fieldOn } from "./card-fields.js";
 const DAY = 86400000;
 const stamp = (value) =>
   /^\d{4}-\d{2}-\d{2}$/.test(value || "")
@@ -95,6 +96,8 @@ export function capacityView(ctx) {
   const round = (n) => Math.round(n * 10) / 10;
   const count = (n) => `${n} task${n === 1 ? "" : "s"}`;
   function render(tasks) {
+    // Without estimates (T23, T38) Capacity counts tasks; the stored choice waits for them.
+    unit = fieldOn(state.config, "estimate") ? ctx.storage.get("capacity-unit", "tasks") : "tasks";
     const teams = (state.organisation?.teams || []).filter((t) =>
       state.project.teams?.includes(t.id),
     );

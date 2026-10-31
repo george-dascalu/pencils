@@ -429,6 +429,16 @@ export function selectionToolbar(
             "button:not(:disabled),summary:not([aria-disabled=true])",
           ),
         ].filter((el) => el.getClientRects().length);
+        // Up and Down move to the nearest tool in the row above or below (T37).
+        const rows = host === root ? [...root.querySelectorAll(":scope > .selection-row")].filter((r) => r.getClientRects().length) : [];
+        const row = rows.indexOf(e.target.closest(".selection-row"));
+        if (["ArrowUp", "ArrowDown"].includes(e.key) && rows.length > 1 && row !== -1) {
+          const other = rows[row + (e.key === "ArrowUp" ? -1 : 1)];
+          if (!other) return;
+          const centre = (el) => { const r = el.getBoundingClientRect(); return r.left + r.width / 2; }, x = centre(e.target);
+          items.filter((el) => other.contains(el)).sort((a, b) => Math.abs(centre(a) - x) - Math.abs(centre(b) - x))[0]?.focus();
+          return;
+        }
         const i = items.indexOf(e.target),
           next =
             e.key === "Home"

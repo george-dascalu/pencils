@@ -5,7 +5,8 @@ import { focusOnOpen } from "./open-focus.js";
 // Documents button) shows the list over the open document or board, which shows blurred beside it
 // on desktop and iPad and is covered on phones. A choice, Escape, its close button or a click
 // outside closes it. project-documents.js and board-explorer.js fill it (folder-tree.js).
-const CHOICES = '[data-list-close], [data-document-open], [data-document-action="create"], [data-board-open], [data-board-menu="board-new"] .board-menu-panel > *';
+// A board choice closes the list itself once it's accepted (board-explorer.js), so a refused one keeps it.
+const CHOICES = '[data-list-close], [data-document-open], [data-document-action="create"], [data-board-menu="board-new"] .board-menu-panel > *';
 export function listPanel(state) {
   let openFor = null, opener = null, pressed = null;
   const panel = () => document.querySelector("#list-panel");
@@ -55,7 +56,12 @@ export function listPanel(state) {
     if (event.key !== "Escape" || !shown() || state.dialog || state.menu || event.target.closest?.("details[open]")) return;
     event.preventDefault();
     event.stopImmediatePropagation();
-    close();
+    // A search with text clears first, as search fields do; the next Escape closes the list.
+    const search = event.target.closest?.('#list-panel input[type="search"]');
+    if (search?.value) {
+      search.value = "";
+      search.dispatchEvent(new Event("input", { bubbles: true }));
+    } else close();
   }, true);
   // A rebuilt page keeps the list open while the same project and view stay open.
   function html() {

@@ -2,6 +2,20 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.20.99 — 2026-10-31
+
+### Changed
+
+- In a board item's toolbar, Up and Down move between its two rows, and touch screens hide the rows' scrollbars like the phone board tools; a mouse shows a thin one.
+- Escape in the document or board list clears its search first, then closes the list.
+- With estimates turned off, Capacity counts tasks and offers no hours. With Parent turned off, the project's card placement rules wait until it's back, so no card needs a parent you can't set.
+
+### Fixed
+
+- Choosing a board while the current one is still saving keeps the board list open with its message.
+- On phones held sideways, the document and board lists fill the page and the page behind them stays in place.
+- A write that starts as a save finishes no longer joins that finished save's record, and files saved together keep their own backups.
+
 ## 0.20.98 — 2026-10-31
 
 ### Changed

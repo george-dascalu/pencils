@@ -11,6 +11,8 @@ export function hierarchyRules(config) {
 }
 export function canParent(config, childType, parentType = null) {
   const rules = hierarchyRules(config);
+  // Without the Parent field (T23, T38) cards can't be placed, so the rules wait until it's back.
+  if (config.off?.includes("parent")) return true;
   return (
     rules.mode !== "enforced" ||
     (parentType === null

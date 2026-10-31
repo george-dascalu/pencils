@@ -37,6 +37,12 @@ export const roadmap = [
   { id: "T32", title: "Steady the board capacity gauge test on phones", status: "done", requested: "2026-10-31T22:38", started: "2026-10-31T22:38", done: "2026-10-31T22:47", version: "0.20.98" },
   { id: "T33", title: "Home: no gap at the top on phones", status: "done", requested: "2026-10-31T22:42", started: "2026-10-31T22:42", done: "2026-10-31T22:47", version: "0.20.98" },
   { id: "T34", title: "Phone View options: one font size; Clear filters as an icon beside Close", status: "done", requested: "2026-10-31T22:43", started: "2026-10-31T22:43", done: "2026-10-31T22:47", version: "0.20.98" },
+  { id: "T35", title: "Server journal: writes during a closing save, and unique backups", status: "done", requested: "2026-10-31T23:19", started: "2026-10-31T23:19", done: "2026-10-31T23:23", version: "0.20.99" },
+  { id: "T36", title: "Document and board lists: refused board keeps the list, focus after Miro import, Escape clears search first, phone landscape full page", status: "done", requested: "2026-10-31T23:19", started: "2026-10-31T23:19", done: "2026-10-31T23:23", version: "0.20.99" },
+  { id: "T37", title: "Board toolbar rows: Up and Down move between rows, scrollbars hidden on touch", status: "done", requested: "2026-10-31T23:19", started: "2026-10-31T23:19", done: "2026-10-31T23:33", version: "0.20.99" },
+  { id: "T38", title: "Card fields: Capacity without estimates, Parent off with strict hierarchy", status: "done", requested: "2026-10-31T23:19", started: "2026-10-31T23:19", done: "2026-10-31T23:33", version: "0.20.99" },
+  { id: "T39", title: "Project settings: choose which views and components (tasks, planning, boards) a project has", status: "requested", requested: "2026-10-31T23:28" },
+  { id: "T40", title: "UI review: readability and consistency, and an error sweep of every screen and button", status: "requested", requested: "2026-10-31T23:29" },
 ];
 
 // "31 Oct 20:05" for a date with a time, "31 Oct" for a bare date.

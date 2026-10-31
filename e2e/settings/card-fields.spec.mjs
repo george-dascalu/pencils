@@ -96,6 +96,14 @@ test("filters and Table columns leave fields that are off", async ({ page }) => 
   await expect(page.locator('select[name="default_view"] option[value="kanban"]')).toHaveCount(0);
 });
 
+test("without estimates, Capacity counts tasks and offers no hours", async ({ page }) => {
+  const s = await seed(["estimate"]);
+  await page.goto(url(s, "capacity"));
+  await page.locator("#capacity-scope").waitFor({ state: "attached" });
+  await expect(page.locator("#capacity-unit")).toBeHidden();
+  await expect(page.locator("#capacity-unit")).toHaveValue("tasks");
+});
+
 onDevices(["phone"], () => test("phone summaries and the bottom bar leave fields that are off", async ({ page }) => {
   const s = await seed(["status", "priority", "start", "due", "assignee"]);
   await page.goto(url(s, "list"));

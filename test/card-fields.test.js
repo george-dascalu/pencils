@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import { schema } from "../server/model.js";
 import { CARD_FIELDS, fieldOn, viewOn } from "../public/card-fields.js";
 import { tablePreferences } from "../public/table-model.js";
+import { canParent } from "../public/hierarchy-model.js";
 
 // Owner request (T23): a project can turn off any built-in card field; cards keep ID and title.
 test("a project can turn off built-in card fields, and only those", () => {
@@ -33,4 +34,11 @@ test("views that need a field that is off leave the tabs", () => {
   assert.equal(viewOn(off("start", "due"), "timeline"), false);
   for (const view of ["overview", "documents", "list", "table", "board"])
     assert.equal(viewOn(off(...CARD_FIELDS.map(([key]) => key)), view), true, view);
+});
+
+// T38: without the Parent field, strict placement rules can't be met, so they don't apply.
+test("placement rules wait while Parent is off", () => {
+  const config = { types: ["epic", "task"], hierarchy: { mode: "enforced", roots: ["epic"], children: { epic: ["task"], task: [] } } };
+  assert.equal(canParent(config, "task", null), false);
+  assert.equal(canParent({ ...config, off: ["parent"] }, "task", null), true);
 });

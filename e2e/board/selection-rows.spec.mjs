@@ -47,6 +47,25 @@ async function check(page, label, { common, specific }) {
   for (const selector of specific) await expect(rows(page).nth(1).locator(selector), `${label}: ${selector} in the type's row`).toHaveCount(1);
 }
 
+onDevices(["desktop", "phone"], () => test("Up and Down move between the two rows; touch screens hide their scrollbars like the phone dock", async ({ page, device }) => {
+  await page.goto(`${app.base}/#project/${app.project.id}/board/${app.board.id}`);
+  await page.locator("#canvas").waitFor();
+  await findOnBoard(page, "note", "First idea");
+  await toolbar(page).waitFor();
+  await expect(rows(page)).toHaveCount(2);
+  const bar = device === "phone" ? "none" : "thin";
+  expect(await rows(page).evaluateAll((els) => els.map((el) => getComputedStyle(el).scrollbarWidth))).toEqual([bar, bar]);
+  const inRow = () => page.evaluate(() => [...document.querySelectorAll("#selection-tools > .selection-row")].findIndex((row) => row.contains(document.activeElement)));
+  await rows(page).first().locator("button:visible, summary:visible").first().focus();
+  expect(await inRow()).toBe(0);
+  await page.keyboard.press("ArrowDown");
+  expect(await inRow(), "Down moves to the second row").toBe(1);
+  await page.keyboard.press("ArrowDown");
+  expect(await inRow(), "and stays on the last row").toBe(1);
+  await page.keyboard.press("ArrowUp");
+  expect(await inRow(), "Up moves back").toBe(0);
+}));
+
 onDevices(["desktop", "phone"], () => test("each selection shows common tools above the type's own tools, two scrolling lines at most", async ({ page, device }) => {
   await page.goto(`${app.base}/#project/${app.project.id}/board/${app.board.id}`);
   await page.locator("#canvas").waitFor();

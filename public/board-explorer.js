@@ -34,6 +34,7 @@ export function boardExplorer(ctx, { canvases, enter }) {
   async function choose(id) {
     if (state.boardTaskEditor && !ctx.closeDialog(false, { confirmDirty: false })) return;
     if (state.boardSaves || state.boardConflict) return toast("Finish saving the current canvas first.", true);
+    ctx.closeList?.();
     await enter(id);
   }
   // Fills the list panel in board views and empties it when another view opens.

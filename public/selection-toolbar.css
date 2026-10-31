@@ -29,8 +29,13 @@
   max-width: 100%;
   overflow-x: auto;
   overscroll-behavior-x: contain;
+  /* A thin bar shows mouse users the row scrolls; touch screens hide it like the phone board dock. */
   scrollbar-width: thin;
   touch-action: pan-x;
+}
+@media (pointer: coarse) {
+  .selection-row { scrollbar-width: none; }
+  .selection-row::-webkit-scrollbar { display: none; }
 }
 .selection-row > .selection-group:first-child {
   border-left: 0;

@@ -89,6 +89,43 @@ test("the list stays closed after leaving the project and coming back", async ({
   await expect(page.locator("#view-content")).toHaveJSProperty("inert", false);
 });
 
+test("Escape first clears the list's search, then closes the list", async ({ page }) => {
+  await page.goto(`${app.base}/#project/${app.project.id}/documents/${app.doc.id}`);
+  await page.locator(".cm-content").waitFor();
+  await openList(page, "documents");
+  await panel(page).locator("#document-search").fill("second");
+  await expect(panel(page).locator("[data-document-open]")).toHaveCount(1);
+  await page.keyboard.press("Escape");
+  await expect(panel(page).locator("#document-search")).toHaveValue("");
+  await expect(panel(page)).toBeVisible();
+  await expect(panel(page).locator("[data-document-open]")).toHaveCount(2);
+  await page.keyboard.press("Escape");
+  await expect(panel(page)).toBeHidden();
+});
+
+test("closing Import from Miro, opened from the board list, leaves focus on the page", async ({ page }) => {
+  await page.goto(`${app.base}/#project/${app.project.id}/board/${app.board.id}`);
+  await page.locator("#canvas").waitFor();
+  await openList(page, "board");
+  await panel(page).locator('[data-board-menu="board-new"] > summary').click();
+  await panel(page).locator('[data-feature="miro-import"]').click();
+  await expect(page.locator("#miro-import-panel")).toBeVisible();
+  await page.keyboard.press("Escape");
+  await expect(page.locator("#miro-import-panel")).toHaveCount(0);
+  expect(await page.evaluate(() => document.activeElement !== document.body && !!document.activeElement?.getClientRects().length), "focus on a visible control").toBe(true);
+});
+
+test.describe("phone held sideways", () => {
+  test.use({ device: "phone", viewportSize: { width: 844, height: 390 } });
+  test("the list is a full page", async ({ page }) => {
+    await page.goto(`${app.base}/#project/${app.project.id}/board/${app.board.id}`);
+    await page.locator("#canvas").waitFor();
+    await openList(page, "board");
+    const [main, box] = [await page.locator(".main").boundingBox(), await panel(page).boundingBox()];
+    expect(box.width).toBeGreaterThanOrEqual(main.width - 1);
+  });
+});
+
 onDevices(["phone"], () => test("the tray separates Documents from the document views with a divider", async ({ page }) => {
   await page.goto(`${app.base}/#project/${app.project.id}/documents/${app.doc.id}`);
   await page.locator(".cm-content").waitFor();

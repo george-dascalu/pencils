@@ -99,8 +99,9 @@ export class WriteJournal {
   // A transaction can end while a write waits here (another save finishes); that write then goes
   // unjournaled, as with no transaction, instead of reading the ended transaction.
   async stage(file, text) {
-    const tx = this.active, ended = () => this.active !== tx;
-    if (!tx) return;
+    // A closing transaction (finish has begun) counts as ended (T35).
+    const tx = this.active, ended = () => this.active !== tx || tx.closing;
+    if (!tx || tx.closing) return;
     const relative = path.relative(this.store.root, file);
     await this.store.safe(file);
     if (ended()) return;
@@ -117,7 +118,8 @@ export class WriteJournal {
         path: relative,
         before: before ? digest(before) : null,
         after: [],
-        backup: `before-${tx.files.length}`,
+        // Unique, so files staged at once keep their own backups (T35).
+        backup: `before-${randomUUID()}`,
       };
       // An ended transaction's folder may be gone before its backup lands.
       if (before)
@@ -148,7 +150,7 @@ export class WriteJournal {
     await this.store.safe(target);
     const hash = await this.fingerprint(source);
     // As in stage: a transaction that ended meanwhile leaves this move unjournaled.
-    if (this.active === tx) {
+    if (this.active === tx && !tx.closing) {
       tx.moves.push({
         source: path.relative(this.store.root, source),
         target: path.relative(this.store.root, target),
@@ -201,8 +203,9 @@ export class WriteJournal {
     return conflicts;
   }
   async finish(success) {
-    if (!this.active) return;
+    if (!this.active || this.active.closing) return;
     const record = this.active;
+    record.closing = true;
     try {
       if (success) {
         record.phase = "committed";
