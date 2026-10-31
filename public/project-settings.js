@@ -21,10 +21,10 @@ export const settingsPages = [
   ],
   [
     "teams",
-    "Organisation & teams",
+    "Teams",
     "people",
     "Project",
-    "Choose the organisation and teams whose members can be assigned tasks.",
+    "Move this project to another organisation, and choose the teams whose members can be assigned tasks.",
   ],
   [
     "workflow",

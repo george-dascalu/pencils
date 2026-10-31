@@ -2,6 +2,12 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.20.76 — 2026-10-31
+
+### Changed
+
+- Project settings' Organisation & teams section is called Teams.
+
 ## 0.20.75 — 2026-10-31
 
 ### Changed

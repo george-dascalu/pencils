@@ -258,7 +258,7 @@ test("moving a project to another organisation keeps its tasks and canvases, and
   await expect(page.locator("#organisation-select")).toHaveValue(studio.id);
   await expect(page.locator(".project-link")).toHaveCount(3);
   // The project settings page refreshes the workspace before navigation settles.
-  await expect(page.locator("#toasts").getByText("Organisation & teams saved.", { exact: true })).toBeVisible();
+  await expect(page.locator("#toasts").getByText("Teams saved.", { exact: true })).toBeVisible();
   const afterMove = await snapshot();
   expect(afterMove.project.organisation).toBe(studio.id);
   expect(afterMove.tasks).toEqual(beforeMove.tasks);
