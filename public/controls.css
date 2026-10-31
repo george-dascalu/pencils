@@ -365,7 +365,7 @@ textarea,
 :is(.row-assignee, .task-relationship-assignee, .kanban-assignee, .phone-field, .spreadsheet td[data-column-key="assignee"] .table-cell-value) > .task-assignee {
   box-sizing: border-box;
   flex: none;
-  width: var(--list-field-height) !important;
+  width: max-content !important;
   height: var(--list-field-height) !important;
   min-width: var(--list-field-height);
   margin: 0;

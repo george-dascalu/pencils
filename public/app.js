@@ -1189,13 +1189,10 @@ function tagsHTML(t) {
     )
     .join("")}</span>`;
 }
+// The first three letters of the name, such as Geo for George; the tooltip keeps the full name.
 function assigneeHTML(t) {
-  const initials = String(t.assignee || "")
-    .split(/\s+/)
-    .map((s) => s[0])
-    .slice(0, 2)
-    .join("")
-    .toUpperCase();
+  const [first = "", ...rest] = [...String(t.assignee || "").trim()].slice(0, 3);
+  const initials = first.toUpperCase() + rest.join("");
   return `<span class="task-assignee ${initials ? "" : "unassigned"}" ${taskColorAttributes(state, "assignee", t.assignee)} title="${esc(t.assignee || "Unassigned")}">${esc(initials) || "–"}</span>`;
 }
 function priorityHTML(t) {

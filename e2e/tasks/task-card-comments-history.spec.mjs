@@ -55,7 +55,7 @@ test("the sidebar names the running version and flags a newer one; the top bar s
 test("a collapsed board card shows assignee, status, priority and due in order with a one-line title", async ({ page }) => {
   await openBoard(page);
   expect(await card(page).locator(".live-card-state").evaluate((el) => [...el.querySelectorAll(":scope > *, :scope > .field-box > *")].map((c) => c.className))).toEqual(["field-box", "canvas-task-assignee", "canvas-task-status", "canvas-task-priority priority high", "canvas-task-dates"]);
-  await expect(card(page).locator(".canvas-task-assignee .task-assignee")).toHaveText("G");
+  await expect(card(page).locator(".canvas-task-assignee .task-assignee")).toHaveText("Geo");
   const title = await card(page).locator(".task-title").evaluate((el) => ({ wrap: getComputedStyle(el).whiteSpace, size: getComputedStyle(el).fontSize, tooltip: el.title }));
   expect(title).toEqual({ wrap: "nowrap", size: "14px", tooltip: app.task.title });
 });

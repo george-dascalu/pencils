@@ -120,7 +120,7 @@ test.describe("desktop", () => {
       await choose(page, "assignee", assignee);
       await expect.poll(async () => (await saved()).assignee).toBe(assignee);
       await expect(row(page).locator(".row-assignee")).toHaveAttribute("title", assignee);
-      await expect(row(page).locator(".row-assignee .task-assignee")).toHaveText(assignee[0]);
+      await expect(row(page).locator(".row-assignee .task-assignee")).toHaveText(assignee.slice(0, 3));
       await expect(row(page).locator(".row-assignee-name")).toHaveCount(0);
       await choose(page, "priority", "Lowest");
       await expect.poll(async () => (await saved()).priority).toBe("none");

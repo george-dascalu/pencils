@@ -85,7 +85,7 @@ onDevices(["desktop", "ipad", "phone"], () => {
     await row.waitFor();
     await assertRelationshipOrder(row, [":scope > .icon", ".task-relationship-key", ".task-relationship-title", ".task-relationship-assignee", ".task-relationship-status", ".task-relationship-priority"], "relationship row");
     const assigneeText = await row.locator(".task-relationship-assignee").evaluate((el) => el.innerText.replace(/\s+/g, " ").trim());
-    expect(assigneeText, "assignee shows the avatar only").toBe("GD");
+    expect(assigneeText, "assignee shows the avatar only").toBe("Geo");
     await expect(row.locator(".task-relationship-assignee"), "assignee name stays available to assistive tech").toHaveAttribute("aria-label", /George Dascalu/);
   });
 
@@ -108,7 +108,7 @@ onDevices(["desktop", "ipad", "phone"], () => {
     const option = picker.locator("[data-relationship-options] button").filter({ hasText: "Ordered task 2" }).first();
     await option.waitFor();
     await assertRelationshipOrder(option, [".task-relationship-link > .icon:first-child", ".task-relationship-key", ".task-relationship-title", ".task-relationship-assignee", ".task-relationship-status", ".task-relationship-priority"], "search result");
-    expect(await option.locator(".task-relationship-assignee").evaluate((el) => el.innerText.trim()), "search result assignee shows the avatar only").toBe("GD");
+    expect(await option.locator(".task-relationship-assignee").evaluate((el) => el.innerText.trim()), "search result assignee shows the avatar only").toBe("Geo");
   });
 });
 

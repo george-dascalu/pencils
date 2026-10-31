@@ -2,6 +2,12 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.20.58 — 2026-10-31
+
+### Changed
+
+- Assignees show the first three letters of their name, such as Geo for George, instead of initials. The full name stays in the tooltip.
+
 ## 0.20.57 — 2026-10-30
 
 ### Changed

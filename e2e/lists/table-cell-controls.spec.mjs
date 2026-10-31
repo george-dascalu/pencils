@@ -60,7 +60,7 @@ onDevices(["desktop", "phone"], () => {
       await expect(visual("type").locator(".icon")).toBeVisible();
       expect((await visual("type").textContent()).trim()).toBe("");
       const { assignee } = await saved();
-      await expect(visual("assignee")).toHaveText(assignee[0]);
+      await expect(visual("assignee")).toHaveText(assignee.slice(0, 3));
       await expect(cell("assignee").locator(".table-cell-select")).toHaveAttribute("title", assignee);
       for (const name of ["type", "assignee", "status", "priority", "parent", "fields.stage", "fields.approved"]) {
         await activate(field(name));
@@ -99,7 +99,7 @@ onDevices(["desktop", "phone"], () => {
       const oldColor = await fieldColor(visual("assignee").locator(".task-assignee"));
       await choose("assignee", assignee);
       await expect.poll(async () => (await saved()).assignee).toBe(assignee);
-      await expect(visual("assignee")).toHaveText(assignee[0]);
+      await expect(visual("assignee")).toHaveText(assignee.slice(0, 3));
       const newColor = await fieldColor(visual("assignee").locator(".task-assignee"));
       expect(newColor).not.toBe(oldColor);
       expect(await fieldColor(cell("assignee").locator(".table-cell-select"))).toBe(newColor);
@@ -118,7 +118,7 @@ onDevices(["desktop", "phone"], () => {
       await expect(visual("status")).toHaveText("In progress");
       await page.reload();
       await row().waitFor();
-      await expect(visual("assignee")).toHaveText(assignee[0]);
+      await expect(visual("assignee")).toHaveText(assignee.slice(0, 3));
       await expect(visual("type").locator(`.task-type.${type}`).first()).toBeAttached();
       await expect(visual("parent")).toHaveText("Parent");
     }
@@ -141,7 +141,7 @@ onDevices(["desktop", "phone"], () => {
     await menu.getByRole("option", { name: "Alex", exact: true }).focus();
     await page.keyboard.press("Enter");
     await expect.poll(async () => (await saved()).assignee).toBe("Alex");
-    await expect(visual("assignee")).toHaveText("A");
+    await expect(visual("assignee")).toHaveText("Ale");
     await expect(field("assignee")).toBeEnabled();
     await field("assignee").focus();
     await page.keyboard.press("Escape");

@@ -74,7 +74,7 @@
   pointer-events: none;
 }
 .table-cell-chevron > .icon { width: 16px; height: 16px; }
-.spreadsheet :is(.table-cell-value, .table-cell-readonly) .task-assignee { width: 24px; height: 24px; margin: 0; }
+.spreadsheet :is(.table-cell-value, .table-cell-readonly) .task-assignee { min-width: 24px; height: 24px; margin: 0; }
 .spreadsheet :is(.table-cell-value, .table-cell-readonly) .task-type > .icon { width: 16px; height: 16px; }
 .spreadsheet .table-cell-select:focus-within { outline: var(--focus-ring); outline-offset: -2px; }
 .table-columns-panel {
@@ -334,7 +334,7 @@
   text-overflow: ellipsis;
   border-top: 1px solid var(--line);
 }
-.table-column-drag-sample .task-assignee { width: 24px; height: 24px; margin: 0; }
+.table-column-drag-sample .task-assignee { min-width: 24px; height: 24px; margin: 0; }
 .table-column-drag-sample .table-cell-readonly { padding: 0; }
 .table-column-drag-ghost.invalid { opacity: 0.5; }
 .table-column-drop-marker {
