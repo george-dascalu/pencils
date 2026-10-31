@@ -39,7 +39,7 @@ async function openBoard(page, board = app.board) {
   await page.goto(`${app.base}/#project/${app.project.id}/board/${board.id}`);
   await gauge(page).waitFor();
   await presence;
-  await expect(page.locator("#canvas-presence")).toHaveText(/Just you|\d+ here/);
+  await expect(page.locator("#canvas-presence [data-pro=participant]")).toHaveAttribute("aria-label", /Just you|\d+ here/);
 }
 
 test("capacity percentages show <1% for tiny boards, the bar stops at 100%, and the gauge shows once it reads over 80% of either limit", () => {

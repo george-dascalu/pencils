@@ -1,7 +1,7 @@
 import { readGestures, tapGestures } from "./drawing-gestures.js";
 
 const chrome =
-  "button,input,select,textarea,a,summary,[contenteditable],[data-group-resize],.inline-editing,.inline-floating-tools,.board-tools,#selection-tools,#pen-tools,.canvas-panel,.canvas-find,.canvas-filters,#canvas-minimap,#canvas-presence,.board-controls,[data-board-settings]";
+  "button,input,select,textarea,a,summary,[contenteditable],[data-group-resize],.inline-editing,.inline-floating-tools,.board-tools,#selection-tools,#pen-tools,.canvas-panel,.canvas-find,.canvas-filters,#canvas-minimap,.board-controls,[data-board-settings]";
 // Fingers manipulate objects even while an ink tool is active. Explicit
 // placement/connection tools still work by touch on the shared Board.
 export const canvasPointerTool = (tool, pointerType) =>

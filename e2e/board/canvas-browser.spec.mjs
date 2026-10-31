@@ -173,7 +173,9 @@ test("two tabs share presence and selections, edit at once and record durable ac
   const secondErrors = [];
   second.on("pageerror", (e) => secondErrors.push(e.message));
   await enter(second);
-  await expect(page.locator("#canvas-presence")).toContainText("2 here", { timeout: 12000 });
+  // Who is here: the board bar's avatars, named in their label (0.20.83).
+  await expect(page.locator("#canvas-presence [data-pro=participant]")).toHaveAttribute("aria-label", "Your name: George · 2 here: George", { timeout: 12000 });
+  await expect(page.locator("#canvas-presence .task-assignee")).toHaveCount(2);
   const client = (p) => p.evaluate(() => sessionStorage.getItem("pencils:client"));
   expect(await client(second), "each tab has its own client").not.toBe(await client(page));
   await find(page, "task-a", "Write specification");

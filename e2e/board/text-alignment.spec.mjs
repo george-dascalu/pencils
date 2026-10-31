@@ -57,7 +57,7 @@ async function emptyPoint(page) {
     const r = canvas.getBoundingClientRect();
     const empty = (x, y) => {
       const hit = document.elementFromPoint(x, y);
-      return hit?.closest("#canvas") && !hit.closest("[data-node],[data-edge],button,input,select,.canvas-panel,.board-tools,.board-controls,#selection-tools,.inline-floating-tools,#canvas-presence");
+      return hit?.closest("#canvas") && !hit.closest("[data-node],[data-edge],button,input,select,.canvas-panel,.board-tools,.board-controls,#selection-tools,.inline-floating-tools");
     };
     for (let y = r.bottom - 130; y > r.top + 80; y -= 50)
       for (let x = r.right - 260; x > r.left + 100; x -= 70)

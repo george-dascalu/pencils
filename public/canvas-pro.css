@@ -219,29 +219,16 @@
   min-height: 28px;
   padding: 3px 8px;
 }
-.canvas-presence {
-  position: absolute;
-  top: 12px;
-  /* At the top right, clear of the tools on the left (styles.css). */
-  right: 18px;
-  z-index: 8;
-  display: flex;
-  gap: 7px;
-  align-items: center;
-  font-size: 11px;
-  max-width: 52%;
-  flex-wrap: wrap;
-  justify-content: flex-end;
+/* Who is here, in the board bar: avatars as for assignees. */
+.canvas-presence { display: flex; flex: none; }
+.presence-button {
+  display: inline-flex; align-items: center; justify-content: center; gap: 2px;
+  min-width: var(--control-height); height: var(--control-height); padding: 0 4px;
+  border: 0; border-radius: 5px; background: transparent; color: var(--muted); font-size: 10px;
 }
-.canvas-presence .button {
-  background: #fff;
-}
-.participant-chip {
-  border-bottom: 3px solid;
-  padding: 4px;
-  background: #ffffffe8;
-  border-radius: 4px;
-}
+.presence-button:hover { background: var(--surface-soft); }
+/* In ink; the others' borders take their cursor colours. */
+.presence-button .task-assignee { color: var(--ink); }
 #canvas-cursors {
   position: absolute;
   inset: 0;
@@ -543,13 +530,6 @@
   .canvas-filters select {
     width: 75px;
   }
-  .canvas-presence {
-    max-width: 40%;
-    font-size: 10px;
-  }
-  .participant-chip {
-    display: none;
-  }
   #canvas-minimap {
     transform: scale(0.7);
     transform-origin: bottom right;
@@ -644,11 +624,6 @@
   bottom: 65px;
   max-width: calc(100% - 100px);
 }
-.canvas-presence {
-  max-width: calc(100% - 330px);
-  flex-wrap: wrap;
-  justify-content: flex-end;
-}
 .canvas.board-expanded {
   position: fixed;
   inset: 0;
@@ -736,10 +711,6 @@
   flex-shrink: 0;
 }
 @media (max-width: 600px) {
-  .canvas-presence {
-    max-width: calc(100% - 100px);
-    top: 100px;
-  }
   .board-help {
     display: none;
   }
@@ -935,7 +906,6 @@ html.board-expanded-view .shell {
   .phone-board-dock [aria-expanded="true"],
   .board-tools:has(#phone-board-add .active) > [data-phone-category="add"],
   .board-tools:has(#phone-board-navigate [data-tool="hand"].active) > [data-phone-category="navigate"] { background: var(--surface-soft); color: var(--green); }
-  .canvas-presence { top: 8px; right: 8px; max-width: calc(100% - 16px); }
   #canvas-minimap { bottom: calc(max(8px, env(safe-area-inset-bottom), var(--board-bottom-clear, 0px)) + var(--control-height) + 16px); }
   #canvas-search-panel { left: 8px; right: 8px; top: 8px; max-width: calc(100% - 16px); }
   .presenting .phone-board-dock { display: none; }

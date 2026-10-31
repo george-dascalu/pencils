@@ -1,7 +1,8 @@
 // Owner requests, 30 October 2026: the bottom bar floats over the board and the open document with
 // no band of page behind it; the board has no zoom or fit buttons (double-click the zoom level to
-// fit), and one toggle takes the board full screen.
+// fit), and one toggle takes the board full screen. Who is here sits in the board bar (0.20.83).
 import { test, expect, onDevices, useApp } from "../fixtures.mjs";
+import { clickControl, selectProjectView } from "../helpers/menu-controls.mjs";
 
 const app = useApp(async (store) => {
   const project = await store.createProject({ title: "Board chrome" });
@@ -49,8 +50,31 @@ onDevices(["desktop", "ipad"], () => test("undo, redo and the view controls stay
   for (let i = 1; i < items.length; i++) expect(items[i].top, `${device}: stacked ${JSON.stringify(items)}`).toBeGreaterThanOrEqual(items[i - 1].bottom - 0.5);
   // Fit board lives in the zoom level's menu (0.20.73), not beside it.
   await expect(page.locator('[data-action="zoom-in"], [data-action="zoom-out"], [data-action="board-fit"]:not([data-board-menu="zoom"] *), [data-board-display="fullscreen"]')).toHaveCount(0);
-  const [canvas, presence] = [await box(page, "#canvas"), await box(page, "#canvas-presence")];
-  expect(canvas.right - presence.right, `${device}: presence moves to the free right edge`).toBeLessThanOrEqual(bar.left - canvas.left);
+}));
+
+// Owner request (T11, 31 October 2026): who is on the board sits in the board bar as a compact
+// avatar button, before Session on wider screens and beside View options on phones.
+onDevices(["desktop", "ipad", "phone"], () => test("the board bar shows who is here as avatars that open your name", async ({ page, device }) => {
+  await openBoard(page);
+  const presence = page.locator(".board-toolbar > #canvas-presence > [data-pro=participant]");
+  await expect(presence).toHaveAttribute("aria-label", "Your name: George · Just you");
+  await expect(presence.locator(".task-assignee")).toHaveText(["Geo"]);
+  const [button, avatar] = [await presence.boundingBox(), await presence.locator(".task-assignee").boundingBox()];
+  expect(button.width, `${device}: compact`).toBeLessThanOrEqual(44);
+  expect(avatar.x >= button.x && avatar.x + avatar.width <= button.x + button.width, `${device}: the avatar fits inside`).toBe(true);
+  if (device === "phone") await expect(page.locator(".board-toolbar > .mobile-view-options")).toBeVisible();
+  else expect(await page.locator("#canvas-presence").evaluate((el) => el.nextElementSibling?.dataset.boardMenu), "before Session").toBe("session");
+  // One, kept by a content-only render (choosing a tool) and back after another view.
+  await clickControl(page.locator('[data-tool="hand"]'));
+  await expect(page.locator(".board-tools [data-tool=hand]")).toHaveClass(/active/);
+  await expect(page.locator("#canvas-presence [data-pro=participant]"), `${device}: after a content render`).toHaveCount(1);
+  await selectProjectView(page, "list");
+  await expect(page.locator("#canvas-presence")).toHaveCount(0);
+  await selectProjectView(page, "board");
+  await expect(presence, `${device}: back on the board`).toHaveCount(1);
+  await expect(page.locator("#canvas-presence [data-pro=participant]")).toHaveCount(1);
+  await presence.click();
+  await page.locator("#canvas-name-form").waitFor();
 }));
 
 // Phones dock the tool categories and the zoom level (0.20.82); undo and redo sit in Navigate's row.

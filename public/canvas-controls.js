@@ -34,7 +34,7 @@ export function canvasControls(ctx, basic) {
   const capacity = boardCapacity();
   const placement = ["sticky", "text", "shape", "grid"];
   const editable = "input,textarea,select,[contenteditable],.inline-editing";
-  const chrome = `${editable},.board-tools,.board-controls,#pen-tools,.inline-floating-tools,#selection-tools,button,a,.canvas-panel,.canvas-find,.canvas-filters,#canvas-presence,#presentation-controls`;
+  const chrome = `${editable},.board-tools,.board-controls,#pen-tools,.inline-floating-tools,#selection-tools,button,a,.canvas-panel,.canvas-find,.canvas-filters,#presentation-controls`;
   const stop = (e) => {
     e.preventDefault();
     e.stopImmediatePropagation();

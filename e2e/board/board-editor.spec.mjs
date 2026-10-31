@@ -70,8 +70,6 @@ test("the selected card's toolbar sits beside the card, clear of presence, with 
   const toolbar = await page.locator("#selection-tools").boundingBox();
   expect(toolbar.y + toolbar.height <= card.y || toolbar.y >= card.y + card.height, "toolbar sits above or below the selected card").toBe(true);
   await expect(page.locator(".board-selection"), "no duplicate top-right card toolbar").toHaveCount(0);
-  const presence = await page.locator("#canvas-presence").boundingBox();
-  expect(toolbar.y, "card actions do not overlap presence").toBeGreaterThanOrEqual(presence.y + presence.height);
 });
 
 test("rich text keeps the card's bounds, formats in place and persists Markdown with wiki links", async ({ page }) => {

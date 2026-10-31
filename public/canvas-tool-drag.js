@@ -14,7 +14,7 @@ export function canvasToolDrag(ctx, place, placeTask) {
     return (
       target?.closest("#canvas") &&
       !target.closest(
-        ".board-tools,.board-controls,.canvas-panel,.canvas-find,.canvas-filters,#selection-tools,#canvas-presence,#canvas-minimap",
+        ".board-tools,.board-controls,.canvas-panel,.canvas-find,.canvas-filters,#selection-tools,#canvas-minimap",
       )
     );
   }

@@ -206,7 +206,7 @@ test("a frame deep link opens on another device, which follows the presenter onl
   await other.goto(`${app.base}/#project/${app.project.id}/board/${app.board.id}/frame/frame`);
   await other.locator("#canvas").waitFor();
   // Invite once both devices are on the board.
-  await expect(page.locator("#canvas-presence")).toContainText("2 here", { timeout: 12000 });
+  await expect(page.locator("#canvas-presence [data-pro=participant]")).toHaveAttribute("aria-label", /· 2 here: /, { timeout: 12000 });
   // Board session lives in the board bar's Session menu (0.20.71).
   await page.locator("[data-board-menu=session] > summary").click();
   await page.locator("[data-session=open]").first().click();

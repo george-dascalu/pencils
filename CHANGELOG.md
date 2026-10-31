@@ -2,6 +2,12 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.20.83 — 2026-10-31
+
+### Changed
+
+- Who is on a board shows in the board bar as avatars, before Session (beside View options on phones), instead of a name chip floating over the board. Tap them to change your name.
+
 ## 0.20.82 — 2026-10-31
 
 ### Changed

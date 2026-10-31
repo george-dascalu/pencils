@@ -305,6 +305,7 @@ export function projectLayout(ctx) {
     if (!$("#canvas") || !toolbar) return;
     // Boards are chosen and created in the sidebar (board-explorer.js), so the bar starts with the save state.
     if ($("#board-save")) toolbar.append($("#board-save"));
+    if ($("#canvas-presence")) toolbar.append($("#canvas-presence"));
     // The right side matches the document bar: Session, Version history, the star and Board tools (⋯).
     const session = iconMenu(toolbar, "session", "Session", "person");
     const history = iconMenu(toolbar, "history", "Version history", "clock");

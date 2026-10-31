@@ -561,7 +561,6 @@ body {
     .file-path,
     .form-error:not(:empty),
     .live-card-state select,
-    .canvas-presence .button,
     .participant-cursor label,
     .board-node.frame > [data-pro="collapse"],
     .board-node.frame.collapsed-frame

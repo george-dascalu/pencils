@@ -53,7 +53,7 @@ async function emptyBoardPoint(page, avoid) {
       for (let x = canvas.left + 12; x < canvas.right - 12; x += 10) {
         if (avoid && x > avoid.x - 12 && x < avoid.x + avoid.width + 12 && y > avoid.y - 12 && y < avoid.y + avoid.height + 12) continue;
         const el = document.elementFromPoint(x, y);
-        if (el?.matches("#canvas, #canvas-world, .canvas-surface") || (el?.closest("#canvas") && !el.closest("[data-node],[data-edge],button,input,select,textarea,.board-controls,.board-tools,#pen-tools,#selection-tools,#canvas-minimap,#canvas-presence,.canvas-panel"))) return { x, y };
+        if (el?.matches("#canvas, #canvas-world, .canvas-surface") || (el?.closest("#canvas") && !el.closest("[data-node],[data-edge],button,input,select,textarea,.board-controls,.board-tools,#pen-tools,#selection-tools,#canvas-minimap,.canvas-panel"))) return { x, y };
       }
     return null;
   }, avoid);

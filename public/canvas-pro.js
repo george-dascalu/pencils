@@ -16,7 +16,7 @@ import { edgeDependency } from "./dependency-model.js";
 import { draftTaskData, validDraftTask } from "./draft-task.js";
 import { boardComments } from "./board-comments.js";
 import { attachmentPreview } from "./attachment-preview.js";
-import { assigneeOptions, assigneeHint, projectPeople } from "./teams.js";
+import { assigneeOptions, assigneeHint, projectPeople, shortName } from "./teams.js";
 import {
   nextStatuses,
   initialStatus,
@@ -949,9 +949,11 @@ export function canvasPro(ctx, basic) {
       "afterbegin",
       `${btn("present", `${icon("fullscreen")}Present`, 'data-menu-home="session"')}<button type="button" class="button small" data-session="open" data-menu-home="session">${icon("person")}Board session</button>${btn("activity", `${icon("activity")}Activity`, 'data-menu-home="history"')}`,
     );
+    // Who is here sits in the board bar, which a content-only render keeps (project-layout.js places it).
+    if (!$("#canvas-presence")) $(".board-toolbar")?.insertAdjacentHTML("beforeend", '<div id="canvas-presence" class="canvas-presence"></div>');
     $("#canvas").insertAdjacentHTML(
       "beforeend",
-      `<canvas id="canvas-overview" aria-hidden="true"></canvas><aside id="canvas-outline" class="canvas-panel ${outlineOpen ? "" : "hidden"}" aria-label="Frames and layers"></aside><div id="canvas-presence" class="canvas-presence"></div><div id="canvas-cursors" aria-hidden="true"></div><div id="canvas-search-panel" class="canvas-panel canvas-search-panel ${searchOpen ? "" : "hidden"}" role="region" aria-label="Board search and filters"><div class="canvas-find"><div class="canvas-search-head"><input id="canvas-find" type="search" aria-label="Find board objects" placeholder="Find on board…" value="${esc(search)}"><button type="button" class="icon-button" data-pro="search-close" aria-label="Close search" title="Close search">${icon("close")}</button></div><div id="canvas-find-results"></div></div><div class="canvas-filters"><input id="canvas-owner" aria-label="Filter canvas by owner" placeholder="Owner" value="${esc(owner)}"><select id="canvas-status" aria-label="Filter canvas by status"><option value="">Every status</option>${state.config.statuses.map((s) => `<option value="${esc(s)}" ${s === status ? "selected" : ""}>${esc(statusLabel(state.config, s))}</option>`).join("")}</select></div></div><button id="canvas-minimap" aria-label="Minimap: click to navigate"><canvas width="200" height="125"></canvas></button>`,
+      `<canvas id="canvas-overview" aria-hidden="true"></canvas><aside id="canvas-outline" class="canvas-panel ${outlineOpen ? "" : "hidden"}" aria-label="Frames and layers"></aside><div id="canvas-cursors" aria-hidden="true"></div><div id="canvas-search-panel" class="canvas-panel canvas-search-panel ${searchOpen ? "" : "hidden"}" role="region" aria-label="Board search and filters"><div class="canvas-find"><div class="canvas-search-head"><input id="canvas-find" type="search" aria-label="Find board objects" placeholder="Find on board…" value="${esc(search)}"><button type="button" class="icon-button" data-pro="search-close" aria-label="Close search" title="Close search">${icon("close")}</button></div><div id="canvas-find-results"></div></div><div class="canvas-filters"><input id="canvas-owner" aria-label="Filter canvas by owner" placeholder="Owner" value="${esc(owner)}"><select id="canvas-status" aria-label="Filter canvas by status"><option value="">Every status</option>${state.config.statuses.map((s) => `<option value="${esc(s)}" ${s === status ? "selected" : ""}>${esc(statusLabel(state.config, s))}</option>`).join("")}</select></div></div><button id="canvas-minimap" aria-label="Minimap: click to navigate"><canvas width="200" height="125"></canvas></button>`,
     );
     updateSearchButton();
     updateOutlineButton();
@@ -3059,7 +3061,7 @@ export function canvasPro(ctx, basic) {
       }
       if (
         event.target.closest(
-          "#pen-tools,.inline-floating-tools,.canvas-panel,.canvas-find,.canvas-filters,#canvas-presence,#presentation-controls,.inline-editing",
+          "#pen-tools,.inline-floating-tools,.canvas-panel,.canvas-find,.canvas-filters,#presentation-controls,.inline-editing",
         )
       ) {
         event.stopImmediatePropagation();
@@ -3379,7 +3381,10 @@ export function canvasPro(ctx, basic) {
       layer = $("#canvas-cursors");
     if (!el || !layer) return;
     const others = members.filter((m) => m.client !== sync.client);
-    updatePresenceMarkup(el, `${btn("participant", esc(name()))}<span>${others.length ? `${others.length + 1} here` : "Just you"}</span>${others.map((m) => `<span class="participant-chip" style="border-color:${memberColor(m)}" title="${esc(m.name)}">${esc(m.name.slice(0, 16))}</span>`).join("")}`);
+    // Avatars as for assignees: yours, then up to two others in their cursor colours and a count of the rest.
+    const label = `Your name: ${name()} · ${others.length ? `${others.length + 1} here: ${others.map((m) => m.name).join(", ")}` : "Just you"}`;
+    const avatar = (person, color) => `<span class="task-assignee"${color ? ` style="border:1px solid ${color}"` : ""}>${esc(shortName(state, person))}</span>`;
+    updatePresenceMarkup(el, `<button type="button" class="presence-button" data-pro="participant" aria-label="${esc(label)}" title="${esc(label)}">${avatar(name())}${others.slice(0, 2).map((m) => avatar(m.name, memberColor(m))).join("")}${others.length > 2 ? `<span class="presence-more">+${others.length - 2}</span>` : ""}</button>`);
     const c = state.camera;
     updatePresenceMarkup(layer, others
       .map(
