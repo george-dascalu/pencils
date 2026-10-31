@@ -115,8 +115,10 @@
 .color-error:empty {
   display: none;
 }
+/* The toolbar's rows scroll sideways (0.20.91), so the panel keeps its viewport position. */
 #selection-tools .color-picker-panel {
-  position: absolute;
+  position: fixed;
+  z-index: 30;
 }
 
 .color-picker .color-picker-panel {

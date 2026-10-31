@@ -195,13 +195,10 @@
 }
 #selection-tools {
   max-width: calc(100% - 180px);
-  flex-wrap: wrap;
   bottom: 70px;
   gap: 5px;
   padding: 6px;
   z-index: 12;
-  max-height: 95px;
-  overflow: auto;
 }
 #pro-selection {
   display: contents;
@@ -540,7 +537,6 @@
   #selection-tools {
     max-width: calc(100% - 80px);
     bottom: 200px;
-    max-height: 140px;
   }
   .canvas-panel {
     width: 240px;
@@ -613,7 +609,6 @@
   bottom: auto;
   width: max-content;
   max-width: min(760px, calc(100% - 24px));
-  max-height: 130px;
   box-shadow: var(--shadow-popover);
   z-index: 18;
 }

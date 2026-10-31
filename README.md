@@ -72,7 +72,7 @@ Rapid changes to the same task are serialized and retain the latest revision. In
 
 ### Board
 
-The selection toolbar's text menu contains font, size, vertical alignment, fit-to-box and copy/paste formatting. **Insert → Bulk notes** in the left toolbar creates one sticky per pasted line. Shape controls offer flowchart shapes, borders and rotation; image controls offer non-destructive crop percentages and replacement without breaking connections.
+The selection toolbar has two rows at most, each scrolling sideways: common tools (edit, colour, comment, organise, layer order, duplicate, lock, delete) above, and the selected type's own tools below. Its text menu contains font, size, vertical alignment, fit-to-box and copy/paste formatting. **Insert → Bulk notes** in the left toolbar creates one sticky per pasted line. Shape controls offer flowchart shapes, borders and rotation; image controls offer non-destructive crop percentages and replacement without breaking connections.
 
 **Arrange** includes matching dimensions, tidy columns/gaps and selected-frame PDF export. A multi-selection has four outer resize handles. **Frames → Layers** assigns selections to named layers and hides or locks their objects. Frame links open the project, board and frame directly; copying objects and pasting with a destination frame selected places them inside that frame. Frame PDF pages are rasterised locally from the SVG export, without an external service. Exported text uses the simplified SVG representation; it is not a full browser screenshot.
 

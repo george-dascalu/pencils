@@ -56,8 +56,10 @@ test("the toolbar is compact, with layer order and delete outside menus", async 
   await resetBoard();
   await openBoard(page);
   await find(page, "note", "First idea");
+  // Two rows since 0.20.91: common tools, then the note's own (selection-rows.spec.mjs).
   const box = await toolbar(page).boundingBox();
-  expect(box.width < 720 && box.height < 55, JSON.stringify(box)).toBe(true);
+  expect(box.width < 720 && box.height < 100, JSON.stringify(box)).toBe(true);
+  await expect(toolbar(page).locator(":scope > .selection-row")).toHaveCount(2);
   await expect(toolbar(page)).toHaveAttribute("role", "toolbar");
   await expect(toolbar(page).locator('[data-selection-menu="more"]')).toHaveCount(0);
   for (const action of ["bring-front", "send-back", "selection-delete"]) {
@@ -160,8 +162,11 @@ for (const viewportSize of [{ width: 1600, height: 1100 }, { width: 390, height:
     expect(box.x).toBeGreaterThanOrEqual(0);
     expect(box.x + box.width).toBeLessThanOrEqual(size.width);
     expect(box.height, JSON.stringify(box)).toBeLessThan(140);
+    // Each row scrolls sideways (0.20.91), so a control at a row's end may need scrolling into view.
     for (const action of ["bring-front", "send-back", "selection-delete"]) {
-      const button = await toolbar(page).locator(`[data-feature="${action}"]`).boundingBox();
+      const control = toolbar(page).locator(`[data-feature="${action}"]`);
+      await control.scrollIntoViewIfNeeded();
+      const button = await control.boundingBox();
       expect(button && button.x >= 0 && button.x + button.width <= size.width, action).toBe(true);
     }
     const canvas = await page.locator("#canvas").boundingBox();
@@ -172,6 +177,11 @@ for (const viewportSize of [{ width: 1600, height: 1100 }, { width: 390, height:
         const panel = await toolbar(page).locator("details[open] .selection-popover").boundingBox();
         return panel && panel.x >= canvas.x && panel.x + panel.width <= canvas.x + canvas.width && panel.y >= canvas.y && panel.y + panel.height <= canvas.y + canvas.height;
       }, { message: `${key} menu inside the board` }).toBe(true);
+      // And on top: the toolbar's rows scroll sideways (0.20.91) and must not clip it.
+      expect(await toolbar(page).locator("details[open] .selection-popover").evaluate((panel) => {
+        const r = panel.getBoundingClientRect();
+        return panel.contains(document.elementFromPoint(r.x + r.width / 2, r.y + r.height / 2));
+      }), `${key} menu is not clipped`).toBe(true);
       await page.keyboard.press("Escape");
     }
   });

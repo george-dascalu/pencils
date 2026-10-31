@@ -29,7 +29,8 @@ export function selectionToolbar(
   const edge = () =>
     ctx.board()?.edges.find((e) => e.id === state.selectedEdge);
   let menuKey = null,
-    selectionKey = "";
+    selectionKey = "",
+    rowScroll = [];
   function button(kind, key, label, glyph, disabled = false, extra = "") {
     const shortcut = {
       inline: "Enter",
@@ -47,6 +48,8 @@ export function selectionToolbar(
   }
   const group = (name, body) =>
     `<div class="selection-group" role="group" aria-label="${name}">${body}</div>`;
+  // Two rows at most (owner request, 31 October 2026): common tools, then the selection's own;
+  // each one line that scrolls sideways (selection-toolbar.css).
   function html() {
     const arrows = pickEdges();
     if (arrows.length && !pick().length)
@@ -58,7 +61,7 @@ export function selectionToolbar(
         filter: filter.html(menu),
       });
     if (arrows.length)
-      return `<div id="selection-tools" class="selection-tools" role="toolbar" aria-label="Selected objects">${group("Selection", filter.html(menu) || `<span>${pickAll().length} selected</span>`)}${group("Object actions", button("feature", "duplicate", "Duplicate", "duplicate") + button("feature", "selection-delete", "Delete", "trash"))}</div>`;
+      return `<div id="selection-tools" class="selection-tools" role="toolbar" aria-label="Selected objects"><div class="selection-row" role="group" aria-label="Common tools">${group("Selection", filter.html(menu) || `<span>${pickAll().length} selected</span>`)}${group("Object actions", button("feature", "duplicate", "Duplicate", "duplicate") + button("feature", "selection-delete", "Delete", "trash"))}</div></div>`;
     const nodes = pick(),
       n = nodes[0],
       single = nodes.length === 1;
@@ -204,7 +207,7 @@ export function selectionToolbar(
             locked,
           )
         : `<span class="selection-kind" title="${nodes.length} selected">${icon(single ? { grid: "table", frame: "frame", query: "table", draw: "pencil", image: "image" }[n.type] || n.type : "group")}<span>${single ? esc((n.projectFrame ? "Project frame" : { sticky: "Note", query: "Live view", draw: "Drawing" }[n.type] || n.type).replace(/^./, (c) => c.toUpperCase())) : `${nodes.length} objects`}</span></span>`;
-    return `<div id="selection-tools" class="selection-tools" role="toolbar" aria-label="Selected objects">${single ? kind + filterMenu : filterMenu || kind}${group("Edit and appearance", `${single && !n.projectFrame ? pro("inline", n.type === "frame" ? "Rename frame" : "Edit", "pencil", locked) : ""}${color}${single ? objectGeometryControls(n, ctx) || pro("object-style", "Appearance and parent frame", "settings", locked) : ""}`)}${single && n.projectFrame ? feature("project-frame-update", "Update plan", "refresh", locked) : ""}${frameTools}${single && n.type === "draw" ? group("Stroke style", `<label class="pen-width" title="Stroke thickness">${icon("stroke-width")}<select data-stroke-width aria-label="Stroke thickness" ${locked ? "disabled" : ""}>${[1, 2, 3, 3.5, 5, 8, 12, 18, 24, 32].map((w) => `<option value="${w}" ${w === (n.strokeWidth || 3.5) ? "selected" : ""}>${w} px</option>`).join("")}</select></label>`) : ""}${single && n.type === "grid" ? gridToolbar(n, state, { button, menu, group, icon }) : ""}${group("Text alignment", textMenu)}${group("Collaboration", single && n.type !== "draft" && !(n.type === "task" && !isTaskNote(n)) ? pro("comments", "Comment", "comment") : "")}${group("Organise", arrange + pro("zoom-selection", "Focus selection", "fit") + (single && !["frame", "grid", "draw"].includes(n.type) ? pro("connections", "Connections", "connect") : ""))}${group("Layer order", feature("bring-front", "Bring to front", "front", locked) + feature("send-back", "Send to back", "back", locked))}${group("Object actions", feature("duplicate", "Duplicate", "duplicate") + feature("lock", locked ? "Unlock selection" : "Lock selection", locked ? "unlock" : "local", false, `aria-pressed="${locked}"`) + more)}${group("Delete", feature("selection-delete", single && n.type === "frame" ? "Delete frame (keep contents)" : "Delete", "trash", locked))}</div>`;
+    return `<div id="selection-tools" class="selection-tools" role="toolbar" aria-label="Selected objects"><div class="selection-row" role="group" aria-label="Common tools">${filterMenu}${group("Edit", `${single && !n.projectFrame ? pro("inline", n.type === "frame" ? "Rename frame" : "Edit", "pencil", locked) : ""}${color}`)}${group("Collaboration", single && n.type !== "draft" && !(n.type === "task" && !isTaskNote(n)) ? pro("comments", "Comment", "comment") : "")}${group("Organise", arrange + pro("zoom-selection", "Focus selection", "fit") + (single && !["frame", "grid", "draw"].includes(n.type) ? pro("connections", "Connections", "connect") : ""))}${group("Layer order", feature("bring-front", "Bring to front", "front", locked) + feature("send-back", "Send to back", "back", locked))}${group("Object actions", feature("duplicate", "Duplicate", "duplicate") + feature("lock", locked ? "Unlock selection" : "Lock selection", locked ? "unlock" : "local", false, `aria-pressed="${locked}"`) + more)}${group("Delete", feature("selection-delete", single && n.type === "frame" ? "Delete frame (keep contents)" : "Delete", "trash", locked))}</div><div class="selection-row" role="group" aria-label="Tools for this selection">${kind}${single ? group("Appearance", objectGeometryControls(n, ctx) || pro("object-style", "Appearance and parent frame", "settings", locked)) : ""}${single && n.projectFrame ? feature("project-frame-update", "Update plan", "refresh", locked) : ""}${frameTools}${single && n.type === "draw" ? group("Stroke style", `<label class="pen-width" title="Stroke thickness">${icon("stroke-width")}<select data-stroke-width aria-label="Stroke thickness" ${locked ? "disabled" : ""}>${[1, 2, 3, 3.5, 5, 8, 12, 18, 24, 32].map((w) => `<option value="${w}" ${w === (n.strokeWidth || 3.5) ? "selected" : ""}>${w} px</option>`).join("")}</select></label>`) : ""}${single && n.type === "grid" ? gridToolbar(n, state, { button, menu, group, icon }) : ""}${group("Text alignment", textMenu)}</div></div>`;
   }
   function render() {
     filter.sync();
@@ -212,11 +215,20 @@ export function selectionToolbar(
       .map((n) => n.id)
       .sort()
       .join(",");
-    if (key !== selectionKey) menuKey = null;
+    if (key !== selectionKey) {
+      menuKey = null;
+      rowScroll = [];
+    }
     selectionKey = key;
     $(".board-selection")?.remove();
     $("#selection-tools")?.remove();
     if (key) $("#canvas")?.insertAdjacentHTML("beforeend", html());
+    // The rows keep their sideways scroll while the selection lasts (a board change rebuilds the
+    // toolbar, and the canvas may have removed it first), and an open menu follows its button.
+    $("#selection-tools")?.querySelectorAll(".selection-row").forEach((row, i) => {
+      if (rowScroll[i]) row.scrollLeft = rowScroll[i];
+      row.addEventListener("scroll", () => { rowScroll[i] = row.scrollLeft; positionMenus(); }, { passive: true });
+    });
     const open =
       menuKey && $(`#selection-tools [data-selection-menu="${menuKey}"]`);
     if (open) open.open = true;
@@ -233,6 +245,10 @@ export function selectionToolbar(
     state.selectionToolbarOpen = false;
   }
   document.addEventListener("color-picker-resize", () => positionMenus());
+  // A menu opened any other way (keyboard, code) is positioned too: in a row it is fixed.
+  document.addEventListener("toggle", (event) => {
+    if (event.target.matches?.("#selection-tools details.selection-menu") && event.target.open) requestAnimationFrame(positionMenus);
+  }, true);
   function positionMenus() {
     const canvas = $("#canvas"),
       menu = $("#selection-tools details[open]");
@@ -485,11 +501,20 @@ export function selectionToolbar(
 export function positionToolbarPopover(panel, menu, canvas) {
   const c = canvas.getBoundingClientRect(),
     m = menu.getBoundingClientRect();
-  panel.style.left = `${Math.max(Math.max(0, c.left) + 8, Math.min(m.left, Math.min(window.innerWidth, c.right) - panel.offsetWidth - 8)) - m.left}px`;
+  const left = Math.max(Math.max(0, c.left) + 8, Math.min(m.left, Math.min(window.innerWidth, c.right) - panel.offsetWidth - 8));
   const below = Math.min(window.innerHeight, c.bottom) - m.bottom - 12,
     above = m.top - Math.max(0, c.top) - 12;
   const up = below < Math.min(panel.scrollHeight, 320) && above > below;
-  panel.style.top = up ? "auto" : "calc(100% + 8px)";
-  panel.style.bottom = up ? "calc(100% + 8px)" : "auto";
+  // In a toolbar row, which scrolls sideways, the panel sits in viewport coordinates so the row
+  // cannot clip it (position: fixed, selection-toolbar.css).
+  if (menu.closest(".selection-row")) {
+    panel.style.left = `${left}px`;
+    panel.style.top = up ? "auto" : `${m.bottom + 8}px`;
+    panel.style.bottom = up ? `${window.innerHeight - m.top + 8}px` : "auto";
+  } else {
+    panel.style.left = `${left - m.left}px`;
+    panel.style.top = up ? "auto" : "calc(100% + 8px)";
+    panel.style.bottom = up ? "calc(100% + 8px)" : "auto";
+  }
   panel.style.maxHeight = `${Math.max(80, up ? above : below)}px`;
 }

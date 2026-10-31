@@ -2,6 +2,12 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.20.91 — 2026-10-31
+
+### Changed
+
+- The selected object's toolbar on a board has two rows at most: common tools (edit, colour, comment, organise, layer order, duplicate, lock, delete) above, and the selected type's own tools below. Each row scrolls sideways instead of wrapping, and the same split applies to a selected connector.
+
 ## 0.20.90 — 2026-10-31
 
 ### Changed

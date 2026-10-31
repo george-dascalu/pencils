@@ -82,6 +82,8 @@ test("a bitmap object drags without moving the camera, and Shift-click adds anot
   await saved("one", 700, 500);
   await expect(page.locator("#canvas-world"), "dragging a bitmap does not pan or zoom").toHaveAttribute("style", camera);
   const two = await point(page, 1200, 1050);
+  // At this zoom the selection's toolbar (two rows since 0.20.91) sits over the second bitmap.
+  await page.locator("#selection-tools").evaluate((el) => (el.style.visibility = "hidden"));
   await page.keyboard.down("Shift");
   await page.mouse.click(two.x, two.y);
   await page.keyboard.up("Shift");

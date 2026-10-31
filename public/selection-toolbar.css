@@ -13,6 +13,33 @@
     0 4px 18px #0002,
     0 1px 3px #0001;
 }
+/* Two lines at most: common tools, then the selection's own, each one line scrolling sideways. */
+#selection-tools.selection-tools {
+  flex-direction: column;
+  flex-wrap: nowrap;
+  align-items: stretch;
+  gap: 2px;
+  max-height: none;
+  overflow: visible;
+}
+.selection-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: nowrap;
+  max-width: 100%;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scrollbar-width: thin;
+  touch-action: pan-x;
+}
+.selection-row > .selection-group:first-child {
+  border-left: 0;
+}
+/* Menus leave the scrolling row (positionToolbarPopover puts them in viewport coordinates). */
+.selection-row .selection-menu > .selection-popover {
+  position: fixed;
+  z-index: 30;
+}
 .selection-group {
   display: flex;
   align-items: center;
