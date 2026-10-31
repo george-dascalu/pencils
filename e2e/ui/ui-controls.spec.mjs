@@ -217,6 +217,19 @@ onDevices(["desktop", "phone"], (device) => test("a tap or click on a date field
   expect(await page.evaluate(() => window.__dateFocus), "a label tap leaves the field unfocused").toBe(0);
 }));
 
+// Owner request (T16, 31 October 2026): the calendar's day numbers are a step smaller (12px)
+// than the page's controls, with the same 32px (44px on touch) targets.
+onDevices(["desktop", "phone"], () => test("the calendar's day numbers are a step smaller", async ({ page, device }) => {
+  await open(page, "list", ".task-row");
+  await page.locator('.task-row [data-action="task-open"]:visible').first().click();
+  await page.locator("#task-form .date-picker-trigger:visible").first().click();
+  const day = page.locator("#shared-date-picker table [data-date-value]").first();
+  await day.waitFor();
+  await expect(day).toHaveCSS("font-size", "12px");
+  const height = (await day.boundingBox()).height;
+  expect(height, `${device}: the target keeps its height`).toBeGreaterThanOrEqual(device === "phone" ? 44 : 32);
+}));
+
 // Menus of rows use the tighter menu padding; popovers that hold fields keep the popover padding.
 test("popovers share padding and radius tokens", async ({ page }) => {
   await open(page, "list", ".task-row");

@@ -68,14 +68,16 @@
 .date-picker-head input {
   width: 72px;
 }
+/* Day numbers sit a step below the page's controls; controls.css sizes their buttons. */
 .date-picker-popover table {
+  font-size: 12px;
   width: 100%;
   table-layout: fixed;
   border-collapse: collapse;
 }
 .date-picker-popover th {
   padding: 8px 0;
-  font-size: 11px;
+  font-size: var(--type-meta);
   font-weight: 700;
 }
 .date-picker-popover td {

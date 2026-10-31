@@ -2,6 +2,12 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.20.88 — 2026-10-31
+
+### Changed
+
+- The calendar's day numbers are a step smaller (12px), with the same tap targets.
+
 ## 0.20.87 — 2026-10-31
 
 ### Changed
