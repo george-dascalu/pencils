@@ -43,7 +43,7 @@ import { installColorPickers } from "./color-picker.js";
 import { installBookmarks } from "./bookmarks.js";
 import { boardFloor } from "./layout-tray.js";
 import { listPanel } from "./list-panel.js";
-import { fieldOn, viewOn, markFieldsOff } from "./card-fields.js";
+import { fieldOn, viewOn, cardsOn, markFieldsOff } from "./card-fields.js";
 import { kanbanDrag } from "./kanban-drag.js";
 import { observeKanbanLayout } from "./kanban-layout.js";
 import { kanbanGroup, kanbanLanes, laneKey } from "./kanban-model.js";
@@ -555,10 +555,17 @@ function preferredAreaView(area, layouts, fallback) {
   );
   return layouts.includes(saved) ? saved : layouts.includes(fallback) ? fallback : layouts[0];
 }
+// Tasks and Planning stay while one of their views is on (T23 card fields, T39 project views).
+// A view the project turned off says so instead of opening.
+const viewOff = (view) => state.config?.views_off?.includes(view) && toast(`This project's settings turn ${viewLabel(view)} off.`);
+const areaOn = (view) => view === "tasks" ? taskViews.some((v) => viewOn(state.config, v)) : view === "planning" ? planningViews.some((v) => viewOn(state.config, v)) : viewOn(state.config, view);
 function openView(view) {
   if (!state.project || !canNavigate()) return false;
   const next = view === "tasks" ? preferredAreaView("task", taskViews, "list") : view === "planning" ? preferredAreaView("planning", planningViews, "calendar") : view === "drawing" ? "board" : view;
-  if (!views.includes(next) || !viewOn(state.config, next) || (state.project.personal && next !== "documents")) return false;
+  if (!views.includes(next) || !viewOn(state.config, next) || (state.project.personal && next !== "documents")) {
+    viewOff(next);
+    return false;
+  }
   if (state.view === next) return true;
   state.helpArticle = null;
   features.drawingReset();
@@ -584,7 +591,10 @@ function settleFields() {
   if (!on(state.sort)) state.sort = "order";
   if (!on(state.groupBy)) state.groupBy = "none";
   if (!on(state.kanbanGroupBy)) state.kanbanGroupBy = "none";
-  if (!viewOn(config, state.view)) state.view = "list";
+  if (!viewOn(config, state.view)) {
+    viewOff(state.view);
+    state.view = viewOn(config, "list") ? "list" : "overview";
+  }
 }
 function setLoading(value) {
   state.loading = value;
@@ -895,13 +905,14 @@ function newMenuHTML(kind = "button") {
     ? `<summary class="icon-button" aria-label="New" title="New card, document or board">${icon("plus")}</summary>`
     : `<summary class="button primary" title="New card, document or board">${icon("plus")}New</summary>`;
   const documents = `<button type="button" data-action="document-new">${icon("file")}Document</button><button type="button" data-action="document-template">${icon("file")}From template</button>`;
-  // A personal space holds documents only.
+  const config = state.project && state.config;
+  // A personal space holds documents only; a project offers what its views show (T39).
   const items = state.project?.personal ? documents : [
-    `<button type="button" data-action="task-new">${icon("task")}Card</button>`,
-    documents,
-    `<button type="button" data-action="board-new">${icon("board")}Board</button>`,
+    cardsOn(config) && `<button type="button" data-action="task-new">${icon("task")}Card</button>`,
+    viewOn(config, "documents") && documents,
+    viewOn(config, "board") && `<button type="button" data-action="board-new">${icon("board")}Board</button>`,
     `<button type="button" data-action="personal-document">${icon("person")}Personal document</button>`,
-  ].join('<span class="board-menu-divider" role="separator"></span>');
+  ].filter(Boolean).join('<span class="board-menu-divider" role="separator"></span>');
   return `<details class="board-menu new-menu${kind === "icon" ? " phone-new-task" : ""}" data-new-menu data-board-menu="new-${kind}">${summary}<div class="board-menu-panel new-menu-panel">${items}</div></details>`;
 }
 function setSidebarOpen(open, focus = true) {
@@ -940,7 +951,7 @@ function projectNavigationHTML() {
     ["Planning views", ["planning"]],
     ["Task views", ["tasks"]],
     ["Visual views", ["board"]],
-  ].filter(([name]) => (!state.project.personal || name === "Documents") && (name !== "Planning views" || planningViews.some((view) => viewOn(state.config, view))));
+  ].filter(([name, [view]]) => (!state.project.personal || name === "Documents") && areaOn(view));
   return `<div id="board-project-tools" class="board-project-tools">
     <nav class="tabs" aria-label="Project views"><div class="tabs-scroll" style="--bar-items: ${groups.length + 1 + features.bottomBar.count()}"><div class="view-tab-group" role="group" aria-label="Home"><button class="tab tab-home" data-action="home" aria-label="Home" title="Home">${icon("home")}</button></div>${groups
       .map(
@@ -951,7 +962,7 @@ function projectNavigationHTML() {
           }).join("")}</div>`,
       )
       .join("")}${features.bottomBar.html()}</div><span class="tabs-divider" aria-hidden="true"></span><button type="button" class="tab tab-search" data-feature="global-search" aria-label="Search" title="Search tasks, documents and boards">${icon("search")}</button></nav>
-    <label class="mobile-view-switcher">View <select id="project-view-switcher" aria-label="Project view">${["settings", "help"].includes(area) ? `<option value="${area}" selected disabled>${label(area)}</option>` : ""}${(state.project.personal ? ["documents"] : ["overview", "documents", "planning", "tasks", "board"]).filter((view) => view !== "planning" || planningViews.some((v) => viewOn(state.config, v))).map((view) => `<option value="${view}" ${view === area ? "selected" : ""}>${viewLabel(view)}</option>`).join("")}</select></label>
+    <label class="mobile-view-switcher">View <select id="project-view-switcher" aria-label="Project view">${["settings", "help"].includes(area) ? `<option value="${area}" selected disabled>${label(area)}</option>` : ""}${(state.project.personal ? ["documents"] : ["overview", "documents", "planning", "tasks", "board"]).filter(areaOn).map((view) => `<option value="${view}" ${view === area ? "selected" : ""}>${viewLabel(view)}</option>`).join("")}</select></label>
     ${newMenuHTML()}
   </div>`;
 }

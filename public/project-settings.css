@@ -273,6 +273,9 @@
 #settings-panel .card-fields { min-width: 0; margin: 24px 0 0; padding: 0; border: 0; }
 #settings-panel .card-fields > legend { padding: 0; font-weight: 600; }
 .card-field-list { display: flex; flex-wrap: wrap; gap: 4px 24px; }
+/* Each component on a row: its own box, then its views. */
+.project-view-group { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 24px; padding: 4px 0; border-bottom: 1px solid var(--line); }
+.project-view-group > label { min-width: 120px; font-weight: 600; }
 #settings-panel .hierarchy-editor {
   border: 0;
   padding-top: 0;

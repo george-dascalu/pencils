@@ -28,7 +28,7 @@ import { grid } from "./grid.js";
 import { taskReorder } from "./task-reorder.js";
 import { taskRowEditor } from "./task-row-editor.js";
 import { recoveryUI } from "./recovery-ui.js";
-import { fieldOn, viewOn } from "./card-fields.js";
+import { fieldOn, viewOn, cardsOn } from "./card-fields.js";
 
 export function installFeatures(ctx) {
   const {
@@ -638,7 +638,7 @@ export function installFeatures(ctx) {
       { id: "today", title: "Today's note", run: () => document.querySelector('.sidebar [data-action="today"]')?.click() },
       ...(all || (state.project && !state.project.personal)
         ? [
-            { id: "new-task", title: "New card", run: () => taskDialog(null) },
+            ...(cardsOn(state.project && state.config) ? [{ id: "new-task", title: "New card", run: () => taskDialog(null) }] : []),
             ...[["workflow", "Statuses & workflow"], ["import", "Import notes"], ["templates", "Task templates"], ["quick-capture", "Quick capture"]].map(([id, title]) => ({ id, title, run: () => click(id) })),
             ...[
               "overview",
@@ -650,7 +650,7 @@ export function installFeatures(ctx) {
               "calendar",
               "timeline",
               "capacity",
-            ].filter((view) => viewOn(state.config, view)).map((view) => ({
+            ].filter((view) => viewOn(state.project && state.config, view)).map((view) => ({
               id: `view-${view}`,
               title: `Open ${viewLabel(view)} view`,
               run: () => ctx.openView(view),

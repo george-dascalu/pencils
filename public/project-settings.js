@@ -1,6 +1,6 @@
 import { randomUUID } from "./uuid.js";
 import { workflowEditor } from "./workflow-editor.js";
-import { CARD_FIELDS, fieldOn, viewOn } from "./card-fields.js";
+import { CARD_FIELDS, VIEW_GROUPS, fieldOn, viewOn } from "./card-fields.js";
 import { projectTeamControls, projectPeople } from "./teams.js";
 import { priorityOptions, priorityLabel } from "./task-priority.js";
 import { taskFieldColor, priorityColors } from "./task-colors.js";
@@ -232,8 +232,13 @@ export function projectSettings(ctx, { sources, automations, personal, organisat
   function general() {
     const p = state.project;
     return form(
-      `${field("title", "Project name", p.title, 'required maxlength="300"')}${field("key", "Project key", p.key, 'required pattern="[A-Za-z][A-Za-z0-9]{1,11}" maxlength="12"')}<p class="field-hint">Task IDs look like <strong data-key-example>${esc(p.key)}-1</strong>. Existing IDs remain available as aliases when the key changes.</p><label class="field">Description<textarea name="body" rows="4" placeholder="What is this project for?">${esc(p.body)}</textarea></label><div class="field-row"><div class="field">Project colour${colorPicker({ label: "Project colour", value: p.color })}</div><label class="field">Default view<select name="default_view">${options(["overview", "documents", "list", "tree", "table", "kanban", "board", "calendar", "timeline", "capacity"].filter((view) => viewOn(state.config, view) || view === p.default_view), p.default_view === "drawing" ? "board" : p.default_view, { board: "Boards" })}</select></label></div>`,
+      `${field("title", "Project name", p.title, 'required maxlength="300"')}${field("key", "Project key", p.key, 'required pattern="[A-Za-z][A-Za-z0-9]{1,11}" maxlength="12"')}<p class="field-hint">Task IDs look like <strong data-key-example>${esc(p.key)}-1</strong>. Existing IDs remain available as aliases when the key changes.</p><label class="field">Description<textarea name="body" rows="4" placeholder="What is this project for?">${esc(p.body)}</textarea></label><div class="field-row"><div class="field">Project colour${colorPicker({ label: "Project colour", value: p.color })}</div><label class="field">Default view<select name="default_view">${options(["overview", "documents", "list", "tree", "table", "kanban", "board", "calendar", "timeline", "capacity"].filter((view) => viewOn({ off: state.config?.off }, view) || view === p.default_view), p.default_view === "drawing" ? "board" : p.default_view, { board: "Boards" })}</select></label></div>${projectViews()}`,
     );
+  }
+  // T39: the views and components this project offers; a component's box turns all its views on or off.
+  function projectViews() {
+    const on = (view) => !state.config?.views_off?.includes(view), names = { list: "List", tree: "Tree", table: "Table", kanban: "Kanban", calendar: "Calendar", timeline: "Timeline", capacity: "Capacity" };
+    return `<fieldset class="card-fields project-views"><legend>Views</legend><p class="field-hint">Overview is always on. Views you turn off leave the tabs and the New menu; nothing in the project is deleted.</p>${VIEW_GROUPS.map(([id, name, views]) => `<div class="project-view-group"><label><input type="checkbox" data-view-group="${id}" ${views.some(on) ? "checked" : ""} ${views.length === 1 ? `name="project-view" value="${views[0]}"` : ""}> ${name}</label>${views.length > 1 ? `<div class="card-field-list">${views.map((view) => `<label><input type="checkbox" name="project-view" value="${view}" data-group="${id}" ${on(view) ? "checked" : ""}> ${names[view]}</label>`).join("")}</div>` : ""}</div>`).join("")}</fieldset>`;
   }
   function teams() {
     return form(
@@ -385,6 +390,21 @@ export function projectSettings(ctx, { sources, automations, personal, organisat
       const f = host.querySelector("form");
       if (!f) return;
       const schema = structuredClone(state.config);
+      if (section === "general") {
+        // The default view offers only the views that are on, and moves to Overview when its view goes.
+        const defaults = () => {
+          const on = new Set([...f.querySelectorAll('[name="project-view"]:checked')].map((box) => box.value)), select = f.elements.default_view;
+          for (const option of select.options) option.disabled = option.value !== "overview" && !on.has(option.value);
+          if (select.selectedOptions[0]?.disabled) select.value = "overview";
+        };
+        f.addEventListener("change", (event) => {
+          const { viewGroup, group } = event.target.dataset, boxes = (id) => [...f.querySelectorAll(`[data-group="${id}"]`)];
+          if (viewGroup) for (const box of boxes(viewGroup)) box.checked = event.target.checked;
+          else if (group) f.querySelector(`[data-view-group="${group}"]`).checked = boxes(group).some((box) => box.checked);
+          if (viewGroup || group) defaults();
+        });
+        defaults();
+      }
       if (section === "teams") {
         projectTeamControls(f, state, esc);
         const paintPeople = () => {
@@ -418,7 +438,12 @@ export function projectSettings(ctx, { sources, automations, personal, organisat
         try {
           const data = new FormData(f);
           let changes;
-          if (section === "general") changes = Object.fromEntries(data);
+          if (section === "general") {
+            changes = Object.fromEntries(data);
+            delete changes["project-view"];
+            const on = data.getAll("project-view"), off = VIEW_GROUPS.flatMap(([, , views]) => views).filter((view) => !on.includes(view));
+            if (off.join() !== (schema.views_off || []).join()) changes.schema = { ...schema, views_off: off.length ? off : undefined };
+          }
           if (section === "teams")
             changes = {
               organisation: data.get("organisation"),

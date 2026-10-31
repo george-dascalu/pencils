@@ -41,8 +41,18 @@ export const roadmap = [
   { id: "T36", title: "Document and board lists: refused board keeps the list, focus after Miro import, Escape clears search first, phone landscape full page", status: "done", requested: "2026-10-31T23:19", started: "2026-10-31T23:19", done: "2026-10-31T23:23", version: "0.20.99" },
   { id: "T37", title: "Board toolbar rows: Up and Down move between rows, scrollbars hidden on touch", status: "done", requested: "2026-10-31T23:19", started: "2026-10-31T23:19", done: "2026-10-31T23:33", version: "0.20.99" },
   { id: "T38", title: "Card fields: Capacity without estimates, Parent off with strict hierarchy", status: "done", requested: "2026-10-31T23:19", started: "2026-10-31T23:19", done: "2026-10-31T23:33", version: "0.20.99" },
-  { id: "T39", title: "Project settings: choose which views and components (tasks, planning, boards) a project has", status: "requested", requested: "2026-10-31T23:28" },
-  { id: "T40", title: "UI review: readability and consistency, and an error sweep of every screen and button", status: "requested", requested: "2026-10-31T23:29" },
+  { id: "T39", title: "Project settings: choose which views and components (tasks, planning, boards) a project has", status: "done", requested: "2026-10-31T23:28", started: "2026-10-31T23:34", done: "2026-10-31T23:41", version: "0.20.100" },
+  { id: "T40", title: "UI review: readability and consistency, and an error sweep of every screen and button", status: "in progress", requested: "2026-10-31T23:29", started: "2026-10-31T23:33" },
+  { id: "T41", title: "Tests: permission checks for file history, per route and role", status: "requested", requested: "2026-10-31T23:35" },
+  { id: "T42", title: "Tests: upload and import routes refuse bad files", status: "requested", requested: "2026-10-31T23:35" },
+  { id: "T43", title: "Tests: vault files survive reading and writing unchanged", status: "requested", requested: "2026-10-31T23:35" },
+  { id: "T44", title: "Tests: console errors and failed requests fail browser tests", status: "requested", requested: "2026-10-31T23:35" },
+  { id: "T45", title: "Tests: phone and touch specs run in WebKit (Docker) before release", status: "requested", requested: "2026-10-31T23:35" },
+  { id: "T46", title: "Tests: layout sweep of every view and device", status: "requested", requested: "2026-10-31T23:35" },
+  { id: "T47", title: "Tests: settings in combination (card fields, views, saved preferences)", status: "requested", requested: "2026-10-31T23:35" },
+  { id: "T48", title: "Tests: flaky tests reported, fixed waits replaced", status: "requested", requested: "2026-10-31T23:35" },
+  { id: "T49", title: "Tests: mutation testing of journal, store, access and model", status: "requested", requested: "2026-10-31T23:35" },
+  { id: "T50", title: "Tests: browser code coverage report", status: "requested", requested: "2026-10-31T23:35" },
 ];
 
 // "31 Oct 20:05" for a date with a time, "31 Oct" for a bare date.

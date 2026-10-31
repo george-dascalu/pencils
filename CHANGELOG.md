@@ -2,6 +2,12 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.20.100 — 2026-10-31
+
+### Added
+
+- Settings → General → Views chooses the views and components each project offers: Tasks (List, Tree, Table, Kanban), Planning (Calendar, Timeline, Capacity), Boards and Documents. Overview always stays. Views that are off leave the tabs, the bottom bar, the layout tray and the New menu; a link or search result for one opens Overview and says why; nothing in the project is deleted.
+
 ## 0.20.99 — 2026-10-31
 
 ### Changed

@@ -3,7 +3,7 @@ import { validTablePreferences } from "../public/table-model.js";
 import { Problem } from "./problem.js";
 import { DEFAULT_TASK_TYPES } from "../public/task-types.js";
 import { PRIORITIES } from "./values.js";
-import { CARD_FIELDS } from "../public/card-fields.js";
+import { CARD_FIELDS, VIEW_GROUPS } from "../public/card-fields.js";
 
 export const DEFAULT_SCHEMA = {
   statuses: ["backlog", "todo", "in-progress", "review", "done"],
@@ -133,6 +133,14 @@ export function schema(value = DEFAULT_SCHEMA) {
       new Set(result.off).size !== result.off.length)
   )
     fail("Only built-in card fields can be turned off, each once.");
+  const views = VIEW_GROUPS.flatMap(([, , list]) => list);
+  if (
+    result.views_off != null &&
+    (!Array.isArray(result.views_off) ||
+      result.views_off.some((v) => !views.includes(v)) ||
+      new Set(result.views_off).size !== result.views_off.length)
+  )
+    fail("Only the project's views can be turned off, each once; Overview stays.");
   if (!Array.isArray(result.fields) || result.fields.length > 40)
     fail("A project supports up to 40 custom fields.");
   const ids = new Set();
