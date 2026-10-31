@@ -177,7 +177,7 @@ onDevices(["phone", "ipad", "ipad-portrait"], () => test("tapping Documents agai
   await page.locator(".task-row").first().waitFor();
   await tab(page, "documents").click();
   await page.locator("#document-form .cm-content").waitFor();
-  await expect(page.locator("#document-form :is(.document-mode-picker, .document-modes):visible"), "the views moved out of the document bar").toHaveCount(0);
+  await expect(page.locator("#document-form [data-document-mode]"), "the views moved out of the document bar").toHaveCount(0);
   const docs = tab(page, "documents"), tray = page.locator(".layout-tray");
   await docs.click();
   await expect(tray).toHaveAttribute("data-open", "");

@@ -2,6 +2,7 @@
 // and the same margin on both sides, in live preview and reading mode. Wider
 // screens keep the fold arrows.
 import { test, expect, onDevices, useApp } from "../fixtures.mjs";
+import { chooseDocumentView } from "../helpers/documents.mjs";
 
 const body = "# Heading\n\nA paragraph long enough to wrap across the whole width of a phone screen, so both of its edges show the margins.\n\n## Second\n\nMore text.\n";
 const app = useApp(async (store) => {
@@ -41,7 +42,7 @@ onDevices(["phone"], () => {
 
   test("reading mode has the same equal margins", async ({ page }) => {
     await open(page);
-    await page.locator('[data-document-mode="reading"]').first().evaluate((el) => el.click());
+    await chooseDocumentView(page, "Reading");
     await page.locator(".document-reading p").first().waitFor();
     const i = await insets(page, ".document-reading", ".document-reading p");
     expect(i.left, `same margin on both sides ${JSON.stringify(i)}`).toBe(i.right);

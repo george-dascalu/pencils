@@ -3,7 +3,7 @@
 // "Card from text" turns text into a card linked to the document. Obsidian resolves the
 // same links through the cards' aliases.
 import { test, expect, useApp } from "../fixtures.mjs";
-import { editorSource, openNewDocument } from "../helpers/documents.mjs";
+import { chooseDocumentView, editorSource, openNewDocument } from "../helpers/documents.mjs";
 
 const app = useApp(async (store) => {
   const project = await store.createProject({ title: "Mentions", key: "CM" });
@@ -27,9 +27,9 @@ test("[[KEY]] shows the card as a chip with its status, in live preview and read
   await expect(chips(page).first()).toContainText("Fix the login");
   await expect(chips(page).first().locator(".field-chip-status")).not.toBeEmpty();
   await expect(chips(page).nth(1)).toContainText("the report");
-  await page.getByRole("button", { name: "Reading", exact: true }).click();
+  await chooseDocumentView(page, "Reading");
   await expect(chips(page, ".document-reading")).toHaveCount(2);
-  await page.getByRole("button", { name: "Live preview", exact: true }).click();
+  await chooseDocumentView(page, "Live preview");
   const body = await editorSource(page);
   await chips(page).first().click();
   await expect(page.locator("#task-form [name=title]")).toHaveValue("Fix the login");

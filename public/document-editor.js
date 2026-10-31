@@ -444,7 +444,7 @@ export function markdownDocumentEditor({ parent, text, mode = "live", renderer, 
     jump(from) {
       const anchor = Math.max(0, Math.min(from, view.state.doc.length));
       view.dispatch({ selection: EditorSelection.cursor(anchor), scrollIntoView: true });
-      focusOnOpen(view.contentDOM, parent.closest("form")?.querySelector('[data-document-action="outline"]'));
+      focusOnOpen(view.contentDOM, parent.closest("form")?.querySelector('[data-document-action="tools"]'));
     },
     insert(value) {
       if (focusedComponent?.element.isConnected && focusedComponent.insert(value)) return;

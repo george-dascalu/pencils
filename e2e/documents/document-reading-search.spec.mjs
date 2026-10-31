@@ -5,7 +5,7 @@
 // the text; Ctrl/Cmd+F reopen with the last query. Live preview and Source keep
 // the editor's search. Searching never changes the Markdown or its version.
 import { test, expect, onDevices, useApp } from "../fixtures.mjs";
-import { axeViolations, chooseDocumentView, noHorizontalScroll, setTheme } from "../helpers/documents.mjs";
+import { axeViolations, chooseDocumentView, documentTool, noHorizontalScroll, setTheme } from "../helpers/documents.mjs";
 
 const app = useApp(async (store) => {
   const project = await store.createProject({ title: "Reading search" });
@@ -33,17 +33,17 @@ const bar = (page) => page.getByRole("search", { name: "Search document", exact:
 const count = (page) => bar(page).getByRole("status");
 const reading = (page) => page.locator(".document-reading");
 async function isReading(page) {
-  await expect(page.getByRole("button", { name: "Reading", exact: true })).toHaveAttribute("aria-pressed", "true");
+  await expect(page.locator("#document-form")).toHaveAttribute("data-document-mode", "reading");
   await expect(page.locator(".document-codemirror")).toBeHidden();
 }
 // Opens the document in Reading with its search open.
 async function openSearch(page) {
   await page.goto(`${app.base}/#project/${app.project.id}/documents/${app.doc.id}`);
   await page.locator(".cm-content").waitFor();
-  await choose(page, "Reading");
+  await chooseDocumentView(page, "Reading");
   await reading(page).waitFor();
   const text = await reading(page).textContent();
-  await choose(page, "Find in document");
+  await documentTool(page, "Find in document");
   await input(page).waitFor();
   return text;
 }
@@ -108,7 +108,7 @@ test.describe("desktop", () => {
     await expect(bar(page)).toBeHidden();
     await expect(reading(page).locator(".document-find-match")).toHaveCount(0);
     expect(await reading(page).textContent()).toBe(originalText);
-    await expect(page.getByRole("button", { name: "Find in document", exact: true })).toBeFocused();
+    await expect(page.getByRole("button", { name: "Document tools", exact: true }), "focus returns to ⋯").toBeFocused();
   });
 
   test("Ctrl+F and Cmd+F reopen Reading search with the last query", async ({ page }) => {
@@ -132,13 +132,13 @@ test.describe("desktop", () => {
   test("Live preview and Source keep the editor's search, and Reading switches back to its own", async ({ page }) => {
     await openSearch(page);
     for (const mode of ["Live preview", "Source"]) {
-      await choose(page, mode);
-      await choose(page, "Find in document");
+      await chooseDocumentView(page, mode);
+      await documentTool(page, "Find in document");
       await page.locator(".cm-search input[name=search]").waitFor();
-      await expect(page.getByRole("button", { name: mode, exact: true })).toHaveAttribute("aria-pressed", "true");
-      await choose(page, "Reading");
+      await expect(page.locator("#document-form")).not.toHaveAttribute("data-document-mode", "reading");
+      await chooseDocumentView(page, "Reading");
       await expect(page.locator(".cm-search")).toHaveCount(0);
-      await choose(page, "Find in document");
+      await documentTool(page, "Find in document");
       await input(page).fill("formatted phrase");
       await isReading(page);
     }
@@ -172,7 +172,7 @@ onDevices(["phone"], () => test("on phones Reading search works from the Documen
   const form = page.locator("#document-form");
   await chooseDocumentView(page, "Reading", { tap: true });
   await expect(form).toHaveAttribute("data-document-mode", "reading");
-  await page.getByRole("button", { name: "Find in document", exact: true }).tap();
+  await documentTool(page, "Find in document", { tap: true });
   await input(page).fill("alpha");
   await page.getByRole("button", { name: "Next match", exact: true }).tap();
   await expect(page.locator(".document-find-count")).toHaveText("2 of 3");

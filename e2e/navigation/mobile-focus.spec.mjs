@@ -75,10 +75,11 @@ for (const [device, width] of [["phone", 390], ["ipad-portrait", 834], ["desktop
       async function mode(name) {
         // Touch screens choose the view from the Documents tab's tray (owner request, 30 Oct;
         // iPad since 0.20.25); the bar steps aside while typing, so the keyboard is dismissed first.
+        // Other screens choose it from Document tools (⋯, since 0.20.68).
         if (touch) {
           await page.evaluate(() => document.activeElement?.blur());
           await click(page.locator('.tabs [data-view="documents"]'));
-        }
+        } else await click(page.getByRole("button", { name: "Document tools", exact: true }));
         await click(page.getByRole("button", { name, exact: true }));
       }
       await passive(page, () => mode("Source"), "Document Source mode");

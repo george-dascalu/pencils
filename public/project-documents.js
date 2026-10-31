@@ -26,6 +26,7 @@ export function projectDocuments(ctx) {
   let editor = null, form = null, current = null, project = null, renderer = null, panel = null, panelOpener = null, paneEditor = null;
   let readingSearch = null;
   let mode = storage.get("document-mode", "live");
+  let editMode = mode === "source" ? "source" : "live"; // where the bar's Reading view toggle returns
   let documentWidth = storage.get("document-width", "page") === "full" ? "full" : "page";
   let activeFolder = null;
   let explorerDrag = null, folderMovePending = false;
@@ -106,10 +107,6 @@ export function projectDocuments(ctx) {
       : entry?.conflict ? "This document changed elsewhere. Review your pending save."
       : entry?.error ? "Changes kept in this browser. Waiting to save." : "";
     form.querySelector("[data-document-recovery]").hidden = !problem;
-    const saved = all().find(d => d.id === current.id);
-    const versions = form.querySelector("[data-document-action=versions]");
-    versions.title = `Page versions · Version ${saved?.version || 1}`;
-    versions.dataset.version = saved?.version || 1;
     renderTaskQueries(form);
     refreshComments();
     updateExplorer();
@@ -379,13 +376,9 @@ export function projectDocuments(ctx) {
     readingSearch?.close();
     if (next === "reading") editor.escape();
     mode = next; storage.set("document-mode", next);
+    if (next !== "reading") editMode = next;
     form.dataset.documentMode = mode;
-    const picker = form.querySelector(".document-mode-picker");
-    if (picker) {
-      const label = `Document view: ${mode === "reading" ? "Reading" : mode === "source" ? "Source" : "Live preview"}`;
-      picker.innerHTML = icon(mode === "reading" ? "preview" : mode === "source" ? "code" : "pencil");
-      picker.setAttribute("aria-label", label); picker.title = label;
-    }
+    form.querySelector('[data-document-action="reading-toggle"]')?.setAttribute("aria-pressed", String(mode === "reading"));
     const reading = form.querySelector(".document-reading"), host = form.querySelector(".document-codemirror");
     host.hidden = mode === "reading";
     reading.hidden = mode !== "reading";
@@ -401,8 +394,8 @@ export function projectDocuments(ctx) {
       editor.setMode(mode);
       if (focus) {
         if (allowsTextAutofocus()) editor.focus();
-        // Otherwise the view's own control keeps focus: the picker, the button or, on phones, the Documents tab.
-        else [picker, form.querySelector(`[data-document-mode="${mode}"]`), document.querySelector(".tabs .tab.active")].find((el) => el?.getClientRects().length)?.focus({ preventScroll: true });
+        // Otherwise the bar's Reading view toggle keeps focus, or the Documents tab takes it (from its tray or ⋯).
+        else if (!document.activeElement?.matches('[data-document-action="reading-toggle"]')) document.querySelector(".tabs .tab.active")?.focus({ preventScroll: true });
       }
     }
   }
@@ -532,7 +525,8 @@ export function projectDocuments(ctx) {
   };
   function propertiesHTML(doc) {
     const tags = frontmatterTags(doc);
-    return `<details class="document-properties" data-tags="${esc(JSON.stringify(tags))}" ${storage.get("document-properties-open", false) ? "open" : ""}><summary>${propertiesSummary(doc)}</summary>
+    const none = !tags.length && !documentProperties(doc).length;
+    return `<details class="document-properties" data-tags="${esc(JSON.stringify(tags))}" ${storage.get("document-properties-open", false) ? "open" : ""} ${none ? "hidden" : ""}><summary>${propertiesSummary(doc)}</summary>
       <div class="document-property-list">${documentProperties(doc).map(([name, value, type]) => `<div class="document-property" data-property="${esc(name)}" data-type="${type}" data-value="${esc(JSON.stringify(value))}"><span class="document-property-name" title="${esc(name)}">${esc(name)}</span>${propertyInput(name, value, type)}<button type="button" class="icon-button" data-property-remove aria-label="Remove ${esc(name)}" title="Remove ${esc(name)}">${icon("close")}</button></div>`).join("")}
         <div class="document-property"><span class="document-property-name">Tags</span><input type="text" name="document-tags" aria-label="Tags" value="${esc(tags.join(", "))}" placeholder="Tags, separated by commas"></div></div>
       <button type="button" class="button small" data-property-add>${icon("plus")}Add property</button></details>`;
@@ -589,6 +583,9 @@ export function projectDocuments(ctx) {
         const record = await saveProperties({ set: { [name]: value } }, latest => Object.keys(latest).some(key => key.toLowerCase() === name.toLowerCase()) ? `“${name}” already exists.` : null);
         showProperties(record);
         closePanel();
+        // The section was redrawn: move on to the new property's value.
+        const section = form.querySelector(".document-properties");
+        focusOnOpen([...section.querySelectorAll("[data-property]")].find(row => row.dataset.property === name)?.querySelector("input"), section.querySelector("[data-property-add]"));
       } catch (error) {
         const problem = box.querySelector(".form-error");
         problem.textContent = error.message; problem.hidden = false;
@@ -915,19 +912,12 @@ export function projectDocuments(ctx) {
           <header class="document-heading">
             <div id="document-formatting" class="document-formatting task-rich-tools" role="toolbar" aria-label="Format document">${richToolbar(icon, { adapter: "document", alignment: null, modes: false, idPrefix: "document", extra: `<div class="selection-group" role="group" aria-label="Insert more"><button type="button" class="selection-action" data-document-action="insert" aria-label="Insert" title="Insert a table, code, callout or more">${icon("plus")}<span class="selection-action-label">Insert</span></button></div>` })}</div>
             <div class="document-view-controls" role="toolbar" aria-label="Document navigation">
-              <button type="button" class="icon-button document-secondary-control" data-document-action="outline" aria-label="Document outline" title="Document outline" aria-expanded="false" aria-haspopup="dialog" popovertarget="document-outline-panel">${icon("tree")}</button>
-              <div class="document-modes" role="group" aria-label="Document view">${MODES.map(([key, label, glyph]) => `<button type="button" class="icon-button" data-document-mode="${key}" aria-label="${label}" title="${label}" aria-pressed="${mode === key}">${icon(glyph)}</button>`).join("")}</div>
-              <button type="button" class="icon-button document-mode-picker" data-document-action="mode-menu" aria-haspopup="dialog" aria-label="Document view">${icon("pencil")}</button>
-              <button type="button" class="icon-button document-secondary-control" data-document-action="width" aria-label="Full width" aria-pressed="${documentWidth === "full"}" title="${documentWidth === "full" ? "Use page width" : "Use full width"}">${icon(documentWidth === "full" ? "width-page" : "width-full")}</button>
               <button type="button" class="icon-button document-format-toggle" data-document-action="format-toggle" aria-label="Show formatting" title="Show formatting" aria-expanded="false" aria-controls="document-formatting">${icon("heading")}</button>
-              <button type="button" class="icon-button" data-document-action="find" aria-label="Find in document" title="Find in document (Ctrl / ⌘ F)">${icon("search")}</button>
+              <button type="button" class="icon-button" data-document-action="reading-toggle" aria-label="Reading view" title="Reading view" aria-pressed="${mode === "reading"}">${icon("preview")}</button>
             </div>
-            <a class="icon-button document-file-action" href="#" data-document-action="obsidian" aria-label="Open in Obsidian" title="Open in Obsidian">${icon("external")}</a>
-            <button type="button" class="icon-button document-file-action" data-document-action="versions" aria-label="Page versions" title="Page versions · Version ${doc.version || 1}" data-version="${doc.version || 1}">${icon("clock")}</button>
+            <a class="document-obsidian-link" href="#" data-document-action="obsidian" hidden>Open in Obsidian</a>
             ${ctx.bookmarks.button("doc", state.project.id, doc.id)}
             <button type="button" class="icon-button" data-document-action="tools" aria-label="Document tools" title="Document tools">${icon("more")}</button>
-            <button type="button" class="icon-button document-file-action" data-document-action="export" aria-label="Export Markdown" title="Export Markdown">${icon("download")}</button>
-            <details class="board-menu document-delete document-file-action"><summary aria-label="Delete document" title="Delete document">${icon("trash")}</summary><div class="board-menu-panel"><p>Move this document to Trash?</p><button type="button" class="button small danger" data-document-action="delete">Move to Trash</button></div></details>
           </header>
           ${(() => { const cards = (state.tasks || []).filter((t) => (t.documents || []).includes(doc.id)); return cards.length ? `<div class="document-linked-cards"><span class="caption">Linked cards</span>${cards.map((t) => `<button type="button" class="button soft" data-action="task-open" data-id="${esc(t.id)}" title="Open ${esc(t.title)}">${icon(t.type || "task")}<span class="task-relationship-key">${esc(t.key || t.id)}</span><span class="task-relationship-title">${esc(t.title)}</span></button>`).join("")}</div>` : ""; })()}
           ${propertiesHTML(doc)}
@@ -1117,9 +1107,8 @@ export function projectDocuments(ctx) {
     const action = button.dataset.documentAction;
     event.preventDefault();
     try {
-      if (action === "mode-menu") {
-        showPanel(button, "Document view", MODES.map(([key, title, glyph]) => `<button type="button" class="document-panel-item" data-document-mode="${key}" aria-pressed="${mode === key}">${icon(glyph)}${title}${mode === key ? icon("check") : ""}</button>`).join(""));
-      } else if (action === "format-toggle") {
+      if (action === "reading-toggle") setMode(mode === "reading" ? editMode : "reading");
+      else if (action === "format-toggle") {
         const open = form.dataset.formatOpen !== "true";
         form.dataset.formatOpen = String(open);
         button.setAttribute("aria-expanded", String(open));
@@ -1129,18 +1118,17 @@ export function projectDocuments(ctx) {
       } else if (action === "new-folder") folderPanel(button);
       else if (action === "width") setDocumentWidth(documentWidth === "full" ? "page" : "full");
       else if (action === "move") movePanel(button);
-      else if (action === "versions") await versionsPanel(button);
+      else if (action === "versions") await versionsPanel(form.querySelector('[data-document-action="tools"]'));
       else if (action === "obsidian") {
-        if (!button.closest(".document-heading")) {
-          closePanel(); form.querySelector('.document-heading [data-document-action="obsidian"]').click(); return;
-        }
-        if (button.dataset.configured !== "true") { obsidianSettings(button); return; }
+        // The hidden link in the bar holds the document's Obsidian address (updateObsidianLink).
+        const link = form.querySelector('.document-heading [data-document-action="obsidian"]');
+        if (link.dataset.configured !== "true") { obsidianSettings(button); return; }
         editor.flush();
         const pid = project, id = current.id, url = endpoint(pid, id);
         const entry = sync.entries.get(url);
         if (entry) await sync.run(entry);
         if (sync.entries.has(url)) throw Error("Finish saving this document before opening it in Obsidian.");
-        if (project === pid && current?.id === id) window.location.href = button.href;
+        if (project === pid && current?.id === id) window.location.href = link.href;
       } else if (action === "obsidian-settings") obsidianSettings(button);
       else if (action === "find") {
         closePanel();
@@ -1148,20 +1136,33 @@ export function projectDocuments(ctx) {
         else editor.find();
       }
       else if (action === "outline") {
-        if (panelOpener === button && panel?.matches(":popover-open")) { closePanel(true); return; }
         const headings = documentOutline(editor.value());
         const tree = (items) => `<ul>${items.map(h => `<li><div class="document-outline-row">${h.children.length ? `<button type="button" class="icon-button" data-outline-toggle aria-label="Toggle ${esc(h.title)} headings" aria-expanded="true" aria-controls="document-outline-${h.from}">${icon("chevron")}</button>` : '<span class="document-outline-spacer" aria-hidden="true"></span>'}<button type="button" class="document-panel-item" data-document-jump="${h.from}">${esc(h.title)}</button></div>${h.children.length ? `<div id="document-outline-${h.from}">${tree(h.children)}</div>` : ""}</li>`).join("")}</ul>`;
-        const outline = showPanel(button, "Outline", `<nav class="document-outline" aria-label="Document headings">${headings.length ? tree(headings) : "<p>Add headings to navigate this document.</p>"}</nav>`, 400);
-        outline.id = "document-outline-panel";
-        button.setAttribute("aria-expanded", "true");
+        showPanel(button, "Outline", `<nav class="document-outline" aria-label="Document headings">${headings.length ? tree(headings) : "<p>Add headings to navigate this document.</p>"}</nav>`, 400);
       } else if (action === "tools") {
+        const group = (name, items) => `<section class="document-tool-group" aria-label="${name}">${items}</section>`;
+        const item = (name, glyph, label, extra = "") => `<button type="button" class="document-panel-item" data-document-action="${name}" ${extra}>${icon(glyph)}${label}</button>`;
+        showPanel(button, "Document tools", [
+          group("Document view", MODES.map(([key, title, glyph]) => `<button type="button" class="document-panel-item" data-document-mode="${key}" aria-pressed="${mode === key}">${icon(glyph)}${title}${mode === key ? icon("check") : ""}</button>`).join("")),
+          group("Layout", `${narrow() ? "" : item("split-columns", "split-columns", "Split side by side", `aria-pressed="${splitState()?.direction === "columns"}"`) + item("split-rows", "split-rows", "Split top and bottom", `aria-pressed="${splitState()?.direction === "rows"}"`)}${item("width", "width-full", documentWidth === "full" ? "Use page width" : "Use full width", `aria-pressed="${documentWidth === "full"}"`)}${item("outline", "tree", "Document outline")}`),
+          group("Edit", `<button type="button" class="document-panel-item" data-document-format="undo">${icon("undo")}Undo</button><button type="button" class="document-panel-item" data-document-format="redo">${icon("redo")}Redo</button>${item("find", "search", "Find in document")}`),
+          group("Document", item("rename", "pencil", "Rename") + item("move", "folder", "Move to folder") + item("property-add", "plus", "Add property")),
+          group("History and links", item("versions", "clock", "Page versions") + item("links", "link", "Backlinks and mentions") + item("comments", "comment", "Comments")),
+          group("Files", item("export", "download", "Export Markdown") + item("obsidian", "external", "Open in Obsidian") + item("obsidian-settings", "settings", "Obsidian settings")),
+          group("Delete", `<button type="button" class="document-panel-item danger" data-document-action="confirm-delete">${icon("trash")}Delete document</button>`),
+        ].join(""));
+      } else if (action === "links") {
         const unlinked = unlinkedMentions(all(), current.title, current.id);
         const backlinks = all().filter(d => d.id !== current.id && [...(d.body || "").matchAll(/\[\[([^\]\n]+)\]\]|\[[^\]]*\]\(([^)\s]+)\)/g)].some(m => resolveDocument(m[1] || m[2], all())?.id === current.id));
-        const group = (name, items) => items ? `<section class="document-tool-group" aria-label="${name}"><h3>${name}</h3>${items}</section>` : "";
-        showPanel(button, "Document tools", `${group("Document", `<button type="button" class="document-panel-item" data-document-action="rename">${icon("pencil")}Rename</button><button type="button" class="document-panel-item" data-document-action="move">${icon("folder")}Move to folder</button><button type="button" class="document-panel-item" data-document-action="export">${icon("download")}Export Markdown</button>${!form.querySelector(".document-delete").getClientRects().length ? `<button type="button" class="document-panel-item danger" data-document-action="confirm-delete">${icon("trash")}Delete document</button>` : ""}`)}${group("View", `${!form.querySelector('.document-heading [data-document-action="width"]').getClientRects().length ? `<button type="button" class="document-panel-item" data-document-action="outline">${icon("tree")}Document outline</button><button type="button" class="document-panel-item" data-document-action="width" aria-pressed="${documentWidth === "full"}">${icon("width-full")}${documentWidth === "full" ? "Use page width" : "Use full width"}</button>` : ""}${narrow() ? "" : `<button type="button" class="document-panel-item" data-document-action="split-columns" aria-pressed="${splitState()?.direction === "columns"}">${icon("split-columns")}Split side by side</button><button type="button" class="document-panel-item" data-document-action="split-rows" aria-pressed="${splitState()?.direction === "rows"}">${icon("split-rows")}Split top and bottom</button>`}`)}${group("History", `<button type="button" class="document-panel-item" data-document-format="undo">${icon("undo")}Undo</button><button type="button" class="document-panel-item" data-document-format="redo">${icon("redo")}Redo</button><button type="button" class="document-panel-item" data-document-action="versions">${icon("clock")}Page versions</button>`)}${group("Obsidian", `<button type="button" class="document-panel-item" data-document-action="obsidian">${icon("external")}Open in Obsidian</button><button type="button" class="document-panel-item" data-document-action="obsidian-settings">${icon("settings")}Obsidian settings</button>`)}<h3>Backlinks (${backlinks.length})</h3>${backlinks.map(d => `<button type="button" class="document-panel-item" data-document-open="${esc(d.id)}">${icon("file")}${esc(d.title)}</button>`).join("") || "<p>No documents link here yet.</p>"}<h3>Unlinked mentions (${unlinked.length})</h3>${unlinked.map(({ document: d, mentions }) => `<div class="document-mention-row"><button type="button" class="document-panel-item" data-document-open="${esc(d.id)}" title="${mentions.length} mention${mentions.length === 1 ? "" : "s"}">${icon("file")}<span>${esc(d.title)}<span class="field-hint document-mention-context">${esc(mentionContext(d.body || "", mentions[0]))}</span></span></button><button type="button" class="button small" data-document-action="link-mentions" data-document-id="${esc(d.id)}" aria-label="Link mentions in ${esc(d.title)}">Link</button></div>`).join("") || "<p>No other document names this one without a link.</p>"}${(() => {
-          const threads = threadsNow();
-          return `<h3>Comments (${threads.length})</h3>${threads.map(t => `<button type="button" class="document-panel-item" data-document-action="comment-open" data-comment-id="${esc(t.id)}">${icon("comment")}<span>${esc(t.root.anchor.quote.slice(0, 80))}<span class="field-hint document-mention-context">${t.range ? "" : "Detached · "}${t.comments.length} comment${t.comments.length === 1 ? "" : "s"}</span></span></button>`).join("") || "<p>No comments yet. Select text, then Insert → Comment on text.</p>"}`;
-        })()}`);
+        showPanel(button, "Backlinks and mentions", `<h3>Backlinks (${backlinks.length})</h3>${backlinks.map(d => `<button type="button" class="document-panel-item" data-document-open="${esc(d.id)}">${icon("file")}${esc(d.title)}</button>`).join("") || "<p>No documents link here yet.</p>"}<h3>Unlinked mentions (${unlinked.length})</h3>${unlinked.map(({ document: d, mentions }) => `<div class="document-mention-row"><button type="button" class="document-panel-item" data-document-open="${esc(d.id)}" title="${mentions.length} mention${mentions.length === 1 ? "" : "s"}">${icon("file")}<span>${esc(d.title)}<span class="field-hint document-mention-context">${esc(mentionContext(d.body || "", mentions[0]))}</span></span></button><button type="button" class="button small" data-document-action="link-mentions" data-document-id="${esc(d.id)}" aria-label="Link mentions in ${esc(d.title)}">Link</button></div>`).join("") || "<p>No other document names this one without a link.</p>"}`);
+      } else if (action === "comments") {
+        const threads = threadsNow();
+        showPanel(button, "Comments", threads.map(t => `<button type="button" class="document-panel-item" data-document-action="comment-open" data-comment-id="${esc(t.id)}">${icon("comment")}<span>${esc(t.root.anchor.quote.slice(0, 80))}<span class="field-hint document-mention-context">${t.range ? "" : "Detached · "}${t.comments.length} comment${t.comments.length === 1 ? "" : "s"}</span></span></button>`).join("") || "<p>No comments yet. Select text, then Insert → Comment on text.</p>");
+      } else if (action === "property-add") {
+        // Shows the Properties section, with its Tags field, and asks for the property from its own Add button.
+        const section = form.querySelector(".document-properties");
+        section.hidden = false; section.open = true;
+        addPropertyPanel(section.querySelector("[data-property-add]"));
       } else if (action === "close-tab") closeTab(button.dataset.documentId);
       else if (action === "split-columns" || action === "split-rows") {
         closePanel();

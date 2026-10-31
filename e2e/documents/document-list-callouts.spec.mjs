@@ -3,7 +3,7 @@
 // ! ? & ~ @ $ or % and a space is tinted and shows an icon; the character stays in
 // the Markdown, so the file reads the same in Obsidian.
 import { test, expect, useApp } from "../fixtures.mjs";
-import { editorSource, openNewDocument } from "../helpers/documents.mjs";
+import { chooseDocumentView, editorSource, openNewDocument } from "../helpers/documents.mjs";
 
 const app = useApp(async (store) => ({ project: await store.createProject({ title: "Callouts", key: "LC" }) }));
 const body = ["- ! Ship on Friday", "- [ ] ? Ask legal", "1. @ Sam owns this", "- plain item", "", "> [!note] keep my Case", "> Body."].join("\n");
@@ -24,7 +24,7 @@ test("list callouts tint their line and show an icon in live preview and reading
   await expect(lines.first()).not.toContainText("!");
   expect(await background(lines.first()), "the line is tinted").not.toBe(await background(page.locator(".cm-line", { hasText: "plain item" })));
   expect(await editorSource(page), "the Markdown keeps the characters").toBe(body);
-  await page.getByRole("button", { name: "Reading", exact: true }).click();
+  await chooseDocumentView(page, "Reading");
   const items = page.locator(".document-reading li[data-list-callout]");
   await expect(items).toHaveCount(3);
   await expect(items.first().getByRole("img", { name: "Important" })).toBeVisible();

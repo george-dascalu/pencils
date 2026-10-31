@@ -3,7 +3,7 @@
 // Markdown as an HTML comment before the table ("<!-- table: scroll -->"), so it
 // stays invisible in other Markdown apps.
 import { test, expect, onDevices, useApp } from "../fixtures.mjs";
-import { editorSource, openNewDocument } from "../helpers/documents.mjs";
+import { chooseDocumentView, editorSource, openNewDocument } from "../helpers/documents.mjs";
 
 const app = useApp(async (store) => ({ project: await store.createProject({ title: "Tables", key: "TL" }) }));
 const table = "| Component | Example | Alignment | Description | Remarks |\n| :--- | :---: | ---: | --- | --- |\n| Plain text | Ready | 1 | Something longer here | Note |\n| Bold text | Done | 2 | Another description | Extra |";
@@ -54,7 +54,7 @@ onDevices(["phone"], () => {
 
   test("reading mode keeps the table's layout", async ({ page }) => {
     await open(page, scrollBody);
-    await page.locator('[data-document-mode="reading"]').first().evaluate((el) => el.click());
+    await chooseDocumentView(page, "Reading");
     await page.locator(".document-reading table").waitFor();
     const l = await layout(page, ".document-reading");
     expect(l.scrollClass && l.scrolls, JSON.stringify(l)).toBe(true);

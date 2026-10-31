@@ -2,7 +2,7 @@
 // block in a document lists the project's matching cards, using a subset of the Obsidian
 // Tasks plugin's syntax; ticking a row completes the card and clicking it opens the card.
 import { test, expect, onDevices, useApp } from "../fixtures.mjs";
-import { editorSource, openNewDocument } from "../helpers/documents.mjs";
+import { chooseDocumentView, editorSource, openNewDocument } from "../helpers/documents.mjs";
 
 const app = useApp(async (store) => ({ project: await store.createProject({ title: "Queries", key: "TQ" }) }));
 const status = async (id) => (await app.store.snapshot(app.project.id)).tasks.find((t) => t.id === id).status;
@@ -29,7 +29,7 @@ test("reading shows the same list, and unknown instructions are reported in the 
   await app.store.createTask(app.project.id, { title: "Reading card" });
   await openNewDocument(page, app, app.project.id, { body: "```tasks\ntitle includes Reading card\ndue someday\n```" });
   await expect(page.locator(".cm-content [data-document-task-query]")).toContainText("Not understood: due someday");
-  await page.getByRole("button", { name: "Reading", exact: true }).click();
+  await chooseDocumentView(page, "Reading");
   await expect(page.locator(".document-reading .document-task-row")).toHaveText([/Reading card/]);
 });
 

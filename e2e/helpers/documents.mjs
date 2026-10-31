@@ -1,6 +1,7 @@
 // Helpers for the document editor specs (e2e/documents). The editor is CodeMirror: blocks
 // outside the viewport are not rendered, so scroll a position into view before checking it.
 import AxeBuilder from "@axe-core/playwright";
+import { expect } from "../fixtures.mjs";
 
 // Creates a document in the project and opens it; `waitFor` is the selector that marks it ready.
 export async function openNewDocument(page, app, projectId, { title, body = "", folder, waitFor = ".cm-content" } = {}) {
@@ -52,18 +53,23 @@ export async function renameDocument(page, name) {
   await panel.getByRole("button", { name: "Rename", exact: true }).click();
   await panel.waitFor({ state: "hidden" });
 }
-// Chooses a document's view (Live preview, Source or Reading). Phones use the Documents tab's
-// tray above the bottom bar (owner request, 30 October 2026), after dismissing the keyboard,
-// which hides the bar; other narrow editors use the Document view menu; wider ones the bar.
+// Since 0.20.68 the document bar holds only its Reading view toggle, the star and ⋯ (Document
+// tools), which holds every other document action. Opens ⋯ and chooses `name`.
+export async function documentTool(page, name, { tap = false } = {}) {
+  const press = (locator) => (tap ? locator.tap() : locator.click());
+  await press(page.locator('#document-form .document-heading [data-document-action="tools"]'));
+  await press(page.getByRole("dialog", { name: "Document tools", exact: true }).getByRole("button", { name, exact: true }));
+}
+// Chooses a document's view (Live preview, Source or Reading). Phones and touch screens use the
+// Documents tab's tray above the bottom bar (owner request, 30 October 2026), after dismissing the
+// keyboard, which hides the bar; other screens use Document tools. Waits until the view shows.
+const VIEWS = { "Live preview": "live", Source: "source", Reading: "reading" };
 export async function chooseDocumentView(page, name, { tap = false } = {}) {
   const press = (locator) => (tap ? locator.tap() : locator.click());
-  // The bottom bar (phones and touch screens) holds the views in the Documents tab's tray.
   if (await page.evaluate(() => matchMedia("(max-width: 600px), (pointer: coarse)").matches)) {
     await page.evaluate(() => document.activeElement?.blur());
     await press(page.locator('.tabs [data-view="documents"]'));
     await press(page.locator(".layout-tray").getByRole("button", { name, exact: true }));
-  } else if (await page.locator("#document-form .document-mode-picker").isVisible()) {
-    await press(page.locator("#document-form .document-mode-picker"));
-    await press(page.getByRole("dialog", { name: "Document view", exact: true }).getByRole("button", { name, exact: true }));
-  } else await press(page.locator("#document-form").getByRole("button", { name, exact: true }));
+  } else await documentTool(page, name, { tap });
+  await expect(page.locator("#document-form")).toHaveAttribute("data-document-mode", VIEWS[name]);
 }

@@ -8,7 +8,7 @@
 // before deleting (merged from the phone document checks of test/mobile-layout.mjs).
 import { test, expect, useApp } from "../fixtures.mjs";
 import { newCard } from "../helpers/new-card.mjs";
-import { chooseDocumentView } from "../helpers/documents.mjs";
+import { chooseDocumentView, documentTool } from "../helpers/documents.mjs";
 
 const app = useApp(async (store) => {
   const project = await store.createProject({ title: "A project with a longer title for compact navigation" });
@@ -78,7 +78,7 @@ for (const [device, width] of sizes) {
         }
         await chooseDocumentView(page, "Reading", { tap: touch });
         await expect(page.locator(".document-formatting"), "Reading hides the text toolbar").toBeHidden();
-        await click(page.getByRole("button", { name: "Find in document", exact: true }));
+        await documentTool(page, "Find in document", { tap: touch });
         await page.getByRole("searchbox", { name: "Find in document", exact: true }).fill("toolbar");
         await expect(page.locator("#document-form")).toHaveAttribute("data-document-mode", "reading");
         await click(page.getByRole("button", { name: "Close search", exact: true }));

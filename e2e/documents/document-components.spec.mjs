@@ -4,7 +4,7 @@
 // workspace passes accessibility checks on desktop and phone widths in both themes.
 import { test, expect, useApp } from "../fixtures.mjs";
 import { browserTabShortcuts } from "../helpers/browser-tab-shortcuts.mjs";
-import { axeViolations, noHorizontalScroll, setTheme } from "../helpers/documents.mjs";
+import { axeViolations, chooseDocumentView, noHorizontalScroll, setTheme } from "../helpers/documents.mjs";
 
 const body = [
   "# Notebook", "", "Keep **this paragraph** exactly as written.", "",
@@ -27,7 +27,7 @@ async function open(page) {
 }
 const textbox = (page, name) => page.getByRole("textbox", { name, exact: true });
 async function remainsLive(page, saved) {
-  await expect(page.getByRole("button", { name: "Live preview", exact: true })).toHaveAttribute("aria-pressed", "true");
+  await expect(page.locator("#document-form")).toHaveAttribute("data-document-mode", "live");
   await expect(page.locator(".cm-line").filter({ hasText: "[!note]" })).toHaveCount(0);
   expect(await saved()).toMatch(/Keep \*\*this paragraph\*\* exactly as written\./);
   expect(await saved()).toMatch(/Untouched ending with \[\[Notebook\|alias\]\]\./);
@@ -135,8 +135,7 @@ test("code and math blocks save, and switching modes stays lossless", async ({ p
   await remainsLive(page, saved);
   const current = await saved();
   for (const name of ["Source", "Reading", "Live preview"]) {
-    await page.getByRole("button", { name, exact: true }).click();
-    await expect(page.getByRole("button", { name, exact: true })).toHaveAttribute("aria-pressed", "true");
+    await chooseDocumentView(page, name);
     expect(await saved(), "Switching modes remains lossless.").toBe(current);
   }
 });

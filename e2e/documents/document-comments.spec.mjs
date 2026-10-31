@@ -1,6 +1,7 @@
 // Owner request, 29 October 2026 (note-taking research, idea 9): comments on document text,
 // anchored to the quoted words and kept in the frontmatter, in the shared comments panel.
 import { test, expect, onDevices, useApp } from "../fixtures.mjs";
+import { documentTool } from "../helpers/documents.mjs";
 
 const app = useApp(async (store) => ({ project: await store.createProject({ title: "Comments", key: "CM" }) }));
 const stored = async (id) => app.store.getDocument(app.project.id, id);
@@ -29,14 +30,14 @@ onDevices(["desktop", "phone"], () => test("selected text gets a comment thread,
   await expect(page.locator(".board-comments .comment-body")).toHaveText("Why beta?");
 }));
 
-test("Document tools lists every thread, including one whose text is gone", async ({ page }) => {
+test("Document tools → Comments lists every thread, including one whose text is gone", async ({ page }) => {
   let doc = await app.store.createDocument(app.project.id, { title: "Detached", body: "Nothing quoted here." });
   doc = await app.store.updateDocument(app.project.id, doc.id, { ...doc, comments: [{ id: "comment-gone", author: "Ana", text: "About the old line", format: "markdown", created: "2026-10-29T10:00:00.000Z", anchor: { quote: "an old line", prefix: "", suffix: "" } }] });
   await page.goto(`${app.base}/#project/${app.project.id}/documents/${doc.id}`);
-  await page.locator('#document-form [data-document-action="tools"]').click();
-  const tools = page.getByRole("dialog", { name: "Document tools" });
-  await expect(tools.getByRole("heading", { name: "Comments (1)" })).toBeVisible();
-  await tools.getByRole("button", { name: /an old line/ }).click();
+  await documentTool(page, "Comments");
+  const list = page.getByRole("dialog", { name: "Comments", exact: true });
+  await expect(list.locator(".document-panel-item")).toHaveText([/an old line.*Detached · 1 comment$/]);
+  await list.getByRole("button", { name: /an old line/ }).click();
   await expect(page.locator(".board-comments .comment-body")).toHaveText("About the old line");
   await expect(page.locator(".board-comments")).toContainText("Detached");
 });
@@ -69,7 +70,7 @@ test("the panel works like other contextual panels and keeps every comment in it
   await page.locator(".cm-line", { hasText: "Second line" }).click();
   await expect(panel).toHaveCount(0);
   // Comments don't add page versions: each version is listed once.
-  await page.locator('#document-form [data-document-action="versions"]').click();
+  await documentTool(page, "Page versions");
   const versions = page.locator(".document-version-list [data-version-index] > span");
   await expect(versions.first()).toContainText("Current");
   const labels = await versions.allTextContents();

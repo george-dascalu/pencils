@@ -5,7 +5,7 @@
 // links and app controls. Also covers Open in Obsidian, the outline, links and
 // backlinks, attachments, and accessibility at desktop and phone widths.
 import { test, expect, useApp } from "../fixtures.mjs";
-import { axeViolations, documentName, noHorizontalScroll, setTheme } from "../helpers/documents.mjs";
+import { axeViolations, chooseDocumentView, documentName, documentTool, noHorizontalScroll, setTheme } from "../helpers/documents.mjs";
 
 const app = useApp(async (store) => {
   const project = await store.createProject({ title: "Markdown workspace" });
@@ -42,10 +42,7 @@ async function open(page) {
   const saved = async () => (await app.store.getDocument(app.project.id, record.id)).body;
   return { record, body, saved };
 }
-const mode = async (page, name) => {
-  await page.getByRole("button", { name, exact: true }).click();
-  await expect(page.getByRole("button", { name, exact: true })).toHaveAttribute("aria-pressed", "true");
-};
+const mode = chooseDocumentView;
 // Since 0.19.31 the open document's name shows in the top bar instead of a title field.
 const title = documentName;
 
@@ -102,8 +99,9 @@ test("rendered Markdown passes accessibility checks at desktop and phone widths 
 
 test("Open in Obsidian uses the saved vault name and file, after a reload too", async ({ page }) => {
   const { record } = await open(page);
-  const link = page.getByRole("link", { name: "Open in Obsidian", exact: true });
-  await link.click();
+  // Document tools → Open in Obsidian asks for the vault first; the bar's hidden link holds the address.
+  const link = page.locator('.document-heading [data-document-action="obsidian"]');
+  await documentTool(page, "Open in Obsidian");
   await page.getByLabel("Obsidian vault name", { exact: true }).fill("Work & notes");
   await page.getByRole("button", { name: "Save settings", exact: true }).click();
   await expect(link).toHaveAttribute("href", /^obsidian:/);
@@ -119,17 +117,17 @@ test("Open in Obsidian uses the saved vault name and file, after a reload too", 
 test("the outline, search, links and backlinks navigate without changing the file", async ({ page }) => {
   const { record, body, saved } = await open(page);
   // Outline jumps into source-backed editing; it never changes the file.
-  await page.getByRole("button", { name: "Document outline", exact: true }).click();
+  await documentTool(page, "Document outline");
   await page.getByRole("button", { name: "Formatting", exact: true }).click();
-  await expect(page.getByRole("button", { name: "Live preview", exact: true })).toHaveAttribute("aria-pressed", "true");
-  await page.getByRole("button", { name: "Find in document", exact: true }).click();
+  await expect(page.locator("#document-form")).toHaveAttribute("data-document-mode", "live");
+  await documentTool(page, "Find in document");
   await page.locator(".cm-search input[name=search]").fill("callout");
   await page.keyboard.press("Escape");
   await mode(page, "Reading");
   await page.locator(".document-reading [data-document-ref]").first().click();
   await expect(title(page)).toHaveText(app.target.title);
-  await page.getByRole("button", { name: "Document tools", exact: true }).click();
-  await page.getByRole("dialog", { name: "Document tools" }).getByRole("button", { name: record.title, exact: true }).click();
+  await documentTool(page, "Backlinks and mentions");
+  await page.getByRole("dialog", { name: "Backlinks and mentions" }).getByRole("button", { name: record.title, exact: true }).click();
   await expect(title(page)).toHaveText(record.title);
   expect(await saved()).toBe(body);
 });

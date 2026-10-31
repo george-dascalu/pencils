@@ -6,7 +6,7 @@
 // folder offers the same choices without dragging, on desktop and phones.
 import { test, expect, startApp } from "../fixtures.mjs";
 import { openSidebar } from "../helpers/menu-controls.mjs";
-import { setTheme, noHorizontalScroll } from "../helpers/documents.mjs";
+import { chooseDocumentView, setTheme, noHorizontalScroll } from "../helpers/documents.mjs";
 
 test.use({ viewportSize: { width: 1500, height: 1000 } });
 // A server and vault per test: each starts from the same folders, with one project in the
@@ -147,7 +147,7 @@ test("a failed save moves nothing, and a later attempt succeeds", async ({ page 
 test("moving a folder while editing keeps the editor and Markdown intact", async ({ page }) => {
   const s = await seed();
   await open(page, s);
-  await page.getByRole("button", { name: "Source", exact: true }).click();
+  await chooseDocumentView(page, "Source");
   const revised = "# Notes\n\nKeep these notes.\n\nAn unsaved thought.";
   await page.locator(".cm-content").fill(revised);
   await openSidebar(page);

@@ -97,7 +97,7 @@ export function documentReadingSearch({ form, content, icon }) {
   function close(focus = false) {
     if (bar.hidden) return false;
     clearMarks(); bar.hidden = true;
-    if (focus) form.querySelector("[data-document-action=find]").focus({ preventScroll: true });
+    if (focus) form.querySelector("[data-document-action=tools]").focus({ preventScroll: true });
     return true;
   }
   bar.addEventListener("input", update);

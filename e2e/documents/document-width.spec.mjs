@@ -1,12 +1,12 @@
 // Documents read at page width or full width. The choice applies to Live
 // preview, Source and Reading alike (with the same column and heading type in
 // Live preview and Reading), is kept on this device across reloads and
-// documents, and never touches the file. Phones keep the switch in Document
-// tools. Live preview hides escaping backslashes away from the cursor and shows
+// documents, and never touches the file. The switch is in Document tools
+// (⋯) on every screen. Live preview hides escaping backslashes away from the cursor and shows
 // dividers.
 import { test, expect, useApp } from "../fixtures.mjs";
 import { openSidebar } from "../helpers/menu-controls.mjs";
-import { chooseDocumentView, documentName, noHorizontalScroll, setTheme } from "../helpers/documents.mjs";
+import { chooseDocumentView, documentName, documentTool, noHorizontalScroll, setTheme } from "../helpers/documents.mjs";
 
 const body = "# A consistent page\n\nFirst paragraph with **bold**, _italic_ and `code`.\n\nSecond paragraph with escaped \\*asterisks\\* and \\[brackets\\].\n\n---\n\n## A section\n\nA paragraph underneath the section heading.\n\n### Smaller heading\n\nMore details.\n\n#### Small heading\n\nLast paragraph.";
 const app = useApp(async (store) => {
@@ -24,11 +24,13 @@ const open = async (page) => {
   await page.goto(`${app.base}/#project/${app.project.id}/documents/${app.doc.id}`);
   await page.locator(".cm-content").waitFor();
 };
-const toggle = (page) => page.getByRole("button", { name: "Full width", exact: true });
 const form = (page) => page.locator("#document-form");
-const choose = async (page, name) => {
-  await page.getByRole("button", { name, exact: true }).click();
-  await expect(page.getByRole("button", { name, exact: true })).toHaveAttribute("aria-pressed", "true");
+const choose = chooseDocumentView;
+// Document tools → Use full width (or Use page width), then closes the menu.
+const setWidth = async (page, full) => {
+  await documentTool(page, full ? "Use full width" : "Use page width");
+  await expect(form(page)).toHaveAttribute("data-document-width", full ? "full" : "page");
+  await page.keyboard.press("Escape");
 };
 const dimensions = (page, mode) => page.locator(mode === "Reading" ? ".document-page" : ".cm-content").evaluate((el) => {
   const style = getComputedStyle(el), rect = el.getBoundingClientRect();
@@ -44,14 +46,10 @@ const dimensions = (page, mode) => page.locator(mode === "Reading" ? ".document-
 
 test("page and full width apply to every mode, with matching Live preview and Reading columns", async ({ page }) => {
   await open(page);
-  await expect(toggle(page)).toHaveAttribute("aria-pressed", "false");
+  await expect(form(page)).toHaveAttribute("data-document-width", "page");
   const metrics = {};
   for (const width of ["page", "full"]) {
-    if (width === "full") {
-      await toggle(page).focus();
-      await page.keyboard.press("Enter");
-      await expect(toggle(page)).toBeFocused();
-    }
+    if (width === "full") await setWidth(page, true);
     metrics[width] = {};
     for (const mode of ["Live preview", "Source", "Reading"]) {
       await choose(page, mode);
@@ -71,11 +69,10 @@ test("page and full width apply to every mode, with matching Live preview and Re
 
 test("full width is remembered across reloads and other documents", async ({ page }) => {
   await open(page);
-  await toggle(page).click();
-  await expect(toggle(page)).toHaveAttribute("aria-pressed", "true");
+  await setWidth(page, true);
   await page.reload();
   await form(page).waitFor();
-  await expect(toggle(page)).toHaveAttribute("aria-pressed", "true");
+  await expect(form(page)).toHaveAttribute("data-document-width", "full");
   await openSidebar(page);
   await page.locator(`[data-document-open="${app.other.id}"]`).click();
   // Since 0.19.31 the open document's name shows in the top bar.
@@ -100,39 +97,26 @@ test("Live preview hides escapes away from the cursor, shows dividers and keeps 
   expect((await page.locator(".cm-content .cm-line").allTextContents()).join("\n")).toBe(body);
 });
 
-test("tablet and phone widths keep the width switch on screen", async ({ page }) => {
+test("at tablet and phone widths Document tools' width switch stays on screen", async ({ page }) => {
   await open(page);
   for (const viewport of [1024, 390]) {
     await page.setViewportSize({ width: viewport, height: 1000 });
-    // Phones switch views from the Documents tab's tray and keep the width switch in the
-    // Document tools menu.
-    const narrow = viewport === 390;
-    if (narrow) await expect(toggle(page)).toBeHidden();
     for (const mode of ["Live preview", "Reading"]) {
-      if (narrow) await chooseDocumentView(page, mode);
-      else await choose(page, mode);
+      await chooseDocumentView(page, mode);
       for (const full of [false, true]) {
-        if (narrow) {
-          if (((await form(page).getAttribute("data-document-width")) === "full") !== full) {
-            await page.getByRole("button", { name: "Document tools", exact: true }).click();
-            const tools = page.getByRole("dialog", { name: "Document tools", exact: true });
-            const item = tools.locator('[data-document-action="width"]');
-            await item.click();
-            await expect(form(page)).toHaveAttribute("data-document-width", full ? "full" : "page");
-            await expect(item).toHaveAttribute("aria-pressed", String(full));
-            const bounds = await tools.boundingBox();
-            expect(bounds.x >= 0 && bounds.x + bounds.width <= viewport, `tools on screen ${JSON.stringify(bounds)}`).toBe(true);
-            await page.keyboard.press("Escape");
-            await tools.waitFor({ state: "hidden" });
-          }
-          expect(await noHorizontalScroll(page), `${viewport} ${mode} full=${full}`).toBe(true);
-          continue;
+        if (((await form(page).getAttribute("data-document-width")) === "full") !== full) {
+          await page.getByRole("button", { name: "Document tools", exact: true }).click();
+          const tools = page.getByRole("dialog", { name: "Document tools", exact: true });
+          const item = tools.locator('[data-document-action="width"]');
+          await item.click();
+          await expect(form(page)).toHaveAttribute("data-document-width", full ? "full" : "page");
+          await expect(item).toHaveAttribute("aria-pressed", String(full));
+          const bounds = await tools.boundingBox();
+          expect(bounds.x >= 0 && bounds.x + bounds.width <= viewport, `tools on screen ${JSON.stringify(bounds)}`).toBe(true);
+          await page.keyboard.press("Escape");
+          await tools.waitFor({ state: "hidden" });
         }
-        if (((await toggle(page).getAttribute("aria-pressed")) === "true") !== full) await toggle(page).click();
-        await expect(toggle(page)).toHaveAttribute("aria-pressed", String(full));
         expect(await noHorizontalScroll(page), `${viewport} ${mode} full=${full}`).toBe(true);
-        const bounds = await toggle(page).boundingBox();
-        expect(bounds.x >= 0 && bounds.x + bounds.width <= viewport, `switch on screen ${JSON.stringify(bounds)}`).toBe(true);
       }
     }
     await setTheme(page, "dark");

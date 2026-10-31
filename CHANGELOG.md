@@ -2,6 +2,13 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.20.68 — 2026-10-31
+
+### Changed
+
+- Like Obsidian, the document bar holds only the formatting, a Reading view toggle, the bookmark star and ⋯. Everything else (the views, split, width, outline, Undo, Redo, Find, Rename, Move, Page versions, backlinks, comments, export, Obsidian and Delete) is in ⋯, once each, as one compact list split by dividers. Backlinks and unlinked mentions, and comments, open their own panels from it.
+- The Properties section shows only once a document has properties or tags; ⋯ → Add property shows it, with its Tags field, and adds the first. After adding a property, the cursor moves to its value.
+
 ## 0.20.67 — 2026-10-31
 
 ### Changed

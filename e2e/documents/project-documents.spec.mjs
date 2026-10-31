@@ -6,7 +6,7 @@
 import fs from "node:fs/promises";
 import { test, expect, onDevices, useApp } from "../fixtures.mjs";
 import { openSidebar } from "../helpers/menu-controls.mjs";
-import { chooseDocumentView, documentName, noHorizontalScroll, renameDocument, setTheme } from "../helpers/documents.mjs";
+import { chooseDocumentView, documentName, documentTool, noHorizontalScroll, renameDocument, setTheme } from "../helpers/documents.mjs";
 
 const app = useApp(async (store) => {
   const project = await store.createProject({ title: "Documents studio" });
@@ -38,8 +38,6 @@ async function browse(page) {
     await page.locator('.sidebar.open[data-drawer-level="documents"] #document-search').waitFor();
   }
 }
-// Since 0.18.35 editors up to 820px wide keep file actions such as Export and Delete in Document tools.
-const toolsHoldFileActions = (page) => page.viewportSize().width <= 820;
 
 function documentTests() {
   test("the Documents tab shows the document in a full-height workspace in both themes", async ({ page }) => {
@@ -98,8 +96,7 @@ function documentTests() {
     await expect(page.locator(".document-reading strong")).toBeVisible();
     await chooseMode(page, "Live preview");
     const download = page.waitForEvent("download");
-    if (toolsHoldFileActions(page)) await page.getByRole("button", { name: "Document tools", exact: true }).click();
-    await page.getByRole("button", { name: "Export Markdown" }).filter({ visible: true }).click();
+    await documentTool(page, "Export Markdown");
     await page.keyboard.press("Escape");
     expect(await fs.readFile(await (await download).path(), "utf8")).toBe(markdown);
     await page.reload();
@@ -143,11 +140,7 @@ function documentTests() {
   test("deleting a document moves it to Trash", async ({ page }) => {
     const doc = await app.store.createDocument(app.project.id, { title: `Delete ${tag()}`, body: "To delete." });
     await open(page, doc.id);
-    // Since 0.18.35 narrow editors move Delete into Document tools.
-    if (toolsHoldFileActions(page)) {
-      await page.getByRole("button", { name: "Document tools", exact: true }).click();
-      await page.getByRole("dialog", { name: "Document tools", exact: true }).getByRole("button", { name: "Delete document", exact: true }).click();
-    } else await page.locator(".document-delete > summary").click();
+    await documentTool(page, "Delete document");
     await page.getByRole("button", { name: "Move to Trash", exact: true }).click();
     await expect.poll(async () => (await snapshot()).documents.some((d) => d.id === doc.id)).toBe(false);
     expect((await app.store.trash()).some((d) => d.id === doc.id)).toBe(true);

@@ -3,7 +3,7 @@
 // Colours are painted with the CSS Custom Highlight API, so the code stays
 // plain editable text.
 import { test, expect, onDevices, useApp } from "../fixtures.mjs";
-import { editorSource, openNewDocument } from "../helpers/documents.mjs";
+import { chooseDocumentView, editorSource, openNewDocument } from "../helpers/documents.mjs";
 
 const app = useApp(async (store) => ({ project: await store.createProject({ title: "Code", key: "CO" }) }));
 const body = "# Code\n\nIntro.\n\n```js\nfunction greet(name) {\n  // say hello\n  return \"Hi \" + name + 42;\n}\n```\n\nAfter.\n";
@@ -73,7 +73,7 @@ test("editing the code keeps colouring it", async ({ page }) => {
 
 test("reading mode shows the same colours", async ({ page }) => {
   await open(page);
-  await page.getByRole("button", { name: "Reading", exact: true }).click();
+  await chooseDocumentView(page, "Reading");
   await page.locator(".document-reading").waitFor();
   await page.waitForFunction(() => [...(CSS.highlights.get("document-code-keyword") || [])].some((r) => r.startContainer.parentElement?.closest(".document-reading") && r.toString() === "function"));
 });

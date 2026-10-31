@@ -1,5 +1,5 @@
-// Documents workspace refinements: an outline panel (keyboard and outside-click
-// friendly, with folding), icon-only view modes, a collapsible sidebar that is
+// Documents workspace refinements: an outline panel (opened from Document tools,
+// closed with Escape or an outside click, with folding), a collapsible sidebar that is
 // remembered, nested folders with Move, drag and rename, automatic page versions
 // with restore, and the outline on phones. Also board task cards: collapsing and
 // expanding the description is saved, keeps the plan flow and focus, survives a
@@ -7,7 +7,7 @@
 import { test, expect, startApp } from "../fixtures.mjs";
 import { openSidebar, closeSidebar } from "../helpers/menu-controls.mjs";
 import { updateProjectFrame } from "../../public/project-frame.js";
-import { noHorizontalScroll, setTheme } from "../helpers/documents.mjs";
+import { chooseDocumentView, documentTool, noHorizontalScroll, setTheme } from "../helpers/documents.mjs";
 
 const markdown = "# Notebook\n\n## First section\n\n### Nested heading\n\nDetails.\n\n## Second section\n\nFinal paragraph.";
 test.use({ viewportSize: { width: 1500, height: 1100 } });
@@ -29,42 +29,29 @@ async function openNotebook(page, { project, doc }) {
   await page.goto(`${app.base}/#project/${project.id}/documents/${doc.id}`);
   await page.locator(".cm-content").waitFor();
 }
-const outlineButton = (page) => page.getByRole("button", { name: "Document outline", exact: true });
 const outline = (page) => page.getByRole("dialog", { name: "Outline", exact: true });
 const nestedFolders = [{ id: "research", title: "Research", parent: null }, { id: "meetings", title: "Meetings", parent: "research" }];
 
-test("the outline opens and closes by click, Enter and Space, Escape and an outside click", async ({ page }) => {
+// Since 0.20.68 the outline opens from Document tools (⋯), like Obsidian's more menu.
+test("the outline opens from Document tools and closes with Escape and an outside click", async ({ page }) => {
   const s = await seedNotebook();
   await openNotebook(page, s);
-  // The mode buttons are icon-only; the outline comes first among the view controls.
-  expect((await page.locator("button[data-document-mode]").allTextContents()).join("")).toBe("");
-  await expect(page.locator(".document-view-controls > :first-child")).toHaveAttribute("data-document-action", "outline");
-  const button = outlineButton(page);
-  await button.click();
-  await expect(button).toHaveAttribute("aria-expanded", "true");
-  await button.click();
-  await expect(outline(page)).toBeHidden();
-  await expect(button).toHaveAttribute("aria-expanded", "false");
-  await expect(button).toBeFocused();
-  await button.press("Enter");
-  await outline(page).waitFor();
-  await button.press("Enter");
-  await expect(outline(page)).toBeHidden();
-  await button.press("Space");
+  await documentTool(page, "Document outline");
   await outline(page).waitFor();
   await page.keyboard.press("Escape");
-  await expect(button).toHaveAttribute("aria-expanded", "false");
-  await button.click();
+  await expect(outline(page)).toBeHidden();
+  await expect(page.getByRole("button", { name: "Document tools", exact: true }), "focus returns to ⋯").toBeFocused();
+  await documentTool(page, "Document outline");
+  await outline(page).waitFor();
   // Since 0.19.31 the document bar has no title field; click the page text outside the panel instead.
   await page.locator(".document-writing .cm-content").click();
   await outline(page).waitFor({ state: "hidden" });
-  await expect(button).toHaveAttribute("aria-expanded", "false");
 });
 
 test("the outline tree folds sections and jumps to headings without changing the file", async ({ page }) => {
   const s = await seedNotebook();
   await openNotebook(page, s);
-  await outlineButton(page).click();
+  await documentTool(page, "Document outline");
   await expect(outline(page).locator("ul ul ul")).toHaveCount(1);
   await outline(page).getByRole("button", { name: "Toggle First section headings", exact: true }).click();
   await expect(outline(page).getByRole("button", { name: "Nested heading", exact: true })).toBeHidden();
@@ -116,10 +103,10 @@ test("editing makes a page version, and restoring one keeps the folder and file"
   const start = (await s.current()).version;
   await openNotebook(page, s);
   // Editing produces a version; restoring produces another, preserving the folder.
-  await page.getByRole("button", { name: "Source", exact: true }).click();
+  await chooseDocumentView(page, "Source");
   await page.locator(".cm-content").fill("# Revised notebook\n\nNew content.");
   await expect.poll(async () => (await s.current()).version).toBe(start + 1);
-  await page.getByRole("button", { name: "Page versions", exact: true }).click();
+  await documentTool(page, "Page versions");
   const history = page.getByRole("dialog", { name: "Page versions", exact: true });
   await history.locator("[data-version-index]").filter({ hasText: `Version ${start}` }).click();
   await expect(history.locator("article")).toContainText("Final paragraph");
@@ -158,23 +145,11 @@ test("a folder is renamed from its Edit panel", async ({ page }) => {
 test("the outline fits desktop and phone screens in both themes, and phones open the document list", async ({ page }) => {
   const s = await seedNotebook({ folders: nestedFolders, folder: "meetings" });
   await openNotebook(page, s);
-  const button = outlineButton(page);
   for (const width of [1500, 390]) {
     await page.setViewportSize({ width, height: 1000 });
     for (const theme of ["light", "dark"]) {
       await setTheme(page, theme);
-      if (width === 390) {
-        // Since 0.18.35 narrow editors keep the outline in the Document tools menu.
-        await expect(button).toBeHidden();
-        await page.getByRole("button", { name: "Document tools", exact: true }).click();
-        await page.getByRole("dialog", { name: "Document tools", exact: true }).getByRole("button", { name: "Document outline", exact: true }).click();
-      } else {
-        await button.click();
-        await button.click();
-        await expect(outline(page)).toBeHidden();
-        await expect(button).toHaveAttribute("aria-expanded", "false");
-        await button.click();
-      }
+      await documentTool(page, "Document outline");
       await outline(page).waitFor();
       expect(await noHorizontalScroll(page), `${width} ${theme}`).toBe(true);
       const rect = await outline(page).boundingBox();
