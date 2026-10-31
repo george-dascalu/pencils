@@ -22,7 +22,8 @@ const header = (page) => page.locator(".topbar .breadcrumb").evaluate((crumb) =>
   return {
     heading: heading?.textContent.trim(),
     headingVisible: visible(heading),
-    trail: [...crumb.children].filter((el) => visible(el) && !el.matches("button.icon-button")).map((el) => el.textContent.trim()),
+    trail: [...crumb.children].filter((el) => visible(el) && !el.matches("button.icon-button, .document-tabs")).map((el) => el.textContent.trim()),
+    tab: crumb.querySelector(".document-tabs [aria-current=page]")?.textContent.trim() || null,
     tooltip: heading?.title || "",
   };
 });
@@ -67,10 +68,12 @@ onDevices(["phone", "ipad", "desktop"], () => test("an open document names itsel
   expect(current).toMatch(/notes/);
   await expect(heading(page)).toHaveText(current);
   const h = await header(page);
-  expect(h.trail).toEqual(device === "phone" ? [] : [current]);
+  // Desktop and iPad name it with its tab, in the title's place; phones show no title.
+  expect([h.trail, h.tab]).toEqual([[], device === "phone" ? null : current]);
   // Renaming the document (Document tools → Rename) renames the header.
   await renameDocument(page, `Weekly ${device} notes`);
   await expect(heading(page)).toHaveText(`Weekly ${device} notes`);
+  if (device !== "phone") await expect(page.locator(".topbar .document-tabs [aria-current=page]")).toHaveText(`Weekly ${device} notes`);
   await expect.poll(async () => (await app.store.snapshot(app.project.id)).documents.find((d) => d.id === app.doc.id).title).toBe(`Weekly ${device} notes`);
 }));
 

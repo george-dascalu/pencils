@@ -2,6 +2,12 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.20.67 — 2026-10-31
+
+### Changed
+
+- On desktop and iPad, a document's tabs move from their own strip above the document into the top bar, in place of the title and in its type, so the document starts higher. The close button shows on the open tab, or on hover.
+
 ## 0.20.66 — 2026-10-31
 
 ### Changed

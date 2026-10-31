@@ -354,7 +354,8 @@ button svg {
   font-size: 11px;
   color: #8a9086;
 }
-.breadcrumb strong {
+.breadcrumb strong,
+.breadcrumb .document-tab-open[aria-current="page"] {
   font-weight: 500;
   color: #535e51;
   max-width: 260px;

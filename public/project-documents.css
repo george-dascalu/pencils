@@ -100,26 +100,29 @@
 .document-pane { min-width: 0; min-height: 0; overflow: hidden; border-left: 1px solid var(--line); }
 .document-pane .document-heading { justify-content: flex-end; }
 .document-pane [data-document-pane-select] { flex: 0 1 260px; min-width: 0; margin-inline-end: auto; }
-/* Open documents as tabs, and a second document beside or below (project-documents.js). Phones
-   keep one document, also when a wider window narrows before the view next renders. */
+/* Open documents as tabs in the top bar, in the title's place and type (the heading stays for screen
+   readers), and a second document beside or below (project-documents.js). Phones keep one
+   document, also when a wider window narrows before the view next renders. */
 @media (min-width: 601px) and (min-height: 501px) {
-  .documents-workspace:has(> .document-tabs) { grid-template-rows: auto minmax(0, 1fr); }
+  .topbar .breadcrumb:has(> .document-tabs) > strong { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
   .documents-workspace[data-split="columns"] { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .documents-workspace[data-split] > .document-tabs { grid-column: 1 / -1; }
-  .documents-workspace[data-split="rows"]:has(> .document-tabs) { grid-template-rows: auto repeat(2, minmax(0, 1fr)); }
+  .documents-workspace[data-split="rows"] { grid-template-rows: repeat(2, minmax(0, 1fr)); }
   .documents-workspace[data-split="rows"] > .document-pane { border-left: 0; border-top: 1px solid var(--line); }
 }
+.main.project-main .topbar .breadcrumb > .document-tabs { display: flex; flex-shrink: 1; gap: 2px; min-width: 0; max-width: 50vw; overflow-x: auto; scrollbar-width: thin; }
 @media (max-width: 600px), (max-height: 500px) {
-  .document-tabs, .document-pane { display: none; }
+  .main.project-main .topbar .breadcrumb > .document-tabs, .document-pane { display: none; }
 }
-.document-tabs { display: flex; gap: 2px; padding: 4px 8px 0; overflow-x: auto; border-bottom: 1px solid var(--line); background: var(--surface-soft); scrollbar-width: thin; }
-.document-tab { display: flex; flex: 0 1 220px; min-width: 120px; align-items: center; border: 1px solid transparent; border-bottom: 0; border-radius: var(--radius-md) var(--radius-md) 0 0; }
-.document-tab:has([aria-current="page"]) { background: var(--surface); border-color: var(--line); }
-.document-tab-open { display: flex; flex: 1; min-width: 0; min-height: var(--control-height); align-items: center; gap: 6px; padding: 0 8px; border: 0; background: none; color: var(--muted); font: inherit; font-size: var(--type-body); cursor: pointer; }
-.document-tab-open[aria-current="page"] { color: var(--ink); }
+.document-tab { display: flex; flex: 0 1 auto; min-width: 120px; max-width: 240px; align-items: center; }
+/* Other tabs share the title's type (project-layout.css) in a muted colour; the open one is the title. */
+.document-tab-open { display: flex; min-width: 0; min-height: var(--control-height); align-items: center; padding: 0 4px; border: 0; background: none; color: var(--muted); font: inherit; cursor: pointer; }
 .document-tab-open span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.document-tab-open .icon { width: 14px; height: 14px; flex-shrink: 0; }
+.document-tab-open .icon { display: none; }
 .document-tab .icon-button { flex-shrink: 0; }
+/* Like the title, the tabs sit on the bar itself: plain close buttons, shown on the open tab or on
+   hover and focus. */
+.topbar .document-tab .icon-button { background: none; border-color: transparent; }
+.topbar .document-tab:not(:has([aria-current="page"]), :hover, :focus-within) .icon-button { opacity: 0; pointer-events: none; }
 @media (pointer: coarse) {
   .document-tab-open, .document-tab .icon-button, .document-pane .document-heading :is(button, select) { min-width: 44px; min-height: 44px; }
 }

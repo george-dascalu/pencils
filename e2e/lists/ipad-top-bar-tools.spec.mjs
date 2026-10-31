@@ -63,7 +63,8 @@ onDevices(["ipad", "ipad-portrait"], () => test("Board, Planning and documents p
     await expect(star, `${device} ${name}: the star is in the top bar`).toHaveAttribute("data-kind", kind);
     await expect(page.locator(".bookmark-button"), `${device} ${name}: one star`).toHaveCount(1);
     await expect(star).toBeVisible();
-    const [box, title] = [await star.boundingBox(), await page.locator(".topbar .breadcrumb strong").boundingBox()];
+    // A document's tabs show in the title's place (the heading stays for screen readers).
+    const [box, title] = [await star.boundingBox(), await page.locator(name === "document" ? ".topbar .breadcrumb .document-tabs" : ".topbar .breadcrumb strong").boundingBox()];
     expect(box.x + box.width, `${device} ${name}: before the title`).toBeLessThanOrEqual(title.x);
     expect(Math.abs(box.y + box.height / 2 - (title.y + title.height / 2)), `${device} ${name}: level with the title`).toBeLessThanOrEqual(4);
     await star.click();

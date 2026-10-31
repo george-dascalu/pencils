@@ -214,7 +214,7 @@
   height: 100%;
   min-height: 0;
 }
-.main.project-main .breadcrumb strong {
+.main.project-main .breadcrumb :is(strong, .document-tab-open) {
   font-size: 14px;
   font-weight: 600;
   max-width: 40vw;

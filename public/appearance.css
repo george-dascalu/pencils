@@ -443,6 +443,7 @@ body {
     .task-title,
     .task-name,
     .breadcrumb strong,
+    .breadcrumb .document-tab-open[aria-current="page"],
     .project-card strong,
     .dashboard-metrics strong,
     .planning-head h2,

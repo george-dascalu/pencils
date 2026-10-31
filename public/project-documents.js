@@ -736,6 +736,7 @@ export function projectDocuments(ctx) {
     button.dataset.configured = String(!!uri);
   }
   function reset() {
+    document.querySelector(".topbar .document-tabs")?.remove();
     const host = document.querySelector("#sidebar-documents");
     if (host) host.innerHTML = "";
     document.querySelector(".sidebar")?.removeAttribute("data-documents");
@@ -864,6 +865,13 @@ export function projectDocuments(ctx) {
   // Re-sync after project-layout.js's toolbar reset, which removes any tray. Media query lists
   // report changes oldest first and this module loads later, so the width list made here fires
   // after project-layout.js's own; on tabBar, listeners run in the order they were added.
+  // Desktop and iPad: the open documents' tabs take the title's place in the top bar, also after the
+  // window grows from a phone's size or a short height.
+  function placeTabs() {
+    document.querySelector(".topbar .document-tabs")?.remove();
+    if (current && state.view === "documents" && !narrow()) document.querySelector(".topbar .breadcrumb strong")?.insertAdjacentHTML("afterend", tabsHTML());
+  }
+  matchMedia("(max-width: 600px), (max-height: 500px)").addEventListener("change", placeTabs);
   const resyncTray = () => { if (state.view === "documents") syncTray(); };
   tabBar.addEventListener("change", resyncTray);
   matchMedia("(max-width: 600px)").addEventListener("change", resyncTray);
@@ -899,7 +907,7 @@ export function projectDocuments(ctx) {
       host.closest(".sidebar")?.setAttribute("data-documents", "shown");
     }
     syncTray();
-    content.innerHTML = `<div class="documents-workspace" data-has-document="${!!doc}">${doc && !narrow() ? tabsHTML() : ""}
+    content.innerHTML = `<div class="documents-workspace" data-has-document="${!!doc}">
       <section class="document-editor" aria-label="Document content">${doc ? `
         <form id="document-form" data-document-width="${documentWidth}">
           <!-- One bar: formatting on the left, the document's own controls on the right. The name
@@ -930,8 +938,10 @@ export function projectDocuments(ctx) {
           <footer class="document-save"><span data-document-stats></span></footer>
         </form>` : `<div class="empty document-empty">${icon("file")}<h2>${state.selectedDocument ? "Document unavailable" : "A home for your project notes"}</h2><p>${state.selectedDocument ? "Choose another document from the explorer." : "Write briefs, meeting notes and reference documents."}</p><button type="button" class="button soft" data-document-action="create">${icon("plus")}New document</button><button type="button" class="button document-empty-browse" data-document-action="browse">${icon("documents")}Browse documents</button></div>`}
       </section></div>`;
+    document.querySelector(".topbar .document-tabs")?.remove();
     if (!doc) return;
     current = doc;
+    placeTabs();
     project = state.project.id;
     form = document.querySelector("#document-form");
     renderer = documentMarkdown({ documents: all, project: () => project, esc, icon, cards: () => state.tasks || [], cardHTML });
