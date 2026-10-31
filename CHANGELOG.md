@@ -2,6 +2,12 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.20.75 — 2026-10-31
+
+### Changed
+
+- The organisation's home no longer has its own New project button; the + beside Projects in the sidebar makes projects.
+
 ## 0.20.74 — 2026-10-31
 
 ### Changed

@@ -844,7 +844,7 @@ function welcomePage() {
         .split("\n")
         .find((line) => line.trim()) ||
         "All your projects, together in one place.",
-    )}</p></div><button class="button primary" data-action="project-new">${icon("plus")}New project</button></section><section class="content organisation-overview"><h2 class="section-title">Projects<span class="count">${projects.length}</span><span class="line"></span></h2><div class="project-grid">${projects
+    )}</p></div></section><section class="content organisation-overview"><h2 class="section-title">Projects<span class="count">${projects.length}</span><span class="line"></span></h2><div class="project-grid">${projects
       .map(
         (project) =>
           `<button class="project-card" data-action="project-open" data-id="${esc(project.id)}"><span class="project-card-top"><span class="project-mark" style="background:${safeColor(project.color)}"></span>${icon("arrow")}</span><strong>${esc(project.title)}</strong><span>${esc(

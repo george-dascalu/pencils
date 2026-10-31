@@ -158,7 +158,9 @@ const interactions = [
     await page.waitForTimeout(500);
   }],
   ["new-project", `#organisation/${ORG}/home`, ".main", async (page) => {
-    await page.getByRole("button", { name: /new project/i }).first().click();
+    // The sidebar's + beside Projects is the one New project control (0.20.75).
+    await page.locator(".topbar .mobile-menu").click();
+    await page.locator('.sidebar .side-label [data-action="project-new"]').click();
     await page.waitForTimeout(400);
   }],
   ["new-organisation", `#home`, ".main", async (page) => {

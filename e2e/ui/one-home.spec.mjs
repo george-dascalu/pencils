@@ -1,7 +1,8 @@
 // Owner request, 31 October 2026: one action, one home. Each of these actions had a second copy:
 // the board's More menu repeated the tool bar, the sidebar had two New project buttons and an
 // organisation settings button beside the Settings button, Settings → You repeated Search, and
-// task views kept a hidden caption. Timeline's Range wore the Weekends icon.
+// task views kept a hidden caption. Timeline's Range wore the Weekends icon. The organisation's
+// home had its own New project button (0.20.75).
 import { test, expect, onDevices, useApp } from "../fixtures.mjs";
 import { openSettingsPage, openSidebar } from "../helpers/menu-controls.mjs";
 
@@ -41,6 +42,16 @@ onDevices(["desktop", "phone"], () => test("the sidebar has one New project butt
   await create.click();
   await expect(page.locator("#project-form"), `${device}: the + creates a project`).toBeVisible();
 }));
+
+// Owner request (T3, 0.20.75): the organisation's home leaves New project to the sidebar's +.
+test("the organisation home has no New project button of its own", async ({ page }) => {
+  await page.goto(`${app.base}/#organisation/${app.project.organisation}/home`);
+  await page.locator(".organisation-overview .project-card").first().waitFor();
+  await expect(page.locator('.main [data-action="project-new"]')).toHaveCount(0);
+  await openSidebar(page);
+  await page.locator('.sidebar [data-action="project-new"]').click();
+  await expect(page.locator("#project-form"), "the sidebar's + creates a project from the home").toBeVisible();
+});
 
 test("Settings → You leaves search to the Search button", async ({ page }) => {
   await page.goto(`${app.base}/#project/${app.project.id}/list`);
