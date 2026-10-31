@@ -34,8 +34,8 @@ onDevices(["desktop", "phone"], () => test("Today opens the day's note in the pe
 
 test("the personal space stays out of organisation project lists", async ({ page }) => {
   await page.goto(`${app.base}/#project/${app.project.id}/list`);
-  await expect(page.locator(".project-links")).toContainText("Shared work");
-  await expect(page.locator(".project-links")).not.toContainText("Personal");
+  await expect(page.locator("#project-select")).toContainText("Shared work");
+  await expect(page.locator("#project-select")).not.toContainText("Personal");
   await openSidebar(page);
   await page.locator(".sidebar").getByRole("button", { name: "Personal", exact: true }).click();
   await expect(page.locator(".topbar strong")).toHaveText("Personal");

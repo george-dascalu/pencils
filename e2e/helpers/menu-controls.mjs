@@ -22,6 +22,12 @@ export async function reveal(locator) {
 export async function clickControl(locator) {
   await (await reveal(locator)).click();
 }
+// The sidebar's Projects dropdown opens a project (0.20.85): the one with this id, or the first.
+export async function chooseProject(page, id) {
+  const select = page.locator("#project-select");
+  await reveal(select);
+  await select.selectOption(id ?? (await select.locator('option:not([value=""])').first().getAttribute("value")));
+}
 
 // Phones use the same view tabs as a bottom bar (0.19.33), where tapping the open Documents
 // tab lists documents instead, so an open tab is left alone.

@@ -4,7 +4,7 @@
 // tabs and project actions on desktop and phone widths, and the header columns never overlap.
 // Part of the cross-browser release gate.
 import { test, expect, useApp } from "../fixtures.mjs";
-import { reveal, selectProjectView, selectSettingsPage, openSettingsPage, clickControl } from "../helpers/menu-controls.mjs";
+import { reveal, selectProjectView, selectSettingsPage, openSettingsPage, chooseProject } from "../helpers/menu-controls.mjs";
 
 const app = useApp(async (store) => {
   const project = await store.demo();
@@ -16,8 +16,8 @@ const app = useApp(async (store) => {
 
 const openProject = async (page) => {
   await page.goto(app.base);
-  await clickControl(page.locator(`.project-link[data-id="${app.project.id}"]`));
-  await page.locator(`.project-link.active[data-id="${app.project.id}"]`).waitFor({ state: "attached" });
+  await chooseProject(page, app.project.id);
+  await expect(page.locator('.topbar [role="heading"]')).toHaveText(app.project.title);
 };
 const pressedTaskLayout = (page) => page.locator('.task-view-switcher [aria-pressed="true"]');
 async function boxOf(page, selector) {
@@ -68,16 +68,16 @@ test("one Tasks tab owns every task layout, with shared search and keyboard sele
 test("each project remembers its own layout, including across reloads", { tag: "@gate" }, async ({ page }) => {
   await openProject(page);
   await selectProjectView(page, "table");
-  await clickControl(page.locator(`.project-link[data-id="${app.otherProject.id}"]`));
-  await page.locator(`.project-link.active[data-id="${app.otherProject.id}"]`).waitFor({ state: "attached" });
+  await chooseProject(page, app.otherProject.id);
+  await expect(page.locator('.topbar [role="heading"]')).toHaveText(app.otherProject.title);
   await expect(pressedTaskLayout(page)).toHaveAttribute("data-view", "tree");
   await selectProjectView(page, "list");
   await selectProjectView(page, "board");
   await page.reload();
   await page.locator('.tabs [data-view="tasks"]').click();
   await expect(pressedTaskLayout(page)).toHaveAttribute("data-view", "list");
-  await clickControl(page.locator(`.project-link[data-id="${app.project.id}"]`));
-  await page.locator(`.project-link.active[data-id="${app.project.id}"]`).waitFor({ state: "attached" });
+  await chooseProject(page, app.project.id);
+  await expect(page.locator('.topbar [role="heading"]')).toHaveText(app.project.title);
   await expect(pressedTaskLayout(page)).toHaveAttribute("data-view", "table");
   // The command palette switches layouts as well.
   await selectProjectView(page, "board");

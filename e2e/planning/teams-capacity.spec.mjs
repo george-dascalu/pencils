@@ -5,7 +5,7 @@
 // desktop and phone screens in both themes and opens tasks in the shared editor.
 // Part of the cross-browser release gate.
 import { test, expect, useApp } from "../fixtures.mjs";
-import { selectProjectView, selectSettingsPage, clickControl, openSettingsPage } from "../helpers/menu-controls.mjs";
+import { selectProjectView, selectSettingsPage, openSettingsPage, chooseProject } from "../helpers/menu-controls.mjs";
 import { newCard } from "../helpers/new-card.mjs";
 
 const today = new Date().toLocaleDateString("en-CA");
@@ -76,7 +76,7 @@ test("adding a member to the project's team makes them assignable on a new card"
   await page.getByText("Organisation saved.", { exact: true }).waitFor();
   const org = await app.store.getOrganisation(project.organisation);
   expect(org.teams[0].members).toEqual([org.people[0].id]);
-  await clickControl(page.locator(`.project-link[data-id="${project.id}"]`));
+  await chooseProject(page, project.id);
   await newCard(page);
   await expect(page.locator("#task-assignee-help")).toHaveCount(0);
   await page.locator("#task-form [name=title]").fill("Planned work");

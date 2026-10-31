@@ -4,7 +4,7 @@
 // and Board, and the Board shows the saved status after a reload. The editor fits desktop and
 // phone widths in both themes.
 import { test, expect, useApp } from "../fixtures.mjs";
-import { selectProjectView, selectSettingsPage, clickControl, openSettingsPage } from "../helpers/menu-controls.mjs";
+import { selectProjectView, selectSettingsPage, openSettingsPage, chooseProject } from "../helpers/menu-controls.mjs";
 import { newCard } from "../helpers/new-card.mjs";
 
 const app = useApp(async (store) => {
@@ -34,7 +34,7 @@ async function openWorkflow(page) {
 
 test("the workflow editor renames, restricts and protects statuses, and guards unsaved changes", async ({ page }) => {
   await page.goto(app.base);
-  await clickControl(page.locator(".project-link"));
+  await chooseProject(page);
   await openSettingsPage(page);
   await selectSettingsPage(page, "workflow");
   await row(page, "todo").locator("[data-status-name]").fill("Ready queue");

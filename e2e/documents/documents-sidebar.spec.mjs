@@ -26,7 +26,7 @@ onDevices(["desktop", "ipad-portrait"], () => test("the document tree sits in th
   await expect(page.locator(".documents-workspace .document-explorer"), "no explorer column in the workspace").toHaveCount(0);
   expect(await shown(page, '.document-heading [data-document-action="browse"]'), "no second menu button").toBe(0);
   // The tree follows the projects in the sidebar.
-  const [projects, docs] = await Promise.all([page.locator(".sidebar .project-links").boundingBox(), tree.boundingBox()]);
+  const [projects, docs] = await Promise.all([page.locator(".sidebar .project-switch").boundingBox(), tree.boundingBox()]);
   expect(docs.y, "documents follow the projects").toBeGreaterThanOrEqual(projects.y + projects.height - 1);
   // Opening another document from the sidebar.
   await tree.locator("[data-document-open]", { hasText: "Project brief" }).click();
@@ -69,11 +69,11 @@ onDevices(["phone"], () => {
     await page.locator(".sidebar.open").waitFor();
     await expect(page.locator(".sidebar")).toHaveAttribute("data-drawer-level", "documents");
     await expect.poll(() => shown(page, ".sidebar .sidebar-documents [data-document-open]"), "the document list shows").toBeGreaterThanOrEqual(2);
-    expect(await shown(page, ".sidebar .project-links"), "projects wait on the first level").toBe(0);
+    expect(await shown(page, ".sidebar .project-switch"), "projects wait on the first level").toBe(0);
     // Back returns to the menu.
     await clickControl(page.locator(".sidebar [data-drawer-back]"));
     await expect(page.locator(".sidebar")).toHaveAttribute("data-drawer-level", "menu");
-    await expect.poll(() => shown(page, ".sidebar .project-links")).toBeGreaterThan(0);
+    await expect.poll(() => shown(page, ".sidebar .project-switch")).toBeGreaterThan(0);
     await expect.poll(() => shown(page, ".sidebar .sidebar-documents")).toBe(0);
   });
 

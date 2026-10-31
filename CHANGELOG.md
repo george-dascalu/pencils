@@ -2,6 +2,12 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.20.85 — 2026-10-31
+
+### Changed
+
+- The sidebar's Organisation and Projects share one style: each is a dropdown under its title, with + beside the title to make a new organisation or project. Choosing a project from the dropdown opens it and closes the sidebar.
+
 ## 0.20.84 — 2026-10-31
 
 ### Changed

@@ -5,7 +5,7 @@
 // its own workflow. On phones the drawer opens and closes and the Settings page fits the screen.
 // Nothing is requested from outside the local server.
 import { test, expect, onDevices, useApp } from "../fixtures.mjs";
-import { openSettingsPage, selectProjectView, clickControl, openSidebar } from "../helpers/menu-controls.mjs";
+import { openSettingsPage, selectProjectView, clickControl, openSidebar, chooseProject } from "../helpers/menu-controls.mjs";
 import { newCard } from "../helpers/new-card.mjs";
 
 const app = useApp(async (store) => ({
@@ -49,7 +49,7 @@ const statusOptions = (page) => page.locator("#task-form [name=status] option").
 // Since 0.20.24 the sidebar opens over the page on every device and starts closed.
 test("the closed sidebar is hidden from assistive technology, and opening it leaves the page in place", async ({ page }) => {
   await page.goto(app.base);
-  await clickControl(page.locator(`[data-action=project-open][data-id="${app.project.id}"]`));
+  await chooseProject(page, app.project.id);
   await expect(page.locator(".sidebar")).toBeHidden();
   expect(await page.locator(".sidebar").evaluate((el) => el.inert)).toBe(true);
   await expect(page.locator(".main")).toBeVisible();

@@ -137,15 +137,15 @@ onDevices(["phone"], () => test("PEN-1 the phone drawer is compact: close beside
   await page.locator(".sidebar.open").waitFor();
   const [brand, close] = await Promise.all([rect(page.locator(".sidebar .brand")), rect(page.locator(".sidebar .phone-drawer-close"))]);
   expect(close.top < brand.bottom && close.bottom > brand.top, `close button shares the brand row: ${JSON.stringify({ brand, close })}`).toBe(true);
-  const labels = await page.evaluate(() => [...document.querySelectorAll(".sidebar .side-label, .sidebar .organisation-choice > span")]
+  const labels = await page.evaluate(() => [...document.querySelectorAll(".sidebar .side-label")]
     .map((el) => `${getComputedStyle(el).textTransform}/${getComputedStyle(el).fontSize}`));
   expect(labels.length, "labels found").toBeGreaterThanOrEqual(2);
   expect(new Set(labels).size, `section labels share one style: ${labels.join(", ")}`).toBe(1);
   // Since 0.19.33 views live in the bottom tab bar; the drawer lists projects, with Settings and
   // Help at the bottom.
-  const [projects, settings] = await Promise.all([rect(page.locator(".sidebar .project-links")), rect(page.locator(".sidebar .phone-drawer-utilities"))]);
+  const [projects, settings] = await Promise.all([rect(page.locator(".sidebar .project-switch")), rect(page.locator(".sidebar .phone-drawer-utilities"))]);
   expect(settings.top, "settings sit below the projects").toBeGreaterThanOrEqual(projects.bottom);
-  const tall = await page.evaluate(() => [...document.querySelectorAll(".sidebar .project-link, .sidebar .directory-link, .sidebar .phone-drawer-utilities .button")]
+  const tall = await page.evaluate(() => [...document.querySelectorAll(".sidebar .directory-link, .sidebar .phone-drawer-utilities .button")]
     .filter((el) => el.getBoundingClientRect().height > 48).length);
   expect(tall, "drawer rows are at most 48px tall").toBe(0);
 }));

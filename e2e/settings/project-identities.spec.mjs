@@ -2,7 +2,7 @@
 // dialog) renumbers task IDs everywhere. The board's task picker finds tasks by the new ID and
 // cards created on the board join the same project records and numbering.
 import { test, expect, onDevices, useApp } from "../fixtures.mjs";
-import { selectProjectView, clickControl, openSettingsPage } from "../helpers/menu-controls.mjs";
+import { selectProjectView, openSettingsPage, chooseProject } from "../helpers/menu-controls.mjs";
 
 const app = useApp(async (store) => {
   const project = await store.createProject({ title: "Website", key: "WEB" });
@@ -16,7 +16,7 @@ test.describe("desktop", () => {
 
   test("a renamed project key renumbers tasks, which the board picker and board-created cards share", async ({ page }) => {
     await page.goto(app.base);
-    await clickControl(page.locator(".project-link"));
+    await chooseProject(page);
     await expect(page.locator("#view-content")).toContainText("WEB-1");
     // Since 0.19.31 one Settings button in the top bar opens the Settings page on the project's General.
     await openSettingsPage(page);

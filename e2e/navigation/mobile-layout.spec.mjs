@@ -48,7 +48,7 @@ onDevices(["phone"], () => {
     await goto(page, "list");
     await page.locator(".mobile-menu").click();
     await expect.poll(() => inert(page, ".main")).toBe(true);
-    await expect(page.locator(".sidebar .project-link").first()).toBeVisible();
+    await expect(page.locator("#project-select")).toBeVisible();
     // The page behind the open drawer is blurred a little, as behind dialogs (owner request, T12).
     await expect(page.locator(".sidebar-overlay")).toHaveCSS("backdrop-filter", "blur(3px)");
     await page.keyboard.press("Escape");

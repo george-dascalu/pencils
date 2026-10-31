@@ -248,7 +248,7 @@ export const helpArticles = [
       {
         id: "workspace",
         title: "Organisations, files and recovery",
-        html: '<p>Switch organisations in the sidebar. Each has projects; use project settings to move a project. Organisations live in <code>Organisations/</code>, tasks as Markdown under <code>Projects/</code>, and boards as native <code>.canvas</code> files. See <a href="#help/obsidian" data-action="help-article" data-id="obsidian">Obsidian</a> for using the files directly.</p><p>Shared mode lets trusted devices reaching the server edit the workspace. Required accounts provide administrator, organisation editor and viewer access. <strong>Settings → Recovery &amp; backups</strong> holds browser drafts, history, trash and vault backups.</p>',
+        html: '<p>Switch organisations and projects with the two dropdowns in the sidebar; the + beside each title makes a new one. Each organisation has projects; use project settings to move a project. Organisations live in <code>Organisations/</code>, tasks as Markdown under <code>Projects/</code>, and boards as native <code>.canvas</code> files. See <a href="#help/obsidian" data-action="help-article" data-id="obsidian">Obsidian</a> for using the files directly.</p><p>Shared mode lets trusted devices reaching the server edit the workspace. Required accounts provide administrator, organisation editor and viewer access. <strong>Settings → Recovery &amp; backups</strong> holds browser drafts, history, trash and vault backups.</p>',
       },
     ],
   },

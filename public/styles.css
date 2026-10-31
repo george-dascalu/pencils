@@ -227,13 +227,6 @@ button svg {
   border-bottom: 1px solid #ffffff13;
   margin-bottom: 25px;
 }
-.workspace-icon {
-  background: #ffffff10;
-  border: 1px solid #ffffff18;
-  border-radius: calc(8px * var(--style-roundness, 1));
-  padding: 9px;
-  display: flex;
-}
 .workspace-switch strong {
   font-size: 13px;
   font-weight: 500;
@@ -261,13 +254,7 @@ button svg {
   place-items: center;
   padding: 2px;
 }
-.project-links {
-  display: flex;
-  flex-direction: column;
-  gap: 5px;
-  overflow: auto;
-}
-:is(.project-link, .directory-link) {
+.directory-link {
   display: flex;
   gap: 10px;
   align-items: center;
@@ -278,15 +265,10 @@ button svg {
   color: #c7d3c8;
   line-height: 1.5;
 }
-.project-link span:last-child {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-:is(.project-link, .directory-link):hover {
+.directory-link:hover {
   background: #ffffff08;
 }
-:is(.project-link, .directory-link).active {
+.directory-link.active {
   background: #d2e3a41a;
   color: #e0edbd;
 }
@@ -1957,30 +1939,17 @@ input[type="search"]:not(.search input) {
   }
 }
 
-.organisation-switch {
-  margin-bottom: 23px;
-  border-top: 1px solid #ffffff13;
-  border-bottom: 1px solid #ffffff13;
-  padding: 16px 10px 12px;
+/* Organisation and Projects share one style: a title with + on its right over a dropdown. */
+.sidebar-switch {
+  margin: 12px 0 8px;
 }
-.organisation-switch-row {
-  display: flex;
-  align-items: center;
-  gap: 10px;
+.sidebar-switch .side-label {
+  padding-bottom: 4px;
 }
-.organisation-choice {
-  display: block;
-  min-width: 0;
-  flex: 1;
+.sidebar-choice {
+  padding: 0 13px;
 }
-.organisation-choice > span {
-  display: block;
-  font-size: 9px;
-  letter-spacing: 0.12em;
-  color: #a5b3a8;
-  margin-bottom: 5px;
-}
-.organisation-choice select {
+.sidebar-choice select {
   appearance: none;
   display: block;
   width: 100%;
@@ -1997,36 +1966,19 @@ input[type="search"]:not(.search input) {
   cursor: pointer;
   text-overflow: ellipsis;
 }
-.organisation-choice option {
+.sidebar-choice select:disabled {
+  color: #a1b1a4;
+  background-image: none;
+  cursor: default;
+}
+.sidebar-choice option {
   background: #263c34;
   color: #edf2e7;
 }
-.organisation-choice select:focus {
+.sidebar-choice select:focus {
   box-shadow: none;
   outline: 1px solid #b3c891;
   outline-offset: -1px;
-}
-.organisation-actions {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-top: 12px;
-  gap: 5px;
-}
-.organisation-actions button {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  font-size: 10px;
-  color: #adbea9;
-  padding: 3px 0;
-}
-.organisation-actions button:hover {
-  color: #e0edbd;
-}
-.organisation-actions .icon {
-  width: 13px;
-  height: 13px;
 }
 .breadcrumb {
   min-width: 0;

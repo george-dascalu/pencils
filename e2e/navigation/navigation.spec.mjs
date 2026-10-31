@@ -4,7 +4,7 @@
 // edits autosave on Back and an invalid open editor is never discarded. Compact phone-width
 // controls and legacy drawing links use the same router. Part of the cross-browser release gate.
 import { test, expect, useApp } from "../fixtures.mjs";
-import { selectProjectView, clickControl, openSettingsPage, openSidebar } from "../helpers/menu-controls.mjs";
+import { selectProjectView, clickControl, openSettingsPage, openSidebar, chooseProject } from "../helpers/menu-controls.mjs";
 import { chooseBoard } from "../helpers/board-canvas.mjs";
 
 const app = useApp(async (store) => {
@@ -28,7 +28,7 @@ async function at(page, hash) {
     const route = history.state.route;
     if (!route.project)
       return !document.querySelector(".tabs") && (route.page === "home" ? !document.querySelector(".project-settings-page") : !!document.querySelector("#settings-page-title"));
-    if (document.querySelector(".project-link.active")?.dataset.id !== route.project) return false;
+    if (document.querySelector("#project-select")?.value !== route.project) return false;
     if (route.view === "overview") return !!document.querySelector(".project-overview");
     if (route.view === "settings") return !!document.querySelector("#project-form");
     if (route.view === "board") return route.gallery ? !!document.querySelector(".drawing-gallery") : document.querySelector(".board-tools")?.dataset.board === route.board;
@@ -155,9 +155,9 @@ test("Back saves task edits and never discards an invalid open editor", { tag: "
 test("the latest destination wins when a second Back arrives during a project request", { tag: "@gate" }, async ({ page }) => {
   const { project, second } = app;
   await start(page);
-  await clickControl(page.locator(`.project-link[data-id="${second.id}"]`));
+  await chooseProject(page, second.id);
   await at(page, projectRoute("list", second.id));
-  await clickControl(page.locator(`.project-link[data-id="${project.id}"]`));
+  await chooseProject(page, project.id);
   await at(page, projectRoute("overview"));
   // A slow response for the second project keeps its request in flight while Back is pressed again.
   await page.route(`**/api/projects/${second.id}`, async (route) => {
@@ -175,7 +175,7 @@ test("the latest destination wins when a second Back arrives during a project re
 test("a missing destination keeps the current page and Forward history", { tag: "@gate" }, async ({ page }) => {
   const { project, second } = app;
   await start(page);
-  await clickControl(page.locator(`.project-link[data-id="${second.id}"]`));
+  await chooseProject(page, second.id);
   await at(page, projectRoute("list", second.id));
   await page.route(`**/api/projects/${project.id}`, (route) =>
     route.fulfill({ status: 404, contentType: "application/json", body: JSON.stringify({ error: "Project no longer available" }) }),

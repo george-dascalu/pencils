@@ -879,19 +879,15 @@ html.table-viewport-view body {
      edge and the shared touch type sizes. */
   .sidebar { width: min(320px, calc(100vw - 36px)); padding: 8px 12px 12px; }
   .sidebar .brand { padding: 4px 4px 10px; }
-  .sidebar .organisation-switch { margin: 8px 0 0; padding: 0; border: 0; }
-  .sidebar .organisation-switch .workspace-icon { display: none; }
-  .sidebar .organisation-choice select { padding-inline: 12px 28px; font-size: var(--type-body); background-position: right 12px center; min-height: 44px; }
-  .sidebar .organisation-actions { margin: 0; padding-inline: 12px; }
-  .sidebar .organisation-actions button { font-size: var(--type-small); min-height: 44px; }
+  .sidebar .sidebar-switch { margin: 8px 0 0; }
+  .sidebar .sidebar-choice { padding: 0; }
+  .sidebar .sidebar-choice select { padding-inline: 12px 28px; font-size: var(--type-body); background-position: right 12px center; min-height: 44px; }
   .sidebar .side-label { padding: 12px 12px 4px; }
-  .sidebar :is(.project-link, .directory-link) { min-height: 44px; margin: 0; padding: 0 12px; font-size: var(--type-body); }
-  .sidebar .project-links { gap: 0; }
+  .sidebar .directory-link { min-height: 44px; margin: 0; padding: 0 12px; font-size: var(--type-body); }
   /* Every drawer section label shares one small-caps style and left edge. */
-  .sidebar .side-label, .sidebar .organisation-choice > span {
+  .sidebar .side-label {
     font-size: var(--type-meta); font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: #a1b1a4;
   }
-  .sidebar .organisation-choice > span { margin: 0; padding: 12px 12px 0; }
   .sidebar .phone-drawer-utilities .button {
     /* 48px tiles (PEN-1: drawer rows stay compact), still 44px+ targets. */
     flex-direction: column; justify-content: center; gap: 2px; height: 48px !important; min-height: 48px;

@@ -15,7 +15,7 @@ const app = useApp(async (store) => {
 onDevices(["desktop", "phone"], () => test("the sidebar has no Teams section", async ({ page, device }) => {
   await page.goto(`${app.base}/#project/${app.project.id}/list`);
   await openSidebar(page);
-  await expect(page.locator(".sidebar .project-links")).toBeVisible();
+  await expect(page.locator(".sidebar .project-switch")).toBeVisible();
   await expect(page.locator(".sidebar :is(.sidebar-directory, [data-page=teams], [data-page=people])"), device).toHaveCount(0);
 }));
 

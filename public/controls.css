@@ -108,8 +108,8 @@ textarea,
 
 :is(
   .button, .icon-button, .tab, .task-picker-trigger,
-  .project-link, .directory-link,
-  .organisation-actions button, .side-label button, .settings-navigation nav a,
+  .directory-link,
+  .side-label button, .settings-navigation nav a,
   .board-menu > summary, .selection-menu > summary, .color-picker > summary,
   .view-layout-switcher button, .selection-action, .symbol-select,
   .board-tools button,

@@ -219,7 +219,7 @@ test("organisations are created and renamed, scope their projects, and are remem
   await expect(selected).toHaveText("Acme Studio");
   studio = (await app.store.listOrganisations()).organisations.find((o) => o.title === "Acme Studio");
   expect(studio).toBeTruthy();
-  await expect(page.locator(".project-link")).toHaveCount(0);
+  await expect(page.locator('#project-select option:not([value=""])')).toHaveCount(0);
   await expect(page.locator(".task-row")).toHaveCount(0);
   for (const title of ["Website refresh", "Marketing launch"]) {
     await click(page, "project-new");
@@ -228,7 +228,7 @@ test("organisations are created and renamed, scope their projects, and are remem
     await page.locator('#project-form [type="submit"]').click();
     await expect(page.getByRole("heading", { name: title, exact: true })).toBeVisible();
   }
-  await expect(page.locator(".project-link")).toHaveCount(2);
+  await expect(page.locator('#project-select option:not([value=""])')).toHaveCount(2);
   expect((await app.store.list(studio.id)).projects).toHaveLength(2);
   await openSettingsPage(page, "organisation");
   await page.locator('#organisation-form [name="title"]').fill("Acme Collective");
@@ -239,7 +239,7 @@ test("organisations are created and renamed, scope their projects, and are remem
   await openSidebar(page);
   await page.locator("#organisation-select").selectOption("o-default");
   await expect(page.getByRole("heading", { name: original.title, exact: true })).toBeVisible();
-  await expect(page.locator(".project-link")).toHaveCount(1);
+  await expect(page.locator('#project-select option:not([value=""])')).toHaveCount(1);
   await openSidebar(page);
   await page.locator("#organisation-select").selectOption(studio.id);
   await expect(page.getByRole("heading", { name: "Marketing launch", exact: true })).toBeVisible();
@@ -258,7 +258,7 @@ test("moving a project to another organisation keeps its tasks and canvases, and
   await page.locator('#project-form [name="organisation"]').selectOption(studio.id);
   await page.locator('#project-form [type="submit"]').click();
   await expect(page.locator("#organisation-select")).toHaveValue(studio.id);
-  await expect(page.locator(".project-link")).toHaveCount(3);
+  await expect(page.locator('#project-select option:not([value=""])')).toHaveCount(3);
   // The project settings page refreshes the workspace before navigation settles.
   await expect(page.locator("#toasts").getByText("Teams saved.", { exact: true })).toBeVisible();
   const afterMove = await snapshot();
@@ -269,7 +269,7 @@ test("moving a project to another organisation keeps its tasks and canvases, and
   await openSidebar(page);
   await page.locator("#organisation-select").selectOption("o-default");
   await expect(page.getByRole("heading", { name: /A little space for your/ })).toBeVisible();
-  await expect(page.locator(".project-link")).toHaveCount(0);
+  await expect(page.locator('#project-select option:not([value=""])')).toHaveCount(0);
   await expect(page.locator('[data-action="task-open"]')).toHaveCount(0);
   await page.reload();
   await expect(page.getByRole("heading", { name: /A little space for your/ })).toBeVisible();

@@ -3,7 +3,7 @@
 // Obsidian .canvas import and a Miro import; a blank board goes into the chosen folder. Board
 // tools → Move to folder and dragging file a board. Phones open the drawer on the board list.
 import { test, expect, onDevices, useApp } from "../fixtures.mjs";
-import { clickControl, openSidebar } from "../helpers/menu-controls.mjs";
+import { clickControl, openSidebar, chooseProject } from "../helpers/menu-controls.mjs";
 
 const app = useApp(async () => ({}));
 // A project per test: one board at the root and one in the Ideas folder.
@@ -81,8 +81,8 @@ test("a folder chosen in one project doesn't follow you to another", async ({ pa
   await openSidebar(page);
   await section(page).locator('[data-board-folder="ideas"]').click();
   // Switch project in the app, so this page keeps the folder it chose.
-  await page.locator(`.sidebar .project-link[data-id="${other.id}"]`).click();
-  await expect(page.locator(".sidebar .project-link.active")).toHaveAttribute("data-id", other.id);
+  await chooseProject(page, other.id);
+  await expect(page.locator("#project-select")).toHaveValue(other.id);
   await page.locator(".topbar .new-menu:not(.phone-new-task) > summary").click();
   await page.locator(".topbar .new-menu:not(.phone-new-task)").getByRole("button", { name: "Board", exact: true }).click();
   await page.locator("#board-form [name=title]").fill("Elsewhere");

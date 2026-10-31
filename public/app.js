@@ -760,6 +760,14 @@ async function openOrganisation(id) {
     setLoading(false);
   }
 }
+// The sidebar's projects, a dropdown like the organisation's; it names no project outside one.
+function projectSelectHTML(p) {
+  // An archived project stays listed while it is open.
+  const listed = organisationProjects(), projects = p && !p.personal && !listed.some((project) => project.id === p.id) ? [...listed, p] : listed;
+  const current = projects.some((project) => project.id === p?.id);
+  const placeholder = current ? "" : `<option value="" selected disabled>${projects.length ? "Choose a project" : "No projects yet"}</option>`;
+  return `<select id="project-select" aria-label="Open project" ${projects.length ? "" : "disabled"}>${placeholder}${projects.map((project) => `<option value="${esc(project.id)}" ${project.id === p?.id ? "selected" : ""}>${esc(project.title)}</option>`).join("")}</select>`;
+}
 function renderApp() {
   keepFocus(renderAppNow);
 }
@@ -782,14 +790,8 @@ function renderAppNow() {
       <button class="brand" data-action="home" aria-label="Pencils home"><img src="/icon.svg" alt=""><span class="wordmark">pencils<span style="color:#b9d18c">.</span></span></button>
       <button class="icon-button phone-drawer-close" id="sidebar-close" data-action="menu" aria-label="Close navigation">${icon("close")}</button>
       <nav class="personal-links" aria-label="Personal"><button class="directory-link ${p?.personal ? "active" : ""}" data-action="personal-open" ${p?.personal ? 'aria-current="page"' : ""}>${icon("person")}<span>Personal</span></button><button class="directory-link" data-action="today">${icon("calendar")}<span>Today</span></button></nav>
-      <div class="organisation-switch"><div class="organisation-switch-row"><span class="workspace-icon" style="color:${safeColor(state.organisation?.color)}">${icon("folder")}</span><label class="organisation-choice"><span>ORGANISATION</span><select id="organisation-select" aria-label="Switch organisation">${state.organisations.map((o) => `<option value="${esc(o.id)}" ${o.id === state.organisation?.id ? "selected" : ""}>${esc(o.title)}</option>`).join("")}</select></label></div><div class="organisation-actions"><button data-action="organisation-new">${icon("plus")}New organisation</button></div></div>
-      <div class="side-label">PROJECTS<button data-action="project-new" aria-label="New project" title="New project">${icon("plus")}</button></div>
-      <nav class="project-links" aria-label="Projects">${organisationProjects()
-        .map(
-          (project) =>
-            `<button class="project-link ${project.id === p?.id ? "active" : ""}" data-action="project-open" data-id="${esc(project.id)}"><span class="project-mark" style="background:${safeColor(project.color)}"></span><span>${esc(project.title)}</span></button>`,
-        )
-        .join("")}</nav>
+      <section class="sidebar-switch organisation-switch" aria-label="Organisation"><div class="side-label">ORGANISATION<button data-action="organisation-new" aria-label="New organisation" title="New organisation">${icon("plus")}</button></div><div class="sidebar-choice"><select id="organisation-select" aria-label="Switch organisation">${state.organisations.map((o) => `<option value="${esc(o.id)}" ${o.id === state.organisation?.id ? "selected" : ""}>${esc(o.title)}</option>`).join("")}</select></div></section>
+      <section class="sidebar-switch project-switch" aria-label="Projects"><div class="side-label">PROJECTS<button data-action="project-new" aria-label="New project" title="New project">${icon("plus")}</button></div><div class="sidebar-choice">${projectSelectHTML(p)}</div></section>
       ${p ? '<section id="sidebar-documents" class="sidebar-documents" aria-label="Documents"></section>' : ""}
       <div class="phone-drawer-utilities" role="group" aria-label="Settings and help" style="--tiles:2"><button class="button" data-action="settings" aria-label="Settings" ${(p ? state.view === "settings" : state.directoryPage === "settings") ? 'aria-current="page"' : ""}>${icon("settings")}<span>Settings</span></button><button class="button" data-action="help" aria-label="Help & guides" ${state.helpArticle ? 'aria-current="page"' : ""}>${icon("help")}<span>Help</span></button></div>
       <div class="side-bottom">
@@ -819,8 +821,9 @@ function keepFocus(render) {
   const focused = document.activeElement !== document.body ? document.activeElement : null;
   const key = focusKey(focused);
   const result = render();
+  // A control in the closed sidebar can't take focus (the menu button shares its close button's action).
   if (key && !focused.isConnected && document.activeElement === document.body)
-    [...document.querySelectorAll(key)].find((el) => el.getClientRects().length)?.focus({ preventScroll: true });
+    [...document.querySelectorAll(key)].find((el) => el.getClientRects().length && !el.closest(".sidebar:not(.open)"))?.focus({ preventScroll: true });
   return result;
 }
 // A selector that finds the same control after a rebuild: a board object (or the board), an
@@ -2608,6 +2611,12 @@ document.addEventListener("change", async (event) => {
       if (!(await openOrganisation(el.value)))
         el.value = state.organisation?.id || "";
     }
+    if (el.id === "project-select") {
+      // Choosing a project closes the sidebar, as other choices in it do, with focus on its menu
+      // button as after Escape; a refused switch leaves the dropdown on the open project.
+      if (state.menu) setSidebarOpen(false);
+      if (!(await openProject(el.value))) el.value = state.project?.personal ? "" : state.project?.id || "";
+    }
     if (el.id === "filter-status") {
       state.status = el.value;
       state.page = 0;
@@ -2655,6 +2664,7 @@ document.addEventListener("change", async (event) => {
     toast(error.message, true);
     if (el.id === "organisation-select")
       el.value = state.organisation?.id || "";
+    if (el.id === "project-select") el.value = state.project?.personal ? "" : state.project?.id || "";
     if (el.dataset.taskField) {
       el.disabled = false;
       el.dataset.unsaved = "true";

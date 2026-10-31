@@ -156,7 +156,7 @@ function documentTests() {
 
   test("another project's Documents view shows none of these documents", async ({ page }) => {
     await page.goto(`${app.base}/#project/${app.other.id}/documents`);
-    await page.locator(`.project-link.active[data-id="${app.other.id}"]`).waitFor({ state: "attached" });
+    await expect(page.locator("#project-select")).toHaveValue(app.other.id);
     await page.locator(".documents-workspace").waitFor();
     await expect(page.locator("[data-document-open]")).toHaveCount(0);
     expect((await app.store.snapshot(app.other.id)).documents).toHaveLength(0);

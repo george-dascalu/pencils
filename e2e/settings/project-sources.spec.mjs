@@ -7,7 +7,7 @@ import os from "node:os";
 import path from "node:path";
 import { test, expect } from "../fixtures.mjs";
 import { useCustomApp } from "../helpers/custom-server.mjs";
-import { selectSettingsPage, clickControl, openSettingsPage } from "../helpers/menu-controls.mjs";
+import { selectSettingsPage, openSettingsPage, chooseProject } from "../helpers/menu-controls.mjs";
 import { Auth } from "../../server/auth.js";
 
 const app = useCustomApp({
@@ -32,7 +32,7 @@ async function signIn(page) {
   await page.locator('[name="username"]').fill("owner");
   await page.locator('[name="password"]').fill("test-long-password");
   await page.locator('#login-form [type="submit"]').click();
-  await clickControl(page.locator(".project-link"));
+  await chooseProject(page);
 }
 
 test("a signed-in administrator previews an Obsidian source without changing tasks, then syncs it", { tag: "@gate" }, async ({ page }) => {

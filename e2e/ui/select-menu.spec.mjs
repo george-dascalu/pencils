@@ -4,7 +4,7 @@
 // the date picker, disabled/grouped/dynamic options, and touch on desktop and phone widths
 // in both themes. Edits made through the menu persist.
 import { test, expect, onDevices, useApp } from "../fixtures.mjs";
-import { reveal, selectProjectView, clickControl, openSidebar } from "../helpers/menu-controls.mjs";
+import { reveal, selectProjectView, openSidebar, chooseProject } from "../helpers/menu-controls.mjs";
 
 const app = useApp(async (store) => {
   const org = await store.createOrganisation({
@@ -40,7 +40,7 @@ test("task editor selects use the shared menu: Escape cancels, type-ahead and En
   await page.goto(app.base);
   await openSidebar(page);
   await pick(page, page.locator("#organisation-select"), "Dropdown studio");
-  await clickControl(page.locator(`.project-link[data-id="${app.project.id}"]`));
+  await chooseProject(page, app.project.id);
   await openTask(page, app.task.id);
   const status = page.locator("#task-form [name=status]");
   await status.click();
