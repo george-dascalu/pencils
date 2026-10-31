@@ -4,6 +4,7 @@
 // notes). Connections opens from the selection toolbar and Import .canvas from the sidebar's New
 // board menu (board-sidebar.spec.mjs), so the board bar has no More.
 import { test, expect, onDevices, useApp } from "../fixtures.mjs";
+import { reveal } from "../helpers/menu-controls.mjs";
 
 const app = useApp(async (store) => {
   const project = await store.createProject({ title: "Left tools", key: "LT" });
@@ -82,19 +83,19 @@ test("Connections opens from the selection toolbar for the selected object", asy
   await expect(page.locator("#keyboard-connector [name=from]")).toHaveValue("note");
 });
 
-onDevices(["phone"], () => test("phones reach Frames, Live task view and Insert's actions in Canvas tools, each named", async ({ page }) => {
+// Since 0.20.82 the dock's Navigate row holds Frames, and its Add row the others as icons.
+onDevices(["phone"], () => test("phones reach Frames, Live task view and Insert's actions in the dock's rows, each named", async ({ page }) => {
   await open(page);
-  await page.locator(".phone-board-more").click();
-  const palette = page.locator("#phone-board-palette");
-  for (const name of ["Frames", "Live task view", "Live note", "Templates", "Bulk notes"]) {
-    const button = palette.getByRole("button", { name, exact: true });
-    await expect(button, name).toBeVisible();
-    // Each shows its name inside the panel: its text, or its label drawn after its icon.
-    const shown = await button.evaluate((el) => el.textContent.trim() || getComputedStyle(el, "::after").content.replace(/^"|"$/g, ""));
-    expect(shown, `${name} shows its name`).toBe(name);
-    const inside = await button.evaluate((el) => { const r = el.getBoundingClientRect(), p = el.closest("#phone-board-palette").getBoundingClientRect(); return r.left >= p.left - 1 && r.right <= p.right + 1; });
-    expect(inside, `${name} inside the panel`).toBe(true);
-  }
-  await palette.getByRole("button", { name: "Bulk notes", exact: true }).click();
+  for (const [row, names] of [["#phone-board-navigate", ["Frames"]], ["#phone-board-add", ["Live task view", "Live note", "Templates", "Bulk notes"]]])
+    for (const name of names) {
+      // By label: a role query skips the closed row's buttons.
+      const button = page.locator(row).locator(`button[aria-label="${name}"]`);
+      await reveal(button);
+      await button.scrollIntoViewIfNeeded();
+      await expect(button, name).toBeVisible();
+      const inside = await button.evaluate((el) => { const r = el.getBoundingClientRect(), p = el.closest(".phone-board-row").getBoundingClientRect(); return r.left >= p.left - 1 && r.right <= p.right + 1 && r.width <= 45; });
+      expect(inside, `${name} is an icon inside the row`).toBe(true);
+    }
+  await page.locator("#phone-board-add").getByRole("button", { name: "Bulk notes", exact: true }).click();
   await expect(page.locator("#bulk-stickies-form")).toBeVisible();
 }));

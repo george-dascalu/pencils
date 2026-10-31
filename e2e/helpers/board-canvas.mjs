@@ -47,11 +47,9 @@ export async function boardSettled(page) {
     .toBe(true);
 }
 
-// Jump to an object with board search (phones keep Search behind "More canvas tools").
+// Jump to an object with board search.
 export async function findOnBoard(page, id, text) {
   await page.locator("#canvas").waitFor();
-  const more = page.locator(".phone-board-more");
-  if (!(await page.locator("#canvas-find").isVisible()) && (await more.isVisible())) await more.click();
   await openBoardSearch(page);
   await page.locator("#canvas-find").fill(text);
   await page.locator(`#canvas-find-results [data-id="${id}"]`).click();

@@ -134,14 +134,19 @@ onDevices(["phone"], () => {
     await seed();
     await enter(page);
     await page.evaluate(() => (document.documentElement.dataset.theme = "dark"));
-    // Phones keep Board appearance in Canvas tools, under the dock's +.
+    // Phones keep Board appearance in the dock's Navigate row.
     await clickControl(page.locator('[data-feature="board-settings"]'));
     await expect(popup(page)).toBeVisible();
     const small = await popup(page).boundingBox();
     expect(small.x >= 0 && small.x + small.width <= 390 && small.y + small.height <= 844, JSON.stringify(small)).toBe(true);
-    // Reset redraws the panel while its button waits in the closed Canvas tools panel.
+    // Reset redraws the panel while its button waits in the closed Navigate row.
     await page.locator("[data-board-settings-reset]").click();
     await expect(popup(page), "Reset keeps the panel open").toBeVisible();
+    // It stays just above the dock, by Navigate, rather than at the screen's corner.
+    const dock = await page.locator(".phone-board-dock").boundingBox();
+    const after = await popup(page).boundingBox();
+    expect(after.y + after.height, JSON.stringify({ after, dock })).toBeLessThanOrEqual(dock.y);
+    expect(after.y + after.height, JSON.stringify({ after, dock })).toBeGreaterThan(dock.y - 60);
     await page.keyboard.press("Escape");
   });
 });

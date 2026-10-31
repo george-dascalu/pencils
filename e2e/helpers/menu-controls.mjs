@@ -6,8 +6,9 @@ export async function reveal(locator) {
   // Phones open the drawer on the Documents or Boards list in those views; the back arrow shows the menu.
   const back = locator.page().locator(".sidebar.open .sidebar-documents-back");
   if (await locator.evaluate((el) => !!el.closest(".sidebar") && !el.closest(".sidebar-documents")) && (await back.isVisible())) await back.click();
-  // Phones keep the board's other tools in Canvas tools, under the dock's +.
-  if (await locator.evaluate((el) => !!el.closest("#phone-board-palette[hidden]"))) await locator.page().locator(".phone-board-more").click();
+  // Phones keep the board's tools in the dock's Navigate and Add rows (0.20.82).
+  const row = await locator.evaluate((el) => el.closest(".phone-board-row[hidden]")?.id);
+  if (row) await locator.page().locator(`.phone-board-category[aria-controls="${row}"]`).click();
   const options = locator.locator('xpath=ancestor::details[contains(@class,"mobile-view-options")]');
   if ((await options.count()) && !(await options.evaluate(el => el.open)))
     await options.locator(":scope > summary").click();
@@ -45,11 +46,7 @@ export async function selectProjectView(page, view) {
 
 export async function openBoardSearch(page) {
   if (await page.locator("#canvas-find").isVisible()) return;
-  const toggle = page.locator('[data-pro="search-toggle"]');
-  // Phones (0.18.26) keep Search in the canvas tools panel behind "More canvas tools".
-  if (!(await toggle.isVisible()) && (await page.locator(".phone-board-more").isVisible()))
-    await page.locator(".phone-board-more").click();
-  await toggle.click();
+  await page.locator('[data-pro="search-toggle"]').click();
 }
 
 export async function selectSettingsPage(page, section) {

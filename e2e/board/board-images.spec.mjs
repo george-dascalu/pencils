@@ -4,6 +4,7 @@
 // not added to another board opened meanwhile; and the picker stays reachable on a dark phone.
 import { test, expect, onDevices, useApp } from "../fixtures.mjs";
 import { chooseBoard } from "../helpers/board-canvas.mjs";
+import { clickControl } from "../helpers/menu-controls.mjs";
 
 const png = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAFAAAAAoCAIAAADmAupWAAAATklEQVR4nO3PQRHAIADAMEAi3nhjdS62uy5R0M597viT9XXA2wzXGa4zXGe4znCd4TrDdYbrDNcZrjNcZ7jOcJ3hOsN1husM1xmuM1z3AGYwAdYPZWEMAAAAAElFTkSuQmCC", "base64");
 // Two frames, red then blue, with a repeating animation loop.
@@ -30,12 +31,8 @@ async function openBoard(page, id = app.board.id) {
 }
 async function upload(page, files) {
   const chooser = page.waitForEvent("filechooser");
-  const add = page.getByRole("button", { name: "Add images or GIFs", exact: true });
-  // Since 0.18.26 phones keep creation tools in the More canvas tools panel.
-  // Wait for whichever the board toolbar shows before choosing.
-  await page.locator('[data-feature="image-add"]:visible, .phone-board-more:visible').first().waitFor();
-  if (!(await add.isVisible())) await page.getByRole("button", { name: "More canvas tools", exact: true }).click();
-  await add.click();
+  // Phones keep creation tools in the dock's Add row (0.20.82).
+  await clickControl(page.locator('[data-feature="image-add"]'));
   const input = await chooser;
   expect(input.isMultiple(), "the picker accepts several files").toBe(true);
   await input.setFiles(files);

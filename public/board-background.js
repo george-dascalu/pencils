@@ -62,11 +62,16 @@ export function boardSettings(ctx, controls) {
     timer = null,
     dirty = false,
     pattern = false;
+  // The phone dock's closed row hides its buttons; the row's category button stands in.
+  const anchorOf = (el) => {
+    const row = el.closest(".phone-board-row[hidden]");
+    return (row && document.querySelector(`[aria-controls="${row.id}"]`)) || el;
+  };
   const visibleTrigger = () =>
     [...document.querySelectorAll('[data-feature="board-settings"]')].find(
       (el) =>
-        el.getClientRects().length &&
-        getComputedStyle(el).visibility !== "hidden",
+        anchorOf(el).getClientRects().length &&
+        getComputedStyle(anchorOf(el)).visibility !== "hidden",
     );
   function close(focus = false) {
     if (!popup) return;
@@ -87,7 +92,7 @@ export function boardSettings(ctx, controls) {
     if (!["board", "drawing"].includes(state.view) || board()?.id !== boardId) return close();
     if (!trigger?.isConnected) trigger = visibleTrigger();
     if (!trigger) return close();
-    const r = trigger.getBoundingClientRect();
+    const r = anchorOf(trigger).getBoundingClientRect();
     const below = innerHeight - r.bottom - 20;
     const above = below < 240 && r.top > below;
     const available = Math.max(120, above ? r.top - 20 : below);

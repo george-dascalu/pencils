@@ -24,9 +24,8 @@ const openBoard = async (page) => {
 const toggle = (page) => page.locator('[data-pro="search-toggle"]');
 const panel = (page) => page.locator("#canvas-search-panel");
 const field = (page) => page.locator("#canvas-find");
-// Phones (0.18.26) keep Search in the canvas tools panel behind "More canvas tools".
-async function openSearch(page, device) {
-  if (device !== "desktop") await page.locator(".phone-board-more").click();
+// Phones dock Search beside the tool categories (0.20.82).
+async function openSearch(page) {
   await toggle(page).click();
   await expect(toggle(page)).toHaveAttribute("aria-expanded", "true");
 }
@@ -76,7 +75,7 @@ onDevices(["desktop", "phone"], () => test("the panel stays on screen in both th
   const width = page.viewportSize().width;
   for (const theme of ["light", "dark"]) {
     await page.evaluate((theme) => (document.documentElement.dataset.theme = theme), theme);
-    await openSearch(page, device);
+    await openSearch(page);
     const box = await panel(page).boundingBox();
     expect(box.height, "the object navigator stays bounded").toBeLessThan(550);
     expect(box.x).toBeGreaterThanOrEqual(0);
@@ -106,7 +105,7 @@ onDevices(["phone"], () => test("a refresh in flight does not steal search focus
   });
   app.store.changed();
   await intercepted;
-  await openSearch(page, device);
+  await openSearch(page);
   await field(page).fill("Keep this search");
   await field(page).evaluate((el) => (el.dataset.refreshProbe = "same"));
   unblock();

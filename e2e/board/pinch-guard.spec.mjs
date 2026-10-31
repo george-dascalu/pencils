@@ -79,8 +79,6 @@ const safariPinchCancelled = (page, selector) => page.evaluate((selector) => {
 const allCancelled = { gesturestart: true, gesturechange: true, touchmove: true };
 
 async function openNameDialog(page) {
-  const trigger = page.locator('[data-pro="participant"]:visible').first();
-  if (!(await trigger.count())) await page.locator(".phone-board-more").click();
   await page.locator('[data-pro="participant"]:visible').first().click();
   await page.locator("#canvas-name-form").waitFor();
   await settled(page);

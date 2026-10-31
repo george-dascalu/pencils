@@ -271,7 +271,7 @@ onDevices(["ipad"], () => {
 
 // Owner request, 30 October 2026: double-tapping the board leaves the pen tools closed unless a
 // drawing tool is already open; the gesture only switches between pen and eraser while drawing.
-onDevices(["ipad", "phone"], () => test("double tap on the board does not open the pen tools when not drawing", async ({ page, device }) => {
+onDevices(["ipad", "phone"], () => test("double tap on the board does not open the pen tools when not drawing", async ({ page }) => {
   const g = await open(page);
   await expect(page.locator("#pen-tools")).toBeHidden();
   // Empty board, on screen on both devices.
@@ -279,7 +279,7 @@ onDevices(["ipad", "phone"], () => test("double tap on the board does not open t
   await expect(page.locator("#pen-tools")).toBeHidden();
   await expect(penMode(page, "erase")).toHaveCount(0);
   // The same double tap switches to the eraser once the pen is open, so it reached the board.
-  if (device === "phone") await page.getByRole("button", { name: "More canvas tools", exact: true }).click();
+  // Phones dock the pen itself (0.20.82).
   await page.locator('[data-feature="draw-tool"]:visible').first().click();
   await page.locator("#pen-tools").waitFor();
   await g.doubleTap(await g.world(100, 420));

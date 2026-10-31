@@ -66,11 +66,7 @@ async function find(page, id, text) {
   await expect(node(page, id)).toBeVisible();
 }
 async function outside(page) {
-  const search = page.locator('[data-pro="search-toggle"]');
-  // Phone boards keep search inside the Canvas tools palette (since 0.18.26),
-  // so click the dock's More canvas tools button as the outside control there.
-  if (await search.isVisible()) await search.click();
-  else await page.locator(".phone-board-more").click();
+  await page.locator('[data-pro="search-toggle"]').click();
 }
 const undo = (page) => page.getByRole("button", { name: "Undo canvas change", exact: true }).click();
 const redo = (page) => page.getByRole("button", { name: "Redo canvas change", exact: true }).click();

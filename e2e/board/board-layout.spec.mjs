@@ -118,7 +118,7 @@ onDevices(["ipad", "phone"], () => {
       expect(fit.y + fit.height, `${key} menu within the height`).toBeLessThanOrEqual(viewport.height);
       await page.keyboard.press("Escape");
     }
-    // Since 0.18.26 phones dock the tools at the bottom with a Canvas tools panel.
+    // Since 0.18.26 phones dock the tools at the bottom (by category since 0.20.82).
     if (device === "phone") await expect(page.locator(".phone-board-dock .board-tools")).toHaveCount(1);
   });
 });

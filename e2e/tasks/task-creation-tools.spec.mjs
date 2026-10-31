@@ -6,7 +6,7 @@
 import { test, expect, useApp } from "../fixtures.mjs";
 import { newCard } from "../helpers/new-card.mjs";
 import { legacySubtasks } from "../helpers/task-editor-helpers.mjs";
-import { openSettingsPage } from "../helpers/menu-controls.mjs";
+import { openSettingsPage, clickControl } from "../helpers/menu-controls.mjs";
 
 const app = useApp(async (store) => {
   const project = await store.createProject({ title: "Creation tools", key: "TOOLS" });
@@ -129,9 +129,8 @@ test("the board's task browser searches, filters and places cards without moving
   await page.locator("#board-task-search").focus();
   await page.keyboard.press("Escape");
   await expect(page.locator("#board-task-panel")).toHaveCount(0);
-  // Still at phone width: since 0.18.26 Project tasks sits in the Canvas tools palette.
-  await page.locator(".phone-board-more").click();
-  await page.locator(".board-tools [data-action=board-task]").click();
+  // Still at phone width: since 0.20.82 Project tasks sits in the dock's Add row.
+  await clickControl(page.locator(".board-tools [data-action=board-task]"));
   await page.locator("[data-action=board-task-close]").focus();
   await page.keyboard.press("Space");
   await expect(page.locator("#board-task-panel")).toHaveCount(0);

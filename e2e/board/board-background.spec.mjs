@@ -28,7 +28,7 @@ async function enter(page) {
   await page.locator(`.board-tools[data-board="${app.board.id}"]`).waitFor();
 }
 async function open(page) {
-  // Board appearance sits at the foot of the tool bar since 0.20.73; phones keep it in Canvas tools.
+  // Board appearance sits at the foot of the tool bar since 0.20.73; phones keep it in the dock's Navigate row.
   await clickControl(page.locator('[data-feature="board-settings"]'));
   await page.locator("#board-settings-form").waitFor();
 }

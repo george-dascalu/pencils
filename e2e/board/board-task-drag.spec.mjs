@@ -4,6 +4,7 @@
 // and on phones a touch drag hides the panel (dark theme) and drops on the board.
 import { test, expect, onDevices, useApp } from "../fixtures.mjs";
 import { seedBoard } from "../helpers/board-canvas.mjs";
+import { clickControl } from "../helpers/menu-controls.mjs";
 
 const app = useApp(async (store) => {
   const project = await store.createProject({ title: "Task drag" });
@@ -25,10 +26,8 @@ async function openBoard(page) {
   await page.locator("#canvas").waitFor();
 }
 async function openPanel(page) {
-  // Phones keep the board tools behind "More canvas tools".
-  const more = page.locator(".phone-board-more");
-  if (await more.isVisible()) await more.click();
-  await page.locator("[data-action=board-task]").click();
+  // Phones keep the board tools in the dock's Add row.
+  await clickControl(page.locator("[data-action=board-task]"));
   await row(page).waitFor();
 }
 // Each save is followed by a background refresh that may rebuild the page (and the Project

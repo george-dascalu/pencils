@@ -1,8 +1,8 @@
 // Phone workspaces: Table leads with the title and opens the card from its key without
 // rewriting desktop column preferences; Calendar, Timeline and Capacity keep their options in
-// the view-options panel and stay on screen; the Board uses a bottom dock with a canvas tools
-// palette (placement, search, minimap, settings) that stays on screen and above the selection
-// toolbar, and returns to the vertical toolbar at desktop width.
+// the view-options panel and stay on screen; the Board uses a bottom dock of categories
+// (Navigate, Add, Pen, Search) whose tool rows scroll sideways, stay on screen and above the
+// selection toolbar, and returns to the vertical toolbar at desktop width.
 import AxeBuilder from "@axe-core/playwright";
 import { test, expect, onDevices, useApp } from "../fixtures.mjs";
 import { reveal, setWeekends } from "../helpers/menu-controls.mjs";
@@ -25,10 +25,14 @@ async function fits(page, locator) {
   const { width, height } = page.viewportSize();
   expect(box && box.x >= -1 && box.y >= -1 && box.x + box.width <= width + 1 && box.y + box.height <= height + 1, JSON.stringify(box)).toBe(true);
 }
-async function palette(page) {
-  await page.getByRole("button", { name: "More canvas tools", exact: true }).click();
-  await page.locator("#phone-board-palette").waitFor();
+// Since 0.20.82 the dock's Navigate and Add each open a row of their tools above it.
+async function category(page, name) {
+  const button = page.locator(".phone-board-dock").getByRole("button", { name, exact: true });
+  await button.click();
+  await expect(button).toHaveAttribute("aria-expanded", "true");
+  return page.locator(`#${await button.getAttribute("aria-controls")}`);
 }
+const labels = (row) => row.locator("button:visible").evaluateAll((els) => els.map((el) => el.getAttribute("aria-label")));
 
 onDevices(["phone"], () => {
   test("Table leads with the title, edits it and opens the card from its key without rewriting desktop columns", async ({ page }) => {
@@ -108,51 +112,84 @@ onDevices(["phone"], () => {
     await closeOptions(page);
   });
 
-  test("the Board dock and canvas tools palette place, search, show the minimap and stay on screen", async ({ page }) => {
+  test("the Board dock picks Navigate, Add, Pen or Search, and each tool row scrolls sideways on screen", async ({ page }) => {
     await goto(page, "board");
-    await page.locator(".phone-board-dock").waitFor();
+    const dock = page.locator(".phone-board-dock");
+    await dock.waitFor();
     await expect(page.locator("#canvas-minimap")).toBeHidden();
-    await fits(page, page.locator(".phone-board-dock"));
-    await palette(page);
-    await fits(page, page.locator("#phone-board-palette"));
+    await fits(page, dock);
+    expect(await dock.locator(":is(button, summary):visible").evaluateAll((els) => els.map((el) => el.getAttribute("aria-label") || el.id)))
+      .toEqual(["Navigate", "Add", "Pen", "Search board", "zoom-label"]);
+    const add = await category(page, "Add");
+    await fits(page, add);
+    // Add holds the task and create tools in the desktop bar's order, in one row that scrolls sideways.
+    expect(await labels(add)).toEqual(["Project tasks", "Add Project frame", "Live task view", "Add sticky note", "Add text", "Add shape", "Add images or GIFs", "Live note", "Templates", "Bulk notes", "Draw frame", "Add grid", "Connect two objects"]);
+    expect(await add.evaluate((row) => ({
+      lines: new Set([...row.querySelectorAll("button")].filter((b) => b.offsetParent).map((b) => Math.round(b.getBoundingClientRect().top))).size,
+      scrolls: row.scrollWidth > row.clientWidth && getComputedStyle(row).overflowX === "auto",
+    }))).toEqual({ lines: 1, scrolls: true });
     const a11y = await new AxeBuilder({ page }).include(".phone-board-dock").withTags(["wcag2a", "wcag2aa", "wcag21aa"]).analyze();
     expect(a11y.violations.map((v) => ({ id: v.id, targets: v.nodes.map((n) => n.target) }))).toEqual([]);
-    await page.getByRole("button", { name: "Close canvas tools", exact: true }).click();
-    // The minimap is in the zoom level's menu since 0.20.73.
-    await page.locator("#zoom-label").click();
-    await page.getByRole("button", { name: "Minimap", exact: true }).click();
-    await expect(page.locator("#canvas-minimap")).toBeVisible();
-    await palette(page);
-    await page.getByRole("button", { name: "Add sticky note", exact: true }).click();
-    await page.locator("#phone-board-palette").waitFor({ state: "hidden" });
+    // Choosing a tool closes the row.
+    await add.getByRole("button", { name: "Add sticky note", exact: true }).click();
+    await expect(add).toBeHidden();
     const canvas = await page.locator("#canvas").boundingBox();
     await page.touchscreen.tap(canvas.x + 180, canvas.y + 180);
     await page.locator(".board-node[data-node]").first().waitFor();
     await page.keyboard.press("Escape");
-    await palette(page);
-    await page.getByRole("button", { name: "Search board", exact: true }).click();
-    await page.locator("#canvas-find").waitFor();
-    await page.locator("#phone-board-palette").waitFor({ state: "hidden" });
-    await palette(page);
+    // Navigate holds the pointer tools, Frames, undo and redo and the view tools; undo keeps it open.
+    const navigate = await category(page, "Navigate");
+    expect(await labels(navigate)).toEqual(["Select / move", "Pan canvas", "Frames", "Undo canvas change", "Redo canvas change", "Full screen", "Board appearance"]);
+    await navigate.getByRole("button", { name: "Undo canvas change", exact: true }).click();
+    await expect(page.locator(".board-node[data-node]")).toHaveCount(0);
+    await expect(navigate, "undo can be pressed again").toBeVisible();
+    // One row at a time; the open category closes it again, and so does Escape.
+    await category(page, "Add");
+    await expect(navigate).toBeHidden();
+    await dock.getByRole("button", { name: "Add", exact: true }).click();
+    await expect(add).toBeHidden();
+    await category(page, "Navigate");
     await page.keyboard.press("Escape");
-    await expect(page.locator(".phone-board-more")).toHaveAttribute("aria-expanded", "false");
+    await expect(navigate).toBeHidden();
+    await expect(dock.getByRole("button", { name: "Navigate", exact: true })).toBeFocused();
+    // A tool that leaves focus in the row hands it back to the row's category as the row closes.
+    await (await category(page, "Navigate")).getByRole("button", { name: "Frames", exact: true }).click();
+    await expect(navigate).toBeHidden();
+    await expect(dock.getByRole("button", { name: "Navigate", exact: true })).toBeFocused();
+    await page.keyboard.press("Escape");
+    // With its row closed, Navigate shows that Pan is on.
+    const navigateButton = dock.getByRole("button", { name: "Navigate", exact: true });
+    const idle = await navigateButton.evaluate((el) => getComputedStyle(el).color);
+    await (await category(page, "Navigate")).getByRole("button", { name: "Pan canvas", exact: true }).click();
+    await expect(navigate).toBeHidden();
+    expect(await navigateButton.evaluate((el) => getComputedStyle(el).color)).not.toBe(idle);
+    // Pen picks the pen, whose own bar opens; Search opens board search.
+    await dock.getByRole("button", { name: "Pen", exact: true }).click();
+    await page.locator("#pen-tools").waitFor();
+    await page.locator("[data-pen-done]").click();
+    await dock.getByRole("button", { name: "Search board", exact: true }).click();
+    await page.locator("#canvas-find").waitFor();
+    await page.keyboard.press("Escape");
     for (const width of [320, 390, 600]) {
       await page.setViewportSize({ width, height: 844 });
-      await fits(page, page.locator(".phone-board-dock"));
-      await palette(page);
-      await fits(page, page.locator("#phone-board-palette"));
-      expect(await page.locator("#phone-board-palette").evaluate((panel) => {
-        const rect = panel.getBoundingClientRect();
-        return panel.contains(document.elementFromPoint(rect.x + rect.width / 2, rect.y + rect.height / 2));
-      }), "Canvas tools must stay above the selected object's toolbar").toBe(true);
+      await fits(page, dock);
+      const row = await category(page, "Add");
+      await fits(page, row);
+      expect(await row.evaluate((el) => {
+        const rect = el.getBoundingClientRect();
+        return el.contains(document.elementFromPoint(rect.x + rect.width / 2, rect.y + rect.height / 2));
+      }), "the row stays above the selected object's toolbar").toBe(true);
       for (const theme of ["light", "dark"]) await page.evaluate((t) => window.PencilsAppearance.write({ theme: t }), theme);
-      await page.getByRole("button", { name: "Close canvas tools", exact: true }).click();
+      await page.keyboard.press("Escape");
     }
     await options(page);
     await page.keyboard.press("Escape");
     expect(await page.locator(".mobile-view-options").evaluate((el) => el.open)).toBe(false);
-    await palette(page);
-    await page.getByRole("button", { name: "Board appearance", exact: true }).click();
+    // The minimap is in the zoom level's menu since 0.20.73.
+    await page.locator("#zoom-label").click();
+    await page.getByRole("button", { name: "Minimap", exact: true }).click();
+    await expect(page.locator("#canvas-minimap")).toBeVisible();
+    await (await category(page, "Navigate")).getByRole("button", { name: "Board appearance", exact: true }).click();
     await page.getByRole("dialog", { name: "Board appearance", exact: true }).waitFor();
     await page.keyboard.press("Escape");
   });

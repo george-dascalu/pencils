@@ -4,7 +4,7 @@
 // task views kept a hidden caption. Timeline's Range wore the Weekends icon. The organisation's
 // home had its own New project button (0.20.75).
 import { test, expect, onDevices, useApp } from "../fixtures.mjs";
-import { openSettingsPage, openSidebar } from "../helpers/menu-controls.mjs";
+import { openSettingsPage, openSidebar, reveal } from "../helpers/menu-controls.mjs";
 
 const app = useApp(async (store) => {
   const project = await store.createProject({ title: "One home" });
@@ -20,9 +20,8 @@ onDevices(["desktop", "phone"], () => test("the board bar's menus leave the tool
   const menus = page.locator(".board-toolbar details.board-menu, .mobile-view-options-panel details.board-menu, .board-tools details.board-menu");
   await expect(page.locator('details[data-board-menu="tools"] [data-feature="canvas-json"]'), `${device}: Board tools is built`).toBeAttached();
   for (const selector of tools) await expect(menus.locator(`:is(${selector}, [data-feature="grid-add"], [data-feature="frame-add"], [data-feature="draw-tool"])`), `${device}: ${selector} not in the board menus`).toHaveCount(0);
-  // Phones reach them under the dock's +.
-  if (device === "phone") await page.locator(".phone-board-more").click();
-  for (const selector of tools) await expect(page.locator(`.board-tools ${selector}`), `${device}: ${selector}`).toBeVisible();
+  // Phones reach them in the dock (the pen) or its Add row.
+  for (const selector of tools) await expect(await reveal(page.locator(`.board-tools ${selector}`)), `${device}: ${selector}`).toBeVisible();
 }));
 
 onDevices(["desktop", "phone"], () => test("the sidebar has one New project button and no organisation settings button", async ({ page, device }) => {

@@ -53,12 +53,12 @@ onDevices(["desktop", "ipad"], () => test("undo, redo and the view controls stay
   expect(canvas.right - presence.right, `${device}: presence moves to the free right edge`).toBeLessThanOrEqual(bar.left - canvas.left);
 }));
 
-// Phones dock the cursor, hand, + and the view controls; undo and redo stay under the +.
-onDevices(["phone"], () => test("phones keep undo and redo under the dock's +", async ({ page }) => {
+// Phones dock the tool categories and the zoom level (0.20.82); undo and redo sit in Navigate's row.
+onDevices(["phone"], () => test("phones dock the tool categories and keep undo and redo in Navigate", async ({ page }) => {
   await openBoard(page);
-  for (const action of ["board-undo", "board-redo"]) await expect(page.locator(`#phone-board-palette [data-action="${action}"]`), action).toHaveCount(1);
-  expect(await page.locator(".phone-board-dock :is(button, summary):visible").evaluateAll((els) => els.map((el) => el.dataset.tool || el.id || el.className)))
-    .toEqual(["cursor", "hand", "phone-board-more icon-button", "zoom-label"]); // the capacity gauge shows only past 80% (0.20.81)
+  for (const action of ["board-undo", "board-redo"]) await expect(page.locator(`#phone-board-navigate [data-action="${action}"]`), action).toHaveCount(1);
+  expect(await page.locator(".phone-board-dock :is(button, summary):visible").evaluateAll((els) => els.map((el) => el.dataset.phoneCategory || el.dataset.tool || el.dataset.pro || el.id)))
+    .toEqual(["navigate", "add", "draw", "search-toggle", "zoom-label"]); // the capacity gauge shows only past 80% (0.20.81)
 }));
 
 // On touch screens just over phone width the centred bar reaches under the tools on the left.

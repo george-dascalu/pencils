@@ -2,6 +2,16 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.20.82 — 2026-10-31
+
+### Changed
+
+- The phone board dock offers four categories: Navigate, Add, Pen and Search. Navigate and Add each open one row of their tools above the dock that scrolls sideways, in place of the Canvas tools panel; Pen picks the pen and Search opens board search. Navigate shows when Pan is on.
+
+### Fixed
+
+- On phones, Board appearance stays just above the dock after Reset instead of jumping to fill the screen.
+
 ## 0.20.81 — 2026-10-31
 
 ### Changed

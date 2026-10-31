@@ -109,21 +109,20 @@ test("clicking the grid tool then the board places a grid whose column alignment
 
 onDevices(["phone"], () => {
   test.use({ viewportSize: null });
-  test("on a phone a grid dragged by touch out of the canvas tools panel lands on the board", async ({ page }) => {
+  test("on a phone a grid dragged by touch out of the dock's Add row lands on the board", async ({ page }) => {
     await open(page);
     await expect.poll(() => page.locator(".sidebar").evaluate((el) => el.getBoundingClientRect().right)).toBeLessThanOrEqual(1);
     await page.evaluate(() => window.PencilsAppearance.write({ theme: "dark" }));
-    // Phones keep the creation tools in the canvas tools panel, opened from the bottom dock;
+    // Phones keep the creation tools in the dock's Add row (0.20.82), which scrolls sideways;
     // drag the grid out of it onto open canvas.
     await page.locator(".phone-board-dock").waitFor({ state: "visible" });
-    await page.locator(".phone-board-more").click();
+    await page.locator('.phone-board-dock [data-phone-category="add"]').click();
     await source(page).waitFor({ state: "visible" });
-    // The panel scrolls; since 0.20.72 it also lists Frames, Live task view and Insert's actions.
     await source(page).scrollIntoViewIfNeeded();
     const r = await source(page).boundingBox();
-    const palette = await page.locator("#phone-board-palette").boundingBox();
+    const row = await page.locator("#phone-board-add").boundingBox();
     const canvas = await page.locator("#canvas").boundingBox();
-    const drop = { x: 160, y: (canvas.y + palette.y) / 2 };
+    const drop = { x: 160, y: (canvas.y + row.y) / 2 };
     const session = await page.context().newCDPSession(page);
     const before = (await nodes()).length;
     await session.send("Input.dispatchTouchEvent", { type: "touchStart", touchPoints: [{ x: r.x + r.width / 2, y: r.y + r.height / 2 }] });

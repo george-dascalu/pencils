@@ -5,7 +5,7 @@
 // borders (0.19.12), and History opens beside the panel and restores a version.
 import { test, expect, onDevices, useApp } from "../fixtures.mjs";
 import { legacySubtasks } from "../helpers/task-editor-helpers.mjs";
-import { selectProjectView, acceptConfirm } from "../helpers/menu-controls.mjs";
+import { selectProjectView, acceptConfirm, clickControl } from "../helpers/menu-controls.mjs";
 import { newCard } from "../helpers/new-card.mjs";
 import { presetCamera } from "../helpers/board-canvas.mjs";
 
@@ -30,10 +30,8 @@ async function openBoard(page, project) {
   await page.locator("#canvas").waitFor();
 }
 async function openNewCardPanel(page) {
-  // Phones keep the board tools behind "More canvas tools".
-  const more = page.locator(".phone-board-more");
-  if (await more.isVisible()) await more.click();
-  await page.locator("[data-action=board-task]").click();
+  // Phones keep the board tools in the dock's Add row.
+  await clickControl(page.locator("[data-action=board-task]"));
   await page.locator("[data-action=board-create-task]").click();
   await page.locator(".board-task-editor").waitFor();
 }
