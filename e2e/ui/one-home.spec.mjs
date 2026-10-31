@@ -13,12 +13,12 @@ const app = useApp(async (store) => {
 });
 const tools = ['[data-tool="grid"]', '[data-tool="frame"]', '[data-tool="project-frame"]', '[data-tool="draw"]', '[data-feature="image-add"]'];
 
-onDevices(["desktop", "phone"], () => test("the board's More menu leaves the tool bar's tools to the tool bar", async ({ page, device }) => {
+onDevices(["desktop", "phone"], () => test("the board bar's menus leave the tool bar's tools to the tool bar", async ({ page, device }) => {
   await page.goto(`${app.base}/#project/${app.project.id}/board/${app.board.id}`);
   await page.locator("#zoom-label").waitFor();
-  const more = page.locator('details[data-board-menu="more"]');
-  await expect(more.locator('[data-layout-tool="layers"]'), `${device}: More is built`).toBeAttached();
-  for (const selector of tools) await expect(more.locator(`:is(${selector}, [data-feature="grid-add"], [data-feature="frame-add"], [data-feature="draw-tool"])`), `${device}: ${selector} not in More`).toHaveCount(0);
+  const menus = page.locator(".board-toolbar details.board-menu, .mobile-view-options-panel details.board-menu, .board-tools details.board-menu");
+  await expect(page.locator('details[data-board-menu="tools"] [data-feature="canvas-json"]'), `${device}: Board tools is built`).toBeAttached();
+  for (const selector of tools) await expect(menus.locator(`:is(${selector}, [data-feature="grid-add"], [data-feature="frame-add"], [data-feature="draw-tool"])`), `${device}: ${selector} not in the board menus`).toHaveCount(0);
   // Phones reach them under the dock's +.
   if (device === "phone") await page.locator(".phone-board-more").click();
   for (const selector of tools) await expect(page.locator(`.board-tools ${selector}`), `${device}: ${selector}`).toBeVisible();

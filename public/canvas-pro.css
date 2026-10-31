@@ -361,7 +361,8 @@
 }
 .canvas-panel {
   position: absolute;
-  left: 64px;
+  /* Beside the tool bar (18px + 58px), not over it. */
+  left: 84px;
   top: 95px;
   bottom: 120px;
   width: 300px;
@@ -380,6 +381,7 @@
 .canvas-panel > button {
   float: right;
 }
+#canvas-outline > .view-layout-switcher { margin-bottom: 8px; }
 .outline-row {
   display: flex;
   align-items: center;

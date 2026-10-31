@@ -118,6 +118,7 @@ export function canvasPro(ctx, basic) {
   let identity = "",
     frameSignature = "",
     outlineOpen = false,
+    outlineTab = "frames",
     outlinePage = 0,
     searchOpen = false,
     search = "",
@@ -946,13 +947,14 @@ export function canvasPro(ctx, basic) {
     updateUndo();
     $("#canvas-extras")?.insertAdjacentHTML(
       "afterbegin",
-      `<span class="board-menu-heading">Insert</span>${btn("note-add", "Live note")}${btn("query-add", "Live task view")}${btn("templates", "Templates")}<span class="board-menu-heading">Navigate</span>${btn("outline", "Outline")}${btn("connections", "Connections")}<span class="board-menu-heading">Organise</span>${btn("present", `${icon("fullscreen")}Present`, 'data-menu-home="session"')}<button type="button" class="button small" data-session="open" data-menu-home="session">${icon("person")}Board session</button>${btn("activity", `${icon("activity")}Activity`, 'data-menu-home="history"')}`,
+      `${btn("present", `${icon("fullscreen")}Present`, 'data-menu-home="session"')}<button type="button" class="button small" data-session="open" data-menu-home="session">${icon("person")}Board session</button>${btn("activity", `${icon("activity")}Activity`, 'data-menu-home="history"')}`,
     );
     $("#canvas").insertAdjacentHTML(
       "beforeend",
-      `<canvas id="canvas-overview" aria-hidden="true"></canvas><aside id="canvas-outline" class="canvas-panel ${outlineOpen ? "" : "hidden"}"></aside><div id="canvas-presence" class="canvas-presence"></div><div id="canvas-cursors" aria-hidden="true"></div><div id="canvas-search-panel" class="canvas-panel canvas-search-panel ${searchOpen ? "" : "hidden"}" role="region" aria-label="Board search and filters"><div class="canvas-find"><div class="canvas-search-head"><input id="canvas-find" type="search" aria-label="Find board objects" placeholder="Find on board…" value="${esc(search)}"><button type="button" class="icon-button" data-pro="search-close" aria-label="Close search" title="Close search">${icon("close")}</button></div><div id="canvas-find-results"></div></div><div class="canvas-filters"><input id="canvas-owner" aria-label="Filter canvas by owner" placeholder="Owner" value="${esc(owner)}"><select id="canvas-status" aria-label="Filter canvas by status"><option value="">Every status</option>${state.config.statuses.map((s) => `<option value="${esc(s)}" ${s === status ? "selected" : ""}>${esc(statusLabel(state.config, s))}</option>`).join("")}</select></div></div><button id="canvas-minimap" aria-label="Minimap: click to navigate"><canvas width="200" height="125"></canvas></button>`,
+      `<canvas id="canvas-overview" aria-hidden="true"></canvas><aside id="canvas-outline" class="canvas-panel ${outlineOpen ? "" : "hidden"}" aria-label="Frames and layers"></aside><div id="canvas-presence" class="canvas-presence"></div><div id="canvas-cursors" aria-hidden="true"></div><div id="canvas-search-panel" class="canvas-panel canvas-search-panel ${searchOpen ? "" : "hidden"}" role="region" aria-label="Board search and filters"><div class="canvas-find"><div class="canvas-search-head"><input id="canvas-find" type="search" aria-label="Find board objects" placeholder="Find on board…" value="${esc(search)}"><button type="button" class="icon-button" data-pro="search-close" aria-label="Close search" title="Close search">${icon("close")}</button></div><div id="canvas-find-results"></div></div><div class="canvas-filters"><input id="canvas-owner" aria-label="Filter canvas by owner" placeholder="Owner" value="${esc(owner)}"><select id="canvas-status" aria-label="Filter canvas by status"><option value="">Every status</option>${state.config.statuses.map((s) => `<option value="${esc(s)}" ${s === status ? "selected" : ""}>${esc(statusLabel(state.config, s))}</option>`).join("")}</select></div></div><button id="canvas-minimap" aria-label="Minimap: click to navigate"><canvas width="200" height="125"></canvas></button>`,
     );
     updateSearchButton();
+    updateOutlineButton();
     enhance();
     outline();
     searchResults();
@@ -1657,9 +1659,19 @@ export function canvasPro(ctx, basic) {
     },
     true,
   );
+  function updateOutlineButton() {
+    const button = $('.board-tools [data-pro="outline"]');
+    button?.setAttribute("aria-expanded", String(outlineOpen));
+    button?.classList.toggle("active", outlineOpen);
+  }
   function outline() {
     const el = $("#canvas-outline");
     if (!el || !outlineOpen) return;
+    const head = `${btn("outline", "×", 'aria-label="Close outline"')}<div class="view-layout-switcher" role="group" aria-label="Outline">${[["frames", "Frames"], ["layers", "Layers"]].map(([tab, label]) => `<button type="button" data-pro="outline-tab" data-tab="${tab}" aria-pressed="${outlineTab === tab}">${label}</button>`).join("")}</div>`;
+    if (outlineTab === "layers") {
+      el.innerHTML = head + basic.layersHTML();
+      return;
+    }
     const slides = slideIds();
     const slideOrder = new Map(slides.map((id, i) => [id, i]));
     const tree = frameOutline(board(), parents), pageSize = 50;
@@ -1672,7 +1684,7 @@ export function canvasPro(ctx, basic) {
         );
     }
     const pagination = tree.rows.length > pageSize ? `<nav class="frame-panel-actions" aria-label="Frame pages">${btn("frames-previous", icon("arrow-left"), `aria-label="Previous frames" ${outlinePage === 0 ? "disabled" : ""}`)}<span>${start + 1}–${Math.min(start + pageSize, tree.rows.length)} / ${tree.rows.length.toLocaleString("en-GB")}</span>${btn("frames-next", icon("arrow"), `aria-label="Next frames" ${start + pageSize >= tree.rows.length ? "disabled" : ""}`)}</nav>` : "";
-    el.innerHTML = `<strong>Frames & presentation</strong>${btn("outline", "×", 'aria-label="Close outline"')}<p>Drag rows or use ↑ / ↓ to reorder slides. Nested frames move with their parent and are not separate slides.</p><div class="frame-panel-actions">${btn("frames-organize", "Order by position")}${btn("present", "Present")}</div>${pagination}${rows.join("") || "<p>Press F and drag to draw a frame.</p>"}`;
+    el.innerHTML = `${head}<p>Drag rows or use ↑ / ↓ to reorder slides. Nested frames move with their parent and are not separate slides.</p><div class="frame-panel-actions">${btn("frames-organize", "Order by position")}${btn("present", "Present")}</div>${pagination}${rows.join("") || "<p>Press F and drag to draw a frame.</p>"}`;
   }
   let draggedFrame = null;
   document.addEventListener("dragstart", (event) => {
@@ -2058,7 +2070,12 @@ export function canvasPro(ctx, basic) {
     } else if (action === "outline") {
       outlineOpen = !outlineOpen;
       $("#canvas-outline")?.classList.toggle("hidden", !outlineOpen);
+      updateOutlineButton();
       outline();
+    } else if (action === "outline-tab") {
+      outlineTab = el.dataset.tab;
+      outline();
+      $(`#canvas-outline [data-tab="${outlineTab}"]`)?.focus({ preventScroll: true });
     } else if (action === "frames-previous" || action === "frames-next") {
       outlinePage += action === "frames-next" ? 1 : -1;
       outline();
@@ -2604,6 +2621,16 @@ export function canvasPro(ctx, basic) {
         event.preventDefault();
         event.stopImmediatePropagation();
         showSearch(false, true);
+        return;
+      }
+      // Escape closes the outline from inside it, back to the tool bar's Frames.
+      if (outlineOpen && event.key === "Escape" && event.target.closest("#canvas-outline")) {
+        event.preventDefault();
+        event.stopImmediatePropagation();
+        outlineOpen = false;
+        $("#canvas-outline")?.classList.add("hidden");
+        updateOutlineButton();
+        $('.board-tools [data-pro="outline"]')?.focus({ preventScroll: true });
         return;
       }
       if (editor) {

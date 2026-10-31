@@ -255,7 +255,7 @@ export function projectLayout(ctx) {
     restoreToolbar();
     if (!state.project || !$(".tabs")) return;
     const queryHost = $(".toolbar-left");
-    $(".view-layout-switcher")?.remove();
+    $(".toolbar-left > .view-layout-switcher")?.remove();
     const taskLayout = taskViews.includes(state.view);
     const layouts = taskLayout ? taskViews : planningViews.includes(state.view) ? planningViews : [];
     if (queryHost && layouts.length)
@@ -302,7 +302,6 @@ export function projectLayout(ctx) {
     if (!$("#canvas") || !toolbar) return;
     const boards = menu(toolbar, "board", viewLabel("board"));
     move(boards, '[data-action="board-new"]');
-    const more = menu(toolbar, "more", "More");
     const settings = toolbar.querySelector(".board-settings-button");
     if (settings) toolbar.append(settings);
     if ($("#board-save")) toolbar.append($("#board-save"));
@@ -313,12 +312,12 @@ export function projectLayout(ctx) {
     if (star) toolbar.append(star);
     const tools = iconMenu(toolbar, "tools", "Board tools", "more");
     move(tools, '[data-action="board-rename"]');
-    const panels = { session, history, tools };
+    const panels = { board: boards, session, history, tools };
     // Dynamic tools are recreated on each board render; remove their old copies.
-    for (const panel of [boards, more, session, history, tools])
+    for (const panel of [boards, session, history, tools])
       for (const el of [...panel.children]) if (!el.dataset.action && !el.dataset.boardPersistent) el.remove();
     const extras = $("#canvas-extras");
-    if (extras) for (const el of [...extras.children]) (panels[el.dataset.menuHome] || more).append(el);
+    if (extras) for (const el of [...extras.children]) (panels[el.dataset.menuHome] || tools).append(el);
     extras?.remove();
     // Items kept across renders (data-board-persistent) stay at the end of their menu.
     for (const panel of [boards, history]) panel.append(...panel.querySelectorAll(":scope > [data-board-persistent]"));
@@ -335,7 +334,10 @@ export function projectLayout(ctx) {
         toolbar = details
           .closest(".table-view-tools,.toolbar-left,.board-toolbar")
           ?.getBoundingClientRect();
-      positionPopover(
+      // The tool bar's Insert menu opens beside the bar, level with its button where it fits.
+      const bar = details.closest(".board-tools")?.getBoundingClientRect();
+      if (bar) positionPopover(panel, { left: bar.right + 8, top: anchor.top, bottom: anchor.top }, { width: 240, maxHeight: 240, gap: 0 });
+      else positionPopover(
         panel,
         {
           left: anchor.left,

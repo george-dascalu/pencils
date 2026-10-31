@@ -60,7 +60,11 @@ export function phoneBoardTools({ icon, state }) {
     tools.append(palette);
     const navigation = palette.querySelector(".phone-board-extra-navigation");
     move(tools.querySelector('[data-pro="search-toggle"]'), navigation);
+    move(tools.querySelector('[data-pro="outline"]'), navigation);
     for (const group of dock.querySelectorAll('.board-tool-group:not([aria-label="Navigate"])')) move(group, palette);
+    // The panel lists Insert's actions with the other tools instead of opening a menu.
+    const insert = palette.querySelector('[data-board-menu="insert"]');
+    for (const row of insert?.querySelectorAll(".board-menu-panel > button") || []) move(row, insert.parentElement);
     const view = document.createElement("div");
     view.className = "phone-board-view-tools";
     view.setAttribute("role", "group"); view.setAttribute("aria-label", "View");

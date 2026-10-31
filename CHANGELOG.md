@@ -2,6 +2,16 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.20.72 — 2026-10-31
+
+### Changed
+
+- The board bar has no More menu. Its tools moved where you use them: the left tool bar's Frames opens the outline, now with Layers as a second tab; Live task view sits with Tasks; one Insert button opens beside the bar with Live note, Templates and Bulk notes (phones list them in Canvas tools); Connections opens from the selection toolbar for the selected object; and Import .canvas joins New board in Boards.
+
+### Fixed
+
+- The board's outline and search panels open beside the tool bar instead of over its edge, and Escape closes the outline from inside it.
+
 ## 0.20.71 — 2026-10-31
 
 ### Changed

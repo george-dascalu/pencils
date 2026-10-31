@@ -214,6 +214,7 @@ export function canvasFeatures(ctx) {
     rememberDisplay: (...args) => pro.rememberDisplay(...args),
   });
   const pro = canvasPro(ctx, {
+    layersHTML: layoutTools.layersHTML,
     pickEdges,
     selectedEdges,
     selectEdge,
@@ -343,11 +344,11 @@ export function canvasFeatures(ctx) {
     miro.position();
     if (!board() || !$("#canvas")) return;
     $("#canvas-extras")?.remove();
-    // Each extra names the board menu it belongs in (project-layout.js); the rest go in More.
+    // Each extra names the board menu it belongs in (project-layout.js); the rest go in Board tools.
     const divider = '<span class="board-menu-divider" role="separator" data-menu-home="tools"></span>';
     $(".board-toolbar")?.insertAdjacentHTML(
       "afterend",
-      `<div id="canvas-extras" class="canvas-extra-tools"><button class="button small" data-layout-tool="layers">Layers</button><button class="button small" data-layout-tool="bulk-notes">Bulk notes</button><button class="button small" data-feature="canvas-import">Import .canvas</button><button class="button small" data-feature="canvas-history" data-menu-home="history">${icon("clock")}History</button><button class="button small" data-drawing-action="recover" data-menu-home="history">${icon("local")}Local checkpoints</button>${divider}<button class="button small" data-drawing-action="link" data-id="${esc(board().id)}" data-menu-home="tools">${icon("link")}Copy board link</button><button class="button small" data-drawing-action="link-task" data-menu-home="tools">${icon("task")}Link tasks</button>${divider}<button class="button small" data-feature="canvas-svg" data-menu-home="tools">${icon("download")}Export SVG</button><button class="button small" data-feature="canvas-png" data-menu-home="tools">${icon("download")}Export PNG</button><button class="button small" data-feature="canvas-json" data-menu-home="tools">${icon("download")}Obsidian .canvas</button>${divider}<button class="button small" data-drawing-action="offline" data-menu-home="tools">${icon("download")}Prepare offline drawing</button><a class="button small" href="/drawing-offline.html" data-menu-home="tools">${icon("external")}Open offline pad</a>${divider}<button class="button small danger" data-feature="canvas-delete" data-menu-home="tools">${icon("trash")}Delete board</button></div>`,
+      `<div id="canvas-extras" class="canvas-extra-tools"><button class="button small" data-feature="canvas-import" data-menu-home="board">${icon("upload")}Import .canvas</button><button class="button small" data-feature="canvas-history" data-menu-home="history">${icon("clock")}History</button><button class="button small" data-drawing-action="recover" data-menu-home="history">${icon("local")}Local checkpoints</button>${divider}<button class="button small" data-drawing-action="link" data-id="${esc(board().id)}" data-menu-home="tools">${icon("link")}Copy board link</button><button class="button small" data-drawing-action="link-task" data-menu-home="tools">${icon("task")}Link tasks</button>${divider}<button class="button small" data-feature="canvas-svg" data-menu-home="tools">${icon("download")}Export SVG</button><button class="button small" data-feature="canvas-png" data-menu-home="tools">${icon("download")}Export PNG</button><button class="button small" data-feature="canvas-json" data-menu-home="tools">${icon("download")}Obsidian .canvas</button>${divider}<button class="button small" data-drawing-action="offline" data-menu-home="tools">${icon("download")}Prepare offline drawing</button><a class="button small" href="/drawing-offline.html" data-menu-home="tools">${icon("external")}Open offline pad</a>${divider}<button class="button small danger" data-feature="canvas-delete" data-menu-home="tools">${icon("trash")}Delete board</button></div>`,
     );
     enhanceBase();
     selection();

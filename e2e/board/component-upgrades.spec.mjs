@@ -55,9 +55,10 @@ async function find(page, id, text) {
   await page.locator(`[data-pro="find-result"][data-id="${id}"]`).click();
   await expect(page.locator(`[data-node="${id}"]`)).toBeVisible();
 }
-async function more(page) {
-  const m = page.locator("[data-board-menu=more]");
-  if ((await m.getAttribute("open")) === null) await m.locator(":scope > summary").click();
+// Since 0.20.72 Layers is the second tab of the outline, opened by the tool bar's Frames.
+async function layers(page) {
+  if (await page.locator("#canvas-outline").isHidden()) await page.locator(".board-tools [data-pro=outline]").click();
+  await page.locator("#canvas-outline [data-tab=layers]").click();
 }
 
 test("font size and vertical alignment save and paint on a sticky", async ({ page }) => {
@@ -104,8 +105,7 @@ test("merged grid cells keep both texts and stay merged after reload", async ({ 
 test("a named layer takes objects and hides and shows them", async ({ page }) => {
   await openBoard(page);
   await find(page, "note", "Typography");
-  await more(page);
-  await page.locator("[data-layout-tool=layers]").click();
+  await layers(page);
   await page.locator("#board-layers-form [name=name]").fill("Ideas");
   await page.locator("#board-layers-form [type=submit]").click();
   await poll(async () => (await current()).layers?.length).toBe(1);
@@ -113,12 +113,9 @@ test("a named layer takes objects and hides and shows them", async ({ page }) =>
   await poll(async () => !!(await nodeOf("note")).layer).toBe(true);
   await page.locator("[data-layer-action=hide]").click();
   await poll(async () => !!(await nodeOf("note")).layerHidden).toBe(true);
-  await page.locator("[data-action=dialog-close]").click();
   await expect(page.locator(".board-node[data-node=note]")).toHaveCount(0);
-  await more(page);
-  await page.locator("[data-layout-tool=layers]").click();
+  await layers(page);
   await page.locator("[data-layer-action=hide]").click();
-  await page.locator("[data-action=dialog-close]").click();
   await expect(page.locator(".board-node[data-node=note]")).toHaveCount(1);
 });
 

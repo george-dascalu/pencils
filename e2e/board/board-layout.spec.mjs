@@ -49,16 +49,14 @@ test.describe("wide desktop", () => {
     expect(rect.y, "compact header").toBeLessThan(160);
     expect(rect.height, "canvas height").toBeGreaterThan(750);
     await expect(page.locator(".hero")).toBeHidden();
-    await summary(page, "more").focus();
-    await summary(page, "more").press("Space");
+    await summary(page, "tools").focus();
+    await summary(page, "tools").press("Space");
     await expect(summary(page, "project")).toHaveCount(0);
-    await expect(page.locator('[data-board-menu="more"] [data-pro=outline]')).toBeVisible();
+    await expect(page.locator('[data-board-menu="tools"] [data-feature=canvas-json]')).toBeVisible();
     // Owner request, 31 October 2026: Board has no saved views; frames, the outline and bookmarks get you around.
     await expect(page.locator('#saved-view,[data-feature="view-save"],[data-feature="view-save-as"],[data-feature="view-delete"]')).toHaveCount(0);
     await page.keyboard.press("Escape");
-    await expect(summary(page, "more")).toBeFocused();
-    await summary(page, "more").click();
-    await expect(page.locator(".board-toolbar [data-board-menu=more] [data-pro=outline]")).toBeVisible();
+    await expect(summary(page, "tools")).toBeFocused();
     // Exports, Rename and the board's other actions live in Board tools (⋯) since 0.20.71.
     await summary(page, "tools").click();
     await expect(page.locator("[data-feature=canvas-json]")).toBeVisible();
@@ -79,13 +77,13 @@ test.describe("wide desktop", () => {
     await page.locator("#project-form").waitFor();
     await selectProjectView(page, "board");
     // Trigger a complete content redraw; every menu must keep exactly one action.
-    await clickControl(page.locator(".board-menu [data-pro=outline]"));
+    await clickControl(page.locator(".board-tools [data-pro=outline]"));
     await selectProjectView(page, "list");
     await expect(page.locator(".hero")).toBeHidden();
     await expect(page.locator("#board-project-tools")).toHaveCount(1);
     await page.locator(".tabs [data-view=board]").click();
     await page.locator("#canvas").waitFor();
-    for (const selector of [".board-settings-button", "[data-action=board-new]", ".board-menu [data-pro=outline]", "[data-action=board-rename]", ".board-menu [data-pro=present]", "[data-feature=canvas-json]", "[data-drawing-action=gallery]", "[data-drawing-save]"])
+    for (const selector of [".board-settings-button", "[data-action=board-new]", ".board-tools [data-pro=outline]", "[data-action=board-rename]", ".board-menu [data-pro=present]", "[data-feature=canvas-json]", "[data-drawing-action=gallery]", "[data-drawing-save]"])
       await expect(page.locator(selector), selector).toHaveCount(1);
   });
 });
@@ -106,7 +104,7 @@ onDevices(["ipad", "phone"], () => {
     // Since 0.19.2 the header New control is a menu offering a card or a document.
     await newCard(page);
     await page.locator("[data-action=dialog-close]").first().click();
-    for (const key of ["board", "more", "session", "history", "tools"]) {
+    for (const key of ["board", "session", "history", "tools"]) {
       // Since 0.18.26 phones keep the board menus in the View options panel;
       // reveal opens it, then the menu, as summary(key).click() does elsewhere.
       const menuPanel = page.locator(`[data-board-menu=${key}] .board-menu-panel`);
@@ -150,7 +148,7 @@ test.describe("short iPad window", () => {
   });
 });
 
-test("the More menu follows the dark theme", async ({ page }) => {
+test("the board menus follow the dark theme", async ({ page }) => {
   await openBoard(page);
   // Since 0.19.31 the former Personal settings are the Settings page's "You" section, and
   // "Back to project" returns to the board.
@@ -158,8 +156,8 @@ test("the More menu follows the dark theme", async ({ page }) => {
   await page.locator("[name=personal-theme][value=dark]").check();
   await page.locator("[data-action=settings-close]").click();
   await page.locator("#canvas").waitFor();
-  await summary(page, "more").click();
-  const panel = page.locator("[data-board-menu=more] .board-menu-panel");
+  await summary(page, "tools").click();
+  const panel = page.locator("[data-board-menu=tools] .board-menu-panel");
   await expect(panel).toBeVisible();
   expect(await panel.evaluate((el) => getComputedStyle(el).backgroundColor)).not.toBe("rgb(255, 255, 255)");
   await page.keyboard.press("Escape");

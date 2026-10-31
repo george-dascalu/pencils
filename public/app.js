@@ -1278,7 +1278,7 @@ function kanbanView(tasks) {
 
 let taskPanelController = null, restoreTaskFocus = null;
 // Small operations open at a width sized to their content instead of the full dialog.
-const COMPACT_DIALOGS = ["board", "canvas-note", "canvas-name", "board-layers", "bulk-stickies", "quick-capture", "view", "keyboard-connector", "frame-link"];
+const COMPACT_DIALOGS = ["board", "canvas-note", "canvas-name", "bulk-stickies", "quick-capture", "view", "keyboard-connector", "frame-link"];
 function showDialog(html, kind, { boardPanel = false, nodeId = null } = {}) {
   const opener = document.activeElement;
   if (taskPanelController && !closeDialog(false, { confirmDirty: false }))
@@ -1773,9 +1773,9 @@ function boardToolsHTML() {
   const tool = (name, title, action = "board-add", glyph = name) =>
     `<button type="button" class="${state.tool === name ? "active" : ""}" aria-pressed="${state.tool === name}" data-action="${action}" data-tool="${name}" title="${title}" aria-label="${title}">${icon(glyph)}</button>`;
   const groups = [
-    ["Navigate", tool("cursor", "Select / move", "board-tool") + tool("hand", "Pan canvas", "board-tool") + `<button type="button" data-pro="search-toggle" aria-label="Search board" title="Search board (Ctrl / ⌘ F)" aria-expanded="false" aria-controls="canvas-search-panel">${icon("search")}</button>`],
-    ["Tasks", `<button type="button" data-action="board-task" aria-label="Project tasks" title="Project tasks" aria-expanded="${!!state.boardTaskPanel}" aria-controls="board-task-panel">${icon("task")}</button><button type="button" data-feature="project-frame-add" data-tool="project-frame" title="Project frame" aria-label="Add Project frame">${icon("project-frame")}</button>`],
-    ["Create", tool("sticky", "Add sticky note") + tool("text", "Add text") + tool("shape", "Add shape") + `<button type="button" data-feature="image-add" aria-label="Add images or GIFs" title="Images / GIFs · PNG, JPG, WebP or GIF · Up to 10 MB each">${icon("image")}</button><button type="button" data-feature="draw-tool" data-tool="draw" aria-label="Pen" title="Pen (P)">${icon("pencil")}</button>`],
+    ["Navigate", tool("cursor", "Select / move", "board-tool") + tool("hand", "Pan canvas", "board-tool") + `<button type="button" data-pro="search-toggle" aria-label="Search board" title="Search board (Ctrl / ⌘ F)" aria-expanded="false" aria-controls="canvas-search-panel">${icon("search")}</button><button type="button" data-pro="outline" aria-label="Frames" title="Frames and layers" aria-expanded="false" aria-controls="canvas-outline">${icon("list")}</button>`],
+    ["Tasks", `<button type="button" data-action="board-task" aria-label="Project tasks" title="Project tasks" aria-expanded="${!!state.boardTaskPanel}" aria-controls="board-task-panel">${icon("task")}</button><button type="button" data-feature="project-frame-add" data-tool="project-frame" title="Project frame" aria-label="Add Project frame">${icon("project-frame")}</button><button type="button" data-pro="query-add" aria-label="Live task view" title="Live task view">${icon("table")}</button>`],
+    ["Create", tool("sticky", "Add sticky note") + tool("text", "Add text") + tool("shape", "Add shape") + `<button type="button" data-feature="image-add" aria-label="Add images or GIFs" title="Images / GIFs · PNG, JPG, WebP or GIF · Up to 10 MB each">${icon("image")}</button><button type="button" data-feature="draw-tool" data-tool="draw" aria-label="Pen" title="Pen (P)">${icon("pencil")}</button><details class="board-menu" data-board-menu="insert"><summary class="icon-summary" aria-label="Insert" title="Insert">${icon("plus")}</summary><div class="board-menu-panel"><button type="button" data-pro="note-add">${icon("documents")}Live note</button><button type="button" data-pro="templates">${icon("duplicate")}Templates</button><button type="button" data-layout-tool="bulk-notes">${icon("sticky")}Bulk notes</button></div></details>`],
     ["Arrange", `<button type="button" data-feature="frame-add" data-tool="frame" title="Frame (F)" aria-label="Draw frame">${icon("frame")}</button>` + tool("grid", "Add grid", "board-add", "table") + tool("connect", "Connect two objects", "board-tool")],
   ];
   // Undo, redo and the view controls (capacity, zoom level, full screen) stay at the foot of the bar
@@ -2672,7 +2672,7 @@ document.addEventListener("dblclick", (event) => {
 });
 document.addEventListener("pointerdown", (event) => {
   const canvas = event.target.closest("#canvas");
-  if (!canvas || event.target.closest("button,select,input")) return;
+  if (!canvas || event.target.closest("button,select,input,.board-menu")) return;
   if (event.button !== 0 && event.button !== 1) return;
   const element = event.target.closest("[data-node]"),
     edge = event.target.closest("[data-edge]");

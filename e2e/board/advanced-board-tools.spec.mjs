@@ -54,8 +54,8 @@ const png = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR
 
 test("several notes are added at once and removed with one undo", async ({ page }) => {
   await open(page);
-  const more = page.locator("[data-board-menu=more]");
-  if ((await more.getAttribute("open")) === null) await more.locator(":scope > summary").click();
+  // Since 0.20.72 Bulk notes is in the tool bar's Insert menu.
+  await page.locator("[data-board-menu=insert] > summary").click();
   await page.locator("[data-layout-tool=bulk-notes]").click();
   await page.locator("#bulk-stickies-form textarea").fill("First bulk note\nSecond bulk note");
   await page.locator("#bulk-stickies-form button[type=submit],#bulk-stickies-form .dialog-foot button").click();

@@ -118,6 +118,8 @@ onDevices(["phone"], () => {
     await page.locator(".phone-board-dock").waitFor({ state: "visible" });
     await page.locator(".phone-board-more").click();
     await source(page).waitFor({ state: "visible" });
+    // The panel scrolls; since 0.20.72 it also lists Frames, Live task view and Insert's actions.
+    await source(page).scrollIntoViewIfNeeded();
     const r = await source(page).boundingBox();
     const palette = await page.locator("#phone-board-palette").boundingBox();
     const canvas = await page.locator("#canvas").boundingBox();

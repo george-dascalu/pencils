@@ -1032,6 +1032,16 @@ html.table-viewport-view body {
 .board-menu-panel > .board-menu-heading:first-child { padding-top: 4px; }
 /* Dividers split a menu's groups without headings, like Obsidian's menus. */
 .board-menu-panel > .board-menu-divider { flex: none; height: 1px; margin: 4px 0; background: var(--line); }
+/* The tool bar's Insert menu: its summary looks like the tools beside it, and its rows like any
+   board menu's, over the tool bar's square buttons (controls.css's :is() counts as (0,2,1)). */
+.board-tools .board-menu > summary { justify-content: center; border-color: transparent; border-radius: 5px; background: transparent; color: #889978; }
+[data-theme="dark"] .board-tools .board-menu > summary { color: var(--ink); }
+.board-tools .board-menu > summary:hover, .board-tools .board-menu[open] > summary { background: var(--surface-soft); }
+/* An open menu paints over the outline and search panels beside the bar. */
+.board-tools:has(.board-menu[open]) { z-index: 26; }
+.board-tools .board-menu .board-menu-panel > :is(button, a) { width: 100% !important; min-width: 0 !important; flex: none !important; padding-inline: var(--control-padding) !important; }
+/* Phones list its actions in Canvas tools with the other tools (phone-board-tools.js). */
+.phone-board-palette [data-board-menu="insert"] { display: none; }
 /* Filter fields line up with the other controls in the menu. */
 .board-menu-panel > .field { display: flex; flex-direction: column; align-items: stretch; text-align: start; margin: 0; padding-inline: 10px; }
 .board-menu-panel > .field > :is(select, input) { width: 100%; max-width: none; }

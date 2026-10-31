@@ -43,12 +43,10 @@ export function boardLayoutTools(ctx, basic) {
     else for (const [property, value] of Object.entries({ left: box.x, top: box.y, width: box.w, height: box.h }))
       if (outline.style[property] !== `${value}px`) outline.style[property] = `${value}px`;
   }
-  function layers() {
+  // The Layers tab of the outline panel (canvas-pro.js), under the tool bar's Frames.
+  function layersHTML() {
     const b = board();
-    showDialog(
-      `<dialog class="dialog"><form id="board-layers-form">${dialogHead("Layers")}<div class="dialog-body"><p>Assign selected objects to a layer. Containers carry their contents.</p><label class="field">New layer<input name="name" maxlength="80" required></label><button class="button" type="submit">Create layer</button>${(b.layers || []).map((l) => `<div class="layer-row"><strong>${esc(l.name)}</strong><button type="button" data-layer-action="assign" data-layer="${esc(l.id)}">Assign selection</button><button type="button" data-layer-action="hide" data-layer="${esc(l.id)}" aria-pressed="${!!l.hidden}">${l.hidden ? "Show" : "Hide"}</button><button type="button" data-layer-action="lock" data-layer="${esc(l.id)}" aria-pressed="${!!l.locked}">${l.locked ? "Unlock" : "Lock"}</button><button type="button" data-layer-action="remove" data-layer="${esc(l.id)}">Remove layer</button></div>`).join("")}<button type="button" data-layer-action="assign" data-layer="">Move selection out of layers</button></div></form></dialog>`,
-      "board-layers",
-    );
+    return `<form id="board-layers-form"><p>Assign selected objects to a layer. Containers carry their contents.</p><label class="field">New layer<input name="name" maxlength="80" required></label><button class="button" type="submit">Create layer</button>${(b.layers || []).map((l) => `<div class="layer-row"><strong>${esc(l.name)}</strong><button type="button" data-layer-action="assign" data-layer="${esc(l.id)}">Assign selection</button><button type="button" data-layer-action="hide" data-layer="${esc(l.id)}" aria-pressed="${!!l.hidden}">${l.hidden ? "Show" : "Hide"}</button><button type="button" data-layer-action="lock" data-layer="${esc(l.id)}" aria-pressed="${!!l.locked}">${l.locked ? "Unlock" : "Lock"}</button><button type="button" data-layer-action="remove" data-layer="${esc(l.id)}">Remove layer</button></div>`).join("")}<button type="button" data-layer-action="assign" data-layer="">Move selection out of layers</button></form>`;
   }
   function layerState(n, l) {
     n.layerHidden = !!l?.hidden;
@@ -71,7 +69,7 @@ export function boardLayoutTools(ctx, basic) {
       changeBoard((b) => {
         (b.layers ||= []).push({ id: basic.uid("layer"), name });
       });
-      layers();
+      $("#board-layers-form [name=name]")?.focus({ preventScroll: true });
     }
     if (e.target.id === "bulk-stickies-form") {
       e.preventDefault();
@@ -100,7 +98,6 @@ export function boardLayoutTools(ctx, basic) {
   });
   document.addEventListener("click", (e) => {
     const action = e.target.closest("[data-layout-tool]")?.dataset.layoutTool;
-    if (action === "layers") layers();
     if (action === "bulk-notes")
       showDialog(
         `<dialog class="dialog"><form id="bulk-stickies-form">${dialogHead("Create sticky notes")}<div class="dialog-body"><label class="field">One note per line<textarea name="text" rows="10" required maxlength="60000"></textarea></label></div><div class="dialog-foot"><button class="button primary">Create notes</button></div></form></dialog>`,
@@ -173,7 +170,6 @@ export function boardLayoutTools(ctx, basic) {
         if (op === "remove") b.layers = b.layers.filter((x) => x !== l);
       }
     });
-    layers();
   });
   document.addEventListener(
     "pointerdown",
@@ -352,5 +348,5 @@ export function boardLayoutTools(ctx, basic) {
     },
     true,
   );
-  return { render };
+  return { render, layersHTML };
 }

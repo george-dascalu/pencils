@@ -424,7 +424,8 @@ export function canvasControls(ctx, basic) {
         !active() ||
         state.dialog ||
         state.canvasEditing ||
-        e.target.closest(editable + ",.board-task-editor")
+        // Keys in the outline and search panels are theirs, not the canvas's.
+        e.target.closest(editable + ",.board-task-editor,.canvas-panel")
       )
         return;
       if ($("#canvas").classList.contains("presenting")) return;

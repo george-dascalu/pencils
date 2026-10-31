@@ -26,9 +26,8 @@ test("the board bar's right side holds Session, Version history, the star and Bo
   expect(await items(page, "session")).toEqual(["Present", "Board session"]);
   expect(await items(page, "history")).toEqual(["Activity", "History", "Local checkpoints"]);
   expect(await items(page, "tools")).toEqual(["Rename", "Copy board link", "Link tasks", "Export SVG", "Export PNG", "Obsidian .canvas", "Prepare offline drawing", "Open offline pad", "Delete board"]);
-  expect(await items(page, "board")).toEqual(["New board", "Boards"]);
-  const more = await items(page, "more");
-  for (const gone of ["Present", "Board session", "Activity", "Keyboard shortcuts", "History", "Export SVG", "Delete board"]) expect(more, gone).not.toContain(gone);
+  // Import .canvas joins New board in Boards since the board bar lost More (0.20.72).
+  expect(await items(page, "board")).toEqual(["New board", "Import .canvas", "Boards"]);
   await expect(page.locator("#frame-nav"), "Jump to frame is gone; Outline covers it").toHaveCount(0);
 });
 
