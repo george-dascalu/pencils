@@ -13,7 +13,8 @@ const app = useApp(async (store) => {
   await store.createTask(project.id, { title: "Child task", status: "todo", parent: tasks[0].id });
   const first = (await store.snapshot(project.id)).tasks.find((t) => t.id === tasks[0].id);
   await store.updateTask(project.id, first.id, { revision: first.revision, comments: [{ id: "c1", text: "Posted comment text", author: "George", created: "2026-10-27T10:00:00.000Z" }] });
-  return { project, tasks };
+  const headed = await store.createTask(project.id, { title: "Headed notes", status: "todo", body: "# Heading one\n\n## Heading two\n\n### Heading three\n\nBody text" });
+  return { project, tasks, headed };
 });
 
 const SCALE = {
@@ -180,3 +181,26 @@ test("desktop table keeps its open button", async ({ page }) => {
   await expect(page.locator(`[data-table-task="${app.tasks[1].id}"] .table-open`)).toBeVisible();
   await expect(page.locator(".phone-table-key:visible")).toHaveCount(0);
 });
+
+// Owner request (T17, 31 October 2026): headings in a card's description stay close to its text's
+// size: 1.3, 1.15 and 1.05 times the text, smaller headings at the text's own size.
+onDevices(["desktop", "phone"], () => test("description headings stay close to the text's size", async ({ page, device }) => {
+  await page.goto(url("list"));
+  await page.locator(`[data-action="task-open"][data-id="${app.headed.id}"]:visible`).first().click();
+  const editor = page.locator("#task-form .task-description .inline-rich");
+  await editor.locator("h1").waitFor();
+  const measure = (root) => root.evaluate((el) => Object.fromEntries(["h1", "h2", "h3", "p"].map((tag) => [tag, parseFloat(getComputedStyle(el.querySelector(tag)).fontSize)]).concat([["weight", getComputedStyle(el.querySelector("h1")).fontWeight]])));
+  // The editor and its preview show headings alike.
+  for (const [name, root] of [["editor", editor], ["preview", page.locator("#task-form #markdown-preview")]]) {
+    if (name === "preview") {
+      await page.locator("#task-form [data-rich-preview]").click();
+      await root.locator("h1").waitFor();
+    }
+    const sizes = await measure(root);
+    if (name === "editor") expect(sizes.p, `${device}: the text keeps the body size`).toBe(scaleFor(device).body);
+    expect(sizes.h1 / sizes.p, `${device} ${name}: ${JSON.stringify(sizes)}`).toBeCloseTo(1.3, 2);
+    expect(sizes.h2 / sizes.p).toBeCloseTo(1.15, 2);
+    expect(sizes.h3 / sizes.p).toBeCloseTo(1.05, 2);
+    expect(sizes.weight).toBe("600");
+  }
+}));

@@ -2239,6 +2239,17 @@ input[type="search"]:not(.search input) {
 .task-description .canvas-markdown :last-child {
   margin-bottom: 0;
 }
+/* Headings stay close to the text's size, as in a compact note. */
+.task-description :is(.inline-rich, .inline-preview) :is(h1, h2, h3, h4, h5, h6) {
+  margin: 0.8em 0 0.4em;
+  font-weight: 600;
+  line-height: 1.3;
+}
+.task-description :is(.inline-rich, .inline-preview) h1 { font-size: 1.3em; }
+.task-description :is(.inline-rich, .inline-preview) h2 { font-size: 1.15em; }
+.task-description :is(.inline-rich, .inline-preview) h3 { font-size: 1.05em; }
+.task-description :is(.inline-rich, .inline-preview) :is(h4, h5, h6) { font-size: 1em; }
+.task-description :is(.inline-rich, .inline-preview) > :first-child { margin-top: 0; }
 .task-description .markdown-source {
   font-family: monospace;
   resize: vertical;

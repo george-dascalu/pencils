@@ -2,6 +2,12 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.20.89 — 2026-10-31
+
+### Changed
+
+- Headings in a card's description are smaller and closer to the text's size, with tighter spacing.
+
 ## 0.20.88 — 2026-10-31
 
 ### Changed
