@@ -1,7 +1,7 @@
 // Owner request, 30 October 2026: an assignee shows the first three letters of their name, such as
 // Geo for George, instead of initials, and they fit their box, even wide letters in Compact
 // density; the full name stays in the tooltip. Owner request, 31 October 2026: a person's own short
-// name, set in People, replaces the three letters.
+// name, set in Settings → Organisation, replaces the three letters.
 import { test, expect, onDevices, useApp } from "../fixtures.mjs";
 
 const app = useApp(async (store) => {
@@ -29,8 +29,8 @@ onDevices(["desktop", "phone"], () => test("assignees show three letters that fi
   }
 }));
 
-test("a short name set in People replaces the three letters and fits its box", async ({ page }) => {
-  await page.goto(`${app.base}/#organisation/${app.organisation.id}/people`);
+test("a short name set in Settings → Organisation replaces the three letters and fits its box", async ({ page }) => {
+  await page.goto(`${app.base}/#organisation/${app.organisation.id}/settings/organisation`);
   const row = page.locator('[data-person="george"]'), field = page.getByLabel("Short name for George", { exact: true });
   await expect(field, "the placeholder shows the default").toHaveAttribute("placeholder", "Geo");
   await row.locator("[data-person-field=name]").fill("Alex");
@@ -39,7 +39,7 @@ test("a short name set in People replaces the three letters and fits its box", a
   await field.fill("MWa");
   const [saved] = await Promise.all([
     page.waitForResponse((r) => r.request().method() === "PATCH" && r.url().includes("/organisations/")),
-    page.getByRole("button", { name: "Save people", exact: true }).click(),
+    page.getByRole("button", { name: "Save organisation", exact: true }).click(),
   ]);
   expect(saved.status()).toBe(200);
   expect((await app.store.getOrganisation(app.organisation.id)).people.map((p) => p.short_name)).toEqual(["MWa", undefined]);

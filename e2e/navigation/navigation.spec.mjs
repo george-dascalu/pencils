@@ -26,7 +26,7 @@ async function at(page, hash) {
     if (location.hash !== hash || history.state?.url !== hash || document.querySelector(".main")?.getAttribute("aria-busy") === "true") return false;
     const route = history.state.route;
     if (!route.project)
-      return !document.querySelector(".tabs") && (route.page === "home" ? !document.querySelector(".directory-page") : document.querySelector(".directory-link[aria-current=page]")?.dataset.page === route.page);
+      return !document.querySelector(".tabs") && (route.page === "home" ? !document.querySelector(".project-settings-page") : !!document.querySelector("#settings-page-title"));
     if (document.querySelector(".project-link.active")?.dataset.id !== route.project) return false;
     if (route.view === "overview") return !!document.querySelector(".project-overview");
     if (route.view === "settings") return !!document.querySelector("#project-form");
@@ -100,7 +100,7 @@ test("Back, Forward and reload restore each view's search and table preferences"
   await expect(page.locator("#search")).toHaveValue("Prerequisite");
 });
 
-test("settings, directory pages, home and organisation switches join the history", { tag: "@gate" }, async ({ page }) => {
+test("settings, home and organisation switches join the history", { tag: "@gate" }, async ({ page }) => {
   const { project, other } = app;
   await start(page, projectRoute("kanban"));
   // Since 0.19.31 the top bar's single Settings button opens the project's General first.
@@ -110,12 +110,6 @@ test("settings, directory pages, home and organisation switches join the history
   await forward(page, projectRoute("settings/general"));
   await page.locator("[data-action=settings-close]").click();
   await at(page, projectRoute("kanban"));
-  await clickControl(page.locator(".directory-link[data-page=people]"));
-  await at(page, `#organisation/${project.organisation}/people`);
-  await clickControl(page.locator(".directory-link[data-page=teams]"));
-  await at(page, `#organisation/${project.organisation}/teams`);
-  await back(page, `#organisation/${project.organisation}/people`);
-  await back(page, projectRoute("kanban"));
   await clickControl(page.locator("[data-action=home]").first());
   await at(page, `#organisation/${project.organisation}/home`);
   await reload(page);

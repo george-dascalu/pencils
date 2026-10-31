@@ -136,7 +136,7 @@
      stay above the bar too. Boards and documents run to the bottom of the screen; their controls at
      the bottom (the phone board dock, the minimap, the word count) sit above the bar, except on the
      expanded board, which covers it. */
-  .main.project-main:not([data-layout-view="board"], [data-layout-view="drawing"], [data-layout-view="documents"], [data-layout-view="table"], [data-layout-view="kanban"], [data-layout-view="timeline"], [data-layout-view="tree"]) > :is(#view-content, .help-page, .directory-page) { padding-bottom: calc(var(--tabbar-clearance) + 6px); }
+  .main.project-main:not([data-layout-view="board"], [data-layout-view="drawing"], [data-layout-view="documents"], [data-layout-view="table"], [data-layout-view="kanban"], [data-layout-view="timeline"], [data-layout-view="tree"]) > :is(#view-content, .help-page) { padding-bottom: calc(var(--tabbar-clearance) + 6px); }
   .main.project-main:is([data-layout-view="board"], [data-layout-view="drawing"], [data-layout-view="documents"]) > #view-content { padding-bottom: 0; }
   .main.project-main .canvas:not(.board-expanded), .main.project-main .documents-workspace { border-bottom: 0; border-end-start-radius: 0; border-end-end-radius: 0; }
   .canvas:not(.board-expanded) { --board-bottom-clear: var(--tabbar-clearance); }
@@ -856,7 +856,7 @@ html.table-viewport-view body {
 #quick-capture.dialog-body > button { align-self: flex-end; }
 #view-toolbar > .shared-query-controls { padding: 7px 16px; }
 
-/* The sidebar holds projects, teams and, at its bottom, Settings and Help above the version; it
+/* The sidebar holds projects and, at its bottom, Settings and Help above the version; it
    closes with its close button. Phones show the active view in the bottom bar. */
 .phone-new-task { display: none; }
 .sidebar .brand { margin-right: 52px; }
@@ -880,8 +880,7 @@ html.table-viewport-view body {
   .sidebar .organisation-actions button { font-size: var(--type-small); min-height: 44px; }
   .sidebar .side-label { padding: 12px 12px 4px; }
   .sidebar :is(.project-link, .directory-link) { min-height: 44px; margin: 0; padding: 0 12px; font-size: var(--type-body); }
-  .sidebar .project-links, .sidebar .directory-links { gap: 0; }
-  .sidebar .sidebar-directory { margin-top: 0; }
+  .sidebar .project-links { gap: 0; }
   /* Every drawer section label shares one small-caps style and left edge. */
   .sidebar .side-label, .sidebar .organisation-choice > span {
     font-size: var(--type-meta); font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: #a1b1a4;
@@ -1063,8 +1062,7 @@ html.table-viewport-view body {
 /* Empty board thumbnail. */
 .drawing-thumb-empty { display: grid; place-items: center; aspect-ratio: 4 / 3; border-radius: 6px; background: var(--surface-soft); color: var(--muted); font-size: 12px; }
 
-/* Current directory page and other segmented controls share the layout switcher's active look. */
-.directory-tabs .button[aria-current="page"],
+/* Segmented controls share the layout switcher's active look. */
 .document-modes .icon-button[aria-pressed="true"],
 .task-pane-switcher [aria-pressed="true"],
 .pen-presets .pen-preset.active {

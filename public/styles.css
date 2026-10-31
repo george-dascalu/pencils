@@ -2891,9 +2891,6 @@ input[type="search"]:not(.search input) {
   display: none;
 }
 
-.sidebar-directory {
-  margin-top: 22px;
-}
 /* Personal and Today share one row, leaving the document explorer its room. */
 .personal-links {
   display: flex;
@@ -2903,11 +2900,6 @@ input[type="search"]:not(.search input) {
   flex: 1;
   min-width: 0;
 }
-.directory-links {
-  display: flex;
-  flex-direction: column;
-  gap: 5px;
-}
 .directory-link > .icon {
   width: 17px;
   height: 17px;
@@ -2916,43 +2908,10 @@ input[type="search"]:not(.search input) {
 .directory-link > span:first-of-type {
   flex: 1;
 }
-.directory-count {
-  color: #a1b1a4;
-  font-size: 11px;
-}
-.directory-tabs {
-  display: flex;
-  gap: 8px;
-  margin: 16px 0;
-}
-.directory-tabs .button {
-  display: inline-flex;
-  gap: 8px;
-  align-items: center;
-}
-.directory-tabs [aria-current="page"] {
-  border-color: var(--green);
-}
-.directory-page .organisation-teams h3 {
-  margin-top: 0;
-}
-.directory-page .dialog-foot {
-  align-items: center;
-  justify-content: space-between;
-}
 .directory-empty {
   padding: 12px;
   border: 1px dashed var(--line);
   border-radius: calc(8px * var(--style-roundness, 1));
-}
-[data-directory-section][hidden] {
-  display: none;
-}
-.directory-page .team-heading {
-  flex-wrap: wrap;
-}
-.directory-page .team-heading > input {
-  flex-basis: 180px;
 }
 
 /* Task comments occupy the same sidebar slot as version history. */

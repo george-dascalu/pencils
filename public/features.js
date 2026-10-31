@@ -324,7 +324,9 @@ export function installFeatures(ctx) {
     };
   }
   function draftKey(form) {
-    return `draft:${state.session?.user?.username || "shared"}:${state.project?.id || state.organisation?.id || "workspace"}:${form.id}:${form.dataset.draftNode ? `board:${form.dataset.board}:draft:${form.dataset.draftNode}` : form.dataset.id || form.dataset.edit || "new"}${form.dataset.directoryPage ? `:${form.dataset.directoryPage}` : ""}`;
+    // Organisation drafts (people and teams) belong to the organisation, whichever project is open.
+    const scope = form.id === "organisation-form" ? state.organisation?.id : state.project?.id || state.organisation?.id;
+    return `draft:${state.session?.user?.username || "shared"}:${scope || "workspace"}:${form.id}:${form.dataset.draftNode ? `board:${form.dataset.board}:draft:${form.dataset.draftNode}` : form.dataset.id || form.dataset.edit || "new"}`;
   }
   function dialogOpened(kind, pageForm) {
     relationships?.destroy();
@@ -350,7 +352,6 @@ export function installFeatures(ctx) {
             form,
             form.dataset.id ? state.organisation : null,
             esc,
-            form.dataset.directoryPage || "all",
           )
         : kind === "project" && form
           ? projectTeamControls(form, state, esc)
@@ -904,10 +905,7 @@ export function installFeatures(ctx) {
         relationships?.refresh();
         reloadTeams?.();
         reloadWorkflow?.();
-        if (
-          (form.id === "project-form" && state.view === "settings") ||
-          form.dataset.directoryPage
-        )
+        if (form.id === "organisation-form" || (form.id === "project-form" && state.view === "settings"))
           state.settingsDirty = true;
         state.dirty = true;
         $(".draft-notice")?.remove();

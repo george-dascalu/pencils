@@ -87,7 +87,7 @@ export const settingsPages = [
     "Organisation",
     "folder",
     "Organisation",
-    "Name, description and colour of this organisation.",
+    "Name, description, colour, people and teams of this organisation.",
   ],
 ];
 // Without an open project, Settings shows only your own and the organisation's sections.
@@ -355,7 +355,7 @@ export function projectSettings(ctx, { sources, automations, personal, organisat
       }
       if (section === "organisation") {
         host.innerHTML = ctx.organisationFormHTML();
-        // People and teams are edited here too, as in the Teams and People pages.
+        // People and teams are edited here, their one home.
         organisationEditor(host.querySelector("form"));
         return;
       }

@@ -173,8 +173,8 @@ test.describe("Group 3: touch targets and axe (findings 13–14)", { tag: "@audi
     });
     test("people, workflow and automation targets are at least 44px on phones", async ({ page }) => {
       const small = [];
-      await page.goto(`${app.base}/#organisation/${app.project.organisation}/people`);
-      await page.locator(".main .directory-page").waitFor();
+      await page.goto(`${app.base}/#organisation/${app.project.organisation}/settings/organisation`);
+      await page.getByRole("button", { name: "Add person", exact: true }).waitFor();
       small.push(...(await smallTargets(page)).map((x) => `people: ${x}`));
       for (const section of ["workflow", "automation"]) {
         await open(page, `settings/${section}`, "#settings-panel");

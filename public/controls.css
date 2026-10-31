@@ -263,7 +263,7 @@ textarea,
   .main :is(.task-id, .phone-task-status, .phone-task-meta, .table-open, .column-header, .kanban-card .priority,
     .kanban-assignee-name, .count, .task-row .due, .timeline-bar, .board-tool-category, .capacity-percent,
     .task-color-badge, .task-key, .eyebrow, .field-hint, .caption, .document-save, .app-version,
-    .directory-count, .side-label, .version, .side-footer) { font-size: 12px; }
+    .side-label, .version, .side-footer) { font-size: 12px; }
   .main .task-assignee { font-size: 10px; }
 }
 

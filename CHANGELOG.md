@@ -2,6 +2,16 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.20.66 — 2026-10-31
+
+### Changed
+
+- People and teams have one home, Settings → Organisation: the sidebar's Teams section and the separate People and Teams pages are gone, old links to them open that section, and Capacity's "People and teams" button goes there.
+
+### Fixed
+
+- An unsaved edit to people and teams is offered again in any of the organisation's projects, and once restored, leaving Settings asks before discarding it.
+
 ## 0.20.65 — 2026-10-31
 
 ### Changed

@@ -99,9 +99,8 @@ test("active states use ARIA instead of classes or primary styling", async ({ pa
   await openBoard(page);
   await expect(page.locator(".board-tools button[data-tool].active[aria-pressed='true']"), "active tool has aria-pressed").toHaveCount(1);
   expect(await page.locator(".board-tools button[data-tool][aria-pressed='false']").count()).toBeGreaterThan(0);
-  await page.goto(`${app.base}/#organisation/${app.project.organisation}/people`);
-  await page.locator(".main").waitFor();
-  await expect(page.locator('.directory-tabs [aria-current="page"], .directory-switch [aria-current="page"], [data-directory-switch] [aria-current="page"]'), "current directory page uses aria-current").toHaveCount(1);
+  await page.goto(`${app.base}/#organisation/${app.project.organisation}/settings/organisation`);
+  await expect(page.locator('.settings-navigation [aria-current="page"]'), "the current settings section uses aria-current").toHaveCount(1);
   await expect(page.locator('[aria-current="page"].button.soft'), "soft is not used as a state").toHaveCount(0);
 });
 
@@ -143,7 +142,7 @@ test("icons inside controls are 16px, including the selection toolbar", async ({
 
 test("counts, tags and assignee chips share one size", async ({ page }) => {
   await open(page, "list", ".task-row");
-  const sizes = await page.evaluate(() => [...new Set([...document.querySelectorAll(".count, .tab-count, .directory-count, .tag")].filter((el) => el.getClientRects().length).map((el) => getComputedStyle(el).fontSize))]);
+  const sizes = await page.evaluate(() => [...new Set([...document.querySelectorAll(".count, .tab-count, .tag")].filter((el) => el.getClientRects().length).map((el) => getComputedStyle(el).fontSize))]);
   expect(sizes, `count sizes ${sizes.join(",")}`).toEqual(["11px"]);
   const chip = await page.locator(".task-row .task-assignee").first().evaluate((el) => Math.round(el.getBoundingClientRect().height));
   // Lists use the shared list chip: 24px avatars with room inside a 32px target (0.19.11).

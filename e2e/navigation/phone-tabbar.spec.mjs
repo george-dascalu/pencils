@@ -161,14 +161,13 @@ onDevices(["phone", "ipad", "ipad-portrait"], () => test("the bar steps aside wh
   await expect(bar(page)).toBeVisible();
 }));
 
-onDevices(["phone"], () => test("the drawer lists Personal, Today, projects, teams, Settings and Help without view tiles", async ({ page }) => {
+onDevices(["phone"], () => test("the drawer lists Personal, Today, projects, Settings and Help without view tiles", async ({ page }) => {
   await open(page);
   await page.locator(".mobile-menu").click();
   await page.locator(".sidebar.open").waitFor();
   const sidebar = page.locator(".sidebar");
   await expect(sidebar.locator(".project-link", { hasText: "Tab bar" })).toBeVisible();
   await expect(sidebar.locator(".personal-links .directory-link")).toHaveText(["Personal", "Today"]);
-  await expect(sidebar.locator(".directory-links .directory-link")).toHaveCount(2);
   await expect(sidebar.locator(".phone-drawer-utilities button")).toHaveText(["Settings", "Help"]);
   await expect(sidebar.locator("[data-view]")).toHaveCount(0);
 }));

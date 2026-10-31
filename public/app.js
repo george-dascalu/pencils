@@ -738,7 +738,6 @@ async function openProject(id) {
   }
 }
 async function openOrganisation(id) {
-  if (["teams", "people"].includes(state.directoryPage)) return openDirectory(state.directoryPage, id);
   if (!canNavigate()) return false;
   const organisation = state.organisations.find((o) => o.id === id);
   if (!organisation)
@@ -761,34 +760,6 @@ async function openOrganisation(id) {
   } finally {
     setLoading(false);
   }
-}
-async function openDirectory(page, organisationId = state.organisation?.id) {
-  if (!["teams", "people"].includes(page) || !canNavigate()) return false;
-  const organisation = state.organisations.find((o) => o.id === organisationId);
-  if (!organisation) return false;
-  setLoading(true);
-  state.navigation++;
-  try {
-    await boardQueue;
-    if (state.boardConflict)
-      throw new Error(
-        "Resolve the unsaved canvas changes before opening the directory.",
-      );
-    clearProject();
-    state.organisation = organisation;
-    state.directoryPage = page;
-    storage.set("organisation", organisation.id);
-    renderApp();
-    return true;
-  } finally {
-    setLoading(false);
-  }
-}
-function directoryPageHTML() {
-  const o = state.organisation,
-    page = state.directoryPage,
-    title = label(page);
-  return `<section class="content project-settings-page directory-page"><header class="settings-page-heading"><h1>${title}</h1><p>${page === "teams" ? "Build teams and choose their members." : "Manage people and their weekly task limits."} ${esc(o.title)}.</p></header><nav class="directory-tabs" aria-label="Organisation directory"><button class="button" data-action="directory-open" data-page="teams" ${page === "teams" ? 'aria-current="page"' : ""}>${icon("group")}Teams <span class="count">${o.teams?.length || 0}</span></button><button class="button" data-action="directory-open" data-page="people" ${page === "people" ? 'aria-current="page"' : ""}>${icon("people")}People <span class="count">${o.people?.length || 0}</span></button></nav><form id="organisation-form" data-directory-page="${page}" data-id="${esc(o.id)}" data-revision="${esc(o.revision)}"><div class="dialog-body"><div class="form-error hidden" role="alert"></div></div><div class="dialog-foot"><span class="field-hint">Changes apply to this organisation.</span><button class="button primary" type="submit">Save ${page}</button></div></form></section>`;
 }
 function renderApp() {
   keepFocus(renderAppNow);
@@ -821,7 +792,6 @@ function renderAppNow() {
         )
         .join("")}</nav>
       ${p ? '<section id="sidebar-documents" class="sidebar-documents" aria-label="Documents"></section>' : ""}
-      ${state.organisation ? `<section class="sidebar-directory"><div class="side-label">TEAMS</div><nav class="directory-links" aria-label="Teams and people">${["teams", "people"].map((page) => `<button class="directory-link ${state.directoryPage === page ? "active" : ""}" data-action="directory-open" data-page="${page}" ${state.directoryPage === page ? 'aria-current="page"' : ""}>${icon(page === "teams" ? "group" : "people")}<span>${label(page)}</span><span class="directory-count">${state.organisation[page]?.length || 0}</span></button>`).join("")}</nav></section>` : ""}
       <div class="phone-drawer-utilities" role="group" aria-label="Settings and help" style="--tiles:2"><button class="button" data-action="settings" aria-label="Settings" ${(p ? state.view === "settings" : state.directoryPage === "settings") ? 'aria-current="page"' : ""}>${icon("settings")}<span>Settings</span></button><button class="button" data-action="help" aria-label="Help & guides" ${state.helpArticle ? 'aria-current="page"' : ""}>${icon("help")}<span>Help</span></button></div>
       <div class="side-bottom">
       <div class="side-footer"><span class="dot"></span>Local workspace${headerStatus.versionHTML()}</div></div>
@@ -829,21 +799,11 @@ function renderAppNow() {
     <main class="main">
       <header class="topbar"><div class="breadcrumb"><button class="icon-button mobile-menu" data-action="menu" aria-label="Toggle sidebar" aria-controls="workspace-sidebar" aria-expanded="${state.menu}">${icon("menu")}</button><strong ${p ? 'role="heading" aria-level="1"' : ""}>${esc(p?.title || (state.helpArticle ? "Help" : state.directoryPage ? label(state.directoryPage) : "Projects"))}</strong></div>${p ? projectNavigationHTML() : ""}<div class="top-actions">${p ? newMenuHTML("icon") : ""}<div class="save-state" id="save-state">${appStatusHTML()}</div></div></header>
       ${!state.online ? '<div class="connection-banner">Local server unavailable. Reconnect to its network to save changes.</div>' : ""}
-      ${state.helpArticle ? helpPageHTML(state.helpArticle, { esc, icon }) : state.directoryPage === "settings" ? '<div id="view-toolbar"></div><section id="view-content" class="content"></section>' : state.directoryPage ? directoryPageHTML() : p ? projectPage() : welcomePage()}
+      ${state.helpArticle ? helpPageHTML(state.helpArticle, { esc, icon }) : state.directoryPage === "settings" ? '<div id="view-toolbar"></div><section id="view-content" class="content"></section>' : p ? projectPage() : welcomePage()}
     </main></div>`;
   updateViewLayout(state);
   if (p) renderView();
   if (state.directoryPage === "settings") void features.settingsRender();
-  else if (state.directoryPage) {
-    const form = $("#organisation-form");
-    features.dialogOpened("organisation", form);
-    const dirty = () => {
-      state.settingsDirty = true;
-      state.dirty = true;
-    };
-    form.addEventListener("input", dirty);
-    form.addEventListener("change", dirty);
-  }
   features.afterRender();
   setLoading(state.loading);
   if (dateOpener && !dateOpener.isConnected) {
@@ -1189,7 +1149,7 @@ function tagsHTML(t) {
     )
     .join("")}</span>`;
 }
-// The person's short name (Geo for George unless set in People); the tooltip keeps the full name.
+// The person's short name (Geo for George unless set in Settings → Organisation); the tooltip keeps the full name.
 function assigneeHTML(t) {
   const initials = shortName(state, t.assignee);
   return `<span class="task-assignee ${initials ? "" : "unassigned"}" ${taskColorAttributes(state, "assignee", t.assignee)} title="${esc(t.assignee || "Unassigned")}">${esc(initials) || "–"}</span>`;
@@ -1560,11 +1520,11 @@ async function restoreNavigation(entry, stillCurrent = () => true) {
     } else {
       clearProject();
       state.organisation = organisation || state.organisation;
-      state.directoryPage = ["teams", "people", "settings"].includes(destination.page)
-        ? destination.page
-        : null;
+      // People and teams live in Settings → Organisation, which their old pages' links open.
+      const directory = ["teams", "people"].includes(destination.page);
+      state.directoryPage = directory || destination.page === "settings" ? "settings" : null;
       if (state.directoryPage === "settings") {
-        state.settingsSection = destination.settingsSection || "personal";
+        state.settingsSection = directory ? "organisation" : destination.settingsSection || "personal";
         state.settingsDetail = "";
       }
       state.helpArticle = destination.page === "help" ? helpArticle(destination.article).id : null;
@@ -2133,9 +2093,8 @@ document.addEventListener("click", async (event) => {
         if ($("#task-form") && !closeDialog(false, { confirmDirty: false })) return;
         location.reload();
         break;
-      case "directory-open":
-        if (state.directoryPage !== el.dataset.page)
-          await openDirectory(el.dataset.page);
+      case "organisation-settings":
+        features.settingsOpen("organisation");
         break;
       case "home":
         if (!canNavigate()) return;
@@ -2470,9 +2429,7 @@ document.addEventListener("submit", async (event) => {
       if (id) renderApp();
       else await openOrganisation(organisation.id);
       toast(
-        form.dataset.directoryPage
-          ? `${label(form.dataset.directoryPage)} saved.`
-          : id
+        id
             ? "Organisation saved."
             : "Organisation created. Add its first project.",
       );

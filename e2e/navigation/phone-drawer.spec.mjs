@@ -25,19 +25,19 @@ const openDrawer = async (page) => {
 };
 const visible = (page, selector) => page.locator(`.sidebar ${selector}`).evaluateAll((els) => els.filter((el) => el.getClientRects().length && getComputedStyle(el).visibility !== "hidden").length);
 
-onDevices(["phone", "small"], () => test("the drawer lists organisation, projects and teams, with Settings and Help at the bottom", async ({ page }) => {
+onDevices(["phone", "small"], () => test("the drawer lists organisation and projects, with Settings and Help at the bottom", async ({ page }) => {
   await open(page);
   await openDrawer(page);
   const fit = await page.locator(".sidebar").evaluate((el) => ({ scroll: el.scrollHeight, height: el.clientHeight }));
   assert.ok(fit.scroll <= fit.height + 1, `no scrolling needed ${JSON.stringify(fit)}`);
-  for (const selector of [".organisation-switch", ".project-links", ".sidebar-directory"]) assert.ok(await visible(page, selector) > 0, `${selector} shown`);
+  for (const selector of [".organisation-switch", ".project-links"]) assert.ok(await visible(page, selector) > 0, `${selector} shown`);
   assert.equal(await visible(page, "[data-view]"), 0, "no view tiles");
   const row = await page.locator(".sidebar .phone-drawer-utilities :is(button, [data-personal])").evaluateAll((els) => els.filter((el) => el.getClientRects().length).map((el) => [el.getAttribute("aria-label") || el.textContent.trim(), Math.round(el.getBoundingClientRect().top), el.getBoundingClientRect().height]));
   assert.ok(row.length === 2 && new Set(row.map(([, top]) => top)).size === 1, `settings share one row ${JSON.stringify(row)}`);
   assert.deepEqual(row.map(([name]) => name), ["Settings", "Help & guides"]);
   assert.ok(row.every(([, , h]) => h >= 44), "44px tap targets");
-  const [teams, settings, sidebar] = await Promise.all([page.locator(".sidebar .sidebar-directory").boundingBox(), page.locator(".sidebar .phone-drawer-utilities").boundingBox(), page.locator(".sidebar").boundingBox()]);
-  assert.ok(settings.y >= teams.y + teams.height, "settings below the teams");
+  const [projects, settings, sidebar] = await Promise.all([page.locator(".sidebar .project-links").boundingBox(), page.locator(".sidebar .phone-drawer-utilities").boundingBox(), page.locator(".sidebar").boundingBox()]);
+  assert.ok(settings.y >= projects.y + projects.height, "settings below the projects");
   assert.ok(settings.y + settings.height >= sidebar.y + sidebar.height - 120, "settings near the bottom, within thumb reach");
 }));
 
@@ -52,7 +52,7 @@ onDevices(["phone"], () => test("drawer text uses the shared touch sizes and one
     const labels = [...side.querySelectorAll(".side-label, .organisation-choice > span")].filter((el) => el.getClientRects().length);
     const size = (el) => parseFloat(getComputedStyle(el).fontSize);
     const edge = (el) => Math.round(el.getBoundingClientRect().left - left);
-    return { itemSizes: items.map((el) => [el.textContent.trim().slice(0, 18), size(el)]), labelSizes: labels.map((el) => [el.textContent.trim(), size(el)]), labelEdges: labels.map(edge), rowEdges: [...side.querySelectorAll(".project-link, .directory-links .directory-link, .personal-links > :first-child")].filter((el) => el.getClientRects().length).map(edge) };
+    return { itemSizes: items.map((el) => [el.textContent.trim().slice(0, 18), size(el)]), labelSizes: labels.map((el) => [el.textContent.trim(), size(el)]), labelEdges: labels.map(edge), rowEdges: [...side.querySelectorAll(".project-link, .personal-links > :first-child")].filter((el) => el.getClientRects().length).map(edge) };
   });
   assert.ok(text.itemSizes.every(([, s]) => s >= 14), `items at least 14px ${JSON.stringify(text.itemSizes)}`);
   assert.ok(text.labelSizes.every(([, s]) => s >= 12), `labels at least 12px ${JSON.stringify(text.labelSizes)}`);
@@ -83,10 +83,10 @@ onDevices(["phone"], () => test("without a project the drawer lists projects str
   assert.equal(await visible(page, "[data-view]"), 0, "no project views");
 }));
 
-onDevices(["desktop"], () => test("the desktop sidebar holds organisation, projects and teams", async ({ page }) => {
+onDevices(["desktop"], () => test("the desktop sidebar holds organisation and projects", async ({ page }) => {
   await open(page);
   await openSidebar(page);
-  for (const selector of [".organisation-switch", ".project-links", ".sidebar-directory"]) assert.ok(await visible(page, selector) > 0, `${selector} shown`);
+  for (const selector of [".organisation-switch", ".project-links"]) assert.ok(await visible(page, selector) > 0, `${selector} shown`);
   assert.equal(await visible(page, "[data-view]"), 0, "no view tiles");
 }));
 

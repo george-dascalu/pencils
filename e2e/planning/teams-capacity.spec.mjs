@@ -70,10 +70,10 @@ test("people and teams are created in the organisation editor, and a team withou
 test("adding a member to the project's team makes them assignable on a new card", { tag: "@gate" }, async ({ page }) => {
   const project = app.membership;
   await page.goto(`${app.base}/#project/${project.id}/list`);
-  await clickControl(page.locator('.directory-link[data-page="teams"]'));
+  await openSettingsPage(page, "organisation");
   await page.locator("[data-member]").check();
-  await page.getByRole("button", { name: "Save teams", exact: true }).click();
-  await page.getByText("Teams saved.", { exact: true }).waitFor();
+  await page.getByRole("button", { name: "Save organisation", exact: true }).click();
+  await page.getByText("Organisation saved.", { exact: true }).waitFor();
   const org = await app.store.getOrganisation(project.organisation);
   expect(org.teams[0].members).toEqual([org.people[0].id]);
   await clickControl(page.locator(`.project-link[data-id="${project.id}"]`));
