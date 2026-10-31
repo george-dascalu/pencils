@@ -2,6 +2,12 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.20.81 — 2026-10-31
+
+### Changed
+
+- The board's capacity gauge shows only once a board passes 80% of its object or frame limit, and then shows the higher share.
+
 ## 0.20.80 — 2026-10-31
 
 ### Added

@@ -2,13 +2,17 @@ import { positionPopover } from './popover-position.js';
 import { BOARD_LIMITS } from './board-limits.js';
 
 export const BOARD_CAPACITY_TARGET = 80_000;
-export function boardCapacityStats(count) {
-  const percent = count / BOARD_CAPACITY_TARGET * 100;
+// The gauge shows only once its (rounded) share of either limit passes this (owner request, 0.20.81).
+export const BOARD_CAPACITY_WARNING = 80;
+// The higher of the object and frame shares.
+export function boardCapacityStats(count, frames = 0) {
+  const percent = Math.max(count / BOARD_CAPACITY_TARGET, frames / BOARD_LIMITS.frames) * 100;
   return {
     count,
     label: percent > 0 && percent < 1 ? '<1%' : `${Math.round(percent)}%`,
     // The percentage remains honest above the target; the ring stops at one turn.
     progress: Math.min(100, Math.max(0, percent)),
+    shown: Math.round(percent) > BOARD_CAPACITY_WARNING,
   };
 }
 
@@ -42,7 +46,12 @@ export function boardCapacity() {
       }
       const gauge = controls.querySelector('.board-capacity');
       if (gauge.dataset.count !== String(count) || gauge.dataset.frameCount !== String(frameCount)) {
-        const stats = boardCapacityStats(count);
+        const stats = boardCapacityStats(count, frameCount);
+        // Hiding the focused gauge leaves focus on the zoom level beside it.
+        if (!stats.shown && gauge.contains(document.activeElement)) controls.querySelector('#zoom-label')?.focus({ preventScroll: true });
+        gauge.hidden = !stats.shown;
+        const panel = gauge.querySelector('#board-capacity-info');
+        if (!stats.shown && panel.matches(':popover-open')) panel.hidePopover();
         const summary = `${count.toLocaleString('en-GB')} / ${BOARD_CAPACITY_TARGET.toLocaleString('en-GB')} objects`;
         const frameSummary = `${frameCount.toLocaleString('en-GB')} / ${BOARD_LIMITS.frames.toLocaleString('en-GB')} frames`;
         gauge.dataset.count = String(count);

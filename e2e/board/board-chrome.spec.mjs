@@ -26,14 +26,16 @@ async function openBoard(page) {
 }
 
 // Owner request, 31 October 2026: the view controls (capacity, zoom level, full screen) and undo/redo
-// sit at the foot of the tool bar on the left, fixed while the rest of the tools scroll.
+// sit at the foot of the tool bar on the left, fixed while the rest of the tools scroll. The capacity
+// gauge shows only past 80% (0.20.81; board-capacity-gauge.spec.mjs), so this small board has none.
 onDevices(["desktop", "ipad"], () => test("undo, redo and the view controls stay at the foot of the tools while the tools scroll", async ({ page, device }) => {
   await page.setViewportSize({ width: page.viewportSize().width, height: 640 });
   await openBoard(page);
   const tools = page.locator(".board-tools"), scroller = tools.locator(".board-tools-scroll"), controls = tools.locator(".board-controls");
   await expect(page.locator(".board-controls"), `${device}: one set of view controls, in the tool bar`).toHaveCount(1);
   for (const name of ["Undo canvas change", "Redo canvas change", "Full screen"]) await expect(controls.getByRole("button", { name, exact: true }), `${device}: ${name}`).toBeVisible();
-  await expect(controls.locator("#zoom-label, .board-capacity-toggle")).toHaveCount(2);
+  await expect(controls.locator("#zoom-label")).toBeVisible();
+  await expect(controls.locator(".board-capacity-toggle")).toBeHidden();
   await expect(scroller.locator('[data-action="board-undo"]')).toHaveCount(0);
   expect(await scroller.evaluate((el) => el.scrollHeight > el.clientHeight), `${device}: the tools scroll`).toBe(true);
   const [bar, before] = [await box(page, ".board-tools"), await box(page, ".board-controls")];
@@ -56,7 +58,7 @@ onDevices(["phone"], () => test("phones keep undo and redo under the dock's +", 
   await openBoard(page);
   for (const action of ["board-undo", "board-redo"]) await expect(page.locator(`#phone-board-palette [data-action="${action}"]`), action).toHaveCount(1);
   expect(await page.locator(".phone-board-dock :is(button, summary):visible").evaluateAll((els) => els.map((el) => el.dataset.tool || el.id || el.className)))
-    .toEqual(["cursor", "hand", "phone-board-more icon-button", "board-capacity-toggle", "zoom-label"]);
+    .toEqual(["cursor", "hand", "phone-board-more icon-button", "zoom-label"]); // the capacity gauge shows only past 80% (0.20.81)
 }));
 
 // On touch screens just over phone width the centred bar reaches under the tools on the left.

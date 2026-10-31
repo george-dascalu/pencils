@@ -892,6 +892,7 @@ html.board-expanded-view .shell {
 
 /* Board capacity lives with navigation, leaving the board surface clear. */
 .board-capacity { display: flex; align-items: center; }
+.board-capacity[hidden] { display: none; }
 .board-controls .board-capacity-toggle { position: relative; color: var(--ink); }
 .board-controls .board-capacity-toggle svg { position: absolute; width: 34px; height: 34px; inset: 50% auto auto 50%; transform: translate(-50%, -50%); fill: none; stroke-width: 2; }
 .capacity-track { stroke: var(--line); }
