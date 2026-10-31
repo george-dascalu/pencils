@@ -2,6 +2,12 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.20.79 — 2026-10-31
+
+### Fixed
+
+- Dragging a Kanban card by touch no longer selects the text underneath: the board's titles and counts can't be selected by a long press, and lifting a card clears any selection.
+
 ## 0.20.78 — 2026-10-31
 
 ### Changed

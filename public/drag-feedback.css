@@ -66,9 +66,10 @@
   box-shadow: var(--shadow-popover);
   scale: 1.03;
 }
-/* The long press lifts the card, so it brings up no callout or text selection. */
+/* The long press lifts the card, so it brings up no callout or text selection, nor selects the
+   column titles and counts near the finger (iOS selects the nearest text it can). */
 @media (pointer: coarse) {
-  .kanban-card {
+  .kanban, .kanban-drag-image {
     -webkit-touch-callout: none;
     -webkit-user-select: none;
     user-select: none;

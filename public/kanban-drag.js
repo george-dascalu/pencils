@@ -286,6 +286,8 @@ export function kanbanDrag(ctx) {
       // A refresh may have redrawn the board under the finger.
       if (!card.isConnected || state.view !== "kanban") return wait();
       press.lifted = true;
+      // Nothing stays selected under the moving card; a focused field keeps its caret.
+      if (!document.activeElement?.matches("input, textarea, [contenteditable]")) getSelection()?.removeAllRanges();
       begin(card, press.x, press.y);
       drag.ghost.classList.add("kanban-touch-lift");
       follow();

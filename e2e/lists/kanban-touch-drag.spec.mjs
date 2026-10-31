@@ -1,7 +1,9 @@
 // Owner request, 30 October 2026 (iPhone screen recording): dragging a Kanban card by touch showed a
 // tiny framed copy, no target in an empty column, and didn't place the card. A long press now lifts
 // the card, which follows the finger over a placeholder and lands where it's let go, with a haptic
-// tick on lift and drop. Moving first still scrolls.
+// tick on lift and drop. Moving first still scrolls. A press selects no text on the board, and
+// lifting a card clears any selection (owner request, T7, 0.20.79: dragging selected the text
+// underneath).
 import { test, expect, onDevices, useApp } from "../fixtures.mjs";
 
 const app = useApp(async (store) => {
@@ -77,4 +79,23 @@ onDevices(["phone"], () => test("on phones a long press reorders a column, and m
   await expect(card(page, app.fourth)).toBeVisible();
   await page.reload(); // a drop saves Manual order as the sort
   await expect(page.locator("[data-sort-menu]"), "the sort stays").toHaveAttribute("aria-label", "Sort: Date created");
+}));
+
+onDevices(["phone"], () => test("a touch drag selects no text: the board is unselectable and lifting clears a selection", async ({ page }) => {
+  const touch = await open(page);
+  expect(await page.locator(".kanban").evaluate((el) => getComputedStyle(el).userSelect), "column titles and counts can't be selected by a long press").toBe("none");
+  // A stray selection elsewhere on the page, as a long press near the board can leave.
+  await page.evaluate(() => {
+    const stray = Object.assign(document.createElement("p"), { id: "stray", textContent: "Stray text" });
+    document.body.append(stray);
+    getSelection().selectAllChildren(stray);
+  });
+  expect(await page.evaluate(() => getSelection().toString())).toBe("Stray text");
+  // The backlog column shows first on phones (the iPad test moves the first card out of it).
+  const from = centre(await card(page, app.fourth).boundingBox());
+  await touch.send("Input.dispatchTouchEvent", { type: "touchStart", touchPoints: [from] });
+  await expect(page.locator(".kanban-drag-image")).toBeVisible();
+  expect(await page.evaluate(() => getSelection().toString()), "lifting the card clears it").toBe("");
+  await touch.send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] });
+  await expect(page.locator(".kanban-drag-image")).toHaveCount(0);
 }));
