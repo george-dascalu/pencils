@@ -2,6 +2,12 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.20.95 — 2026-10-31
+
+### Changed
+
+- The Roadmap shows when each request was made, started and done as short times ("31 Oct 20:05") and how long it took ("2h 15m").
+
 ## 0.20.94 — 2026-10-31
 
 ### Changed

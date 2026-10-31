@@ -1,13 +1,13 @@
 // Bundled guides work locally. External links are references, not loaded resources.
-import { roadmap } from "./roadmap.js";
+import { roadmap, shortWhen, took } from "./roadmap.js";
 
 // The Roadmap page: the requests under each status, done ones newest first, in reference tables.
 const escapeHtml = (value) => String(value ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
 const byId = (a, b) => a.id.localeCompare(b.id, undefined, { numeric: true });
 const roadmapTable = (items) =>
   items.length
-    ? `<div class="help-table"><table><thead><tr><th>ID</th><th>Request</th><th>Requested</th><th>Started</th><th>Done</th><th>Release</th></tr></thead><tbody>${items
-        .map((i) => `<tr data-roadmap="${escapeHtml(i.id)}"><td>${escapeHtml(i.id)}</td><td>${escapeHtml(i.title)}</td><td>${escapeHtml(i.requested)}</td><td>${escapeHtml(i.started || "")}</td><td>${escapeHtml(i.done || "")}</td><td>${escapeHtml(i.version || "")}</td></tr>`)
+    ? `<div class="help-table"><table><thead><tr><th>ID</th><th>Request</th><th>Requested</th><th>Started</th><th>Done</th><th>Took</th><th>Release</th></tr></thead><tbody>${items
+        .map((i) => `<tr data-roadmap="${escapeHtml(i.id)}"><td>${escapeHtml(i.id)}</td><td>${escapeHtml(i.title)}</td><td>${shortWhen(i.requested)}</td><td>${shortWhen(i.started)}</td><td>${shortWhen(i.done)}</td><td>${took(i.started, i.done)}</td><td>${escapeHtml(i.version || "")}</td></tr>`)
         .join("")}</tbody></table></div>`
     : "<p>Nothing here at the moment.</p>";
 const roadmapArticle = {
