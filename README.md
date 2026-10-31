@@ -66,7 +66,7 @@ Cards show their due date after the assignee and priority, in the same box; the 
 
 ### Spreadsheet
 
-Edit cells and use **Shift-click** for rectangular range selection, **Ctrl/Cmd+C/V** for TSV copy/paste, and **arrow keys** or **Enter** to navigate cells; Shift+arrows extends a range. Paste into existing visible rows; add rows first if needed. Select rows for bulk status changes or archiving. Resize columns with header handles, or use **Columns** to hide/reorder them. Save a named view to share its layout.
+Edit cells and drag across them or use **Shift-click** for rectangular range selection, **Ctrl/Cmd+C/V** for TSV copy/paste, and **arrow keys** or **Enter** to navigate cells; Shift+arrows extends a range. Paste into existing visible rows; add rows first if needed. **Bulk edit** changes the status of, or archives, the rows a range spans (two or more), the visible rows or every matching task; there are no row checkboxes. Resize columns with header handles, or use **Columns** to hide/reorder them. Save a named view to share its layout.
 
 Rapid changes to the same task are serialized and retain the latest revision. Invalid values and unresolved concurrent edits remain recoverable in **Recovery & backups**. Spreadsheet formulas are not evaluated. Optional SharePoint sources import a named Excel table through a separate, read-only mapping preview; CSV export and validated clipboard paste are available.
 

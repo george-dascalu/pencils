@@ -94,8 +94,9 @@ test.describe("desktop", () => {
     await page.mouse.move(5, 5);
     await page.mouse.up();
     await waitOrder(page, current);
-    await row(page, app.b.id).locator("[data-row-select]").check();
-    await expect(page.locator("#grid-selection-count")).toHaveText(/1 selected/);
+    await row(page, app.b.id).locator("td[data-cell]").first().click();
+    await row(page, app.b.id).locator("td[data-cell]").nth(2).click({ modifiers: ["Shift"] });
+    await expect(row(page, app.b.id).locator("td.range-selected")).toHaveCount(3);
     await row(page, app.b.id).locator('input[data-task-field="title"]').fill("Beta edited");
     await row(page, app.b.id).locator('input[data-task-field="title"]').press("Tab");
     await settled(page);

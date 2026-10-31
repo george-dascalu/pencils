@@ -2,6 +2,12 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.20.59 — 2026-10-31
+
+### Changed
+
+- Table has no row checkboxes. Drag across cells, or Shift-click, to pick rows, then use **Bulk edit** to change their status or archive them; it also applies to the visible rows or every matching task, on phones too. The row actions column is narrower.
+
 ## 0.20.58 — 2026-10-31
 
 ### Changed

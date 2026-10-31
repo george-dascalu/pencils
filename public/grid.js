@@ -57,9 +57,10 @@ export function grid(ctx) {
     focus = null,
     rowIds = [],
     columns = [];
-  const selected = new Set();
-  let matchingRows = [];
-  const bulkIds=()=> $("#bulk-scope")?.value === "matching" ? matchingRows.map(t=>t.id) : $("#bulk-scope")?.value === "page" ? [...rowIds] : [...selected];
+  let matchingRows = [], dragging = false, pressed = false;
+  // The rows a cell range spans, as in a spreadsheet: Bulk edit's "Selected rows" when there are two or more.
+  const rangeRows = () => (anchor && focus ? rowIds.slice(Math.min(anchor[0], focus[0]), Math.max(anchor[0], focus[0]) + 1) : []);
+  const bulkIds=()=> $("#bulk-scope")?.value === "matching" ? matchingRows.map(t=>t.id) : $("#bulk-scope")?.value === "page" ? [...rowIds] : rangeRows();
   const scopeName=()=> $("#bulk-scope")?.selectedOptions[0]?.textContent || "Selected rows";
   const bulkAllowed=ids=>{if(ids.length>500) {toast("Narrow the filters to 500 tasks or fewer before a bulk update.",true);return false;}return ids.length>0;};
   const fieldValue = (t, key) =>
@@ -241,11 +242,9 @@ export function grid(ctx) {
       if (hidden) continue;
       const r = rowIds.length;
       rowIds.push(t.id);
-      body += `<tr data-table-task="${esc(t.id)}" data-task-order-row="${esc(t.id)}" data-task-order-group="${esc(JSON.stringify(path))}"><td class="task-row-controls"><div class="task-row-actions">${taskReorderHandle(t, esc)}<label class="task-checkbox"><input type="checkbox" data-row-select="${t.id}" ${selected.has(t.id) ? "checked" : ""} aria-label="Select ${esc(t.title)}"></label><button class="table-open" data-action="task-open" data-id="${t.id}" aria-label="Open ${esc(t.title)}" title="Open task details">${ctx.icon("external")}</button></div></td>${columns.map((c, k) => `<td role="gridcell" tabindex="${r === 0 && k === 0 ? 0 : -1}" data-cell="${r},${k}" data-column-key="${esc(c.key)}" style="--pin-offset:${c.pinOffset}px">${preferences.outline && c.key === "title" && t.parent ? `<small class="table-parent-context" style="padding-left:${Math.min(12,result.depths.get(t.id)||0)*12}px">↳ ${esc(parents.get(t.parent)?.key || t.parent)}${!result.depths.get(t.id)?" · parent outside this group or filter":""}</small>`:""}${c.key === "title" ? `<div class="table-title-line">${cell(t, c.key)}<button type="button" class="phone-table-key" tabindex="-1" data-action="task-open" data-id="${esc(t.id)}" aria-label="Open ${esc(t.key || t.id)}: ${esc(t.title)}" title="Open card">${esc(t.key || "")}</button></div>` : cell(t, c.key)}</td>`).join("")}</tr>`;
+      body += `<tr data-table-task="${esc(t.id)}" data-task-order-row="${esc(t.id)}" data-task-order-group="${esc(JSON.stringify(path))}"><td class="task-row-controls"><div class="task-row-actions">${taskReorderHandle(t, esc)}<button class="table-open" data-action="task-open" data-id="${t.id}" aria-label="Open ${esc(t.title)}" title="Open task details">${ctx.icon("external")}</button></div></td>${columns.map((c, k) => `<td role="gridcell" tabindex="${r === 0 && k === 0 ? 0 : -1}" data-cell="${r},${k}" data-column-key="${esc(c.key)}" style="--pin-offset:${c.pinOffset}px">${preferences.outline && c.key === "title" && t.parent ? `<small class="table-parent-context" style="padding-left:${Math.min(12,result.depths.get(t.id)||0)*12}px">↳ ${esc(parents.get(t.parent)?.key || t.parent)}${!result.depths.get(t.id)?" · parent outside this group or filter":""}</small>`:""}${c.key === "title" ? `<div class="table-title-line">${cell(t, c.key)}<button type="button" class="phone-table-key" tabindex="-1" data-action="task-open" data-id="${esc(t.id)}" aria-label="Open ${esc(t.key || t.id)}: ${esc(t.title)}" title="Open card">${esc(t.key || "")}</button></div>` : cell(t, c.key)}</td>`).join("")}</tr>`;
     }
-    // Bulk actions and clipboard ranges must never target filtered or collapsed rows.
-    for (const id of selected) if (!rowIds.includes(id)) selected.delete(id);
-    return { controls: `${tools.html()}<div class="grid-tools">${columnsMenu()}<span id="grid-selection-count" class="sr-only" role="status">${selected.size} selected on this page</span><span id="grid-bulk" ${selected.size ? "" : "hidden"}><label>Apply to <select id="bulk-scope"><option value="selected">Selected rows</option><option value="page">Visible rows on this page (${rowIds.length})</option><option value="matching">All matching tasks (${matchingRows.length})</option></select></label><label>Bulk status <select id="bulk-status"><option value="">Choose…</option>${options(state.config.statuses, "")}</select></label><button class="button small" data-feature="bulk-archive">Archive tasks</button></span></div>`, html: `<div class="table-scroll"><table class="task-table spreadsheet" style="width:${tableWidth()}" role="grid" aria-label="Tasks spreadsheet"><colgroup><col style="width:var(--table-selection-width)">${columns.map((c) => `<col data-table-col="${esc(c.key)}" style="width:${phone.matches && c.key === "title" ? "var(--table-phone-title-width)" : `${c.width || 160}px`}">`).join("")}</colgroup><thead><tr><th><label class="task-checkbox"><input type="checkbox" id="grid-all" aria-label="Select all visible rows" ${rowIds.length && rowIds.every((id) => selected.has(id)) ? "checked" : ""}></label></th>${columns
+    return { controls: `${tools.html()}<div class="grid-tools">${columnsMenu()}<span id="grid-selection-count" class="sr-only" role="status"></span><details class="board-menu table-bulk-menu" data-board-menu="table-bulk" ${state.headerMenu === "table-bulk" ? "open" : ""}><summary>Bulk edit<svg class="icon menu-caret" viewBox="0 0 24 24" aria-hidden="true"><path d="m8 10 4 4 4-4"/></svg></summary><div class="board-menu-panel table-menu-panel" id="grid-bulk"><label class="field">Apply to<select id="bulk-scope"><option value="selected" disabled>Selected rows</option><option value="page" selected>Visible rows on this page (${rowIds.length})</option><option value="matching">All matching tasks (${matchingRows.length})</option></select></label><label class="field">Status<select id="bulk-status"><option value="">Choose…</option>${options(state.config.statuses, "")}</select></label><div class="menu-footer"><button type="button" class="button small" data-feature="bulk-archive">Archive tasks</button></div></div></details></div>`, html: `<div class="table-scroll"><table class="task-table spreadsheet" style="width:${tableWidth()}" role="grid" aria-label="Tasks spreadsheet"><colgroup><col style="width:var(--table-selection-width)">${columns.map((c) => `<col data-table-col="${esc(c.key)}" style="width:${phone.matches && c.key === "title" ? "var(--table-phone-title-width)" : `${c.width || 160}px`}">`).join("")}</colgroup><thead><tr><th><span class="sr-only">Row actions</span></th>${columns
       .map((c) => {
         const sort = preferences.sorts.findIndex((s) => s.field === c.key),
           active = preferences.filters.some(
@@ -286,6 +285,13 @@ export function grid(ctx) {
       el.classList.toggle("range-selected", yes);
       if (yes) cells.push([r, c]);
     });
+    // Two or more rows in the range become Bulk edit's selected rows.
+    const rows = rangeRows().length, option = $('#bulk-scope option[value="selected"]');
+    if (!option) return;
+    option.disabled = rows < 2;
+    option.textContent = rows < 2 ? "Selected rows" : `Selected rows (${rows})`;
+    $("#bulk-scope").value = rows < 2 ? ($("#bulk-scope").value === "selected" ? "page" : $("#bulk-scope").value) : "selected";
+    $("#grid-selection-count").textContent = rows < 2 ? "" : `${rows} rows selected`;
   }
   function value(key, text) {
     const field = state.config.fields.find((f) => `fields.${f.id}` === key);
@@ -310,20 +316,43 @@ export function grid(ctx) {
       ? { fields: { ...(task(id).fields || {}), [key.slice(7)]: val } }
       : { [key]: val };
   }
+  const stopDragging = () => {
+    if (dragging && state.toolDragging === "table-range") state.toolDragging = false;
+    dragging = false;
+  };
   document.addEventListener("pointerdown", (event) => {
+    stopDragging();
     const cell = event.target.closest("[data-cell]");
     if (!cell) return;
     const point = cell.dataset.cell.split(",").map(Number);
     if (!event.shiftKey || !anchor) anchor = point;
     focus = point;
+    pressed = true;
+    dragging = event.pointerType === "mouse" && event.button === 0;
     paint();
     if (event.shiftKey) event.preventDefault();
   });
+  // Dragging the mouse across cells extends the range, as in a spreadsheet.
+  document.addEventListener("pointermove", (event) => {
+    if (!dragging) return;
+    if (!(event.buttons & 1)) return stopDragging();
+    const cell = document.elementFromPoint(event.clientX, event.clientY)?.closest("[data-cell]");
+    if (!cell || cell.dataset.cell === String(focus)) return;
+    focus = cell.dataset.cell.split(",").map(Number);
+    // A repaint would drop the range, so refreshes wait (app.js refreshBlocked).
+    state.toolDragging ||= "table-range";
+    getSelection()?.removeAllRanges();
+    paint();
+  });
+  for (const type of ["pointerup", "pointercancel"]) document.addEventListener(type, stopDragging);
   document.addEventListener("focusin", (event) => {
     const cell = event.target.closest("[data-cell]");
     if (!cell) return;
     focus = cell.dataset.cell.split(",").map(Number);
-    if (!anchor) anchor = focus;
+    // Tabbing in from outside the grid starts a new range; a press already set it.
+    if (!anchor || (!pressed && !event.relatedTarget?.closest?.("[data-cell]"))) anchor = focus;
+    pressed = false;
+    paint();
     if (event.target.matches("input,select"))
       event.target.dataset.editStart = event.target.value;
   });
@@ -371,8 +400,10 @@ export function grid(ctx) {
     const text = event.clipboardData.getData("text/plain");
     if (!/[\t\n]/.test(text)) return;
     event.preventDefault();
-    const targets = rowIds.slice(focus[0]).map(task),
-      map = columns.slice(focus[1]).map((c) => c.key);
+    // Into the range from its top-left cell, however it was picked.
+    const start = [0, 1].map((i) => Math.min(anchor?.[i] ?? focus[i], focus[i]));
+    const targets = rowIds.slice(start[0]).map(task),
+      map = columns.slice(start[1]).map((c) => c.key);
     const count = Math.max(
       ...text
         .replace(/\r/g, "")
@@ -512,6 +543,9 @@ export function grid(ctx) {
     const move = (!editing || event.altKey) && directions[event.key];
     if (!move && event.key !== "Tab" && !(editing && event.key === "Enter"))
       return;
+    // Shift+arrows move the range's far end, wherever the keyboard is; Shift+Tab and Shift+Enter
+    // only move back.
+    const extend = event.shiftKey && !!move;
     let next;
     if (event.key === "Tab") {
       const index =
@@ -519,18 +553,18 @@ export function grid(ctx) {
       if (index < 0 || index >= rowIds.length * columns.length) return;
       next = [Math.floor(index / columns.length), index % columns.length];
     } else {
-      const delta = move || [event.shiftKey ? -1 : 1, 0];
+      const delta = move || [event.shiftKey ? -1 : 1, 0], from = extend && anchor && focus ? focus : point;
       next = [
-        Math.max(0, Math.min(rowIds.length - 1, point[0] + delta[0])),
-        Math.max(0, Math.min(columns.length - 1, point[1] + delta[1])),
+        Math.max(0, Math.min(rowIds.length - 1, from[0] + delta[0])),
+        Math.max(0, Math.min(columns.length - 1, from[1] + delta[1])),
       ];
     }
     event.preventDefault();
     if (editing)
       event.target.dispatchEvent(new Event("change", { bubbles: true }));
-    if (!event.shiftKey || !anchor) anchor = point;
+    if (!anchor) anchor = point;
     focus = next;
-    if (!event.shiftKey) anchor = next;
+    if (!extend) anchor = next;
     paint();
     $$('[data-cell][tabindex="0"]').forEach((cell) => (cell.tabIndex = -1));
     const nextCell = $(`[data-cell="${next}"]`);
@@ -577,21 +611,6 @@ export function grid(ctx) {
   });
   document.addEventListener("change", async (event) => {
     const el = event.target;
-    if (el.dataset.rowSelect) {
-      el.checked
-        ? selected.add(el.dataset.rowSelect)
-        : selected.delete(el.dataset.rowSelect);
-    }
-    if (el.dataset.rowSelect) {
-      $("#grid-selection-count").textContent =
-        `${selected.size} selected on this page`;
-      $("#grid-bulk").hidden = !selected.size;
-    }
-    if (el.id === "grid-all") {
-      for (const id of rowIds)
-        el.checked ? selected.add(id) : selected.delete(id);
-      renderView(true);
-    }
     if (el.id === "bulk-status" && el.value) {
       const ids=bulkIds();if(!bulkAllowed(ids)) {el.value="";return;}
       const blocked = ids
@@ -663,7 +682,7 @@ export function grid(ctx) {
       if(!bulkAllowed(ids)) return true;
       if(await confirmAction({ title: "Archive these tasks?", message: `Archive ${ids.length} tasks (${scopeName()}). They remain recoverable with Include archived.`, confirmLabel: "Archive" })) {
         for(const id of ids) if(task(id)) await patchTask(id,{archived:true},false);
-        selected.clear();renderView(true);
+        renderView(true);
       }
       return true;
     }

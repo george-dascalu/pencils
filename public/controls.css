@@ -10,8 +10,6 @@
   --board-control-height: 28px;
   --menu-control-height: 28px;
   --menu-panel-padding: 8px;
-  --task-checkbox-size: 13px;
-  --task-checkbox-target: 24px;
   --text-focus-color: #737373;
   --touch-text-font-size: 16px;
   /* Type scale for the card popup and the Table view: one step per role. */
@@ -47,7 +45,6 @@ textarea,
   :root, :root[data-density] {
     --control-height: 44px;
     --menu-control-height: 44px;
-    --task-checkbox-target: 44px;
     /* Body text matches the 16px text-entry size so nothing jumps between
        reading and editing; iOS zooms into smaller editable text. */
     --type-meta: 12px;
@@ -196,65 +193,11 @@ textarea,
 .planning-head > .date-field { flex: 0 1 180px; }
 .planning-head > h2 { overflow-wrap: anywhere; }
 .task-table.spreadsheet {
-  /* Handle and checkbox, plus the open button where it is shown. */
-  --table-selection-width: calc(70px + var(--table-open-slot, 24px));
+  /* The drag handle, plus the open button where it is shown. */
+  --table-selection-width: calc(38px + var(--table-open-slot, 24px));
   --table-row-height: var(--control-height);
   --table-row-action-height: var(--control-height);
   --table-header-height: var(--control-height);
-}
-.task-checkbox {
-  position: relative;
-  display: inline-grid;
-  place-items: center;
-  flex: 0 0 var(--task-checkbox-target);
-  width: var(--task-checkbox-target);
-  height: var(--task-checkbox-target);
-  padding: 0;
-  margin: 0;
-  cursor: pointer;
-}
-/* The native box is drawn inside a 24px (44px on touch) control so the whole target is the input. */
-.task-table.spreadsheet .task-checkbox > input[type="checkbox"] {
-  appearance: none;
-  -webkit-appearance: none;
-  display: grid;
-  place-items: center;
-  width: var(--task-checkbox-target);
-  height: var(--task-checkbox-target);
-  min-height: var(--task-checkbox-target);
-  margin: 0;
-  padding: 0;
-  border: 0;
-  background: transparent;
-  cursor: inherit;
-}
-.task-table.spreadsheet .task-checkbox > input[type="checkbox"]::before {
-  content: "";
-  box-sizing: border-box;
-  width: var(--task-checkbox-size);
-  height: var(--task-checkbox-size);
-  border: 1px solid var(--line);
-  border-radius: 3px;
-  background: var(--surface);
-}
-.task-table.spreadsheet .task-checkbox > input[type="checkbox"]:checked::before,
-.task-table.spreadsheet .task-checkbox > input[type="checkbox"]:indeterminate::before {
-  border-color: var(--green);
-  background-color: var(--green);
-  background-repeat: no-repeat;
-  background-position: center;
-  background-size: 9px 9px;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'%3E%3Cpath d='m2.5 6.5 2.5 2.5 4.5-5' fill='none' stroke='%23fff' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
-}
-.task-table.spreadsheet .task-checkbox > input[type="checkbox"]:indeterminate::before {
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'%3E%3Cpath d='M3 6h6' fill='none' stroke='%23fff' stroke-width='1.8' stroke-linecap='round'/%3E%3C/svg%3E");
-}
-.task-table.spreadsheet .task-checkbox > input[type="checkbox"]:focus-visible {
-  outline: var(--focus-ring);
-  outline-offset: -3px;
-  border-radius: 4px;
-}
-@media (pointer: coarse) {
 }
 .task-table.spreadsheet .task-row-actions { gap: 2px; }
 .task-row > .task-type, .row-fields > :is(.row-assignee, .row-priority) {
@@ -286,7 +229,7 @@ textarea,
   /* Title fields set their own size, never below 16px on touch. */
 }
 @media (pointer: coarse) {
-  .task-table.spreadsheet { --table-selection-width: calc(96px + var(--table-open-slot, 46px)); }
+  .task-table.spreadsheet { --table-selection-width: calc(50px + var(--table-open-slot, 46px)); }
   .spreadsheet .task-row-actions > .table-open {
     width: var(--control-height); min-width: var(--control-height);
     flex-basis: var(--control-height);

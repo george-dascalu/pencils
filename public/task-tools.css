@@ -24,7 +24,6 @@
 .task-reorder-handle:focus-visible { outline: var(--focus-ring); outline-offset: 1px; }
 .spreadsheet td.task-row-controls { padding: 1px 3px; white-space: nowrap; }
 .task-row-actions { display: flex; gap: 4px; align-items: center; justify-content: center; }
-.task-row-actions > input[type="checkbox"] { flex: 0 0 16px; margin: 0; }
 .spreadsheet .task-row-actions > :is(.task-reorder-handle, .table-open) { height: var(--table-row-action-height); min-height: var(--table-row-action-height); }
 .spreadsheet .task-row-actions > .table-open { position: static; align-items: center; justify-content: center; width: 20px; padding: 0; flex: 0 0 20px; }
 .task-reorder-source { opacity: .35; }

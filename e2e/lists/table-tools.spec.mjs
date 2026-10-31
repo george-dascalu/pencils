@@ -154,12 +154,12 @@ test.describe("desktop", () => {
     await page.locator('[data-table-action="expand"]').click();
     await expect(rows(page)).toHaveCount(100);
     await page.locator('[data-board-menu="table-groups"] > summary').click();
-    // Collapsing a group excludes selected hidden tasks from a later bulk action.
-    const alice = app.seeded[0];
-    await page.locator(`[data-row-select="${alice.id}"]`).check();
-    await page.locator('[data-table-action="group-toggle"]').filter({ hasText: "Alice" }).first().click();
-    await expect(page.locator("#grid-bulk")).toBeHidden();
-    expect((await snap()).tasks.find((t) => t.id === alice.id).status).toBe("done");
+    // Collapsing a group clears the selected rows, so a later bulk action can't reach hidden tasks.
+    await page.locator('td[data-cell="0,0"]').click();
+    await page.locator('td[data-cell="2,0"]').click({ modifiers: ["Shift"] });
+    await expect(page.locator('#bulk-scope option[value="selected"]')).toHaveText("Selected rows (3)");
+    await page.locator('[data-table-action="group-toggle"]').first().click();
+    await expect(page.locator('#bulk-scope option[value="selected"]')).toHaveJSProperty("disabled", true);
   });
 
   test("Reset grouping clears only grouping, keeps filters, sort and widths, and persists after reload", gate, async ({ page }) => {
