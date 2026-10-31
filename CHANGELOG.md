@@ -2,6 +2,12 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.20.84 — 2026-10-31
+
+### Changed
+
+- On phones the page behind the open sidebar is blurred a little, as behind dialogs.
+
 ## 0.20.83 — 2026-10-31
 
 ### Changed

@@ -190,6 +190,10 @@ button svg {
   background: #17332570;
   z-index: 119;
 }
+/* Phones blur the page behind the open sidebar a little, as behind dialogs. */
+@media (max-width: 600px) {
+  .sidebar-overlay.visible { -webkit-backdrop-filter: blur(3px); backdrop-filter: blur(3px); }
+}
 @media (min-width: 781px) and (pointer: coarse) {
   .sidebar {
     width: 315px;

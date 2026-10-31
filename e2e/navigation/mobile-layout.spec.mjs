@@ -1,5 +1,5 @@
 // Phone layout (AGENTS.md: one sidebar, the phone drawer and bottom tab bar, 44px touch targets):
-// the drawer makes the page inert and closes with Escape or a tap outside; task rows stay compact with full tap
+// the drawer blurs and makes the page inert and closes with Escape or a tap outside; task rows stay compact with full tap
 // targets; tree branches toggle; the document list is the drawer's Documents level (0.19.27);
 // every shipped view fits a phone in both themes with an accessible document header; and
 // documents, List and Tree fit from 360px to desktop. The phone document toolbar checks
@@ -49,6 +49,8 @@ onDevices(["phone"], () => {
     await page.locator(".mobile-menu").click();
     await expect.poll(() => inert(page, ".main")).toBe(true);
     await expect(page.locator(".sidebar .project-link").first()).toBeVisible();
+    // The page behind the open drawer is blurred a little, as behind dialogs (owner request, T12).
+    await expect(page.locator(".sidebar-overlay")).toHaveCSS("backdrop-filter", "blur(3px)");
     await page.keyboard.press("Escape");
     await expect(page.locator(".mobile-menu")).toBeFocused();
     await page.locator(".mobile-menu").click();
