@@ -2,6 +2,12 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.20.70 — 2026-10-31
+
+### Changed
+
+- Board no longer has saved views (the "Unsaved view" picker, Save view, Save as and Delete view): they saved task filters the board doesn't use. Frames, the outline and bookmarks get you around. Live task views that already use a saved view keep it.
+
 ## 0.20.69 — 2026-10-31
 
 ### Changed

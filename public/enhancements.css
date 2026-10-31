@@ -43,7 +43,6 @@ summary:focus-visible,
 .sidebar {
   overflow: auto;
 }
-.feature-toolbar,
 .advanced-filters,
 .canvas-extra-tools {
   display: flex;
@@ -54,7 +53,6 @@ summary:focus-visible,
   border-bottom: 1px solid #e0e5d9;
   background: #fafbf7;
 }
-.feature-toolbar select,
 .advanced-filters select,
 .advanced-filters > input,
 .canvas-extra-tools select {
@@ -706,7 +704,6 @@ summary:focus-visible,
   .hero {
     padding: 24px 20px;
   }
-  .feature-toolbar,
   .advanced-filters {
     padding: 10px 16px;
   }
@@ -775,9 +772,6 @@ summary:focus-visible,
   }
   .tabs {
     max-width: 100%;
-  }
-  .feature-toolbar #quick-capture {
-    margin-left: 0;
   }
 }
 .canvas-lines {

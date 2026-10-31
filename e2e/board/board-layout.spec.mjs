@@ -52,7 +52,9 @@ test.describe("wide desktop", () => {
     await summary(page, "more").focus();
     await summary(page, "more").press("Space");
     await expect(summary(page, "project")).toHaveCount(0);
-    await expect(page.locator("#saved-view")).toBeVisible();
+    await expect(page.locator('[data-board-menu="more"] [data-pro=outline]')).toBeVisible();
+    // Owner request, 31 October 2026: Board has no saved views; frames, the outline and bookmarks get you around.
+    await expect(page.locator('#saved-view,[data-feature="view-save"],[data-feature="view-save-as"],[data-feature="view-delete"]')).toHaveCount(0);
     await page.keyboard.press("Escape");
     await expect(summary(page, "more")).toBeFocused();
     await summary(page, "more").click();
@@ -82,7 +84,7 @@ test.describe("wide desktop", () => {
     await expect(page.locator("#board-project-tools")).toHaveCount(1);
     await page.locator(".tabs [data-view=board]").click();
     await page.locator("#canvas").waitFor();
-    for (const selector of ["#saved-view", ".board-settings-button", "[data-action=board-new]", ".board-menu [data-pro=outline]"])
+    for (const selector of [".board-settings-button", "[data-action=board-new]", ".board-menu [data-pro=outline]"])
       await expect(page.locator(selector), selector).toHaveCount(1);
   });
 });

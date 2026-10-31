@@ -332,7 +332,6 @@ body {
     .toolbar,
     .stats-strip,
     .board-toolbar,
-    .feature-toolbar,
     .advanced-filters,
     .canvas-extra-tools,
     .grid-tools,
@@ -682,10 +681,6 @@ body {
 .canvas-library-tools .button {justify-content:flex-start;}
 .canvas-gallery-actions {display:flex;flex-wrap:wrap;gap:8px;}
 
-/* Shared query controls stay alongside the query they save. */
-.shared-query-controls {display:flex;align-items:center;gap:6px;flex-wrap:wrap;max-width:100%}
-.shared-query-controls #saved-view {max-width:220px}
 .board-menu-panel {overflow:auto;z-index:140}
-@media(max-width:600px){.shared-query-controls {width:100%}.shared-query-controls #saved-view{flex:1;min-width:120px}}
 
 .agenda-row button,.timeline-row button {color:var(--ink)}

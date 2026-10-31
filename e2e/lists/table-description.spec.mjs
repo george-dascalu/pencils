@@ -1,8 +1,7 @@
 // Table Description column: a plain-text preview of the Markdown body (no links,
 // images or attachment names), compact rows that follow control sizing, the shared
-// rich editor for editing (attachment links kept), legacy named views opened from the
-// Board menu, remembered column choices, keyboard and touch opening, both themes and
-// the CSV export.
+// rich editor for editing (attachment links kept), remembered column choices, keyboard and
+// touch opening, both themes and the CSV export.
 import fs from "node:fs/promises";
 import { test, expect, onDevices, useApp } from "../fixtures.mjs";
 import { reveal } from "../helpers/menu-controls.mjs";
@@ -13,11 +12,6 @@ const app = useApp(async (store) => {
   const task = await store.createTask(project.id, { title: "Detailed task", body });
   const empty = await store.createTask(project.id, { title: "Empty task" });
   await store.createTask(project.id, { title: "Long task", body: "Long description. ".repeat(100) });
-  const legacyColumns = [{ key: "key", width: 120 }, { key: "title", width: 220 }, { key: "priority", width: 110, visible: false }];
-  await store.updateProject(project.id, {
-    revision: (await store.snapshot(project.id)).project.revision,
-    views: [{ id: "legacy", name: "Legacy view", view: "table", columns: legacyColumns }],
-  });
   return { project, task, empty };
 });
 
@@ -26,13 +20,9 @@ const row = (page) => page.locator(`[data-table-task="${app.task.id}"]`);
 const preview = (page) => row(page).locator(".table-description");
 const headers = (page) => page.locator("thead th[data-column-key]").evaluateAll((els) => els.map((el) => el.dataset.columnKey));
 
-// Existing named views remain readable from the Board menu.
-async function openLegacyView(page, device) {
-  await page.goto(`${app.base}/#project/${app.project.id}/board`);
-  await (await reveal(page.locator("#saved-view"))).selectOption("legacy");
+async function openTable(page, device) {
+  await page.goto(`${app.base}/#project/${app.project.id}/table`);
   await row(page).waitFor();
-  const close = page.getByRole("button", { name: "Close view options", exact: true });
-  if (await close.isVisible()) await close.click();
   if (device === "phone") await page.waitForFunction(() => document.querySelector(".sidebar").getBoundingClientRect().right <= 1);
 }
 
@@ -43,17 +33,8 @@ test.afterEach(async () => {
 });
 
 onDevices(["desktop", "phone"], () => {
-  test("a legacy named view opens from the Board menu with its saved columns", async ({ page, device }) => {
-    await openLegacyView(page, device);
-    await expect(page.locator('#saved-view,[data-feature="view-save-as"]')).toHaveCount(0);
-    expect((await headers(page)).slice(0, 3)).toEqual(device === "phone" ? ["title", "key", "body"] : ["key", "title", "body"]);
-    await expect(page.locator('thead th[data-column-key="priority"]')).toHaveCount(0);
-    await expect(page.locator('[data-resize-column="title"]')).toHaveAttribute("aria-valuenow", "220");
-    await expect(page.locator('[data-resize-column="body"]')).toHaveAttribute("aria-valuenow", "300");
-  });
-
   test("descriptions preview as plain text in compact rows and open the editor with attachments, in both themes", async ({ page, device }) => {
-    await openLegacyView(page, device);
+    await openTable(page, device);
     for (const theme of ["light", "dark"]) {
       await page.evaluate((theme) => window.PencilsAppearance.write({ theme }), theme);
       await expect(preview(page)).toHaveText(/First paragraph Second paragraph with a link\./);
@@ -81,7 +62,7 @@ onDevices(["desktop", "phone"], () => {
   });
 
   test("editing a description uses the shared rich editor, keeps attachment links and reaches the CSV export", async ({ page, device }) => {
-    await openLegacyView(page, device);
+    await openTable(page, device);
     await preview(page).click();
     await page.locator("#task-form .inline-rich").fill("Updated description\nSecond line");
     await expect.poll(async () => (await saved()).body).toContain("Updated description");
@@ -98,7 +79,7 @@ onDevices(["desktop", "phone"], () => {
   });
 
   test("the Description column can be hidden, shown and moved, and keeps its place and width after reload", async ({ page, device }) => {
-    await openLegacyView(page, device);
+    await openTable(page, device);
     // Current column preferences keep the added field across reload.
     await reveal(page.locator('[data-column-visible="body"]'));
     await page.locator('[data-column-visible="body"]').uncheck();

@@ -24,7 +24,6 @@ import { projectLayout } from "./project-layout.js";
 import { personalSettings } from "./personal-settings.js";
 import { planning } from "./planning.js";
 import { grid } from "./grid.js";
-import { tablePreferences } from "./table-model.js";
 import { taskReorder } from "./task-reorder.js";
 import { taskRowEditor } from "./task-row-editor.js";
 import { recoveryUI } from "./recovery-ui.js";
@@ -166,55 +165,14 @@ export function installFeatures(ctx) {
     state.project = result;
     return result;
   }
-  const personalViewKey = () =>
-    `views:${state.session?.user?.username || "shared"}:${state.project.id}`;
-  const personalViews = () => storage.get(personalViewKey(), []);
-  const savedViews = () => [...personalViews(), ...(state.project.views || [])];
-  function viewDefinition() {
-    return {
-      view: state.view,
-      search: state.search || "",
-      status: state.status || "all",
-      type: state.type || "all",
-      sort: state.sort || "created",
-      sortDir: state.sortDir || 1,
-      filters: state.extraFilters || {},
-      groupBy: state.groupBy || "status",
-      ...(state.view === "kanban" ? { kanbanGroupBy: kanbanGroup(state.kanbanGroupBy) } : {}),
-      columns: state.tableColumns || null,
-      ...(state.view === "table"
-        ? { table: structuredClone(sheet.preferences()) }
-        : {}),
-    };
-  }
-  function viewChanged(view) {
-    if (!view) return false;
-    const current = viewDefinition();
-    return Object.keys(current).some(
-      (key) =>
-        JSON.stringify(key === "table" ? tablePreferences(view[key], state.config) : view[key] ?? current[key]) !==
-        JSON.stringify(current[key]),
-    );
-  }
   function viewToolbar() {
-    $("#feature-toolbar")?.remove();
     $(".advanced-filters")?.remove();
     const host = $("#view-toolbar");
     if (!host) return;
     const f = state.extraFilters || {};
     host.insertAdjacentHTML(
       "afterbegin",
-      `${["board", "drawing"].includes(state.view) && !state.boardGallery ? `<div class="feature-toolbar" id="feature-toolbar"><select id="saved-view" aria-label="Saved project views"><option value="">Unsaved view</option>${[
-        ["Personal · this browser", personalViews()],
-        ["Project · shared", state.project.views || []],
-      ]
-        .map(
-          ([name, views]) =>
-            `<optgroup label="${name}">${views.map((v) => `<option value="${esc(v.id)}" ${v.id === state.savedView ? "selected" : ""}>${esc(v.name)}${v.id === state.savedView && viewChanged(v) ? " · Unsaved changes" : ""}</option>`).join("")}</optgroup>`,
-        )
-        .join(
-          "",
-        )}</select>${button("view-save", "Save view")}${state.savedView ? button("view-save-as", "Save as…") : ""}${state.savedView ? button("view-delete", "Delete view") : ""}</div>` : ""}${["board", "drawing", "overview"].includes(state.view) ? "" : `<div class="advanced-filters"><label class="field">Assignee<input id="filter-assignee" placeholder="Anyone" value="${esc(f.assignee || "")}"></label><label class="field">Tag<input id="filter-tag" placeholder="Any tag" value="${esc(f.tag || "")}"></label><label class="field">Deadline<select id="filter-due">${options(["", "overdue", "week", "none"], f.due || "", { "": "Any deadline", overdue: "Overdue", week: "Next 7 days", none: "No deadline" })}</select></label><label class="field">Completion<select id="filter-completion">${options(["", "open", "done"], f.completion || "", { "": "Any completion", open: "Open", done: "Completed" })}</select></label>${state.view === "list" ? `<label class="field">Group by<select id="group-by">${options(["status", "type", "assignee", "priority", "none"], state.groupBy || "status", { status: "Status", type: "Type", assignee: "Assignee", priority: "Priority", none: "No grouping" })}</select></label>` : ""}<div class="filter-checks"><label><input type="checkbox" id="filter-blocked" ${f.blocked ? "checked" : ""}> Blocked</label><label><input type="checkbox" id="filter-archived" ${f.archived ? "checked" : ""}> Include archived</label></div><div class="menu-footer"><button type="button" class="button" data-action="filters-reset">Clear filters</button></div></div>`}`,
+      `${["board", "drawing", "overview"].includes(state.view) ? "" : `<div class="advanced-filters"><label class="field">Assignee<input id="filter-assignee" placeholder="Anyone" value="${esc(f.assignee || "")}"></label><label class="field">Tag<input id="filter-tag" placeholder="Any tag" value="${esc(f.tag || "")}"></label><label class="field">Deadline<select id="filter-due">${options(["", "overdue", "week", "none"], f.due || "", { "": "Any deadline", overdue: "Overdue", week: "Next 7 days", none: "No deadline" })}</select></label><label class="field">Completion<select id="filter-completion">${options(["", "open", "done"], f.completion || "", { "": "Any completion", open: "Open", done: "Completed" })}</select></label>${state.view === "list" ? `<label class="field">Group by<select id="group-by">${options(["status", "type", "assignee", "priority", "none"], state.groupBy || "status", { status: "Status", type: "Type", assignee: "Assignee", priority: "Priority", none: "No grouping" })}</select></label>` : ""}<div class="filter-checks"><label><input type="checkbox" id="filter-blocked" ${f.blocked ? "checked" : ""}> Blocked</label><label><input type="checkbox" id="filter-archived" ${f.archived ? "checked" : ""}> Include archived</label></div><div class="menu-footer"><button type="button" class="button" data-action="filters-reset">Clear filters</button></div></div>`}`,
     );
     if (state.view === "table") {
       $(".toolbar-right")?.setAttribute("hidden", "");
@@ -848,29 +806,6 @@ export function installFeatures(ctx) {
         await openProject(el.dataset.project);
       taskDialog(el.dataset.id);
     }
-    if (action === "view-save" || action === "view-save-as") {
-      const current = savedViews().find((v) => v.id === state.savedView);
-      state.savingViewAs = action === "view-save-as";
-      showDialog(
-        `<dialog class="dialog"><form id="view-form">${dialogHead("Save this view")}<div class="dialog-body">${field("name", "View name", current?.name || "", "text", 'required maxlength="100"')}<label class="field">Who can use this view<select name="scope"><option value="personal" ${current?.scope === "personal" || !current ? "selected" : ""}>Personal · this browser</option><option value="project" ${current && current.scope !== "personal" ? "selected" : ""}>Project · shared with project members</option></select></label><p>Saves this board’s current view. Personal views stay in this browser.</p></div><div class="dialog-foot"><button class="button primary" type="submit">Save view</button></div></form></dialog>`,
-        "view",
-      );
-    }
-    if (action === "view-delete" && (await confirmAction({ anchor: el, title: "Delete this saved view?", message: "Anyone using a shared view loses it too.", confirmLabel: "Delete view", danger: true }))) {
-      if (personalViews().some((v) => v.id === state.savedView))
-        storage.set(
-          personalViewKey(),
-          personalViews().filter((v) => v.id !== state.savedView),
-        );
-      else
-        await saveProject({
-          views: (state.project.views || []).filter(
-            (v) => v.id !== state.savedView,
-          ),
-        });
-      state.savedView = null;
-      renderView();
-    }
     if (action === "quick-capture")
       showDialog(`<dialog class="dialog">${dialogHead("Quick capture")}<form id="quick-capture" class="dialog-body"><label class="field">Title<input name="title" aria-label="Card title" placeholder="Card title…" required maxlength="300" autofocus></label><button class="button primary" type="submit">Add card</button></form></dialog>`, "quick-capture");
     if (action === "workflow") settings.open("workflow");
@@ -1114,38 +1049,6 @@ export function installFeatures(ctx) {
       if (state.dialog === "personal") state.dirty = false;
       renderApp();
     }
-    if (el.id === "saved-view") {
-      const view = savedViews().find((v) => v.id === el.value);
-      state.savedView = view?.id || null;
-      if (view) {
-        state.boardGallery = false;
-        drawings.reset();
-        Object.assign(state, {
-          view: view.view === "drawing" ? "board" : view.view,
-          search: view.search || "",
-          status: view.status || "all",
-          type: view.type || "all",
-          sort: view.sort || "created",
-          sortDir: view.sortDir || 1,
-          extraFilters: structuredClone(view.filters || {}),
-          tableColumns: structuredClone(view.columns || null),
-          groupBy: view.groupBy || "status",
-          ...(view.view === "kanban" ? { kanbanGroupBy: kanbanGroup(view.kanbanGroupBy) } : {}),
-          ...(view.view === "table"
-            ? {
-                tablePreferences: structuredClone(
-                  view.table || { groups: [], sorts: [], filters: [] },
-                ),
-                tableCollapsed: new Set(),
-              }
-            : {}),
-          page: 0,
-        });
-      }
-      if (view?.view === "table") sheet.persist();
-      if (view?.view === "kanban") storage.set(`kanban-group:${state.project.id}`, state.kanbanGroupBy);
-      renderApp();
-    }
   });
   document.addEventListener("submit", async (event) => {
     const form = event.target;
@@ -1153,7 +1056,6 @@ export function installFeatures(ctx) {
     if (
       ![
         "quick-capture",
-        "view-form",
         "account-form",
         "login-form",
       ].includes(form.id)
@@ -1179,37 +1081,6 @@ export function installFeatures(ctx) {
         await refresh();
         form.reset();
         $("#quick-capture input")?.focus();
-      }
-      if (form.id === "view-form") {
-        const scope = data.get("scope");
-        const current = savedViews().find((v) => v.id === state.savedView);
-        const sameScope = (current?.scope || "project") === scope;
-        const id =
-          !state.savingViewAs && sameScope && current
-            ? current.id
-            : `${scope === "personal" ? "pv" : "v"}-${randomUUID()}`;
-        const view = {
-          ...viewDefinition(),
-          id,
-          name: String(data.get("name")).trim(),
-          scope,
-        };
-        if (!view.name) throw new Error("Enter a view name.");
-        if (scope === "personal")
-          storage.set(personalViewKey(), [
-            ...personalViews().filter((v) => v.id !== id),
-            view,
-          ]);
-        else
-          await saveProject({
-            views: [
-              ...(state.project.views || []).filter((v) => v.id !== id),
-              view,
-            ],
-          });
-        state.savedView = id;
-        closeDialog(true);
-        renderView();
       }
       if (form.id === "account-form") {
         const organisations = {};

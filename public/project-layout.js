@@ -108,7 +108,7 @@ export function projectLayout(ctx) {
     const panel = compact.lastElementChild;
     const selectors = toolbar.classList.contains("board-toolbar")
       ? ".board-toolbar > .board-menu, .board-toolbar > .bookmark-button, .board-toolbar > .board-settings-button, .board-toolbar > .board-save, .board-toolbar > [data-feature=recovery]"
-      : ".shared-query-controls, .toolbar-left > .filter:not(#sort), .toolbar-left > .board-menu, .toolbar-left > .bookmark-button, .toolbar-right, .table-view-tools, .grid-tools, #view-toolbar [data-phone-options], #view-content [data-phone-options]";
+      : ".toolbar-left > .filter:not(#sort), .toolbar-left > .board-menu, .toolbar-left > .bookmark-button, .toolbar-right, .table-view-tools, .grid-tools, #view-toolbar [data-phone-options], #view-content [data-phone-options]";
     for (const element of document.querySelectorAll(selectors)) {
       const slot = document.createComment("view control position");
       element.before(slot);
@@ -242,24 +242,7 @@ export function projectLayout(ctx) {
   function projectHeader() {
     restoreToolbar();
     if (!state.project || !$(".tabs")) return;
-    $(".shared-query-controls")?.remove();
-    const features = $("#feature-toolbar");
     const queryHost = $(".toolbar-left");
-    if (features) {
-      const controls = document.createElement("div");
-      controls.className = "shared-query-controls";
-      controls.append(...features.children);
-      if ($(".board-toolbar")) {
-        controls.dataset.boardPersistent = "true";
-        menu($(".board-toolbar"), "board", viewLabel("board"));
-        menu($(".board-toolbar"), "more", "More").prepend(controls);
-      } else if (queryHost) queryHost.prepend(controls);
-      else {
-        const host = $(".overview-toolbar") || $("#view-toolbar");
-        host.prepend(controls);
-      }
-      features.remove();
-    }
     $(".view-layout-switcher")?.remove();
     const taskLayout = taskViews.includes(state.view);
     const layouts = taskLayout ? taskViews : planningViews.includes(state.view) ? planningViews : [];

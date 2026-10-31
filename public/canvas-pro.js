@@ -452,7 +452,7 @@ export function canvasPro(ctx, basic) {
             `<button data-pro="open-task" data-task="${esc(t.id)}"><span class="status-dot ${esc(t.status)}" ${taskColorAttributes(state, "status", t.status)}></span>${esc(t.title)}<small>${esc(t.assignee || t.status)}</small></button>`,
         )
         .join("") || "<p>No matching tasks.</p>"
-    }${tasks.length > 100 ? "<small>First 100 matches · narrow the saved view to see more.</small>" : ""}</div>`;
+    }${tasks.length > 100 ? "<small>First 100 matches · narrow the filter to see more.</small>" : ""}</div>`;
   }
   async function loadNote(n) {
     const file = noteFile(n);

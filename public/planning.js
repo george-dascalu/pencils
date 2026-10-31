@@ -86,7 +86,6 @@ export function planning(ctx) {
             ? { due: "overdue" }
             : { completion: el.dataset.query };
       state.view = "list";
-      state.savedView = null;
       ctx.renderApp();
       return true;
     }

@@ -16,7 +16,7 @@
 .mobile-view-options > summary { list-style: none; }
 .mobile-view-options > summary::-webkit-details-marker { display: none; }
 .mobile-view-options-panel > header { display: flex; align-items: center; justify-content: space-between; }
-.mobile-view-options-panel :is(.shared-query-controls, .table-view-tools, .grid-tools, .toolbar-right) {
+.mobile-view-options-panel :is(.table-view-tools, .grid-tools, .toolbar-right) {
   display: flex; flex-wrap: wrap; gap: 8px; padding: 0; margin: 0; width: 100%;
 }
 /* The star shows its name in View options. */
@@ -854,7 +854,6 @@ html.table-viewport-view body {
 }
 #quick-capture.dialog-body input { width: 100%; }
 #quick-capture.dialog-body > button { align-self: flex-end; }
-#view-toolbar > .shared-query-controls { padding: 7px 16px; }
 
 /* The sidebar holds projects and, at its bottom, Settings and Help above the version; it
    closes with its close button. Phones show the active view in the bottom bar. */

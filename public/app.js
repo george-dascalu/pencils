@@ -562,7 +562,6 @@ function openView(view) {
   state.dirty = false;
   state.view = next;
   state.page = 0;
-  state.savedView = null;
   storage.set(`view:${state.project.id}`, state.view);
   renderApp();
   return true;
@@ -688,7 +687,6 @@ function applySnapshot(snapshot) {
 }
 function activateProject(snapshot) {
   clearProject();
-  state.savedView = null;
   state.tableColumns = null;
   state.tablePreferences = null;
   state.tableCollapsed = new Set();
@@ -1410,7 +1408,6 @@ const navigationDefaults = {
   kanbanGroupBy: "none",
   kanbanCollapsed: [],
   page: 0,
-  savedView: null,
   tableColumns: null,
   tablePreferences: null,
   settingsReturn: "list",

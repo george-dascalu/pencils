@@ -64,11 +64,7 @@ function locationFor(route) {
     ? `#organisation/${route.organisation}/${route.page || "home"}${route.page === "settings" && route.settingsSection ? `/${route.settingsSection}` : ""}`
     : "#home";
 }
-const identity = (entry) =>
-  JSON.stringify([
-    locationFor(entry.route),
-    entry.preferences?.savedView || null,
-  ]);
+const identity = (entry) => locationFor(entry.route);
 const scrollPosition = () => ({
   x: scrollX,
   y: scrollY,

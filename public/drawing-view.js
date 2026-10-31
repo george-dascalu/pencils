@@ -65,7 +65,7 @@ export function drawingView(ctx) {
         .join("") || "<p>No canvases yet. Create one to start.</p>"
     }</div></section>`;
   }
-  // Every entry path (tabs, saved views, selectors and old URLs) goes through
+  // Every entry path (tabs, selectors and old URLs) goes through
   // this gate before rendering an editable canvas or writing a new checkpoint.
   const editable = (b) =>
     Object.fromEntries(

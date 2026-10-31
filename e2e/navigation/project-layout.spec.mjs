@@ -132,11 +132,8 @@ async function everyViewSharesTheHeader(page, size) {
       const nav = await boxOf(page, ".tabs");
       expect(create.x >= nav.right && create.y >= box.y && create.bottom <= box.bottom, "New task follows the navigation in the top row").toBe(true);
     }
-    if (["board", "drawing"].includes(view)) {
-      await reveal(page.locator("#saved-view"));
-      await expect(page.locator("#saved-view"), `${view}: saved views remain accessible`).toBeVisible();
-      await page.keyboard.press("Escape");
-    } else await expect(page.locator('#saved-view,[data-feature="view-save"],[data-feature="view-save-as"],[data-feature="view-delete"]'), `${view}: saved-view controls are removed`).toHaveCount(0);
+    // Since 0.20.70 no view, Board included, has saved views.
+    await expect(page.locator('#saved-view,[data-feature="view-save"],[data-feature="view-save-as"],[data-feature="view-delete"]'), `${view}: no saved-view controls`).toHaveCount(0);
     if (!["board", "drawing", "overview"].includes(view)) {
       const rows = "#view-content .task-row,#view-content .kanban-card,#view-content [data-table-task],#view-content [data-timeline-row],#view-content [data-calendar-card],#view-content .capacity-task";
       await (await reveal(page.locator("#filter-assignee"))).fill("No matching owner");

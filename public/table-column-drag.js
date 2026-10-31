@@ -1,4 +1,4 @@
-// Reordering shares the column configuration used by Columns and saved views.
+// Reordering shares the column configuration used by Columns.
 export function tableColumnDrag({ state, renderView }, fieldName) {
   let drag = null;
   let suppressClick = false;
