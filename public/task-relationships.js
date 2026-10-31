@@ -9,9 +9,12 @@ import { taskColorAttributes, fieldBoxStyle } from "./task-colors.js";
 import { statusLabel } from "./workflow-model.js";
 import { positionPopover } from "./popover-position.js";
 import { focusOnOpen } from "./open-focus.js";
+import { fieldOn } from "./card-fields.js";
 
 export function taskRelationshipsEditor(ctx, form, { flush, changed }) {
   const { state, esc, icon, sync, patchTask, taskDialog } = ctx;
+  // Without the Parent field (T23) a card has no parent or children to show.
+  const kinds = () => relationshipTypes.filter(([kind]) => fieldOn(state.config, "parent") || !["parent", "child"].includes(kind));
   // A new card has no id yet: its own fields are written into the form and
   // changes to other cards wait in `staged` until the card is created.
   const draft = !form.dataset.id;
@@ -28,7 +31,7 @@ export function taskRelationshipsEditor(ctx, form, { flush, changed }) {
   host.innerHTML = `<div class="task-relationships-heading"><h3>Relationships</h3><details class="selection-menu task-relationship-sort"><summary class="icon-button" aria-label="Sort relationships" title="Sort relationships">${icon("sort")}</summary><div class="selection-popover task-picker-popover"><h3 class="popover-title">Sort by</h3><div role="listbox" aria-label="Sort relationships by">${[["", "Relationship order"], ["assignee", "Assignee"], ["status", "Status"], ["priority", "Priority"]].map(([value, label]) => `<button type="button" role="option" data-relationship-sort="${value}" aria-selected="false"><span>${label}</span>${icon("check")}</button>`).join("")}</div><button type="button" class="button" data-relationship-sort-direction aria-label="Reverse relationship sort">${icon("sort")}Reverse order</button></div></details><button type="button" class="icon-button" data-relationship-toggle aria-expanded="false" aria-label="Add relationship" title="Add relationship">${icon("plus")}</button></div>
     <div data-relationship-list></div>
     <div class="selection-popover task-relationship-picker" id="task-relationship-picker" data-relationship-picker popover="manual" role="dialog" aria-label="Add relationship" aria-modal="false" hidden>
-      <div class="task-relationship-controls"><select aria-label="Relationship type">${relationshipTypes.map(([value, label]) => `<option value="${value}">${label}</option>`).join("")}</select><input type="search" aria-label="Find a task to link" placeholder="Find by ID or title…"><button type="button" class="icon-button" data-relationship-close aria-label="Close relationship picker">${icon("close")}</button></div>
+      <div class="task-relationship-controls"><select aria-label="Relationship type">${kinds().map(([value, label]) => `<option value="${value}">${label}</option>`).join("")}</select><input type="search" aria-label="Find a task to link" placeholder="Find by ID or title…"><button type="button" class="icon-button" data-relationship-close aria-label="Close relationship picker">${icon("close")}</button></div>
       <div class="task-relationship-options" data-relationship-options></div>
     </div><p class="field-hint" data-relationship-status role="status" hidden></p>`;
   form.querySelector(".task-description").after(host);
@@ -143,7 +146,7 @@ export function taskRelationshipsEditor(ctx, form, { flush, changed }) {
       rows = taskRelationships(list, id);
     paint(
       host.querySelector("[data-relationship-list]"),
-      relationshipTypes
+      kinds()
         .map(([kind, label]) => {
           const group = rows.filter((row) => row.kind === kind).sort((a, b) =>
             compareRelationshipTasks(list.find(t => t.id === a.target), list.find(t => t.id === b.target), sortField, sortDirection, state.config));

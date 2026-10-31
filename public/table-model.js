@@ -1,3 +1,4 @@
+import { fieldOn } from "./card-fields.js";
 import { validQuery, compileQuery } from "./query-model.js";
 // Shared table rules: no task mutations, stable ordering, and empty values last.
 export const tableFieldKeys =
@@ -25,6 +26,9 @@ export function tableFields(config) {
     ]),
   ].map(([key, name, type]) => ({ key, name, type }));
 }
+// The fields a project offers for columns, filters, sorts and queries: without the built-in
+// fields it turned off (T23); saved preferences still validate against tableFields.
+export const offeredFields = (config) => tableFields(config).filter((f) => fieldOn(config, f.key));
 export const tableValue = (t, key) =>
   key.startsWith("fields.") ? t.fields?.[key.slice(7)] : t[key];
 export const emptyValue = (v) =>
@@ -75,7 +79,8 @@ export function validTablePreferences(p) {
 }
 export function tablePreferences(p, config) {
   if (!validTablePreferences(p)) return { outline: true, groups: [], sorts: [], filters: [] };
-  const keys = new Set(tableFields(config).map((f) => f.key));
+  // Saved groups, sorts and filters on fields the project turned off (T23) wait until they're back.
+  const keys = new Set(offeredFields(config).map((f) => f.key));
   return {
     ...(p.query ? { query: structuredClone(p.query) } : {}),
     // Outline is now standard, including older saved views with it disabled.

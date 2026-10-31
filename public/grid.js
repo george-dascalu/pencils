@@ -1,4 +1,5 @@
 import { confirmAction } from "./confirm-popover.js";
+import { fieldOn } from "./card-fields.js";
 import { priorityOptions, priorityLabels, priorityLabel } from "./task-priority.js";
 import {sourceFields,sourceLabel} from "./source-model.js";
 import { tableResult, activeTableFilter } from "./table-model.js";
@@ -66,7 +67,7 @@ export function grid(ctx) {
   const fieldValue = (t, key) =>
     key.startsWith("fields.") ? t.fields?.[key.slice(7)] : t[key];
   const fields = () => [
-    ...standard,
+    ...standard.filter((key) => fieldOn(state.config, key)),
     ...(state.config?.fields || []).map((f) => `fields.${f.id}`),
   ];
   const fieldName = (key) =>

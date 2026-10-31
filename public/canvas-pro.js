@@ -58,6 +58,7 @@ import {
   nodeFill,
   readableText,
 } from "./node-layout.js";
+import { fieldOn } from "./card-fields.js";
 import { canvasRichText, richToolbar } from "./canvas-rich-text.js";
 import { encodeCanvas, markdownSlice, palette } from "./canvas-format.js";
 import {
@@ -412,13 +413,13 @@ export function canvasPro(ctx, basic) {
         )
         .join("")}</div>`;
     if (n.viewType === "table") {
-      const fields = n.visibleFields || [
+      const fields = (n.visibleFields || [
         "key",
         "title",
         "status",
         "assignee",
         "due",
-      ];
+      ]).filter((field) => fieldOn(state.config, field));
       return `<div class="query-title">${esc(n.text || "Live tasks")}</div><div class="embedded-table"><table><thead><tr>${fields.map((f) => `<th>${esc(f)}</th>`).join("")}</tr></thead><tbody>${tasks
         .map(
           (t) =>

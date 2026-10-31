@@ -1,5 +1,5 @@
 import { validQuery } from "./query-model.js";
-import { tableFields } from "./table-model.js";
+import { offeredFields } from "./table-model.js";
 export function queryEditor(ctx, preferences, persist) {
   const { state, esc, showDialog, closeDialog, dialogHead, toast, renderView } =
     ctx;
@@ -26,7 +26,7 @@ export function queryEditor(ctx, preferences, persist) {
         ],
         node.match,
       )}</select></legend>${node.rules.map((child, i) => rows(child, path ? `${path}.${i}` : String(i), depth + 1)).join("")}<div class="query-actions"><button type="button" class="button small" data-query-add="condition" data-query-path="${path}">Add condition</button>${depth < 3 ? `<button type="button" class="button small" data-query-add="group" data-query-path="${path}">Add group</button>` : ""}${path ? `<button type="button" class="button small" data-query-remove="${path}">Remove group</button>` : ""}</div></fieldset>`;
-    const fields = tableFields(state.config),
+    const fields = offeredFields(state.config),
       field = fields.find((f) => f.key === node.field);
     const ops = [
       ["contains", "Contains"],

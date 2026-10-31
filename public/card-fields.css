@@ -1,0 +1,18 @@
+/* Card fields a project turned off (T23, card-fields.js) leave every surface: List and Tree rows,
+   phone summaries, the card editor and date editor, Kanban and board cards, relationship rows and
+   the filters. The root lists them in data-fields-off; values stay in the files. */
+:root[data-fields-off~="type"] :is(.task-row .task-type, .phone-task-meta > .icon:first-child, .kanban-card .task-type, .task-identity-row > [data-task-picker="type"], .canvas-task-type, .task-relationship-link > .icon:first-child, label.field:has(> #filter-type)),
+:root[data-fields-off~="assignee"] :is(.row-assignee, .phone-field[data-field="assignee"], .task-assignee-field, .kanban-assignee, .task-relationship-assignee, .canvas-task-assignee, label.field:has(> #filter-assignee), [data-relationship-sort="assignee"]),
+:root[data-fields-off~="status"] :is(.row-status, .phone-field[data-field="status"], #task-form .field:has(> select[name="status"]), .task-relationship-status, .canvas-task-status, label.field:has(> :is(#filter-status, #filter-completion)), [data-relationship-sort="status"]),
+:root[data-fields-off~="priority"] :is(.row-priority, .phone-field[data-field="priority"], #task-form .field:has(> [data-task-picker="priority"]), .kanban-card .field-chip-priority, .task-relationship-priority, .canvas-task-priority, [data-relationship-sort="priority"]),
+:root[data-fields-off~="start"] :is(.task-date-range > [name="start"], label.field:has(> input[name="start"]), .canvas-task-date:has(> [data-canvas-task-date="start"])),
+:root[data-fields-off~="due"] :is(.task-date-range > [name="due"], label.field:has(> input[name="due"]), .canvas-task-date:has(> [data-canvas-task-date="due"]), .kanban-card .field-box > :is(.due, .sr-only), label.field:has(> #filter-due)),
+:root:is([data-fields-off~="start"], [data-fields-off~="due"]) :is(.task-date-range > span[aria-hidden], .canvas-task-date-arrow),
+:root[data-fields-off~="start"][data-fields-off~="due"] :is([data-row-dates], #task-form .task-dates, .canvas-task-dates),
+:root[data-fields-off~="tags"] label.field:has(> #filter-tag),
+/* A field box with nothing left in it goes too. */
+:root[data-fields-off~="assignee"][data-fields-off~="status"][data-fields-off~="priority"][data-fields-off~="start"][data-fields-off~="due"] :is(.row-fields, .phone-task-fields, .live-card-state),
+:root[data-fields-off~="assignee"][data-fields-off~="status"][data-fields-off~="priority"] :is(#task-form .task-fields, .task-relationship-metadata),
+:root[data-fields-off~="assignee"][data-fields-off~="priority"][data-fields-off~="due"] .kanban-card .card-bottom {
+  display: none !important;
+}

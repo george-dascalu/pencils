@@ -2,6 +2,12 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.20.97 — 2026-10-31
+
+### Added
+
+- Projects can turn off the built-in card fields they don't use in Settings → Statuses & workflow → Card fields: type, assignee, status, priority, start and due dates, estimate, tags and parent. Cards keep their ID and title. A field that's off leaves rows, cards, the card editor, filters, sort and Table columns, and its values stay for when it's turned back on. Views that need it leave the tabs: Kanban without status, Tree without parent, Calendar and Timeline without both dates, Capacity without assignee.
+
 ## 0.20.96 — 2026-10-31
 
 ### Changed

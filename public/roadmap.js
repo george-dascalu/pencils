@@ -25,7 +25,7 @@ export const roadmap = [
   { id: "T20", title: "Board item toolbars in two rows", status: "done", requested: "2026-10-31", started: "2026-10-31", done: "2026-10-31T17:40", version: "0.20.91" },
   { id: "T21", title: "Board item toolbar rows scroll sideways", status: "done", requested: "2026-10-31", started: "2026-10-31", done: "2026-10-31T17:40", version: "0.20.91" },
   { id: "T22", title: "Personal homepage with panels", status: "done", requested: "2026-10-31", started: "2026-10-31", done: "2026-10-31T19:55", version: "0.20.93" },
-  { id: "T23", title: "Configurable card properties", status: "requested", requested: "2026-10-31" },
+  { id: "T23", title: "Configurable card properties", status: "done", requested: "2026-10-31", started: "2026-10-31T21:22", done: "2026-10-31T21:34", version: "0.20.97" },
   { id: "T24", title: "Roadmap page", status: "done", requested: "2026-10-31", started: "2026-10-31", done: "2026-10-31T18:07", version: "0.20.92" },
   { id: "T25", title: "Documents and Boards list pages (panel over the open item)", status: "done", requested: "2026-10-31", started: "2026-10-31T20:23", done: "2026-10-31T20:42", version: "0.20.96" },
   { id: "T26", title: "A popup's button closes it when pressed again", status: "done", requested: "2026-10-31", started: "2026-10-31", done: "2026-10-31T20:16", version: "0.20.94" },

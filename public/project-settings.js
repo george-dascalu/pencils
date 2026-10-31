@@ -1,5 +1,6 @@
 import { randomUUID } from "./uuid.js";
 import { workflowEditor } from "./workflow-editor.js";
+import { CARD_FIELDS, fieldOn } from "./card-fields.js";
 import { projectTeamControls, projectPeople } from "./teams.js";
 import { priorityOptions, priorityLabel } from "./task-priority.js";
 import { taskFieldColor, priorityColors } from "./task-colors.js";
@@ -405,7 +406,7 @@ export function projectSettings(ctx, { sources, automations, personal, organisat
         workflowEditor(f, schema, state.tasks, ctx, { section });
       // Assignee, status and priority share one box whose border takes the priority's colour.
       if (section === "workflow")
-        f.querySelector(".dialog-body").insertAdjacentHTML("beforeend", `<fieldset class="priority-colors"><legend>Priority colours</legend><p class="field-hint">A card's assignee, status and priority share one box with a border in its priority's colour.</p><div class="priority-color-list">${priorityOptions.map((priority) => `<div class="field">${esc(priorityLabel(priority))}${colorPicker({ label: `${priorityLabel(priority)} priority colour`, value: taskFieldColor(state, "priority", priority), name: `priority-color-${priority}` })}</div>`).join("")}</div></fieldset>`);
+        f.querySelector(".dialog-body").insertAdjacentHTML("beforeend", `<fieldset class="card-fields"><legend>Card fields</legend><p class="field-hint">Cards always show their ID and title. Turn off the fields this project doesn't use: their values stay in the files, and views that need a field that's off leave the tabs.</p><div class="card-field-list">${CARD_FIELDS.map(([key, name]) => `<label><input type="checkbox" name="card-field" value="${key}" ${fieldOn(schema, key) ? "checked" : ""}> ${name}</label>`).join("")}</div></fieldset><fieldset class="priority-colors"><legend>Priority colours</legend><p class="field-hint">A card's assignee, status and priority share one box with a border in its priority's colour.</p><div class="priority-color-list">${priorityOptions.map((priority) => `<div class="field">${esc(priorityLabel(priority))}${colorPicker({ label: `${priorityLabel(priority)} priority colour`, value: taskFieldColor(state, "priority", priority), name: `priority-color-${priority}` })}</div>`).join("")}</div></fieldset>`);
       f.addEventListener("submit", async (event) => {
         event.preventDefault();
         event.stopPropagation();
@@ -429,6 +430,8 @@ export function projectSettings(ctx, { sources, automations, personal, organisat
             // Only colours that differ from the defaults are kept, so the defaults can change later.
             const colors = Object.fromEntries(priorityOptions.map((priority) => [priority, data.get(`priority-color-${priority}`)]).filter(([priority, color]) => color && color !== priorityColors[priority]));
             changes.schema.priority_colors = Object.keys(colors).length ? colors : undefined;
+            const on = data.getAll("card-field"), off = CARD_FIELDS.map(([key]) => key).filter((key) => !on.includes(key));
+            changes.schema.off = off.length ? off : undefined;
           }
           if (section === "fields")
             changes = {

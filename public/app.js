@@ -43,6 +43,7 @@ import { installColorPickers } from "./color-picker.js";
 import { installBookmarks } from "./bookmarks.js";
 import { boardFloor } from "./layout-tray.js";
 import { listPanel } from "./list-panel.js";
+import { fieldOn, viewOn, markFieldsOff } from "./card-fields.js";
 import { kanbanDrag } from "./kanban-drag.js";
 import { observeKanbanLayout } from "./kanban-layout.js";
 import { kanbanGroup, kanbanLanes, laneKey } from "./kanban-model.js";
@@ -546,17 +547,18 @@ function canNavigate() {
   return true;
 }
 function preferredAreaView(area, layouts, fallback) {
+  layouts = layouts.filter((view) => viewOn(state.config, view));
   if (layouts.includes(state.view)) return state.view;
   const saved = storage.get(
     `${area}-view:${state.project.id}`,
     state.project.default_view,
   );
-  return layouts.includes(saved) ? saved : fallback;
+  return layouts.includes(saved) ? saved : layouts.includes(fallback) ? fallback : layouts[0];
 }
 function openView(view) {
   if (!state.project || !canNavigate()) return false;
   const next = view === "tasks" ? preferredAreaView("task", taskViews, "list") : view === "planning" ? preferredAreaView("planning", planningViews, "calendar") : view === "drawing" ? "board" : view;
-  if (!views.includes(next) || (state.project.personal && next !== "documents")) return false;
+  if (!views.includes(next) || !viewOn(state.config, next) || (state.project.personal && next !== "documents")) return false;
   if (state.view === next) return true;
   state.helpArticle = null;
   features.drawingReset();
@@ -568,6 +570,21 @@ function openView(view) {
   storage.set(`view:${state.project.id}`, state.view);
   renderApp();
   return true;
+}
+// Filters, sort, grouping and the open view leave the card fields the project turned off (T23),
+// and the page hides those fields (card-fields.css).
+function settleFields() {
+  const config = state.project && state.config, on = (field) => fieldOn(config, field);
+  markFieldsOff(config);
+  if (!config) return;
+  if (!on("status")) state.status = "all";
+  if (!on("type")) state.type = "all";
+  for (const [filter, field] of [["assignee", "assignee"], ["tag", "tags"], ["due", "due"], ["completion", "status"]])
+    if (!on(field)) delete state.extraFilters?.[filter];
+  if (!on(state.sort)) state.sort = "order";
+  if (!on(state.groupBy)) state.groupBy = "none";
+  if (!on(state.kanbanGroupBy)) state.kanbanGroupBy = "none";
+  if (!viewOn(config, state.view)) state.view = "list";
 }
 function setLoading(value) {
   state.loading = value;
@@ -785,6 +802,7 @@ function renderAppNow() {
   )
     closeDialog(false, { confirmDirty: false });
   const p = state.project;
+  settleFields();
   document.title = `${state.helpArticle ? helpArticle(state.helpArticle).title + " · Help" : state.directoryPage ? label(state.directoryPage) + " · " + state.organisation?.title : p ? `${viewLabel(state.view)} · ${p.title}` : state.organisation?.title || "Workspace"} · Pencils`;
   app.innerHTML = `<div class="shell">
     <button class="sidebar-overlay ${state.menu ? "visible" : ""}" data-action="menu" aria-label="Close sidebar"></button>
@@ -922,7 +940,7 @@ function projectNavigationHTML() {
     ["Planning views", ["planning"]],
     ["Task views", ["tasks"]],
     ["Visual views", ["board"]],
-  ].filter(([name]) => !state.project.personal || name === "Documents");
+  ].filter(([name]) => (!state.project.personal || name === "Documents") && (name !== "Planning views" || planningViews.some((view) => viewOn(state.config, view))));
   return `<div id="board-project-tools" class="board-project-tools">
     <nav class="tabs" aria-label="Project views"><div class="tabs-scroll" style="--bar-items: ${groups.length + 1 + features.bottomBar.count()}"><div class="view-tab-group" role="group" aria-label="Home"><button class="tab tab-home" data-action="home" aria-label="Home" title="Home">${icon("home")}</button></div>${groups
       .map(
@@ -933,7 +951,7 @@ function projectNavigationHTML() {
           }).join("")}</div>`,
       )
       .join("")}${features.bottomBar.html()}</div><span class="tabs-divider" aria-hidden="true"></span><button type="button" class="tab tab-search" data-feature="global-search" aria-label="Search" title="Search tasks, documents and boards">${icon("search")}</button></nav>
-    <label class="mobile-view-switcher">View <select id="project-view-switcher" aria-label="Project view">${["settings", "help"].includes(area) ? `<option value="${area}" selected disabled>${label(area)}</option>` : ""}${(state.project.personal ? ["documents"] : ["overview", "documents", "planning", "tasks", "board"]).map((view) => `<option value="${view}" ${view === area ? "selected" : ""}>${viewLabel(view)}</option>`).join("")}</select></label>
+    <label class="mobile-view-switcher">View <select id="project-view-switcher" aria-label="Project view">${["settings", "help"].includes(area) ? `<option value="${area}" selected disabled>${label(area)}</option>` : ""}${(state.project.personal ? ["documents"] : ["overview", "documents", "planning", "tasks", "board"]).filter((view) => view !== "planning" || planningViews.some((v) => viewOn(state.config, v))).map((view) => `<option value="${view}" ${view === area ? "selected" : ""}>${viewLabel(view)}</option>`).join("")}</select></label>
     ${newMenuHTML()}
   </div>`;
 }
@@ -1051,7 +1069,7 @@ function renderViewNow(onlyContent) {
         ? boardToolbar()
         : state.view === "overview"
           ? ""
-          : `<div class="toolbar"><div class="toolbar-left"><label class="search">${icon("search")}<input id="search" type="search" aria-label="Search tasks" placeholder="Find a task…" value="${esc(state.search)}"></label><select id="filter-status" class="filter" aria-label="Filter by status"><option value="all">All statuses</option>${options(statuses, state.status, statusNames)}</select><select id="filter-type" class="filter" aria-label="Filter by task type"><option value="all">All types</option>${options(types, state.type)}</select>${bookmarks.button("view", state.project.id, state.view)}</div><div class="toolbar-right"><select id="sort" class="filter" aria-label="Sort tasks">${sortGroups.map(([group, values]) => (group ? `<optgroup label="${group}">${options(values, state.sort, sortNames)}</optgroup>` : options(values, state.sort, sortNames))).join("")}</select></div><div class="view-controls"></div></div>`;
+          : `<div class="toolbar"><div class="toolbar-left"><label class="search">${icon("search")}<input id="search" type="search" aria-label="Search tasks" placeholder="Find a task…" value="${esc(state.search)}"></label><select id="filter-status" class="filter" aria-label="Filter by status"><option value="all">All statuses</option>${options(statuses, state.status, statusNames)}</select><select id="filter-type" class="filter" aria-label="Filter by task type"><option value="all">All types</option>${options(types, state.type)}</select>${bookmarks.button("view", state.project.id, state.view)}</div><div class="toolbar-right"><select id="sort" class="filter" aria-label="Sort tasks">${sortGroups.map(([group, values]) => [group, values.filter((value) => fieldOn(state.config, value))]).filter(([, values]) => values.length).map(([group, values]) => (group ? `<optgroup label="${group}">${options(values, state.sort, sortNames)}</optgroup>` : options(values, state.sort, sortNames))).join("")}</select></div><div class="view-controls"></div></div>`;
   }
   const content = $("#view-content");
   const previousKanban = onlyContent && state.view === "kanban" ? content.querySelector(".kanban") : null;
@@ -1170,7 +1188,7 @@ function taskRow(t, depth = null, hasChildren = false, flat = false) {
   const control = (field, name) => `name="${field}" data-row-field="${field}" data-id="${esc(t.id)}" aria-label="${name} for ${esc(t.title)}" ${t.source ? 'disabled title="Managed by the connected source"' : ""}`;
   // Phones show a summary that opens the card; its fields open their own picker (the row's select).
   // The date follows the fields in their box and opens the date editor, in rows and phone summaries.
-  const dates = className => `<button type="button" class="${className}" data-row-dates="${esc(t.id)}" aria-label="${esc(t.due ? new Date(`${t.due}T12:00:00`).toLocaleDateString(undefined, { day: "numeric", month: "short" }) : "Set dates")} — edit dates for ${esc(t.title)}" aria-haspopup="dialog" aria-expanded="false" title="${esc(`Start: ${t.start || "Not set"} · Due: ${t.due || "Not set"}`)}">${dueHTML(t) || '<span class="due">—</span>'}</button>`;
+  const dates = className => `<button type="button" class="${className}" data-row-dates="${esc(t.id)}" aria-label="${esc(t.due ? new Date(`${t.due}T12:00:00`).toLocaleDateString(undefined, { day: "numeric", month: "short" }) : "Set dates")} — edit dates for ${esc(t.title)}" aria-haspopup="dialog" aria-expanded="false" title="${esc(`Start: ${t.start || "Not set"} · Due: ${t.due || "Not set"}`)}">${(fieldOn(state.config, "due") && dueHTML(t)) || '<span class="due">—</span>'}</button>`;
   const phoneField = (field, name, value, chip) => `<button type="button" class="phone-field" data-action="phone-field" data-field="${field}" data-id="${esc(t.id)}" aria-haspopup="listbox" aria-label="${name} for ${esc(t.title)}: ${esc(value)}" ${t.source ? "disabled" : ""}>${chip}</button>`;
   return `<div data-task-order-row="${esc(t.id)}" data-task-order-group="${esc(depth !== null || state.groupBy === "none" ? "" : t[state.groupBy || "status"] || "")}" class="task-row ${depth !== null ? "tree-row" : ""}${flat ? " tree-flat" : ""} ${t.contextOnly ? "tree-context" : ""}" ${depth !== null ? `style="--depth:${Math.min(depth, 12)}"` : ""}>
     ${depth !== null ? `<button class="tree-toggle ${state.collapsed.has(t.id) ? "collapsed" : ""}" data-action="collapse" data-id="${esc(t.id)}" aria-label="${state.collapsed.has(t.id) ? "Expand" : "Collapse"} subtasks" ${hasChildren ? `aria-expanded="${!state.collapsed.has(t.id)}" title="${state.tasks.filter(c => c.parent === t.id).length} subtasks"` : "disabled"}>${hasChildren ? icon("chevron") : ""}</button>` : ""}

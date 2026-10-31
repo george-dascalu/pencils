@@ -3,6 +3,7 @@ import { validTablePreferences } from "../public/table-model.js";
 import { Problem } from "./problem.js";
 import { DEFAULT_TASK_TYPES } from "../public/task-types.js";
 import { PRIORITIES } from "./values.js";
+import { CARD_FIELDS } from "../public/card-fields.js";
 
 export const DEFAULT_SCHEMA = {
   statuses: ["backlog", "todo", "in-progress", "review", "done"],
@@ -125,6 +126,13 @@ export function schema(value = DEFAULT_SCHEMA) {
         "Card hierarchy rules must list existing parent and child types, and types allowed without a parent.",
       );
   }
+  if (
+    result.off != null &&
+    (!Array.isArray(result.off) ||
+      result.off.some((f) => !CARD_FIELDS.some(([key]) => key === f)) ||
+      new Set(result.off).size !== result.off.length)
+  )
+    fail("Only built-in card fields can be turned off, each once.");
   if (!Array.isArray(result.fields) || result.fields.length > 40)
     fail("A project supports up to 40 custom fields.");
   const ids = new Set();

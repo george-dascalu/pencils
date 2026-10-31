@@ -28,6 +28,7 @@ import { grid } from "./grid.js";
 import { taskReorder } from "./task-reorder.js";
 import { taskRowEditor } from "./task-row-editor.js";
 import { recoveryUI } from "./recovery-ui.js";
+import { fieldOn } from "./card-fields.js";
 
 export function installFeatures(ctx) {
   const {
@@ -174,7 +175,7 @@ export function installFeatures(ctx) {
     const f = state.extraFilters || {};
     host.insertAdjacentHTML(
       "afterbegin",
-      `${["board", "drawing", "overview"].includes(state.view) ? "" : `<div class="advanced-filters"><label class="field">Assignee<input id="filter-assignee" placeholder="Anyone" value="${esc(f.assignee || "")}"></label><label class="field">Tag<input id="filter-tag" placeholder="Any tag" value="${esc(f.tag || "")}"></label><label class="field">Deadline<select id="filter-due">${options(["", "overdue", "week", "none"], f.due || "", { "": "Any deadline", overdue: "Overdue", week: "Next 7 days", none: "No deadline" })}</select></label><label class="field">Completion<select id="filter-completion">${options(["", "open", "done"], f.completion || "", { "": "Any completion", open: "Open", done: "Completed" })}</select></label>${state.view === "list" ? `<label class="field">Group by<select id="group-by">${options(["status", "type", "assignee", "priority", "none"], state.groupBy || "status", { status: "Status", type: "Type", assignee: "Assignee", priority: "Priority", none: "No grouping" })}</select></label>` : ""}<div class="filter-checks"><label><input type="checkbox" id="filter-blocked" ${f.blocked ? "checked" : ""}> Blocked</label><label><input type="checkbox" id="filter-archived" ${f.archived ? "checked" : ""}> Include archived</label></div><div class="menu-footer"><button type="button" class="button" data-action="filters-reset">Clear filters</button></div></div>`}`,
+      `${["board", "drawing", "overview"].includes(state.view) ? "" : `<div class="advanced-filters"><label class="field">Assignee<input id="filter-assignee" placeholder="Anyone" value="${esc(f.assignee || "")}"></label><label class="field">Tag<input id="filter-tag" placeholder="Any tag" value="${esc(f.tag || "")}"></label><label class="field">Deadline<select id="filter-due">${options(["", "overdue", "week", "none"], f.due || "", { "": "Any deadline", overdue: "Overdue", week: "Next 7 days", none: "No deadline" })}</select></label><label class="field">Completion<select id="filter-completion">${options(["", "open", "done"], f.completion || "", { "": "Any completion", open: "Open", done: "Completed" })}</select></label>${state.view === "list" ? `<label class="field">Group by<select id="group-by">${options(["status", "type", "assignee", "priority", "none"].filter((field) => fieldOn(state.config, field)), state.groupBy || "status", { status: "Status", type: "Type", assignee: "Assignee", priority: "Priority", none: "No grouping" })}</select></label>` : ""}<div class="filter-checks"><label><input type="checkbox" id="filter-blocked" ${f.blocked ? "checked" : ""}> Blocked</label><label><input type="checkbox" id="filter-archived" ${f.archived ? "checked" : ""}> Include archived</label></div><div class="menu-footer"><button type="button" class="button" data-action="filters-reset">Clear filters</button></div></div>`}`,
     );
     if (state.view === "table") {
       $(".toolbar-right")?.setAttribute("hidden", "");
@@ -187,7 +188,7 @@ export function installFeatures(ctx) {
     $(".kanban-group-control")?.remove();
     $(".kanban-id-control")?.remove();
     if (state.view === "kanban") {
-      $(".toolbar-right")?.insertAdjacentHTML("afterbegin", `<label class="kanban-group-control">Swimlanes<select id="kanban-group" class="filter" aria-label="Kanban swimlanes">${options(kanbanGroups, kanbanGroup(state.kanbanGroupBy), { none: "None", assignee: "Assignee", priority: "Priority", type: "Task type" })}</select></label><label class="kanban-group-control kanban-id-control"><input type="checkbox" id="kanban-show-ids" ${storage.get(`kanban-show-ids:${state.project.id}`, false) === true ? "checked" : ""}>Show card IDs</label>`);
+      $(".toolbar-right")?.insertAdjacentHTML("afterbegin", `<label class="kanban-group-control">Swimlanes<select id="kanban-group" class="filter" aria-label="Kanban swimlanes">${options(kanbanGroups.filter((field) => fieldOn(state.config, field)), kanbanGroup(state.kanbanGroupBy), { none: "None", assignee: "Assignee", priority: "Priority", type: "Task type" })}</select></label><label class="kanban-group-control kanban-id-control"><input type="checkbox" id="kanban-show-ids" ${storage.get(`kanban-show-ids:${state.project.id}`, false) === true ? "checked" : ""}>Show card IDs</label>`);
     }
     layout.projectHeader();
   }

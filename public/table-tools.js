@@ -2,6 +2,7 @@ import { queryEditor } from "./query-editor.js";
 import { priorityOptions, priorityLabel } from "./task-priority.js";
 import {
   tableFields,
+  offeredFields,
   tablePreferences,
   tableValue,
   valueKey,
@@ -73,7 +74,7 @@ export function tableTools(ctx) {
     );
   }
   const fieldOptions = (value, exclude = []) =>
-    tableFields(state.config)
+    offeredFields(state.config)
       .filter((f) => !exclude.includes(f.key) || f.key === value)
       .map(
         (f) =>
@@ -128,7 +129,7 @@ export function tableTools(ctx) {
   }
   function html() {
     const p = preferences(),
-      fields = tableFields(state.config),
+      fields = offeredFields(state.config),
       count = p.filters.filter(activeTableFilter).length;
     const groups = `${[0, 1].map((i) => `<label class="field">${i ? "Then group by" : "Group by"}<select data-table-group="${i}" aria-label="${i ? "Then group by" : "Group table by"}" ${i && !p.groups[0] ? "disabled" : ""}><option value="">None</option>${fieldOptions(p.groups[i], p.groups)}</select></label>`).join("")}<div class="table-rule"><button class="button small" data-table-action="expand">Expand all</button><button class="button small" data-table-action="collapse">Collapse all</button></div><button type="button" class="button small" data-table-action="clear-groups" ${p.groups.length ? "" : "disabled"}>Reset grouping</button>`;
     const sorts = `${p.sorts
