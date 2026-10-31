@@ -3,6 +3,9 @@
 export async function reveal(locator) {
   await locator.waitFor({ state: "attached" });
   if (await locator.evaluate((el) => !!el.closest(".sidebar:not(.open)"))) await openSidebar(locator.page());
+  // Phones open the drawer on the Documents or Boards list in those views; the back arrow shows the menu.
+  const back = locator.page().locator(".sidebar.open .sidebar-documents-back");
+  if (await locator.evaluate((el) => !!el.closest(".sidebar") && !el.closest(".sidebar-documents")) && (await back.isVisible())) await back.click();
   // Phones keep the board's other tools in Canvas tools, under the dock's +.
   if (await locator.evaluate((el) => !!el.closest("#phone-board-palette[hidden]"))) await locator.page().locator(".phone-board-more").click();
   const options = locator.locator('xpath=ancestor::details[contains(@class,"mobile-view-options")]');

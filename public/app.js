@@ -502,6 +502,7 @@ function clearProject() {
   state.documents = [];
   state.selectedDocument = null;
   state.documentSearch = "";
+  state.boardSearch = "";
   state.documentExplorerOpen = false;
   state.helpArticle = null;
   if (state.directoryPage) {
@@ -886,9 +887,9 @@ document.addEventListener("click", event => {
 function setSidebarOpen(open, focus = true) {
   state.menu = open;
   const sidebar = $(".sidebar");
-  // In Documents each opening starts on the document list.
+  // In Documents and Boards each opening starts on the list of documents or boards.
   if (open && state.project) {
-    state.drawerLevel = state.view === "documents" ? "documents" : "menu";
+    state.drawerLevel = ["documents", "board", "drawing"].includes(state.view) ? "documents" : "menu";
     sidebar?.setAttribute("data-drawer-level", state.drawerLevel);
   }
   sidebar?.classList.toggle("open", open);
@@ -900,8 +901,8 @@ function setSidebarOpen(open, focus = true) {
 }
 // The drawer uses the same action handlers as the desktop navigation.
 document.addEventListener("click", event => {
-  // Choosing or creating a document in the drawer also closes it.
-  const button = event.target.closest('.sidebar [data-action], .sidebar [data-document-open], .sidebar [data-document-action="create"]');
+  // Choosing or creating a document or board in the drawer also closes it.
+  const button = event.target.closest('.sidebar [data-action], .sidebar [data-document-open], .sidebar [data-document-action="create"], .sidebar [data-board-open], .sidebar .document-explorer [data-feature]');
   if (state.menu && button && button.dataset.action !== "menu") setSidebarOpen(false, false);
 }, true);
 document.addEventListener("keydown", event => {
@@ -1027,6 +1028,7 @@ function renderViewNow(onlyContent) {
     return;
   }
   if (state.view !== "documents") features.documentsReset();
+  features.boardSidebar();
   if (state.view === "documents") {
     $("#view-toolbar").innerHTML = "";
     features.documentsRender();
@@ -1767,7 +1769,8 @@ async function patchTask(id, changes, rerender = true) {
 }
 
 function boardToolbar() {
-  return `<div class="board-toolbar"><select id="board-select" aria-label="Select board">${state.boards.filter(b=>!b.archived).map((b) => `<option value="${esc(b.id)}" ${b.id === state.selectedBoard ? "selected" : ""}>${esc(b.title)}</option>`).join("")}</select><button class="button small" data-action="board-new">${icon("plus")}New board</button>${state.selectedBoard ? `<button class="button small" data-action="board-rename">${icon("pencil")}Rename</button>` : ""}${state.selectedBoard ? bookmarks.button("board", state.project.id, state.selectedBoard) : ""}<span class="board-save" id="board-save">${esc(saveIssue([...sync.entries.values()], {storageError:sync.storageError,online:state.online}) ? "" : saveState([...sync.entries.values()],{storageError:sync.storageError,online:state.online}))}</span>${state.boardConflict ? '<button class="button small" data-feature="recovery">Resolve</button>' : ""}</div>`;
+  // Boards are chosen and created in the sidebar's Boards section (board-explorer.js).
+  return `<div class="board-toolbar">${state.selectedBoard ? `<button class="button small" data-action="board-rename">${icon("pencil")}Rename</button>` : ""}${state.selectedBoard ? bookmarks.button("board", state.project.id, state.selectedBoard) : ""}<span class="board-save" id="board-save">${esc(saveIssue([...sync.entries.values()], {storageError:sync.storageError,online:state.online}) ? "" : saveState([...sync.entries.values()],{storageError:sync.storageError,online:state.online}))}</span>${state.boardConflict ? '<button class="button small" data-feature="recovery">Resolve</button>' : ""}</div>`;
 }
 function boardToolsHTML() {
   const tool = (name, title, action = "board-add", glyph = name) =>
@@ -2005,7 +2008,7 @@ function addNode(type, taskId = null, position = null, draft = null) {
 function boardNameDialog(rename = false) {
   if (rename && !board()) return;
   showDialog(
-    `<dialog class="dialog"><form id="board-form" data-rename="${rename}">${dialogHead(rename ? "Name this board" : "A new place to think")}<div class="dialog-body"><div class="form-error hidden" role="alert"></div><label class="field">Board name<input name="title" value="${esc(rename ? board().title : "")}" required maxlength="300" placeholder="Ideas, a roadmap, the big picture…" autofocus></label></div><div class="dialog-foot"><button type="button" class="button" data-action="dialog-close">Cancel</button><button type="submit" class="button primary">${rename ? "Save name" : "Create canvas"}</button></div></form></dialog>`,
+    `<dialog class="dialog"><form id="board-form" data-rename="${rename}">${dialogHead(rename ? "Name this board" : "A new place to think")}<div class="dialog-body"><div class="form-error hidden" role="alert"></div><label class="field">Board name<input name="title" value="${esc(rename ? board().title : "")}" required maxlength="300" placeholder="Ideas, a roadmap, the big picture…" autofocus></label>${rename ? "" : `<input type="hidden" name="folder" value="${esc(features.boardFolder() || "")}">`}</div><div class="dialog-foot"><button type="button" class="button" data-action="dialog-close">Cancel</button><button type="submit" class="button primary">${rename ? "Save name" : "Create canvas"}</button></div></form></dialog>`,
     "board",
   );
 }
@@ -2608,21 +2611,6 @@ document.addEventListener("change", async (event) => {
       storage.set(`sort:${state.project.id}`, state.sort);
       state.sortDir = 1;
       renderView(true);
-    }
-    if (el.id === "board-select") {
-      if (
-        state.boardTaskEditor &&
-        !closeDialog(false, { confirmDirty: false })
-      ) {
-        el.value = state.selectedBoard;
-        return;
-      }
-      if (state.boardSaves || state.boardConflict) {
-        el.value = state.selectedBoard;
-        toast("Finish saving the current canvas first.", true);
-        return;
-      }
-      if (!(await features.drawingEnter(el.value))) el.value = state.selectedBoard;
     }
     if (el.dataset.taskField) {
       const field = el.dataset.taskField,

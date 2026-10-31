@@ -6,6 +6,7 @@ import {
 } from "./drawing-store.js";
 import { strokeMarkup } from "./pen-model.js";
 import { decodeCanvas, encodeCanvas } from "./canvas-format.js";
+import { boardExplorer } from "./board-explorer.js";
 export function drawingView(ctx) {
   const {
     state,
@@ -193,12 +194,9 @@ export function drawingView(ctx) {
     const b = ctx.board(),
       toolbar = document.querySelector(".board-toolbar");
     if (!b || !toolbar) return;
-    // The Boards menu opens the gallery; Version history shows the device checkpoint. Both stay
-    // across board renders (project-layout.js keeps data-board-persistent items).
-    const boards = toolbar.querySelector('[data-board-menu="board"] .board-menu-panel'),
-      history = toolbar.querySelector('[data-board-menu="history"] .board-menu-panel');
-    if (boards && !boards.querySelector("[data-board-persistent]"))
-      boards.insertAdjacentHTML("beforeend", `<button type="button" class="button small" data-board-persistent="true" data-drawing-action="gallery">${icon("board")}Boards</button>`);
+    // Version history shows the device checkpoint; it stays across board renders (project-layout.js
+    // keeps data-board-persistent items).
+    const history = toolbar.querySelector('[data-board-menu="history"] .board-menu-panel');
     if (history && !history.querySelector("[data-drawing-save]"))
       history.insertAdjacentHTML("beforeend", '<small class="field-hint" data-board-persistent="true" data-drawing-save>Device checkpoint available</small>');
     document.querySelector("#canvas")?.classList.add("drawing-canvas");
@@ -241,13 +239,6 @@ export function drawingView(ctx) {
     e.preventDefault();
     try {
       if (action === "open") return await enter(id);
-      if (action === "gallery") {
-        if (!ctx.canNavigate()) return;
-        reset();
-        state.boardGallery = true;
-        renderView();
-        return;
-      }
       if (action === "recover") return await recover();
       if (action === "sync") {
         await ctx.flushBoard();
@@ -367,5 +358,6 @@ export function drawingView(ctx) {
       toast(error.message, true);
     }
   });
-  return { gallery, render, enter, checkpoint, ready, reset, settled: () => preparing };
+  const sidebar = boardExplorer(ctx, { canvases, enter });
+  return { gallery, render, enter, checkpoint, ready, reset, settled: () => preparing, sidebar: sidebar.sync, folder: sidebar.folder };
 }

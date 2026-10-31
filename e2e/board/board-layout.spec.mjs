@@ -60,7 +60,7 @@ test.describe("wide desktop", () => {
     // Exports, Rename and the board's other actions live in Board tools (⋯) since 0.20.71.
     await summary(page, "tools").click();
     await expect(page.locator("[data-feature=canvas-json]")).toBeVisible();
-    await summary(page, "board").click();
+    await summary(page, "history").click();
     await expect(page.locator("[data-feature=canvas-json]")).toBeHidden();
     await expect(summary(page, "navigate")).toHaveCount(0);
     await expect(page.locator(".board-toolbar [data-board-menu=tools] [data-action=board-rename]")).toHaveCount(1);
@@ -83,7 +83,7 @@ test.describe("wide desktop", () => {
     await expect(page.locator("#board-project-tools")).toHaveCount(1);
     await page.locator(".tabs [data-view=board]").click();
     await page.locator("#canvas").waitFor();
-    for (const selector of ['[data-feature="board-settings"]', "[data-action=board-new]", ".board-tools [data-pro=outline]", "[data-action=board-rename]", ".board-menu [data-pro=present]", "[data-feature=canvas-json]", "[data-drawing-action=gallery]", "[data-drawing-save]"])
+    for (const selector of ['[data-feature="board-settings"]', "[data-action=board-new]", ".board-tools [data-pro=outline]", "[data-action=board-rename]", ".board-menu [data-pro=present]", "[data-feature=canvas-json]", "[data-board-action=move]", "[data-drawing-save]"])
       await expect(page.locator(selector), selector).toHaveCount(1);
   });
 });
@@ -104,7 +104,7 @@ onDevices(["ipad", "phone"], () => {
     // Since 0.19.2 the header New control is a menu offering a card or a document.
     await newCard(page);
     await page.locator("[data-action=dialog-close]").first().click();
-    for (const key of ["board", "session", "history", "tools"]) {
+    for (const key of ["session", "history", "tools"]) {
       // Since 0.18.26 phones keep the board menus in the View options panel;
       // reveal opens it, then the menu, as summary(key).click() does elsewhere.
       const menuPanel = page.locator(`[data-board-menu=${key}] .board-menu-panel`);

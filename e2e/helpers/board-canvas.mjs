@@ -1,7 +1,7 @@
 // Steps shared by the board (canvas) tests: seeding a board, waiting for the camera and
 // card rendering to settle, finding objects with board search, and board <-> screen points.
 import { expect } from "@playwright/test";
-import { openBoardSearch } from "./menu-controls.mjs";
+import { openBoardSearch, clickControl } from "./menu-controls.mjs";
 
 // The project's board as saved in the vault (the first board unless `boardId` is given).
 export async function savedBoard(store, projectId, boardId) {
@@ -13,6 +13,12 @@ export async function savedBoard(store, projectId, boardId) {
 export async function seedBoard(store, projectId, patch, boardId) {
   const board = await savedBoard(store, projectId, boardId);
   return store.updateBoard(projectId, board.id, { revision: board.revision, ...patch });
+}
+
+// Open another board from the sidebar's Boards section (0.20.74; the board picker before).
+export async function chooseBoard(page, id) {
+  await clickControl(page.locator(`.sidebar [data-board-open="${id}"]`));
+  await page.locator(`.board-tools[data-board="${id}"]`).waitFor();
 }
 
 // Start the page on a given camera for a board (the app restores it from localStorage).

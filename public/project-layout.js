@@ -3,7 +3,7 @@ import { phoneBoardTools } from "./phone-board-tools.js";
 import { mountLayoutTray, removeLayoutTray, tabBar } from "./layout-tray.js";
 // Group the existing controls without replacing their handlers or save state.
 export function projectLayout(ctx) {
-  const { $, state, icon, label, viewLabel, taskViews, planningViews, openView, openSelectMenu } = ctx;
+  const { $, state, icon, label, taskViews, planningViews, openView, openSelectMenu } = ctx;
   const narrow = matchMedia("(max-width: 600px)");
   const phoneBoard = phoneBoardTools({ icon, state });
   let moved = [], compact = null, keep = null;
@@ -300,8 +300,7 @@ export function projectLayout(ctx) {
     restoreToolbar();
     const toolbar = $(".board-toolbar");
     if (!$("#canvas") || !toolbar) return;
-    const boards = menu(toolbar, "board", viewLabel("board"));
-    move(boards, '[data-action="board-new"]');
+    // Boards are chosen and created in the sidebar (board-explorer.js), so the bar starts with the save state.
     if ($("#board-save")) toolbar.append($("#board-save"));
     // The right side matches the document bar: Session, Version history, the star and Board tools (⋯).
     const session = iconMenu(toolbar, "session", "Session", "person");
@@ -310,15 +309,15 @@ export function projectLayout(ctx) {
     if (star) toolbar.append(star);
     const tools = iconMenu(toolbar, "tools", "Board tools", "more");
     move(tools, '[data-action="board-rename"]');
-    const panels = { board: boards, session, history, tools };
+    const panels = { session, history, tools };
     // Dynamic tools are recreated on each board render; remove their old copies.
-    for (const panel of [boards, session, history, tools])
+    for (const panel of [session, history, tools])
       for (const el of [...panel.children]) if (!el.dataset.action && !el.dataset.boardPersistent) el.remove();
     const extras = $("#canvas-extras");
     if (extras) for (const el of [...extras.children]) (panels[el.dataset.menuHome] || tools).append(el);
     extras?.remove();
     // Items kept across renders (data-board-persistent) stay at the end of their menu.
-    for (const panel of [boards, history]) panel.append(...panel.querySelectorAll(":scope > [data-board-persistent]"));
+    history.append(...history.querySelectorAll(":scope > [data-board-persistent]"));
     const recovery = toolbar.querySelector('[data-feature="recovery"]');
     if (recovery) toolbar.append(recovery);
     restoreMenus();

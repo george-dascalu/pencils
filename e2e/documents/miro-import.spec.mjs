@@ -1,7 +1,8 @@
-// One-time Miro import from Boards (Board settings until 0.20.73): connect with an access token (never
+// One-time Miro import from the sidebar's New board menu (Board settings until 0.20.73, Boards
+// until 0.20.74): connect with an access token (never
 // kept in the browser), browse and preview a board without writing anything,
 // refresh the preview when options change, then import the canvas with its tasks
-// and media and open it, returning focus to Board settings. The panel fits and
+// and media and open it, returning focus to Board tools. The panel fits and
 // passes accessibility checks on desktop and phones in both themes, and the
 // import only ever reads from Miro.
 import { test, expect } from "../fixtures.mjs";
@@ -23,8 +24,8 @@ test.afterEach(() => {
 
 const panel = (page) => page.locator("#miro-import-panel");
 async function openImport(page) {
-  // Boards → Import from Miro since 0.20.73.
-  await clickControl(page.locator('.board-toolbar [data-board-menu="board"] [data-feature="miro-import"]'));
+  // The sidebar's New board → Import from Miro since 0.20.74.
+  await clickControl(page.locator('.sidebar [data-board-menu="board-new"] [data-feature="miro-import"]'));
   await panel(page).getByText("Use an access token", { exact: true }).waitFor();
 }
 // A project per test (the Miro connection belongs to the project), opened on its board
@@ -86,15 +87,15 @@ test("importing creates the canvas with its tasks and media, opens it and return
   expect(snapshot.tasks).toHaveLength(2);
   const board = snapshot.boards.find((b) => b.nodes.length);
   expect(board.nodes.filter((n) => n.type === "image")).toHaveLength(1);
-  await expect(page.locator("#board-select")).toHaveValue(board.id);
+  await page.locator(`.board-tools[data-board="${board.id}"]`).waitFor();
   // Closing the panel applies the refresh it held back (the import wrote attachment files),
-  // which reloads the project and rebuilds the board. Keyboard focus stays on Board settings.
+  // which reloads the project and rebuilds the board. Keyboard focus goes to Board tools.
   const reloaded = page.waitForResponse((r) => r.request().method() === "GET" && new URL(r.url()).pathname === `/api/projects/${project.id}`);
   await panel(page).getByRole("button", { name: "Open imported canvas" }).click();
   await expect(panel(page)).toHaveCount(0);
   await reloaded;
   await page.evaluate(() => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve))));
-  await expect(page.locator('.board-toolbar [data-board-menu="board"] > summary')).toBeFocused();
+  await expect(page.locator("#board-menu-tools")).toBeFocused();
   const textNode = board.nodes.find((n) => n.miro?.item === "text");
   await page.evaluate(() => (document.documentElement.dataset.theme = "dark"));
   expect(await page.locator(`[data-node="${textNode.id}"]`).evaluate((el) => getComputedStyle(el).color), "text stays readable on a pale imported frame in dark mode").toBe("rgb(0, 0, 0)");

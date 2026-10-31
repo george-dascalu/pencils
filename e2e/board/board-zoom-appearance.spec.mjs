@@ -4,6 +4,7 @@
 // (Board tools → Rename has it), the display toggles (now in the zoom menu) or Import from Miro
 // (now in Boards).
 import { test, expect, useApp } from "../fixtures.mjs";
+import { clickControl } from "../helpers/menu-controls.mjs";
 
 const app = useApp(async (store) => ({ project: await store.createProject({ title: "Zoom and look", key: "ZL" }) }));
 const open = async (page) => {
@@ -52,10 +53,10 @@ test("one Board appearance button opens the board's look, without its name, disp
     await expect(panel.locator(kept), kept).toHaveCount(1);
 });
 
-test("Boards imports from Miro", async ({ page }) => {
+// The sidebar's New board menu imports from Miro since 0.20.74; the panel opens by Board tools.
+test("New board imports from Miro", async ({ page }) => {
   await open(page);
-  await page.locator('.board-toolbar [data-board-menu="board"] > summary').click();
-  expect(await page.locator('.board-toolbar [data-board-menu="board"] .board-menu-panel > :is(button, a)').evaluateAll((els) => els.map((el) => el.textContent.trim()))).toEqual(["New board", "Import .canvas", "Import from Miro", "Boards"]);
-  await page.locator('.board-toolbar [data-board-menu="board"] [data-feature="miro-import"]').click();
+  await clickControl(page.locator('.sidebar [data-board-menu="board-new"] [data-feature="miro-import"]'));
   await expect(page.locator("#miro-import-panel")).toBeVisible();
+  await expect(page.locator(".sidebar.open"), "the sidebar closes for the panel").toHaveCount(0);
 });

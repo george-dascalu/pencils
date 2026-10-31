@@ -1,8 +1,9 @@
 import { Problem } from "./problem.js";
 
-export function documentFolders(value) {
+// Folders for documents and, since 0.20.74, boards (noun names the kind in messages).
+export function documentFolders(value, noun = "document") {
   if (!Array.isArray(value) || value.length > 500)
-    throw new Problem(400, "Use up to 500 document folders.");
+    throw new Problem(400, `Use up to 500 ${noun} folders.`);
   const folders = value.map(folder => {
     if (!folder || typeof folder.id !== "string" || !/^[\w-]{1,80}$/.test(folder.id) ||
         typeof folder.title !== "string" || !folder.title.trim() || folder.title.length > 100 ||
@@ -30,9 +31,9 @@ export function documentFolders(value) {
   return folders;
 }
 
-export function documentFolder(value, folders = []) {
+export function documentFolder(value, folders = [], noun = "document") {
   if (value == null || value === "") return null;
   if (typeof value !== "string" || !folders.some(folder => folder.id === value))
-    throw new Problem(400, "Choose a document folder in this project.");
+    throw new Problem(400, `Choose a ${noun} folder in this project.`);
   return value;
 }

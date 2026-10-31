@@ -4,6 +4,7 @@
 // preference; the settings fit a phone; reset returns to the theme's background, light or dark.
 import { test, expect, onDevices, useApp } from "../fixtures.mjs";
 import { clickControl, openSettingsPage } from "../helpers/menu-controls.mjs";
+import { chooseBoard } from "../helpers/board-canvas.mjs";
 
 const app = useApp(async (store) => {
   const project = await store.createProject({ title: "Settings" });
@@ -23,9 +24,8 @@ async function seed(background) {
   await app.store.updateBoard(app.project.id, board.id, { revision: board.revision, settings });
 }
 async function enter(page) {
-  await page.goto(`${app.base}/#project/${app.project.id}/board`);
-  await page.locator("#canvas").waitFor();
-  await page.locator("#board-select").selectOption(app.board.id);
+  await page.goto(`${app.base}/#project/${app.project.id}/board/${app.board.id}`);
+  await page.locator(`.board-tools[data-board="${app.board.id}"]`).waitFor();
 }
 async function open(page) {
   // Board appearance sits at the foot of the tool bar since 0.20.73; phones keep it in Canvas tools.
@@ -101,9 +101,9 @@ test("the fine grid previews five minor squares per major one and follows zoom a
 test("each board keeps its own background, and Plain removes the pattern", async ({ page }) => {
   await seed({ ...peach, pattern: "fine-grid" });
   await enter(page);
-  await page.locator("#board-select").selectOption(app.other.id);
+  await chooseBoard(page, app.other.id);
   await expect.poll(async () => (await appearance(page)).image).toMatch(/radial-gradient/);
-  await page.locator("#board-select").selectOption(app.board.id);
+  await chooseBoard(page, app.board.id);
   await open(page);
   await page.locator('[name="pattern"][value="plain"]').check();
   await close(page);

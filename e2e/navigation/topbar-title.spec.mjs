@@ -4,6 +4,7 @@
 import { test, expect, onDevices, useApp } from "../fixtures.mjs";
 import { renameDocument } from "../helpers/documents.mjs";
 import { clickControl } from "../helpers/menu-controls.mjs";
+import { chooseBoard } from "../helpers/board-canvas.mjs";
 
 const app = useApp(async (store) => {
   const project = await store.createProject({ title: "A little more possibility", key: "TB" });
@@ -45,7 +46,7 @@ onDevices(["phone", "ipad", "desktop"], () => test("a board names itself in the 
 
 onDevices(["phone", "desktop"], () => test("switching boards renames the header", async ({ page }) => {
   await openBoard(page);
-  await page.locator("#board-select").selectOption(app.second.id);
+  await chooseBoard(page, app.second.id);
   await expect(heading(page)).toHaveText("Launch plan board");
 }));
 

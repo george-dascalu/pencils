@@ -6,7 +6,7 @@
 // Part of the cross-browser release gate (desktop tests run in Firefox and WebKit too).
 import net from "node:net";
 import { test, expect, onDevices, useApp } from "../fixtures.mjs";
-import { clickControl } from "../helpers/menu-controls.mjs";
+import { clickControl, openSidebar, closeSidebar } from "../helpers/menu-controls.mjs";
 import { makeStroke } from "../../public/pen-model.js";
 
 const app = useApp();
@@ -30,7 +30,6 @@ async function seedProject({ defaultView } = {}) {
 const boards = async (project) => (await app.store.snapshot(project.id)).boards;
 const boardNamed = async (project, title) => (await boards(project)).find((b) => b.title === title);
 const draws = (board) => board.nodes.filter((n) => n.type === "draw");
-const boardMenu = (page) => page.locator('[data-board-menu="board"] summary');
 // Board tools (⋯) holds Link tasks, Copy board link and the offline pad (0.20.71).
 const toolsMenu = (page) => page.locator('[data-board-menu="tools"] summary');
 const activeTab = (page) => page.locator('.tabs [aria-current="page"]');
@@ -90,8 +89,7 @@ test("a pencil stroke on a new board saves to the server and this device, and th
   const { project, linkedTask } = await seedProject();
   await page.goto(`${app.base}/#project/${project.id}/board`);
   await page.locator("#canvas").waitFor();
-  await boardMenu(page).click();
-  await page.locator('[data-action="board-new"]').click();
+  await clickControl(page.locator('.sidebar [data-board-menu="board-new"] [data-action="board-new"]'));
   await page.locator('#board-form [name="title"]').fill("Fresh sketch");
   await page.locator('#board-form .dialog-foot button[type="submit"]').click();
   await page.locator("#canvas").waitFor();
@@ -110,16 +108,16 @@ test("a pencil stroke on a new board saves to the server and this device, and th
   expect((await boardNamed(project, "Fresh sketch")).settings.linked_tasks).toEqual([linkedTask.id]);
 });
 
-test("the Boards gallery lists every board, legacy drawings included, and the device checkpoints", gate, async ({ page }) => {
+// The sidebar lists the boards since 0.20.74 (the gallery before); Version history keeps the checkpoints.
+test("the sidebar lists every board, legacy drawings included, and Version history the device checkpoints", gate, async ({ page }) => {
   const { project, legacy, sketch } = await seedProject();
   await page.goto(`${app.base}/#project/${project.id}/board/${sketch.id}`);
   await page.locator("#canvas").waitFor();
-  await expect(page.locator("#board-select option")).toHaveCount(3);
-  await boardMenu(page).click();
-  await page.locator('[data-drawing-action="gallery"]').click();
-  await expect(page.locator('[data-drawing-action="open"]')).toHaveCount(3);
-  await expect(page.locator(`[data-drawing-action="open"][data-id="${legacy.id}"]`)).toBeVisible();
-  await page.locator('[data-drawing-action="recover"]').click();
+  await openSidebar(page);
+  await expect(page.locator(".sidebar [data-board-open]")).toHaveCount(3);
+  await expect(page.locator(`.sidebar [data-board-open="${legacy.id}"]`)).toBeVisible();
+  await closeSidebar(page);
+  await clickControl(page.locator('.board-toolbar [data-drawing-action="recover"]'));
   await expect(page.getByText(/Pencil sketch/).last()).toBeVisible();
   await page.locator('[data-action="dialog-close"]').click();
 });
@@ -130,9 +128,7 @@ test("offline drawing survives a reload without the server, and pending edits gu
   try {
     await page.goto(`${gateway.base}/#project/${project.id}/board/${sketch.id}`);
     await page.locator("#canvas").waitFor();
-    await boardMenu(page).click();
-    await page.locator('[data-drawing-action="gallery"]').click();
-    await page.locator('[data-drawing-action="offline"]').click();
+    await clickControl(page.locator('.board-toolbar [data-drawing-action="offline"]'));
     await expect(page.getByText("Offline drawing is prepared.")).toBeVisible();
     await page.goto(`${gateway.base}/drawing-offline.html`);
     await page.locator(`[data-open$="/${sketch.id}"]`).click();
@@ -153,9 +149,9 @@ test("offline drawing survives a reload without the server, and pending edits gu
     await page.locator('[data-action="dialog-close"]').click();
     await page.locator(`[data-drawing-action="open"][data-id="${legacy.id}"]`).click();
     await page.locator("#canvas").waitFor();
-    await page.selectOption("#board-select", sketch.id);
+    await clickControl(page.locator(`.sidebar [data-board-open="${sketch.id}"]`));
     await pendingGuard(page).waitFor();
-    await expect(page.locator("#canvas"), "the canvas selector protects pending offline work").toHaveCount(0);
+    await expect(page.locator("#canvas"), "the sidebar's board list protects pending offline work").toHaveCount(0);
     // Direct links, Board and legacy Drawing, followed inside the app and opened afresh. (While
     // guarding, the app moves the address to the gallery, so a reload would open the gallery.)
     for (const link of [`#project/${project.id}/board/${sketch.id}`, `#project/${project.id}/drawing/${sketch.id}`]) {
@@ -186,11 +182,10 @@ test("offline drawing survives a reload without the server, and pending edits gu
   }
 });
 
+// The gallery remains where pending device changes send a board, and at its address.
 onDevices(["desktop", "phone"], (device) => test("the Boards gallery fits the screen and opens a board", device === "desktop" ? gate : {}, async ({ page }) => {
   const { project, legacy, sketch } = await seedProject();
-  await page.goto(`${app.base}/#project/${project.id}/board/${legacy.id}`);
-  await page.locator("#canvas").waitFor();
-  await clickControl(page.locator('[data-drawing-action="gallery"]'));
+  await page.goto(`${app.base}/#project/${project.id}/board/gallery`);
   await expect(page.locator(`[data-drawing-action="open"][data-id="${legacy.id}"]`)).toBeVisible();
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1), "the gallery fits the viewport").toBe(true);
   await page.locator(`[data-drawing-action="open"][data-id="${sketch.id}"]`).click();

@@ -2,6 +2,12 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.20.74 — 2026-10-31
+
+### Changed
+
+- Boards sit in the sidebar like documents, in folders you can make, rename, nest and drag boards into, with search. The sidebar's New board menu makes a blank board in the chosen folder or imports an Obsidian .canvas or a Miro board, and Board tools → Move to folder files the open board. The board picker, the bar's Boards menu and its gallery are gone; on phones the menu opens on the board list.
+
 ## 0.20.73 — 2026-10-31
 
 ### Changed

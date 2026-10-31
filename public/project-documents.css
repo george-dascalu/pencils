@@ -35,6 +35,9 @@
 .sidebar-documents .document-explorer h2 .count { letter-spacing: 0; }
 .sidebar-documents .icon-button { color: #c7d3c8; background: transparent; border-color: transparent; }
 .sidebar-documents .icon-button:hover { background: #ffffff0d; color: #e0edbd; }
+/* The Boards section's New board menu (board-explorer.js) matches the icon buttons beside it. */
+.sidebar-documents .board-menu > summary { background: transparent; border-color: transparent; color: #c7d3c8; }
+.sidebar-documents .board-menu > summary:hover, .sidebar-documents .board-menu[open] > summary { background: #ffffff0d; border-color: transparent; color: #e0edbd; }
 .sidebar-documents .document-search { margin: 0 0 8px; }
 .sidebar-documents .document-search input { background: #ffffff0d; border-color: #ffffff24; color: #edf2e7; }
 .sidebar-documents .document-search input::placeholder { color: #a1b1a4; }

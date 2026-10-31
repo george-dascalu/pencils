@@ -5,6 +5,7 @@
 // The popover works in full screen and fits a dark phone screen.
 import { test, expect, onDevices, useApp } from "../fixtures.mjs";
 import { clickControl } from "../helpers/menu-controls.mjs";
+import { chooseBoard } from "../helpers/board-canvas.mjs";
 
 const app = useApp(async (store) => {
   const project = await store.createProject({ title: "Settings" });
@@ -20,9 +21,8 @@ async function seed({ title = app.board.title, snap = true } = {}) {
   await app.store.updateBoard(app.project.id, board.id, { revision: board.revision, title, settings: { ...board.settings, snap, alignObjects: true } });
 }
 async function enter(page) {
-  await page.goto(`${app.base}/#project/${app.project.id}/board`);
-  await page.locator("#canvas").waitFor();
-  await page.locator("#board-select").selectOption(app.board.id);
+  await page.goto(`${app.base}/#project/${app.project.id}/board/${app.board.id}`);
+  await page.locator(`.board-tools[data-board="${app.board.id}"]`).waitFor();
 }
 const trigger = (page) => page.getByRole("button", { name: "Board appearance", exact: true });
 const popup = (page) => page.locator("#board-settings-popover");
@@ -91,11 +91,11 @@ test("display preferences persist in this browser per board, while snap is share
   await page.keyboard.press("Escape");
   await expectSnap(page, false);
   // The other board keeps its own settings and display.
-  await page.locator("#board-select").selectOption(app.other.id);
+  await chooseBoard(page, app.other.id);
   await expectSnap(page, true);
   await expect(page.locator("#canvas-minimap")).toBeVisible();
   await expect(page.locator("#canvas")).not.toHaveClass(/grid-hidden/);
-  await page.locator("#board-select").selectOption(app.board.id);
+  await chooseBoard(page, app.board.id);
   await expectSnap(page, false);
   await expect(page.locator("#canvas-minimap")).toBeHidden();
   await expect(page.locator("#canvas")).toHaveClass(/grid-hidden/);

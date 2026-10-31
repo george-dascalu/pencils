@@ -14,7 +14,8 @@ import { makeAnchor, documentThreads, threadRoots, validComment } from "./docume
 import { boardComments } from "./board-comments.js";
 import { sketchPad } from "./sketch-pad.js";
 import { taskColorAttributes, fieldBoxStyle } from "./task-colors.js";
-import { positionPopover } from "./popover-position.js";
+import { anchoredPanel } from "./anchored-panel.js";
+import { folderTree } from "./folder-tree.js";
 import { richToolbar } from "./canvas-rich-text.js";
 import { installToolbarScroll, floatMenuPanel } from "./rich-toolbar-scroll.js";
 import { randomUUID } from "./uuid.js";
@@ -23,34 +24,17 @@ import { mountLayoutTray, removeLayoutTray, tabBar } from "./layout-tray.js";
 
 export function projectDocuments(ctx) {
   const { state, api, sync, storage, esc, icon, renderView, toast } = ctx;
-  let editor = null, form = null, current = null, project = null, renderer = null, panel = null, panelOpener = null, paneEditor = null;
+  let editor = null, form = null, current = null, project = null, renderer = null, paneEditor = null;
   let readingSearch = null;
   let mode = storage.get("document-mode", "live");
   let editMode = mode === "source" ? "source" : "live"; // where the bar's Reading view toggle returns
   let documentWidth = storage.get("document-width", "page") === "full" ? "full" : "page";
-  let activeFolder = null;
-  let explorerDrag = null, folderMovePending = false;
-  const closedFolders = new Set();
-  const folders = () => state.project?.document_folders || [];
-  const insideFolder = (id, ancestor, list = folders()) => {
-    const seen = new Set();
-    while (id && !seen.has(id)) {
-      if (id === ancestor) return true;
-      seen.add(id);
-      id = list.find(f => f.id === id)?.parent;
-    }
-    return false;
-  };
-  const folderName = (id, seen = new Set()) => {
-    const folder = folders().find(f => f.id === id);
-    if (!folder || seen.has(id)) return "";
-    seen.add(id);
-    return [folderName(folder.parent, seen), folder.title].filter(Boolean).join(" / ");
-  };
-  const folderOptions = (value = null, excluded = null) =>
-    `<option value="">Documents</option>${folders().filter(f => !excluded || !insideFolder(f.id, excluded)).sort((a,b) => folderName(a.id).localeCompare(folderName(b.id))).map(f => `<option value="${esc(f.id)}" ${f.id === value ? "selected" : ""}>${esc(folderName(f.id))}</option>`).join("")}`;
   if (!["live", "source", "reading"].includes(mode)) mode = "live";
   const all = () => state.documents || [];
+  const panels = anchoredPanel(ctx), showPanel = panels.show, closePanel = panels.close;
+  const explorer = folderTree({ ...ctx, kind: "document", label: "Documents", placeholder: "Find a document or #tag…", glyph: "file", panels,
+    items: all, selected: () => state.selectedDocument, matches: matchesDocument, moveItem: moveDocument });
+  const folders = explorer.folders, updateExplorer = explorer.update;
   const endpoint = (pid, id = "") => `/projects/${pid}/documents${id ? `/${id}` : ""}`;
   const selected = () => all().find(d => d.id === state.selectedDocument);
   const listKey = () => `document:${state.project.id}`;
@@ -74,29 +58,6 @@ export function projectDocuments(ctx) {
     link.click();
     setTimeout(() => URL.revokeObjectURL(url), 1000);
   };
-  function explorer() {
-    const query = (state.documentSearch || "").trim().toLocaleLowerCase();
-    const documents = all().filter(d => !query || matchesDocument(d, query))
-      .sort((a, b) => a.title.localeCompare(b.title, undefined, { numeric: true, sensitivity: "base" }) || a.id.localeCompare(b.id));
-    const documentItem = d => `<li><button type="button" draggable="true" class="document-link ${d.id === state.selectedDocument ? "active" : ""}" data-document-open="${esc(d.id)}" ${d.id === state.selectedDocument ? 'aria-current="page"' : ""} title="${esc([folderName(d.folder), d.title].filter(Boolean).join(" / "))}">${icon("file")}<span>${esc(d.title)}</span></button></li>`;
-    if (query) return documents.map(documentItem).join("") || '<li class="document-explorer-empty">No matching documents.</li>';
-    const tree = (parent, seen = new Set()) => {
-      const children = folders().filter(f => (f.parent || null) === parent && !seen.has(f.id)).sort((a,b) => a.title.localeCompare(b.title));
-      return children.map(f => `<li><div class="document-folder-row ${activeFolder === f.id ? "active" : ""}" data-document-folder-drop="${esc(f.id)}"><button type="button" draggable="true" class="document-link" data-document-folder="${esc(f.id)}" aria-expanded="${!closedFolders.has(f.id)}" title="${esc(folderName(f.id))} · Drag to move">${icon("chevron")}${icon("folder")}<span>${esc(f.title)}</span></button><button type="button" class="icon-button" data-document-folder-edit="${esc(f.id)}" aria-label="Edit ${esc(f.title)} folder" title="Edit folder">${icon("more")}</button></div><ul ${closedFolders.has(f.id) ? "hidden" : ""}>${tree(f.id, new Set([...seen, f.id]))}</ul></li>`).join("") +
-        documents.filter(d => parent ? d.folder === parent : !folders().some(f => f.id === d.folder)).map(documentItem).join("");
-    };
-    return tree(null) || '<li class="document-explorer-empty">No documents yet.</li>';
-  }
-  function updateExplorer() {
-    const list = document.querySelector("#document-list");
-    if (!list) return;
-    const focused = list.contains(document.activeElement) ? document.activeElement.dataset.documentOpen : null;
-    const focusedFolder = list.contains(document.activeElement) ? (document.activeElement.dataset.documentFolder || document.activeElement.dataset.documentFolderEdit) : null;
-    list.innerHTML = explorer();
-    if (focused) list.querySelector(`[data-document-open="${CSS.escape(focused)}"]`)?.focus({ preventScroll: true });
-    if (focusedFolder) list.querySelector(`[data-document-folder="${CSS.escape(focusedFolder)}"]`)?.focus({ preventScroll: true });
-    document.querySelector("#document-count").textContent = all().length;
-  }
   function syncChanged() {
     if (!form?.isConnected || state.project?.id !== project) return;
     const entry = sync.entries.get(endpoint(project, current.id));
@@ -125,45 +86,13 @@ export function projectDocuments(ctx) {
     const record = await api(url, { method: "PATCH", body: { revision: latest.revision, folder: folder || null } });
     if (state.project?.id !== pid) return;
     state.documents = all().map(d => d.id === id ? record : d);
-    if (current?.id === id) { current = record; activeFolder = record.folder; }
-    expandFolderAncestors(folder);
+    if (current?.id === id) { current = record; explorer.active = record.folder; }
+    explorer.expand(folder);
     updateExplorer(); syncChanged();
     toast("Document moved.");
   }
-  function expandFolderAncestors(folder) {
-    for (let id = folder, seen = new Set(); id && !seen.has(id); id = folders().find(f => f.id === id)?.parent) {
-      seen.add(id); closedFolders.delete(id);
-    }
-  }
-  async function moveFolder(id, parent) {
-    if (folderMovePending) return;
-    const pid = state.project.id;
-    folderMovePending = true;
-    try {
-      const snapshot = await api(`/projects/${pid}`);
-      const list = snapshot.project.document_folders || [];
-      const folder = list.find(f => f.id === id);
-      if (!folder) throw Error("This folder no longer exists. Refresh Documents and try again.");
-      if (parent && !list.some(f => f.id === parent)) throw Error("The destination folder no longer exists.");
-      if (insideFolder(parent, id, list)) throw Error("Choose a folder outside this folder and its subfolders.");
-      if ((folder.parent || null) === parent) return;
-      const record = await api(`/projects/${pid}`, {
-        method: "PATCH",
-        body: {
-          revision: snapshot.project.revision,
-          document_folders: list.map(f => f.id === id ? { ...f, parent } : f),
-        },
-      });
-      if (state.project?.id !== pid) return;
-      state.project = record;
-      expandFolderAncestors(parent);
-      updateExplorer();
-      document.querySelector(`[data-document-folder="${CSS.escape(id)}"]`)?.focus({ preventScroll: true });
-      toast(`Folder moved to ${parent ? folderName(parent) : "Documents"}.`);
-    } finally { folderMovePending = false; }
-  }
   function movePanel(button) {
-    const box = showPanel(button, "Move document", `<form><label class="field">Folder<select name="folder">${folderOptions(selected()?.folder)}</select></label><div class="document-panel-actions"><button class="button primary">Move</button></div></form>`);
+    const box = showPanel(button, "Move document", `<form><label class="field">Folder<select name="folder">${explorer.options(selected()?.folder)}</select></label><div class="document-panel-actions"><button class="button primary">Move</button></div></form>`);
     box.querySelector("form").addEventListener("submit", async event => {
       event.preventDefault();
       const submit = event.submitter; submit.disabled = true;
@@ -209,7 +138,7 @@ export function projectDocuments(ctx) {
       const submit = event.target.querySelector('[type="submit"]');
       submit.disabled = true;
       try {
-        const record = await create(title, body, { folder: inTemplatesFolder(activeFolder, folders()) ? null : activeFolder, caret: cursor });
+        const record = await create(title, body, { folder: inTemplatesFolder(explorer.active, folders()) ? null : explorer.active, caret: cursor });
         closePanel();
         if (record && state.view !== "documents") openDocument(record.id);
       } catch (error) {
@@ -219,14 +148,6 @@ export function projectDocuments(ctx) {
       }
     });
   }
-  // Changes the folder list against the project's latest revision; false if the project changed meanwhile.
-  async function updateFolders(change) {
-    const pid = state.project.id, snapshot = await api(`/projects/${pid}`);
-    const record = await api(`/projects/${pid}`, { method: "PATCH", body: { revision: snapshot.project.revision, document_folders: change([...(snapshot.project.document_folders || [])], snapshot) } });
-    if (state.project?.id !== pid) return false;
-    state.project = record;
-    return true;
-  }
   // Today: this day's note (YYYY-MM-DD) in the Daily folder, made from a "Daily" template when there is one.
   const DAILY = "# {{date:dddd D MMMM YYYY}}\n\n## Cards due\n\n```tasks\nnot done\nassignee is me\ndue before tomorrow\nsort by due\n```\n\n## Notes\n\n{{cursor}}\n";
   async function today() {
@@ -235,7 +156,7 @@ export function projectDocuments(ctx) {
     if (!daily) {
       const isDaily = f => !f.parent && f.title.trim().toLowerCase() === "daily";
       daily = { id: `folder-${randomUUID()}`, title: "Daily", parent: null };
-      if (!(await updateFolders(list => list.some(isDaily) ? list : [...list, daily]))) return;
+      if (!(await explorer.updateFolders(list => list.some(isDaily) ? list : [...list, daily]))) return;
       daily = folders().find(isDaily);
     }
     const existing = all().find(d => d.folder === daily.id && d.title === date);
@@ -244,34 +165,6 @@ export function projectDocuments(ctx) {
     const { body, cursor } = expandTemplate(template?.body ?? DAILY, { title: date, project: state.project.title });
     const record = await create(date, body, { folder: daily.id, caret: cursor });
     if (record && state.view !== "documents") openDocument(record.id);
-  }
-  function folderPanel(button, id = null) {
-    const folder = folders().find(f => f.id === id);
-    const box = showPanel(button, folder ? "Edit folder" : "New folder", `<form><label class="field">Folder name<input name="title" required maxlength="100" value="${esc(folder?.title || "")}" autocomplete="off"></label><label class="field">Parent folder<select name="parent">${folderOptions(folder ? folder.parent : activeFolder, id)}</select></label><p class="form-error" role="alert" hidden></p><div class="document-panel-actions">${folder ? '<button type="button" class="button danger" data-delete-folder>Delete folder</button>' : ""}<button type="submit" class="button primary">${folder ? "Save" : "Create folder"}</button></div></form>`);
-    const save = async (remove = false) => {
-      const values = new FormData(box.querySelector("form"));
-      const buttons = box.querySelectorAll("button"); buttons.forEach(b => b.disabled = true);
-      try {
-        const folderId = id || `folder-${randomUUID()}`;
-        const changed = await updateFolders((list, snapshot) => {
-          const next = list.filter(f => f.id !== folderId);
-          if (!remove) next.push({ id: folderId, title: values.get("title"), parent: values.get("parent") || null });
-          else if (snapshot.documents.some(d => d.folder === id) || list.some(f => f.parent === id))
-            throw Error("Move this folder's documents and subfolders before deleting it.");
-          return next;
-        });
-        if (!changed) return;
-        activeFolder = remove ? null : folderId;
-        closedFolders.delete(folderId);
-        closePanel(true); updateExplorer();
-      } catch (error) {
-        const message = box.querySelector(".form-error"); message.hidden = false; message.textContent = error.message;
-        buttons.forEach(b => b.disabled = false);
-      }
-    };
-    box.querySelector("form").addEventListener("submit", event => { event.preventDefault(); void save(); });
-    box.querySelector("[data-delete-folder]")?.addEventListener("click", () => void save(true));
-    if (focusOnOpen(box.querySelector("input"), box.querySelector("button"))) box.querySelector("input").select();
   }
   async function versionsPanel(button) {
     const pid = project, id = current.id;
@@ -327,50 +220,6 @@ export function projectDocuments(ctx) {
     if (!form) return;
     const stats = documentStats(form.elements.body.value);
     form.querySelector("[data-document-stats]").textContent = `${stats.words.toLocaleString()} words · ${stats.characters.toLocaleString()} characters`;
-  }
-  function closePanel(focus = false) {
-    if (!panel) return;
-    if (panelOpener?.hasAttribute("aria-expanded")) panelOpener.setAttribute("aria-expanded", "false");
-    panel.cleanup?.();
-    if (panel.matches(":popover-open")) panel.hidePopover();
-    panel.remove(); panel = null;
-    if (state.dialog === "document-panel") state.dialog = null;
-    if (focus && panelOpener?.isConnected) panelOpener.focus({ preventScroll: true });
-  }
-  function showPanel(button, title, html, width = 360) {
-    if (panel?.contains(button)) button = panelOpener;
-    closePanel();
-    panelOpener = button;
-    panel = document.createElement("section");
-    panel.className = "document-panel board-settings-popover";
-    panel.setAttribute("popover", "auto");
-    panel.setAttribute("role", "dialog");
-    panel.setAttribute("aria-label", title);
-    panel.innerHTML = `<header><h2>${esc(title)}</h2><button type="button" class="icon-button" data-document-panel-close aria-label="Close ${esc(title)}">${icon("close")}</button></header>${html}`;
-    document.body.append(panel); panel.showPopover(); state.dialog = "document-panel";
-    const position = () => panel && positionPopover(panel, button.getBoundingClientRect(), { width, maxHeight: Math.min(560, innerHeight - 24) });
-    position();
-    const lifecycle = new AbortController();
-    const observer = new ResizeObserver(position);
-    observer.observe(panel);
-    panel.cleanup = () => { lifecycle.abort(); observer.disconnect(); };
-    window.addEventListener("resize", position, { signal: lifecycle.signal });
-    window.visualViewport?.addEventListener("resize", position, { signal: lifecycle.signal });
-    const openedPanel = panel;
-    panel.addEventListener("toggle", event => {
-      if (event.newState !== "closed") return;
-      openedPanel.cleanup();
-      if (panel === openedPanel) {
-        if (button.hasAttribute("aria-expanded")) button.setAttribute("aria-expanded", "false");
-        if (state.dialog === "document-panel") state.dialog = null;
-      }
-    });
-    panel.querySelector("[data-document-panel-close]").addEventListener("click", () => closePanel(true));
-    panel.addEventListener("keydown", event => {
-      if (event.key === "Escape") { event.preventDefault(); event.stopPropagation(); closePanel(true); }
-    });
-    focusOnOpen(panel.querySelector("input,button"), panel.querySelector("button"));
-    return panel;
   }
   function setMode(next, focus = true) {
     readingSearch?.close();
@@ -734,10 +583,13 @@ export function projectDocuments(ctx) {
   }
   function reset() {
     document.querySelector(".topbar .document-tabs")?.remove();
+    // The section holds the board list in board views (board-explorer.js).
     const host = document.querySelector("#sidebar-documents");
-    if (host) host.innerHTML = "";
-    document.querySelector(".sidebar")?.removeAttribute("data-documents");
-    clearExplorerDrag();
+    if (host?.querySelector("#document-explorer")) {
+      host.innerHTML = "";
+      host.closest(".sidebar")?.removeAttribute("data-documents");
+    }
+    explorer.reset();
     closePanel();
     readingSearch?.destroy(); readingSearch = null;
     commentPanel?.destroy(); commentPanel = null; thread = null;
@@ -888,19 +740,16 @@ export function projectDocuments(ctx) {
     if (doc && !narrow() && !openTabs().includes(doc.id)) storage.set(tabsKey(), [...openTabs(), doc.id]);
     if (doc && storage.get(splitKey(), null)?.id === doc.id) setSplit(null);
     content.className = "content documents-content";
-    if (!folders().some(f => f.id === activeFolder)) activeFolder = null;
+    if (!folders().some(f => f.id === explorer.active)) explorer.active = null;
     // The document tree lives in the main sidebar (iPad and desktop) and in the
     // drawer's Documents level (phones); the workspace holds the editor only.
     const host = document.querySelector("#sidebar-documents");
     if (host) {
-      host.innerHTML = `
-      <aside id="document-explorer" class="document-explorer" aria-label="Document explorer">
-        <header data-document-folder-drop="" title="Drop here to move to Documents"><button type="button" class="icon-button sidebar-documents-back" data-drawer-back aria-label="Back to the menu" title="Back to the menu">${icon("chevron")}</button><h2><button type="button" class="document-root" data-document-root>Documents <span class="count" id="document-count">${all().length}</span></button></h2><div class="document-explorer-actions"><button type="button" class="icon-button" data-document-action="create" aria-label="New document" title="New document">${icon("plus")}</button><button type="button" class="icon-button" data-document-action="new-folder" aria-label="New folder" title="New folder">${icon("folder")}</button></div></header>
-        <label class="document-search search">${icon("search")}<input type="search" id="document-search" aria-label="Find a document" placeholder="Find a document or #tag…" value="${esc(state.documentSearch || "")}"></label>
-        <nav aria-label="Project documents"><ul id="document-list">${explorer()}</ul></nav>
-        <footer><button type="button" class="button small" data-document-action="import">${icon("plus")}Import Markdown</button><input type="file" id="document-import" accept=".md,.markdown,text/markdown,text/plain" multiple hidden></footer>
-      </aside>
-`;
+      host.innerHTML = explorer.html({
+        actions: `<button type="button" class="icon-button" data-document-action="create" aria-label="New document" title="New document">${icon("plus")}</button><button type="button" class="icon-button" data-document-action="new-folder" aria-label="New folder" title="New folder">${icon("folder")}</button>`,
+        footer: `<footer><button type="button" class="button small" data-document-action="import">${icon("plus")}Import Markdown</button><input type="file" id="document-import" accept=".md,.markdown,text/markdown,text/plain" multiple hidden></footer>`,
+      });
+      host.setAttribute("aria-label", "Documents");
       host.closest(".sidebar")?.setAttribute("data-documents", "shown");
     }
     syncTray();
@@ -1021,13 +870,13 @@ export function projectDocuments(ctx) {
     swapPane(id);
     reset();
     state.selectedDocument = id;
-    activeFolder = all().find(d => d.id === id)?.folder || null;
+    explorer.active = all().find(d => d.id === id)?.folder || null;
     state.documentExplorerOpen = false;
     storage.set(listKey(), id);
     renderView();
   }
   // `caret` places the caret in the new document (a template's {{cursor}}) instead of asking for a name.
-  async function create(title = "Untitled document", body = "", { folder = activeFolder, caret } = {}) {
+  async function create(title = "Untitled document", body = "", { folder = explorer.active, caret } = {}) {
     const pid = state.project.id;
     const record = await api(endpoint(pid), { method: "POST", body: { title, body, folder } });
     if (state.project?.id !== pid) return;
@@ -1043,27 +892,10 @@ export function projectDocuments(ctx) {
     }
     return record;
   }
-  document.addEventListener("input", event => {
-    if (event.target.id !== "document-search") return;
-    state.documentSearch = event.target.value;
-    updateExplorer();
-  });
   document.addEventListener("click", async event => {
-    const folder = event.target.closest("[data-document-folder]");
-    if (folder) {
-      const id = folder.dataset.documentFolder;
-      activeFolder = id;
-      closedFolders.has(id) ? closedFolders.delete(id) : closedFolders.add(id);
-      updateExplorer();
-      document.querySelector(`[data-document-folder="${CSS.escape(id)}"]`)?.focus({ preventScroll: true });
-      return;
-    }
-    const folderEdit = event.target.closest("[data-document-folder-edit]");
-    if (folderEdit) { folderPanel(folderEdit, folderEdit.dataset.documentFolderEdit); return; }
-    if (event.target.closest("[data-document-root]")) { activeFolder = null; updateExplorer(); return; }
     const branch = event.target.closest("[data-outline-toggle]");
-    if (branch && panel?.contains(branch)) {
-      const children = panel.querySelector(`#${CSS.escape(branch.getAttribute("aria-controls"))}`);
+    if (branch && panels.element?.contains(branch)) {
+      const children = panels.element.querySelector(`#${CSS.escape(branch.getAttribute("aria-controls"))}`);
       children.hidden = !children.hidden;
       branch.setAttribute("aria-expanded", String(!children.hidden));
       return;
@@ -1115,7 +947,7 @@ export function projectDocuments(ctx) {
         button.setAttribute("aria-label", open ? "Hide formatting" : "Show formatting");
         button.title = open ? "Hide formatting" : "Show formatting";
         editor.view.requestMeasure();
-      } else if (action === "new-folder") folderPanel(button);
+      } else if (action === "new-folder") explorer.panel(button);
       else if (action === "width") setDocumentWidth(documentWidth === "full" ? "page" : "full");
       else if (action === "move") movePanel(button);
       else if (action === "versions") await versionsPanel(form.querySelector('[data-document-action="tools"]'));
@@ -1236,66 +1068,6 @@ export function projectDocuments(ctx) {
     } catch (error) { toast(error.message, true); }
     finally { if (button.isConnected) button.disabled = false; }
   });
-  function clearExplorerDropTargets() {
-    document.querySelectorAll(".document-drop-target").forEach(el => el.classList.remove("document-drop-target"));
-  }
-  function clearExplorerDrag() {
-    explorerDrag = null;
-    clearExplorerDropTargets();
-  }
-  function draggedExplorerItem(transfer) {
-    const kind = [...transfer.types].includes("application/x-pencils-document-folder") ? "folder"
-      : [...transfer.types].includes("application/x-pencils-document") ? "document" : null;
-    if (!kind) return null;
-    if (explorerDrag?.kind === kind && explorerDrag.project === state.project?.id) return explorerDrag;
-    const id = transfer.getData(`application/x-pencils-document${kind === "folder" ? "-folder" : ""}`);
-    return id ? { kind, id } : null;
-  }
-  function acceptsExplorerDrop(item, parent) {
-    if (!item || (parent && !folders().some(f => f.id === parent))) return false;
-    const source = (item.kind === "folder" ? folders() : all()).find(f => f.id === item.id);
-    if (!source) return false;
-    if (item.kind === "folder")
-      return !folderMovePending && (source.parent || null) !== parent && !insideFolder(parent, item.id);
-    return (source.folder || null) !== parent;
-  }
-  document.addEventListener("dragstart", event => {
-    const item = event.target.closest(".document-explorer [data-document-open], .document-explorer [data-document-folder]");
-    if (!item) return;
-    clearExplorerDrag();
-    const kind = item.hasAttribute("data-document-folder") ? "folder" : "document";
-    const id = kind === "folder" ? item.dataset.documentFolder : item.dataset.documentOpen;
-    explorerDrag = { kind, id, project: state.project.id };
-    event.dataTransfer.setData(`application/x-pencils-document${kind === "folder" ? "-folder" : ""}`, id);
-    event.dataTransfer.effectAllowed = "move";
-  });
-  document.addEventListener("dragover", event => {
-    const folder = event.target.closest("[data-document-folder-drop]");
-    const item = draggedExplorerItem(event.dataTransfer);
-    if (!item) return;
-    clearExplorerDropTargets();
-    if (!folder || !acceptsExplorerDrop(item, folder.dataset.documentFolderDrop || null)) {
-      event.dataTransfer.dropEffect = "none";
-      return;
-    }
-    event.preventDefault(); event.dataTransfer.dropEffect = "move";
-    folder.classList.add("document-drop-target");
-  });
-  document.addEventListener("dragleave", event => {
-    const folder = event.target.closest("[data-document-folder-drop]");
-    if (folder && !folder.contains(event.relatedTarget)) folder.classList.remove("document-drop-target");
-  });
-  document.addEventListener("drop", event => {
-    const folder = event.target.closest("[data-document-folder-drop]");
-    const item = draggedExplorerItem(event.dataTransfer);
-    clearExplorerDrag();
-    if (!folder || !item) return;
-    event.preventDefault();
-    const parent = folder.dataset.documentFolderDrop || null;
-    if (!acceptsExplorerDrop(item, parent)) return;
-    void (item.kind === "folder" ? moveFolder(item.id, parent) : moveDocument(item.id, parent)).catch(error => toast(error.message, true));
-  });
-  document.addEventListener("dragend", clearExplorerDrag);
   // The style menu lives inside the scrolling toolbar; open it in the top layer.
   document.addEventListener("toggle", (event) => {
     const menu = event.target;

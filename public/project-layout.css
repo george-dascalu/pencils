@@ -980,7 +980,6 @@ html.table-viewport-view body {
   .spreadsheet [data-column-key="title"] .table-column-grip,
   .spreadsheet [data-column-key="title"] [data-resize-column] { display: none; }
   .board-toolbar:has(.mobile-view-options) { display: flex; flex-wrap: nowrap; padding: 6px 8px; gap: 8px; }
-  .board-toolbar:has(.mobile-view-options) > #board-select { flex: 1; min-width: 0; max-width: none; }
   .board-toolbar .mobile-view-options { flex: none; }
   .mobile-view-options-panel > .board-save { display: block; }
 }

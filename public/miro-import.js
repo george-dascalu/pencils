@@ -1,9 +1,9 @@
 import { positionPopover } from "./popover-position.js";
 import { readableText } from "./node-layout.js";
 
-// Opened from Boards (0.20.73); focus and position fall back to its menu, then Board appearance.
+// Opened from the sidebar's New board menu (0.20.74); it sits by Board tools, or else Board appearance.
 const home = () =>
-  document.querySelector('.board-toolbar [data-board-menu="board"] > summary') ||
+  document.querySelector("#board-menu-tools") ||
   document.querySelector('[data-feature="board-settings"]');
 
 // A one-time import. Tokens and source snapshots never enter local storage.

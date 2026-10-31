@@ -1,8 +1,8 @@
 // Owner request, 31 October 2026 (board menus, like Miro, FigJam and Obsidian Canvas): the left
 // tool bar holds what More held. Navigate gets Frames (the outline, with Layers as its second
 // tab), Tasks gets Live task view, and Create gets one Insert menu (Live note, Templates, Bulk
-// notes). Connections opens from the selection toolbar and Import .canvas from Boards, so the
-// board bar has no More.
+// notes). Connections opens from the selection toolbar and Import .canvas from the sidebar's New
+// board menu (board-sidebar.spec.mjs), so the board bar has no More.
 import { test, expect, onDevices, useApp } from "../fixtures.mjs";
 
 const app = useApp(async (store) => {
@@ -44,8 +44,6 @@ test("the tool bar holds Frames, Live task view and Insert, and the board bar ha
   await expect(page.locator("#bulk-stickies-form")).toBeVisible();
   await page.keyboard.press("Escape");
   await expect(page.locator("[data-board-menu=more]")).toHaveCount(0);
-  await page.locator('.board-toolbar [data-board-menu="board"] > summary').click();
-  expect(await texts(page.locator('.board-toolbar [data-board-menu="board"] .board-menu-panel > :is(button, a)'))).toEqual(["New board", "Import .canvas", "Import from Miro", "Boards"]);
 });
 
 test("Frames opens the outline, whose Layers tab makes layers", async ({ page }) => {

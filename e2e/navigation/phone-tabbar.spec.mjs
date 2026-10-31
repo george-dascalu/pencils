@@ -257,7 +257,7 @@ onDevices(["phone", "small"], () => test("the view's row sits between the floati
       expect(clipped, `${device} ${view}: nothing clips the button's shadow`).toEqual([]);
     }
     const [menu, create] = await Promise.all([page.locator(".topbar .mobile-menu").boundingBox(), page.locator(".topbar .phone-new-task > summary").boundingBox()]);
-    const first = page.locator(view === "board" ? "#board-select" : "#view-toolbar .search");
+    const first = page.locator(view === "board" ? "#view-toolbar .board-toolbar > :visible" : "#view-toolbar .search").first();
     const options = page.locator("#view-toolbar .mobile-view-options > summary");
     const row = await page.locator(view === "board" ? "#view-toolbar .board-toolbar > :visible" : "#view-toolbar .toolbar-left > *").evaluateAll((els) => els.map((el) => el.getBoundingClientRect().toJSON()));
     for (let i = 1; i < row.length; i++) expect(row[i].left, `${device} ${view}: the row's controls don't overlap`).toBeGreaterThanOrEqual(row[i - 1].right - 1);

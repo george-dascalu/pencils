@@ -1131,6 +1131,8 @@ export function installFeatures(ctx) {
     drawingEnter: drawings.enter,
     drawingSettled: drawings.settled,
     drawingRender: drawings.render,
+    boardSidebar: drawings.sidebar,
+    boardFolder: drawings.folder,
     drawingCheckpoint: drawings.checkpoint,
     viewToolbar,
     adaptToolbar: layout.compactToolbar,

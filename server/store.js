@@ -753,6 +753,12 @@ export class Store {
       if (warnings.length) throw new Problem(409, "Repair unreadable documents before changing folders.");
       for (const document of items) documentFolder(document.folder, data.document_folders);
     }
+    if ("board_folders" in input) {
+      data.board_folders = documentFolders(input.board_folders, "board");
+      const { items, warnings } = await this.children(id, "boards");
+      if (warnings.length) throw new Problem(409, "Repair unreadable boards before changing folders.");
+      for (const board of items) documentFolder(board.folder, data.board_folders, "board");
+    }
     if ("default_view" in input)
       data.default_view = choice(
         input.default_view,

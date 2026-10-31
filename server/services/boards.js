@@ -10,6 +10,7 @@ import { validGrid } from "../../public/grid-model.js";
 import { randomUUID } from "node:crypto";
 import { checkStroke } from "../strokes.js";
 import { Problem } from "../problem.js";
+import { documentFolder } from "../document-folders.js";
 import { now, validId, title, body, choice, color } from "../values.js";
 
 export const boardsMethods = {
@@ -368,7 +369,7 @@ export const boardsMethods = {
     }
   },
   async createBoard(project, input) {
-    await this.read(this.file(project, "project"));
+    const parent = await this.read(this.file(project, "project"));
     const id = `b-${randomUUID().slice(0, 8)}`;
     return this.write(
       this.file(project, "boards", id),
@@ -377,6 +378,7 @@ export const boardsMethods = {
         kind: "board",
         project,
         title: title(input.title),
+        folder: documentFolder(input.folder, parent.data.board_folders, "board"),
         nodes: [],
         edges: [],
         created: now(),

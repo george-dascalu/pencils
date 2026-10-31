@@ -3,6 +3,7 @@
 // reload keep them; invalid or oversized files never create broken cards; an upload in flight is
 // not added to another board opened meanwhile; and the picker stays reachable on a dark phone.
 import { test, expect, onDevices, useApp } from "../fixtures.mjs";
+import { chooseBoard } from "../helpers/board-canvas.mjs";
 
 const png = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAFAAAAAoCAIAAADmAupWAAAATklEQVR4nO3PQRHAIADAMEAi3nhjdS62uy5R0M597viT9XXA2wzXGa4zXGe4znCd4TrDdYbrDNcZrjNcZ7jOcJ3hOsN1husM1xmuM1z3AGYwAdYPZWEMAAAAAElFTkSuQmCC", "base64");
 // Two frames, red then blue, with a repeating animation loop.
@@ -24,9 +25,8 @@ test.beforeEach(async () => {
   }
 });
 async function openBoard(page, id = app.board.id) {
-  await page.goto(`${app.base}/#project/${app.project.id}/board`);
-  await page.locator("#canvas").waitFor();
-  await page.locator("#board-select").selectOption(id);
+  await page.goto(`${app.base}/#project/${app.project.id}/board/${id}`);
+  await page.locator(`.board-tools[data-board="${id}"]`).waitFor();
 }
 async function upload(page, files) {
   const chooser = page.waitForEvent("filechooser");
@@ -110,7 +110,7 @@ test("an upload in flight is not added to another board opened meanwhile", async
   });
   await upload(page, [{ name: "Interrupted.png", mimeType: "image/png", buffer: png }]);
   await intercepted;
-  await page.locator("#board-select").selectOption(app.other.id);
+  await chooseBoard(page, app.other.id);
   release();
   await page.getByText(/Image import stopped because you left the board/).waitFor();
   expect(await count(app.other.id)).toBe(0);

@@ -5,6 +5,7 @@
 // controls and legacy drawing links use the same router. Part of the cross-browser release gate.
 import { test, expect, useApp } from "../fixtures.mjs";
 import { selectProjectView, clickControl, openSettingsPage, openSidebar } from "../helpers/menu-controls.mjs";
+import { chooseBoard } from "../helpers/board-canvas.mjs";
 
 const app = useApp(async (store) => {
   const project = await store.createProject({ title: "Navigation project", default_view: "overview" });
@@ -30,7 +31,7 @@ async function at(page, hash) {
     if (document.querySelector(".project-link.active")?.dataset.id !== route.project) return false;
     if (route.view === "overview") return !!document.querySelector(".project-overview");
     if (route.view === "settings") return !!document.querySelector("#project-form");
-    if (route.view === "board") return route.gallery ? !!document.querySelector(".drawing-gallery") : document.querySelector("#board-select")?.value === route.board;
+    if (route.view === "board") return route.gallery ? !!document.querySelector(".drawing-gallery") : document.querySelector(".board-tools")?.dataset.board === route.board;
     return document.querySelector(".view-layout-switcher [aria-pressed=true]")?.dataset.view === route.view;
   }, hash);
   expect(new URL(page.url()).hash).toBe(hash);
@@ -122,18 +123,16 @@ test("settings, home and organisation switches join the history", { tag: "@gate"
   await expect(page.locator("#organisation-select")).toHaveValue(project.organisation);
 });
 
-test("board switches and the board gallery join the history", { tag: "@gate" }, async ({ page }) => {
+// Boards are chosen in the sidebar since 0.20.74; the gallery only opens by its address.
+test("board switches join the history", { tag: "@gate" }, async ({ page }) => {
   const { boards } = app;
   await start(page);
   await view(page, "board");
-  await page.locator("#board-select").selectOption(boards[1].id);
+  await chooseBoard(page, boards[1].id);
   await at(page, projectRoute(`board/${boards[1].id}`));
   await back(page, projectRoute(`board/${boards[0].id}`));
-  await expect(page.locator("#board-select")).toHaveValue(boards[0].id);
+  await expect(page.locator(".board-tools")).toHaveAttribute("data-board", boards[0].id);
   await forward(page, projectRoute(`board/${boards[1].id}`));
-  await clickControl(page.locator("[data-drawing-action=gallery]"));
-  await at(page, projectRoute("board/gallery"));
-  await back(page, projectRoute(`board/${boards[1].id}`));
 });
 
 test("Back saves task edits and never discards an invalid open editor", { tag: "@gate" }, async ({ page }) => {

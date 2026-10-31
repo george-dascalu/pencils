@@ -4,6 +4,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { createHash, randomUUID } from "node:crypto";
 import { Problem } from "./problem.js";
+import { documentFolder } from "./document-folders.js";
 import {
   decodeCanvas,
   encodeCanvas,
@@ -181,6 +182,7 @@ export function installCanvas(Store) {
       data.id = id;
       data.project = project;
       data.title = input.title || data.title;
+      data.folder = documentFolder(input.folder, (await this.read(this.file(project, "project"))).data.board_folders, "board");
       data.operations = [];
       data.created = new Date().toISOString();
       data.updated = data.created;
@@ -220,6 +222,8 @@ export function installCanvas(Store) {
           );
         data = { ...current.data, ...result.value };
       } else this.checkRevision(current, input.revision);
+      if ("folder" in input)
+        data.folder = documentFolder(input.folder, (await this.read(this.file(project, "project"))).data.board_folders, "board");
       this.validateBoard(data);
       if (
         data.templates &&
@@ -250,7 +254,12 @@ export function installCanvas(Store) {
       data.nodes = persisted.nodes;
       data.edges = persisted.edges;
       const changes = difference(current.data, data);
-      if (!changes.length) return this.public(current, file);
+      if (!changes.length) {
+        // A folder move organises the sidebar; it stays out of the board's undo log.
+        if ((data.folder ?? null) === (current.data.folder ?? null)) return this.public(current, file);
+        data.updated = new Date().toISOString();
+        return this.write(file, data, current.body, current);
+      }
       const operation = {
         id: operationId,
         client: String(input.client || "").slice(0, 100),
