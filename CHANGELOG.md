@@ -2,6 +2,13 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.20.96 — 2026-10-31
+
+### Changed
+
+- The document list and the board list have a page of their own instead of a sidebar section: press the open Documents or Boards tab (on phones and iPad, the Documents tab's tray → Documents). On desktop and iPad the list covers four fifths of the page with the open document or board blurred beside it; phones show it as a full page. Choosing an item, Escape, its close button or a click outside closes it.
+- The Documents tray has a divider between Documents and the document views.
+
 ## 0.20.95 — 2026-10-31
 
 ### Changed

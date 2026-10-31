@@ -1,12 +1,13 @@
 // Phone layout (AGENTS.md: one sidebar, the phone drawer and bottom tab bar, 44px touch targets):
 // the drawer blurs and makes the page inert and closes with Escape or a tap outside; task rows stay compact with full tap
-// targets; tree branches toggle; the document list is the drawer's Documents level (0.19.27);
+// targets; tree branches toggle; the document list opens from the tray as a page (0.20.96);
 // every shipped view fits a phone in both themes with an accessible document header; and
 // documents, List and Tree fit from 360px to desktop. The phone document toolbar checks
 // (modes, search, formatting, versions, delete confirmation) are in compact-navigation.spec.mjs.
 import AxeBuilder from "@axe-core/playwright";
 import { test, expect, onDevices, useApp } from "../fixtures.mjs";
 import { documentName } from "../helpers/documents.mjs";
+import { openList } from "../helpers/menu-controls.mjs";
 
 const app = useApp(async (store) => {
   const project = await store.demo();
@@ -76,19 +77,19 @@ onDevices(["phone"], () => {
     await navigate(page, "documents");
   });
 
-  test("the document list is the drawer's Documents level and opens documents", async ({ page }) => {
+  test("the document list opens from the tray as a page and opens documents", async ({ page }) => {
     await goto(page, "list");
     await navigate(page, "documents");
     await page.locator(".cm-content").waitFor();
     expect((await page.locator(".document-writing").boundingBox()).y).toBeLessThan(180);
-    await page.locator(".mobile-menu").click();
-    await expect.poll(() => inert(page, ".main")).toBe(true);
-    await page.locator(`.sidebar [data-document-open="${app.second.id}"]`).click();
+    await openList(page);
+    await page.locator(`#list-panel [data-document-open="${app.second.id}"]`).click();
     // Since 0.19.31 the document bar has no title field; the top bar names the open document.
     await expect(documentName(page)).toHaveText("Meeting notes");
     await expect(page.locator('#document-form [name="title"]')).toHaveValue("Meeting notes");
-    await expect.poll(() => inert(page, ".main")).toBe(false);
+    await expect(page.locator("#list-panel")).toBeHidden();
     await page.locator(".mobile-menu").click();
+    await expect.poll(() => inert(page, ".main")).toBe(true);
     await page.keyboard.press("Escape");
     await expect.poll(() => inert(page, ".sidebar")).toBe(true);
   });
@@ -110,10 +111,8 @@ onDevices(["phone"], () => {
       // Since 0.19.31 the document bar (.document-heading) also holds the formatting controls.
       const a11y = await new AxeBuilder({ page }).include(".topbar").include(".document-heading").withTags(["wcag2a", "wcag2aa", "wcag21aa"]).analyze();
       expect(a11y.violations.map((v) => ({ id: v.id, targets: v.nodes.map((n) => n.target) }))).toEqual([]);
-      // In Documents the drawer opens on the document list (0.19.27); Back shows the menu.
       await page.locator(".mobile-menu").click();
       await page.waitForFunction(() => document.querySelector(".sidebar").getBoundingClientRect().left >= -1);
-      await page.locator(".sidebar [data-drawer-back]").click();
       await page.keyboard.press("Escape");
     });
   }

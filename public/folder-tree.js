@@ -1,7 +1,7 @@
 import { randomUUID } from "./uuid.js";
 import { focusOnOpen } from "./open-focus.js";
 
-// The folder tree Documents and Boards show in the sidebar: nested folders that open and close,
+// The folder tree Documents and Boards show in their list panels (list-panel.js): nested folders that open and close,
 // drag and drop to move items and folders, and a panel to add, rename or delete a folder. `kind`
 // ("document" or "board") names the ids, the data attributes (data-<kind>-open, -folder,
 // -folder-edit, -folder-drop, -root), the drag types and the project's list (<kind>_folders).
@@ -45,7 +45,7 @@ export function folderTree({ kind, label, placeholder, glyph, state, api, esc, i
   // The section: a header with the count and the caller's actions, search, the tree and a footer.
   function html({ actions, footer = "" }) {
     return `<aside id="${kind}-explorer" class="document-explorer" aria-label="${kind[0].toUpperCase() + kind.slice(1)} explorer">
-        <header ${attr("folder-drop")}="" title="Drop here to move to ${label}"><button type="button" class="icon-button sidebar-documents-back" data-drawer-back aria-label="Back to the menu" title="Back to the menu">${icon("chevron")}</button><h2><button type="button" class="document-root" ${attr("root")}>${label} <span class="count" id="${kind}-count">${items().length}</span></button></h2><div class="document-explorer-actions">${actions}</div></header>
+        <header ${attr("folder-drop")}="" title="Drop here to move to ${label}"><h2><button type="button" class="document-root" ${attr("root")}>${label} <span class="count" id="${kind}-count">${items().length}</span></button></h2><div class="document-explorer-actions">${actions}<button type="button" class="icon-button" data-list-close aria-label="Close ${plural}" title="Close">${icon("close")}</button></div></header>
         <label class="document-search search">${icon("search")}<input type="search" id="${kind}-search" aria-label="Find a ${kind}" placeholder="${placeholder}" value="${esc(state[searchKey] || "")}"></label>
         <nav aria-label="Project ${plural}"><ul id="${kind}-list">${tree()}</ul></nav>
         ${footer}

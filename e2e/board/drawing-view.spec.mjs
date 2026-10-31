@@ -6,7 +6,7 @@
 // Part of the cross-browser release gate (desktop tests run in Firefox and WebKit too).
 import net from "node:net";
 import { test, expect, onDevices, useApp } from "../fixtures.mjs";
-import { clickControl, openSidebar, closeSidebar } from "../helpers/menu-controls.mjs";
+import { clickControl, openList } from "../helpers/menu-controls.mjs";
 import { makeStroke } from "../../public/pen-model.js";
 
 const app = useApp();
@@ -89,7 +89,7 @@ test("a pencil stroke on a new board saves to the server and this device, and th
   const { project, linkedTask } = await seedProject();
   await page.goto(`${app.base}/#project/${project.id}/board`);
   await page.locator("#canvas").waitFor();
-  await clickControl(page.locator('.sidebar [data-board-menu="board-new"] [data-action="board-new"]'));
+  await clickControl(page.locator('#list-panel [data-board-menu="board-new"] [data-action="board-new"]'));
   await page.locator('#board-form [name="title"]').fill("Fresh sketch");
   await page.locator('#board-form .dialog-foot button[type="submit"]').click();
   await page.locator("#canvas").waitFor();
@@ -108,15 +108,16 @@ test("a pencil stroke on a new board saves to the server and this device, and th
   expect((await boardNamed(project, "Fresh sketch")).settings.linked_tasks).toEqual([linkedTask.id]);
 });
 
-// The sidebar lists the boards since 0.20.74 (the gallery before); Version history keeps the checkpoints.
-test("the sidebar lists every board, legacy drawings included, and Version history the device checkpoints", gate, async ({ page }) => {
+// The board list lists the boards since 0.20.74 (the gallery before); Version history keeps the checkpoints.
+test("the board list has every board, legacy drawings included, and Version history the device checkpoints", gate, async ({ page }) => {
   const { project, legacy, sketch } = await seedProject();
   await page.goto(`${app.base}/#project/${project.id}/board/${sketch.id}`);
   await page.locator("#canvas").waitFor();
-  await openSidebar(page);
-  await expect(page.locator(".sidebar [data-board-open]")).toHaveCount(3);
-  await expect(page.locator(`.sidebar [data-board-open="${legacy.id}"]`)).toBeVisible();
-  await closeSidebar(page);
+  await openList(page);
+  await expect(page.locator("#list-panel [data-board-open]")).toHaveCount(3);
+  await expect(page.locator(`#list-panel [data-board-open="${legacy.id}"]`)).toBeVisible();
+  await page.keyboard.press("Escape");
+  await expect(page.locator("#list-panel")).toBeHidden();
   await clickControl(page.locator('.board-toolbar [data-drawing-action="recover"]'));
   await expect(page.getByText(/Pencil sketch/).last()).toBeVisible();
   await page.locator('[data-action="dialog-close"]').click();
@@ -150,9 +151,9 @@ test("offline drawing survives a reload without the server, and pending edits gu
     await page.locator('[data-action="dialog-close"]').click();
     await page.locator(`[data-drawing-action="open"][data-id="${legacy.id}"]`).click();
     await page.locator("#canvas").waitFor();
-    await clickControl(page.locator(`.sidebar [data-board-open="${sketch.id}"]`));
+    await clickControl(page.locator(`#list-panel [data-board-open="${sketch.id}"]`));
     await pendingGuard(page).waitFor();
-    await expect(page.locator("#canvas"), "the sidebar's board list protects pending offline work").toHaveCount(0);
+    await expect(page.locator("#canvas"), "the board list protects pending offline work").toHaveCount(0);
     // Direct links, Board and legacy Drawing, followed inside the app and opened afresh. (While
     // guarding, the app moves the address to the gallery, so a reload would open the gallery.)
     for (const link of [`#project/${project.id}/board/${sketch.id}`, `#project/${project.id}/drawing/${sketch.id}`]) {

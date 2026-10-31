@@ -208,9 +208,7 @@ onDevices(["phone", "ipad", "ipad-portrait"], () => test("tapping Documents agai
   await expect(page.locator(".layout-tray")).not.toHaveAttribute("data-open", "");
   await docs.click();
   await tray.getByRole("button", { name: "Documents" }).click();
-  await page.locator(".sidebar.open").waitFor();
-  await expect(page.locator(".sidebar")).toHaveAttribute("data-drawer-level", "documents");
-  await expect(page.locator(".sidebar .sidebar-documents [data-document-open]", { hasText: "Notes" })).toBeVisible();
+  await expect(page.locator("#list-panel [data-document-open]", { hasText: "Notes" })).toBeVisible();
 }));
 
 onDevices(["narrow", "desktop"], () => test("without a touch screen, wider windows keep the view tabs in the top bar, with Search after them (owner request, 29 Oct)", async ({ page }) => {

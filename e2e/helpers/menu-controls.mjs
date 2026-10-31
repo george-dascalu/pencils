@@ -3,9 +3,7 @@
 export async function reveal(locator) {
   await locator.waitFor({ state: "attached" });
   if (await locator.evaluate((el) => !!el.closest(".sidebar:not(.open)"))) await openSidebar(locator.page());
-  // Phones open the drawer on the Documents or Boards list in those views; the back arrow shows the menu.
-  const back = locator.page().locator(".sidebar.open .sidebar-documents-back");
-  if (await locator.evaluate((el) => !!el.closest(".sidebar") && !el.closest(".sidebar-documents")) && (await back.isVisible())) await back.click();
+  if (await locator.evaluate((el) => !!el.closest("#list-panel[hidden]"))) await openList(locator.page());
   // Phones keep the board's tools in the dock's Navigate and Add rows (0.20.82).
   const row = await locator.evaluate((el) => el.closest(".phone-board-row[hidden]")?.id);
   if (row) await locator.page().locator(`.phone-board-category[aria-controls="${row}"]`).click();
@@ -18,6 +16,19 @@ export async function reveal(locator) {
   if ((await menu.count()) && !(await menu.evaluate((el) => el.open)))
     await menu.locator("summary").click();
   return locator;
+}
+// The document or board list (0.20.96) opens from the open Documents or Boards tab, or on touch
+// screens with a document open, from the Documents button in that tab's tray.
+export async function openList(page) {
+  if (await page.locator("#list-panel").isVisible()) return;
+  const kind = await page.locator("#list-panel").getAttribute("data-kind");
+  const tab = page.locator(`.tabs [data-view="${kind === "boards" ? "board" : "documents"}"][aria-current="page"]`);
+  if (!(await tab.getAttribute("aria-controls"))) await tab.click();
+  else {
+    if ((await tab.getAttribute("aria-expanded")) !== "true") await tab.click();
+    await page.locator(".layout-tray [data-list-toggle]").click();
+  }
+  await page.locator("#list-panel:not([hidden])").waitFor();
 }
 export async function clickControl(locator) {
   await (await reveal(locator)).click();

@@ -64,14 +64,21 @@ for (const [device, width] of [["phone", 390], ["ipad-portrait", 834], ["desktop
     test("the document list, document modes and New document leave the keyboard closed", async ({ page }) => {
       await page.goto(base() + "documents/" + app.doc.id);
       await page.locator(".cm-content").waitFor();
-      // Since 0.19.27 the document list lives in the main sidebar (the drawer's
-      // Documents level on phones and narrow tablets).
-      const drawer = await page.locator(".mobile-menu").isVisible();
-      if (drawer) await passive(page, () => click(page.locator(".mobile-menu")), "Open the document list");
+      // Since 0.20.96 the document list has a page of its own, opened from the open Documents
+      // tab, or on touch screens from its tray.
+      async function list() {
+        if (touch) {
+          await click(page.locator('.tabs [data-view="documents"]'));
+          await click(page.locator(".layout-tray").getByRole("button", { name: "Documents", exact: true }));
+        } else await click(page.locator('.tabs [data-view="documents"][aria-current="page"]'));
+        await page.locator("#list-panel:not([hidden])").waitFor();
+      }
+      await passive(page, list, "Open the document list");
       const search = page.locator("#document-search");
       await click(search);
       await focused(search);
-      if (drawer) await click(page.locator(".phone-drawer-close"));
+      await page.keyboard.press("Escape");
+      await page.locator("#list-panel").waitFor({ state: "hidden" });
       async function mode(name) {
         // Touch screens choose the view from the Documents tab's tray (owner request, 30 Oct;
         // iPad since 0.20.25); the bar steps aside while typing, so the keyboard is dismissed first.
@@ -89,7 +96,7 @@ for (const [device, width] of [["phone", 390], ["ipad-portrait", 834], ["desktop
       await passive(page, () => mode("Live preview"), "Document Live preview mode");
       await passive(page, () => mode("Reading"), "Document Reading mode");
       await passive(page, () => mode("Source"), "Document Source after Reading");
-      if (drawer) await click(page.locator(".mobile-menu"));
+      await list();
       // Since 0.19.31 the document bar has no title field: a new document opens the Rename
       // panel, which leaves the keyboard closed on touch and focuses the name on desktop.
       const name = page.getByRole("dialog", { name: "Rename document", exact: true }).getByLabel("Document name", { exact: true });

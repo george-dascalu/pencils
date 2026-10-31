@@ -1,9 +1,10 @@
-// Owner request (T2, 0.20.74): boards live in the main sidebar like documents, in folders, instead
-// of the board picker, the bar's Boards menu and the gallery. New board offers a blank board, an
-// Obsidian .canvas import and a Miro import; a blank board goes into the chosen folder. Board
-// tools → Move to folder and dragging file a board. Phones open the drawer on the board list.
+// Owner request (T2, 0.20.74): boards are listed like documents, in folders, instead of the board
+// picker, the bar's Boards menu and the gallery; since 0.20.96 (T25) the list has a page of its own,
+// opened from the open Boards tab. New board offers a blank board, an Obsidian .canvas import and a
+// Miro import; a blank board goes into the chosen folder. Board tools → Move to folder and dragging
+// file a board.
 import { test, expect, onDevices, useApp } from "../fixtures.mjs";
-import { clickControl, openSidebar, chooseProject } from "../helpers/menu-controls.mjs";
+import { clickControl, openList, chooseProject } from "../helpers/menu-controls.mjs";
 
 const app = useApp(async () => ({}));
 // A project per test: one board at the root and one in the Ideas folder.
@@ -19,22 +20,22 @@ async function open(page, s, board = s.first) {
   await page.goto(`${app.base}/#project/${s.project.id}/board/${board.id}`);
   await page.locator(`.board-tools[data-board="${board.id}"]`).waitFor();
 }
-const section = (page) => page.locator(".sidebar #board-explorer");
+const section = (page) => page.locator("#list-panel #board-explorer");
 
-test("boards are listed in the sidebar's folders and open from there, with no picker in the bar", async ({ page }) => {
+test("boards are listed in folders on the board list and open from there, with no picker in the bar", async ({ page }) => {
   const s = await seed("BSA");
   await open(page, s);
   await expect(page.locator("#board-select"), "no board picker").toHaveCount(0);
   await expect(page.locator('.board-toolbar [data-board-menu="board"]'), "no Boards menu").toHaveCount(0);
-  await openSidebar(page);
+  await openList(page);
   await expect(section(page).locator("h2")).toHaveText("Boards 2");
   await expect(section(page).locator("[data-board-folder]")).toHaveText("Ideas");
   await expect(section(page).locator("[data-board-open]")).toHaveText(["Filed board", s.first.title]);
   await expect(section(page).locator('[data-board-open][aria-current="page"]')).toHaveText(s.first.title);
   await section(page).locator(`[data-board-open="${s.filed.id}"]`).click();
   await page.locator(`.board-tools[data-board="${s.filed.id}"]`).waitFor();
-  await expect(page.locator(".sidebar.open"), "choosing a board closes the sidebar").toHaveCount(0);
-  // Other views empty the section; Documents fills it with documents.
+  await expect(page.locator("#list-panel"), "choosing a board closes the list").toBeHidden();
+  // Other views empty the list; Documents fills it with documents.
   await page.goto(`${app.base}/#project/${s.project.id}/list`);
   await page.locator("#view-toolbar .search").waitFor();
   await expect(page.locator("#board-explorer")).toHaveCount(0);
@@ -43,7 +44,7 @@ test("boards are listed in the sidebar's folders and open from there, with no pi
 test("New board offers a blank board and both imports, and a blank board goes into the chosen folder", async ({ page }) => {
   const s = await seed("BSB");
   await open(page, s);
-  await openSidebar(page);
+  await openList(page);
   await section(page).locator('[data-board-folder="ideas"]').click();
   await section(page).locator('[data-board-menu="board-new"] > summary').click();
   await expect(section(page).locator('[data-board-menu="board-new"] .board-menu-panel > button')).toHaveText(["Blank board", "Import Obsidian .canvas", "Import from Miro"]);
@@ -64,7 +65,7 @@ test("Board tools → Move to folder and dragging a board onto a folder file it,
   await expect(panel).toHaveCount(0);
   expect((await saved(s, s.first.id)).operations || [], "moving a board is not a canvas edit").toEqual([]);
   // Drag the filed board to the root (the section's header).
-  await openSidebar(page);
+  await openList(page);
   const transfer = await page.evaluateHandle(() => new DataTransfer());
   await section(page).locator(`[data-board-open="${s.filed.id}"]`).dispatchEvent("dragstart", { dataTransfer: transfer });
   const root = section(page).locator('header[data-board-folder-drop=""]');
@@ -78,7 +79,7 @@ test("Board tools → Move to folder and dragging a board onto a folder file it,
 test("a folder chosen in one project doesn't follow you to another", async ({ page }) => {
   const s = await seed("BSE"), other = await app.store.createProject({ title: "Board folders BSF", key: "BSF" });
   await open(page, s);
-  await openSidebar(page);
+  await openList(page);
   await section(page).locator('[data-board-folder="ideas"]').click();
   // Switch project in the app, so this page keeps the folder it chose.
   await chooseProject(page, other.id);
@@ -94,14 +95,13 @@ test("a folder chosen in one project doesn't follow you to another", async ({ pa
 });
 
 onDevices(["phone"], () => {
-  test("phones open the drawer on the board list, and a tap opens a board", async ({ page }) => {
+  test("phones open the board list as a page from the Boards tab, and a tap opens a board", async ({ page }) => {
     const s = await seed("BSD");
     await open(page, s);
-    await openSidebar(page);
-    await expect(page.locator(".sidebar")).toHaveAttribute("data-drawer-level", "documents");
+    await page.locator('.tabs [data-view="board"][aria-current="page"]').click();
     await expect(section(page)).toBeVisible();
     await section(page).locator(`[data-board-open="${s.filed.id}"]`).click();
     await page.locator(`.board-tools[data-board="${s.filed.id}"]`).waitFor();
-    await expect(page.locator(".sidebar.open")).toHaveCount(0);
+    await expect(page.locator("#list-panel")).toBeHidden();
   });
 });

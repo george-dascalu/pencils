@@ -6,6 +6,7 @@ import AxeBuilder from "@axe-core/playwright";
 import fs from "node:fs/promises";
 import { test, expect, onDevices, useApp } from "../fixtures.mjs";
 import { newCard } from "../helpers/new-card.mjs";
+import { openList } from "../helpers/menu-controls.mjs";
 
 const app = useApp(async (store) => {
   const project = await store.createProject({ title: "Assessment project", key: "UX" });
@@ -58,7 +59,7 @@ test.describe("Group 1: tablet layout (findings 1–7)", { tag: "@audit" }, () =
     test("documents editor keeps at least 500px on iPad portrait with the sidebar", async ({ page }) => {
       await open(page, "documents", ".documents-workspace");
       const link = page.locator(".document-link").first();
-      if (!(await link.isVisible())) await page.locator('[data-document-action="browse"]').first().click();
+      if (!(await link.isVisible())) await openList(page);
       await link.click();
       await page.locator(".document-editor").first().waitFor();
       await expect.poll(async () => (await rect(page, ".document-editor")).width, "editor width").toBeGreaterThanOrEqual(500);
@@ -377,7 +378,7 @@ test.describe("Group 6: keyboard, copy, identity (findings 27–31)", { tag: "@a
   test("the word count chip never covers document text", async ({ page }) => {
     await open(page, "documents", ".documents-workspace");
     const link = page.locator(".document-link").first();
-    if (!(await link.isVisible())) await page.locator('[data-document-action="browse"]').first().click();
+    if (!(await link.isVisible())) await openList(page);
     await link.click();
     await page.locator(".cm-content").waitFor();
     await page.evaluate(() => { const s = document.querySelector(".cm-scroller"); s.scrollTop = s.scrollHeight; });

@@ -1,11 +1,11 @@
 // The Documents view of a project: navigation and search, rich and Markdown
 // editing with autosave, export and import, offline edits kept across a reload,
 // conflict recovery, Trash, project isolation, and a full-height workspace in
-// both themes, on desktop, a 768px tablet (document list in the drawer) and phones
+// both themes, on desktop, a 768px tablet and phones
 // (view picker and Document tools for narrow editors).
 import fs from "node:fs/promises";
 import { test, expect, onDevices, useApp } from "../fixtures.mjs";
-import { openSidebar } from "../helpers/menu-controls.mjs";
+import { openList } from "../helpers/menu-controls.mjs";
 import { chooseDocumentView, documentName, documentTool, noHorizontalScroll, renameDocument, setTheme } from "../helpers/documents.mjs";
 
 const app = useApp(async (store) => {
@@ -30,14 +30,8 @@ async function open(page, id = app.starter.id) {
   if (page.viewportSize().width <= 780) await page.waitForFunction(() => document.querySelector(".sidebar").getBoundingClientRect().right <= 1);
 }
 const chooseMode = (page, name) => chooseDocumentView(page, name);
-// Since 0.19.27 the document list is in the main sidebar; on narrow screens the one
-// menu button opens the drawer on the document list while Documents is open.
-async function browse(page) {
-  if (page.viewportSize().width <= 780) {
-    await page.getByRole("button", { name: "Toggle sidebar", exact: true }).click();
-    await page.locator('.sidebar.open[data-drawer-level="documents"] #document-search').waitFor();
-  }
-}
+// Since 0.20.96 the document list has a page of its own, opened from the open Documents tab.
+const browse = openList;
 
 function documentTests() {
   test("the Documents tab shows the document in a full-height workspace in both themes", async ({ page }) => {
@@ -55,14 +49,13 @@ function documentTests() {
       expect(await noHorizontalScroll(page), theme).toBe(true);
       const bounds = await page.locator(".documents-workspace").boundingBox();
       expect(bounds.y + bounds.height <= height + 1 && bounds.height > 600, `${theme} workspace fills the screen ${JSON.stringify(bounds)}`).toBe(true);
-      await expect(page.getByRole("complementary", { name: "Document explorer" }), "the explorer waits in the closed sidebar").toBeHidden();
+      await expect(page.getByRole("complementary", { name: "Document explorer" }), "the explorer waits in the closed list").toBeHidden();
     }
   });
 
   test("Find a document filters the list, and Back returns to the previous document", async ({ page }) => {
     await open(page);
     await browse(page);
-    await openSidebar(page);
     await page.getByLabel("Find a document").fill("Decisions");
     await expect(page.locator("[data-document-open]")).toHaveCount(1);
     await page.locator(`[data-document-open="${app.second.id}"]`).click();
@@ -74,7 +67,6 @@ function documentTests() {
   test("a new document saves its title, rich text and Markdown, exports, and reloads", async ({ page }) => {
     await open(page);
     await browse(page);
-    await openSidebar(page);
     await page.getByRole("button", { name: "New document", exact: true }).first().click();
     await expect(title(page)).toHaveText("Untitled document");
     // Since 0.19.31 a new document opens the Rename panel with its name ready to change.
@@ -164,7 +156,7 @@ function documentTests() {
 }
 
 onDevices(["desktop", "phone"], documentTests);
-// A 768px tablet: below the 780px breakpoint, so the document list lives in the drawer.
+// A 768px tablet: below the 780px breakpoint.
 test.describe("tablet 768", () => {
   test.use({ device: "ipad-portrait", viewportSize: { width: 768, height: 950 } });
   documentTests();

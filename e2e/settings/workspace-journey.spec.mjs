@@ -165,7 +165,7 @@ test("a new sticky note and connector persist, with undo and redo, across a relo
 test("a project keeps several named canvases", async ({ page }) => {
   await openDemo(page, "board");
   await page.locator("#canvas").waitFor();
-  // New → Board (0.20.80); the sidebar's Boards section has New board too.
+  // New → Board (0.20.80); the board list has New board too.
   await clickControl(page.locator('.topbar .new-menu:not(.phone-new-task) [data-action="board-new"]'));
   await page.locator('#board-form [name="title"]').fill("Another canvas");
   await page.locator('#board-form [type="submit"]').click();

@@ -41,7 +41,8 @@ import { smoothZoom } from "./camera-motion.js";
 import { paintBoardBackground } from "./board-background.js";
 import { installColorPickers } from "./color-picker.js";
 import { installBookmarks } from "./bookmarks.js";
-import { tabBar, boardFloor } from "./layout-tray.js";
+import { boardFloor } from "./layout-tray.js";
+import { listPanel } from "./list-panel.js";
 import { kanbanDrag } from "./kanban-drag.js";
 import { observeKanbanLayout } from "./kanban-layout.js";
 import { kanbanGroup, kanbanLanes, laneKey } from "./kanban-model.js";
@@ -787,13 +788,12 @@ function renderAppNow() {
   document.title = `${state.helpArticle ? helpArticle(state.helpArticle).title + " · Help" : state.directoryPage ? label(state.directoryPage) + " · " + state.organisation?.title : p ? `${viewLabel(state.view)} · ${p.title}` : state.organisation?.title || "Workspace"} · Pencils`;
   app.innerHTML = `<div class="shell">
     <button class="sidebar-overlay ${state.menu ? "visible" : ""}" data-action="menu" aria-label="Close sidebar"></button>
-    <aside id="workspace-sidebar" class="sidebar ${state.menu ? "open" : ""}" data-drawer-level="${p && state.drawerLevel === "documents" ? "documents" : "menu"}">
+    <aside id="workspace-sidebar" class="sidebar ${state.menu ? "open" : ""}">
       <button class="brand" data-action="home" aria-label="Pencils home"><img src="/icon.svg" alt=""><span class="wordmark">pencils<span style="color:#b9d18c">.</span></span></button>
       <button class="icon-button phone-drawer-close" id="sidebar-close" data-action="menu" aria-label="Close navigation">${icon("close")}</button>
       <nav class="personal-links" aria-label="Personal"><button class="directory-link ${!p && !state.helpArticle && !state.directoryPage ? "active" : ""}" data-action="home" ${!p && !state.helpArticle && !state.directoryPage ? 'aria-current="page"' : ""}>${icon("home")}<span>Home</span></button><button class="directory-link ${p?.personal ? "active" : ""}" data-action="personal-open" ${p?.personal ? 'aria-current="page"' : ""}>${icon("person")}<span>Personal</span></button><button class="directory-link" data-action="today">${icon("calendar")}<span>Today</span></button></nav>
       <section class="sidebar-switch organisation-switch" aria-label="Organisation"><div class="side-label">ORGANISATION<button data-action="organisation-new" aria-label="New organisation" title="New organisation">${icon("plus")}</button></div><div class="sidebar-choice"><select id="organisation-select" aria-label="Switch organisation">${state.organisations.map((o) => `<option value="${esc(o.id)}" ${o.id === state.organisation?.id ? "selected" : ""}>${esc(o.title)}</option>`).join("")}</select></div></section>
       <section class="sidebar-switch project-switch" aria-label="Projects"><div class="side-label">PROJECTS<button data-action="project-new" aria-label="New project" title="New project">${icon("plus")}</button></div><div class="sidebar-choice">${projectSelectHTML(p)}</div></section>
-      ${p ? '<section id="sidebar-documents" class="sidebar-documents" aria-label="Documents"></section>' : ""}
       <div class="phone-drawer-utilities" role="group" aria-label="Settings, roadmap and help" style="--tiles:3"><button class="button" data-action="settings" aria-label="Settings" ${(p ? state.view === "settings" : state.directoryPage === "settings") ? 'aria-current="page"' : ""}>${icon("settings")}<span>Settings</span></button><button class="button" data-action="help-article" data-id="roadmap" aria-label="Roadmap" ${state.helpArticle === "roadmap" ? 'aria-current="page"' : ""}>${icon("flag")}<span>Roadmap</span></button><button class="button" data-action="help" aria-label="Help & guides" ${state.helpArticle && state.helpArticle !== "roadmap" ? 'aria-current="page"' : ""}>${icon("help")}<span>Help</span></button></div>
       <div class="side-bottom">
       <div class="side-footer"><span class="dot"></span>Local workspace${headerStatus.versionHTML()}</div></div>
@@ -804,6 +804,7 @@ function renderAppNow() {
       ${state.helpArticle ? helpPageHTML(state.helpArticle, { esc, icon }) : state.directoryPage === "settings" ? '<div id="view-toolbar"></div><section id="view-content" class="content"></section>' : p ? projectPage() : features.homeHTML()}
     </main></div>`;
   updateViewLayout(state);
+  lists.sync();
   if (p) renderView();
   if (state.directoryPage === "settings") void features.settingsRender();
   if (!p && !state.helpArticle && !state.directoryPage) features.homeMount();
@@ -885,25 +886,9 @@ function newMenuHTML(kind = "button") {
   ].join('<span class="board-menu-divider" role="separator"></span>');
   return `<details class="board-menu new-menu${kind === "icon" ? " phone-new-task" : ""}" data-new-menu data-board-menu="new-${kind}">${summary}<div class="board-menu-panel new-menu-panel">${items}</div></details>`;
 }
-// Phones: the drawer lists the organisation, projects and teams, with Settings and Help at the
-// bottom; in Documents it opens on its document list level, with a way back.
-function setDrawerLevel(level) {
-  state.drawerLevel = level;
-  const sidebar = $(".sidebar");
-  sidebar?.setAttribute("data-drawer-level", level);
-  if (state.menu) sidebar?.querySelector(level === "documents" ? "[data-drawer-back]" : ".phone-drawer-close")?.focus({ preventScroll: true });
-}
-document.addEventListener("click", event => {
-  if (event.target.closest("[data-drawer-back]")) setDrawerLevel("menu");
-});
 function setSidebarOpen(open, focus = true) {
   state.menu = open;
   const sidebar = $(".sidebar");
-  // In Documents and Boards each opening starts on the list of documents or boards.
-  if (open && state.project) {
-    state.drawerLevel = ["documents", "board", "drawing"].includes(state.view) ? "documents" : "menu";
-    sidebar?.setAttribute("data-drawer-level", state.drawerLevel);
-  }
   sidebar?.classList.toggle("open", open);
   $(".sidebar-overlay")?.classList.toggle("visible", open);
   if (sidebar) sidebar.inert = !open;
@@ -913,8 +898,8 @@ function setSidebarOpen(open, focus = true) {
 }
 // The drawer uses the same action handlers as the desktop navigation.
 document.addEventListener("click", event => {
-  // Choosing or creating a document or board in the drawer also closes it.
-  const button = event.target.closest('.sidebar [data-action], .sidebar [data-document-open], .sidebar [data-document-action="create"], .sidebar [data-board-open], .sidebar .document-explorer [data-feature]');
+  // Choosing from the drawer also closes it.
+  const button = event.target.closest(".sidebar [data-action]");
   if (state.menu && button && button.dataset.action !== "menu") setSidebarOpen(false, false);
 }, true);
 document.addEventListener("keydown", event => {
@@ -952,6 +937,7 @@ function projectNavigationHTML() {
     ${newMenuHTML()}
   </div>`;
 }
+const lists = listPanel(state);
 function projectPage() {
   if (taskViews.includes(state.view))
     storage.set(`task-view:${state.project.id}`, state.view);
@@ -965,7 +951,7 @@ function projectPage() {
     <div class="stats-strip"><span class="stat">${icon("task")}<strong>${total}</strong> tasks</span><span class="stat-divider"></span><span class="stat"><span class="progress"><span style="width:${progress}%"></span></span><strong>${progress}%</strong> complete</span><span class="stat-divider"></span><span class="stat">${icon("check")}<strong>${done}</strong> done</span><span class="stat">${icon("file")}Markdown workspace</span></div>
     ${warningsHTML([...state.globalWarnings, ...state.warnings])}
 
-    <div id="view-toolbar"></div><section id="view-content"></section>`;
+    ${lists.html()}<div id="view-toolbar"></div><section id="view-content"></section>`;
 }
 // The Sort menu: Manual order, then the sorts grouped by what they compare.
 const sortGroups = [["", ["order"]], ["Card", ["key", "title", "parent", "assignee"]], ["Progress", ["status", "priority"]], ["Dates", ["due", "created"]]];
@@ -1783,7 +1769,7 @@ async function patchTask(id, changes, rerender = true) {
 }
 
 function boardToolbar() {
-  // Boards are chosen and created in the sidebar's Boards section (board-explorer.js).
+  // Boards are chosen and created in the board list (board-explorer.js, list-panel.js).
   return `<div class="board-toolbar">${state.selectedBoard ? `<button class="button small" data-action="board-rename">${icon("pencil")}Rename</button>` : ""}${state.selectedBoard ? bookmarks.button("board", state.project.id, state.selectedBoard) : ""}<span class="board-save" id="board-save">${esc(saveIssue([...sync.entries.values()], {storageError:sync.storageError,online:state.online}) ? "" : saveState([...sync.entries.values()],{storageError:sync.storageError,online:state.online}))}</span>${state.boardConflict ? '<button class="button small" data-feature="recovery">Resolve</button>' : ""}</div>`;
 }
 function boardToolsHTML() {
@@ -2242,10 +2228,10 @@ document.addEventListener("click", async (event) => {
         break;
       case "view": {
         const fromLayout = el.closest(".view-layout-switcher"), fromTray = el.closest(".layout-tray");
-        // With the bottom bar, tapping Documents again shows its tray (project-layout.js), or,
-        // with no document open, the document list (the drawer's Documents level).
-        if (el.dataset.view === "documents" && state.view === "documents" && el.closest(".tabs") && tabBar.matches) {
-          if (!el.hasAttribute("aria-controls")) setSidebarOpen(true);
+        // Pressing the open Documents or Boards tab shows its list (list-panel.js); with the bottom
+        // bar, the open Documents tab shows its tray instead (project-layout.js) while a document is open.
+        if (["documents", "board"].includes(el.dataset.view) && state.view === el.dataset.view && el.closest(".tabs")) {
+          if (!el.hasAttribute("aria-controls")) lists.toggle(el);
           break;
         }
         // The phone layout tray closes with the new view, so focus returns to its tab.

@@ -2,7 +2,7 @@ import { positionPopover } from "./popover-position.js";
 import { focusOnOpen } from "./open-focus.js";
 
 // A small panel beside the button that opened it, one at a time: light dismiss, Escape and a close
-// button, with focus back on the button. Documents and the sidebar's board list share it.
+// button, with focus back on the button. The document and board lists share it.
 // The last control pressed, during its click only: a panel's opener pressed again closes the panel,
 // while a panel shown from inside the open one (such as Rename from Document tools, anchored to the
 // same button) opens as before (owner request T26).

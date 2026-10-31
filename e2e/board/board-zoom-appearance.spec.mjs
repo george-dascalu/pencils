@@ -53,10 +53,10 @@ test("one Board appearance button opens the board's look, without its name, disp
     await expect(panel.locator(kept), kept).toHaveCount(1);
 });
 
-// The sidebar's New board menu imports from Miro since 0.20.74; the panel opens by Board tools.
+// The board list's New board menu imports from Miro since 0.20.74; the panel opens by Board tools.
 test("New board imports from Miro", async ({ page }) => {
   await open(page);
-  await clickControl(page.locator('.sidebar [data-board-menu="board-new"] [data-feature="miro-import"]'));
+  await clickControl(page.locator('#list-panel [data-board-menu="board-new"] [data-feature="miro-import"]'));
   await expect(page.locator("#miro-import-panel")).toBeVisible();
-  await expect(page.locator(".sidebar.open"), "the sidebar closes for the panel").toHaveCount(0);
+  await expect(page.locator("#list-panel"), "the list closes for the panel").toBeHidden();
 });

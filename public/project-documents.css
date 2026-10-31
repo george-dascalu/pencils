@@ -17,10 +17,35 @@
   overflow: hidden;
   background: var(--surface);
 }
-/* The document list lives in the main sidebar (iPad, desktop) and in the
-   phone drawer's Documents level, in the sidebar's dark style. */
-.sidebar-documents { display: none; flex-direction: column; min-height: 0; margin-top: 16px; padding-top: 12px; border-top: 1px solid #ffffff13; }
-.sidebar[data-documents="shown"] > .sidebar-documents { display: flex; flex: 1 1 0; min-height: 160px; }
+/* The document and board lists have a page of their own (list-panel.js): on desktop and iPad four
+   fifths of the page over the open document or board, which shows blurred beside it; phones give
+   the list the whole page under the floating buttons. */
+.main.project-main > #list-panel {
+  grid-row: 2 / -1;
+  grid-column: 1;
+  z-index: 5; /* under the bottom bar */
+  display: flex;
+  flex-direction: column;
+  width: 80%;
+  min-height: 0;
+  overflow: hidden;
+  background: var(--paper);
+  border-right: 1px solid var(--line);
+  box-shadow: var(--shadow-drawer);
+}
+.main.project-main > #list-panel[hidden] { display: none; }
+.list-panel:not([hidden]) ~ :is(#view-toolbar, #view-content) { filter: blur(3px); pointer-events: none; user-select: none; }
+.list-panel .document-explorer > header { padding: 10px 8px 10px 16px; }
+/* The New board menu (board-explorer.js) matches the icon buttons beside it. */
+.list-panel .board-menu > summary { background: transparent; border-color: transparent; }
+@media (max-width: 600px) {
+  .main.project-main > #list-panel { width: 100%; border-right: 0; box-shadow: none; }
+}
+@media (max-width: 600px), (pointer: coarse) {
+  .main.project-main > #list-panel { padding-bottom: var(--tabbar-clearance); }
+  .list-panel .document-link { min-height: 44px; padding-inline: 12px; font-size: var(--type-body); }
+  .list-panel .document-search input { font-size: var(--type-body); }
+}
 .document-explorer {
   display: flex;
   flex-direction: column;
@@ -29,27 +54,6 @@
   min-height: 0;
   color: inherit;
 }
-.sidebar-documents-back { display: none; }
-.sidebar-documents .document-explorer > header { padding: 0 0 8px 13px; }
-.sidebar-documents .document-explorer h2 { font-size: 10px; font-weight: 600; letter-spacing: 0.13em; text-transform: uppercase; color: #a1b1a4; }
-.sidebar-documents .document-explorer h2 .count { letter-spacing: 0; }
-.sidebar-documents .icon-button { color: #c7d3c8; background: transparent; border-color: transparent; }
-.sidebar-documents .icon-button:hover { background: #ffffff0d; color: #e0edbd; }
-/* The Boards section's New board menu (board-explorer.js) matches the icon buttons beside it. */
-.sidebar-documents .board-menu > summary { background: transparent; border-color: transparent; color: #c7d3c8; }
-.sidebar-documents .board-menu > summary:hover, .sidebar-documents .board-menu[open] > summary { background: #ffffff0d; border-color: transparent; color: #e0edbd; }
-.sidebar-documents .document-search { margin: 0 0 8px; }
-.sidebar-documents .document-search input { background: #ffffff0d; border-color: #ffffff24; color: #edf2e7; }
-.sidebar-documents .document-search input::placeholder { color: #a1b1a4; }
-.sidebar-documents .document-search .icon { color: #a1b1a4; }
-.sidebar-documents .document-explorer > nav { padding: 0; }
-.sidebar-documents .document-link { color: #c7d3c8; font-size: 12px; border-color: transparent; }
-.sidebar-documents .document-link > .icon { color: #a1b1a4; }
-.sidebar-documents .document-link:hover, .sidebar-documents .document-folder-row.active { background: #ffffff08; }
-.sidebar-documents .document-link.active { background: #d2e3a41a; color: #e0edbd; border-color: transparent; }
-.sidebar-documents .document-explorer-empty { color: #a1b1a4; }
-.sidebar-documents .document-explorer > footer { padding: 8px 0 0; border-top: 1px solid #ffffff13; }
-.sidebar-documents .document-explorer > footer .button { background: transparent; border-color: #ffffff24; color: #c7d3c8; }
 .document-empty-browse { display: inline-flex; }
 .document-explorer > header {
   display: flex;
@@ -69,14 +73,14 @@
 .document-folder-row [aria-expanded="false"] > .icon:first-child { transform: rotate(-90deg); }
 .document-folder-row [aria-expanded="true"] > .icon:first-child { transform: none; }
 .document-drop-target { outline: 2px solid var(--green); outline-offset: -2px; }
-#document-list ul { list-style: none; padding: 0 0 0 16px; margin: 0; }
-#document-list [hidden] { display: none; }
+:is(#document-list, #board-list) ul { list-style: none; padding: 0 0 0 16px; margin: 0; }
+:is(#document-list, #board-list) [hidden] { display: none; }
 .document-explorer h2 { margin: 0; font-size: 14px; font-weight: 600; }
 .document-explorer h2 .count { margin-left: 5px; }
 .document-explorer .document-search { margin: 0 12px 10px; min-width: 0; }
 .document-search input { width: 100%; min-width: 0; }
 .document-explorer > nav { flex: 1; min-height: 0; overflow: auto; padding: 0 6px; }
-#document-list { margin: 0; padding: 0; list-style: none; }
+:is(#document-list, #board-list) { margin: 0; padding: 0; list-style: none; }
 .document-link {
   display: flex;
   align-items: center;

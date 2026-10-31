@@ -1,7 +1,7 @@
 import { anchoredPanel } from "./anchored-panel.js";
 import { folderTree } from "./folder-tree.js";
 
-// Boards in the main sidebar, like Documents (0.20.74): folders, search and a New board menu
+// The board list, like Documents (0.20.74; a page of its own since 0.20.96, list-panel.js): folders, search and a New board menu
 // (Blank, Import Obsidian .canvas, Import from Miro). It replaced the board picker and the gallery.
 export function boardExplorer(ctx, { canvases, enter }) {
   const { state, api, route, icon, toast } = ctx;
@@ -36,27 +36,27 @@ export function boardExplorer(ctx, { canvases, enter }) {
     if (state.boardSaves || state.boardConflict) return toast("Finish saving the current canvas first.", true);
     await enter(id);
   }
-  // Fills the sidebar's section in board views and empties it when another view opens.
+  // Fills the list panel in board views and empties it when another view opens.
   function sync() {
-    const host = document.querySelector("#sidebar-documents");
+    const host = document.querySelector("#list-panel");
     if (!host) return;
     const shown = host.querySelector("#board-explorer");
     if (!["board", "drawing"].includes(state.view)) {
       if (!shown) return;
       host.innerHTML = "";
-      host.closest(".sidebar")?.removeAttribute("data-documents");
+      delete host.dataset.kind;
       explorer.reset(); panels.close();
       return;
     }
     if (!state.project?.board_folders?.some(f => f.id === explorer.active)) explorer.active = null;
     if (shown) return explorer.update();
-    // A rebuilt sidebar (and bar) leaves an open panel without its button.
+    // A rebuilt page (and bar) leaves an open panel without its button.
     panels.close();
     host.innerHTML = explorer.html({
       actions: `<details class="board-menu" data-board-menu="board-new"><summary class="icon-button" aria-label="New board" title="New board">${icon("plus")}</summary><div class="board-menu-panel"><button type="button" data-action="board-new">${icon("board")}Blank board</button><button type="button" data-feature="canvas-import">${icon("upload")}Import Obsidian .canvas</button><button type="button" data-feature="miro-import">${icon("download")}Import from Miro</button></div></details><button type="button" class="icon-button" data-board-action="new-folder" aria-label="New folder" title="New folder">${icon("folder")}</button>`,
     });
     host.setAttribute("aria-label", "Boards");
-    host.closest(".sidebar")?.setAttribute("data-documents", "shown");
+    host.dataset.kind = "boards";
   }
   document.addEventListener("click", event => {
     const open = event.target.closest("[data-board-open]");

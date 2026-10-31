@@ -5,7 +5,7 @@
 // Part of the cross-browser release gate.
 import AxeBuilder from "@axe-core/playwright";
 import { test, expect, useApp } from "../fixtures.mjs";
-import { openHelp, clickControl } from "../helpers/menu-controls.mjs";
+import { openHelp } from "../helpers/menu-controls.mjs";
 import { helpArticles } from "../../public/help-content.js";
 import { newCard } from "../helpers/new-card.mjs";
 
@@ -104,11 +104,9 @@ for (const width of [1600, 1180, 390]) {
     test.use({ viewportSize: { width, height: 900 } });
     test("project navigation, New and settings stay usable from Help", { tag: "@gate" }, async ({ page }) => {
       const phone = width <= 600;
-      // Help is at the bottom of the sidebar, which opens over the page (0.20.24). In Documents
-      // the phone drawer opens on the document list (0.19.27); go back to the menu first.
+      // Help is at the bottom of the sidebar, which opens over the page (0.20.24).
       const showHelp = async () => {
         await page.locator(".mobile-menu").click();
-        if (await page.locator(".sidebar [data-drawer-back]").isVisible()) await clickControl(page.locator(".sidebar [data-drawer-back]"));
         await page.locator('.phone-drawer-utilities [data-action="help"]').click();
         await title(page, "Help & guides");
       };

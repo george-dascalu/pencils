@@ -24,8 +24,8 @@ test.afterEach(() => {
 
 const panel = (page) => page.locator("#miro-import-panel");
 async function openImport(page) {
-  // The sidebar's New board → Import from Miro since 0.20.74.
-  await clickControl(page.locator('.sidebar [data-board-menu="board-new"] [data-feature="miro-import"]'));
+  // The board list's New board → Import from Miro since 0.20.74.
+  await clickControl(page.locator('#list-panel [data-board-menu="board-new"] [data-feature="miro-import"]'));
   await panel(page).getByText("Use an access token", { exact: true }).waitFor();
 }
 // A project per test (the Miro connection belongs to the project), opened on its board

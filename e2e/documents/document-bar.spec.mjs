@@ -2,7 +2,7 @@
 // Formatting and the document's controls now share one bar, without the title; the name
 // shows in the top bar and changes through Document tools → Rename.
 import { test, expect, onDevices, useApp } from "../fixtures.mjs";
-import { openSidebar, clickControl } from "../helpers/menu-controls.mjs";
+import { clickControl } from "../helpers/menu-controls.mjs";
 
 const app = useApp(async (store) => {
   const project = await store.createProject({ title: "Bars", key: "BA" });
@@ -36,8 +36,7 @@ test("Document tools renames the document, and the top bar follows", async ({ pa
 
 test("a new document opens with its name ready to type", async ({ page }) => {
   await page.goto(`${app.base}/#project/${app.project.id}/documents/${app.doc.id}`);
-  await openSidebar(page);
-  await clickControl(page.locator('.sidebar [data-document-action="create"]').first());
+  await clickControl(page.locator('#list-panel [data-document-action="create"]'));
   await expect(page.getByLabel("Document name")).toBeFocused();
 });
 

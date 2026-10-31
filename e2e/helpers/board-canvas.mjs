@@ -15,9 +15,9 @@ export async function seedBoard(store, projectId, patch, boardId) {
   return store.updateBoard(projectId, board.id, { revision: board.revision, ...patch });
 }
 
-// Open another board from the sidebar's Boards section (0.20.74; the board picker before).
+// Open another board from the board list (0.20.96; the sidebar's Boards section from 0.20.74).
 export async function chooseBoard(page, id) {
-  await clickControl(page.locator(`.sidebar [data-board-open="${id}"]`));
+  await clickControl(page.locator(`#list-panel [data-board-open="${id}"]`));
   await page.locator(`.board-tools[data-board="${id}"]`).waitFor();
 }
 

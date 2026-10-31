@@ -2,6 +2,7 @@
 // sit in the middle of the top bar (empty on iPad, whose view tabs are in the bottom bar), and the
 // bookmark star sits before the title. Desktop and phones keep their toolbar row.
 import { test, expect, onDevices, useApp } from "../fixtures.mjs";
+import { openList } from "../helpers/menu-controls.mjs";
 
 const app = useApp(async (store) => {
   const project = await store.createProject({ title: "Top bar tools", key: "TB" });
@@ -78,11 +79,12 @@ onDevices(["ipad", "ipad-portrait"], () => test("Board, Planning and documents p
     await expect(page.locator(".topbar .breadcrumb .bookmark-button"), `${device} ${path}`).toHaveAttribute("data-kind", kind);
     await expect(page.locator(".bookmark-button"), `${device} ${path}: one star`).toHaveCount(1);
   }
-  // Opening another document in place, from the sidebar, swaps the star for its own.
+  // Opening another document in place, from the document list, swaps the star for its own.
   await page.goto(`${app.base}/#project/${project.id}/documents/${doc.id}`);
-  await page.locator(".topbar .mobile-menu").click();
-  // By keyboard: the documents section's footer covers the last item once it's scrolled into view.
-  await page.locator(".sidebar .sidebar-documents [data-document-open]", { hasText: "Second note" }).focus();
+  await page.locator("#document-form").waitFor();
+  await openList(page);
+  // By keyboard: the list's footer covers the last item once it's scrolled into view.
+  await page.locator("#list-panel [data-document-open]", { hasText: "Second note" }).focus();
   await page.keyboard.press("Enter");
   await expect(page.locator(".topbar .breadcrumb .bookmark-button"), `${device}: the second document's star`).toHaveAttribute("data-id", second.id);
   await expect(page.locator(".bookmark-button"), `${device}: one star`).toHaveCount(1);

@@ -582,12 +582,9 @@ export function projectDocuments(ctx) {
   }
   function reset() {
     document.querySelector(".topbar .document-tabs")?.remove();
-    // The section holds the board list in board views (board-explorer.js).
-    const host = document.querySelector("#sidebar-documents");
-    if (host?.querySelector("#document-explorer")) {
-      host.innerHTML = "";
-      host.closest(".sidebar")?.removeAttribute("data-documents");
-    }
+    // The list panel holds the board list in board views (board-explorer.js).
+    const host = document.querySelector("#list-panel");
+    if (host?.querySelector("#document-explorer")) { host.innerHTML = ""; delete host.dataset.kind; }
     explorer.reset();
     closePanel();
     readingSearch?.destroy(); readingSearch = null;
@@ -600,9 +597,6 @@ export function projectDocuments(ctx) {
   }
   let scrolled = null; // { id, scroll: { selector: scrollTop } } for the open document
   let pendingCaret = null; // { id, at }: where a document made from a template starts its caret
-  // The document list sits in the main sidebar, so it has no pane of its own
-  // to open, close or make inert.
-  function syncExplorer() {}
   function tabsHTML() {
     const list = openTabs();
     return `<nav class="document-tabs" aria-label="Open documents">${list.map(id => {
@@ -707,7 +701,7 @@ export function projectDocuments(ctx) {
   function syncTray() {
     if (!selected() || !tabBar.matches) return removeLayoutTray();
     const tray = document.createElement("template");
-    tray.innerHTML = `<div class="view-layout-switcher" role="group" aria-label="Document view"><button type="button" data-action="menu" aria-label="Documents" title="Documents">${icon("folder")}<span>Documents</span></button>${MODES.map(([key, label, glyph]) => `<button type="button" data-document-mode="${key}" aria-label="${label}" aria-pressed="${mode === key}" title="${label}">${icon(glyph)}<span>${label}</span></button>`).join("")}</div>`;
+    tray.innerHTML = `<div class="view-layout-switcher" role="group" aria-label="Document view"><button type="button" data-list-toggle aria-label="Documents" title="Documents">${icon("folder")}<span>Documents</span></button><span class="tray-divider" role="separator"></span>${MODES.map(([key, label, glyph]) => `<button type="button" data-document-mode="${key}" aria-label="${label}" aria-pressed="${mode === key}" title="${label}">${icon(glyph)}<span>${label}</span></button>`).join("")}</div>`;
     mountLayoutTray(tray.content.firstElementChild, state.layoutTray === state.view);
   }
   // Re-sync after project-layout.js's toolbar reset, which removes any tray. Media query lists
@@ -740,16 +734,15 @@ export function projectDocuments(ctx) {
     if (doc && storage.get(splitKey(), null)?.id === doc.id) setSplit(null);
     content.className = "content documents-content";
     if (!folders().some(f => f.id === explorer.active)) explorer.active = null;
-    // The document tree lives in the main sidebar (iPad and desktop) and in the
-    // drawer's Documents level (phones); the workspace holds the editor only.
-    const host = document.querySelector("#sidebar-documents");
+    // The document list has a page of its own (list-panel.js); the workspace holds the editor only.
+    const host = document.querySelector("#list-panel");
     if (host) {
       host.innerHTML = explorer.html({
         actions: `<button type="button" class="icon-button" data-document-action="create" aria-label="New document" title="New document">${icon("plus")}</button><button type="button" class="icon-button" data-document-action="new-folder" aria-label="New folder" title="New folder">${icon("folder")}</button>`,
         footer: `<footer><button type="button" class="button small" data-document-action="import">${icon("plus")}Import Markdown</button><input type="file" id="document-import" accept=".md,.markdown,text/markdown,text/plain" multiple hidden></footer>`,
       });
       host.setAttribute("aria-label", "Documents");
-      host.closest(".sidebar")?.setAttribute("data-documents", "shown");
+      host.dataset.kind = "documents";
     }
     syncTray();
     content.innerHTML = `<div class="documents-workspace" data-has-document="${!!doc}">
@@ -770,7 +763,7 @@ export function projectDocuments(ctx) {
           <div class="document-writing"><div class="document-codemirror"></div><article class="document-reading" tabindex="0" aria-label="Document reading view" hidden></article><textarea name="body" hidden>${esc(doc.body || "")}</textarea></div>
           <input type="file" id="document-attachment" accept=".png,.jpg,.jpeg,.gif,.webp,.pdf,.txt,.md,.csv,.zip" multiple hidden>
           <footer class="document-save"><span data-document-stats></span></footer>
-        </form>` : `<div class="empty document-empty">${icon("file")}<h2>${state.selectedDocument ? "Document unavailable" : "A home for your project notes"}</h2><p>${state.selectedDocument ? "Choose another document from the explorer." : "Write briefs, meeting notes and reference documents."}</p><button type="button" class="button soft" data-document-action="create">${icon("plus")}New document</button><button type="button" class="button document-empty-browse" data-document-action="browse">${icon("documents")}Browse documents</button></div>`}
+        </form>` : `<div class="empty document-empty">${icon("file")}<h2>${state.selectedDocument ? "Document unavailable" : "A home for your project notes"}</h2><p>${state.selectedDocument ? "Choose another document from the explorer." : "Write briefs, meeting notes and reference documents."}</p><button type="button" class="button soft" data-document-action="create">${icon("plus")}New document</button><button type="button" class="button document-empty-browse" data-list-toggle>${icon("documents")}Browse documents</button></div>`}
       </section></div>`;
     document.querySelector(".topbar .document-tabs")?.remove();
     if (!doc) return;
@@ -838,7 +831,7 @@ export function projectDocuments(ctx) {
       event.preventDefault(); event.stopPropagation(); form.classList.remove("document-drag-over");
       void attachFiles([...event.dataTransfer.files]);
     });
-    setMode(mode, false); updateStats(); updateObsidianLink(); syncExplorer(); syncTopbarTitle(state); showPane();
+    setMode(mode, false); updateStats(); updateObsidianLink(); syncTopbarTitle(state); showPane();
     if (keep?.id === doc.id) {
       const restore = () => { for (const [selector, top] of Object.entries(keep.scroll)) { const el = form?.querySelector(selector); if (el && top) el.scrollTop = top; } };
       restore();
@@ -1025,10 +1018,7 @@ export function projectDocuments(ctx) {
           toast(`Linked the mentions in ${record.title}.`);
         }
       }
-      else if (action === "browse") {
-        // The document list is in the sidebar: open it there.
-        document.querySelector(".mobile-menu")?.click();
-      } else if (action === "create") {
+      else if (action === "create") {
         button.disabled = true;
         await create();
       } else if (action === "import") document.querySelector("#document-import").click();
