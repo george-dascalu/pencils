@@ -1,6 +1,6 @@
 import { randomUUID } from "./uuid.js";
 import { workflowEditor } from "./workflow-editor.js";
-import { CARD_FIELDS, fieldOn } from "./card-fields.js";
+import { CARD_FIELDS, fieldOn, viewOn } from "./card-fields.js";
 import { projectTeamControls, projectPeople } from "./teams.js";
 import { priorityOptions, priorityLabel } from "./task-priority.js";
 import { taskFieldColor, priorityColors } from "./task-colors.js";
@@ -232,7 +232,7 @@ export function projectSettings(ctx, { sources, automations, personal, organisat
   function general() {
     const p = state.project;
     return form(
-      `${field("title", "Project name", p.title, 'required maxlength="300"')}${field("key", "Project key", p.key, 'required pattern="[A-Za-z][A-Za-z0-9]{1,11}" maxlength="12"')}<p class="field-hint">Task IDs look like <strong data-key-example>${esc(p.key)}-1</strong>. Existing IDs remain available as aliases when the key changes.</p><label class="field">Description<textarea name="body" rows="4" placeholder="What is this project for?">${esc(p.body)}</textarea></label><div class="field-row"><div class="field">Project colour${colorPicker({ label: "Project colour", value: p.color })}</div><label class="field">Default view<select name="default_view">${options(["overview", "documents", "list", "tree", "table", "kanban", "board", "calendar", "timeline", "capacity"], p.default_view === "drawing" ? "board" : p.default_view, { board: "Boards" })}</select></label></div>`,
+      `${field("title", "Project name", p.title, 'required maxlength="300"')}${field("key", "Project key", p.key, 'required pattern="[A-Za-z][A-Za-z0-9]{1,11}" maxlength="12"')}<p class="field-hint">Task IDs look like <strong data-key-example>${esc(p.key)}-1</strong>. Existing IDs remain available as aliases when the key changes.</p><label class="field">Description<textarea name="body" rows="4" placeholder="What is this project for?">${esc(p.body)}</textarea></label><div class="field-row"><div class="field">Project colour${colorPicker({ label: "Project colour", value: p.color })}</div><label class="field">Default view<select name="default_view">${options(["overview", "documents", "list", "tree", "table", "kanban", "board", "calendar", "timeline", "capacity"].filter((view) => viewOn(state.config, view) || view === p.default_view), p.default_view === "drawing" ? "board" : p.default_view, { board: "Boards" })}</select></label></div>`,
     );
   }
   function teams() {

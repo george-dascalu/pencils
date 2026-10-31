@@ -96,11 +96,15 @@ export class WriteJournal {
       JSON.stringify(this.active),
     );
   }
+  // A transaction can end while a write waits here (another save finishes); that write then goes
+  // unjournaled, as with no transaction, instead of reading the ended transaction.
   async stage(file, text) {
-    if (!this.active) return;
+    const tx = this.active, ended = () => this.active !== tx;
+    if (!tx) return;
     const relative = path.relative(this.store.root, file);
     await this.store.safe(file);
-    let item = this.active.files.find((f) => f.path === relative);
+    if (ended()) return;
+    let item = tx.files.find((f) => f.path === relative);
     if (!item) {
       let before = null;
       try {
@@ -108,15 +112,18 @@ export class WriteJournal {
       } catch (e) {
         if (e.code !== "ENOENT") throw e;
       }
+      if (ended()) return;
       item = {
         path: relative,
         before: before ? digest(before) : null,
         after: [],
-        backup: `before-${this.active.files.length}`,
+        backup: `before-${tx.files.length}`,
       };
+      // An ended transaction's folder may be gone before its backup lands.
       if (before)
-        await atomic(path.join(this.root, this.active.id, item.backup), before);
-      this.active.files.push(item);
+        await atomic(path.join(this.root, tx.id, item.backup), before).catch((error) => { if (!ended()) throw error; });
+      if (ended()) return;
+      tx.files.push(item);
     }
     item.after.push(digest(text));
     await this.persist();
@@ -135,15 +142,20 @@ export class WriteJournal {
     return digest(await fs.readFile(file));
   }
   async move(source, target) {
-    if (!this.active) return fs.rename(source, target);
+    const tx = this.active;
+    if (!tx) return fs.rename(source, target);
     await this.store.safe(source);
     await this.store.safe(target);
-    this.active.moves.push({
-      source: path.relative(this.store.root, source),
-      target: path.relative(this.store.root, target),
-      hash: await this.fingerprint(source),
-    });
-    await this.persist();
+    const hash = await this.fingerprint(source);
+    // As in stage: a transaction that ended meanwhile leaves this move unjournaled.
+    if (this.active === tx) {
+      tx.moves.push({
+        source: path.relative(this.store.root, source),
+        target: path.relative(this.store.root, target),
+        hash,
+      });
+      await this.persist();
+    }
     await fs.rename(source, target);
   }
   async rollback(record) {

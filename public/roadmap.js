@@ -32,6 +32,11 @@ export const roadmap = [
   { id: "T27", title: "Document formatting toolbar always shown, except in Reading view", status: "done", requested: "2026-10-31", started: "2026-10-31", done: "2026-10-31T20:16", version: "0.20.94" },
   { id: "T28", title: "Board bar: Session, Version history and Present inside Board tools (⋯)", status: "done", requested: "2026-10-31", started: "2026-10-31", done: "2026-10-31T20:16", version: "0.20.94" },
   { id: "T29", title: "Roadmap shows times and how long each took", status: "done", requested: "2026-10-31T20:05", started: "2026-10-31T20:21", done: "2026-10-31T20:30", version: "0.20.95" },
+  { id: "T30", title: "Fix a save that can crash when another finishes meanwhile (server journal)", status: "done", requested: "2026-10-31T22:38", started: "2026-10-31T22:38", done: "2026-10-31T22:47", version: "0.20.98" },
+  { id: "T31", title: "Card fields: the last places that still show fields that are off", status: "done", requested: "2026-10-31T22:38", started: "2026-10-31T22:38", done: "2026-10-31T22:47", version: "0.20.98" },
+  { id: "T32", title: "Steady the board capacity gauge test on phones", status: "done", requested: "2026-10-31T22:38", started: "2026-10-31T22:38", done: "2026-10-31T22:47", version: "0.20.98" },
+  { id: "T33", title: "Home: no gap at the top on phones", status: "done", requested: "2026-10-31T22:42", started: "2026-10-31T22:42", done: "2026-10-31T22:47", version: "0.20.98" },
+  { id: "T34", title: "Phone View options: one font size; Clear filters as an icon beside Close", status: "done", requested: "2026-10-31T22:43", started: "2026-10-31T22:43", done: "2026-10-31T22:47", version: "0.20.98" },
 ];
 
 // "31 Oct 20:05" for a date with a time, "31 Oct" for a bare date.

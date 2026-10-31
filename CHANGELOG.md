@@ -2,6 +2,18 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.20.98 — 2026-10-31
+
+### Changed
+
+- Card fields a project turned off also leave search, document task rows and card chips, the board's Live task view (its layouts, columns and filters, and saved rules on those fields), the Default view setting and the command palette's views. With the due date off, list rows show the start date.
+- Phones' View options uses one font size for names, values, checkboxes and Bookmark, and Clear filters is an icon button left of Close.
+
+### Fixed
+
+- On phones, Home has no gap at the top: Edit layout sits beside the menu button.
+- A save could fail when another save finished at the same moment.
+
 ## 0.20.97 — 2026-10-31
 
 ### Added

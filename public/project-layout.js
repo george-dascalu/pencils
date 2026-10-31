@@ -125,6 +125,9 @@ export function projectLayout(ctx) {
       details.open = true;
       details.dataset.expanded = "true";
     }
+    // Clear filters sits left of Close as an icon (T34); the filters' own footer keeps it on wider screens.
+    if (panel.querySelector('[data-action="filters-reset"]'))
+      panel.querySelector("header button").insertAdjacentHTML("beforebegin", `<button type="button" class="icon-button" data-action="filters-reset" aria-label="Clear filters" title="Clear filters">${icon("eraser")}</button>`);
     if (sortButton) toolbar.append(sortButton);
     toolbar.append(compact);
     compact.addEventListener("toggle", event => {
@@ -132,7 +135,7 @@ export function projectLayout(ctx) {
       state.mobileViewOptions = compact?.open;
       positionCompact();
     });
-    panel.querySelector("header button").onclick = closeCompact;
+    panel.querySelector('header button[aria-label="Close view options"]').onclick = closeCompact;
     positionCompact();
   }
   // iPad (owner request, 30 Oct 2026): a task view's search, filters and sort sit in the middle of

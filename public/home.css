@@ -75,6 +75,12 @@
 .home-checks { display: flex; flex-wrap: wrap; gap: 6px 12px; }
 .home-checks label { display: inline-flex; align-items: center; gap: 4px; font-size: var(--type-small); }
 @media (max-width: 600px) {
+  /* Like project pages, Home's own row (Edit layout) sits in the header's row, beside the floating
+     menu button, so the panels start right under it (T33). */
+  .main:has(> .home) { display: grid; grid-template-columns: minmax(0, 1fr); align-content: start; }
+  .main:has(> .home) > :is(.topbar, #view-toolbar) { grid-row: 1; grid-column: 1; align-self: start; }
+  .main:has(> .home) > #view-toolbar { display: flex; align-items: center; min-height: 56px; margin-inline-start: calc(var(--control-height) + 16px); }
+  .main:has(> .home) > #view-toolbar > .home-toolbar { flex: 1; padding-block: 0; }
   /* One column, in reading order (home.js sorts the panels); no dragging. */
   .home-grid { grid-template-columns: minmax(0, 1fr); grid-auto-rows: auto; }
   .home-panel { grid-column: 1 / -1; grid-row: auto; min-height: calc(var(--h) * 40px); }

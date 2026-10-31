@@ -71,3 +71,24 @@ test("related writes publish one notification only after commit", async (t) => {
   assert.equal(events.length, 1);
   assert.equal(events[0][1].project, project.id);
 });
+// A save that ends its transaction while another write waits to stage (T30, seen as a crash in
+// a release run): the waiting write goes unjournaled, as with no transaction, instead of failing.
+test("a write staged while its transaction ends does not crash", async (t) => {
+  const { store } = await fixture(t),
+    file = path.join(store.root, "late.md"),
+    moved = path.join(store.root, "moved.md"),
+    safe = store.safe.bind(store);
+  await fs.writeFile(file, "before");
+  await store.journal.start();
+  let release;
+  const gate = new Promise((resolve) => (release = resolve));
+  store.safe = async (target) => { await gate; return safe(target); };
+  const staged = store.journal.stage(file, "after"), move = store.journal.move(file, moved);
+  store.safe = safe;
+  await store.journal.finish(true);
+  release();
+  await assert.doesNotReject(staged);
+  await assert.doesNotReject(move);
+  assert.equal(store.journal.active, null);
+  assert.equal(await fs.readFile(moved, "utf8"), "before", "the move still happens");
+});

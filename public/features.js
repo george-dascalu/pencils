@@ -28,7 +28,7 @@ import { grid } from "./grid.js";
 import { taskReorder } from "./task-reorder.js";
 import { taskRowEditor } from "./task-row-editor.js";
 import { recoveryUI } from "./recovery-ui.js";
-import { fieldOn } from "./card-fields.js";
+import { fieldOn, viewOn } from "./card-fields.js";
 
 export function installFeatures(ctx) {
   const {
@@ -650,7 +650,7 @@ export function installFeatures(ctx) {
               "calendar",
               "timeline",
               "capacity",
-            ].map((view) => ({
+            ].filter((view) => viewOn(state.config, view)).map((view) => ({
               id: `view-${view}`,
               title: `Open ${viewLabel(view)} view`,
               run: () => ctx.openView(view),

@@ -26,9 +26,10 @@ const app = useApp(async (store) => {
   const small = await store.createBoard(project.id, { title: "Small" });
   return { project, board, small };
 });
-// The desktop test deletes and restores objects; every test starts from the seeded board.
+// The desktop test deletes and restores objects; every test starts from the seeded board. By id:
+// the snapshot's board order changes as boards save, and boards[0] once seeded the Small board (T32).
 test.beforeEach(async () => {
-  const board = (await app.store.snapshot(app.project.id)).boards[0];
+  const board = (await app.store.snapshot(app.project.id)).boards.find((b) => b.id === app.board.id);
   await app.store.updateBoard(app.project.id, board.id, { revision: board.revision, nodes: app.board.nodes, edges: app.board.edges });
 });
 const gauge = (page) => page.locator("#board-capacity-toggle");

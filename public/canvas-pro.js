@@ -58,7 +58,7 @@ import {
   nodeFill,
   readableText,
 } from "./node-layout.js";
-import { fieldOn } from "./card-fields.js";
+import { fieldOn, viewOn } from "./card-fields.js";
 import { canvasRichText, richToolbar } from "./canvas-rich-text.js";
 import { encodeCanvas, markdownSlice, palette } from "./canvas-format.js";
 import {
@@ -356,19 +356,21 @@ export function canvasPro(ctx, basic) {
   function matched(t, query = {}) {
     const filters = query.filters || query;
     const today = new Date().toISOString().slice(0, 10),
-      soon = new Date(Date.now() + 7 * 86400000).toISOString().slice(0, 10);
+      soon = new Date(Date.now() + 7 * 86400000).toISOString().slice(0, 10),
+      // A saved rule on a field the project turned off (T23) waits until the field is back.
+      on = (field) => fieldOn(state.config, field);
     return (
       (!t.archived || filters.archived) &&
-      (!query.status || query.status === "all" || t.status === query.status) &&
-      (!query.type || query.type === "all" || t.type === query.type) &&
-      (!filters.assignee ||
+      (!on("status") || !query.status || query.status === "all" || t.status === query.status) &&
+      (!on("type") || !query.type || query.type === "all" || t.type === query.type) &&
+      (!on("assignee") || !filters.assignee ||
         t.assignee?.toLowerCase().includes(filters.assignee.toLowerCase())) &&
-      (!filters.tag ||
+      (!on("tags") || !filters.tag ||
         t.tags?.some((tag) =>
           tag.toLowerCase().includes(filters.tag.toLowerCase()),
         )) &&
       (!filters.blocked || taskFlags(t).blocked) &&
-      (!filters.due ||
+      (!on("due") || !filters.due ||
         (filters.due === "overdue"
           ? taskFlags(t).overdue
           : filters.due === "none"
@@ -1752,7 +1754,7 @@ export function canvasPro(ctx, basic) {
   function queryDialog(n = null) {
     const q = n?.query || {};
     showDialog(
-      `<dialog class="dialog"><form id="canvas-query-form" data-id="${esc(n?.id || "")}">${dialogHead("Live task view")}<div class="dialog-body">${input("title", "Card title", n?.text || "Live tasks")}${select("viewType", "Layout", ["list", "table", "kanban", "timeline"], n?.viewType || "list")}<fieldset><legend>Visible table fields</legend>${["key", "title", "status", "assignee", "due", "priority", "type"].map((f) => `<label><input type="checkbox" name="field-${f}" ${(n?.visibleFields || ["key", "title", "status", "assignee", "due"]).includes(f) ? "checked" : ""}>${f}</label>`).join(" ")}</fieldset><label class="field">Saved project view<select name="view"><option value="">Custom filter</option>${(state.project.views || []).map((v) => `<option value="${esc(v.id)}" ${n?.view === v.id ? "selected" : ""}>${esc(v.name)}</option>`).join("")}</select></label>${select("status", "Status", ["all", ...state.config.statuses], q.status || "all")}${input("assignee", "Owner contains", q.assignee || "")}${input("search", "Text contains", q.search || "")}<p>The card always reads the current tasks. Editing a task anywhere updates every card.</p></div><div class="dialog-foot"><button type="submit" class="button primary">Save view card</button></div></form></dialog>`,
+      `<dialog class="dialog"><form id="canvas-query-form" data-id="${esc(n?.id || "")}">${dialogHead("Live task view")}<div class="dialog-body">${input("title", "Card title", n?.text || "Live tasks")}${select("viewType", "Layout", ["list", "table", "kanban", "timeline"].filter((view) => viewOn(state.config, view) || view === n?.viewType), n?.viewType || "list")}<fieldset><legend>Visible table fields</legend>${["key", "title", "status", "assignee", "due", "priority", "type"].map((f) => `<label ${fieldOn(state.config, f) ? "" : "hidden"}><input type="checkbox" name="field-${f}" ${(n?.visibleFields || ["key", "title", "status", "assignee", "due"]).includes(f) ? "checked" : ""}>${f}</label>`).join(" ")}</fieldset><label class="field">Saved project view<select name="view"><option value="">Custom filter</option>${(state.project.views || []).map((v) => `<option value="${esc(v.id)}" ${n?.view === v.id ? "selected" : ""}>${esc(v.name)}</option>`).join("")}</select></label>${select("status", "Status", ["all", ...state.config.statuses], q.status || "all")}${input("assignee", "Owner contains", q.assignee || "")}${input("search", "Text contains", q.search || "")}<p>The card always reads the current tasks. Editing a task anywhere updates every card.</p></div><div class="dialog-foot"><button type="submit" class="button primary">Save view card</button></div></form></dialog>`,
       "canvas-query",
     );
   }

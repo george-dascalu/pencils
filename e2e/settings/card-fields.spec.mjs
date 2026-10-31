@@ -55,6 +55,11 @@ test("turning fields off in Settings hides them and the views that need them, an
   for (const part of ['select[name="status"]', '[data-task-picker="priority"]', ".task-assignee-field", ".task-dates"])
     await expect(form.locator(part), part).toBeHidden();
   await page.keyboard.press("Escape");
+  // A saved default view that's now hidden stays chosen, so saving General keeps it.
+  const { project } = await app.store.snapshot(s.project.id);
+  await app.store.updateProject(s.project.id, { revision: project.revision, default_view: "kanban" });
+  await page.goto(url(s, "settings/general"));
+  await expect(page.locator('select[name="default_view"]')).toHaveValue("kanban");
 
   // Turned back on, the values are still there.
   await setOff(s.project.id, []);
@@ -69,6 +74,12 @@ test("filters and Table columns leave fields that are off", async ({ page }) => 
   await row(page).waitFor();
   await expect(row(page).locator(".row-due"), "the start date stays, without the due date").toBeVisible();
   await expect(row(page).locator(".row-due")).not.toContainText("5");
+  await expect(row(page).locator(".row-due"), "the start date, 2 Nov").toContainText("2");
+  // Search leaves text in fields that are off.
+  await page.locator("#search").fill("Ann");
+  await expect(row(page)).toHaveCount(0);
+  await page.locator("#search").fill("");
+  await expect(row(page)).toHaveCount(1);
   await page.locator('[data-board-menu="filters"] > summary').click();
   for (const id of ["#filter-status", "#filter-assignee", "#filter-tag", "#filter-completion"])
     await expect(page.locator(id), id).toBeHidden();
@@ -79,6 +90,10 @@ test("filters and Table columns leave fields that are off", async ({ page }) => 
   const keys = await heads.evaluateAll((els) => els.map((el) => el.dataset.columnKey));
   for (const key of ["status", "assignee", "tags"]) expect(keys, key).not.toContain(key);
   expect(keys).toContain("priority");
+  // The default view offers only views that stay (no Kanban without status).
+  await page.goto(url(s, "settings/general"));
+  await expect(page.locator('select[name="default_view"] option[value="list"]')).toHaveCount(1);
+  await expect(page.locator('select[name="default_view"] option[value="kanban"]')).toHaveCount(0);
 });
 
 onDevices(["phone"], () => test("phone summaries and the bottom bar leave fields that are off", async ({ page }) => {

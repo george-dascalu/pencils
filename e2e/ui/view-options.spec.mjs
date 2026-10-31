@@ -26,7 +26,8 @@ onDevices(["phone"], () => {
     expect(rows.length, "the filters are listed").toBeGreaterThan(4);
     for (const row of rows) {
       expect(row.height, `${row.name}: one line`).toBeLessThanOrEqual(row.control + 1);
-      expect(row.nameHeight, `${row.name}: the name fits one line`).toBeLessThanOrEqual(20);
+      // Names take the panel's one 16px size since T34, a 22px line; two lines would be 44px.
+      expect(row.nameHeight, `${row.name}: the name fits one line`).toBeLessThanOrEqual(26);
       expect(row.offset, `${row.name}: the name sits before the control`).toBeGreaterThan(row.nameEnd);
       expect(row.control, `${row.name}: a 44px target`).toBeGreaterThanOrEqual(44);
     }

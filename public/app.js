@@ -987,11 +987,11 @@ function filteredTasks() {
         [
           t.title,
           t.body,
-          t.assignee,
+          fieldOn(state.config, "assignee") ? t.assignee : "",
           t.id,
           t.key,
           ...(t.aliases || []),
-          ...(t.tags || []),
+          ...(fieldOn(state.config, "tags") ? t.tags || [] : []),
         ].some((v) =>
           String(v || "")
             .toLowerCase()
@@ -1188,7 +1188,10 @@ function taskRow(t, depth = null, hasChildren = false, flat = false) {
   const control = (field, name) => `name="${field}" data-row-field="${field}" data-id="${esc(t.id)}" aria-label="${name} for ${esc(t.title)}" ${t.source ? 'disabled title="Managed by the connected source"' : ""}`;
   // Phones show a summary that opens the card; its fields open their own picker (the row's select).
   // The date follows the fields in their box and opens the date editor, in rows and phone summaries.
-  const dates = className => `<button type="button" class="${className}" data-row-dates="${esc(t.id)}" aria-label="${esc(t.due ? new Date(`${t.due}T12:00:00`).toLocaleDateString(undefined, { day: "numeric", month: "short" }) : "Set dates")} — edit dates for ${esc(t.title)}" aria-haspopup="dialog" aria-expanded="false" title="${esc(`Start: ${t.start || "Not set"} · Due: ${t.due || "Not set"}`)}">${(fieldOn(state.config, "due") && dueHTML(t)) || '<span class="due">—</span>'}</button>`;
+  // With the due date off (T23) the button shows the start date and names only the dates that are on.
+  const dueOn = fieldOn(state.config, "due"), startOn = fieldOn(state.config, "start"), shownDate = dueOn ? t.due : t.start;
+  const day = (value) => new Date(`${value}T12:00:00`).toLocaleDateString(undefined, { day: "numeric", month: "short" });
+  const dates = className => `<button type="button" class="${className}" data-row-dates="${esc(t.id)}" aria-label="${esc(shownDate ? day(shownDate) : "Set dates")} — edit dates for ${esc(t.title)}" aria-haspopup="dialog" aria-expanded="false" title="${esc([startOn && `Start: ${t.start || "Not set"}`, dueOn && `Due: ${t.due || "Not set"}`].filter(Boolean).join(" · "))}">${(dueOn ? dueHTML(t) : t.start && `<span class="due">${esc(day(t.start))}</span>`) || '<span class="due">—</span>'}</button>`;
   const phoneField = (field, name, value, chip) => `<button type="button" class="phone-field" data-action="phone-field" data-field="${field}" data-id="${esc(t.id)}" aria-haspopup="listbox" aria-label="${name} for ${esc(t.title)}: ${esc(value)}" ${t.source ? "disabled" : ""}>${chip}</button>`;
   return `<div data-task-order-row="${esc(t.id)}" data-task-order-group="${esc(depth !== null || state.groupBy === "none" ? "" : t[state.groupBy || "status"] || "")}" class="task-row ${depth !== null ? "tree-row" : ""}${flat ? " tree-flat" : ""} ${t.contextOnly ? "tree-context" : ""}" ${depth !== null ? `style="--depth:${Math.min(depth, 12)}"` : ""}>
     ${depth !== null ? `<button class="tree-toggle ${state.collapsed.has(t.id) ? "collapsed" : ""}" data-action="collapse" data-id="${esc(t.id)}" aria-label="${state.collapsed.has(t.id) ? "Expand" : "Collapse"} subtasks" ${hasChildren ? `aria-expanded="${!state.collapsed.has(t.id)}" title="${state.tasks.filter(c => c.parent === t.id).length} subtasks"` : "disabled"}>${hasChildren ? icon("chevron") : ""}</button>` : ""}

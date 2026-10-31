@@ -15,7 +15,9 @@
 .mobile-view-options:not([open]) > .mobile-view-options-panel { display: none; }
 .mobile-view-options > summary { list-style: none; }
 .mobile-view-options > summary::-webkit-details-marker { display: none; }
-.mobile-view-options-panel > header { display: flex; align-items: center; justify-content: space-between; }
+.mobile-view-options-panel > header { display: flex; align-items: center; gap: 4px; }
+.mobile-view-options-panel > header > strong { margin-inline-end: auto; }
+.mobile-view-options-panel .menu-footer:has(> [data-action="filters-reset"]) { display: none; }
 .mobile-view-options-panel :is(.table-view-tools, .grid-tools, .toolbar-right) {
   display: flex; flex-wrap: wrap; gap: 8px; padding: 0; margin: 0; width: 100%;
 }
@@ -1076,8 +1078,11 @@ html.table-viewport-view body {
   /* One row per field, its name before its control, so the panel stays compact (T5). Over the
      menu rows in controls.css, which loads later. */
   .mobile-view-options-panel { gap: 4px; }
-  .mobile-view-options .mobile-view-options-panel .field { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 64%); align-items: center; gap: 8px; margin: 0 0 4px; padding-block: 0; }
+  .mobile-view-options .mobile-view-options-panel .field { display: grid; grid-template-columns: minmax(max-content, 1fr) minmax(0, 60%); align-items: center; gap: 8px; margin: 0 0 4px; padding-block: 0; }
   .mobile-view-options-panel .field > :is(select, input) { width: 100%; }
+  /* One size for names, values, checkboxes and the bookmark (T34); a name keeps one line and the
+     control gives way (Table's "Add column filter"). */
+  .mobile-view-options-panel :is(.field, .field > select, .field > input, .filter-checks > label, .bookmark-button) { font-size: var(--type-body); }
 }
 .dialog.compact-dialog { width: min(420px, calc(100vw - 32px)); }
 
