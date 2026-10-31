@@ -101,7 +101,12 @@ export function grid(ctx) {
     if (event.target.matches(".table-cell-select > select")) refreshSelect(event.target);
   });
   tableColumnDrag(ctx, fieldName);
-  const columnWidth = key => ["title", "body"].includes(key) ? 300 : 160;
+  // ID, Type and Assignee start just wide enough for their heading and values; ID grows for long
+  // project keys, about 9px a character in its monospace font.
+  const narrow = { type: 100, assignee: 128 };
+  const columnWidth = key => key === "key"
+    ? Math.min(160, Math.max(90, 26 + 9 * state.tasks.reduce((n, t) => Math.max(n, (t.key || "").length), 0)))
+    : narrow[key] || (["title", "body"].includes(key) ? 300 : 160);
   function config() {
     const saved =
       state.tableColumns ||

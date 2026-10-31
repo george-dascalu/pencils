@@ -73,19 +73,18 @@ test.describe("desktop", () => {
     await dragBefore(page, "type", "key");
     const typeColumn = page.locator('.spreadsheet th[data-column-key="type"]');
     const typeWidth = () => typeColumn.evaluate((el) => el.getBoundingClientRect().width);
-    await expect.poll(async () => near(await typeWidth(), 160)).toBe(true);
+    await expect.poll(async () => near(await typeWidth(), 100), "Type starts narrow").toBe(true);
     const typeEdge = page.locator('[data-resize-column="type"]');
     const edge = await point(typeEdge);
     await page.mouse.move(edge.x, edge.y);
     await page.mouse.down();
-    await page.mouse.move(edge.x - 40, edge.y, { steps: 5 });
-    expect(near(await typeWidth(), 120), "Type shrinks during the drag").toBe(true);
+    await page.mouse.move(edge.x + 40, edge.y, { steps: 5 });
+    expect(near(await typeWidth(), 140), "Type resizes during the drag").toBe(true);
     await page.mouse.up();
-    await expect.poll(async () => near(await typeWidth(), 120), "The narrower width survives rendering").toBe(true);
+    await expect.poll(async () => near(await typeWidth(), 140), "The new width survives rendering").toBe(true);
     await typeEdge.focus();
-    await page.keyboard.press("ArrowLeft");
-    await page.keyboard.press("ArrowLeft");
-    await expect.poll(async () => near(await typeWidth(), 90)).toBe(true);
+    for (let i = 0; i < 3; i++) await page.keyboard.press("ArrowLeft");
+    await expect.poll(async () => near(await typeWidth(), 90), "down to the narrow minimum").toBe(true);
     await expect(typeEdge, "Keyboard resizing retains focus").toBeFocused();
 
     // Header actions reveal together on hover or keyboard focus, without shifting columns.

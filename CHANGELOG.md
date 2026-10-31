@@ -2,6 +2,12 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.20.60 — 2026-10-31
+
+### Changed
+
+- Table's ID, Type and Assignee columns start narrow, just wide enough for their heading and values (ID widens for long project keys), leaving more room for the rest. Saved views keep their own widths.
+
 ## 0.20.59 — 2026-10-31
 
 ### Changed

@@ -422,7 +422,6 @@
   left: var(--pin-offset, 0px);
   z-index: 1;
   background: var(--surface);
-  min-width: 100px;
 }
 .spreadsheet [data-column-key="title"] {
   position: sticky;
@@ -542,6 +541,7 @@
 .spreadsheet .table-column-compact .table-header-menu > summary {
   width: 24px;
 }
+.spreadsheet .table-column-compact > [data-table-sort-column] { padding-inline: 2px; }
 .spreadsheet .table-header-menu.has-active-filter > summary {
   color: var(--green);
   background: var(--surface-soft);
