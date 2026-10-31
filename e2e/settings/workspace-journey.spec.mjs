@@ -229,7 +229,7 @@ test("organisations are created and renamed, scope their projects, and are remem
   }
   await expect(page.locator(".project-link")).toHaveCount(2);
   expect((await app.store.list(studio.id)).projects).toHaveLength(2);
-  await click(page, "organisation-edit");
+  await openSettingsPage(page, "organisation");
   await page.locator('#organisation-form [name="title"]').fill("Acme Collective");
   await page.locator('#organisation-form [type="submit"]').click();
   await expect(selected).toHaveText("Acme Collective");

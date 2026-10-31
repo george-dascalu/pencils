@@ -2,7 +2,7 @@
 // full page, opened from a single Settings button in the top bar (and the phone drawer).
 // Without an open project the page shows your own and the organisation's sections.
 import { test, expect, onDevices, useApp } from "../fixtures.mjs";
-import { openSettingsPage, clickControl, openSidebar } from "../helpers/menu-controls.mjs";
+import { openSettingsPage, openSidebar } from "../helpers/menu-controls.mjs";
 
 const app = useApp(async (store) => ({
   project: await store.createProject({ title: "Settings lab", key: "SL" }),
@@ -37,12 +37,6 @@ test("the organisation is edited on the Settings page", async ({ page }) => {
   await expect.poll(async () => (await (await fetch(`${app.base}/api/organisations`)).json()).organisations.map((o) => o.title)).toContain("Renamed organisation");
   await name.fill(original);
   await page.locator("#organisation-form [type=submit]").click();
-});
-
-test("the sidebar's organisation button opens the Organisation section", async ({ page }) => {
-  await page.goto(`${app.base}/#project/${app.project.id}/list`);
-  await clickControl(page.locator('.sidebar [data-action="organisation-edit"]'));
-  await expect(page.locator("#settings-page-title")).toHaveText("Organisation");
 });
 
 test("without a project open, Settings shows You and Organisation", async ({ page }) => {

@@ -42,10 +42,8 @@ const snapshotTask = async (project, id) => (await app.store.snapshot(project.id
 test("people and teams are created in the organisation editor, and a team without members offers no assignees", { tag: "@gate" }, async ({ page }) => {
   const project = app.fresh;
   await page.goto(`${app.base}/#project/${project.id}/list`);
-  // Since 0.19.31 the sidebar's organisation button opens the Organisation section of the
-  // Settings page (no dialog), which also edits people and teams.
-  await clickControl(page.locator("[data-action=organisation-edit]"));
-  await page.locator(".settings-loading").waitFor({ state: "detached" });
+  // Settings → Organisation also edits people and teams.
+  await openSettingsPage(page, "organisation");
   await page.getByRole("button", { name: "Add person", exact: true }).click();
   await page.getByLabel("Person name", { exact: true }).fill("Alice");
   await page.locator("[data-person-field=task_capacity]").fill("0");

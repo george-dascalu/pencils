@@ -2,6 +2,17 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.20.65 — 2026-10-31
+
+### Changed
+
+- One action, one home:
+  - The board's More menu no longer repeats Grid, Frame, Project frame, Pen and Images, which stay in the tool bar.
+  - The sidebar keeps one New project button, the + beside Projects, now on phones too.
+  - The sidebar's organisation settings button is gone; Settings → Organisation is opened from the Settings button.
+  - Settings → You no longer repeats Search, which stays in the top bar (the bottom bar on phones and iPad) and on Ctrl/⌘ K.
+- Timeline's Range button has its own icon instead of the Weekends calendar.
+
 ## 0.20.64 — 2026-10-31
 
 ### Changed

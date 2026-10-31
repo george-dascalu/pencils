@@ -4,7 +4,7 @@
 // invalid hex is rejected, visual picking previews locally until applied, recent colours are
 // shared and persist, and the panel stays on screen with keyboard access on desktop and phone.
 import { test, expect, useApp } from "../fixtures.mjs";
-import { clickControl, openSettingsPage } from "../helpers/menu-controls.mjs";
+import { openSettingsPage } from "../helpers/menu-controls.mjs";
 
 const app = useApp(async (store) => {
   const project = await store.createProject({ title: "Colours" });
@@ -53,10 +53,8 @@ test("projects and organisations take palette and validated custom colours", asy
   await page.getByText("Changes saved", { exact: true }).waitFor();
   await page.getByRole("button", { name: "Back to project", exact: true }).click();
   expect((await app.store.snapshot(app.project.id)).project.color).toBe("#edc48b");
-  // Since 0.19.31 the sidebar's organisation button opens the Organisation section of the
-  // Settings page instead of a dialog.
   const organisation = page.locator("#organisation-form");
-  await clickControl(page.locator("[data-action=organisation-edit]"));
+  await openSettingsPage(page, "organisation");
   await custom(page, "oops", organisation);
   await expect(page.locator(".color-error")).toBeVisible();
   await page.locator("[data-color-hex]").fill("#123abc");
@@ -66,7 +64,7 @@ test("projects and organisations take palette and validated custom colours", asy
   await expect(page.locator("#toasts")).toContainText("Organisation saved.");
   expect(await recents(page), "invalid hex never becomes a recent colour").not.toContain("oops");
   await page.locator("[data-action=settings-close]").click();
-  await clickControl(page.locator("[data-action=organisation-edit]"));
+  await openSettingsPage(page, "organisation");
   await expect(organisation.locator("[name=color]")).toHaveValue("#123abc");
   await page.locator("[data-action=settings-close]").click();
 });

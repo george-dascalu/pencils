@@ -106,7 +106,7 @@ textarea,
 
 :is(
   .button, .icon-button, .tab, .task-picker-trigger,
-  .project-link, .directory-link, .side-new,
+  .project-link, .directory-link,
   .organisation-actions button, .side-label button, .settings-navigation nav a,
   .board-menu > summary, .selection-menu > summary, .color-picker > summary,
   .view-layout-switcher button, .selection-action, .symbol-select,
@@ -155,7 +155,7 @@ textarea,
 }
 .task-table td :is(input, select):not([type="checkbox"], [type="radio"]) { font-size: var(--type-table) !important; }
 .task-table td input[data-task-field="title"] { font-size: var(--type-table-title) !important; }
-:is(.icon-button, .side-label button, .organisation-actions button[aria-label],
+:is(.icon-button, .side-label button,
     .board-tools button, .board-menu > summary.icon-summary,
     .task-reorder-handle, .tree-toggle, .tree-toggle-spacer) {
   width: var(--control-height) !important;

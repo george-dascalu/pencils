@@ -345,7 +345,7 @@ export function canvasFeatures(ctx) {
     $("#canvas-extras")?.remove();
     $(".board-toolbar")?.insertAdjacentHTML(
       "afterend",
-      `<div id="canvas-extras" class="canvas-extra-tools"><button class="button small" data-layout-tool="layers">Layers</button><button class="button small" data-layout-tool="bulk-notes">Bulk notes</button><button class="button small" data-feature="grid-add">Grid</button><button class="button small" data-feature="frame-add">Frame</button><button class="button small" data-feature="project-frame-add">Project frame</button><button class="button small ${state.tool === "draw" ? "primary" : ""}" data-feature="draw-tool">Pen</button><button class="button small" data-feature="image-add" title="PNG, JPG, WebP or GIF · Up to 10 MB each">Images / GIFs</button><select id="frame-nav" aria-label="Jump to frame"><option value="">Jump to frame…</option>${board()
+      `<div id="canvas-extras" class="canvas-extra-tools"><button class="button small" data-layout-tool="layers">Layers</button><button class="button small" data-layout-tool="bulk-notes">Bulk notes</button><select id="frame-nav" aria-label="Jump to frame"><option value="">Jump to frame…</option>${board()
         .nodes.filter((n) => n.type === "frame")
         .map(
           (n) =>
@@ -1356,12 +1356,6 @@ export function canvasFeatures(ctx) {
         }
       }, { adoptNewFrames: action !== "duplicate" });
       if (action === "duplicate") focusSelection();
-      return true;
-    }
-    if (action === "grid-add") {
-      state.tool = "grid";
-      state.headerMenu = null;
-      renderView();
       return true;
     }
     if (action === "project-frame-add") {

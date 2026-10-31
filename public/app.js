@@ -812,15 +812,14 @@ function renderAppNow() {
       <button class="brand" data-action="home" aria-label="Pencils home"><img src="/icon.svg" alt=""><span class="wordmark">pencils<span style="color:#b9d18c">.</span></span></button>
       <button class="icon-button phone-drawer-close" id="sidebar-close" data-action="menu" aria-label="Close navigation">${icon("close")}</button>
       <nav class="personal-links" aria-label="Personal"><button class="directory-link ${p?.personal ? "active" : ""}" data-action="personal-open" ${p?.personal ? 'aria-current="page"' : ""}>${icon("person")}<span>Personal</span></button><button class="directory-link" data-action="today">${icon("calendar")}<span>Today</span></button></nav>
-      <div class="organisation-switch"><div class="organisation-switch-row"><span class="workspace-icon" style="color:${safeColor(state.organisation?.color)}">${icon("folder")}</span><label class="organisation-choice"><span>ORGANISATION</span><select id="organisation-select" aria-label="Switch organisation">${state.organisations.map((o) => `<option value="${esc(o.id)}" ${o.id === state.organisation?.id ? "selected" : ""}>${esc(o.title)}</option>`).join("")}</select></label></div><div class="organisation-actions"><button data-action="organisation-new">${icon("plus")}New organisation</button><button data-action="organisation-edit" aria-label="Organisation settings" ${state.organisation ? "" : "disabled"}>${icon("settings")}</button></div></div>
-      <div class="side-label">PROJECTS<button data-action="project-new" aria-label="Create project">${icon("plus")}</button></div>
+      <div class="organisation-switch"><div class="organisation-switch-row"><span class="workspace-icon" style="color:${safeColor(state.organisation?.color)}">${icon("folder")}</span><label class="organisation-choice"><span>ORGANISATION</span><select id="organisation-select" aria-label="Switch organisation">${state.organisations.map((o) => `<option value="${esc(o.id)}" ${o.id === state.organisation?.id ? "selected" : ""}>${esc(o.title)}</option>`).join("")}</select></label></div><div class="organisation-actions"><button data-action="organisation-new">${icon("plus")}New organisation</button></div></div>
+      <div class="side-label">PROJECTS<button data-action="project-new" aria-label="New project" title="New project">${icon("plus")}</button></div>
       <nav class="project-links" aria-label="Projects">${organisationProjects()
         .map(
           (project) =>
             `<button class="project-link ${project.id === p?.id ? "active" : ""}" data-action="project-open" data-id="${esc(project.id)}"><span class="project-mark" style="background:${safeColor(project.color)}"></span><span>${esc(project.title)}</span></button>`,
         )
         .join("")}</nav>
-      <button class="side-new" data-action="project-new">${icon("plus")}New project</button>
       ${p ? '<section id="sidebar-documents" class="sidebar-documents" aria-label="Documents"></section>' : ""}
       ${state.organisation ? `<section class="sidebar-directory"><div class="side-label">TEAMS</div><nav class="directory-links" aria-label="Teams and people">${["teams", "people"].map((page) => `<button class="directory-link ${state.directoryPage === page ? "active" : ""}" data-action="directory-open" data-page="${page}" ${state.directoryPage === page ? 'aria-current="page"' : ""}>${icon(page === "teams" ? "group" : "people")}<span>${label(page)}</span><span class="directory-count">${state.organisation[page]?.length || 0}</span></button>`).join("")}</nav></section>` : ""}
       <div class="phone-drawer-utilities" role="group" aria-label="Settings and help" style="--tiles:2"><button class="button" data-action="settings" aria-label="Settings" ${(p ? state.view === "settings" : state.directoryPage === "settings") ? 'aria-current="page"' : ""}>${icon("settings")}<span>Settings</span></button><button class="button" data-action="help" aria-label="Help & guides" ${state.helpArticle ? 'aria-current="page"' : ""}>${icon("help")}<span>Help</span></button></div>
@@ -1093,7 +1092,7 @@ function renderViewNow(onlyContent) {
         ? boardToolbar()
         : state.view === "overview"
           ? ""
-          : `<div class="toolbar"><div class="toolbar-left"><label class="search">${icon("search")}<input id="search" type="search" aria-label="Search tasks" placeholder="Find a task…" value="${esc(state.search)}"></label><select id="filter-status" class="filter" aria-label="Filter by status"><option value="all">All statuses</option>${options(statuses, state.status, statusNames)}</select><select id="filter-type" class="filter" aria-label="Filter by task type"><option value="all">All types</option>${options(types, state.type)}</select>${bookmarks.button("view", state.project.id, state.view)}</div><div class="toolbar-right"><span class="caption">A place for every little detail</span><select id="sort" class="filter" aria-label="Sort tasks">${sortGroups.map(([group, values]) => (group ? `<optgroup label="${group}">${options(values, state.sort, sortNames)}</optgroup>` : options(values, state.sort, sortNames))).join("")}</select></div><div class="view-controls"></div></div>`;
+          : `<div class="toolbar"><div class="toolbar-left"><label class="search">${icon("search")}<input id="search" type="search" aria-label="Search tasks" placeholder="Find a task…" value="${esc(state.search)}"></label><select id="filter-status" class="filter" aria-label="Filter by status"><option value="all">All statuses</option>${options(statuses, state.status, statusNames)}</select><select id="filter-type" class="filter" aria-label="Filter by task type"><option value="all">All types</option>${options(types, state.type)}</select>${bookmarks.button("view", state.project.id, state.view)}</div><div class="toolbar-right"><select id="sort" class="filter" aria-label="Sort tasks">${sortGroups.map(([group, values]) => (group ? `<optgroup label="${group}">${options(values, state.sort, sortNames)}</optgroup>` : options(values, state.sort, sortNames))).join("")}</select></div><div class="view-controls"></div></div>`;
   }
   const content = $("#view-content");
   const previousKanban = onlyContent && state.view === "kanban" ? content.querySelector(".kanban") : null;
@@ -1667,8 +1666,7 @@ function organisationFormHTML(organisation = state.organisation) {
   const edit = !!organisation?.id;
   return `<form id="organisation-form" data-id="${esc(edit ? organisation.id : "")}" data-revision="${esc(organisation.revision || "")}">${edit ? "" : dialogHead("A home for your projects")}<div class="dialog-body"><div class="form-error hidden" role="alert"></div><label class="field">Organisation name<input name="title" value="${esc(organisation.title)}" placeholder="A company, a team, or your own space" maxlength="300" required ${edit ? "" : "autofocus"}></label><label class="field">Description<textarea name="body" rows="3" placeholder="What brings these projects together?">${esc(organisation.body)}</textarea></label><div class="field">Organisation colour${colorPicker({ label: "Organisation colour", value: organisation.color })}</div><p>Each organisation has its own project list. You can switch organisations at any time.</p></div><div class="dialog-foot">${edit ? "" : '<button type="button" class="button" data-action="dialog-close">Cancel</button>'}<button type="submit" class="button primary">${edit ? "Save organisation" : "Create organisation"}</button></div></form>`;
 }
-function organisationDialog(edit = false) {
-  if (edit) return state.organisation && features.settingsOpen("organisation");
+function organisationDialog() {
   showDialog(`<dialog class="dialog">${organisationFormHTML({ title: "", body: "", color: "#66856f" })}</dialog>`, "organisation");
 }
 function projectFormHTML(edit = false) {
@@ -2150,9 +2148,6 @@ document.addEventListener("click", async (event) => {
         break;
       case "organisation-new":
         organisationDialog();
-        break;
-      case "organisation-edit":
-        organisationDialog(true);
         break;
       case "project-new":
         projectDialog();

@@ -252,7 +252,8 @@ button svg {
   color: #a1b1a4;
 }
 .side-label button {
-  display: flex;
+  display: grid;
+  place-items: center;
   padding: 2px;
 }
 .project-links {
@@ -289,15 +290,6 @@ button svg {
   height: 9px;
   border-radius: 3px;
   flex-shrink: 0;
-}
-.side-new {
-  display: flex;
-  gap: 10px;
-  align-items: center;
-  color: #9cad9f;
-  font-size: 12px;
-  margin-top: 12px;
-  padding: 11px 13px;
 }
 .side-bottom {
   margin-top: auto;
@@ -593,10 +585,6 @@ button svg {
   background: transparent;
   border-color: #e3e6dc;
   max-width: 150px;
-}
-.toolbar-right .caption {
-  font-size: 10px;
-  color: #a1a697;
 }
 .content {
   padding: 0 38px 40px;
@@ -1799,9 +1787,6 @@ input[type="search"]:not(.search input) {
   }
   .hero-right {
     gap: 8px;
-  }
-  .toolbar .caption {
-    display: none;
   }
   .search input {
     width: 170px;

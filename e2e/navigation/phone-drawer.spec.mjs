@@ -48,11 +48,11 @@ onDevices(["phone"], () => test("drawer text uses the shared touch sizes and one
   const text = await page.evaluate(() => {
     const side = document.querySelector(".sidebar");
     const left = side.getBoundingClientRect().left;
-    const items = [...side.querySelectorAll(".project-link, .side-new, .directory-link, .organisation-choice select, .phone-drawer-utilities [aria-label]")].filter((el) => el.getClientRects().length);
+    const items = [...side.querySelectorAll(".project-link, .directory-link, .organisation-choice select, .phone-drawer-utilities [aria-label]")].filter((el) => el.getClientRects().length);
     const labels = [...side.querySelectorAll(".side-label, .organisation-choice > span")].filter((el) => el.getClientRects().length);
     const size = (el) => parseFloat(getComputedStyle(el).fontSize);
     const edge = (el) => Math.round(el.getBoundingClientRect().left - left);
-    return { itemSizes: items.map((el) => [el.textContent.trim().slice(0, 18), size(el)]), labelSizes: labels.map((el) => [el.textContent.trim(), size(el)]), labelEdges: labels.map(edge), rowEdges: [...side.querySelectorAll(".project-link, .side-new, .directory-links .directory-link, .personal-links > :first-child")].filter((el) => el.getClientRects().length).map(edge) };
+    return { itemSizes: items.map((el) => [el.textContent.trim().slice(0, 18), size(el)]), labelSizes: labels.map((el) => [el.textContent.trim(), size(el)]), labelEdges: labels.map(edge), rowEdges: [...side.querySelectorAll(".project-link, .directory-links .directory-link, .personal-links > :first-child")].filter((el) => el.getClientRects().length).map(edge) };
   });
   assert.ok(text.itemSizes.every(([, s]) => s >= 14), `items at least 14px ${JSON.stringify(text.itemSizes)}`);
   assert.ok(text.labelSizes.every(([, s]) => s >= 12), `labels at least 12px ${JSON.stringify(text.labelSizes)}`);

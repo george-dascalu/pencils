@@ -137,7 +137,7 @@ test("a project's workflow is its own: new cards and Kanban use it, and a status
 
 test("a new project can start with its own workflow", async ({ page }) => {
   await openProject(page);
-  await clickControl(page.locator('.side-new[data-action="project-new"]'));
+  await clickControl(page.locator('.sidebar .side-label [data-action="project-new"]'));
   await page.locator("#project-form [name=title]").fill("Independent workflow");
   await setStatuses(page, ["queued", "complete"], "complete");
   await page.locator("#project-form [type=submit]").click();

@@ -13,7 +13,7 @@ const app = useApp(async (store) => {
   return { project };
 });
 
-const controls = ".button,.icon-button,.tab,.avatar,.project-link,.directory-link,.side-new,.organisation-actions button,.side-label button,.settings-navigation nav a,.task-picker-trigger,.board-menu>summary,.view-layout-switcher,.view-layout-switcher button,.search:has(> input),.selection-action,.board-tools button,.select-menu [role=option],.task-picker-popover [role=option],input:not([type=checkbox],[type=radio],[type=range],[type=color],[type=file],[type=hidden]),select:not([multiple])";
+const controls = ".button,.icon-button,.tab,.avatar,.project-link,.directory-link,.organisation-actions button,.side-label button,.settings-navigation nav a,.task-picker-trigger,.board-menu>summary,.view-layout-switcher,.view-layout-switcher button,.search:has(> input),.selection-action,.board-tools button,.select-menu [role=option],.task-picker-popover [role=option],input:not([type=checkbox],[type=radio],[type=range],[type=color],[type=file],[type=hidden]),select:not([multiple])";
 async function check(page, scope, name, height) {
   const result = await page.locator(scope).locator(controls).evaluateAll((els, expected) =>
     els.filter((el) => el.getClientRects().length && getComputedStyle(el).visibility !== "hidden")

@@ -313,20 +313,10 @@ export function projectLayout(ctx) {
     for (const panel of [boards, more])
       for (const el of [...panel.children]) if (!el.dataset.action && !el.dataset.boardPersistent) el.remove();
     const extras = $("#canvas-extras");
-    const addFeatures = ["grid-add", "frame-add", "draw-tool", "image-add"];
-    const addPro = ["note-add", "query-add"];
     if (extras)
       for (const el of [...extras.children]) {
-        const feature = el.dataset.feature,
-          pro = el.dataset.pro;
-        const panel =
-          addFeatures.includes(feature) || addPro.includes(pro)
-            ? more
-            : feature === "canvas-delete"
-              ? boards
-              : more;
-        if (pro === "shortcuts") el.textContent = "Keyboard shortcuts";
-        panel.append(el);
+        if (el.dataset.pro === "shortcuts") el.textContent = "Keyboard shortcuts";
+        (el.dataset.feature === "canvas-delete" ? boards : more).append(el);
       }
     extras?.remove();
     toolbar.querySelector(".spacer")?.remove();
