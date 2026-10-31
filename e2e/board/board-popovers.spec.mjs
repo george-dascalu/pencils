@@ -27,12 +27,12 @@ async function openBoard(page) {
   await page.locator("[data-node=note]").waitFor();
 }
 async function openSettings(page) {
-  await page.getByRole("button", { name: "Board settings", exact: true }).click();
+  await page.getByRole("button", { name: "Board appearance", exact: true }).click();
   return page.locator("#board-settings-form");
 }
 const saved = (page) => expect(page.locator("#board-save")).toHaveText("Saved automatically");
 
-test("board settings apply automatically, with undo and redo of the snap and the title", async ({ page }) => {
+test("board appearance applies automatically, with undo and redo of the snap", async ({ page }) => {
   await openBoard(page);
   const form = await openSettings(page);
   const snap = form.locator("[name=snap]");
@@ -50,15 +50,8 @@ test("board settings apply automatically, with undo and redo of the snap and the
   await expect(snap).not.toBeChecked();
   await page.keyboard.press("Control+z");
   await expect(snap).toBeChecked();
-  const title = form.locator("[name=title]");
-  await title.fill("Auto renamed");
-  await expect(page.locator("#board-select option:checked")).toHaveText("Auto renamed");
-  await saved(page);
-  await page.keyboard.press("Control+z");
-  await expect(title).toHaveValue(app.board.title);
-  await page.keyboard.press("Control+Shift+z");
-  await expect(title).toHaveValue("Auto renamed");
-  await expect.poll(async () => (await current()).title, { message: "the redone title is saved" }).toBe("Auto renamed");
+  // The name is Board tools → Rename's since 0.20.73.
+  await expect(form.locator("[name=title]")).toHaveCount(0);
 });
 
 test("a continuous slider gesture paints the canvas immediately and saves as one undoable edit", async ({ page }) => {
@@ -77,39 +70,24 @@ test("a continuous slider gesture paints the canvas immediately and saves as one
   await expect(spacing, "one undo returns to before the gesture").toHaveValue("20");
 });
 
-test("hiding the minimap is a local preference that undo and redo follow", async ({ page }) => {
-  await openBoard(page);
-  const form = await openSettings(page);
-  const minimap = form.locator("[name=show-minimap]");
-  await minimap.uncheck();
-  await expect(page.locator("#canvas-minimap")).toBeHidden();
-  await page.keyboard.press("Control+z");
-  await expect(minimap).toBeChecked();
-  await expect(page.locator("#canvas-minimap")).toBeVisible();
-  await page.keyboard.press("Control+Shift+z");
-  await expect(minimap).not.toBeChecked();
-});
-
-test("Reset restores shared and local preferences together as one undoable step, without moving the camera", async ({ page }) => {
+// Minimap and Background pattern are view preferences in the zoom level's menu since 0.20.73,
+// like M and G (board-settings.spec.mjs); Reset restores the board's shared look.
+test("Reset restores the board's look as one undoable step, without moving the camera", async ({ page }) => {
   await openBoard(page);
   const camera = await page.locator("#canvas-world").getAttribute("style");
   const form = await openSettings(page);
-  const minimap = form.locator("[name=show-minimap]");
   const pattern = form.locator("[name=pattern]:checked");
-  await minimap.uncheck();
   await form.locator('[name=pattern][value="fine-grid"]').check();
   await saved(page);
   await form.locator("[data-board-settings-reset]").click();
   await saved(page);
-  await expect(minimap).toBeChecked();
+  await expect(pattern).toHaveValue("dots");
   await page.keyboard.press("Control+z");
   await expect(pattern).toHaveValue("fine-grid");
-  await expect(minimap).not.toBeChecked();
   await page.keyboard.press("Control+Shift+z");
   await expect(pattern).toHaveValue("dots");
-  await expect(minimap).toBeChecked();
   await form.locator("[data-board-settings-close]").click();
-  await expect(page.locator("#canvas-world"), "settings never move the camera").toHaveAttribute("style", camera);
+  await expect(page.locator("#canvas-world"), "board appearance never moves the camera").toHaveAttribute("style", camera);
 });
 
 async function openComments(page) {

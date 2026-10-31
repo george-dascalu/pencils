@@ -59,9 +59,9 @@ async function resize(page, dx, dy, modifier, corner = "se") {
 }
 
 async function setAlignObjects(page, on) {
-  await page.getByRole("button", { name: "Board settings", exact: true }).click();
+  await page.getByRole("button", { name: "Board appearance", exact: true }).click();
   await page.locator("#canvas-align").setChecked(on);
-  await page.getByRole("button", { name: "Close board settings", exact: true }).click();
+  await page.getByRole("button", { name: "Close board appearance", exact: true }).click();
   await expect.poll(async () => (await current()).settings.alignObjects).toBe(on);
 }
 
@@ -104,7 +104,7 @@ test("turning off object alignment persists for the board across reloads and oth
   await savesSettled(page);
   await page.reload();
   await node(page, "moving").waitFor();
-  await page.getByRole("button", { name: "Board settings", exact: true }).click();
+  await page.getByRole("button", { name: "Board appearance", exact: true }).click();
   await expect(page.locator("#canvas-align")).not.toBeChecked();
   await page.keyboard.press("Escape");
   await drag(page, "moving", 346, 500);
@@ -117,7 +117,7 @@ test("turning off object alignment persists for the board across reloads and oth
   const fresh = await other.newPage();
   await fresh.goto(`${app.base}/#project/${app.project.id}/board`);
   await fresh.locator("#canvas").waitFor();
-  await fresh.getByRole("button", { name: "Board settings", exact: true }).click();
+  await fresh.getByRole("button", { name: "Board appearance", exact: true }).click();
   await expect(fresh.locator("#canvas-align")).not.toBeChecked();
   await fresh.keyboard.press("Escape");
   await other.close();

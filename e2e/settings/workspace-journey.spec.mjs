@@ -169,14 +169,13 @@ test("a project keeps several named canvases", async ({ page }) => {
   await page.locator('#board-form [type="submit"]').click();
   await page.locator("dialog").waitFor({ state: "detached" });
   expect((await snapshot()).boards).toHaveLength(2);
-  await page.getByRole("button", { name: "Board settings", exact: true }).click();
-  // Board settings is an anchored popover that applies changes as you edit; Apply was
-  // removed, and closing it flushes the pending rename.
+  // Board tools → Rename names the board since 0.20.73.
+  await clickControl(page.locator('.board-toolbar [data-action="board-rename"]'));
   await saved(page, async () => {
-    await page.locator('#board-settings-form [name="title"]').fill("Planning canvas");
-    await page.getByRole("button", { name: "Close board settings", exact: true }).click();
+    await page.locator('#board-form [name="title"]').fill("Planning canvas");
+    await page.locator('#board-form [type="submit"]').click();
   });
-  await page.locator("#board-settings-form").waitFor({ state: "detached" });
+  await page.locator("#board-form").waitFor({ state: "detached" });
   expect((await snapshot()).boards.map((b) => b.title)).toContain("Planning canvas");
 });
 

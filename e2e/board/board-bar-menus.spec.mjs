@@ -27,7 +27,7 @@ test("the board bar's right side holds Session, Version history, the star and Bo
   expect(await items(page, "history")).toEqual(["Activity", "History", "Local checkpoints"]);
   expect(await items(page, "tools")).toEqual(["Rename", "Copy board link", "Link tasks", "Export SVG", "Export PNG", "Obsidian .canvas", "Prepare offline drawing", "Open offline pad", "Delete board"]);
   // Import .canvas joins New board in Boards since the board bar lost More (0.20.72).
-  expect(await items(page, "board")).toEqual(["New board", "Import .canvas", "Boards"]);
+  expect(await items(page, "board")).toEqual(["New board", "Import .canvas", "Import from Miro", "Boards"]);
   await expect(page.locator("#frame-nav"), "Jump to frame is gone; Outline covers it").toHaveCount(0);
 });
 

@@ -78,7 +78,7 @@ test("the dependency arrow style is set in Board settings, undone with Ctrl+Z, k
   await expect(arrow(page)).toHaveAttribute("stroke", "#8863b2");
   await expect(arrow(page)).toHaveAttribute("style", /stroke-width:3;stroke-dasharray:8 5/);
   await clickArrow(page);
-  await page.getByRole("button", { name: "Dependency arrow style in Board settings", exact: true }).click();
+  await page.getByRole("button", { name: "Dependency arrow style in Board appearance", exact: true }).click();
   const settings = page.locator(".dependency-style-settings");
   await settings.locator('[name="dependency-width"]').click();
   await page.locator("#shared-select-menu").getByRole("option", { name: "5 px", exact: true }).click();
@@ -109,7 +109,7 @@ test("the dependency arrow style is set in Board settings, undone with Ctrl+Z, k
   await expect.poll(async () => (await style()).color).toBe("#f1a9a0");
   await expect(settings.locator('[name="dependency-width"]')).toHaveValue("5");
   await expect(settings.locator('[name="dependency-color"]')).toHaveValue("#f1a9a0");
-  await page.getByRole("button", { name: "Close board settings", exact: true }).click();
+  await page.getByRole("button", { name: "Close board appearance", exact: true }).click();
   await page.reload();
   await expect(arrow(page)).toHaveAttribute("stroke", "#f1a9a0");
   await expect(arrow(page)).toHaveAttribute("style", /stroke-width:5;stroke-dasharray:1 5/);

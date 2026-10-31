@@ -3,6 +3,7 @@
 // Since 30 October phones show no title at all; the heading stays for screen readers.
 import { test, expect, onDevices, useApp } from "../fixtures.mjs";
 import { renameDocument } from "../helpers/documents.mjs";
+import { clickControl } from "../helpers/menu-controls.mjs";
 
 const app = useApp(async (store) => {
   const project = await store.createProject({ title: "A little more possibility", key: "TB" });
@@ -48,13 +49,18 @@ onDevices(["phone", "desktop"], () => test("switching boards renames the header"
   await expect(heading(page)).toHaveText("Launch plan board");
 }));
 
-test("renaming a board in Board settings renames the header", async ({ page }) => {
+test("renaming a board in Board tools renames the header", async ({ page }) => {
   await openBoard(page, app.second);
-  await page.getByRole("button", { name: "Board settings", exact: true }).click();
-  const title = page.locator('#board-settings-form [name="title"]');
-  await title.fill("Renamed launch board");
+  // Board tools → Rename names the board since 0.20.73.
+  const rename = async (name) => {
+    await clickControl(page.locator('.board-toolbar [data-action="board-rename"]'));
+    await page.locator('#board-form [name="title"]').fill(name);
+    await page.locator('#board-form [type="submit"]').click();
+    await page.locator("#board-form").waitFor({ state: "detached" });
+  };
+  await rename("Renamed launch board");
   await expect(heading(page)).toHaveText("Renamed launch board");
-  await title.fill("Launch plan board");
+  await rename("Launch plan board");
   await expect(heading(page)).toHaveText("Launch plan board");
 });
 

@@ -3,7 +3,7 @@
 // background, saved in the board file and seen by fresh browsers; hiding the grid is a display
 // preference; the settings fit a phone; reset returns to the theme's background, light or dark.
 import { test, expect, onDevices, useApp } from "../fixtures.mjs";
-import { openSettingsPage, reveal } from "../helpers/menu-controls.mjs";
+import { clickControl, openSettingsPage } from "../helpers/menu-controls.mjs";
 
 const app = useApp(async (store) => {
   const project = await store.createProject({ title: "Settings" });
@@ -28,11 +28,11 @@ async function enter(page) {
   await page.locator("#board-select").selectOption(app.board.id);
 }
 async function open(page) {
-  // Since 0.18.26 phones keep Board settings in the View options panel; reveal opens it.
-  await (await reveal(page.locator(".board-toolbar .board-settings-button"))).click();
+  // Board appearance sits at the foot of the tool bar since 0.20.73; phones keep it in Canvas tools.
+  await clickControl(page.locator('[data-feature="board-settings"]'));
   await page.locator("#board-settings-form").waitFor();
 }
-const close = (page) => page.getByRole("button", { name: "Close board settings", exact: true }).click();
+const close = (page) => page.getByRole("button", { name: "Close board appearance", exact: true }).click();
 const saved = (page) => expect(page.locator("#board-save")).toHaveText("Saved automatically");
 const appearance = (page) => page.locator("#canvas").evaluate((el) => ({ color: getComputedStyle(el).backgroundColor, image: getComputedStyle(el).backgroundImage, size: getComputedStyle(el).backgroundSize }));
 const previewStyle = (page, property) => page.locator(".background-preview").evaluate((el, property) => getComputedStyle(el)[property], property);
@@ -114,7 +114,6 @@ onDevices(["phone"], () => {
   test("background settings fit a phone screen", async ({ page }) => {
     await seed({ ...peach, pattern: "plain" });
     await enter(page);
-    await page.locator(".board-toolbar .mobile-view-options").waitFor();
     await open(page);
     const box = await page.locator("#board-settings-form").boundingBox();
     expect(box.x >= 0 && box.x + box.width <= 390, JSON.stringify(box)).toBe(true);

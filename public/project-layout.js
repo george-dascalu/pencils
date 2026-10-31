@@ -107,7 +107,7 @@ export function projectLayout(ctx) {
     compact.innerHTML = `<summary class="button" aria-label="View options" title="View options">${icon("filter")}</summary><div class="mobile-view-options-panel" aria-label="View options"><header><strong>View options</strong><button type="button" class="icon-button" aria-label="Close view options">${icon("close")}</button></header></div>`;
     const panel = compact.lastElementChild;
     const selectors = toolbar.classList.contains("board-toolbar")
-      ? ".board-toolbar > .board-menu, .board-toolbar > .bookmark-button, .board-toolbar > .board-settings-button, .board-toolbar > .board-save, .board-toolbar > [data-feature=recovery]"
+      ? ".board-toolbar > .board-menu, .board-toolbar > .bookmark-button, .board-toolbar > .board-save, .board-toolbar > [data-feature=recovery]"
       : ".toolbar-left > .filter:not(#sort), .toolbar-left > .board-menu, .toolbar-left > .bookmark-button, .toolbar-right, .table-view-tools, .grid-tools, #view-toolbar [data-phone-options], #view-content [data-phone-options]";
     for (const element of document.querySelectorAll(selectors)) {
       const slot = document.createComment("view control position");
@@ -229,7 +229,7 @@ export function projectLayout(ctx) {
     if (!el) {
       host.insertAdjacentHTML(
         "beforeend",
-        `<details class="board-menu" data-board-menu="${key}"><summary>${title}<svg class="icon menu-caret" viewBox="0 0 24 24" aria-hidden="true"><path d="m8 10 4 4 4-4"/></svg></summary><div class="board-menu-panel"></div></details>`,
+        `<details class="board-menu" data-board-menu="${key}"><summary id="board-menu-${key}">${title}<svg class="icon menu-caret" viewBox="0 0 24 24" aria-hidden="true"><path d="m8 10 4 4 4-4"/></svg></summary><div class="board-menu-panel"></div></details>`,
       );
       el = host.lastElementChild;
     }
@@ -302,8 +302,6 @@ export function projectLayout(ctx) {
     if (!$("#canvas") || !toolbar) return;
     const boards = menu(toolbar, "board", viewLabel("board"));
     move(boards, '[data-action="board-new"]');
-    const settings = toolbar.querySelector(".board-settings-button");
-    if (settings) toolbar.append(settings);
     if ($("#board-save")) toolbar.append($("#board-save"));
     // The right side matches the document bar: Session, Version history, the star and Board tools (⋯).
     const session = iconMenu(toolbar, "session", "Session", "person");

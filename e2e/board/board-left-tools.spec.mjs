@@ -45,7 +45,7 @@ test("the tool bar holds Frames, Live task view and Insert, and the board bar ha
   await page.keyboard.press("Escape");
   await expect(page.locator("[data-board-menu=more]")).toHaveCount(0);
   await page.locator('.board-toolbar [data-board-menu="board"] > summary').click();
-  expect(await texts(page.locator('.board-toolbar [data-board-menu="board"] .board-menu-panel > :is(button, a)'))).toEqual(["New board", "Import .canvas", "Boards"]);
+  expect(await texts(page.locator('.board-toolbar [data-board-menu="board"] .board-menu-panel > :is(button, a)'))).toEqual(["New board", "Import .canvas", "Import from Miro", "Boards"]);
 });
 
 test("Frames opens the outline, whose Layers tab makes layers", async ({ page }) => {

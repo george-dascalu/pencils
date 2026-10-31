@@ -142,13 +142,13 @@ test("visual picking previews locally; applying saves one colour that recent lis
   await expect(objectPicker.locator("[data-color-hex]")).toHaveValue(picked);
   await page.keyboard.press("Escape");
 
-  await page.getByRole("button", { name: "Board settings", exact: true }).click();
+  await page.getByRole("button", { name: "Board appearance", exact: true }).click();
   const backgroundPicker = page.locator("#board-settings-form .color-picker").first();
   await backgroundPicker.locator("summary").click();
   await expect(backgroundPicker.locator("[data-color-plane]")).toBeHidden();
   await backgroundPicker.locator(`[data-color-recent="${picked}"]`).click();
   await expect(page.locator('#board-settings-form [name="background-color"]')).toHaveValue(picked);
-  await page.getByRole("button", { name: "Close board settings", exact: true }).click();
+  await page.getByRole("button", { name: "Close board appearance", exact: true }).click();
   await expect.poll(async () => (await current()).settings.background.color).toBe(picked);
   await page.reload();
   await openSettingsPage(page);

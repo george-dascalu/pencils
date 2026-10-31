@@ -88,7 +88,7 @@ test("Escape returns focus to the frame's update button, and an outside tap clos
   await panel(page).waitFor({ state: "detached" });
   await expect(page.locator('[data-node="n-plan"] .project-frame-update')).toBeFocused();
   await openPreview(page);
-  await page.getByRole("button", { name: "Board settings", exact: true }).tap();
+  await page.getByRole("button", { name: "Board appearance", exact: true }).tap();
   await page.locator("#board-settings-form").waitFor();
   await expect(panel(page), "An outside tap dismisses the panel and activates the target").toHaveCount(0);
   await page.locator("[data-board-settings-close]").tap();

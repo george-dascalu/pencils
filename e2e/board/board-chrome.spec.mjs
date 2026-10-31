@@ -45,7 +45,8 @@ onDevices(["desktop", "ipad"], () => test("undo, redo and the view controls stay
   expect(await box(page, ".board-controls"), `${device}: the controls do not scroll`).toEqual(before);
   const items = await controls.locator(":scope > *").evaluateAll((els) => els.map((el) => el.getBoundingClientRect().toJSON()).filter((r) => r.width));
   for (let i = 1; i < items.length; i++) expect(items[i].top, `${device}: stacked ${JSON.stringify(items)}`).toBeGreaterThanOrEqual(items[i - 1].bottom - 0.5);
-  await expect(page.locator('[data-action="zoom-in"], [data-action="zoom-out"], [data-action="board-fit"], [data-board-display="fullscreen"]')).toHaveCount(0);
+  // Fit board lives in the zoom level's menu (0.20.73), not beside it.
+  await expect(page.locator('[data-action="zoom-in"], [data-action="zoom-out"], [data-action="board-fit"]:not([data-board-menu="zoom"] *), [data-board-display="fullscreen"]')).toHaveCount(0);
   const [canvas, presence] = [await box(page, "#canvas"), await box(page, "#canvas-presence")];
   expect(canvas.right - presence.right, `${device}: presence moves to the free right edge`).toBeLessThanOrEqual(bar.left - canvas.left);
 }));
@@ -54,7 +55,7 @@ onDevices(["desktop", "ipad"], () => test("undo, redo and the view controls stay
 onDevices(["phone"], () => test("phones keep undo and redo under the dock's +", async ({ page }) => {
   await openBoard(page);
   for (const action of ["board-undo", "board-redo"]) await expect(page.locator(`#phone-board-palette [data-action="${action}"]`), action).toHaveCount(1);
-  expect(await page.locator(".phone-board-dock button:visible").evaluateAll((els) => els.map((el) => el.dataset.tool || el.id || el.className)))
+  expect(await page.locator(".phone-board-dock :is(button, summary):visible").evaluateAll((els) => els.map((el) => el.dataset.tool || el.id || el.className)))
     .toEqual(["cursor", "hand", "phone-board-more icon-button", "board-capacity-toggle", "zoom-label"]);
 }));
 

@@ -1,4 +1,4 @@
-// One-time Miro import from Board settings: connect with an access token (never
+// One-time Miro import from Boards (Board settings until 0.20.73): connect with an access token (never
 // kept in the browser), browse and preview a board without writing anything,
 // refresh the preview when options change, then import the canvas with its tasks
 // and media and open it, returning focus to Board settings. The panel fits and
@@ -6,6 +6,7 @@
 // import only ever reads from Miro.
 import { test, expect } from "../fixtures.mjs";
 import { useCustomApp } from "../helpers/custom-server.mjs";
+import { clickControl } from "../helpers/menu-controls.mjs";
 import { miroFetch, miroFixture, miroBoard } from "../helpers/miro-fixture.js";
 import { Auth } from "../../server/auth.js";
 import { axeViolations } from "../helpers/documents.mjs";
@@ -22,8 +23,8 @@ test.afterEach(() => {
 
 const panel = (page) => page.locator("#miro-import-panel");
 async function openImport(page) {
-  await page.getByRole("button", { name: "Board settings", exact: true }).first().click();
-  await page.getByRole("button", { name: "Import from Miro", exact: true }).click();
+  // Boards → Import from Miro since 0.20.73.
+  await clickControl(page.locator('.board-toolbar [data-board-menu="board"] [data-feature="miro-import"]'));
   await panel(page).getByText("Use an access token", { exact: true }).waitFor();
 }
 // A project per test (the Miro connection belongs to the project), opened on its board
@@ -93,7 +94,7 @@ test("importing creates the canvas with its tasks and media, opens it and return
   await expect(panel(page)).toHaveCount(0);
   await reloaded;
   await page.evaluate(() => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve))));
-  await expect(page.locator('[data-feature="board-settings"]:visible')).toBeFocused();
+  await expect(page.locator('.board-toolbar [data-board-menu="board"] > summary')).toBeFocused();
   const textNode = board.nodes.find((n) => n.miro?.item === "text");
   await page.evaluate(() => (document.documentElement.dataset.theme = "dark"));
   expect(await page.locator(`[data-node="${textNode.id}"]`).evaluate((el) => getComputedStyle(el).color), "text stays readable on a pale imported frame in dark mode").toBe("rgb(0, 0, 0)");

@@ -159,7 +159,7 @@ test("textareas and inputs share one text size and border token", async ({ page 
 
 test("sliders use the shared range styling with a live value", async ({ page }) => {
   await openBoard(page);
-  await page.getByRole("button", { name: /board settings/i }).first().click();
+  await page.getByRole("button", { name: /board appearance/i }).first().click();
   const range = page.locator("#board-settings-form #board-pattern-spacing");
   await range.waitFor();
   const [accent, border, valuetext] = await range.evaluate((el) => [getComputedStyle(el).accentColor, getComputedStyle(el).borderTopWidth, el.getAttribute("aria-valuetext")]);

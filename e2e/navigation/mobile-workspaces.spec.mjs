@@ -117,8 +117,10 @@ onDevices(["phone"], () => {
     await fits(page, page.locator("#phone-board-palette"));
     const a11y = await new AxeBuilder({ page }).include(".phone-board-dock").withTags(["wcag2a", "wcag2aa", "wcag21aa"]).analyze();
     expect(a11y.violations.map((v) => ({ id: v.id, targets: v.nodes.map((n) => n.target) }))).toEqual([]);
+    await page.getByRole("button", { name: "Close canvas tools", exact: true }).click();
+    // The minimap is in the zoom level's menu since 0.20.73.
+    await page.locator("#zoom-label").click();
     await page.getByRole("button", { name: "Minimap", exact: true }).click();
-    await page.locator("#phone-board-palette").waitFor({ state: "hidden" });
     await expect(page.locator("#canvas-minimap")).toBeVisible();
     await palette(page);
     await page.getByRole("button", { name: "Add sticky note", exact: true }).click();
@@ -149,9 +151,9 @@ onDevices(["phone"], () => {
     await options(page);
     await page.keyboard.press("Escape");
     expect(await page.locator(".mobile-view-options").evaluate((el) => el.open)).toBe(false);
-    await options(page);
-    await page.getByRole("button", { name: "Board settings", exact: true }).click();
-    await page.getByRole("dialog", { name: "Board settings", exact: true }).waitFor();
+    await palette(page);
+    await page.getByRole("button", { name: "Board appearance", exact: true }).click();
+    await page.getByRole("dialog", { name: "Board appearance", exact: true }).waitFor();
     await page.keyboard.press("Escape");
   });
 

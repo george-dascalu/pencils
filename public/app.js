@@ -1767,7 +1767,7 @@ async function patchTask(id, changes, rerender = true) {
 }
 
 function boardToolbar() {
-  return `<div class="board-toolbar"><select id="board-select" aria-label="Select board">${state.boards.filter(b=>!b.archived).map((b) => `<option value="${esc(b.id)}" ${b.id === state.selectedBoard ? "selected" : ""}>${esc(b.title)}</option>`).join("")}</select><button class="button small" data-action="board-new">${icon("plus")}New board</button>${state.selectedBoard ? `<button class="button small" data-action="board-rename">${icon("pencil")}Rename</button>` : ""}${state.selectedBoard ? bookmarks.button("board", state.project.id, state.selectedBoard) : ""}<button type="button" class="button small board-settings-button" data-feature="board-settings">${icon("settings")}Board settings</button><span class="board-save" id="board-save">${esc(saveIssue([...sync.entries.values()], {storageError:sync.storageError,online:state.online}) ? "" : saveState([...sync.entries.values()],{storageError:sync.storageError,online:state.online}))}</span>${state.boardConflict ? '<button class="button small" data-feature="recovery">Resolve</button>' : ""}</div>`;
+  return `<div class="board-toolbar"><select id="board-select" aria-label="Select board">${state.boards.filter(b=>!b.archived).map((b) => `<option value="${esc(b.id)}" ${b.id === state.selectedBoard ? "selected" : ""}>${esc(b.title)}</option>`).join("")}</select><button class="button small" data-action="board-new">${icon("plus")}New board</button>${state.selectedBoard ? `<button class="button small" data-action="board-rename">${icon("pencil")}Rename</button>` : ""}${state.selectedBoard ? bookmarks.button("board", state.project.id, state.selectedBoard) : ""}<span class="board-save" id="board-save">${esc(saveIssue([...sync.entries.values()], {storageError:sync.storageError,online:state.online}) ? "" : saveState([...sync.entries.values()],{storageError:sync.storageError,online:state.online}))}</span>${state.boardConflict ? '<button class="button small" data-feature="recovery">Resolve</button>' : ""}</div>`;
 }
 function boardToolsHTML() {
   const tool = (name, title, action = "board-add", glyph = name) =>
@@ -1782,7 +1782,7 @@ function boardToolsHTML() {
   // while the tools above them scroll.
   const historyGroup = ["History", `<button type="button" data-action="board-undo" title="Undo" aria-label="Undo canvas change" ${state.history.length ? "" : "disabled"}>${icon("undo")}</button><button type="button" data-action="board-redo" title="Redo" aria-label="Redo canvas change" ${state.future.length ? "" : "disabled"}>${icon("redo")}</button>`];
   const group = ([name, buttons]) => `<div class="board-tool-group" role="group" aria-label="${name}"><span class="board-tool-category" aria-hidden="true">${name}</span>${buttons}</div>`;
-  return `<div class="board-tools" role="toolbar" aria-label="Canvas tools" aria-orientation="vertical" data-board="${esc(board().id)}"><div class="board-tools-scroll">${groups.map(group).join("")}</div><div class="board-controls">${group(historyGroup)}<button type="button" class="icon-button board-zoom" id="zoom-label" data-action="board-zoom" title="Zoom level: double-click to fit the board (Alt+1)" aria-keyshortcuts="Alt+1">${Math.round(state.camera.z * 100)}%</button></div></div>`;
+  return `<div class="board-tools" role="toolbar" aria-label="Canvas tools" aria-orientation="vertical" data-board="${esc(board().id)}"><div class="board-tools-scroll">${groups.map(group).join("")}</div><div class="board-controls">${group(historyGroup)}<details class="board-menu" data-board-menu="zoom"><summary class="icon-summary board-zoom" id="zoom-label" data-action="board-zoom" title="Zoom level: double-click to fit the board (Alt+1)" aria-keyshortcuts="Alt+1">${Math.round(state.camera.z * 100)}%</summary><div class="board-menu-panel"><button type="button" data-action="board-fit" title="Alt+1">${icon("fit")}Fit board</button><button type="button" data-action="board-actual-size" title="Ctrl / ⌘ 0">${icon("search")}100%</button><button type="button" data-board-display="minimap" aria-pressed="true" title="M">${icon("board")}Minimap</button><button type="button" data-board-display="grid" aria-pressed="true" title="G">${icon("table")}Background pattern</button></div></details></div></div>`;
 }
 function boardView() {
   const b = board();
@@ -2348,6 +2348,12 @@ document.addEventListener("click", async (event) => {
             state.selectedEdges?.clear();
           }
         });
+        break;
+      case "board-fit":
+        fitBoard();
+        break;
+      case "board-actual-size":
+        zoom(1 / state.camera.z);
         break;
       case "board-zoom":
         // Double-clicking or double-tapping the zoom level fits the board, like Alt+1.

@@ -84,7 +84,8 @@ export function canvasControls(ctx, basic) {
     );
     canvas.classList.toggle("grid-hidden", !grid);
     $("#canvas-minimap")?.classList.toggle("hidden", !minimap);
-    $('[data-board-display="minimap"]')?.setAttribute("aria-pressed", String(minimap));
+    for (const el of $$('[data-board-display="minimap"]')) el.setAttribute("aria-pressed", String(minimap));
+    for (const el of $$('[data-board-display="grid"]')) el.setAttribute("aria-pressed", String(grid));
     canvas.classList.toggle("board-expanded", expanded);
     setBoardExpanded(expanded);
     if (!$("#board-expand"))
@@ -95,7 +96,7 @@ export function canvasControls(ctx, basic) {
     if (!$("#expanded-board-settings"))
       $(".board-controls")?.insertAdjacentHTML(
         "beforeend",
-        `<button id="expanded-board-settings" type="button" class="icon-button" data-feature="board-settings" aria-label="Board settings" title="Board settings">${icon("settings")}</button>`,
+        `<button id="expanded-board-settings" type="button" class="icon-button" data-feature="board-settings" aria-label="Board appearance" title="Board appearance">${icon("settings")}</button>`,
       );
     const expandButton = $("#board-expand");
     expandButton.innerHTML = icon(expanded ? "shrink" : "fullscreen");
@@ -202,8 +203,9 @@ export function canvasControls(ctx, basic) {
   document.addEventListener("click", async (e) => {
     const button = e.target.closest("[data-board-display]");
     if (!button || !active()) return;
-    if (button.dataset.boardDisplay === "minimap") {
-      minimap = !minimap;
+    if (button.dataset.boardDisplay === "minimap" || button.dataset.boardDisplay === "grid") {
+      if (button.dataset.boardDisplay === "minimap") minimap = !minimap;
+      else grid = !grid;
       saveDisplay(); render(); return;
     }
     // One toggle: the board fills the window and, where the browser allows it (not on iPhone),

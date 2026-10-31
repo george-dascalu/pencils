@@ -3,6 +3,8 @@
 export async function reveal(locator) {
   await locator.waitFor({ state: "attached" });
   if (await locator.evaluate((el) => !!el.closest(".sidebar:not(.open)"))) await openSidebar(locator.page());
+  // Phones keep the board's other tools in Canvas tools, under the dock's +.
+  if (await locator.evaluate((el) => !!el.closest("#phone-board-palette[hidden]"))) await locator.page().locator(".phone-board-more").click();
   const options = locator.locator('xpath=ancestor::details[contains(@class,"mobile-view-options")]');
   if ((await options.count()) && !(await options.evaluate(el => el.open)))
     await options.locator(":scope > summary").click();

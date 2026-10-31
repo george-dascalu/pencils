@@ -2,6 +2,13 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.20.73 — 2026-10-31
+
+### Changed
+
+- The board's zoom level opens a menu: Fit board, 100%, Minimap and Background pattern (double-clicking it still fits the board).
+- One Board appearance button, at the foot of the board's tool bar, replaces both Board settings buttons and opens beside the bar with snapping, the background, the dependency arrow style and Reset. The board's name moved to Board tools → Rename, the display toggles to the zoom menu, and Import from Miro to Boards.
+
 ## 0.20.72 — 2026-10-31
 
 ### Changed

@@ -1,6 +1,11 @@
 import { positionPopover } from "./popover-position.js";
 import { readableText } from "./node-layout.js";
 
+// Opened from Boards (0.20.73); focus and position fall back to its menu, then Board appearance.
+const home = () =>
+  document.querySelector('.board-toolbar [data-board-menu="board"] > summary') ||
+  document.querySelector('[data-feature="board-settings"]');
+
 // A one-time import. Tokens and source snapshots never enter local storage.
 export function miroImport(ctx) {
   const { state, api, esc, icon, board, toast } = ctx;
@@ -41,7 +46,7 @@ export function miroImport(ctx) {
     if (focus)
       (opener?.isConnected
         ? opener
-        : document.querySelector('[data-feature="board-settings"]')
+        : home()
       )?.focus({ preventScroll: true });
   }
   function position() {
@@ -53,9 +58,7 @@ export function miroImport(ctx) {
       return close(false);
     const r = opener?.isConnected
       ? opener.getBoundingClientRect()
-      : document
-          .querySelector('[data-feature="board-settings"]')
-          ?.getBoundingClientRect();
+      : home()?.getBoundingClientRect();
     positionPopover(panel, r || { left: 12, top: 12, bottom: 12 }, {
       width: 700,
       maxHeight: innerHeight - 24,
@@ -303,7 +306,7 @@ export function miroImport(ctx) {
     destination = { id: board().id, title: board().title };
     opener = button?.isConnected
       ? button
-      : document.querySelector('[data-feature="board-settings"]');
+      : home();
     setup = null;
     preview = null;
     result = null;
