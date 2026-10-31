@@ -2,6 +2,12 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.20.77 — 2026-10-31
+
+### Changed
+
+- On phones, View options is compact: each filter is one row, its name beside its control, with less space between rows.
+
 ## 0.20.76 — 2026-10-31
 
 ### Changed

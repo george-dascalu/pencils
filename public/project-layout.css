@@ -967,7 +967,7 @@ html.table-viewport-view body {
   .planning-period > h2 { text-align: center; font-size: 14px; line-height: 1.4; }
   /* Between the floating buttons the period is narrow, so a long one wraps. */
   #view-toolbar .planning-period > h2 { white-space: normal; text-wrap: balance; }
-  .mobile-view-options-panel :is(.planning-options, .planning-head, .timeline-options) { display: flex; flex-direction: column; align-items: stretch; gap: 12px; width: 100%; }
+  .mobile-view-options-panel :is(.planning-options, .planning-head, .timeline-options) { display: flex; flex-direction: column; align-items: stretch; gap: 4px; width: 100%; }
   .mobile-view-options-panel :is(.planning-options, .timeline-options) > label { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
   .mobile-view-options-panel :is(.planning-options, .timeline-options) select { min-width: 0; max-width: 70%; }
   .mobile-view-options-panel .field-hint { margin: 0; }
@@ -1070,6 +1070,11 @@ html.table-viewport-view body {
   .mobile-view-options-panel .board-menu-panel fieldset { min-inline-size: 0; max-width: 100%; }
   .mobile-view-options-panel .table-filter-rule { grid-template-columns: minmax(0, 1fr); }
   .mobile-view-options-panel .table-filter-rule > * { flex-wrap: wrap; min-width: 0; max-width: 100%; }
+  /* One row per field, its name before its control, so the panel stays compact (T5). Over the
+     menu rows in controls.css, which loads later. */
+  .mobile-view-options-panel { gap: 4px; }
+  .mobile-view-options .mobile-view-options-panel .field { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 64%); align-items: center; gap: 8px; margin: 0 0 4px; padding-block: 0; }
+  .mobile-view-options-panel .field > :is(select, input) { width: 100%; }
 }
 .dialog.compact-dialog { width: min(420px, calc(100vw - 32px)); }
 
