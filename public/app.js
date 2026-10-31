@@ -31,7 +31,7 @@ import {
   statusLabel,
   transitionError,
 } from "./workflow-model.js";
-import { assigneeOptions, assigneeHint } from "./teams.js";
+import { assigneeOptions, assigneeHint, shortName } from "./teams.js";
 import { taskPickerHTML } from "./task-modal.js";
 import { updateFrameMembership } from "./frame-model.js";
 import { taskDescriptionHTML } from "./task-description.js";
@@ -1189,10 +1189,9 @@ function tagsHTML(t) {
     )
     .join("")}</span>`;
 }
-// The first three letters of the name, such as Geo for George; the tooltip keeps the full name.
+// The person's short name (Geo for George unless set in People); the tooltip keeps the full name.
 function assigneeHTML(t) {
-  const [first = "", ...rest] = [...String(t.assignee || "").trim()].slice(0, 3);
-  const initials = first.toUpperCase() + rest.join("");
+  const initials = shortName(state, t.assignee);
   return `<span class="task-assignee ${initials ? "" : "unassigned"}" ${taskColorAttributes(state, "assignee", t.assignee)} title="${esc(t.assignee || "Unassigned")}">${esc(initials) || "–"}</span>`;
 }
 function priorityHTML(t) {

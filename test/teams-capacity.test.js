@@ -41,6 +41,15 @@ test("Team members are unique across teams and directory validates membership an
     /distinct/,
   );
 });
+test("A person's short name is optional, trimmed and at most three characters", () => {
+  const short = (short_name) => directory([{ id: "g", name: "George", short_name }], []).people[0];
+  assert.equal(short(" GD ").short_name, "GD");
+  assert.equal(short("Geo").short_name, "Geo");
+  assert.equal(short(" ").short_name, undefined);
+  assert.equal(short(undefined).short_name, undefined);
+  assert.throws(() => short("Geor"), /Short names/);
+  assert.throws(() => short(3), /Short names/);
+});
 test("Capacity counts each overlapping task once, includes unestimated work, and separates unscheduled tasks", () => {
   const base = { status: "todo", assignee_id: "a" };
   const data = capacityData(

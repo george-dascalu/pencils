@@ -2,6 +2,12 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.20.62 — 2026-10-31
+
+### Added
+
+- People have an optional short name of up to three characters (Settings → Organisation or the People page). Task avatars show it instead of the first three letters of the name, so people whose names start alike can be told apart.
+
 ## 0.20.61 — 2026-10-31
 
 ### Fixed

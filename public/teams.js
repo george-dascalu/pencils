@@ -1,5 +1,13 @@
 const newId = () =>
   `person-${Date.now().toString(36)}-${Array.from(crypto.getRandomValues(new Uint32Array(2)), (n) => n.toString(36)).join("")}`;
+// A person's short name, set in People, or the first three letters of their name, such as Geo for George.
+const letters = (name) => {
+  const [first = "", ...rest] = [...String(name || "").trim()].slice(0, 3);
+  return first.toUpperCase() + rest.join("");
+};
+export const shortName = (state, name) =>
+  state.organisation?.people?.find((p) => p.name === name)?.short_name ||
+  letters(name);
 export function projectPeople(state) {
   const teams = new Set(state.project?.teams || []);
   const ids = new Set(
@@ -33,7 +41,7 @@ export function organisationTeams(form, organisation, esc, mode = "all") {
     host.innerHTML = `<input type="hidden" name="people"><input type="hidden" name="teams"><div data-directory-section="people" ${mode === "teams" ? "hidden" : ""}><h3>People</h3><p class="field-hint">People can belong to several teams. Weekly task limits are optional. Hours spread across working days; time off reduces availability. Leave blank to track workload without a limit. No login account is required.</p><div class="people-list">${!people.length ? '<p class="directory-empty">No people yet. Add someone to start building your teams.</p>' : ""}${people
       .map(
         (p) =>
-          `<div class="person-row" data-person="${esc(p.id)}"><input aria-label="Person name" data-person-field="name" value="${esc(p.name)}" placeholder="Name" maxlength="100" required><label>Tasks / week<input aria-label="Weekly task limit for ${esc(p.name)}" data-person-field="task_capacity" type="number" min="0" max="10000" step="1" value="${p.task_capacity ?? ""}"></label><label>Hours / week<input aria-label="Weekly hours for ${esc(p.name)}" data-person-field="capacity" type="number" min="0" max="168" step="any" value="${p.capacity ?? 40}"></label><details><summary>Availability</summary><div class="team-members">${[
+          `<div class="person-row" data-person="${esc(p.id)}"><input aria-label="Person name" data-person-field="name" value="${esc(p.name)}" placeholder="Name" maxlength="100" required><label>Short name<input aria-label="Short name for ${esc(p.name)}" data-person-field="short_name" maxlength="3" placeholder="${esc(letters(p.name))}" value="${esc(p.short_name || "")}"></label><label>Tasks / week<input aria-label="Weekly task limit for ${esc(p.name)}" data-person-field="task_capacity" type="number" min="0" max="10000" step="1" value="${p.task_capacity ?? ""}"></label><label>Hours / week<input aria-label="Weekly hours for ${esc(p.name)}" data-person-field="capacity" type="number" min="0" max="168" step="any" value="${p.capacity ?? 40}"></label><details><summary>Availability</summary><div class="team-members">${[
             [1, "Mon"],
             [2, "Tue"],
             [3, "Wed"],
@@ -81,6 +89,10 @@ export function organisationTeams(form, organisation, esc, mode = "all") {
           `[data-person-name="${person.id}"]`,
         ))
           label.textContent = el.value || "Unnamed person";
+      if (el.dataset.personField === "name")
+        el.closest("[data-person]").querySelector(
+          "[data-person-field=short_name]",
+        ).placeholder = letters(el.value);
     }
     if (person && el.dataset.personDay != null) {
       const days = new Set(person.working_days || [1, 2, 3, 4, 5]);

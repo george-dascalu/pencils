@@ -66,6 +66,9 @@ export function directory(people = [], teams = []) {
       )
     )
       fail("Time off must contain up to 366 dates in YYYY-MM-DD format.");
+    const short_name = p.short_name ?? "";
+    if (typeof short_name !== "string" || [...short_name.trim()].length > 3)
+      fail("Short names must have at most three characters.");
     return {
       ...p,
       name,
@@ -73,6 +76,7 @@ export function directory(people = [], teams = []) {
       task_capacity,
       working_days,
       time_off: [...new Set(time_off)],
+      short_name: short_name.trim() || undefined,
     };
   });
   const teamNames = new Set();
