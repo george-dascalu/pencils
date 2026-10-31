@@ -863,15 +863,22 @@ function warningsHTML(warnings) {
     ? `<details class="warning"><summary>${warnings.length} vault ${warnings.length === 1 ? "issue" : "issues"} need attention</summary>${warnings.map((w) => `<div>${esc(w)}</div>`).join("")}</details>`
     : "";
 }
-// One New control everywhere: it offers a card or a document (PEN-6).
+// One New control everywhere (PEN-6): a card, a document, a board or a personal document, in groups
+// split by dividers (T8).
 let personalOpening = null;
 function newMenuHTML(kind = "button") {
   const summary = kind === "icon"
-    ? `<summary class="icon-button" aria-label="New" title="New card or document">${icon("plus")}</summary>`
-    : `<summary class="button primary" title="New card or document">${icon("plus")}New</summary>`;
+    ? `<summary class="icon-button" aria-label="New" title="New card, document or board">${icon("plus")}</summary>`
+    : `<summary class="button primary" title="New card, document or board">${icon("plus")}New</summary>`;
+  const documents = `<button type="button" data-action="document-new">${icon("file")}Document</button><button type="button" data-action="document-template">${icon("file")}From template</button>`;
   // A personal space holds documents only.
-  const card = state.project?.personal ? "" : `<button type="button" data-action="task-new">${icon("task")}Card</button>`;
-  return `<details class="board-menu new-menu${kind === "icon" ? " phone-new-task" : ""}" data-new-menu data-board-menu="new-${kind}">${summary}<div class="board-menu-panel new-menu-panel">${card}<button type="button" data-action="document-new">${icon("file")}Document</button><button type="button" data-action="document-template">${icon("file")}From template</button></div></details>`;
+  const items = state.project?.personal ? documents : [
+    `<button type="button" data-action="task-new">${icon("task")}Card</button>`,
+    documents,
+    `<button type="button" data-action="board-new">${icon("board")}Board</button>`,
+    `<button type="button" data-action="personal-document">${icon("person")}Personal document</button>`,
+  ].join('<span class="board-menu-divider" role="separator"></span>');
+  return `<details class="board-menu new-menu${kind === "icon" ? " phone-new-task" : ""}" data-new-menu data-board-menu="new-${kind}">${summary}<div class="board-menu-panel new-menu-panel">${items}</div></details>`;
 }
 // Phones: the drawer lists the organisation, projects and teams, with Settings and Help at the
 // bottom; in Documents it opens on its document list level, with a way back.
@@ -2168,14 +2175,19 @@ document.addEventListener("click", async (event) => {
         }
         break;
       }
-      // The account's personal space (made on first use), and Today's note in it.
+      // The account's personal space (made on first use), and Today's note or a new document in it.
       // One at a time, so a double click doesn't make two notes for the day.
       case "personal-open":
+      case "personal-document":
       case "today":
         personalOpening ||= (async () => {
           const { project } = await api("/personal", { method: "POST", body: {} });
           if (state.project?.id !== project.id && !(await openProject(project.id))) return;
           if (action === "today") await features.today();
+          if (action === "personal-document") {
+            const record = await features.createDocument();
+            if (record) await features.openDocument(record.id);
+          }
         })().finally(() => { personalOpening = null; });
         await personalOpening;
         break;

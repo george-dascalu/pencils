@@ -207,7 +207,8 @@ export function folderTree({ kind, label, placeholder, glyph, state, api, esc, i
   document.addEventListener("dragend", reset);
   return {
     html, update, panel, expand, updateFolders, reset, folders, name, options,
-    get active() { return active; },
+    // A folder chosen in another project (or since deleted) is no folder here.
+    get active() { return folders().some(f => f.id === active) ? active : null; },
     set active(id) { active = id; },
   };
 }

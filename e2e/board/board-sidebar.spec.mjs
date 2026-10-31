@@ -74,6 +74,25 @@ test("Board tools → Move to folder and dragging a board onto a folder file it,
   await expect(section(page).locator('[data-board-folder-drop="ideas"] + ul [data-board-open]')).toHaveText([s.first.title]);
 });
 
+// The chosen folder belongs to its project: New → Board in another project goes to that project's root.
+test("a folder chosen in one project doesn't follow you to another", async ({ page }) => {
+  const s = await seed("BSE"), other = await app.store.createProject({ title: "Board folders BSF", key: "BSF" });
+  await open(page, s);
+  await openSidebar(page);
+  await section(page).locator('[data-board-folder="ideas"]').click();
+  // Switch project in the app, so this page keeps the folder it chose.
+  await page.locator(`.sidebar .project-link[data-id="${other.id}"]`).click();
+  await expect(page.locator(".sidebar .project-link.active")).toHaveAttribute("data-id", other.id);
+  await page.locator(".topbar .new-menu:not(.phone-new-task) > summary").click();
+  await page.locator(".topbar .new-menu:not(.phone-new-task)").getByRole("button", { name: "Board", exact: true }).click();
+  await page.locator("#board-form [name=title]").fill("Elsewhere");
+  await page.locator("#board-form [type=submit]").click();
+  await expect.poll(async () => {
+    const board = (await app.store.snapshot(other.id)).boards.find((b) => b.title === "Elsewhere");
+    return board ? board.folder ?? "root" : "not made";
+  }, "made at the other project's root").toBe("root");
+});
+
 onDevices(["phone"], () => {
   test("phones open the drawer on the board list, and a tap opens a board", async ({ page }) => {
     const s = await seed("BSD");

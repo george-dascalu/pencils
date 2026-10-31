@@ -83,7 +83,7 @@ test.describe("wide desktop", () => {
     await expect(page.locator("#board-project-tools")).toHaveCount(1);
     await page.locator(".tabs [data-view=board]").click();
     await page.locator("#canvas").waitFor();
-    for (const selector of ['[data-feature="board-settings"]', "[data-action=board-new]", ".board-tools [data-pro=outline]", "[data-action=board-rename]", ".board-menu [data-pro=present]", "[data-feature=canvas-json]", "[data-board-action=move]", "[data-drawing-save]"])
+    for (const selector of ['[data-feature="board-settings"]', ".sidebar [data-action=board-new]", ".board-tools [data-pro=outline]", "[data-action=board-rename]", ".board-menu [data-pro=present]", "[data-feature=canvas-json]", "[data-board-action=move]", "[data-drawing-save]"])
       await expect(page.locator(selector), selector).toHaveCount(1);
   });
 });

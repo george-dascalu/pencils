@@ -6,7 +6,7 @@ See [CHANGELOG.md](CHANGELOG.md) for dated additions, changes and fixes. The [Pr
 
 ## Make the workspace yours
 
-Every project view uses the same compact header: project title in the breadcrumb, **Overview**, **Planning**, **Tasks**, **Boards**, **New** (a card or a document) and **Project settings**. Tasks contains List, Tree, Table and Kanban; Planning contains Calendar, Timeline and Capacity. Overview shows project progress, open/blocked/overdue tasks, status counts and upcoming deadlines.
+Every project view uses the same compact header: project title in the breadcrumb, **Overview**, **Planning**, **Tasks**, **Boards**, **New** (a card, a document or one from a template, a board, or a document in your personal space, in groups split by dividers; the personal space offers documents only) and **Project settings**. Tasks contains List, Tree, Table and Kanban; Planning contains Calendar, Timeline and Capacity. Overview shows project progress, open/blocked/overdue tasks, status counts and upcoming deadlines.
 
 Project Settings has its own grouped sidebar and dedicated pages. General, Teams, Statuses & workflow, Types & hierarchy and Custom fields save independently. Data sources, Import notes, Automation, Diagnostics and Archive & recovery contain their own tools. Source configuration and automation editing have direct links; browser Back, Forward and reload preserve the page. Unsaved changes require an explicit discard before navigating away. Templates are removed from the settings navigation. On phones, choose a page using Settings section.
 

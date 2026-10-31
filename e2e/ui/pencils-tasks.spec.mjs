@@ -174,13 +174,19 @@ onDevices(["phone"], () => test("the phone top bar's + button centres its icon",
 }));
 
 // ----- PEN-6: New offers card or document -----
+// Since 0.20.80 (T8) its groups are split by dividers, and it also makes a board in the project or a
+// document in the personal space.
+const newMenu = (page) => page.locator(".topbar .new-menu:not(.phone-new-task)");
+const menuItems = async (page) => {
+  await newMenu(page).locator("> summary").click();
+  return newMenu(page).locator(".new-menu-panel > *").evaluateAll((els) => els.map((el) => el.matches('[role="separator"]') ? "|" : el.textContent.trim()));
+};
 test("PEN-6 the header New control offers a card or a document", async ({ page }) => {
   await open(page, "list", ".task-row");
   const summary = page.locator(".topbar .new-menu:not(.phone-new-task) > summary");
   await expect(summary).toHaveText("New");
-  await summary.click();
+  expect(await menuItems(page)).toEqual(["Card", "|", "Document", "From template", "|", "Board", "|", "Personal document"]);
   const items = page.locator(".topbar .new-menu:not(.phone-new-task) .new-menu-panel button");
-  expect((await items.allInnerTexts()).map((t) => t.trim())).toEqual(["Card", "Document", "From template"]);
   await items.nth(1).click();
   const title = page.locator(".documents-workspace #document-form [name=title]");
   await expect(title).toHaveValue("Untitled document");
@@ -189,6 +195,21 @@ test("PEN-6 the header New control offers a card or a document", async ({ page }
   await summary.click();
   await items.nth(0).click();
   await page.locator("#task-form.task-create-form").waitFor();
+});
+
+test("New makes a board in the project, and a document in the personal space, which offers documents only", async ({ page }) => {
+  await open(page, "list", ".task-row");
+  await menuItems(page);
+  await newMenu(page).getByRole("button", { name: "Board", exact: true }).click();
+  await page.locator("#board-form [name=title]").fill("Planning wall");
+  await page.locator("#board-form [type=submit]").click();
+  await page.locator(".board-tools").waitFor();
+  expect((await snapshot()).boards.some((b) => b.title === "Planning wall"), "the board is in this project").toBe(true);
+  await menuItems(page);
+  await newMenu(page).getByRole("button", { name: "Personal document", exact: true }).click();
+  await expect(page.locator(".documents-workspace #document-form [name=title]")).toHaveValue("Untitled document");
+  await expect(page.locator('.sidebar [data-action="personal-open"][aria-current="page"]'), "in the personal space").toHaveCount(1);
+  expect(await menuItems(page)).toEqual(["Document", "From template"]);
 });
 
 onDevices(["phone"], () => test("PEN-6 the phone header plus opens the New menu", async ({ page }) => {

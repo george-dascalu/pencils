@@ -2,6 +2,16 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.20.80 — 2026-10-31
+
+### Added
+
+- New makes a board in the project, and a document in your personal space from any project. Its choices are grouped by dividers: Card; Document and From template; Board; Personal document. The personal space offers documents only.
+
+### Fixed
+
+- A folder chosen in the Documents or Boards list no longer follows you to another project, where a new document or board then failed to save.
+
 ## 0.20.79 — 2026-10-31
 
 ### Fixed
