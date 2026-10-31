@@ -993,7 +993,10 @@ html.table-viewport-view body {
 #sort { display: none; }
 /* Icon-only menu triggers, such as Filters, count active values in a badge. */
 .board-menu > summary.icon-summary { position: relative; justify-content: center; }
-.icon-summary > .filter-count {
+.mobile-view-options > summary { position: relative; }
+.mobile-view-options > summary.filter-active { color: var(--green); }
+.mobile-view-options[open] > summary { background: var(--surface-soft); }
+:is(.icon-summary, .mobile-view-options > summary) > .filter-count {
   position: absolute; top: 2px; right: 2px; min-width: 14px; height: 14px; padding: 0 3px; box-sizing: border-box;
   border-radius: 7px; background: var(--green); color: var(--surface); font-size: 9px; font-weight: 600; line-height: 14px; text-align: center;
 }

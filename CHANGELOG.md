@@ -2,6 +2,12 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.20.78 — 2026-10-31
+
+### Changed
+
+- On phones, the View options button looks like the sort button beside it, and counts the active filters in a badge, as the Filters button does on larger screens.
+
 ## 0.20.77 — 2026-10-31
 
 ### Changed

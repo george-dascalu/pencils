@@ -104,7 +104,10 @@ export function projectLayout(ctx) {
     compact = document.createElement("details");
     compact.className = "mobile-view-options";
     compact.open = !!state.mobileViewOptions;
-    compact.innerHTML = `<summary class="button" aria-label="View options" title="View options">${icon("filter")}</summary><div class="mobile-view-options-panel" aria-label="View options"><header><strong>View options</strong><button type="button" class="icon-button" aria-label="Close view options">${icon("close")}</button></header></div>`;
+    // An icon button like sort beside it (task views), counting active filters as the Filters menu does.
+    const count = Number(toolbar.querySelector('[data-board-menu="filters"] > summary > .filter-count')?.textContent || 0);
+    const name = `View options${count ? ` (${count} ${count === 1 ? "filter" : "filters"} active)` : ""}`;
+    compact.innerHTML = `<summary class="icon-button${count ? " filter-active" : ""}" aria-label="${name}" title="${name}">${icon("filter")}${count ? `<span class="filter-count" aria-hidden="true">${count}</span>` : ""}</summary><div class="mobile-view-options-panel" aria-label="View options"><header><strong>View options</strong><button type="button" class="icon-button" aria-label="Close view options">${icon("close")}</button></header></div>`;
     const panel = compact.lastElementChild;
     const selectors = toolbar.classList.contains("board-toolbar")
       ? ".board-toolbar > .board-menu, .board-toolbar > .bookmark-button, .board-toolbar > .board-save, .board-toolbar > [data-feature=recovery]"
