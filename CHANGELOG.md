@@ -2,6 +2,12 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.20.86 — 2026-10-31
+
+### Changed
+
+- The sidebar's Organisation and Projects dropdowns open their menus in the sidebar's dark colours instead of a light menu.
+
 ## 0.20.85 — 2026-10-31
 
 ### Changed

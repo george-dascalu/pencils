@@ -19,6 +19,16 @@
   font: 13px/1.4 var(--app-font, "Work Sans", sans-serif);
   text-align: left;
 }
+/* Opened from the sidebar, the menu wears the sidebar's surface and text (styles.css .sidebar). */
+.select-menu.sidebar-select-menu {
+  --surface: var(--side);
+  --surface-soft: #ffffff14;
+  --ink: #e3e9df;
+  --muted: #a1b1a4;
+  --line: #ffffff24;
+  --green: #b3c891;
+  --focus-ring: 1px solid #b3c891;
+}
 .select-menu::backdrop {
   background: transparent;
   pointer-events: none;

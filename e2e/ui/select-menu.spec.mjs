@@ -2,9 +2,11 @@
 // never the platform picker. Covers the organisation picker, task editor fields (keyboard,
 // type-ahead, Escape), filters in every view, board card fields under zoom, nesting inside
 // the date picker, disabled/grouped/dynamic options, and touch on desktop and phone widths
-// in both themes. Edits made through the menu persist.
+// in both themes. Edits made through the menu persist. Menus opened from the sidebar take its dark
+// colours (0.20.86).
 import { test, expect, onDevices, useApp } from "../fixtures.mjs";
 import { reveal, selectProjectView, openSidebar, chooseProject } from "../helpers/menu-controls.mjs";
+import { axeViolations } from "../helpers/documents.mjs";
 
 const app = useApp(async (store) => {
   const org = await store.createOrganisation({
@@ -155,3 +157,31 @@ onDevices(["desktop", "ipad", "phone"], () => {
   }
   });
 });
+
+// Owner request (T14, 31 October 2026): the sidebar's dropdowns open their menu in the sidebar's
+// own dark colours; menus elsewhere keep the light surface.
+onDevices(["desktop", "phone"], () => test("menus opened from the sidebar take its dark colours, in both themes", async ({ page }) => {
+  await openList(page);
+  const colours = (selector) => page.locator(selector).evaluate((el) => getComputedStyle(el).backgroundColor);
+  for (const theme of ["light", "dark"]) {
+    await page.evaluate((theme) => window.PencilsAppearance.write({ theme }), theme);
+    for (const select of ["#organisation-select", "#project-select"]) {
+      await openSidebar(page);
+      await page.locator(select).click();
+      await menu(page).waitFor();
+      expect(await colours("#shared-select-menu"), `${theme} ${select}: the sidebar's surface`).toBe(await colours(".sidebar"));
+      expect(await axeViolations(page, "#shared-select-menu"), `${theme} ${select}`).toEqual([]);
+      // The keyboard's focus ring is the sidebar's light green, as on its dropdowns.
+      await page.keyboard.press("ArrowDown");
+      await expect(menu(page).locator('[role="option"]:focus')).toHaveCSS("outline-color", "rgb(179, 200, 145)");
+      await page.keyboard.press("Escape");
+      await expect(menu(page)).toHaveCount(0);
+      await page.keyboard.press("Escape");
+    }
+  }
+  await page.evaluate(() => window.PencilsAppearance.write({ theme: "light" }));
+  await openTask(page, app.task.id);
+  await page.locator("#task-form [name=status]").click();
+  await menu(page).waitFor();
+  expect(await colours("#shared-select-menu"), "elsewhere the light surface").toBe("rgb(255, 255, 255)");
+}));

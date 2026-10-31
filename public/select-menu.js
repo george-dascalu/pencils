@@ -112,7 +112,8 @@ export function installSelectMenus({ esc, icon, taskColor = () => "" }) {
     anchorEl = anchor;
     query = "";
     menu = document.createElement("div");
-    menu.className = "select-menu";
+    // A menu opened from the sidebar takes the sidebar's dark colours (select-menu.css).
+    menu.className = `select-menu${select.closest(".sidebar") ? " sidebar-select-menu" : ""}`;
     menu.id = "shared-select-menu";
     menu.setAttribute("popover", "manual");
     menu.setAttribute("role", "listbox");
