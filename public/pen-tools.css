@@ -91,7 +91,7 @@
 .canvas[data-drawing-hand="left"] #pen-tools {left:auto;right:16px;transform:none;}
 .pen-preferences {position:relative;}
 .pen-preferences summary {padding:0;cursor:pointer;}
-.pen-preferences .selection-popover {position:fixed;right:auto;min-width:0;padding:var(--menu-panel-padding);display:grid;gap:12px;background:var(--surface);}
+.pen-preferences .selection-popover {position:fixed;right:auto;min-width:0;padding:var(--popover-padding);display:grid;gap:12px;background:var(--surface);}
 .pen-preferences:not([open]) .selection-popover {display:none;}
 .pen-preferences .selection-popover {
   width: min(340px, calc(100vw - 100px));

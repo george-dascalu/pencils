@@ -277,7 +277,7 @@
   overflow: auto;
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 0;
   padding: var(--popover-padding, 8px);
   background: var(--surface, #fff);
   color: var(--ink);

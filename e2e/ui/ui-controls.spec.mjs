@@ -168,6 +168,7 @@ test("sliders use the shared range styling with a live value", async ({ page }) 
   expect(valuetext, "slider lacks aria-valuetext").toBeTruthy();
 });
 
+// Menus of rows use the tighter menu padding; popovers that hold fields keep the popover padding.
 test("popovers share padding and radius tokens", async ({ page }) => {
   await open(page, "list", ".task-row");
   await page.locator("[data-sort-menu]").click();
@@ -178,7 +179,8 @@ test("popovers share padding and radius tokens", async ({ page }) => {
   await page.locator("#task-form").waitFor();
   await page.locator("#task-form .date-picker-trigger").first().click();
   const picker = await page.locator(".date-picker-popover").evaluate((el) => [getComputedStyle(el).paddingTop, getComputedStyle(el).borderTopLeftRadius]);
-  expect(picker, `date picker ${picker} vs select menu ${select}`).toEqual(select);
+  expect(select, "select menus use the menu padding").toEqual(["4px", picker[1]]);
+  expect(picker, "the date picker keeps the popover padding and shares the radius").toEqual(["8px", select[1]]);
 });
 
 test("empty states share one component and the timeline empty state has text", async ({ page }) => {

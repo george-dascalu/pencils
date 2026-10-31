@@ -2,6 +2,12 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.20.69 — 2026-10-31
+
+### Changed
+
+- The app is more compact, like Obsidian: menus and dropdown lists have 4px padding with their rows edge to edge, and settings pages have less padding. On desktop and iPad each project and organisation setting with a one-line control is one row, its name on the left and the control on the right, divided by lines, with any hint under its row; phones still stack them. Setting names read at body size on every screen.
+
 ## 0.20.68 — 2026-10-31
 
 ### Changed

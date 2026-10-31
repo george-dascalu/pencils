@@ -2,7 +2,7 @@
 .select-menu,
 .task-picker-popover.selection-popover {
   box-sizing: border-box;
-  padding: var(--popover-padding, 8px);
+  padding: var(--menu-panel-padding, 4px);
   border: 1px solid var(--line);
   border-radius: var(--radius-popover, 10px);
   background: var(--surface);

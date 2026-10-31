@@ -80,7 +80,7 @@
   min-width: 0;
 }
 .settings-section-heading {
-  margin-bottom: 24px;
+  margin-bottom: 16px;
 }
 .settings-section-heading h2 {
   font-size: 25px;
@@ -107,7 +107,7 @@
   min-width: 0;
 }
 #settings-panel :is(.dialog-body, .settings-page-body) {
-  padding: 24px;
+  padding: 16px 24px;
   max-height: none;
 }
 #settings-panel .dialog-body {
@@ -120,8 +120,46 @@
   gap: 10px;
 }
 #settings-panel .field {
-  margin-block: 0 20px;
+  margin-block: 0 16px;
   min-width: 0;
+}
+/* Every setting's name reads at body size, in rows and above text areas alike. */
+:is(#settings-panel .dialog-body > .field, #settings-panel .dialog-body > .field-row > .field) {
+  font-size: 13px;
+  color: var(--ink);
+}
+/* Like Obsidian, a setting with a one-line control is one row: its name on the left, the
+   control on the right, with a divider between rows. Text areas, lists and editors keep the
+   full width, and phones (below) stack the name above the control. */
+@media (min-width: 781px) {
+  #settings-panel .dialog-body > .field-row {
+    display: block;
+  }
+  :is(#settings-panel .dialog-body > .field, #settings-panel .dialog-body > .field-row > .field):has(> :where(input:not([type="checkbox"], [type="radio"], [type="range"], [type="hidden"]), select, .color-picker)) {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 320px);
+    align-items: center;
+    column-gap: 24px;
+    margin: 0;
+    padding-block: 8px;
+    border-bottom: 1px solid var(--line);
+  }
+  :is(#settings-panel .dialog-body > .field, #settings-panel .dialog-body > .field-row > .field) > :is(input, select, .color-picker) {
+    grid-column: 2;
+    grid-row: 1;
+  }
+  :is(#settings-panel .dialog-body > .field, #settings-panel .dialog-body > .field-row > .field) > .color-picker {
+    justify-self: end;
+  }
+  /* A hint after a row belongs to it: the divider moves below the hint. */
+  #settings-panel .dialog-body > .field:has(+ .field-hint) {
+    border-bottom: 0;
+  }
+  #settings-panel .dialog-body > .field + .field-hint {
+    margin: 0;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--line);
+  }
 }
 #settings-panel .field input,
 #settings-panel .field select,
@@ -160,7 +198,7 @@
   align-items: center;
   justify-content: space-between;
   gap: 24px;
-  padding: 24px 0;
+  padding: 12px 0;
   border-bottom: 1px solid var(--line);
 }
 .settings-action-row:first-child {

@@ -9,7 +9,8 @@
   --control-icon-size: 16px;
   --board-control-height: 28px;
   --menu-control-height: 28px;
-  --menu-panel-padding: 8px;
+  /* Menus of rows stay tight, like Obsidian's. */
+  --menu-panel-padding: 4px;
   --text-focus-color: #737373;
   --touch-text-font-size: 16px;
   /* Type scale for the card popup and the Table view: one step per role. */
@@ -94,9 +95,10 @@ textarea,
   --control-option-padding: 4px;
   font-size: var(--control-font-size);
 }
+/* Rows run edge to edge, like Obsidian's menus. */
 .board-menu .board-menu-panel {
   padding: var(--menu-panel-padding);
-  gap: 4px;
+  gap: 0;
 }
 .board-menu-panel .field {
   gap: 4px;

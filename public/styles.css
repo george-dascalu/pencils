@@ -31,6 +31,7 @@
   --radius-popover: calc(10px * var(--style-roundness, 1));
   /* Style settings (public/appearance.js) may choose the code font, and themes (themes.css) set their own. */
   --font-mono: var(--style-code-font, var(--theme-code-font, monospace));
+  /* Popovers that hold text or fields; menus of rows use --menu-panel-padding (controls.css). */
   --popover-padding: 8px;
   --control-border: #dce0d5;
   /* The primary button's fill, which themes (themes.css) change. */
