@@ -149,6 +149,8 @@ test("hiding weekends removes weekend days and their cards, and is remembered af
   await expect(page.locator(".calendar-day.weekend")).toHaveCount(0);
   await expect(card(page, seed.weekend.id)).toHaveCount(0);
   await page.reload();
+  // A reload opens the current month; the cards are in October 2026.
+  await setMonth(page);
   await card(page, seed.work.id).waitFor();
   await expect(page.locator(".calendar")).toHaveAttribute("data-weekends", "false");
   await page.locator("[data-calendar-weekends]").click();

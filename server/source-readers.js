@@ -186,7 +186,9 @@ export async function readObsidian(
           413,
           "Obsidian folder exceeds the 10,000-file / 50 MB import limit.",
         );
-      const text = await fs.readFile(file, "utf8"),
+      // A byte order mark isn't part of the frontmatter; the version stays the file's own digest.
+      const raw = await fs.readFile(file, "utf8"),
+        text = raw.replace(/^\uFEFF/, ""),
         fm = text.match(/^---\r?\n([\s\S]*?)\r?\n---(?:\r?\n|$)/);
       const doc = fm ? YAML.parseDocument(fm[1]) : null;
       if (doc?.errors.length)
@@ -202,7 +204,7 @@ export async function readObsidian(
           key: block || relative,
           url: `obsidian://open?${new URLSearchParams({ vault, file: relative + (block ? `#^${block}` : "") })}`,
           fields,
-          version: digest(text),
+          version: digest(raw),
           raw: { file: relative, block, frontmatter: props },
           description: block ? "" : body,
         });
@@ -266,7 +268,7 @@ export async function writeObsidian(root, record, mapping, input) {
       409,
       "The note changed. Sync and review before publishing.",
     );
-  let text = original;
+  let text = original.replace(/^\uFEFF/, "");
   if (record.raw.block) {
     const id = record.raw.block.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"),
       pattern = new RegExp(
@@ -320,7 +322,7 @@ export async function writeObsidian(root, record, mapping, input) {
     )
       throw new Problem(400, "Enter a valid field value.");
     doc.set(mapping?.[field] || field, value);
-    text = `---\n${doc.toString({ lineWidth: 0 })}---\n${original.slice(match[0].length)}`;
+    text = `---\n${doc.toString({ lineWidth: 0 })}---\n${text.slice(match[0].length)}`;
   }
   return { file: real, original, text, version: record.version };
 }

@@ -93,11 +93,13 @@ export function installWorkspace(Store) {
             400,
             "Import Markdown files up to 200,000 characters each.",
           );
-        const match = note.content.match(
-          /^---\r?\n([\s\S]*?)\r?\n---(?:\r?\n|$)([\s\S]*)$/,
-        );
+        // A byte order mark from some editors is part of neither the frontmatter nor the body.
+        const content = note.content.replace(/^\uFEFF/, ""),
+          match = content.match(
+            /^---\r?\n([\s\S]*?)\r?\n---(?:\r?\n|$)([\s\S]*)$/,
+          );
         let properties = {},
-          body = note.content;
+          body = content;
         if (match) {
           try {
             properties = YAML.parseDocument(match[1]).toJS({

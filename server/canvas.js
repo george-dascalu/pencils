@@ -355,7 +355,8 @@ export function installCanvas(Store) {
       }
       if (raw.length > 2000000)
         throw new Problem(413, "This note is too large to edit on the canvas.");
-      const front = /^---\r?\n[\s\S]*?\r?\n---(?:\r?\n|$)/.exec(raw)?.[0] || "";
+      // The frontmatter, after any byte order mark, stays as it is; the board edits the body.
+      const front = /^\uFEFF?---\r?\n[\s\S]*?\r?\n---(?:\r?\n|$)/.exec(raw)?.[0] || "";
       return {
         file: relative,
         body: raw.slice(front.length),

@@ -319,6 +319,17 @@ test("concurrent board operations merge disjoint edits, reject conflicts, persis
   );
   assert.equal(restored.nodes[0].x, 120);
 });
+// T43: a note saved with a byte order mark keeps it and its frontmatter out of the board's text.
+test("a note with a byte order mark edits on the board and keeps its frontmatter", async (t) => {
+  const { store, project, root } = await setup(t);
+  const file = `Projects/${project.id}/notes/bom.md`;
+  await fs.mkdir(path.dirname(path.join(root, file)), { recursive: true });
+  await fs.writeFile(path.join(root, file), "\uFEFF---\ntags: [x]\n---\nOld text\n");
+  const note = await store.canvasNote(project.id, file);
+  assert.equal(note.body, "Old text\n");
+  await store.editCanvasNote(project.id, { file, revision: note.revision, body: "New text\n" });
+  assert.equal(await fs.readFile(path.join(root, file), "utf8"), "\uFEFF---\ntags: [x]\n---\nNew text\n");
+});
 test("heading and block edits preserve surrounding Markdown, frontmatter and revisions", async (t) => {
   const { store, project, root } = await setup(t);
   const file = `Projects/${project.id}/notes/plan.md`;

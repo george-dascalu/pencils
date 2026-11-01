@@ -23,6 +23,8 @@ export { STATUSES, TYPES, PRIORITIES, DEFAULT_ORGANISATION } from "./values.js";
 export { Problem } from "./problem.js";
 
 function parse(text, file) {
+  // Some editors start files with a byte order mark; it isn't part of the frontmatter or JSON.
+  text = text.replace(/^\uFEFF/, "");
   if (file.endsWith(".canvas") || /^\s*\{/.test(text)) {
     try {
       const source = JSON.parse(text),

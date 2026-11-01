@@ -2,6 +2,12 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.20.101 — 2026-11-01
+
+### Fixed
+
+- Notes and cards saved with a byte order mark (as some Windows editors do) read as themselves again, instead of as plain notes that dropped out of the project; imported notes, Obsidian sources and notes edited on a board keep their frontmatter with one too.
+
 ## 0.20.100 — 2026-10-31
 
 ### Added
