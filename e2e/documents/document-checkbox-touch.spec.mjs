@@ -30,7 +30,8 @@ async function open(page) {
 }
 
 onDevices(["phone"], () => {
-  test("a touch on a checklist box toggles it without focusing the editor", async ({ page }) => {
+  test("a touch on a checklist box toggles it without focusing the editor", async ({ page, browserName }) => {
+    test.skip(browserName === "webkit", "WebKit refuses to construct the Touch the test taps with (Illegal constructor)");
     await open(page);
     const box = await visibleCheckbox(page);
     const find = (label) => page.evaluate((label) => {

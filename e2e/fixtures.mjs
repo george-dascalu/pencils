@@ -14,8 +14,8 @@
 // grouped as "<device> › <title>", each in a fresh browser context. Tests outside it use the
 // desktop preset. Every test fails on page errors, console errors and server errors (500 and
 // above); a test that expects some lists them with test.use({ allowErrors: [/pattern/] }).
-// Touch devices always use Chromium with coarse-pointer emulation; desktop devices use the
-// project's browser (Chromium, or Firefox/WebKit in the release gate).
+// Touch devices use Chromium with coarse-pointer emulation, or WebKit in the ios project (onDevices
+// tags them @touch); desktop devices use the project's browser (Chromium, or Firefox/WebKit in the gate).
 import { test as base, expect } from "@playwright/test";
 import fs from "node:fs/promises";
 import os from "node:os";
@@ -45,9 +45,11 @@ export const test = base.extend({
   deviceScaleFactor: [undefined, { option: true }],
   // Errors a test expects (see page below), as regular expressions.
   allowErrors: [[], { option: true }],
-  touchBrowser: [async ({ playwright }, use) => {
+  // The engine touch devices use: "chromium", or "webkit" (the ios project).
+  touchEngine: ["chromium", { option: true, scope: "worker" }],
+  touchBrowser: [async ({ playwright, touchEngine, launchOptions }, use) => {
     let browser;
-    await use(async () => (browser ||= await playwright.chromium.launch({ args: touchArgs })));
+    await use(async () => (browser ||= await (touchEngine === "webkit" ? playwright.webkit.launch(launchOptions) : playwright.chromium.launch({ args: touchArgs }))));
     await browser?.close();
   }, { scope: "worker" }],
   context: async ({ browser, touchBrowser, device, viewportSize, deviceScaleFactor }, use) => {
@@ -55,12 +57,16 @@ export const test = base.extend({
     const owner = touch ? await touchBrowser() : browser;
     // British dates and London time, as on the owner's devices.
     const context = await owner.newContext({ viewport: viewportSize || { width, height }, deviceScaleFactor, hasTouch: touch, isMobile: touch, reducedMotion: "reduce", locale: "en-GB", timezoneId: "Europe/London" });
+    // Tests that drive Chromium's DevTools protocol (raw touches, pinches, pens) skip in other engines.
+    if (owner.browserType().name() !== "chromium") context.newCDPSession = () => test.skip(true, "needs Chromium's DevTools protocol");
     await use(context);
     await context.close();
   },
-  page: async ({ context, allowErrors }, use) => {
+  page: async ({ context, allowErrors, device }, use) => {
     const page = await context.newPage();
     page.setDefaultTimeout(12000);
+    // Mobile WebKit has no mouse wheel.
+    if (context.browser()?.browserType().name() === "webkit" && devices[device].touch) page.mouse.wheel = () => test.skip(true, "mobile WebKit has no mouse wheel");
     const errors = [], checks = [];
     page.on("pageerror", (error) => errors.push(error.message));
     // Browsers log each refused request as "Failed to load resource": refusals (4xx) are part of
@@ -116,7 +122,8 @@ export function useApp(seed = async () => ({})) {
 export function onDevices(deviceNames, tests) {
   for (const device of deviceNames) {
     if (!devices[device]) throw new Error(`Unknown device ${device}`);
-    test.describe(device, () => {
+    // Touch devices are tagged @touch, which the ios project runs in WebKit.
+    test.describe(device, devices[device].touch ? { tag: "@touch" } : {}, () => {
       test.use({ device });
       tests(device);
     });

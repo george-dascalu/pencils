@@ -11,7 +11,8 @@ const app = useApp(async (store) => {
   return { project, long };
 });
 
-onDevices(["desktop", "ipad", "phone"], () => test("ID, Type and Assignee start narrow, and their headings and values fit", async ({ page, device }) => {
+onDevices(["desktop", "ipad", "phone"], () => test("ID, Type and Assignee start narrow, and their headings and values fit", async ({ page, device, browserName }) => {
+  test.fail(browserName === "webkit", "T51: in WebKit the Assignee heading is wider than its narrow column");
   await page.goto(`${app.base}/#project/${app.project.id}/table`);
   await expect(page.locator('td[data-column-key="key"]').first()).toBeVisible();
   for (const [key, most] of [["key", 90], ["type", 100], ["assignee", 128]]) {

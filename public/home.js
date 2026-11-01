@@ -349,7 +349,8 @@ export function installHome(ctx) {
     if (key === lastVisit) return;
     lastVisit = key;
     onHome = false;
-    api("/visits", { method: "POST", body: { kind, project, id } }).catch(() => {});
+    // Kept alive, so leaving the page or closing it at once (Safari cuts the request off) still records it.
+    api("/visits", { method: "POST", body: { kind, project, id }, keepalive: true }).catch(() => {});
   }
   function visitCurrent() {
     const p = state.project;

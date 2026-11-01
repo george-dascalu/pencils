@@ -132,6 +132,7 @@ test("deleting a parent keeps its replies, and undo restores it", async ({ page 
 
 onDevices(["phone"], () => {
   test("replies delete individually on a dark phone screen, with no orphaned placeholder", async ({ page }) => {
+    test.skip(!reply, "needs the conversation the earlier steps build (they don't run in the ios project)");
     await openBoard(page);
     await page.evaluate(() => window.PencilsAppearance.write({ theme: "dark" }));
     await openComments(page);

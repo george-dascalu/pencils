@@ -10,6 +10,11 @@ import { defineConfig } from "@playwright/test";
 
 const gate = (process.env.GATE_BROWSERS || "firefox,webkit").split(",").filter(Boolean);
 const chromium = { browserName: "chromium", launchOptions: { args: ["--no-sandbox"] } };
+// WebKit's network process crashes on the GIO modules a snap-packaged terminal (VS Code) points it
+// at. scripts/webkit-local.sh adds the libraries a host without sudo lacks.
+const { GIO_MODULE_DIR, ...webkitEnv } = process.env;
+if (!GIO_MODULE_DIR?.includes("/snap/")) webkitEnv.GIO_MODULE_DIR = GIO_MODULE_DIR;
+const webkit = { browserName: "webkit", launchOptions: { env: webkitEnv } };
 
 export default defineConfig({
   testDir: "e2e",
@@ -31,6 +36,10 @@ export default defineConfig({
       { name: "docker", use: chromium, testMatch: "**/offline.spec.mjs" },
       { name: "audit", use: chromium, grep: /@audit/ },
     ]),
-    ...gate.map((browserName) => ({ name: browserName, use: { browserName }, grep: /@gate/ })),
+    // Phone and iPad tests run in WebKit too, the engine of iPhones and iPads; the release runs the
+    // affected ones (IOS=0 skips them on a host without WebKit).
+    // Every phone and iPad test (onDevices tags them @touch), besides scale tests and audits.
+    { name: "ios", use: { ...webkit, touchEngine: "webkit" }, grep: /@touch/, grepInvert: /@heavy|@audit/ },
+    ...gate.map((browserName) => ({ name: browserName, use: browserName === "webkit" ? webkit : { browserName }, grep: /@gate/ })),
   ],
 });

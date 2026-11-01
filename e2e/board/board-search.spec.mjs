@@ -88,7 +88,8 @@ onDevices(["desktop", "phone"], () => test("the panel stays on screen in both th
   }
 }));
 
-onDevices(["phone"], () => test("a refresh in flight does not steal search focus or reset the field", async ({ page, device }) => {
+onDevices(["phone"], () => test("a refresh in flight does not steal search focus or reset the field", async ({ page, device, browserName }) => {
+  test.fail(browserName === "webkit", "T51: in WebKit, Escape from board search leaves focus off the board");
   await openBoard(page);
   let unblock, reached;
   const gate = new Promise((resolve) => (unblock = resolve));

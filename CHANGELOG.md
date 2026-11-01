@@ -2,6 +2,13 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.20.103 — 2026-11-01
+
+### Fixed
+
+- In Safari, formatting toolbars (documents, card descriptions and comments) no longer report a resize loop error as they show or hide their scroll chevrons.
+- Opening a document, board or view and leaving the page straight away still records the visit for Home.
+
 ## 0.20.102 — 2026-11-01
 
 ### Fixed

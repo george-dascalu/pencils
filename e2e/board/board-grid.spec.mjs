@@ -240,7 +240,8 @@ test("the grid's title, cells and text survive a reload", async ({ page }) => {
 
 onDevices(["phone"], () => {
   test.use({ viewportSize: null });
-  test("on a phone the toolbar fits, resize targets stay 8px and the title stays 24px high and editable at any zoom", async ({ page }) => {
+  test("on a phone the toolbar fits, resize targets stay 8px and the title stays 24px high and editable at any zoom", async ({ page, browserName }) => {
+    test.fail(browserName === "webkit", "T51: in WebKit the grid object doesn't show on the phone board");
     await openGrid(page);
     await page.evaluate(() => (document.documentElement.dataset.theme = "dark"));
     // Since 0.20.33 the board has no zoom buttons: double-tap the zoom level to fit, Ctrl+-/= to zoom.

@@ -286,6 +286,7 @@ test("moving a project to another organisation keeps its tasks and canvases, and
 
 onDevices(["phone"], () => {
   test("the phone layout fits without horizontal scrolling, and the drawer closes from its overlay", async ({ page }) => {
+    test.skip(!demo, "needs the project the earlier steps make (they don't run in the ios project)");
     await page.goto(`${app.base}/#project/${demo.id}/list`);
     await page.locator(".breadcrumb strong").waitFor();
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);

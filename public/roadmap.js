@@ -42,17 +42,18 @@ export const roadmap = [
   { id: "T37", title: "Board toolbar rows: Up and Down move between rows, scrollbars hidden on touch", status: "done", requested: "2026-10-31T23:19", started: "2026-10-31T23:19", done: "2026-10-31T23:33", version: "0.20.99" },
   { id: "T38", title: "Card fields: Capacity without estimates, Parent off with strict hierarchy", status: "done", requested: "2026-10-31T23:19", started: "2026-10-31T23:19", done: "2026-10-31T23:33", version: "0.20.99" },
   { id: "T39", title: "Project settings: choose which views and components (tasks, planning, boards) a project has", status: "done", requested: "2026-10-31T23:28", started: "2026-10-31T23:34", done: "2026-10-31T23:41", version: "0.20.100" },
-  { id: "T40", title: "UI review: readability and consistency, and an error sweep of every screen and button", status: "in progress", requested: "2026-10-31T23:29", started: "2026-10-31T23:33" },
+  { id: "T40", title: "UI review: readability and consistency, and an error sweep of every screen and button", status: "done", requested: "2026-10-31T23:29", started: "2026-10-31T23:33", done: "2026-11-01T00:48", version: "0.20.103" },
   { id: "T41", title: "Tests: permission checks for file history, per route and role", status: "done", requested: "2026-10-31T23:35", started: "2026-10-31T23:44", done: "2026-10-31T23:52", version: "0.20.101" },
   { id: "T42", title: "Tests: upload and import routes refuse bad files", status: "done", requested: "2026-10-31T23:35", started: "2026-10-31T23:52", done: "2026-10-31T23:56", version: "0.20.101" },
   { id: "T43", title: "Tests: vault files survive reading and writing unchanged", status: "done", requested: "2026-10-31T23:35", started: "2026-10-31T23:56", done: "2026-11-01T00:02", version: "0.20.101" },
   { id: "T44", title: "Tests: console errors and failed requests fail browser tests", status: "done", requested: "2026-10-31T23:35", started: "2026-11-01T00:07", done: "2026-11-01T00:16", version: "0.20.102" },
-  { id: "T45", title: "Tests: phone and touch specs run in WebKit (Docker) before release", status: "requested", requested: "2026-10-31T23:35" },
+  { id: "T45", title: "Tests: phone and touch specs run in WebKit (Docker) before release", status: "done", requested: "2026-10-31T23:35", started: "2026-11-01T00:34", done: "2026-11-01T00:56", version: "0.20.103" },
   { id: "T46", title: "Tests: layout sweep of every view and device", status: "done", requested: "2026-10-31T23:35", started: "2026-11-01T00:26", done: "2026-11-01T00:33", version: "0.20.102" },
   { id: "T47", title: "Tests: settings in combination (card fields, views, saved preferences)", status: "done", requested: "2026-10-31T23:35", started: "2026-11-01T00:21", done: "2026-11-01T00:26", version: "0.20.102" },
   { id: "T48", title: "Tests: flaky tests reported, fixed waits replaced", status: "done", requested: "2026-10-31T23:35", started: "2026-11-01T00:16", done: "2026-11-01T00:21", version: "0.20.102" },
   { id: "T49", title: "Tests: mutation testing of journal, store, access and model", status: "requested", requested: "2026-10-31T23:35" },
   { id: "T50", title: "Tests: browser code coverage report", status: "requested", requested: "2026-10-31T23:35" },
+  { id: "T51", title: "WebKit differences: grid on the phone board, focus after board search, Table Assignee heading, comment toolbar chevron", status: "requested", requested: "2026-11-01T00:52" },
 ];
 
 // "31 Oct 20:05" for a date with a time, "31 Oct" for a bare date.

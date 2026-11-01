@@ -23,13 +23,20 @@ export function installToolbarScroll(shell) {
   edges.start?.addEventListener("click", () => step(-1));
   edges.end?.addEventListener("click", () => step(1));
   scroller.addEventListener("scroll", update, { passive: true });
-  const observer = new ResizeObserver(update);
+  // Showing a chevron resizes the scroller, so a resize updates on the next frame: within the same
+  // one it would loop, which Safari reports as an error.
+  let frame = 0;
+  const observer = new ResizeObserver(() => {
+    cancelAnimationFrame(frame);
+    frame = requestAnimationFrame(update);
+  });
   observer.observe(scroller);
   for (const group of scroller.children) observer.observe(group);
   update();
   return {
     update,
     destroy() {
+      cancelAnimationFrame(frame);
       observer.disconnect();
     },
   };

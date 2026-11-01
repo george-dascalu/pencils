@@ -98,10 +98,12 @@ export function changedFiles(root = projectRoot) {
 
 export const describe = (plan) => plan.all ? `every test${plan.heavy ? " and @heavy" : ""}` : plan.paths.length ? `${plan.paths.join(" ")}${plan.heavy ? " and @heavy" : ""}` : "none needed";
 
-// Runs the chosen tests in Chromium; resolves without running when none are needed.
+// Runs the chosen tests in Chromium, and their phone and iPad tests in WebKit too (the ios project;
+// IOS=0 skips it on a host without WebKit); resolves without running when none are needed.
 export function runAffected(plan, { log } = {}) {
   if (!plan.all && !plan.paths.length) return Promise.resolve("");
-  return command("npx", ["playwright", "test", "--project=chromium", ...plan.paths], { log, env: { ...process.env, HEAVY: plan.heavy ? "1" : "0" } });
+  const projects = ["--project=chromium", ...(process.env.IOS === "0" ? [] : ["--project=ios"])];
+  return command("npx", ["playwright", "test", ...projects, ...plan.paths], { log, env: { ...process.env, HEAVY: plan.heavy ? "1" : "0" } });
 }
 
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {

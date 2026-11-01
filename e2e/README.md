@@ -40,6 +40,7 @@ onDevices(["phone", "ipad", "desktop"], () => {
 - Every test fails on page errors, `console.error` and server errors (500 and above, except responses the test fakes with `page.route`). A test that expects some lists them: `test.use({ allowErrors: [/pattern/] })`. Only the test's `page` is watched: check other pages it opens (`context.newPage()`, popups) itself.
 - Seeded dates are fixed (October 2026), and today moves on: after a reload, go back to the seeded month or week instead of relying on the view opening on today.
 - The batch check (`RELEASE=1`) fails on flaky tests (`failOnFlakyTests`): fix them instead of rerunning.
+- Phone and iPad tests run in WebKit too: `npx playwright test --project=ios` (once per host: `scripts/webkit-local.sh`). Calls to `newCDPSession` skip the test outside Chromium, and so does the mouse wheel on mobile WebKit.
 - Name tests after the behaviour, as a sentence. Start the file with a comment naming the owner request or the rule it guards.
 - Tag tests that belong in the cross-browser release gate with `{ tag: "@gate" }`, and slow scale tests (many objects or users) with `{ tag: "@heavy" }` so they run in the batch check rather than on every change.
 - Shared helpers for menus, the New menu and the card editor are in `e2e/helpers/`.
