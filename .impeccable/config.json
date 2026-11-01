@@ -21,6 +21,15 @@
         ],
         "createdAt": "2026-10-20T13:47:02.525Z",
         "reason": "Agent verified by detector output, CSS, event handlers and HEAD: the linked .board-node.blocked-task stripe indicates a blocked task, and #canvas-outline .frame-row-target is a temporary drag insertion marker. Both predate the Miro import and provide functional state feedback rather than decorative card accents."
+      },
+      {
+        "rule": "side-tab",
+        "value": "*",
+        "files": [
+          "public/project-documents.css"
+        ],
+        "createdAt": "2026-11-01T21:58:43.284Z",
+        "reason": "Agent verified: project-documents.js renders .document-comment-quote as a blockquote containing the document text a comment refers to. Its border marks quoted context, not a decorative card accent; this was also recorded as a false positive in the 2026-11-01 audit."
       }
     ]
   }

@@ -40,3 +40,7 @@ Evidence: [before](assets/impeccable-2026-11-01/performance.json), [after](asset
 - Final batch (`GATE_BROWSERS=firefox,webkit npm run test:release`): syntax/types and 416 unit tests passed; 2,450 browser tests passed, 61 skipped, no failures or flaky tests; all four Docker tests passed. This includes heavy board fixtures, phone/iPad flows in WebKit, and the cross-browser gate in Firefox and WebKit.
 
 Physical iPad/iPhone performance, a live screen-reader session and native 200% text resizing remain unverified.
+
+## Detector follow-up
+
+The stop hooks repeated the `side-tab` warning for `.document-comment-quote`. This is the semantic blockquote containing the document text a comment refers to (`public/project-documents.js`), already identified as functional quoted context in the original audit. A shared, file-scoped `side-tab` exception for `public/project-documents.css` was recorded using `impeccable hooks ignore-value`, with that evidence as its reason. Both installed detectors honor it. No application styling changed.
