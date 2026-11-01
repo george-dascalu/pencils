@@ -3,9 +3,9 @@ export function saveState(
   entries = [],
   { storageError = false, online = true } = {},
 ) {
-  if (storageError) return "Browser draft storage full — keep this tab open";
+  if (storageError) return "Browser draft storage unavailable — keep this tab open";
   if (entries.some((e) => e.conflict))
-    return "Conflict — changes kept in Recovery";
+    return "Edits need review — open Recovery & backups";
   const failed = entries.find((e) => e.error);
   if (failed)
     return online
@@ -47,7 +47,7 @@ export function saveIssue(entries = [], { storageError = false, online = true } 
     title: "Changes could not be saved",
     cause: `${failed.error} Changes are kept in this browser.`,
     action: failed.blocked
-      ? "Correct the issue, then edit again or choose Retry in Recovery & backups. Export the draft there if you need a copy."
+      ? "Correct the issue, then edit again or choose Retry save in Recovery & backups. Export the draft there if you need a copy."
       : "Saving will retry automatically. If the problem continues, open Recovery & backups to export the draft or retry manually.",
   };
 }

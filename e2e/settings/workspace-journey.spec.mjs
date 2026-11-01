@@ -193,7 +193,7 @@ test("Markdown edited outside the app shows live, and a conflicting edit keeps t
   await fs.writeFile(file, (await fs.readFile(file, "utf8")).replace("Changed in Obsidian", "Newer Obsidian edit"));
   // Existing cards save automatically (no Save button). The conflicting save keeps the
   // browser draft and says so in the autosave status.
-  await expect(page.locator("#task-form [data-autosave-status]")).toHaveText(/^Conflict — changes kept in Recovery$/);
+  await expect(page.locator("#task-form [data-autosave-status]")).toHaveText('Edits need review — open Recovery & backups');
   await expect(page.locator('#task-form [name="title"]')).toHaveValue("Unsaved browser edit");
   page.once("dialog", (dialog) => dialog.accept());
   await click(page, "dialog-close");

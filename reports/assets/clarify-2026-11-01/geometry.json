@@ -1,0 +1,1442 @@
+[
+  {
+    "name": "desktop",
+    "surface": "recovery",
+    "width": 1440,
+    "scroll": 1440,
+    "buttons": [
+      {
+        "text": "",
+        "width": 32,
+        "scroll": 32
+      },
+      {
+        "text": "Use my edits",
+        "width": 95,
+        "scroll": 95
+      },
+      {
+        "text": "Use server edits",
+        "width": 117,
+        "scroll": 117
+      },
+      {
+        "text": "Export draft",
+        "width": 89,
+        "scroll": 89
+      },
+      {
+        "text": "Retry save",
+        "width": 81,
+        "scroll": 81
+      },
+      {
+        "text": "Discard draft",
+        "width": 95,
+        "scroll": 95
+      },
+      {
+        "text": "Create backup now",
+        "width": 135,
+        "scroll": 135
+      },
+      {
+        "text": "Upload backup ZIP",
+        "width": 129,
+        "scroll": 129
+      },
+      {
+        "text": "Verify backup",
+        "width": 99,
+        "scroll": 99
+      },
+      {
+        "text": "Restore backup",
+        "width": 113,
+        "scroll": 113
+      },
+      {
+        "text": "Close",
+        "width": 51,
+        "scroll": 51
+      }
+    ]
+  },
+  {
+    "name": "desktop",
+    "surface": "confirm",
+    "width": 1440,
+    "scroll": 1440,
+    "buttons": [
+      {
+        "text": "",
+        "width": 32,
+        "scroll": 32
+      },
+      {
+        "text": "Use my edits",
+        "width": 95,
+        "scroll": 95
+      },
+      {
+        "text": "Use server edits",
+        "width": 117,
+        "scroll": 117
+      },
+      {
+        "text": "Export draft",
+        "width": 89,
+        "scroll": 89
+      },
+      {
+        "text": "Retry save",
+        "width": 81,
+        "scroll": 81
+      },
+      {
+        "text": "Discard draft",
+        "width": 95,
+        "scroll": 95
+      },
+      {
+        "text": "Create backup now",
+        "width": 135,
+        "scroll": 135
+      },
+      {
+        "text": "Upload backup ZIP",
+        "width": 129,
+        "scroll": 129
+      },
+      {
+        "text": "Verify backup",
+        "width": 99,
+        "scroll": 99
+      },
+      {
+        "text": "Restore backup",
+        "width": 113,
+        "scroll": 113
+      },
+      {
+        "text": "Close",
+        "width": 51,
+        "scroll": 51
+      },
+      {
+        "text": "Cancel",
+        "width": 58,
+        "scroll": 58
+      },
+      {
+        "text": "Restore backup",
+        "width": 113,
+        "scroll": 113
+      }
+    ]
+  },
+  {
+    "name": "desktop",
+    "surface": "checkpoints",
+    "width": 1440,
+    "scroll": 1440,
+    "buttons": [
+      {
+        "text": "",
+        "width": 32,
+        "scroll": 32
+      },
+      {
+        "text": "Apply to board",
+        "width": 105,
+        "scroll": 105
+      },
+      {
+        "text": "Restore as copy",
+        "width": 115,
+        "scroll": 115
+      }
+    ]
+  },
+  {
+    "name": "desktop",
+    "surface": "offline-list",
+    "width": 1440,
+    "scroll": 1440,
+    "buttons": [
+      {
+        "text": "Research board — launch planning and follow-up work",
+        "width": 330,
+        "scroll": 330
+      }
+    ]
+  },
+  {
+    "name": "desktop",
+    "surface": "offline-pad",
+    "width": 1440,
+    "scroll": 1440,
+    "buttons": [
+      {
+        "text": "Boards",
+        "width": 94,
+        "scroll": 94
+      },
+      {
+        "text": "",
+        "width": 12,
+        "scroll": 12
+      },
+      {
+        "text": "",
+        "width": 12,
+        "scroll": 12
+      },
+      {
+        "text": "",
+        "width": 12,
+        "scroll": 12
+      },
+      {
+        "text": "",
+        "width": 12,
+        "scroll": 12
+      },
+      {
+        "text": "",
+        "width": 12,
+        "scroll": 12
+      },
+      {
+        "text": "",
+        "width": 12,
+        "scroll": 12
+      },
+      {
+        "text": "",
+        "width": 12,
+        "scroll": 12
+      },
+      {
+        "text": "",
+        "width": 12,
+        "scroll": 12
+      },
+      {
+        "text": "",
+        "width": 48,
+        "scroll": 48
+      },
+      {
+        "text": "",
+        "width": 48,
+        "scroll": 48
+      },
+      {
+        "text": "Export board file",
+        "width": 119,
+        "scroll": 119
+      }
+    ]
+  },
+  {
+    "name": "ipad-dark",
+    "surface": "recovery",
+    "width": 820,
+    "scroll": 820,
+    "buttons": [
+      {
+        "text": "",
+        "width": 44,
+        "scroll": 44
+      },
+      {
+        "text": "Use my edits",
+        "width": 95,
+        "scroll": 95
+      },
+      {
+        "text": "Use server edits",
+        "width": 117,
+        "scroll": 117
+      },
+      {
+        "text": "Export draft",
+        "width": 89,
+        "scroll": 89
+      },
+      {
+        "text": "Retry save",
+        "width": 81,
+        "scroll": 81
+      },
+      {
+        "text": "Discard draft",
+        "width": 95,
+        "scroll": 95
+      },
+      {
+        "text": "Create backup now",
+        "width": 135,
+        "scroll": 135
+      },
+      {
+        "text": "Upload backup ZIP",
+        "width": 129,
+        "scroll": 129
+      },
+      {
+        "text": "Verify backup",
+        "width": 99,
+        "scroll": 99
+      },
+      {
+        "text": "Restore backup",
+        "width": 113,
+        "scroll": 113
+      },
+      {
+        "text": "Close",
+        "width": 51,
+        "scroll": 51
+      }
+    ]
+  },
+  {
+    "name": "ipad-dark",
+    "surface": "confirm",
+    "width": 820,
+    "scroll": 820,
+    "buttons": [
+      {
+        "text": "",
+        "width": 44,
+        "scroll": 44
+      },
+      {
+        "text": "Use my edits",
+        "width": 95,
+        "scroll": 95
+      },
+      {
+        "text": "Use server edits",
+        "width": 117,
+        "scroll": 117
+      },
+      {
+        "text": "Export draft",
+        "width": 89,
+        "scroll": 89
+      },
+      {
+        "text": "Retry save",
+        "width": 81,
+        "scroll": 81
+      },
+      {
+        "text": "Discard draft",
+        "width": 95,
+        "scroll": 95
+      },
+      {
+        "text": "Create backup now",
+        "width": 135,
+        "scroll": 135
+      },
+      {
+        "text": "Upload backup ZIP",
+        "width": 129,
+        "scroll": 129
+      },
+      {
+        "text": "Verify backup",
+        "width": 99,
+        "scroll": 99
+      },
+      {
+        "text": "Restore backup",
+        "width": 113,
+        "scroll": 113
+      },
+      {
+        "text": "Close",
+        "width": 51,
+        "scroll": 51
+      },
+      {
+        "text": "Cancel",
+        "width": 58,
+        "scroll": 58
+      },
+      {
+        "text": "Restore backup",
+        "width": 113,
+        "scroll": 113
+      }
+    ]
+  },
+  {
+    "name": "ipad-dark",
+    "surface": "checkpoints",
+    "width": 820,
+    "scroll": 820,
+    "buttons": [
+      {
+        "text": "",
+        "width": 44,
+        "scroll": 44
+      },
+      {
+        "text": "Apply to board",
+        "width": 105,
+        "scroll": 105
+      },
+      {
+        "text": "Restore as copy",
+        "width": 115,
+        "scroll": 115
+      }
+    ]
+  },
+  {
+    "name": "ipad-dark",
+    "surface": "offline-list",
+    "width": 820,
+    "scroll": 820,
+    "buttons": [
+      {
+        "text": "Research board — launch planning and follow-up work",
+        "width": 330,
+        "scroll": 330
+      }
+    ]
+  },
+  {
+    "name": "ipad-dark",
+    "surface": "offline-pad",
+    "width": 820,
+    "scroll": 820,
+    "buttons": [
+      {
+        "text": "Boards",
+        "width": 94,
+        "scroll": 94
+      },
+      {
+        "text": "",
+        "width": 12,
+        "scroll": 12
+      },
+      {
+        "text": "",
+        "width": 12,
+        "scroll": 12
+      },
+      {
+        "text": "",
+        "width": 12,
+        "scroll": 12
+      },
+      {
+        "text": "",
+        "width": 12,
+        "scroll": 12
+      },
+      {
+        "text": "",
+        "width": 12,
+        "scroll": 12
+      },
+      {
+        "text": "",
+        "width": 12,
+        "scroll": 12
+      },
+      {
+        "text": "",
+        "width": 12,
+        "scroll": 12
+      },
+      {
+        "text": "",
+        "width": 12,
+        "scroll": 12
+      },
+      {
+        "text": "",
+        "width": 48,
+        "scroll": 48
+      },
+      {
+        "text": "",
+        "width": 48,
+        "scroll": 48
+      },
+      {
+        "text": "Export board file",
+        "width": 119,
+        "scroll": 119
+      }
+    ]
+  },
+  {
+    "name": "phone",
+    "surface": "recovery",
+    "width": 390,
+    "scroll": 390,
+    "buttons": [
+      {
+        "text": "",
+        "width": 44,
+        "scroll": 44
+      },
+      {
+        "text": "Use my edits",
+        "width": 95,
+        "scroll": 95
+      },
+      {
+        "text": "Use server edits",
+        "width": 117,
+        "scroll": 117
+      },
+      {
+        "text": "Export draft",
+        "width": 89,
+        "scroll": 89
+      },
+      {
+        "text": "Retry save",
+        "width": 81,
+        "scroll": 81
+      },
+      {
+        "text": "Discard draft",
+        "width": 95,
+        "scroll": 95
+      },
+      {
+        "text": "Create backup now",
+        "width": 135,
+        "scroll": 135
+      },
+      {
+        "text": "Upload backup ZIP",
+        "width": 129,
+        "scroll": 129
+      },
+      {
+        "text": "Verify backup",
+        "width": 99,
+        "scroll": 99
+      },
+      {
+        "text": "Restore backup",
+        "width": 113,
+        "scroll": 113
+      },
+      {
+        "text": "Close",
+        "width": 51,
+        "scroll": 51
+      }
+    ]
+  },
+  {
+    "name": "phone",
+    "surface": "confirm",
+    "width": 390,
+    "scroll": 390,
+    "buttons": [
+      {
+        "text": "",
+        "width": 44,
+        "scroll": 44
+      },
+      {
+        "text": "Use my edits",
+        "width": 95,
+        "scroll": 95
+      },
+      {
+        "text": "Use server edits",
+        "width": 117,
+        "scroll": 117
+      },
+      {
+        "text": "Export draft",
+        "width": 89,
+        "scroll": 89
+      },
+      {
+        "text": "Retry save",
+        "width": 81,
+        "scroll": 81
+      },
+      {
+        "text": "Discard draft",
+        "width": 95,
+        "scroll": 95
+      },
+      {
+        "text": "Create backup now",
+        "width": 135,
+        "scroll": 135
+      },
+      {
+        "text": "Upload backup ZIP",
+        "width": 129,
+        "scroll": 129
+      },
+      {
+        "text": "Verify backup",
+        "width": 99,
+        "scroll": 99
+      },
+      {
+        "text": "Restore backup",
+        "width": 113,
+        "scroll": 113
+      },
+      {
+        "text": "Close",
+        "width": 51,
+        "scroll": 51
+      },
+      {
+        "text": "Cancel",
+        "width": 58,
+        "scroll": 58
+      },
+      {
+        "text": "Restore backup",
+        "width": 113,
+        "scroll": 113
+      }
+    ]
+  },
+  {
+    "name": "phone",
+    "surface": "checkpoints",
+    "width": 390,
+    "scroll": 390,
+    "buttons": [
+      {
+        "text": "",
+        "width": 44,
+        "scroll": 44
+      },
+      {
+        "text": "Apply to board",
+        "width": 105,
+        "scroll": 105
+      },
+      {
+        "text": "Restore as copy",
+        "width": 115,
+        "scroll": 115
+      }
+    ]
+  },
+  {
+    "name": "phone",
+    "surface": "offline-list",
+    "width": 390,
+    "scroll": 390,
+    "buttons": [
+      {
+        "text": "Research board — launch planning and follow-up work",
+        "width": 330,
+        "scroll": 330
+      }
+    ]
+  },
+  {
+    "name": "phone",
+    "surface": "offline-pad",
+    "width": 390,
+    "scroll": 390,
+    "buttons": [
+      {
+        "text": "Boards",
+        "width": 94,
+        "scroll": 94
+      },
+      {
+        "text": "",
+        "width": 12,
+        "scroll": 12
+      },
+      {
+        "text": "",
+        "width": 12,
+        "scroll": 12
+      },
+      {
+        "text": "",
+        "width": 12,
+        "scroll": 12
+      },
+      {
+        "text": "",
+        "width": 12,
+        "scroll": 12
+      },
+      {
+        "text": "",
+        "width": 12,
+        "scroll": 12
+      },
+      {
+        "text": "",
+        "width": 12,
+        "scroll": 12
+      },
+      {
+        "text": "",
+        "width": 12,
+        "scroll": 12
+      },
+      {
+        "text": "",
+        "width": 12,
+        "scroll": 12
+      },
+      {
+        "text": "",
+        "width": 48,
+        "scroll": 48
+      },
+      {
+        "text": "",
+        "width": 48,
+        "scroll": 48
+      },
+      {
+        "text": "Export board file",
+        "width": 119,
+        "scroll": 119
+      }
+    ]
+  },
+  {
+    "name": "phone-dark",
+    "surface": "recovery",
+    "width": 390,
+    "scroll": 390,
+    "buttons": [
+      {
+        "text": "",
+        "width": 44,
+        "scroll": 44
+      },
+      {
+        "text": "Use my edits",
+        "width": 95,
+        "scroll": 95
+      },
+      {
+        "text": "Use server edits",
+        "width": 117,
+        "scroll": 117
+      },
+      {
+        "text": "Export draft",
+        "width": 89,
+        "scroll": 89
+      },
+      {
+        "text": "Retry save",
+        "width": 81,
+        "scroll": 81
+      },
+      {
+        "text": "Discard draft",
+        "width": 95,
+        "scroll": 95
+      },
+      {
+        "text": "Create backup now",
+        "width": 135,
+        "scroll": 135
+      },
+      {
+        "text": "Upload backup ZIP",
+        "width": 129,
+        "scroll": 129
+      },
+      {
+        "text": "Verify backup",
+        "width": 99,
+        "scroll": 99
+      },
+      {
+        "text": "Restore backup",
+        "width": 113,
+        "scroll": 113
+      },
+      {
+        "text": "Close",
+        "width": 51,
+        "scroll": 51
+      }
+    ]
+  },
+  {
+    "name": "phone-dark",
+    "surface": "confirm",
+    "width": 390,
+    "scroll": 390,
+    "buttons": [
+      {
+        "text": "",
+        "width": 44,
+        "scroll": 44
+      },
+      {
+        "text": "Use my edits",
+        "width": 95,
+        "scroll": 95
+      },
+      {
+        "text": "Use server edits",
+        "width": 117,
+        "scroll": 117
+      },
+      {
+        "text": "Export draft",
+        "width": 89,
+        "scroll": 89
+      },
+      {
+        "text": "Retry save",
+        "width": 81,
+        "scroll": 81
+      },
+      {
+        "text": "Discard draft",
+        "width": 95,
+        "scroll": 95
+      },
+      {
+        "text": "Create backup now",
+        "width": 135,
+        "scroll": 135
+      },
+      {
+        "text": "Upload backup ZIP",
+        "width": 129,
+        "scroll": 129
+      },
+      {
+        "text": "Verify backup",
+        "width": 99,
+        "scroll": 99
+      },
+      {
+        "text": "Restore backup",
+        "width": 113,
+        "scroll": 113
+      },
+      {
+        "text": "Close",
+        "width": 51,
+        "scroll": 51
+      },
+      {
+        "text": "Cancel",
+        "width": 58,
+        "scroll": 58
+      },
+      {
+        "text": "Restore backup",
+        "width": 113,
+        "scroll": 113
+      }
+    ]
+  },
+  {
+    "name": "phone-dark",
+    "surface": "checkpoints",
+    "width": 390,
+    "scroll": 390,
+    "buttons": [
+      {
+        "text": "",
+        "width": 44,
+        "scroll": 44
+      },
+      {
+        "text": "Apply to board",
+        "width": 105,
+        "scroll": 105
+      },
+      {
+        "text": "Restore as copy",
+        "width": 115,
+        "scroll": 115
+      }
+    ]
+  },
+  {
+    "name": "phone-dark",
+    "surface": "offline-list",
+    "width": 390,
+    "scroll": 390,
+    "buttons": [
+      {
+        "text": "Research board — launch planning and follow-up work",
+        "width": 330,
+        "scroll": 330
+      }
+    ]
+  },
+  {
+    "name": "phone-dark",
+    "surface": "offline-pad",
+    "width": 390,
+    "scroll": 390,
+    "buttons": [
+      {
+        "text": "Boards",
+        "width": 94,
+        "scroll": 94
+      },
+      {
+        "text": "",
+        "width": 12,
+        "scroll": 12
+      },
+      {
+        "text": "",
+        "width": 12,
+        "scroll": 12
+      },
+      {
+        "text": "",
+        "width": 12,
+        "scroll": 12
+      },
+      {
+        "text": "",
+        "width": 12,
+        "scroll": 12
+      },
+      {
+        "text": "",
+        "width": 12,
+        "scroll": 12
+      },
+      {
+        "text": "",
+        "width": 12,
+        "scroll": 12
+      },
+      {
+        "text": "",
+        "width": 12,
+        "scroll": 12
+      },
+      {
+        "text": "",
+        "width": 12,
+        "scroll": 12
+      },
+      {
+        "text": "",
+        "width": 48,
+        "scroll": 48
+      },
+      {
+        "text": "",
+        "width": 48,
+        "scroll": 48
+      },
+      {
+        "text": "Export board file",
+        "width": 119,
+        "scroll": 119
+      }
+    ]
+  },
+  {
+    "name": "small",
+    "surface": "recovery",
+    "width": 320,
+    "scroll": 320,
+    "buttons": [
+      {
+        "text": "",
+        "width": 44,
+        "scroll": 44
+      },
+      {
+        "text": "Use my edits",
+        "width": 95,
+        "scroll": 95
+      },
+      {
+        "text": "Use server edits",
+        "width": 117,
+        "scroll": 117
+      },
+      {
+        "text": "Export draft",
+        "width": 89,
+        "scroll": 89
+      },
+      {
+        "text": "Retry save",
+        "width": 81,
+        "scroll": 81
+      },
+      {
+        "text": "Discard draft",
+        "width": 95,
+        "scroll": 95
+      },
+      {
+        "text": "Create backup now",
+        "width": 135,
+        "scroll": 135
+      },
+      {
+        "text": "Upload backup ZIP",
+        "width": 129,
+        "scroll": 129
+      },
+      {
+        "text": "Verify backup",
+        "width": 99,
+        "scroll": 99
+      },
+      {
+        "text": "Restore backup",
+        "width": 113,
+        "scroll": 113
+      },
+      {
+        "text": "Close",
+        "width": 51,
+        "scroll": 51
+      }
+    ]
+  },
+  {
+    "name": "small",
+    "surface": "confirm",
+    "width": 320,
+    "scroll": 320,
+    "buttons": [
+      {
+        "text": "",
+        "width": 44,
+        "scroll": 44
+      },
+      {
+        "text": "Use my edits",
+        "width": 95,
+        "scroll": 95
+      },
+      {
+        "text": "Use server edits",
+        "width": 117,
+        "scroll": 117
+      },
+      {
+        "text": "Export draft",
+        "width": 89,
+        "scroll": 89
+      },
+      {
+        "text": "Retry save",
+        "width": 81,
+        "scroll": 81
+      },
+      {
+        "text": "Discard draft",
+        "width": 95,
+        "scroll": 95
+      },
+      {
+        "text": "Create backup now",
+        "width": 135,
+        "scroll": 135
+      },
+      {
+        "text": "Upload backup ZIP",
+        "width": 129,
+        "scroll": 129
+      },
+      {
+        "text": "Verify backup",
+        "width": 99,
+        "scroll": 99
+      },
+      {
+        "text": "Restore backup",
+        "width": 113,
+        "scroll": 113
+      },
+      {
+        "text": "Close",
+        "width": 51,
+        "scroll": 51
+      },
+      {
+        "text": "Cancel",
+        "width": 58,
+        "scroll": 58
+      },
+      {
+        "text": "Restore backup",
+        "width": 113,
+        "scroll": 113
+      }
+    ]
+  },
+  {
+    "name": "small",
+    "surface": "checkpoints",
+    "width": 320,
+    "scroll": 320,
+    "buttons": [
+      {
+        "text": "",
+        "width": 44,
+        "scroll": 44
+      },
+      {
+        "text": "Apply to board",
+        "width": 105,
+        "scroll": 105
+      },
+      {
+        "text": "Restore as copy",
+        "width": 115,
+        "scroll": 115
+      }
+    ]
+  },
+  {
+    "name": "small",
+    "surface": "offline-list",
+    "width": 320,
+    "scroll": 320,
+    "buttons": [
+      {
+        "text": "Research board — launch planning and follow-up work",
+        "width": 286,
+        "scroll": 286
+      }
+    ]
+  },
+  {
+    "name": "small",
+    "surface": "offline-pad",
+    "width": 320,
+    "scroll": 320,
+    "buttons": [
+      {
+        "text": "Boards",
+        "width": 94,
+        "scroll": 94
+      },
+      {
+        "text": "",
+        "width": 12,
+        "scroll": 12
+      },
+      {
+        "text": "",
+        "width": 12,
+        "scroll": 12
+      },
+      {
+        "text": "",
+        "width": 12,
+        "scroll": 12
+      },
+      {
+        "text": "",
+        "width": 12,
+        "scroll": 12
+      },
+      {
+        "text": "",
+        "width": 12,
+        "scroll": 12
+      },
+      {
+        "text": "",
+        "width": 12,
+        "scroll": 12
+      },
+      {
+        "text": "",
+        "width": 12,
+        "scroll": 12
+      },
+      {
+        "text": "",
+        "width": 12,
+        "scroll": 12
+      },
+      {
+        "text": "",
+        "width": 48,
+        "scroll": 48
+      },
+      {
+        "text": "",
+        "width": 48,
+        "scroll": 48
+      },
+      {
+        "text": "Export board file",
+        "width": 119,
+        "scroll": 119
+      }
+    ]
+  },
+  {
+    "name": "zoom-200",
+    "surface": "recovery",
+    "width": 720,
+    "scroll": 720,
+    "buttons": [
+      {
+        "text": "",
+        "width": 32,
+        "scroll": 32
+      },
+      {
+        "text": "Use my edits",
+        "width": 95,
+        "scroll": 95
+      },
+      {
+        "text": "Use server edits",
+        "width": 117,
+        "scroll": 117
+      },
+      {
+        "text": "Export draft",
+        "width": 89,
+        "scroll": 89
+      },
+      {
+        "text": "Retry save",
+        "width": 81,
+        "scroll": 81
+      },
+      {
+        "text": "Discard draft",
+        "width": 95,
+        "scroll": 95
+      },
+      {
+        "text": "Create backup now",
+        "width": 135,
+        "scroll": 135
+      },
+      {
+        "text": "Upload backup ZIP",
+        "width": 129,
+        "scroll": 129
+      },
+      {
+        "text": "Verify backup",
+        "width": 99,
+        "scroll": 99
+      },
+      {
+        "text": "Restore backup",
+        "width": 113,
+        "scroll": 113
+      },
+      {
+        "text": "Close",
+        "width": 51,
+        "scroll": 51
+      }
+    ]
+  },
+  {
+    "name": "zoom-200",
+    "surface": "confirm",
+    "width": 720,
+    "scroll": 720,
+    "buttons": [
+      {
+        "text": "",
+        "width": 32,
+        "scroll": 32
+      },
+      {
+        "text": "Use my edits",
+        "width": 95,
+        "scroll": 95
+      },
+      {
+        "text": "Use server edits",
+        "width": 117,
+        "scroll": 117
+      },
+      {
+        "text": "Export draft",
+        "width": 89,
+        "scroll": 89
+      },
+      {
+        "text": "Retry save",
+        "width": 81,
+        "scroll": 81
+      },
+      {
+        "text": "Discard draft",
+        "width": 95,
+        "scroll": 95
+      },
+      {
+        "text": "Create backup now",
+        "width": 135,
+        "scroll": 135
+      },
+      {
+        "text": "Upload backup ZIP",
+        "width": 129,
+        "scroll": 129
+      },
+      {
+        "text": "Verify backup",
+        "width": 99,
+        "scroll": 99
+      },
+      {
+        "text": "Restore backup",
+        "width": 113,
+        "scroll": 113
+      },
+      {
+        "text": "Close",
+        "width": 51,
+        "scroll": 51
+      },
+      {
+        "text": "Cancel",
+        "width": 58,
+        "scroll": 58
+      },
+      {
+        "text": "Restore backup",
+        "width": 113,
+        "scroll": 113
+      }
+    ]
+  },
+  {
+    "name": "zoom-200",
+    "surface": "checkpoints",
+    "width": 720,
+    "scroll": 720,
+    "buttons": [
+      {
+        "text": "",
+        "width": 32,
+        "scroll": 32
+      },
+      {
+        "text": "Apply to board",
+        "width": 105,
+        "scroll": 105
+      },
+      {
+        "text": "Restore as copy",
+        "width": 115,
+        "scroll": 115
+      }
+    ]
+  },
+  {
+    "name": "zoom-200",
+    "surface": "offline-list",
+    "width": 720,
+    "scroll": 720,
+    "buttons": [
+      {
+        "text": "Research board — launch planning and follow-up work",
+        "width": 322,
+        "scroll": 322
+      }
+    ]
+  },
+  {
+    "name": "zoom-200",
+    "surface": "offline-pad",
+    "width": 720,
+    "scroll": 720,
+    "buttons": [
+      {
+        "text": "Boards",
+        "width": 93,
+        "scroll": 93
+      },
+      {
+        "text": "",
+        "width": 12,
+        "scroll": 12
+      },
+      {
+        "text": "",
+        "width": 12,
+        "scroll": 12
+      },
+      {
+        "text": "",
+        "width": 12,
+        "scroll": 12
+      },
+      {
+        "text": "",
+        "width": 12,
+        "scroll": 12
+      },
+      {
+        "text": "",
+        "width": 12,
+        "scroll": 12
+      },
+      {
+        "text": "",
+        "width": 12,
+        "scroll": 12
+      },
+      {
+        "text": "",
+        "width": 12,
+        "scroll": 12
+      },
+      {
+        "text": "",
+        "width": 12,
+        "scroll": 12
+      },
+      {
+        "text": "",
+        "width": 48,
+        "scroll": 48
+      },
+      {
+        "text": "",
+        "width": 48,
+        "scroll": 48
+      },
+      {
+        "text": "Export board file",
+        "width": 117,
+        "scroll": 117
+      }
+    ]
+  }
+]

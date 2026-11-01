@@ -1532,7 +1532,7 @@ async function restoreNavigation(entry, stillCurrent = () => true) {
     }
     await boardQueue;
     if (state.boardConflict) {
-      toast("Resolve the canvas conflict before changing pages.", true);
+      toast("Review the board’s conflicting edits in Recovery & backups before leaving this page.", true);
       return false;
     }
     if (!stillCurrent()) return false;
@@ -1847,7 +1847,7 @@ async function patchTask(id, changes, rerender = true) {
 
 function boardToolbar() {
   // Boards are chosen and created in the board list (board-explorer.js, list-panel.js).
-  return `<div class="board-toolbar">${state.selectedBoard ? `<button class="button small" data-action="board-rename">${icon("pencil")}Rename</button>` : ""}${state.selectedBoard ? bookmarks.button("board", state.project.id, state.selectedBoard) : ""}<span class="board-save" id="board-save">${esc(saveIssue([...sync.entries.values()], {storageError:sync.storageError,online:state.online}) ? "" : saveState([...sync.entries.values()],{storageError:sync.storageError,online:state.online}))}</span>${state.boardConflict ? '<button class="button small" data-feature="recovery">Resolve</button>' : ""}</div>`;
+  return `<div class="board-toolbar">${state.selectedBoard ? `<button class="button small" data-action="board-rename">${icon("pencil")}Rename</button>` : ""}${state.selectedBoard ? bookmarks.button("board", state.project.id, state.selectedBoard) : ""}<span class="board-save" id="board-save">${esc(saveIssue([...sync.entries.values()], {storageError:sync.storageError,online:state.online}) ? "" : saveState([...sync.entries.values()],{storageError:sync.storageError,online:state.online}))}</span>${state.boardConflict ? '<button class="button small" data-feature="recovery">Review edits</button>' : ""}</div>`;
 }
 function boardToolsHTML() {
   const tool = (name, title, action = "board-add", glyph = name) =>
@@ -2651,7 +2651,7 @@ document.addEventListener("submit", async (event) => {
       data.w = Math.max(minimum.w, data.w);
       data.h = Math.max(minimum.h, data.h);
       if (state.boardConflict)
-        throw new Error("Resolve the canvas conflict before saving objects.");
+        throw new Error("Review the board’s conflicting edits in Recovery & backups before saving objects.");
       changeBoard((b) =>
         Object.assign(
           b.nodes.find((n) => n.id === form.dataset.id),
@@ -2663,7 +2663,7 @@ document.addEventListener("submit", async (event) => {
       await boardQueue;
       if (state.boardConflict)
         throw new Error(
-          "Resolve the canvas conflict before changing canvases.",
+          "Review the board’s conflicting edits in Recovery & backups before switching boards.",
         );
       const rename = form.dataset.rename === "true",
         b = board();

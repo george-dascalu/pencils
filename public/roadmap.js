@@ -4,6 +4,7 @@
 // YYYY-MM-DDTHH:MM (local time; blank when not on record; done is when the work finished, the
 // release follows within minutes); version is the release.
 export const roadmap = [
+  { id: "T106", title: "Clarify recovery, backup and offline drawing copy; keep confirmations reachable and long board names readable", status: "done", requested: "2026-11-01", started: "2026-11-01", done: "2026-11-01", version: "0.20.124" },
   { id: "T2", title: "Boards in the sidebar, in folders", status: "done", requested: "", started: "2026-10-31", done: "2026-10-31T14:04", version: "0.20.74" },
   { id: "T3", title: "One New project button", status: "done", requested: "", started: "2026-10-31", done: "2026-10-31T14:11", version: "0.20.75" },
   { id: "T4", title: "Teams settings wording", status: "done", requested: "", started: "2026-10-31", done: "2026-10-31T14:16", version: "0.20.76" },

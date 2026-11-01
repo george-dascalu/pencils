@@ -66,9 +66,9 @@ export function projectDocuments(ctx) {
     const problem = entry?.error || entry?.conflict || sync.storageError;
     form.querySelector("[data-document-save-problem]").hidden = !problem;
     form.querySelector("[data-document-save]").textContent =
-      sync.storageError ? "Browser storage is full. Keep this page open until saved."
+      sync.storageError ? "Browser draft storage is unavailable. Keep this page open and export your draft from Recovery & backups."
       : entry?.conflict ? "This document changed elsewhere. Review your pending save."
-      : entry?.error ? "Changes kept in this browser. Waiting to save." : "";
+      : entry?.error ? "Changes kept in this browser. Open Recovery & backups to review the save." : "";
     form.querySelector("[data-document-recovery]").hidden = !problem;
     renderTaskQueries(form);
     refreshComments();

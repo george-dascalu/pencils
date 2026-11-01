@@ -35,7 +35,7 @@ async function gallery() {
   capture?.destroy();
   capture = null;
   documents = await localDrawings(owner);
-  root.innerHTML = `<header><h1>Local canvases</h1><a class="button" href="/">Return to workspace</a></header><p>Device: ${esc(owner)}. Edits stay in IndexedDB until you restore a checkpoint in the connected workspace. This page never caches API responses or publishes remote edits.</p>${documents.map((d) => `<div class="local-document"><button class="button" data-open="${esc(d.key)}">${esc(d.board.title)}</button><small>${esc(new Date(d.updated).toLocaleString())} · ${d.pending ? "Pending server sync" : "Server checkpoint"}</small></div>`).join("") || "<p>Prepare offline drawing from the Boards menu while connected first.</p>"}`;
+  root.innerHTML = `<header><h1>Offline drawing</h1><a class="button" href="/">Return to workspace</a></header><p>Board copies saved in this browser. Offline edits do not sync automatically. When connected, return to the project and open Board tools → Local checkpoints. Choose Apply to board to update the original, or Restore as copy to create a separate board.</p>${documents.map((d) => `<div class="local-document"><button class="button" data-open="${esc(d.key)}">${esc(d.board.title)}</button><small>${esc(new Date(d.updated).toLocaleString())} · ${d.pending ? "Not saved to server" : "Copy of server board"}</small></div>`).join("") || "<p>No boards prepared here yet. While connected, open a board and choose Board tools → Prepare offline drawing.</p>"}`;
 }
 function say(text) {
   const el = document.querySelector("[data-save]");
@@ -43,12 +43,12 @@ function say(text) {
 }
 async function save() {
   const doc = structuredClone(current);
-  say("Saving on this device…");
+  say("Saving in this browser…");
   saveChain = saveChain
     .then(() => drawingCheckpoint(doc.owner, doc.project, doc.board, true))
-    .then(() => say("Saved on this device · pending server sync"))
+    .then(() => say("Saved in this browser · not on server"))
     .catch(() =>
-      say("Storage unavailable — export now and keep this tab open"),
+      say("Browser storage unavailable. Keep this tab open and choose Export board file."),
     );
   await saveChain;
 }
@@ -65,7 +65,7 @@ function paint() {
 }
 function render() {
   const ignored = current.board.nodes.some((n) => n.type !== "draw");
-  root.innerHTML = `<header><button type="button" class="button" data-gallery><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg><span>Canvases</span></button><h1>${esc(current.board.title)}</h1><span data-save role="status">Local checkpoint</span></header><div class="offline-tools" role="toolbar" aria-label="Drawing tools">${picker({ value: style.color, name: "ink-color", label: "Ink colour" })}<label>Width <input type="range" min="1" max="32" value="${style.strokeWidth}" data-width></label><button type="button" class="button" data-undo aria-label="Undo stroke" title="Undo stroke"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 10h10a7 7 0 0 1 0 14M3 10l5-5M3 10l5 5"/></svg></button><button type="button" class="button" data-redo aria-label="Redo stroke" title="Redo stroke"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 10H11a7 7 0 0 0 0 14m10-14-5-5m5 5-5 5"/></svg></button><button type="button" class="button" data-export>Export editable canvas</button></div>${ignored ? "<p>Offline ink preview shows strokes. Image references and other objects remain in the document and are available when reconnected.</p>" : ""}<div id="offline-canvas" tabindex="0" aria-label="Drawing canvas. Pencil or mouse draws; fingers navigate."><svg id="offline-content"></svg><div id="offline-ink"></div></div>`;
+  root.innerHTML = `<header><button type="button" class="button" data-gallery><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg><span>Boards</span></button><h1>${esc(current.board.title)}</h1><span data-save role="status">${current.pending ? "Saved in this browser · not on server" : "Copy of server board"}</span></header><div class="offline-tools" role="toolbar" aria-label="Drawing tools">${picker({ value: style.color, name: "ink-color", label: "Ink colour" })}<label>Width <input type="range" min="1" max="32" value="${style.strokeWidth}" data-width></label><button type="button" class="button" data-undo aria-label="Undo stroke" title="Undo stroke"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 10h10a7 7 0 0 1 0 14M3 10l5-5M3 10l5 5"/></svg></button><button type="button" class="button" data-redo aria-label="Redo stroke" title="Redo stroke"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 10H11a7 7 0 0 0 0 14m10-14-5-5m5 5-5 5"/></svg></button><button type="button" class="button" data-export>Export board file</button></div>${ignored ? "<p>Only drawing strokes are shown here. Other board objects are kept in the saved copy.</p>" : ""}<div id="offline-canvas" tabindex="0" aria-label="Drawing area. Draw with a pen or mouse; use fingers to pan and zoom."><svg id="offline-content"></svg><div id="offline-ink"></div></div>`;
   paint();
   const canvas = document.querySelector("#offline-canvas");
   // Pencil and mouse draw; fingers pan and pinch.
@@ -187,5 +187,5 @@ root.addEventListener("change", (e) => {
   if (e.target.hasAttribute("data-width")) style.strokeWidth = +e.target.value;
 });
 gallery().catch((error) => {
-  root.textContent = `Cannot open device storage: ${error.message}`;
+  root.textContent = `Could not open this browser’s board copies. Check browser storage permissions, then reload. Details: ${error.message}`;
 });

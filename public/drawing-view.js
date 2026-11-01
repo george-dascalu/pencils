@@ -64,7 +64,7 @@ export function drawingView(ctx) {
           (b) =>
             `<article><button type="button" data-drawing-action="open" data-id="${esc(b.id)}">${svg(b)}<strong>${esc(b.title)}</strong><small>${b.nodeCount ?? b.nodes.length} objects · ${b.strokeCount ?? b.nodes.filter((n) => n.type === "draw").length} strokes</small></button><button type="button" class="button small" data-drawing-action="link" data-id="${esc(b.id)}">Copy board link</button></article>`,
         )
-        .join("") || "<p>No canvases yet. Create one to start.</p>"
+        .join("") || "<p>No boards yet. Choose New board to start.</p>"
     }</div></section>`;
   }
   // Every entry path (tabs, selectors and old URLs) goes through
@@ -158,7 +158,7 @@ export function drawingView(ctx) {
         state.boardGallery = true;
         renderView();
         toast(
-          "This canvas has pending device changes. Sync the checkpoint or restore a copy before opening it.",
+          "This board has edits saved only in this browser. Choose Apply to board or Restore as copy to continue.",
         );
         await recover();
       } else {
@@ -172,7 +172,7 @@ export function drawingView(ctx) {
     if (!ctx.canNavigate()) return false;
     await ctx.flushBoard();
     if (state.boardConflict) {
-      toast("Resolve the canvas conflict before changing canvases.", true);
+      toast("Review the board’s conflicting edits in Recovery & backups before switching boards.", true);
       return false;
     }
     const b = await ctx.ensureBoard(id);
@@ -228,7 +228,7 @@ export function drawingView(ctx) {
       (d) => d.project.id === state.project.id,
     );
     showDialog(
-      `<dialog class="dialog">${dialogHead("Local canvas checkpoints")}<div class="dialog-body"><p>Restoring creates a separate canvas, preserving the server version. Device storage can be cleared by the browser; keep server backups too.</p>${docs.map((d) => `<p>${esc(d.board.title)} · ${esc(new Date(d.updated).toLocaleString())} · ${d.pending ? "Pending sync" : "Synced"} ${d.pending ? `<button type="button" class="button small" data-drawing-action="sync" data-id="${esc(d.board.id)}">Sync checkpoint</button>` : ""} <button type="button" class="button small" data-drawing-action="restore" data-id="${esc(d.board.id)}">Restore as copy</button></p>`).join("") || "<p>No checkpoints on this device.</p>"}</div></dialog>`,
+      `<dialog class="dialog">${dialogHead("Local checkpoints")}<div class="dialog-body"><p>Board copies saved in this browser. Apply to board merges your edits into the original board. Restore as copy creates a separate board. Browser storage can be cleared; keep server backups too.</p>${docs.map((d) => `<p>${esc(d.board.title)} · ${esc(new Date(d.updated).toLocaleString())} · ${d.pending ? "Not saved to server" : "Saved to server"} ${d.pending ? `<button type="button" class="button small" data-drawing-action="sync" data-id="${esc(d.board.id)}">Apply to board</button>` : ""} <button type="button" class="button small" data-drawing-action="restore" data-id="${esc(d.board.id)}">Restore as copy</button></p>`).join("") || "<p>No board copies in this browser yet. Open a board while connected to create a checkpoint.</p>"}</div></dialog>`,
       "drawing-recovery",
     );
   }
@@ -251,7 +251,7 @@ export function drawingView(ctx) {
           remote = fresh.boards.find((b) => b.id === id);
         if (!remote)
           throw Error(
-            "Server canvas is missing. Restore the checkpoint as a copy.",
+            "The original board is no longer on the server. Choose Restore as copy to recover your edits in a new board.",
           );
         const result = merge(
           persisted(saved.base || saved.board),
@@ -260,7 +260,7 @@ export function drawingView(ctx) {
         );
         if (result.conflicts.length)
           throw Error(
-            "The same canvas changed on the server. Both versions are retained; restore this checkpoint as a copy to compare.",
+            "The same board content changed in this browser and on the server. Both versions are kept. Choose Restore as copy to compare them in separate boards.",
           );
         const synced = await api(route("boards", id), {
           method: "PATCH",
@@ -299,7 +299,7 @@ export function drawingView(ctx) {
         const link = `${location.origin}/#project/${state.project.id}/board/${id}`;
         try {
           await navigator.clipboard.writeText(link);
-          toast("Canvas link copied. Paste it in a card or board note.");
+          toast("Board link copied. Paste it in a card or board note.");
         } catch {
           // The browser refused the clipboard: the link to copy by hand, as Copy frame link does.
           showDialog(`<dialog class="dialog">${dialogHead("Board link")}<div class="dialog-body"><input aria-label="Board link" value="${esc(link)}" readonly></div></dialog>`, "board-link");
@@ -309,7 +309,7 @@ export function drawingView(ctx) {
       if (action === "link-task") {
         const b = ctx.board();
         showDialog(
-          `<dialog class="dialog"><form id="drawing-links">${dialogHead("Link canvas to cards")}<div class="dialog-body">${state.tasks
+          `<dialog class="dialog"><form id="drawing-links">${dialogHead("Link board to cards")}<div class="dialog-body">${state.tasks
             .filter((t) => !t.archived)
             .map(
               (t) =>
@@ -356,7 +356,7 @@ export function drawingView(ctx) {
               { protectPending: true },
             );
         toast(
-          "Offline drawing is prepared. Open /drawing-offline.html when the server is unavailable.",
+          "Offline drawing is ready. Choose Open offline pad in Board tools and bookmark that page before disconnecting.",
         );
       }
     } catch (error) {

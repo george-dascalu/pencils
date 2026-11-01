@@ -56,6 +56,10 @@ This describes the product's mechanism, not a claim that it is unique or superio
 - `reports/2026-10-20-backend-board-performance.md` contains historical workload measurements and implementation findings. It is not a benchmark for every later release or physical device.
 - `public/icon.svg` and the bundled files under `public/fonts/` provide existing assets. Preserve their licences and source records.
 
+## Interface Terminology
+
+Interface terminology: a **board** is the workspace resource; **canvas** describes the drawing area or the `.canvas` file format. **Saved in this browser** means a local copy, distinct from **saved to the server**. A **local checkpoint** is a board copy held in browser storage; **Apply to board** merges it into the original, while **Restore as copy** creates another board. A **project backup** contains projects and organisations; an **installation backup** also covers the rest of the vault and server setup.
+
 ## Product Principles
 
 1. Keep the owner's data portable, recoverable and under their control.

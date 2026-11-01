@@ -2,6 +2,18 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.20.124 — 2026-11-01
+
+### Changed
+
+- Recovery names browser and server edits, explains which fields a conflict choice affects, and makes retry, discard and backup actions explicit.
+- Offline drawing distinguishes browser-only edits from server saves and explains how to apply them to a board or restore a separate copy. Board terminology is consistent through recovery and linking.
+
+### Fixed
+
+- Backup and draft confirmations stay above the Recovery dialog, with working confirmation, Cancel and Escape controls.
+- Long offline board names wrap without hiding their save state or pushing the page sideways.
+
 ## 0.20.123 — 2026-11-01
 
 ### Changed

@@ -102,7 +102,7 @@ function documentTests() {
     // Unacknowledged edits remain available after reload and retry automatically.
     await page.route("**/api/projects/*/documents/*", (route) => (route.request().method() === "PATCH" ? route.abort() : route.continue()));
     await rich(page).fill("Offline draft retained");
-    await expect(page.locator("[data-document-save]")).toContainText("Waiting");
+    await expect(page.locator("[data-document-save]")).toContainText("Changes kept in this browser");
     await page.reload();
     await page.locator("#document-form").waitFor();
     await expect(rich(page)).toContainText("Offline draft retained");
@@ -124,7 +124,7 @@ function documentTests() {
     await expect(page.locator("[data-document-save]")).toContainText("changed elsewhere");
     expect((await getDocument(doc.id)).body).toBe("Other editor's text");
     await page.locator("[data-document-recovery]").click();
-    await page.locator(`[data-feature="resolve-local"][data-url="/projects/${app.project.id}/documents/${doc.id}"]`).click();
+    await page.getByRole('button', { name: 'Use my edits', exact: true }).click();
     await page.locator('[data-action="dialog-close"]').first().click();
     await expect.poll(async () => (await getDocument(doc.id)).body).toContain("My conflicting edit");
   });

@@ -130,16 +130,20 @@ test("offline drawing survives a reload without the server, and pending edits gu
     await page.goto(`${gateway.base}/#project/${project.id}/board/${sketch.id}`);
     await page.locator("#canvas").waitFor();
     await clickControl(page.locator('.board-toolbar [data-drawing-action="offline"]'));
-    await expect(page.getByText("Offline drawing is prepared.")).toBeVisible();
+    await expect(page.getByText("Offline drawing is ready.")).toBeVisible();
     await page.goto(`${gateway.base}/drawing-offline.html`);
+    await expect(page.getByRole('heading', { name: 'Offline drawing', exact: true })).toBeVisible();
+    await expect(page.locator('#offline-drawings')).toContainText('Offline edits do not sync automatically.');
     await page.locator(`[data-open$="/${sketch.id}"]`).click();
+    await expect(page.locator('[data-save]')).toHaveText('Copy of server board');
     await gateway.stop();
     expect(await page.evaluate(() => fetch("/api/health").then(() => true, () => false)), "the origin is unavailable; offline reload cannot use the server").toBe(false);
     const box = await page.locator("#offline-canvas").boundingBox();
     await drawStroke(page, { x: box.x + 130, y: box.y + 120 }, { x: box.x + 240, y: box.y + 180 }, 8);
-    await expect(page.getByText("Saved on this device · pending server sync")).toBeVisible();
+    await expect(page.locator('[data-save]')).toHaveText('Saved in this browser · not on server');
     await page.reload();
     await page.locator(`[data-open$="/${sketch.id}"]`).click();
+    await expect(page.locator('[data-save]')).toHaveText('Saved in this browser · not on server');
     await expect(page.locator("#offline-content > g > g"), "both strokes come back from the device").toHaveCount(2);
 
     await gateway.restart();
@@ -147,6 +151,8 @@ test("offline drawing survives a reload without the server, and pending edits gu
     await page.goto(gateway.base);
     await page.locator(`.home-grid .project-card[data-id="${project.id}"]`).click();
     await pendingGuard(page).waitFor();
+    await expect(pendingGuard(page)).toHaveAccessibleName('Apply to board');
+    await expect(page.locator('dialog[open]')).toContainText('Restore as copy creates a separate board.');
     await expect(page.locator("#canvas")).toHaveCount(0);
     await page.locator('[data-action="dialog-close"]').click();
     await page.locator(`[data-drawing-action="open"][data-id="${legacy.id}"]`).click();
@@ -192,4 +198,22 @@ onDevices(["desktop", "phone"], (device) => test("the Boards gallery fits the sc
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1), "the gallery fits the viewport").toBe(true);
   await page.locator(`[data-drawing-action="open"][data-id="${sketch.id}"]`).click();
   await page.locator("#canvas").waitFor();
+}));
+
+onDevices(['desktop', 'ipad', 'phone'], () => test('offline board names and save states fit without hiding the next step', gate, async ({ page }) => {
+  const { project, sketch } = await seedProject();
+  await app.store.updateBoard(project.id, sketch.id, { revision: sketch.revision, title: 'Unbroken'.repeat(20) });
+  await page.goto(`${app.base}/#project/${project.id}/board/${sketch.id}`);
+  await page.locator('#canvas').waitFor();
+  await clickControl(page.locator('.board-toolbar [data-drawing-action="offline"]'));
+  await expect(page.getByText('Offline drawing is ready.')).toBeVisible();
+  await page.goto(`${app.base}/drawing-offline.html`);
+  const row = page.locator('.local-document').filter({ has: page.locator(`[data-open$="/${sketch.id}"]`) });
+  await expect(row).toContainText('Copy of server board');
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1)).toBe(true);
+  expect(await row.evaluate(el => getComputedStyle(el).flexWrap)).toBe('wrap');
+  await row.getByRole('button').click();
+  await expect(page.getByRole('button', { name: 'Export board file', exact: true })).toBeVisible();
+  await expect(page.locator('[data-save]')).toHaveText('Copy of server board');
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1)).toBe(true);
 }));

@@ -16,7 +16,8 @@ export function confirmAction({ anchor = null, title = "", message = "", confirm
     panel.setAttribute("role", "alertdialog");
     panel.setAttribute("aria-label", title || message);
     panel.innerHTML = `${title ? `<strong class="confirm-title">${esc(title)}</strong>` : ""}${message ? `<p class="confirm-message">${esc(message)}</p>` : ""}<div class="confirm-actions"><button type="button" class="button" data-confirm-cancel>${esc(cancelLabel)}</button><button type="button" class="button ${danger ? "danger" : "primary"}" data-confirm-accept>${esc(confirmLabel)}</button></div>`;
-    document.body.append(panel);
+    // A modal makes everything outside it inert, including a confirmation on body.
+    (opener?.closest('dialog[open]') || document.body).append(panel);
     const place = () => {
       const r = opener?.isConnected ? opener.getBoundingClientRect() : null;
       if (r && (r.width || r.height)) positionPopover(panel, r, { width: 320, maxHeight: 280 });

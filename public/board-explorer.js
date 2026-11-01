@@ -10,7 +10,7 @@ export function boardExplorer(ctx, { canvases, enter }) {
     items: canvases, selected: () => state.selectedBoard, matches: (b, query) => b.title.toLocaleLowerCase().includes(query), moveItem: move });
   async function move(id, folder) {
     // While a conflict holds, refreshes keep this browser's boards, so the list wouldn't follow.
-    if (state.boardConflict) throw Error("Resolve the canvas conflict before moving boards.");
+    if (state.boardConflict) throw Error("Review the board’s conflicting edits in Recovery & backups before moving boards.");
     await ctx.flushBoard();
     const latest = await api(route("boards", id));
     await api(route("boards", id), { method: "PATCH", body: { revision: latest.revision, folder: folder || null } });

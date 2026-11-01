@@ -32,13 +32,13 @@ export function recoveryUI(ctx) {
       })
       : [{ items: [] }, { backups: [] }];
     showDialog(
-      `<dialog class="dialog wide-dialog">${dialogHead("Recovery & backups")}<div class="dialog-body"><h3>Pending saves</h3>${[...sync.entries.values()].map((e) => `<section class="recovery-item"><strong>${esc(e.local?.title || e.url)}</strong><p>${esc(e.error || "Waiting to save")}</p>${e.conflict ? `<ul>${e.conflict.conflicts.map((c) => `<li><strong>${esc(c.path)}</strong><div class="conflict-values"><pre>Your edit: ${esc(JSON.stringify(c.local))}</pre><pre>On disk: ${esc(JSON.stringify(c.remote))}</pre></div></li>`).join("")}</ul><button class="button small" data-feature="resolve-local" data-url="${esc(e.url)}">Keep my conflicting values</button><button class="button small" data-feature="resolve-remote" data-url="${esc(e.url)}">Use disk values for conflicts</button>` : ""}<button class="button small" data-feature="draft-download" data-url="${esc(e.url)}">Export draft</button><button class="button small" data-feature="draft-retry" data-url="${esc(e.url)}">Retry</button><button class="button small danger" data-feature="draft-discard" data-url="${esc(e.url)}">Discard draft</button></section>`).join("") || "<p>All queued changes are saved.</p>"}<p class="field-hint">Editor drafts are restored when you reopen the same card, or a new card's editor, in this browser. Drafts are separate from vault backups.</p>${
+      `<dialog class="dialog wide-dialog">${dialogHead("Recovery & backups")}<div class="dialog-body"><h3>Pending saves</h3>${[...sync.entries.values()].map((e) => `<section class="recovery-item"><strong>${esc(e.local?.title || e.url)}</strong><p>${esc(e.error || "Waiting to save to the server")}</p>${e.conflict ? `<p>This choice applies to the conflicting fields below. Other edits are combined.</p><ul>${e.conflict.conflicts.map((c) => `<li><strong>${esc(c.path)}</strong><div class="conflict-values"><pre>Your edit: ${esc(JSON.stringify(c.local))}</pre><pre>Server version: ${esc(JSON.stringify(c.remote))}</pre></div></li>`).join("")}</ul><button class="button small" data-feature="resolve-local" data-url="${esc(e.url)}">Use my edits</button><button class="button small" data-feature="resolve-remote" data-url="${esc(e.url)}">Use server edits</button>` : ""}<button class="button small" data-feature="draft-download" data-url="${esc(e.url)}">Export draft</button><button class="button small" data-feature="draft-retry" data-url="${esc(e.url)}">Retry save</button><button class="button small danger" data-feature="draft-discard" data-url="${esc(e.url)}">Discard draft</button></section>`).join("") || "<p>No pending saves in this browser.</p>"}<p class="field-hint">Editor drafts are restored when you reopen the same card, or a new card's editor, in this browser. Drafts are separate from vault backups.</p>${
         unavailable ? '<p role="status">Server backups and trash are unavailable. You can still export your browser drafts above.</p>' : state.session?.user?.admin
-          ? `<h3>Project backups</h3><p>Includes Projects and Organisations. Accounts, history, trash and other vault folders require an installation backup. Automatic backup before the first edit each day. Keep a copy on another disk.</p><p class="field-hint">ZIP exports support 220 MB compressed, 200 MB expanded and 30,000 files. Larger backups are stored as files on the server and can be restored here. Verify a backup before restoring it.</p><button class="button" data-feature="backup-create">Create backup now</button> <button class="button" data-feature="backup-upload">Upload backup ZIP</button>${backups.backups
+          ? `<h3>Project backups</h3><p>Contains projects and organisations only. Accounts, history, trash and other vault folders need an installation backup. Pencils makes a project backup before the first edit each day. Keep a copy on another disk.</p><p class="field-hint">ZIP exports support 220 MB compressed, 200 MB expanded and 30,000 files. Larger backups are stored as files on the server and can be restored here. Verify a backup before restoring it.</p><button class="button" data-feature="backup-create">Create backup now</button> <button class="button" data-feature="backup-upload">Upload backup ZIP</button>${backups.backups
               .slice(0, 40)
               .map(
                 (b) =>
-                  `<div class="recovery-item"><strong>${esc(new Date(b.created).toLocaleString())}</strong><p>${esc(b.reason)} · ${b.files} files · ${(b.size / 1024).toFixed(0)} KB</p>${b.format === "directory" ? `<span>Files stored on server</span>` : `<a class="button small" href="/api/backups/${esc(b.id)}" download>Download ZIP</a>`}<button class="button small" data-feature="backup-verify" data-id="${esc(b.id)}">Verify</button><button class="button small danger" data-feature="backup-restore" data-id="${esc(b.id)}">Restore vault</button></div>`,
+                  `<div class="recovery-item"><strong>${esc(new Date(b.created).toLocaleString())}</strong><p>${esc(b.reason)} · ${b.files} files · ${(b.size / 1024).toFixed(0)} KB</p>${b.format === "directory" ? `<span>Files stored on server</span>` : `<a class="button small" href="/api/backups/${esc(b.id)}" download>Download ZIP</a>`}<button class="button small" data-feature="backup-verify" data-id="${esc(b.id)}">Verify backup</button><button class="button small danger" data-feature="backup-restore" data-id="${esc(b.id)}">Restore backup</button></div>`,
               )
               .join(
                 "",
@@ -98,7 +98,7 @@ export function recoveryUI(ctx) {
           if (!response.ok)
             throw new Error(result.error || "Backup upload failed.");
           await open();
-          toast("Backup uploaded. Choose Restore vault to apply it.");
+          toast("Backup uploaded. Choose Restore backup to replace projects and organisations.");
         } catch (error) {
           toast(error.message, true);
         }
@@ -129,13 +129,13 @@ export function recoveryUI(ctx) {
     }
     if (action === "backup-restore") {
       if (
-        await confirmAction({ anchor: el, title: "Restore this backup?", message: "All projects and organisations are replaced. A backup of the current vault is created first.", confirmLabel: "Restore backup", danger: true })
+        await confirmAction({ anchor: el, title: "Restore this backup?", message: "All projects and organisations will be replaced by this backup. A backup of their current contents is created first.", confirmLabel: "Restore backup", danger: true })
       ) {
         await api(`/backups/${el.dataset.id}`, { method: "POST", body: {} });
         closeDialog(true);
         state.project = null;
         await refresh();
-        toast("Vault restored.");
+        toast("Projects and organisations restored.");
       }
       return true;
     }
@@ -186,7 +186,7 @@ export function recoveryUI(ctx) {
     }
     if (action === "draft-discard") {
       if (
-        await confirmAction({ anchor: el, title: "Discard these unsaved changes?", message: "Export the draft first if you want a copy.", confirmLabel: "Discard", danger: true })
+        await confirmAction({ anchor: el, title: "Discard these unsaved changes?", message: "Export draft first if you want a copy. Discarding removes this draft from the browser.", confirmLabel: "Discard draft", danger: true })
       ) {
         sync.discard(el.dataset.url);
         await refresh(false);
