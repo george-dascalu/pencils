@@ -1,6 +1,6 @@
 // Project settings are pages, not dialogs (AGENTS.md: dialogs only for major workflows):
 // one page per section with history and deep links, saves that touch only their own section,
-// an unsaved-change guard on the sidebar and browser Back, conflict protection against
+// saves as they change (leaving saves a field being typed in), conflict protection against
 // concurrent edits, and every page laid out without overflow on desktop and phones in both
 // themes. Set SETTINGS_A11Y=1 to add axe checks of every page.
 import fs from "node:fs/promises";
@@ -9,7 +9,7 @@ import path from "node:path";
 import AxeBuilder from "@axe-core/playwright";
 import { test, expect } from "../fixtures.mjs";
 import { useCustomApp } from "../helpers/custom-server.mjs";
-import { showSettingsSection, openSettingsPage } from "../helpers/menu-controls.mjs";
+import { showSettingsSection, openSettingsPage, settingsSaved } from "../helpers/menu-controls.mjs";
 import { Auth } from "../../server/auth.js";
 import { settingsPages } from "../../public/project-settings.js";
 
@@ -37,10 +37,7 @@ async function section(page, id) {
   await showSettingsSection(page, id);
   await atHash(page, hash(id));
 }
-async function save(page) {
-  await page.locator('#settings-panel [type="submit"]').click();
-  await page.getByText("Changes saved", { exact: true }).waitFor();
-}
+const save = settingsSaved;
 const title = (page) => page.locator('#project-form [name="title"]');
 
 test("Project settings opens on General as a page, and saving General keeps the workflow and teams", { tag: "@gate" }, async ({ page }) => {
@@ -56,31 +53,22 @@ test("Project settings opens on General as a page, and saving General keeps the 
 
   const initial = (await snapshot()).project;
   await title(page).fill("Renamed project");
-  // Leaving with unsaved changes asks first; dismissing stays on the page with the edit.
-  page.once("dialog", (d) => d.dismiss());
+  // Settings save as they change: leaving the page saves the field being typed in.
   await page.locator('[data-settings-section="workflow"]').click();
-  expect(new URL(page.url()).hash).toBe(hash("general"));
-  await expect(title(page)).toHaveValue("Renamed project");
-  await save(page);
+  await atHash(page, hash("workflow"));
+  await expect.poll(async () => (await snapshot()).project.title).toBe("Renamed project");
   const saved = (await snapshot()).project;
-  expect(saved.title).toBe("Renamed project");
   expect(saved.schema, "General save preserves the workflow").toEqual(initial.schema);
   expect(saved.teams).toEqual(initial.teams);
-  expect(new URL(page.url()).hash, "Save stays on the page").toBe(hash("general"));
 });
 
-test("browser Back uses the same unsaved-change guard, and Discard restores the saved values", { tag: "@gate" }, async ({ page }) => {
+test("browser Back saves the field being typed in", { tag: "@gate" }, async ({ page }) => {
   await open(page, "teams");
   await section(page, "general");
-  const savedTitle = (await snapshot()).project.title;
-  await expect(title(page)).toHaveValue(savedTitle);
-  await title(page).fill("Keep this unsaved name");
-  page.once("dialog", (d) => d.dismiss());
+  await title(page).fill("Saved on the way back");
   await page.goBack();
-  await atHash(page, hash("general"));
-  await expect(title(page)).toHaveValue("Keep this unsaved name");
-  await page.locator("[data-settings-discard]").click();
-  await expect(title(page)).toHaveValue(savedTitle);
+  await atHash(page, hash("teams"));
+  await expect.poll(async () => (await snapshot()).project.title).toBe("Saved on the way back");
 });
 
 test("Workflow and Hierarchy save separately without overwriting each other", { tag: "@gate" }, async ({ page }) => {
@@ -100,7 +88,7 @@ test("Workflow and Hierarchy save separately without overwriting each other", { 
   expect(schema.status_labels.todo).toBe("Ready");
 });
 
-test("a custom field survives saving another page, Back and a reload", { tag: "@gate" }, async ({ page }) => {
+test("a custom field survives another page, Back and a reload", { tag: "@gate" }, async ({ page }) => {
   await open(page);
   await section(page, "fields");
   await page.locator("[data-settings-add-field]").click();
@@ -111,7 +99,6 @@ test("a custom field survives saving another page, Back and a reload", { tag: "@
   expect((await snapshot()).project.schema.fields[0].options).toEqual(["Alpha", "Beta"]);
   await section(page, "teams");
   await page.locator("[data-settings-assignees]").waitFor();
-  await save(page);
   expect((await snapshot()).project.schema.fields[0].name).toBe("Release train");
   await page.goBack();
   await atHash(page, hash("fields"));
@@ -188,11 +175,11 @@ test("a stale settings page does not overwrite a concurrent project edit", { tag
   await title(page).fill("Unsaved change");
   const fresh = (await snapshot()).project;
   await app.store.updateProject(app.project.id, { revision: fresh.revision, body: "Changed outside this browser" });
-  await page.locator('#project-form [type="submit"]').click();
+  await title(page).blur();
   await page.locator("#project-form .form-error:not(.hidden)").waitFor();
+  await expect(page.locator("[data-settings-save-state]")).toHaveText("Not saved");
   expect((await snapshot()).project.body).toBe("Changed outside this browser");
   expect((await snapshot()).project.title).toBe(fresh.title);
-  await page.locator("[data-settings-discard]").click();
   await page.reload();
   await page.locator("#project-form").waitFor();
 });

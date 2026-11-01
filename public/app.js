@@ -53,6 +53,7 @@ import { compareTaskOrder } from "./task-order-model.js";
 import { SaveQueue } from "./sync.js";
 import { createMarkdown } from "./markdown.js";
 import { installFeatures } from "./features.js";
+import { settingsSaveState } from "./project-settings.js";
 const $ = (selector, root = document) => root.querySelector(selector);
 // The sidebar opens over the content, so the swipe in from the left edge opens it.
 installEdgeSwipeGuard({
@@ -853,10 +854,18 @@ function renderAppNow() {
 function keepFocus(render) {
   const focused = document.activeElement !== document.body ? document.activeElement : null;
   const key = focusKey(focused);
+  // A Settings field is found again by its place in its form, or is the same field when the page
+  // kept it across a save.
+  const settings = focused?.closest("#settings-panel") && state.settingsSection;
+  const field = !key && settings && focused.form?.id && [focused.form.id, [...focused.form.elements].indexOf(focused)];
   const result = render();
-  // A control in the closed sidebar can't take focus (the menu button shares its close button's action).
-  if (key && !focused.isConnected && document.activeElement === document.body)
-    [...document.querySelectorAll(key)].find((el) => el.getClientRects().length && !el.closest(".sidebar:not(.open)"))?.focus({ preventScroll: true });
+  if (focused && (!focused.isConnected || settings) && document.activeElement === document.body) {
+    // A control in the closed sidebar can't take focus (the menu button shares its close button's action).
+    const again = focused.isConnected ? focused : key
+      ? [...document.querySelectorAll(key)].find((el) => el.getClientRects().length && !el.closest(".sidebar:not(.open)"))
+      : field && state.settingsSection === settings ? document.getElementById(field[0])?.elements[field[1]] : null;
+    again?.focus({ preventScroll: true });
+  }
   return result;
 }
 // A selector that finds the same control after a rebuild: a board object (or the board), an
@@ -1664,7 +1673,7 @@ kanbanDrag({ state, task, patchTask, renderView, storage, toast, statusNames });
 // New organisations are created in a dialog; the current one is edited on the Settings page.
 function organisationFormHTML(organisation = state.organisation) {
   const edit = !!organisation?.id;
-  return `<form id="organisation-form" data-id="${esc(edit ? organisation.id : "")}" data-revision="${esc(organisation.revision || "")}">${edit ? "" : dialogHead("A home for your projects")}<div class="dialog-body"><div class="form-error hidden" role="alert"></div><label class="field">Organisation name<input name="title" value="${esc(organisation.title)}" placeholder="A company, a team, or your own space" maxlength="300" required ${edit ? "" : "autofocus"}></label><label class="field">Description<textarea name="body" rows="3" placeholder="What brings these projects together?">${esc(organisation.body)}</textarea></label><div class="field">Organisation colour${colorPicker({ label: "Organisation colour", value: organisation.color })}</div><p>Each organisation has its own project list. You can switch organisations at any time.</p></div><div class="dialog-foot">${edit ? "" : '<button type="button" class="button" data-action="dialog-close">Cancel</button>'}<button type="submit" class="button primary">${edit ? "Save organisation" : "Create organisation"}</button></div></form>`;
+  return `<form id="organisation-form" data-id="${esc(edit ? organisation.id : "")}" data-revision="${esc(organisation.revision || "")}">${edit ? "" : dialogHead("A home for your projects")}<div class="dialog-body"><div class="form-error hidden" role="alert"></div><label class="field">Organisation name<input name="title" value="${esc(organisation.title)}" placeholder="A company, a team, or your own space" maxlength="300" required ${edit ? "" : "autofocus"}></label><label class="field">Description<textarea name="body" rows="3" placeholder="What brings these projects together?">${esc(organisation.body)}</textarea></label><div class="field">Organisation colour${colorPicker({ label: "Organisation colour", value: organisation.color })}</div><p>Each organisation has its own project list. You can switch organisations at any time.</p></div><div class="dialog-foot" ${edit ? "hidden" : ""}><button type="button" class="button" data-action="dialog-close">Cancel</button><button type="submit" class="button primary">${edit ? "Save organisation" : "Create organisation"}</button></div></form>`;
 }
 function organisationDialog() {
   showDialog(`<dialog class="dialog">${organisationFormHTML({ title: "", body: "", color: "#66856f" })}</dialog>`, "organisation");
@@ -2466,6 +2475,13 @@ document.addEventListener("submit", async (event) => {
   const data = Object.fromEntries(new FormData(form));
   try {
     if (form.id === "organisation-form") {
+      const edits = state.settingsEdits, typed = state.settingsTyped, id = form.dataset.id;
+      // Settings save the organisation as it changes; only a new one has a button.
+      if (id) {
+        settingsSaveState(state, "Saving…");
+        state.settingsSaving = true;
+        state.settingsSavingEdits = edits;
+      }
       await boardQueue;
       if (state.boardConflict)
         throw new Error(
@@ -2474,21 +2490,39 @@ document.addEventListener("submit", async (event) => {
       // Only forms with the Teams and People editors send these; others leave them as they are.
       if ("people" in data) data.people = JSON.parse(data.people || "[]");
       if ("teams" in data) data.teams = JSON.parse(data.teams || "[]");
-      const id = form.dataset.id;
       const organisation = await api(`/organisations${id ? `/${id}` : ""}`, {
         method: id ? "PATCH" : "POST",
         body: { ...data, ...(id ? { revision: form.dataset.revision } : {}) },
       });
-      closeDialog(true);
-      state.settingsDirty = false;
+      // An edit still to save keeps its browser draft.
+      if (!id || state.settingsEdits === edits) closeDialog(true);
       applyWorkspace(await fetchWorkspace());
-      if (id) renderApp();
-      else await openOrganisation(organisation.id);
-      toast(
-        id
-            ? "Organisation saved."
-            : "Organisation created. Add its first project.",
-      );
+      if (id) {
+        form.dataset.revision = organisation.revision;
+        state.settingsFailed = false;
+        if (!form.isConnected) {
+          // Left during the save: a Settings page shown since is redrawn, unless it has edits of its own.
+          if (!state.settingsDirty) renderApp();
+        } else if (state.settingsEdits !== edits) {
+          // A change made during the save is saved next instead of being redrawn away.
+          settingsSaveState(state, "Saved");
+          queueMicrotask(() => {
+            if (!form.isConnected) return;
+            if (form.checkValidity()) form.requestSubmit();
+            else settingsSaveState(state, "Not saved");
+          });
+        } else {
+          settingsSaveState(state, "Saved");
+          if (state.settingsTyped === typed) state.settingsDirty = state.dirty = false;
+          state.settingsKeep = true;
+          renderApp();
+          state.settingsKeep = false;
+        }
+      } else {
+        state.settingsDirty = false;
+        await openOrganisation(organisation.id);
+        toast("Organisation created. Add its first project.");
+      }
     } else if (form.id === "project-form") {
       data.teams = JSON.parse(data.teams || "[]");
       const edit = form.dataset.edit === "true";
@@ -2619,6 +2653,10 @@ document.addEventListener("submit", async (event) => {
       renderApp();
     }
   } catch (error) {
+    if (form.id === "organisation-form" && form.dataset.id && form.isConnected) {
+      settingsSaveState(state, "Not saved");
+      state.settingsFailed = true;
+    }
     const output = $(".form-error", form);
     if (output) {
       output.textContent = error.message;
@@ -2627,6 +2665,7 @@ document.addEventListener("submit", async (event) => {
     } else toast(error.message, true);
   } finally {
     submit.disabled = false;
+    if (form.id === "organisation-form") state.settingsSaving = false;
   }
 });
 document.addEventListener("input", (event) => {

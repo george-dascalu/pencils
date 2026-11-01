@@ -983,7 +983,7 @@ export function projectDocuments(ctx) {
           group("Delete", `<button type="button" class="document-panel-item danger" data-document-action="confirm-delete">${icon("trash")}Delete document</button>`),
           // Phones and iPad show the word count here instead of the chip over the text.
           `<p class="document-tool-stats">${esc(form.querySelector("[data-document-stats]").textContent)}</p>`,
-        ].join(""));
+        ].join(""), 280, { menu: true });
       } else if (action === "links") {
         const unlinked = unlinkedMentions(all(), current.title, current.id);
         const backlinks = all().filter(d => d.id !== current.id && [...(d.body || "").matchAll(/\[\[([^\]\n]+)\]\]|\[[^\]]*\]\(([^)\s]+)\)/g)].some(m => resolveDocument(m[1] || m[2], all())?.id === current.id));
@@ -1018,7 +1018,7 @@ export function projectDocuments(ctx) {
         showPanel(button, "Delete document", '<p>Move this document to Trash?</p><button type="button" class="button danger" data-document-action="delete">Move to Trash</button>');
       } else if (action === "insert") {
         const categories = panelCategories(state.project.personal ? ["card"] : []);
-        showPanel(button, "Insert", `<div class="document-insert-options">${categories.map(([title, items]) => `<section aria-label="${title}"><h3>${title}</h3>${items.map(([key,label,glyph]) => `<button type="button" class="document-panel-item" ${["attach", "card", "comment", "sketch"].includes(key) ? `data-document-action="${key}"` : `data-document-format="${key}"`}>${icon(glyph)}${label}</button>`).join("")}</section>`).join("")}</div>`);
+        showPanel(button, "Insert", `<div class="document-insert-options">${categories.map(([title, items]) => `<section aria-label="${title}">${items.map(([key,label,glyph]) => `<button type="button" class="document-panel-item" ${["attach", "card", "comment", "sketch"].includes(key) ? `data-document-action="${key}"` : `data-document-format="${key}"`}>${icon(glyph)}${label}</button>`).join("")}</section>`).join("")}</div>`, 280, { menu: true });
 
       } else if (action === "attach") { closePanel(); form.querySelector("#document-attachment").click(); }
       else if (action === "card") { closePanel(); await makeCard(); }

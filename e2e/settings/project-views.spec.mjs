@@ -2,6 +2,7 @@
 // (Tasks, Planning, Boards, Documents) a project has; Overview always stays. Views that are off
 // leave the tabs (the bottom bar on touch screens), the layout tray and the New menu, and a link
 // to one opens Overview. Nothing in the project is deleted.
+import { settingsSaved } from "../helpers/menu-controls.mjs";
 import { test, expect, onDevices, useApp } from "../fixtures.mjs";
 
 const app = useApp(async () => ({}));
@@ -32,8 +33,7 @@ test("Settings → General turns views and components off, and they leave the ta
   for (const name of ["List", "Tree", "Table", "Kanban"]) await expect(views.getByRole("checkbox", { name, exact: true })).not.toBeChecked();
   await expect(views.getByRole("checkbox", { name: "Planning", exact: true }), "Planning keeps Timeline and Capacity").toBeChecked();
   await expect(page.locator('#project-form [name="default_view"]'), "the default view leaves List as it goes").toHaveValue("overview");
-  await page.locator("#project-form [type=submit]").click();
-  await page.getByText("Changes saved", { exact: true }).waitFor();
+  await settingsSaved(page);
   const saved = (await app.store.snapshot(project.id)).project;
   expect(saved.schema.views_off).toEqual(["list", "tree", "table", "kanban", "calendar", "board"]);
   expect(saved.default_view).toBe("overview");
@@ -53,8 +53,7 @@ test("Settings → General turns views and components off, and they leave the ta
   // Turning a view back on brings it back.
   await page.goto(url(project, "settings/general"));
   await page.getByRole("group", { name: "Views", exact: true }).getByRole("checkbox", { name: "Boards", exact: true }).check();
-  await page.locator("#project-form [type=submit]").click();
-  await page.getByText("Changes saved", { exact: true }).waitFor();
+  await settingsSaved(page);
   await page.goto(url(project, "overview"));
   await expect(tab(page, "board")).toHaveCount(1);
 });

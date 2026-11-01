@@ -143,6 +143,41 @@ if (typeof document !== "undefined") document.addEventListener("keydown", (event
   }
 });
 
+// Settings save as they change (owner request T72). A field's change saves its form, and so do the
+// editors that keep their value in a hidden field (statuses, people, teams). One save runs at a time;
+// a change made during it is saved after it (state.settingsEdits). A form that isn't valid waits as
+// "Not saved", and says why only on the field just changed, so focus never jumps to another field.
+export function autosaveSettings(form, busy, state) {
+  form.dataset.autosave = "";
+  const save = (event, report) => {
+    if (busy()) return;
+    if (form.checkValidity()) return void form.requestSubmit();
+    settingsSaveState(state, "Not saved");
+    if (report && event.target.willValidate && !event.target.checkValidity()) event.target.reportValidity();
+  };
+  // A name typed for something not yet added (a new status or card type) isn't a setting.
+  form.addEventListener("change", (event) => {
+    if (event.target.type !== "hidden" && !event.target.closest("[data-settings-readonly], [data-settings-staging]")) save(event, true);
+  });
+  // An editor's hidden field saves once the editor has finished: it may update another hidden
+  // field right after (card types, then the hierarchy), which this one save then includes.
+  let queued = false;
+  form.addEventListener("input", (event) => {
+    if (event.target.type !== "hidden" || queued) return;
+    queued = true;
+    queueMicrotask(() => {
+      queued = false;
+      if (form.isConnected) save(event, false);
+    });
+  });
+}
+// "Saving…", "Saved" or "Not saved" beside the page title, kept across the redraw after a save.
+export function settingsSaveState(state, text) {
+  state.settingsSaveState = text;
+  const status = document.querySelector("[data-settings-save-state]");
+  if (status) status.textContent = text;
+}
+
 export function projectSettings(ctx, { sources, automations, personal, organisationEditor }) {
   const {
     state,
@@ -158,7 +193,8 @@ export function projectSettings(ctx, { sources, automations, personal, organisat
   let sequence = 0,
     railScroll = 0,
     pageScroll = 0,
-    shown = "";
+    shown = "",
+    panel = null;
   const page = () => settingsPage(state.settingsSection);
   const showing = () => (state.project ? state.view === "settings" : state.directoryPage === "settings");
   const current = (section) => showing() && page()[0] === section;
@@ -171,15 +207,22 @@ export function projectSettings(ctx, { sources, automations, personal, organisat
   function clean() {
     state.settingsDirty = false;
     state.dirty = false;
+    state.settingsFailed = false;
   }
+  // Settings save as they change: leaving saves a field still being typed in. Only an edit that
+  // can't be saved, or one in a form with its own Save (sources, automation, import), asks first.
   function canLeave() {
     if (!showing()) return true;
-    if (state.settingsSaving) {
+    if (document.activeElement?.closest("#settings-panel [data-autosave]")) document.activeElement.blur();
+    // An edit made during a save is saved after it, which needs the page.
+    if (state.settingsSaving && state.settingsEdits !== state.settingsSavingEdits) {
       toast("Wait for these settings to finish saving.");
       return false;
     }
-    if (!state.settingsDirty) return true;
-    if (!confirm("Discard unsaved changes to this settings page?"))
+    const forms = [...document.querySelectorAll("#settings-panel form")];
+    const stuck = state.settingsFailed || forms.some((form) => form.hasAttribute("data-autosave") && !form.checkValidity());
+    const unsaved = state.settingsDirty && forms.some((form) => !form.hasAttribute("data-autosave"));
+    if ((stuck || unsaved) && !confirm(stuck ? "Discard the change that can't be saved?" : "Discard unsaved changes to this settings page?"))
       return false;
     clean();
     return true;
@@ -203,6 +246,8 @@ export function projectSettings(ctx, { sources, automations, personal, organisat
       ? ctx.storage.get(`view:${state.project.id}`, "list") : state.view;
     state.helpArticle = null;
     clean();
+    state.settingsSaveState = "";
+    state.settingsKeep = false;
     state.view = "settings";
     state.settingsSection = state.project.personal ? "personal" : settingsPage(section)[0];
     state.settingsDetail = detail;
@@ -215,18 +260,18 @@ export function projectSettings(ctx, { sources, automations, personal, organisat
   function markDirty(event) {
     if (
       !event.target.closest("form") ||
-      event.target.closest("[data-settings-readonly]")
+      event.target.closest("[data-settings-readonly], [data-settings-staging]")
     )
       return;
     state.settingsDirty = state.dirty = true;
-    const status = document.querySelector("[data-settings-save-state]");
-    if (status) status.textContent = "Unsaved changes";
-  }
-  function footer(title = "Save changes") {
-    return `<div class="dialog-foot settings-save-bar"><span role="status" data-settings-save-state>No unsaved changes</span><button type="button" class="button" data-settings-discard>Discard changes</button><button type="submit" class="button primary">${title}</button></div>`;
+    // Typing is counted apart from committed edits (a field's change, or an editor's hidden field,
+    // which signals with input and then change), which a save under way saves next.
+    const hidden = event.target.type === "hidden";
+    if (hidden ? event.type === "input" : event.type === "change") state.settingsEdits = (state.settingsEdits || 0) + 1;
+    else if (!hidden) state.settingsTyped = (state.settingsTyped || 0) + 1;
   }
   function form(body, id = "project-form") {
-    return `<form id="${id}" data-settings-form data-edit="true" data-revision="${esc(state.project.revision)}"><div class="dialog-body"><div class="form-error hidden" role="alert"></div>${body}</div>${footer()}</form>`;
+    return `<form id="${id}" data-settings-form data-edit="true" data-revision="${esc(state.project.revision)}"><div class="dialog-body"><div class="form-error hidden" role="alert"></div>${body}</div></form>`;
   }
   const field = (name, title, value, extra = "") =>
     `<label class="field">${title}<input name="${name}" value="${esc(value || "")}" ${extra}></label>`;
@@ -243,7 +288,7 @@ export function projectSettings(ctx, { sources, automations, personal, organisat
   }
   function teams() {
     return form(
-      `<label class="field">Organisation<select name="organisation" required>${state.organisations.map((o) => `<option value="${esc(o.id)}" ${o.id === state.project.organisation ? "selected" : ""}>${esc(o.title)}</option>`).join("")}</select></label><p class="field-hint">Moving organisations moves this project, its cards and boards. Select teams from the destination organisation before saving.</p><div class="settings-assignee-summary"><h3>Available assignees</h3><p data-settings-assignees></p></div>`,
+      `<label class="field">Organisation<select name="organisation" required>${state.organisations.map((o) => `<option value="${esc(o.id)}" ${o.id === state.project.organisation ? "selected" : ""}>${esc(o.title)}</option>`).join("")}</select></label><p class="field-hint">Moving organisations moves this project, its cards and boards; then choose its teams from the new organisation.</p><div class="settings-assignee-summary"><h3>Available assignees</h3><p data-settings-assignees></p></div>`,
     );
   }
   function customField(
@@ -265,7 +310,7 @@ export function projectSettings(ctx, { sources, automations, personal, organisat
       );
     const types =
       section === "hierarchy"
-        ? `<div class="field type-list-field"><span id="type-list-label">Card types</span><input type="hidden" name="types" value="${esc(state.config.types.join(", "))}" required>${typeChipsHTML(state.config.types)}<div class="type-add"><input data-type-input aria-label="New type name" placeholder="New type…" maxlength="30"><button type="button" class="button small" data-type-add>${icon("plus")}Add type</button></div><span class="field-hint">Types in use cannot be removed.</span></div>`
+        ? `<div class="field type-list-field"><span id="type-list-label">Card types</span><input type="hidden" name="types" value="${esc(state.config.types.join(", "))}" required>${typeChipsHTML(state.config.types)}<div class="type-add"><input data-type-input data-settings-staging aria-label="New type name" placeholder="New type…" maxlength="30"><button type="button" class="button small" data-type-add>${icon("plus")}Add type</button></div><span class="field-hint">Types in use cannot be removed.</span></div>`
         : "";
     return form(types, "workflow-form");
   }
@@ -315,14 +360,18 @@ export function projectSettings(ctx, { sources, automations, personal, organisat
     }
   }
   async function render() {
-    const serial = ++sequence,
-      projectId = state.project?.id,
-      pages = pagesFor(state.project);
+    const pages = pagesFor(state.project);
     const [section, title, , , description] = pages.find(([id]) => id === state.settingsSection) || pages[0];
     state.settingsSection = section;
     const detail = state.settingsDetail || "";
     // A new section starts at the top; saves and refreshes of the same one keep its scroll.
     const key = `${state.project?.id || ""}/${section}/${detail}`;
+    // After an autosave the page around it is redrawn but the panel is kept as it is, with its open
+    // menus and half-made edits, and its form stays the current one.
+    const keep = state.settingsKeep && key === shown && panel;
+    state.settingsKeep = false;
+    const serial = keep ? sequence : ++sequence,
+      projectId = state.project?.id;
     if (key !== shown) pageScroll = 0;
     shown = key;
     const valid = () =>
@@ -345,15 +394,21 @@ export function projectSettings(ctx, { sources, automations, personal, organisat
       })
       .join(
         "",
-      )}</nav><label class="field settings-mobile-nav">Settings section<select id="settings-section-select">${pages.map(([id, name]) => `<option value="${id}" ${id === section ? "selected" : ""}>${name}</option>`).join("")}</select></label><button type="button" class="button settings-return" data-action="settings-close">${icon("arrow-left")}${state.project ? "Back to project" : "Back"}</button></aside><section class="settings-content"><header class="settings-section-heading">${detail ? `${link(section, "← Back to " + title)}` : ""}<h2 id="settings-page-title" tabindex="-1">${esc(title)}</h2><p>${description}</p></header><div id="settings-panel" aria-live="polite"><p class="settings-loading" role="status">Loading ${esc(title.toLowerCase())}…</p></div></section>`;
+      )}</nav><label class="field settings-mobile-nav">Settings section<select id="settings-section-select">${pages.map(([id, name]) => `<option value="${id}" ${id === section ? "selected" : ""}>${name}</option>`).join("")}</select></label><button type="button" class="button settings-return" data-action="settings-close">${icon("arrow-left")}${state.project ? "Back to project" : "Back"}</button></aside><section class="settings-content"><header class="settings-section-heading">${detail ? `${link(section, "← Back to " + title)}` : ""}<h2 id="settings-page-title" tabindex="-1">${esc(title)}</h2><span class="settings-save-state" role="status" data-settings-save-state>${esc(state.settingsSaveState || "")}</span><p>${description}</p></header><div id="settings-panel" aria-live="polite"><p class="settings-loading" role="status">Loading ${esc(title.toLowerCase())}…</p></div></section>`;
     // The rail is rebuilt with the page: keep where it was scrolled to, with the open section in view.
     const rail = content.querySelector(".settings-navigation");
     rail.scrollTop = railScroll;
     rail.querySelector('[aria-current="page"]')?.scrollIntoView({ block: "nearest" });
     const pane = content.querySelector(".settings-content");
-    const host = document.querySelector("#settings-panel");
-    host.addEventListener("input", markDirty);
-    host.addEventListener("change", markDirty);
+    if (keep) {
+      document.querySelector("#settings-panel").replaceWith(panel);
+      pane.scrollTop = pageScroll;
+      return;
+    }
+    const host = (panel = document.querySelector("#settings-panel"));
+    // Before the form's own listeners, so a save started by this change doesn't count it as a later edit.
+    host.addEventListener("input", markDirty, true);
+    host.addEventListener("change", markDirty, true);
     try {
       if (section === "personal") {
         host.innerHTML = personal().html();
@@ -363,7 +418,9 @@ export function projectSettings(ctx, { sources, automations, personal, organisat
       if (section === "organisation") {
         host.innerHTML = ctx.organisationFormHTML();
         // People and teams are edited here, their one home.
-        organisationEditor(host.querySelector("form"));
+        const organisationForm = host.querySelector("form");
+        organisationEditor(organisationForm);
+        autosaveSettings(organisationForm, () => organisationForm.querySelector('[type="submit"]').disabled, state);
         return;
       }
       if (section === "sources") {
@@ -422,28 +479,43 @@ export function projectSettings(ctx, { sources, automations, personal, organisat
         };
         f.addEventListener("change", paintPeople);
         paintPeople();
+        // Moving to another organisation moves the cards and boards too: ask before it saves. Its
+        // teams belong to the old organisation, so they are chosen again there.
+        f.addEventListener("change", (event) => {
+          const select = f.elements.organisation;
+          if (select.value === state.project.organisation || confirm(`Move this project to ${select.selectedOptions[0].text}? Its cards and boards move with it, and you then choose its teams there.`)) return;
+          event.stopImmediatePropagation();
+          select.value = state.project.organisation;
+        }, true);
       }
       if (["workflow", "hierarchy"].includes(section))
         workflowEditor(f, schema, state.tasks, ctx, { section });
       // Assignee, status and priority share one box whose border takes the priority's colour.
       if (section === "workflow")
         f.querySelector(".dialog-body").insertAdjacentHTML("beforeend", `<fieldset class="card-fields"><legend>Card fields</legend><p class="field-hint">Cards always show their ID and title. Turn off the fields this project doesn't use: their values stay in the files, and views that need a field that's off leave the tabs.</p><div class="card-field-list">${CARD_FIELDS.map(([key, name]) => `<label><input type="checkbox" name="card-field" value="${key}" ${fieldOn(schema, key) ? "checked" : ""}> ${name}</label>`).join("")}</div></fieldset><fieldset class="priority-colors"><legend>Priority colours</legend><p class="field-hint">A card's assignee, status and priority share one box with a border in its priority's colour.</p><div class="priority-color-list">${priorityOptions.map((priority) => `<div class="field">${esc(priorityLabel(priority))}${colorPicker({ label: `${priorityLabel(priority)} priority colour`, value: taskFieldColor(state, "priority", priority), name: `priority-color-${priority}` })}</div>`).join("")}</div></fieldset>`);
+      if (section !== "import") autosaveSettings(f, () => state.settingsSaving, state);
       f.addEventListener("submit", async (event) => {
         event.preventDefault();
         event.stopPropagation();
         const submit = f.querySelector('[type="submit"]'),
-          error = f.querySelector(".form-error");
-        submit.disabled = true;
+          error = f.querySelector(".form-error"),
+          edits = state.settingsEdits,
+          typed = state.settingsTyped;
+        if (submit) submit.disabled = true;
+        else settingsSaveState(state, "Saving…");
         state.settingsSaving = true;
+        state.settingsSavingEdits = edits;
         error.classList.add("hidden");
         try {
           const data = new FormData(f);
+          // The project as it is now: an earlier save from this page is already in it.
+          const config = structuredClone(state.config);
           let changes;
           if (section === "general") {
             changes = Object.fromEntries(data);
             delete changes["project-view"];
             const on = data.getAll("project-view"), off = VIEW_GROUPS.flatMap(([, , views]) => views).filter((view) => !on.includes(view));
-            if (off.join() !== (schema.views_off || []).join()) changes.schema = { ...schema, views_off: off.length ? off : undefined };
+            if (off.join() !== (config.views_off || []).join()) changes.schema = { ...config, views_off: off.length ? off : undefined };
           }
           if (section === "teams")
             changes = {
@@ -462,7 +534,7 @@ export function projectSettings(ctx, { sources, automations, personal, organisat
           if (section === "fields")
             changes = {
               schema: {
-                ...schema,
+                ...config,
                 fields: [...f.querySelectorAll("[data-field-id]")].map(
                   (row) => ({
                     id: row.dataset.fieldId,
@@ -502,28 +574,48 @@ export function projectSettings(ctx, { sources, automations, personal, organisat
               `Imported ${result.tasks.length} note${result.tasks.length === 1 ? "" : "s"}.`,
             );
           } else {
-            await api(`/projects/${projectId}`, {
+            const saved = await api(`/projects/${projectId}`, {
               method: "PATCH",
               body: { ...changes, revision: f.dataset.revision },
             });
-            clean();
+            // The next save checks against this one, so an edit made elsewhere since still conflicts.
+            f.dataset.revision = saved.revision;
+            state.settingsFailed = false;
             await refresh(false);
-            if (valid()) {
-              renderApp();
-              document.querySelector("[data-settings-save-state]").textContent =
-                "Changes saved";
+            if (!f.isConnected) {
+              // Left during the save: a Settings page shown since is redrawn with the saved values,
+              // unless it has edits of its own.
+              if (showing() && !state.settingsDirty) renderApp();
+            } else if (state.settingsEdits !== edits) {
+              // A change made during the save is saved next instead of being redrawn away.
+              settingsSaveState(state, "Saved");
+              queueMicrotask(() => {
+                if (!f.isConnected) return;
+                if (f.checkValidity()) f.requestSubmit();
+                else settingsSaveState(state, "Not saved");
+              });
+            } else {
+              settingsSaveState(state, "Saved");
+              if (state.settingsTyped === typed) clean();
+              if (valid()) {
+                state.settingsKeep = true;
+                renderApp();
+                state.settingsKeep = false;
+              }
             }
-            toast(`${title} saved.`);
           }
         } catch (e) {
+          if (!submit && f.isConnected) {
+            settingsSaveState(state, "Not saved");
+            state.settingsFailed = true;
+          }
           if (f.isConnected) {
             error.textContent = e.message;
             error.classList.remove("hidden");
-          }
+          } else toast(e.message, true);
         } finally {
           state.settingsSaving = false;
-          submit.disabled =
-            section === "import" && !f.elements.notes.files.length;
+          if (submit) submit.disabled = !f.elements.notes.files.length;
         }
       });
     } catch (e) {
@@ -544,18 +636,6 @@ export function projectSettings(ctx, { sources, automations, personal, organisat
     }
     const target = event.target.closest("button");
     if (!target?.closest(".project-settings-layout")) return;
-    if (target.hasAttribute("data-settings-discard")) {
-      clean();
-      state.settingsSaving = true;
-      try {
-        await refresh(false);
-        renderApp();
-      } catch (e) {
-        toast(e.message, true);
-      } finally {
-        state.settingsSaving = false;
-      }
-    }
     if (target.hasAttribute("data-settings-parent")) open(page()[0]);
     if (target.hasAttribute("data-settings-retry")) void render();
     if (target.hasAttribute("data-settings-add-field")) {
@@ -563,18 +643,14 @@ export function projectSettings(ctx, { sources, automations, personal, organisat
         .querySelector("[data-settings-fields]")
         .insertAdjacentHTML("beforeend", customField());
       document.querySelector("[data-fields-empty]").hidden = true;
-      state.settingsDirty = state.dirty = true;
-      document.querySelector("[data-settings-save-state]").textContent =
-        "Unsaved changes";
       focusOnOpen(document.querySelector("[data-settings-fields] section:last-child input"), target);
     }
     if (target.hasAttribute("data-settings-remove-field")) {
+      const fields = target.closest("form");
       target.closest("[data-field-id]").remove();
-      state.settingsDirty = state.dirty = true;
-      document.querySelector("[data-settings-save-state]").textContent =
-        "Unsaved changes";
       document.querySelector("[data-fields-empty]").hidden =
         !!document.querySelector("[data-field-id]");
+      fields.dispatchEvent(new Event("change", { bubbles: true }));
     }
     if (target.hasAttribute("data-settings-rebuild")) {
       target.disabled = true;

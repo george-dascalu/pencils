@@ -2,6 +2,7 @@
 // Geo for George, instead of initials, and they fit their box, even wide letters in Compact
 // density; the full name stays in the tooltip. Owner request, 31 October 2026: a person's own short
 // name, set in Settings → Organisation, replaces the three letters.
+import { settingsSaved } from "../helpers/menu-controls.mjs";
 import { test, expect, onDevices, useApp } from "../fixtures.mjs";
 
 const app = useApp(async (store) => {
@@ -37,11 +38,7 @@ test("a short name set in Settings → Organisation replaces the three letters a
   await expect(field, "the placeholder follows the name").toHaveAttribute("placeholder", "Ale");
   await row.locator("[data-person-field=name]").fill("George");
   await field.fill("MWa");
-  const [saved] = await Promise.all([
-    page.waitForResponse((r) => r.request().method() === "PATCH" && r.url().includes("/organisations/")),
-    page.getByRole("button", { name: "Save organisation", exact: true }).click(),
-  ]);
-  expect(saved.status()).toBe(200);
+  await settingsSaved(page);
   expect((await app.store.getOrganisation(app.organisation.id)).people.map((p) => p.short_name)).toEqual(["MWa", undefined]);
   await page.goto(`${app.base}/#project/${app.named.id}/list`);
   await page.evaluate(() => window.PencilsAppearance.write({ density: "compact" }));

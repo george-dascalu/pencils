@@ -124,3 +124,9 @@ export async function openSettingsPage(page, section) {
 export async function openHelp(page) {
   await clickControl(page.locator(".sidebar .phone-drawer-utilities [data-action=help]"));
 }
+
+// Settings save as they change (T72): commit the field being edited, then wait for its save.
+export async function settingsSaved(page) {
+  await page.evaluate(() => document.activeElement?.blur());
+  await page.locator('[data-settings-save-state]:text-is("Saved")').waitFor();
+}

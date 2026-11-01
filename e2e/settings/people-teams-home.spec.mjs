@@ -2,7 +2,7 @@
 // sidebar has no Teams section, the old Teams and People links open that section, and Capacity's
 // empty state goes there.
 import { test, expect, onDevices, useApp } from "../fixtures.mjs";
-import { openSidebar } from "../helpers/menu-controls.mjs";
+import { openSidebar, settingsSaved } from "../helpers/menu-controls.mjs";
 
 const app = useApp(async (store) => {
   const project = await store.createProject({ title: "People home" });
@@ -33,9 +33,9 @@ test("Capacity without teams sends you to Settings → Organisation", async ({ p
   await expect(page.locator("#settings-page-title")).toHaveText("Organisation");
 });
 
-// The draft belongs to the organisation, so its other projects offer it too; once restored it is
-// an unsaved change that leaving asks about, and only saving writes it.
-test("an unsaved People edit is offered in the organisation's other projects and guarded once restored", async ({ page }) => {
+// The draft belongs to the organisation, so its other projects offer it too; Settings save as they
+// change, so restoring it saves it.
+test("an unsaved People edit is offered in the organisation's other projects and saved once restored", async ({ page }) => {
   const name = page.locator('[data-person="george"] [data-person-field=name]');
   const stored = async () => (await app.store.getOrganisation(app.organisation.id)).people[0].name;
   await page.goto(`${app.base}/#project/${app.first.id}/settings/organisation`);
@@ -45,15 +45,7 @@ test("an unsaved People edit is offered in the organisation's other projects and
   await page.goto(`${app.base}/#project/${app.second.id}/settings/organisation`);
   await page.locator("[data-feature=form-restore]").click();
   await expect(name).toHaveValue("George draft");
-  expect(await stored()).toBe("George");
-  let asked = "";
-  page.once("dialog", (dialog) => { asked = dialog.message(); void dialog.dismiss(); });
-  await page.locator('.settings-navigation [data-settings-section="personal"]').click();
-  await expect.poll(() => asked, "leaving asks first").toMatch(/Discard unsaved changes/);
-  await expect(name).toHaveValue("George draft");
-  await page.getByRole("button", { name: "Save organisation", exact: true }).click();
-  await page.getByText("Organisation saved.", { exact: true }).waitFor();
-  expect(await stored()).toBe("George draft");
+  await expect.poll(stored, "restoring saves the draft").toBe("George draft");
 });
 
 for (const width of [1440, 390])

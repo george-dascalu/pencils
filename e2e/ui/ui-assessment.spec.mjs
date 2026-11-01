@@ -75,19 +75,6 @@ test.describe("Group 1: tablet layout (findings 1–7)", { tag: "@audit" }, () =
       await open(page, "list", ".task-row");
       expect(await page.evaluate(() => document.querySelector('meta[name="viewport"]').content)).toMatch(/viewport-fit=cover/);
     });
-    test("settings save footer never covers the last control on a phone", async ({ page }) => {
-      await open(page, "settings/workflow", "#settings-panel .dialog-foot");
-      await page.evaluate(() => { window.scrollTo(0, document.documentElement.scrollHeight); document.querySelector(".main")?.scrollTo(0, 1e6); document.querySelector("#view-content")?.scrollTo(0, 1e6); });
-      await settled(page);
-      const [lastBottom, footTop] = await page.evaluate(() => {
-        const foot = document.querySelector("#settings-panel .dialog-foot");
-        const body = foot.parentElement.querySelector(".settings-page-body, .dialog-body") || foot.previousElementSibling;
-        const controls = [...body.querySelectorAll("button, input, select, textarea, summary")].filter((el) => el.getBoundingClientRect().height);
-        const last = controls[controls.length - 1];
-        return [last.getBoundingClientRect().bottom, foot.getBoundingClientRect().top];
-      });
-      expect(lastBottom, `last control bottom ${lastBottom} is under the footer top ${footTop}`).toBeLessThanOrEqual(footTop + 1);
-    });
     test("phone kanban shows the edge of the next column", async ({ page }) => {
       await open(page, "kanban", ".kanban-column");
       const first = await rect(page, "#view-content > .kanban > .kanban-column", 0);

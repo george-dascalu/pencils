@@ -4,7 +4,7 @@
 // invalid hex is rejected, visual picking previews locally until applied, recent colours are
 // shared and persist, and the panel stays on screen with keyboard access on desktop and phone.
 import { test, expect, useApp } from "../fixtures.mjs";
-import { openSettingsPage } from "../helpers/menu-controls.mjs";
+import { openSettingsPage, settingsSaved } from "../helpers/menu-controls.mjs";
 
 const app = useApp(async (store) => {
   const project = await store.createProject({ title: "Colours" });
@@ -48,9 +48,8 @@ test("projects and organisations take palette and validated custom colours", asy
   // Since 0.19.31 the top bar's single Settings button replaces the project gear.
   await openSettingsPage(page);
   await choose(page, "Peach", page.locator("#project-form"));
-  // Since 0.15.18 Project settings is a page with its own save bar ("Save changes").
-  await page.locator("#project-form [type=submit]").click();
-  await page.getByText("Changes saved", { exact: true }).waitFor();
+  // Settings save as they change (T72).
+  await settingsSaved(page);
   await page.getByRole("button", { name: "Back to project", exact: true }).click();
   expect((await app.store.snapshot(app.project.id)).project.color).toBe("#edc48b");
   const organisation = page.locator("#organisation-form");
@@ -60,8 +59,7 @@ test("projects and organisations take palette and validated custom colours", asy
   await page.locator("[data-color-hex]").fill("#123abc");
   await page.locator("[data-color-hex]").press("Enter");
   await expect(organisation.locator("[name=color]")).toHaveValue("#123abc");
-  await organisation.locator(".dialog-foot button.primary").click();
-  await expect(page.locator("#toasts")).toContainText("Organisation saved.");
+  await settingsSaved(page);
   expect(await recents(page), "invalid hex never becomes a recent colour").not.toContain("oops");
   await page.locator("[data-action=settings-close]").click();
   await openSettingsPage(page, "organisation");

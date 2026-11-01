@@ -3,6 +3,7 @@
 // Fields that are off leave rows, cards, the card editor, filters, sort and Table columns, and the
 // views that need them (Kanban: status, Tree: parent, Calendar and Timeline: dates, Capacity:
 // assignee) leave the tabs.
+import { settingsSaved } from "../helpers/menu-controls.mjs";
 import { test, expect, onDevices, useApp } from "../fixtures.mjs";
 
 const app = useApp(async () => ({}));
@@ -28,8 +29,7 @@ test("turning fields off in Settings hides them and the views that need them, an
   await expect(fields.getByRole("checkbox")).toHaveCount(9);
   for (const name of ["Assignee", "Status", "Priority", "Start date", "Due date", "Parent"])
     await fields.getByRole("checkbox", { name, exact: true }).uncheck();
-  await page.locator("#workflow-form [type=submit]").click();
-  await page.getByText("Changes saved", { exact: true }).waitFor();
+  await settingsSaved(page);
   expect((await app.store.snapshot(s.project.id)).project.schema.off).toEqual(["assignee", "status", "priority", "start", "due", "parent"]);
 
   await page.goto(url(s, "list"));

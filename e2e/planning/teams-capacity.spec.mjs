@@ -5,7 +5,7 @@
 // desktop and phone screens in both themes and opens tasks in the shared editor.
 // Part of the cross-browser release gate.
 import { test, expect, useApp } from "../fixtures.mjs";
-import { selectProjectView, selectSettingsPage, openSettingsPage, chooseProject } from "../helpers/menu-controls.mjs";
+import { selectProjectView, selectSettingsPage, openSettingsPage, chooseProject, settingsSaved } from "../helpers/menu-controls.mjs";
 import { newCard } from "../helpers/new-card.mjs";
 
 const today = new Date().toLocaleDateString("en-CA");
@@ -49,8 +49,7 @@ test("people and teams are created in the organisation editor, and a team withou
   await page.locator("[data-person-field=task_capacity]").fill("0");
   await page.getByRole("button", { name: "Add team", exact: true }).click();
   await page.getByLabel("Team name", { exact: true }).fill("Design");
-  await page.getByRole("button", { name: "Save organisation", exact: true }).click();
-  await page.getByText("Organisation saved.", { exact: true }).waitFor();
+  await settingsSaved(page);
   const org = await app.store.getOrganisation(project.organisation);
   expect(org.people[0].task_capacity).toBe(0);
   expect(org.teams[0].members).toEqual([]);
@@ -58,8 +57,7 @@ test("people and teams are created in the organisation editor, and a team withou
   await openSettingsPage(page);
   await selectSettingsPage(page, "teams");
   await page.locator("[data-project-team]").check();
-  await page.getByRole("button", { name: "Save changes", exact: true }).click();
-  await page.getByText("Changes saved", { exact: true }).waitFor();
+  await settingsSaved(page);
   await page.getByRole("button", { name: "Back to project", exact: true }).click();
   await newCard(page);
   await expect(page.locator("#task-form [name=assignee] option")).toHaveText(["Unassigned"]);
@@ -72,8 +70,7 @@ test("adding a member to the project's team makes them assignable on a new card"
   await page.goto(`${app.base}/#project/${project.id}/list`);
   await openSettingsPage(page, "organisation");
   await page.locator("[data-member]").check();
-  await page.getByRole("button", { name: "Save organisation", exact: true }).click();
-  await page.getByText("Organisation saved.", { exact: true }).waitFor();
+  await settingsSaved(page);
   const org = await app.store.getOrganisation(project.organisation);
   expect(org.teams[0].members).toEqual([org.people[0].id]);
   await chooseProject(page, project.id);

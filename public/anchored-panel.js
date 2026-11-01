@@ -23,7 +23,8 @@ export function anchoredPanel({ state, esc, icon }) {
     if (state.dialog === "document-panel") state.dialog = null;
     if (focus && opener?.isConnected) opener.focus({ preventScroll: true });
   }
-  function show(button, title, html, width = 360) {
+  // A menu (Document tools, Insert) is a list of rows like the board's menus: no header, 4px padding.
+  function show(button, title, html, width = 360, { menu = false } = {}) {
     // Pressed again, its opener closes this panel; it opens another panel (one shown from inside
     // this one, such as Backlinks) as before.
     if (panel && button === opener && panel.getAttribute("aria-label") === title && pressed instanceof Node && button.contains(pressed)) return close(true);
@@ -31,11 +32,11 @@ export function anchoredPanel({ state, esc, icon }) {
     close();
     opener = button;
     panel = document.createElement("section");
-    panel.className = "document-panel board-settings-popover";
+    panel.className = `document-panel board-settings-popover${menu ? " document-menu" : ""}`;
     panel.setAttribute("popover", "auto");
     panel.setAttribute("role", "dialog");
     panel.setAttribute("aria-label", title);
-    panel.innerHTML = `<header><h2>${esc(title)}</h2><button type="button" class="icon-button" data-document-panel-close aria-label="Close ${esc(title)}">${icon("close")}</button></header>${html}`;
+    panel.innerHTML = menu ? html : `<header><h2>${esc(title)}</h2><button type="button" class="icon-button" data-document-panel-close aria-label="Close ${esc(title)}">${icon("close")}</button></header>${html}`;
     document.body.append(panel); panel.showPopover(); state.dialog = "document-panel";
     const position = () => panel && positionPopover(panel, button.getBoundingClientRect(), { width, maxHeight: Math.min(560, innerHeight - 24) });
     position();
@@ -56,7 +57,7 @@ export function anchoredPanel({ state, esc, icon }) {
         panel = null; opener = null;
       }
     });
-    panel.querySelector("[data-document-panel-close]").addEventListener("click", () => close(true));
+    panel.querySelector("[data-document-panel-close]")?.addEventListener("click", () => close(true));
     panel.addEventListener("keydown", event => {
       if (event.key === "Escape") { event.preventDefault(); event.stopPropagation(); close(true); }
     });

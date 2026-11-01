@@ -7,7 +7,7 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import { test, expect, useApp } from "../fixtures.mjs";
-import { clickControl, reveal, selectProjectView, selectSettingsPage, openSettingsPage } from "../helpers/menu-controls.mjs";
+import { clickControl, reveal, selectProjectView, selectSettingsPage, openSettingsPage, settingsSaved } from "../helpers/menu-controls.mjs";
 import { newCard } from "../helpers/new-card.mjs";
 
 const app = useApp(async (store) => {
@@ -84,14 +84,12 @@ test("a custom type and a typed field reach new cards, the table, calendar and t
   await selectSettingsPage(page, "hierarchy");
   await page.locator("#workflow-form [data-type-input]").fill("research");
   await page.locator("#workflow-form [data-type-add]").click();
-  await page.locator("#workflow-form [type=submit]").click();
-  await page.getByText("Changes saved", { exact: true }).waitFor();
+  await settingsSaved(page);
   await selectSettingsPage(page, "fields");
   await page.locator("[data-settings-add-field]").click();
   await page.locator("[data-field-name]").fill("Cost");
   await page.locator("[data-field-type]").selectOption("number");
-  await page.locator("#workflow-form [type=submit]").click();
-  await page.getByText("Changes saved", { exact: true }).waitFor();
+  await settingsSaved(page);
   await page.locator('[data-action="settings-close"]').click();
   await newCard(page);
   await page.locator("#task-form [name=title]").fill("Planned work");

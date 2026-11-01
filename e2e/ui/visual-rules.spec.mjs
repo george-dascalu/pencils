@@ -1,9 +1,9 @@
 // Visual workflow and hierarchy rules in Project settings: connections are added and
 // removed on the diagram (Connect, then a source and a destination; or the remove chip),
-// the hierarchy mode can be enforced, edits persist through Save changes and a reload,
+// the hierarchy mode can be enforced, edits save as they change and persist through a reload,
 // and the diagram fits desktop and phone widths in light and dark themes.
 import { test, expect, useApp } from "../fixtures.mjs";
-import { selectSettingsPage, openSettingsPage } from "../helpers/menu-controls.mjs";
+import { selectSettingsPage, openSettingsPage, settingsSaved } from "../helpers/menu-controls.mjs";
 
 const app = useApp(async (store) => ({
   project: await store.createProject({
@@ -39,8 +39,7 @@ test("workflow rules connect only once enabled, and a transition can be added an
   expect((await schema(page)).transitions.todo).toContain("done");
   await workflow.locator("[data-rule-remove=done]").click();
   expect((await schema(page)).transitions.todo).not.toContain("done");
-  await page.getByRole("button", { name: "Save changes", exact: true }).click();
-  await page.getByText("Changes saved", { exact: true }).waitFor();
+  await settingsSaved(page);
   await expect.poll(async () => (await saved()).transitions.todo).not.toContain("done");
 });
 
@@ -57,7 +56,7 @@ test("hierarchy links are edited on the diagram, the enforced mode saves, and bo
   await page.locator("[data-hierarchy-mode]").selectOption("enforced");
   await hierarchy.locator('[data-rule-node="@root"]').click();
   await hierarchy.locator("[data-rule-remove=bug]").click();
-  await page.getByRole("button", { name: "Save changes", exact: true }).click();
+  await settingsSaved(page);
   await expect.poll(async () => (await saved()).hierarchy?.mode).toBe("enforced");
   const stored = await saved();
   expect(stored.transitions.todo).not.toContain("done");

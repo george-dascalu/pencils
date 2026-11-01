@@ -4,7 +4,7 @@
 // and Board, and the Board shows the saved status after a reload. The editor fits desktop and
 // phone widths in both themes.
 import { test, expect, useApp } from "../fixtures.mjs";
-import { selectProjectView, selectSettingsPage, openSettingsPage, chooseProject } from "../helpers/menu-controls.mjs";
+import { selectProjectView, selectSettingsPage, openSettingsPage, chooseProject, settingsSaved } from "../helpers/menu-controls.mjs";
 import { newCard } from "../helpers/new-card.mjs";
 
 const app = useApp(async (store) => {
@@ -32,7 +32,7 @@ async function openWorkflow(page) {
   await selectSettingsPage(page, "workflow");
 }
 
-test("the workflow editor renames, restricts and protects statuses, and guards unsaved changes", async ({ page }) => {
+test("the workflow editor renames, restricts and protects statuses, and saves as it changes", async ({ page }) => {
   await page.goto(app.base);
   await chooseProject(page);
   await openSettingsPage(page);
@@ -47,13 +47,7 @@ test("the workflow editor renames, restricts and protects statuses, and guards u
   await page.locator("[data-status-add]").click();
   await row(page, "on-hold").locator("[data-status-remove]").click();
   await expect(row(page, "on-hold")).toHaveCount(0);
-  // Leaving with unsaved changes asks first; dismissing keeps the edits.
-  page.once("dialog", (d) => d.dismiss());
-  await page.locator("[data-action=settings-close]").click();
-  await expect(row(page, "todo").locator("[data-status-name]")).toHaveValue("Ready queue");
-  await expect(page.locator("[data-workflow-rules]")).toBeChecked();
-  await page.getByRole("button", { name: "Save changes", exact: true }).click();
-  await expect(page.getByText("Statuses & workflow saved.", { exact: true })).toBeVisible();
+  await settingsSaved(page);
   await page.getByRole("button", { name: "Back to project", exact: true }).click();
   const config = (await app.store.snapshot(app.project.id)).project.schema;
   expect(config.transitions.todo).toEqual(["doing"]);

@@ -2,6 +2,7 @@
 // box whose border takes the priority's colour wherever they appear together, and each project
 // sets its priority colours in Settings → Workflow. Owner request, 30 October 2026: the box holds
 // the date too, after the priority, everywhere.
+import { settingsSaved } from "../helpers/menu-controls.mjs";
 import { test, expect, onDevices, useApp } from "../fixtures.mjs";
 
 const app = useApp(async (store) => {
@@ -68,8 +69,7 @@ test("each project sets its priority colours in Settings → Workflow", async ({
   await picker.locator("[data-color-custom-toggle]").click();
   await picker.locator("[data-color-hex]").fill("#123abc");
   await picker.locator("[data-color-apply]").click();
-  await page.locator("#workflow-form [type=submit]").click();
-  await page.getByText("Changes saved", { exact: true }).waitFor();
+  await settingsSaved(page);
   expect((await app.store.snapshot(app.project.id)).project.schema.priority_colors).toEqual({ low: "#123abc" });
   await page.goto(url("list"));
   await boxed(row(page, app.low).locator(".row-fields.field-box"), [".row-priority .field-chip"], "#123abc", "list after the setting");

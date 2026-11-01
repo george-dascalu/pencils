@@ -5,7 +5,7 @@
 // its own workflow. On phones the drawer opens and closes and the Settings page fits the screen.
 // Nothing is requested from outside the local server.
 import { test, expect, onDevices, useApp } from "../fixtures.mjs";
-import { openSettingsPage, selectProjectView, clickControl, openSidebar, chooseProject } from "../helpers/menu-controls.mjs";
+import { openSettingsPage, selectProjectView, clickControl, openSidebar, chooseProject, settingsSaved } from "../helpers/menu-controls.mjs";
 import { newCard } from "../helpers/new-card.mjs";
 
 const app = useApp(async (store) => ({
@@ -117,7 +117,7 @@ test("a project's workflow is its own: new cards and Kanban use it, and a status
   await openProject(page);
   await openSettings(page, "workflow");
   await setStatuses(page, ["ideas", "active", "shipped"], "shipped");
-  await page.locator("#workflow-form [type=submit]").click();
+  await settingsSaved(page);
   await expect.poll(async () => (await app.store.snapshot(app.project.id)).project.schema.statuses[0]).toBe("ideas");
   expect((await app.store.snapshot(app.other.id)).project.schema.statuses).toEqual(["backlog", "todo", "in-progress", "review", "done"]);
   if (await page.locator("[data-action=settings-close]").count()) await page.locator("[data-action=settings-close]").click();

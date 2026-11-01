@@ -2,7 +2,7 @@
 // scrolled the page beside it, and the other way round. The rail and the page now scroll on
 // their own; narrow screens stack them in one scroller as before.
 import { test, expect, onDevices, useApp } from "../fixtures.mjs";
-import { openSettingsPage } from "../helpers/menu-controls.mjs";
+import { openSettingsPage, settingsSaved } from "../helpers/menu-controls.mjs";
 
 const app = useApp(async (store) => ({ project: await store.createProject({ title: "Scroll", key: "SC" }) }));
 const rail = (page) => page.locator(".settings-navigation");
@@ -36,10 +36,10 @@ onDevices(["ipad", "desktop"], () => {
     await page.locator('#organisation-form [name="body"]').evaluate((el) => {
       el.value = "Saved while scrolled";
       el.dispatchEvent(new Event("input", { bubbles: true }));
+      el.dispatchEvent(new Event("change", { bubbles: true }));
     });
-    await page.getByRole("button", { name: "Save organisation" }).click();
+    await settingsSaved(page);
     await expect(page.locator('#organisation-form [name="body"]')).toHaveValue("Saved while scrolled");
-    await expect(page.locator("#toasts")).toContainText("Organisation saved.");
     await expect.poll(() => pane(page).evaluate((el) => el.scrollTop), "the page keeps its scroll").toBe(scrolled);
     // Picking another section rebuilds the rail but keeps it where it was; the new page starts at the top.
     const link = rail(page).locator("nav a", { hasText: "Automation" });

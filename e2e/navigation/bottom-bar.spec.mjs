@@ -15,7 +15,7 @@ const views = [
   ["documents", ".cm-scroller", ".cm-line", "Line 59"],
   ["table", ".table-scroll", ".spreadsheet tbody tr"],
   ["kanban", ".kanban-column:has(.kanban-card)", ".kanban-column:has(.kanban-card) .kanban-card"],
-  ["settings/workflow", "#view-content", ".project-settings-page .dialog-foot"],
+  ["settings/workflow", "#view-content", "#settings-panel form > .dialog-body > :last-child"],
 ];
 // Scrolls the view's scroller to its end and returns the bottom of its last item.
 const endBottom = (page, scroller, last, text) => page.evaluate(([scroller, last, text]) => {
@@ -32,10 +32,6 @@ onDevices(["phone"], () => test("views run behind the bottom bar and scroll thei
     const bar = await page.locator(".topbar .tabs").boundingBox();
     const box = await page.locator(scroller).first().boundingBox();
     expect(box.y + box.height, `${view}: content runs behind the bar`).toBeGreaterThan(bar.y + bar.height / 2);
-    if (view.startsWith("settings")) {
-      const foot = await page.locator(last).boundingBox();
-      expect(foot.y + foot.height, "the sticky Save bar stays above the bar before the end").toBeLessThanOrEqual(bar.y);
-    }
     await expect.poll(() => endBottom(page, scroller, last, text), `${view}: the end scrolls above the bar`).toBeLessThanOrEqual(bar.y);
     if (view === "documents") {
       await expect(page.locator("[data-document-stats]"), "the word count is in Document tools, not over the text").toBeHidden();

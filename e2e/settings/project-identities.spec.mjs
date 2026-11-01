@@ -2,7 +2,7 @@
 // dialog) renumbers task IDs everywhere. The board's task picker finds tasks by the new ID and
 // cards created on the board join the same project records and numbering.
 import { test, expect, onDevices, useApp } from "../fixtures.mjs";
-import { selectProjectView, openSettingsPage, chooseProject } from "../helpers/menu-controls.mjs";
+import { selectProjectView, openSettingsPage, chooseProject, settingsSaved } from "../helpers/menu-controls.mjs";
 
 const app = useApp(async (store) => {
   const project = await store.createProject({ title: "Website", key: "WEB" });
@@ -22,7 +22,7 @@ test.describe("desktop", () => {
     await openSettingsPage(page);
     await expect(page.locator("dialog[open]")).toHaveCount(0);
     await page.locator(".project-settings-page [name=key]").fill("APP");
-    await page.locator("#project-form [type=submit]").click();
+    await settingsSaved(page);
     await expect.poll(async () => (await snapshot()).project.key).toBe("APP");
     expect((await snapshot()).tasks[0].key).toBe("APP-1");
 

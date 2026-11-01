@@ -833,9 +833,12 @@ export function installFeatures(ctx) {
               o.selected = draft.data[input.name].includes(o.value);
           } else input.value = draft.data[input.name];
         }
+        // A Settings form saves the restored draft at once, against the revision the draft started
+        // from, so a change made elsewhere since still conflicts.
+        const settings = form.hasAttribute("data-autosave");
         if (draft.base) {
           formBases.set(form, draft.base);
-          if (form.id === "organisation-form" && draft.base.revision)
+          if ((form.id === "organisation-form" || settings) && draft.base.revision)
             form.dataset.revision = draft.base.revision;
         }
         taskEditor?.reload();
@@ -843,13 +846,14 @@ export function installFeatures(ctx) {
         relationships?.refresh();
         reloadTeams?.();
         reloadWorkflow?.();
-        if (form.id === "organisation-form" || (form.id === "project-form" && state.view === "settings"))
-          state.settingsDirty = true;
+        if (settings) state.settingsDirty = true;
         state.dirty = true;
         $(".draft-notice")?.remove();
         autosave?.schedule();
+        // Settings save as they change, so a restored draft saves now.
+        if (settings) form.dispatchEvent(new Event("change", { bubbles: true }));
         toast(
-          autosave
+          autosave || settings
             ? "Browser draft restored. Changes save automatically."
             : "Browser draft restored. Save to update the vault.",
         );

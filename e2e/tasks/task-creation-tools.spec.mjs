@@ -6,7 +6,7 @@
 import { test, expect, useApp } from "../fixtures.mjs";
 import { newCard } from "../helpers/new-card.mjs";
 import { legacySubtasks } from "../helpers/task-editor-helpers.mjs";
-import { openSettingsPage, clickControl } from "../helpers/menu-controls.mjs";
+import { openSettingsPage, clickControl, settingsSaved } from "../helpers/menu-controls.mjs";
 
 const app = useApp(async (store) => {
   const project = await store.createProject({ title: "Creation tools", key: "TOOLS" });
@@ -84,7 +84,6 @@ test("the hierarchy editor refuses rules that existing cards break, fits a phone
   await page.locator("[data-hierarchy-mode]").selectOption("enforced");
   await page.locator(".hierarchy-matrix > summary").click();
   await page.locator('[data-hierarchy-parent="task"][data-hierarchy-child="bug"]').uncheck();
-  await page.locator("#settings-panel [type=submit]").click();
   await expect(page.getByText(/Move existing cards before enforcing/)).toBeVisible();
   await page.locator('[data-hierarchy-parent="task"][data-hierarchy-child="bug"]').check();
   await page.locator('[data-hierarchy-parent="bug"][data-hierarchy-child="task"]').uncheck();
@@ -93,7 +92,7 @@ test("the hierarchy editor refuses rules that existing cards break, fits a phone
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1), `${width}px: no horizontal scroll`).toBe(true);
   }
   await page.setViewportSize({ width: 1440, height: 1000 });
-  await page.locator("#settings-panel [type=submit]").click();
+  await settingsSaved(page);
   await expect.poll(async () => (await snap()).project.schema.hierarchy?.mode).toBe("enforced");
 });
 

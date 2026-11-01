@@ -113,7 +113,7 @@ export function workflowEditor(form, config, tasks, { esc, icon }, { section = "
       )
       .join(
         "",
-      )}</ul></div><div class="workflow-add"><input data-new-status placeholder="New status name…" aria-label="New status name" maxlength="100"><button type="button" class="button small" data-status-add>${icon("plus")}Add status</button></div><p class="form-error" data-workflow-error hidden></p></details></div>`;
+      )}</ul></div><div class="workflow-add"><input data-new-status data-settings-staging placeholder="New status name…" aria-label="New status name" maxlength="100"><button type="button" class="button small" data-status-add>${icon("plus")}Add status</button></div><p class="form-error" data-workflow-error hidden></p></details></div>`;
     const h = hierarchyRules(model);
     host.insertAdjacentHTML(
       "beforeend",

@@ -2,6 +2,13 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.20.110 — 2026-11-01
+
+### Changed
+
+- Settings save as you change them: no save bar and no Save or Discard buttons, with Saving… and Saved beside the page title. Leaving the page saves the field you were typing in, and moving a project to another organisation asks first.
+- Document tools and Insert are compact menus like the board's: rows edge to edge with dividers between groups, Insert in one column.
+
 ## 0.20.109 — 2026-11-01
 
 ### Changed

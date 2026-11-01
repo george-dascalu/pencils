@@ -79,8 +79,20 @@
 .settings-content {
   min-width: 0;
 }
+/* The title shares its row with the save status; the rest of the heading runs below. */
 .settings-section-heading {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  column-gap: 12px;
+  align-items: baseline;
   margin-bottom: 16px;
+}
+.settings-section-heading > :not(h2, .settings-save-state) {
+  grid-column: 1 / -1;
+}
+.settings-save-state {
+  color: var(--muted);
+  font-size: var(--type-small);
 }
 .settings-section-heading h2 {
   font-size: var(--type-section);
@@ -172,11 +184,6 @@
 }
 #settings-panel .form-error:empty {
   display: none;
-}
-.settings-save-bar > [role="status"] {
-  margin-right: auto;
-  font-size: 12px;
-  color: var(--muted);
 }
 .settings-field-row {
   border-bottom: 1px solid var(--line);
@@ -335,9 +342,6 @@
   #settings-panel .field-row,
   .settings-health-summary {
     grid-template-columns: minmax(0, 1fr);
-  }
-  .settings-save-bar > [role="status"] {
-    flex-basis: 100%;
   }
   #settings-panel .dialog-foot button {
     flex: 1;

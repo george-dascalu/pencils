@@ -6,7 +6,7 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import { test, expect, onDevices, useApp } from "../fixtures.mjs";
-import { clickControl, selectProjectView, selectSettingsPage, openSettingsPage, openSidebar } from "../helpers/menu-controls.mjs";
+import { clickControl, selectProjectView, selectSettingsPage, openSettingsPage, openSidebar, settingsSaved } from "../helpers/menu-controls.mjs";
 import { newCard } from "../helpers/new-card.mjs";
 
 const app = useApp();
@@ -232,7 +232,7 @@ test("organisations are created and renamed, scope their projects, and are remem
   expect((await app.store.list(studio.id)).projects).toHaveLength(2);
   await openSettingsPage(page, "organisation");
   await page.locator('#organisation-form [name="title"]').fill("Acme Collective");
-  await page.locator('#organisation-form [type="submit"]').click();
+  await settingsSaved(page);
   await expect(selected).toHaveText("Acme Collective");
   expect((await app.store.getOrganisation(studio.id)).title).toBe("Acme Collective");
   // Each organisation remembers its last project, also after a reload.
@@ -255,12 +255,12 @@ test("moving a project to another organisation keeps its tasks and canvases, and
   // One Settings button, at the bottom of the sidebar (0.20.24; the top bar's before).
   await openSettingsPage(page);
   await selectSettingsPage(page, "teams");
+  // Settings save as they change; a move to another organisation asks first.
+  page.once("dialog", (dialog) => dialog.accept());
   await page.locator('#project-form [name="organisation"]').selectOption(studio.id);
-  await page.locator('#project-form [type="submit"]').click();
   await expect(page.locator("#organisation-select")).toHaveValue(studio.id);
   await expect(page.locator('#project-select option:not([value=""])')).toHaveCount(3);
-  // The project settings page refreshes the workspace before navigation settles.
-  await expect(page.locator("#toasts").getByText("Teams saved.", { exact: true })).toBeVisible();
+  await expect(page.locator("[data-settings-save-state]")).toHaveText("Saved");
   const afterMove = await snapshot();
   expect(afterMove.project.organisation).toBe(studio.id);
   expect(afterMove.tasks).toEqual(beforeMove.tasks);

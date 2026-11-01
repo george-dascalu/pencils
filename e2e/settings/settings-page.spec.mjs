@@ -2,7 +2,7 @@
 // full page, opened from a single Settings button in the top bar (and the phone drawer).
 // Without an open project the page shows your own and the organisation's sections.
 import { test, expect, onDevices, useApp } from "../fixtures.mjs";
-import { openSettingsPage, openSidebar } from "../helpers/menu-controls.mjs";
+import { openSettingsPage, openSidebar, settingsSaved } from "../helpers/menu-controls.mjs";
 
 const app = useApp(async (store) => ({
   project: await store.createProject({ title: "Settings lab", key: "SL" }),
@@ -32,11 +32,10 @@ test("the organisation is edited on the Settings page", async ({ page }) => {
   await expect(page.locator("dialog[open]")).toHaveCount(0);
   const original = await name.inputValue();
   await name.fill("Renamed organisation");
-  await page.locator("#organisation-form [type=submit]").click();
-  await expect(page.locator("#toasts")).toContainText("Organisation saved.");
+  await settingsSaved(page);
   await expect.poll(async () => (await (await fetch(`${app.base}/api/organisations`)).json()).organisations.map((o) => o.title)).toContain("Renamed organisation");
   await name.fill(original);
-  await page.locator("#organisation-form [type=submit]").click();
+  await settingsSaved(page);
 });
 
 test("without a project open, Settings shows You and Organisation", async ({ page }) => {
@@ -48,16 +47,17 @@ test("without a project open, Settings shows You and Organisation", async ({ pag
   await expect(page.locator(".settings-navigation")).toHaveCount(0);
 });
 
-test("without a project, unsaved organisation edits ask before leaving Settings", async ({ page }) => {
+test("without a project, leaving Settings saves the organisation field being typed in", async ({ page }) => {
   await page.goto(`${app.base}/#home`);
   await openSettingsPage(page);
   await nav(page).locator("a", { hasText: "Organisation" }).click();
-  await page.locator('#organisation-form [name="title"]').fill("Unsaved name");
-  let asked = "";
-  page.once("dialog", (dialog) => { asked = dialog.message(); dialog.dismiss(); });
+  const name = page.locator('#organisation-form [name="title"]');
+  const original = await name.inputValue(), id = await page.locator("#organisation-form").getAttribute("data-id");
+  await name.fill("Saved on leaving");
   await page.locator("[data-action=settings-close]").click();
-  await expect.poll(() => asked).toContain("Discard unsaved changes");
-  await expect(page.locator('#organisation-form [name="title"]')).toHaveValue("Unsaved name");
+  const title = async () => (await (await fetch(`${app.base}/api/organisations`)).json()).organisations.find((o) => o.id === id).title;
+  await expect.poll(title).toBe("Saved on leaving");
+  await app.store.updateOrganisation(id, { title: original, revision: (await app.store.getOrganisation(id)).revision });
 });
 
 test("switching organisation from Settings without a project opens that organisation", async ({ page }) => {
@@ -86,8 +86,7 @@ test("saving the organisation's details keeps its people and teams", async ({ pa
   const project = await app.store.createProject({ title: "Staffed project", organisation: organisation.id, teams: ["design"] });
   await page.goto(`${app.base}/#project/${project.id}/settings/organisation`);
   await page.locator('#organisation-form [name="body"]').fill("A team that makes things.");
-  await page.locator("#organisation-form [type=submit]").click();
-  await expect(page.locator("#toasts")).toContainText("Organisation saved.");
+  await settingsSaved(page);
   const saved = (await (await fetch(`${app.base}/api/organisations`)).json()).organisations.find((o) => o.id === organisation.id);
   expect(saved.people.map((p) => p.name)).toEqual(["Alice"]);
   expect(saved.teams.map((t) => t.name)).toEqual(["Design"]);
