@@ -97,7 +97,7 @@ export const roadmap = [
   { id: "T92", title: "Deleted documents, cards and boards wait in a list for 30 days", status: "requested", requested: "2026-11-01T10:58", started: "", done: "", version: "" },
   { id: "T93", title: "Audit page in Settings: every change to cards, documents and boards, kept 365 days", status: "requested", requested: "2026-11-01T10:58", started: "", done: "", version: "" },
   { id: "T94", title: "Phone board: full screen keeps the toolbar above the browser's bar", status: "done", requested: "2026-11-01T10:58", started: "2026-11-01T11:11", done: "2026-11-01T11:39", version: "0.20.114" },
-  { id: "T95", title: "Sweep of every board control on phone, iPad and desktop", status: "requested", requested: "2026-11-01T10:58", started: "2026-11-01T11:11", done: "", version: "" },
+  { id: "T95", title: "Sweep of every board control on phone, iPad and desktop", status: "done", requested: "2026-11-01T10:58", started: "2026-11-01T11:11", done: "2026-11-01T16:38", version: "0.20.115" },
   { id: "T96", title: "Debug page in Settings: failed API calls, errors and logs", status: "requested", requested: "2026-11-01T11:27", started: "", done: "", version: "" },
   { id: "T97", title: "Better splash page with an animated loading circle that shows progress", status: "requested", requested: "2026-11-01T11:27", started: "", done: "", version: "" },
 ];

@@ -298,6 +298,13 @@ body.task-reordering, body.task-reordering * { cursor: grabbing !important; user
   box-shadow: var(--shadow-popover);
   overflow: auto;
 }
+/* Phones: the screen's width, above the tool dock (as the minimap). */
+@media (max-width: 600px) {
+  .canvas-panel.board-task-panel {
+    top: 8px; left: 8px; right: 8px; width: auto;
+    bottom: calc(max(8px, env(safe-area-inset-bottom), var(--board-bottom-clear, 0px)) + var(--control-height) + 16px);
+  }
+}
 .board-task-panel header {
   display: flex;
   align-items: center;

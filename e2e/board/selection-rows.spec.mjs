@@ -111,10 +111,10 @@ onDevices(["desktop", "phone"], () => test("each selection shows common tools ab
     await page.keyboard.press("Escape");
     return;
   }
-  // Select all takes the connector too: the mixed selection has common tools only.
+  // Select all takes the connector too: the objects' tools stay, and duplicate and delete cover
+  // the connector (board sweep T95, board-sweep-fixes.spec.mjs).
   await page.keyboard.press("Control+a");
-  await check(page, "desktop all", { common: ["[data-feature=selection-delete]", "[data-feature=duplicate]", ".selection-filter-total"], specific: [] });
-  await expect(rows(page)).toHaveCount(1);
+  await check(page, "desktop all", { common: ["[data-feature=selection-delete]", "[data-feature=duplicate]", "[data-feature=lock]", ".selection-filter-total"], specific: [] });
   // A connector: its own endpoints and line tools below the common actions.
   await page.keyboard.press("Escape");
   await page.locator('[data-edge="e1"]').first().click({ force: true });

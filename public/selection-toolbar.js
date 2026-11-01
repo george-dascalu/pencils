@@ -50,7 +50,8 @@ export function selectionToolbar(
   const group = (name, body) =>
     `<div class="selection-group" role="group" aria-label="${name}">${body}</div>`;
   // Two rows at most (owner request, 31 October 2026): common tools, then the selection's own;
-  // each one line that scrolls sideways (selection-toolbar.css).
+  // each one line that scrolls sideways (selection-toolbar.css). With objects and connectors
+  // selected, the objects' tools show; duplicate and delete cover the connectors too.
   function html() {
     const arrows = pickEdges();
     if (arrows.length && !pick().length)
@@ -61,8 +62,6 @@ export function selectionToolbar(
         count: arrows.length,
         filter: filter.html(menu),
       });
-    if (arrows.length)
-      return `<div id="selection-tools" class="selection-tools" role="toolbar" aria-label="Selected objects"><div class="selection-row" role="group" aria-label="Common tools">${group("Selection", filter.html(menu) || `<span>${pickAll().length} selected</span>`)}${group("Object actions", button("feature", "duplicate", "Duplicate", "duplicate") + button("feature", "selection-delete", "Delete", "trash"))}</div></div>`;
     const nodes = pick(),
       n = nodes[0],
       single = nodes.length === 1;
@@ -129,7 +128,7 @@ export function selectionToolbar(
       "arrange",
       "Arrange objects",
       icon("arrange"),
-      `<button type="button" data-layout-tool="match-width">Match width</button><button type="button" data-layout-tool="match-height">Match height</button><label class="field">Tidy columns<input id="tidy-columns" type="number" min="1" max="20" value="3"></label><label class="field">Gap<input id="tidy-gap" type="number" min="0" max="1000" value="24"></label><button type="button" data-layout-tool="tidy">Tidy selection</button><hr><strong>Align</strong><div class="selection-align-grid">${[
+      `<button type="button" data-layout-tool="match-width" ${editable.length < 2 ? "disabled" : ""}>Match width</button><button type="button" data-layout-tool="match-height" ${editable.length < 2 ? "disabled" : ""}>Match height</button><label class="field">Tidy columns<input id="tidy-columns" type="number" min="1" max="20" value="3"></label><label class="field">Gap<input id="tidy-gap" type="number" min="0" max="1000" value="24"></label><button type="button" data-layout-tool="tidy" ${editable.length < 2 ? "disabled" : ""}>Tidy selection</button><hr><strong>Align</strong><div class="selection-align-grid">${[
         ["align-left", "Align left", "align-left"],
         ["align-center", "Align centres horizontally", "align-center"],
         ["align-right", "Align right", "align-right"],

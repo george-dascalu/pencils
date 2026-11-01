@@ -361,7 +361,7 @@ export function installCanvas(Store) {
         file: relative,
         body: raw.slice(front.length),
         revision: hash(raw),
-        title: path.basename(file, ".md"),
+        title: await this.noteTitle(file),
       };
     },
     async editCanvasNote(project, input) {
@@ -458,6 +458,20 @@ export function installCanvas(Store) {
         }
       }
       return results;
+    },
+    // The notes a board can embed, by title: the project's documents and other Markdown notes,
+    // without its own records (project.md, identity.md and cards).
+    async canvasNoteChoices(project) {
+      const base = `Projects/${project}/`, result = [];
+      for (const file of await this.canvasNotes(project))
+        if (![`${base}project.md`, `${base}identity.md`].includes(file) && !file.startsWith(`${base}tasks/`))
+          result.push({ file, title: await this.noteTitle(this.resolveFile(file)) });
+      return result.sort((a, b) => a.title.localeCompare(b.title) || a.file.localeCompare(b.file));
+    },
+    // A note's title from its frontmatter, else its file name; a note that can't be read keeps its name.
+    async noteTitle(file) {
+      const title = (await this.read(file).catch(() => null))?.data?.title;
+      return typeof title === "string" && title.trim() ? title : path.basename(file, ".md");
     },
     async canvasNotes(project) {
       const result = [];

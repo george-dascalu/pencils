@@ -195,7 +195,11 @@ export function canvasControls(ctx, basic) {
       (nodes.some((n) => n.type === "grid") ? 26 : 0);
     const safeTop = canvas.clientWidth < 600 ? 160 : 110;
     if (y < safeTop) y = bottom + handleGap;
-    toolbar.style.left = `${Math.max(12, Math.min(canvas.clientWidth - width - 12, (left + right - width) / 2))}px`;
+    // Clear of the tool rail where it fits beside it (phones dock the tools at the bottom).
+    const rail = canvas.querySelector(".board-tools"),
+      beside = rail?.offsetParent && !rail.closest(".phone-board-dock") ? rail.offsetLeft + rail.offsetWidth + 8 : 12,
+      start = canvas.clientWidth - width - 12 >= beside ? beside : 12;
+    toolbar.style.left = `${Math.max(start, Math.min(canvas.clientWidth - width - 12, (left + right - width) / 2))}px`;
     const floor = Math.min(canvas.clientHeight - 70, boardFloor(canvas) - 8);
     toolbar.style.top = `${Math.max(safeTop, Math.min(floor - height, y))}px`;
     basic.positionMenus?.();

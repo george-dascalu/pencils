@@ -1556,6 +1556,22 @@ input[type="search"]:not(.search input) {
   gap: 5px;
 }
 /* The scrolling part reaches the bar's edges, as the whole bar did, so focus rings aren't clipped. */
+/* A shadow at an edge with more tools beyond (touch screens hide scrollbars): the surface-coloured
+   covers scroll with the tools and hide the shadows at the ends. */
+.board-tools-scroll {
+  background:
+    linear-gradient(var(--surface) 30%, transparent) top / 100% 24px no-repeat local,
+    linear-gradient(transparent, var(--surface) 70%) bottom / 100% 24px no-repeat local,
+    radial-gradient(farthest-side at 50% 0, color-mix(in srgb, var(--ink) 22%, transparent), transparent) top / 100% 10px no-repeat scroll,
+    radial-gradient(farthest-side at 50% 100%, color-mix(in srgb, var(--ink) 22%, transparent), transparent) bottom / 100% 10px no-repeat scroll;
+}
+.selection-row {
+  background:
+    linear-gradient(to right, var(--surface) 30%, transparent) left / 24px 100% no-repeat local,
+    linear-gradient(to left, var(--surface) 30%, transparent) right / 24px 100% no-repeat local,
+    radial-gradient(farthest-side at 0 50%, color-mix(in srgb, var(--ink) 22%, transparent), transparent) left / 10px 100% no-repeat scroll,
+    radial-gradient(farthest-side at 100% 50%, color-mix(in srgb, var(--ink) 22%, transparent), transparent) right / 10px 100% no-repeat scroll;
+}
 .board-tools-scroll {
   min-height: 0;
   margin: -6px -6px 0;

@@ -600,7 +600,7 @@ export function canvasPro(ctx, basic) {
               note && !note.error
                 ? markdownSlice(note.body, n.subpath || "")
                 : null;
-          el.innerHTML = `<strong>${esc(n.file?.split("/").pop() || "Note")}${n.subpath ? ` · ${esc(n.subpath)}` : ""}</strong><div class="canvas-markdown">${note?.error ? esc(note.error) : section ? (section.text ? markdown(section.text) : '<span class="is-placeholder">Add notes…</span>') : note ? "Heading or block not found." : "Loading note…"}</div>`;
+          el.innerHTML = `<strong>${esc(note?.title || n.file?.split("/").pop() || "Note")}${n.subpath ? ` · ${esc(n.subpath)}` : ""}</strong><div class="canvas-markdown">${note?.error ? esc(note.error) : section ? (section.text ? markdown(section.text) : '<span class="is-placeholder">Add notes…</span>') : note ? "Heading or block not found." : "Loading note…"}</div>`;
         }
       } else if (n.type === "grid") el.innerHTML = gridHTML(n, ctx);
       else if (n.type === "query") el.innerHTML = queryRows(n);
@@ -2350,7 +2350,7 @@ export function canvasPro(ctx, basic) {
     } else if (action === "note-add") {
       const { files } = await api(route("notes"));
       showDialog(
-        `<dialog class="dialog"><form id="canvas-note-form">${dialogHead("Embed a live Markdown note")}<div class="dialog-body"><label class="field">Project note<select name="file">${files.map((f) => `<option>${esc(f)}</option>`).join("")}</select></label><p>Notes stay in the project folder. Open the same file in Obsidian or edit it directly in the canvas.</p></div><div class="dialog-foot"><button class="button primary" ${files.length ? "" : "disabled"}>Add live note</button></div></form></dialog>`,
+        `<dialog class="dialog"><form id="canvas-note-form">${dialogHead("Embed a live Markdown note")}<div class="dialog-body"><label class="field">Project note<select name="file">${files.map((f) => `<option value="${esc(f.file)}">${esc(f.title)}</option>`).join("")}</select></label><p>Notes stay in the project folder. Open the same file in Obsidian or edit it directly in the canvas.</p></div><div class="dialog-foot"><button class="button primary" ${files.length ? "" : "disabled"}>Add live note</button></div></form></dialog>`,
         "canvas-note",
       );
     } else if (action === "participant")
@@ -3472,6 +3472,10 @@ export function canvasPro(ctx, basic) {
     }
   }
   setInterval(heartbeat, 800);
+  // A closed tab leaves at once, not after the server's 15-second timeout.
+  window.addEventListener("pagehide", () => {
+    if (lastRoom) api(lastRoom + "/presence", { method: "POST", keepalive: true, body: { client: sync.client, leave: true } }).catch(() => {});
+  });
   window.addEventListener("beforeunload", (e) => {
     if (editor) {
       e.preventDefault();

@@ -679,6 +679,20 @@ test("backlinks include project notes with wiki aliases, heading links and relat
   assert.equal(results[0].id, null);
 });
 
+// Board sweep T95: Insert › Live note lists the project's documents and notes by title, without its
+// own records; a title that isn't text, or a note too large to edit, still lists by file name.
+test("the live note picker lists notes by title and survives odd titles and large notes", async (t) => {
+  const { store, project, root } = await setup(t);
+  await store.createTask(project.id, { title: "A card" });
+  await store.createDocument(project.id, { title: "Meeting notes", body: "Agenda." });
+  const dir = path.join(root, `Projects/${project.id}/notes`);
+  await fs.mkdir(dir, { recursive: true });
+  await fs.writeFile(path.join(dir, "year.md"), "---\ntitle: 1984\n---\nBody");
+  await fs.writeFile(path.join(dir, "huge.md"), "x".repeat(2_000_001));
+  const titles = (await store.canvasNoteChoices(project.id)).map((note) => note.title);
+  assert.deepEqual(titles, ["huge", "Meeting notes", "year"]);
+});
+
 test("exhausted filesystem watchers fall back to polling without crashing or losing writes", async (t) => {
   const { store, project } = await setup(t);
   store.watch();

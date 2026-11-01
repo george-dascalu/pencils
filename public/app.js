@@ -233,10 +233,12 @@ installDatePickers({ esc, icon });
 document.addEventListener(
   "keydown",
   (event) => {
-    if (!event.target.closest("#board-task-panel") || state.toolDragging)
-      return;
-    event.stopImmediatePropagation();
-    if (event.key !== "Escape") return;
+    if (!state.boardTaskPanel || state.toolDragging) return;
+    const inside = event.target.closest("#board-task-panel");
+    if (inside) event.stopImmediatePropagation();
+    // Escape closes it from the board or its button too, where touch screens leave focus
+    // (focusOnOpen), letting the board's own Escape run as well; not while presenting.
+    if (event.key !== "Escape" || !(inside || (event.target.matches("body, #canvas, [data-action=\"board-task\"], .phone-board-category") && !document.querySelector(".presenting")))) return;
     event.preventDefault();
     state.boardTaskPanel = false;
     renderView();
@@ -1918,19 +1920,22 @@ function fitBoard() {
     minY = Math.min(...b.nodes.map((n) => n.y)),
     maxX = Math.max(...b.nodes.map((n) => n.x + n.w)),
     maxY = Math.max(...b.nodes.map((n) => n.y + n.h));
-  // Fit above the bottom bar and the phone dock, which float over the board.
-  const height = boardFloor(canvas);
+  // Fit above the bottom bar and the phone dock, which float over the board, and beside the tool
+  // rail, which phones dock at the bottom.
+  const height = boardFloor(canvas),
+    phone = !!canvas.querySelector(".phone-board-dock"),
+    side = phone ? 16 : 80;
   const z = Math.max(
     0.001,
     Math.min(
       1.25,
-      (canvas.clientWidth - 160) / (maxX - minX),
+      (canvas.clientWidth - side * 2) / (maxX - minX),
       (height - 100) / (maxY - minY),
     ),
   );
   state.camera = {
     z,
-    x: (canvas.clientWidth - (maxX - minX) * z) / 2 - minX * z + 20,
+    x: (canvas.clientWidth - (maxX - minX) * z) / 2 - minX * z + (phone ? 0 : 20),
     y: (height - (maxY - minY) * z) / 2 - minY * z,
   };
   updateCamera();

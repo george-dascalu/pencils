@@ -43,7 +43,7 @@ export async function documentsRoutes(ctx: RequestContext): Promise<unknown> {
         200,
         url.searchParams.has("file")
           ? await store.canvasNote(project, url.searchParams.get("file"))
-          : { files: await store.canvasNotes(project) },
+          : { files: await store.canvasNoteChoices(project) },
       );
     if (method === "PATCH") {
       const data = await input(req);

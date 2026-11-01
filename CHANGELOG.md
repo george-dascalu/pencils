@@ -2,6 +2,21 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.20.115 — 2026-11-01
+
+### Changed
+
+- Select all on a board with arrows keeps the objects' colour, Arrange and Lock; Duplicate and Delete include the arrows.
+- The board's tool rail and the selection toolbar's rows show a shadow at an edge where more tools lie beyond.
+- Insert › Live note lists the project's documents by title, without the project's own files, and a live note shows its document's title.
+
+### Fixed
+
+- The selection toolbar no longer covers the board's tool rail.
+- Arrange's Match width, Match height and Tidy selection wait for two objects, like Align.
+- On phones, Project cards fills the screen's width above the tool dock and closes with Escape, and Fit board uses the phone's width.
+- A closed tab leaves the board's list of who is here at once instead of after 15 seconds.
+
 ## 0.20.114 — 2026-11-01
 
 ### Changed
