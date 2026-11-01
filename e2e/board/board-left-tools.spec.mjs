@@ -1,8 +1,8 @@
 // Owner request, 31 October 2026 (board menus, like Miro, FigJam and Obsidian Canvas): the left
 // tool bar holds what More held. Navigate gets Frames (the outline, with Layers as its second
 // tab), Tasks gets Live task view, and Create gets one Insert menu (Live note, Templates, Bulk
-// notes). Connections opens from the selection toolbar and Import .canvas from the sidebar's New
-// board menu (board-sidebar.spec.mjs), so the board bar has no More.
+// notes). Connections opens from Board tools (T89, 1 November 2026) and Import .canvas from the
+// sidebar's New board menu (board-sidebar.spec.mjs), so the board bar has no More.
 import { test, expect, onDevices, useApp } from "../fixtures.mjs";
 import { reveal } from "../helpers/menu-controls.mjs";
 
@@ -76,10 +76,13 @@ test("Frames opens the outline, whose Layers tab makes layers", async ({ page })
   await expect(frames).toBeFocused();
 });
 
-test("Connections opens from the selection toolbar for the selected object", async ({ page }) => {
+test("Connections opens from Board tools for the selected object", async ({ page }) => {
   await open(page);
   await page.locator('.board-node[data-node="note"]').click();
-  await page.locator('#selection-tools [data-pro="connections"]').click();
+  await expect(page.locator("#selection-tools")).toBeVisible();
+  await expect(page.locator('#selection-tools [data-pro="connections"]')).toHaveCount(0);
+  await reveal(page.locator('.board-toolbar [data-pro="connections"]'));
+  await page.locator('.board-toolbar [data-pro="connections"]').click();
   await expect(page.locator("#keyboard-connector [name=from]")).toHaveValue("note");
 });
 

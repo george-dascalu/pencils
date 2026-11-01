@@ -424,8 +424,7 @@ body {
     .tab.active,
     .tab:hover,
     .topbar .document-tab-open[aria-current="page"],
-    .board-tools button.active,
-    .board-tools button:hover,
+    .board-tools button:not(.active):hover,
     .spreadsheet .range-selected,
     .calendar-day.today,
     .search-result:hover

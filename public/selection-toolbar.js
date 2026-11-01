@@ -16,6 +16,7 @@ import {
 import { isTaskNote, nodeFill } from "./node-layout.js";
 import { selectionFilter } from "./selection-filter.js";
 import { connectorToolbar } from "./connector-toolbar.js";
+import { boardFloor } from "./layout-tray.js";
 // Shared, selection-aware controls; existing action handlers own edits and undo.
 export function selectionToolbar(
   ctx,
@@ -121,11 +122,7 @@ export function selectionToolbar(
             : null,
           locked,
         ) +
-        textStyleControls(n, { ...ctx, textNodes: nodes }) +
-        '<div class="text-format-actions" role="group" aria-label="Formatting clipboard">' +
-        button("object-style", "copy", "Copy formatting", "duplicate") +
-        button("object-style", "paste", "Paste formatting", "pencil", locked) +
-        "</div>",
+        textStyleControls(n, { ...ctx, textNodes: nodes }),
       locked,
     );
     const arrange = menu(
@@ -160,7 +157,7 @@ export function selectionToolbar(
       single && n.type === "frame"
         ? group(
             "Frame controls",
-            pro("frame-link", "Copy frame link", "connect") +
+            pro("frame-link", "Copy frame link", "link") +
               menu(
                 "frame-size",
                 "Frame size",
@@ -171,7 +168,7 @@ export function selectionToolbar(
               feature(
                 "frame-fit",
                 "Fit frame to contents",
-                "fit",
+                "shrink",
                 locked || !contents.length,
               ) +
               feature(
@@ -201,13 +198,13 @@ export function selectionToolbar(
         ? menu(
             "convert",
             "Convert " +
-              (n.type === "draft" ? "Draft card" : note ? "Note" : "Task"),
+              (n.type === "draft" ? "Draft card" : note ? "Note" : "Card"),
             `${icon(n.type === "draft" ? "pencil" : note ? "sticky" : "task")}<span>${n.type === "draft" ? "Draft card" : note ? "Note" : "Card"}</span>`,
-            `${pro("convert", n.type === "draft" ? "Finalise card" : n.type === "sticky" ? "Draft card" : "Task", "task", locked || (!note && n.type !== "draft"))}${pro("convert-note", "Note", "sticky", locked || note)}<p class="conversion-hint">${n.type === "draft" ? "Finalise this draft to create a project card and assign its ID." : n.type === "sticky" ? "Turn this note into a draft card. Finalise it when ready." : "Card details stay linked when shown as a note."}</p>`,
+            `${pro("convert", n.type === "draft" ? "Finalise card" : n.type === "sticky" ? "Draft card" : "Card", "task", locked || (!note && n.type !== "draft"))}${pro("convert-note", "Note", "sticky", locked || note)}${n.type === "draft" ? '<p class="conversion-hint">Finalise this draft to create a project card and assign its ID.</p>' : n.type === "sticky" ? '<p class="conversion-hint">Turn this note into a draft card. Finalise it when ready.</p>' : ""}`,
             locked,
           )
         : `<span class="selection-kind" title="${nodes.length} selected">${icon(single ? { grid: "table", frame: "frame", query: "table", draw: "pencil", image: "image" }[n.type] || n.type : "group")}<span>${single ? esc((n.projectFrame ? "Project frame" : { sticky: "Note", query: "Live view", draw: "Drawing" }[n.type] || n.type).replace(/^./, (c) => c.toUpperCase())) : `${nodes.length} objects`}</span></span>`;
-    return `<div id="selection-tools" class="selection-tools" role="toolbar" aria-label="Selected objects"><div class="selection-row" role="group" aria-label="Common tools">${filterMenu}${group("Edit", `${single && !n.projectFrame ? pro("inline", n.type === "frame" ? "Rename frame" : "Edit", "pencil", locked) : ""}${color}`)}${group("Collaboration", single && n.type !== "draft" && !(n.type === "task" && !isTaskNote(n)) ? pro("comments", "Comment", "comment") : "")}${group("Organise", arrange + pro("zoom-selection", "Focus selection", "fit") + (single && !["frame", "grid", "draw"].includes(n.type) ? pro("connections", "Connections", "connect") : ""))}${group("Layer order", feature("bring-front", "Bring to front", "front", locked) + feature("send-back", "Send to back", "back", locked))}${group("Object actions", feature("duplicate", "Duplicate", "duplicate") + feature("lock", locked ? "Unlock selection" : "Lock selection", locked ? "unlock" : "local", false, `aria-pressed="${locked}"`) + more)}${group("Delete", feature("selection-delete", single && n.type === "frame" ? "Delete frame (keep contents)" : "Delete", "trash", locked))}</div><div class="selection-row" role="group" aria-label="Tools for this selection">${kind}${single ? group("Appearance", objectGeometryControls(n, ctx) || pro("object-style", "Appearance and parent frame", "settings", locked)) : ""}${single && n.projectFrame ? feature("project-frame-update", "Update plan", "refresh", locked) : ""}${frameTools}${single && n.type === "draw" ? group("Stroke style", `<label class="pen-width" title="Stroke thickness">${icon("stroke-width")}<select data-stroke-width aria-label="Stroke thickness" ${locked ? "disabled" : ""}>${[1, 2, 3, 3.5, 5, 8, 12, 18, 24, 32].map((w) => `<option value="${w}" ${w === (n.strokeWidth || 3.5) ? "selected" : ""}>${w} px</option>`).join("")}</select></label>`) : ""}${single && n.type === "grid" ? gridToolbar(n, state, { button, menu, group, icon }) : ""}${group("Text alignment", textMenu)}</div></div>`;
+    return `<div id="selection-tools" class="selection-tools" role="toolbar" aria-label="Selected objects"><div class="selection-row" role="group" aria-label="Common tools">${filterMenu}${group("Edit", `${single && !n.projectFrame ? pro("inline", n.type === "frame" ? "Rename frame" : "Edit", "pencil", locked) : ""}${color}`)}${group("Collaboration", single && n.type !== "draft" && !(n.type === "task" && !isTaskNote(n)) ? pro("comments", "Comment", "comment") : "")}${group("Organise", arrange + pro("zoom-selection", "Focus selection", "fit"))}${group("Layer order", feature("bring-front", "Bring to front", "front", locked) + feature("send-back", "Send to back", "back", locked))}${group("Object actions", feature("duplicate", "Duplicate", "duplicate") + feature("lock", locked ? "Unlock selection" : "Lock selection", locked ? "unlock" : "local", false, `aria-pressed="${locked}"`) + more)}${group("Delete", feature("selection-delete", single && n.type === "frame" ? "Delete frame (keep contents)" : "Delete", "trash", locked))}</div><div class="selection-row" role="group" aria-label="Tools for this selection">${kind}${single ? group("Appearance", objectGeometryControls(n, ctx) || pro("object-style", "Appearance and parent frame", "settings", locked)) : ""}${single && n.projectFrame ? feature("project-frame-update", "Update plan", "refresh", locked) : ""}${frameTools}${single && n.type === "draw" ? group("Stroke style", `<label class="pen-width" title="Stroke thickness">${icon("stroke-width")}<select data-stroke-width aria-label="Stroke thickness" ${locked ? "disabled" : ""}>${[1, 2, 3, 3.5, 5, 8, 12, 18, 24, 32].map((w) => `<option value="${w}" ${w === (n.strokeWidth || 3.5) ? "selected" : ""}>${w} px</option>`).join("")}</select></label>`) : ""}${single && n.type === "grid" ? gridToolbar(n, state, { button, menu, group, icon }) : ""}${group("Text alignment", textMenu)}</div></div>`;
   }
   function render() {
     filter.sync();
@@ -512,7 +509,8 @@ export function positionToolbarPopover(panel, menu, canvas) {
   const c = canvas.getBoundingClientRect(),
     m = menu.getBoundingClientRect();
   const left = Math.max(Math.max(0, c.left) + 8, Math.min(m.left, Math.min(window.innerWidth, c.right) - panel.offsetWidth - 8));
-  const below = Math.min(window.innerHeight, c.bottom) - m.bottom - 12,
+  // Clear of the bottom bar and the phone dock, which the board runs under.
+  const below = Math.min(window.innerHeight, c.top + boardFloor(canvas, panel)) - m.bottom - 12,
     above = m.top - Math.max(0, c.top) - 12;
   const up = below < Math.min(panel.scrollHeight, 320) && above > below;
   // In a toolbar row, which scrolls sideways, the panel sits in viewport coordinates so the row

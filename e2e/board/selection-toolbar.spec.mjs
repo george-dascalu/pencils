@@ -200,3 +200,23 @@ test("in dark mode the toolbar has a dark surface", async ({ page }) => {
   await menu(page, "arrange").click();
   expect(await toolbar(page).evaluate((el) => getComputedStyle(el).backgroundColor)).not.toBe("rgb(255, 255, 255)");
 });
+
+// Owner requests, 1 November 2026: Connections moved to Board tools (T89), and the task's
+// conversion hint (T90) and the text menu's Copy and Paste formatting buttons (T91) are gone; the
+// Ctrl/⌘+Alt+C and V shortcuts stay (note-styles.spec.mjs).
+test("the toolbar has no Connections, no task conversion hint and no formatting clipboard", async ({ page }) => {
+  await resetBoard();
+  await openBoard(page);
+  await find(page, "task-a", "Write specification");
+  await expect(toolbar(page).locator('[data-pro="connections"]')).toHaveCount(0);
+  // Cards are called cards (board sweep T95).
+  await expect(menu(page, "convert")).toHaveAccessibleName("Convert Card");
+  await menu(page, "convert").click();
+  await expect(toolbar(page).locator('[data-pro="convert"]')).toHaveAccessibleName("Card");
+  await expect(toolbar(page).locator('[data-pro="convert-note"]')).toBeVisible();
+  await expect(toolbar(page).locator('[data-selection-menu="convert"] .conversion-hint')).toHaveCount(0);
+  await page.keyboard.press("Escape");
+  await find(page, "note", "First idea");
+  await expect(toolbar(page).locator('[data-selection-menu="convert"] .conversion-hint')).toHaveText("Turn this note into a draft card. Finalise it when ready.");
+  await expect(toolbar(page).locator('[data-object-style="copy"], [data-object-style="paste"]')).toHaveCount(0);
+});

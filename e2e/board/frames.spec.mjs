@@ -240,6 +240,11 @@ test("duplicating or pasting a frame copies its full contents and internal conne
 test("size presets and fit leave contents alone, Select contents selects them, and deleting a frame keeps its contents", async ({ page }) => {
   await open(page);
   await findOnBoard(page, "outer", "Workshop");
+  // Each frame tool has its own icon (board sweep T95): a link for Copy frame link, and not
+  // Focus selection's for Fit frame to contents.
+  const glyph = (selector) => page.locator(`#selection-tools ${selector} svg`).first().innerHTML();
+  expect(await glyph('[data-pro="frame-link"]')).toBe(await page.evaluate(() => document.querySelector('[data-drawing-action="link"] svg').innerHTML));
+  expect(await glyph('[data-feature="frame-fit"]')).not.toBe(await glyph('[data-pro="zoom-selection"]'));
   await page.locator('#selection-tools [data-selection-menu="frame-size"] > summary').click();
   await page.locator('[data-preset="square"]').click();
   await expect.poll(async () => (await saved("outer")).w).toBe(600);

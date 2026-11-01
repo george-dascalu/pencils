@@ -2,6 +2,22 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.20.114 — 2026-11-01
+
+### Changed
+
+- The board's chosen tool is filled in the accent colour, and on phones the dock's Navigate or Add button shows the tool chosen in its row, such as the hand while panning.
+- Connections moved from the selection toolbar to Board tools (⋯).
+- The text menu no longer has Copy and Paste formatting buttons; Ctrl/⌘+Alt+C and Ctrl/⌘+Alt+V still copy and paste formatting, and Help lists them.
+- A card's Convert menu no longer shows the linked-details hint, and calls the card a card.
+- Copy frame link and Fit frame to contents have their own icons.
+
+### Fixed
+
+- On phones and iPad, the selection toolbar's menus (Arrange, colour with the custom picker, and the others), Board tools and other menus end above the bottom bar, so their last rows can be tapped.
+- On phones, full screen leaves the board's tool dock where it was instead of moving it behind Safari's bar.
+- On a Mac, ⌘+Option+C and ⌘+Option+V copy and paste a board object's formatting.
+
 ## 0.20.113 — 2026-11-01
 
 ### Added

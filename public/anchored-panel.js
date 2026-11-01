@@ -46,7 +46,9 @@ export function anchoredPanel({ state, esc, icon }) {
     const position = () => panel && positionPopover(panel, button.getBoundingClientRect(), { width, maxHeight: Math.min(560, innerHeight - 24) });
     position();
     const lifecycle = new AbortController();
-    const observer = new ResizeObserver(position);
+    // On the next frame: placing the panel can resize it, such as when the bottom bar, hidden while
+    // typing, comes back as focus leaves the text.
+    const observer = new ResizeObserver(() => requestAnimationFrame(position));
     observer.observe(panel);
     panel.cleanup = () => { lifecycle.abort(); observer.disconnect(); };
     window.addEventListener("resize", position, { signal: lifecycle.signal });

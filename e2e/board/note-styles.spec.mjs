@@ -69,9 +69,11 @@ test("a folded note keeps its fold when edited, its style pastes onto another no
   await expect.poll(async () => (await nodes())[0].text).toContain("Folded note content");
   await expect(note(page).locator(".note-style-art")).toHaveCount(1);
   await note(page).click();
-  await clickControl(page.locator('[data-object-style="copy"]'));
+  // The text menu has no Copy or Paste formatting buttons (T91); the shortcuts stay.
+  await page.keyboard.press("ControlOrMeta+Alt+c");
   await page.locator('[data-node="note-1"]').click();
-  await clickControl(page.locator('[data-object-style="paste"]'));
+  // macOS's Option key turns V into √, so the shortcut follows the physical key.
+  await page.evaluate(() => (document.activeElement || document.body).dispatchEvent(new KeyboardEvent("keydown", { key: "√", code: "KeyV", metaKey: true, altKey: true, bubbles: true })));
   await expect.poll(async () => (await nodes())[1].noteStyle).toBe("fold-bottom");
   await savesSettled(page);
   await page.reload();

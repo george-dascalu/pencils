@@ -279,11 +279,6 @@ export function objectText(ctx, pick) {
       document
         .querySelector('[data-selection-menu="text-align"] > summary')
         ?.focus({ preventScroll: true });
-      return;
-    }
-    const a = e.target.closest("[data-object-style]");
-    if (a) {
-      a.dataset.objectStyle === "copy" ? copy() : paste();
     }
   });
   document.addEventListener(
@@ -299,11 +294,12 @@ export function objectText(ctx, pick) {
       if (
         (e.ctrlKey || e.metaKey) &&
         e.altKey &&
-        ["c", "v"].includes(e.key.toLowerCase())
+        ["KeyC", "KeyV"].includes(e.code)
       ) {
+        // By physical key: macOS's Option key turns C and V into other characters.
         e.preventDefault();
         e.stopImmediatePropagation();
-        e.key.toLowerCase() === "c" ? copy() : paste();
+        e.code === "KeyC" ? copy() : paste();
       }
     },
     true,

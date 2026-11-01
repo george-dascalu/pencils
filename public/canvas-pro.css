@@ -898,9 +898,7 @@ html.board-expanded-view .shell {
   .phone-board-row .board-tool-group { flex-direction: row; gap: 2px; }
   .phone-board-row .board-tool-group + .board-tool-group { border-top: 0; padding-top: 0; border-left: 1px solid var(--line); padding-left: 4px; }
   .phone-board-row button > span { display: none; }
-  .phone-board-dock [aria-expanded="true"],
-  .board-tools:has(#phone-board-add .active) > [data-phone-category="add"],
-  .board-tools:has(#phone-board-navigate [data-tool="hand"].active) > [data-phone-category="navigate"] { background: var(--surface-soft); color: var(--green); }
+  .phone-board-dock [aria-expanded="true"] { background: var(--surface-soft); color: var(--green); }
   #canvas-minimap { bottom: calc(max(8px, env(safe-area-inset-bottom), var(--board-bottom-clear, 0px)) + var(--control-height) + 16px); }
   #canvas-search-panel { left: 8px; right: 8px; top: 8px; max-width: calc(100% - 16px); }
   .presenting .phone-board-dock { display: none; }

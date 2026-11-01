@@ -28,9 +28,9 @@ async function openBoard(page) {
 
 test("the keyboard connector makes one card block another, anchored right to left", { tag: "@gate" }, async ({ page }) => {
   await openBoard(page);
-  // Since 0.20.72 Connections opens from the selection toolbar.
+  // Connections opens from Board tools (T89), From set to the selected object.
   await page.locator('[data-node="node-0"]').click();
-  await clickControl(page.locator('#selection-tools [data-pro="connections"]'));
+  await clickControl(page.locator('.board-toolbar [data-pro="connections"]'));
   await page.locator('#keyboard-connector [name="from"]').selectOption("node-0");
   await page.locator('#keyboard-connector [name="to"]').selectOption("node-1");
   await page.locator('#keyboard-connector [name="relationship"]').selectOption("blocks");

@@ -1,19 +1,17 @@
+import { bottomBarTop, tabBarQuery } from "./popover-position.js";
 // Phones and touch screens such as iPad: a tray above the bottom bar, opened by tapping the open
 // tab again, holds Tasks and Planning layouts or the Documents list and document views.
 // project-layout.js toggles it and closes it on a choice, a tap elsewhere or Escape.
 // Matches the bottom bar's media query in project-layout.css.
-export const tabBar = matchMedia("(max-width: 600px), (pointer: coarse)");
-// How much of the bottom of `el`, which runs under the floating bottom bar, the bar covers: none on
-// desktop, while typing (the bar steps aside) or when something, such as the expanded board, lies over it.
-export function bottomBarCover(el) {
-  const r = tabBar.matches && document.querySelector(".topbar .tabs")?.getBoundingClientRect();
-  if (!r?.height || !document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2)?.closest(".topbar .tabs")) return 0;
-  return Math.max(0, el.getBoundingClientRect().bottom - r.top);
+export const tabBar = matchMedia(tabBarQuery);
+// How much of the bottom of `el`, which runs under the floating bottom bar, the bar covers.
+export function bottomBarCover(el, ignore) {
+  return Math.max(0, el.getBoundingClientRect().bottom - bottomBarTop(ignore));
 }
 // The lowest point, in the board's own coordinates, clear of the bottom bar and the phone dock.
-export function boardFloor(canvas) {
+export function boardFloor(canvas, ignore) {
   const dock = canvas.querySelector(".phone-board-dock");
-  return Math.min(canvas.clientHeight - bottomBarCover(canvas), dock?.offsetParent ? dock.offsetTop - 8 : Infinity);
+  return Math.min(canvas.clientHeight - bottomBarCover(canvas, ignore), dock?.offsetParent ? dock.offsetTop - 8 : Infinity);
 }
 export function mountLayoutTray(content, open) {
   removeLayoutTray();

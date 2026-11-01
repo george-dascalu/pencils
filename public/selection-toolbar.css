@@ -423,15 +423,6 @@
   padding-top: 7px;
   margin-top: 3px;
 }
-.text-format-actions {
-  display: flex;
-  gap: 4px;
-  border-top: 1px solid var(--line);
-  padding-top: 7px;
-}
-.text-format-actions .selection-action-label {
-  display: none;
-}
 .inline-floating-tools > .vertical-alignment-row {
   border-top: 0;
   border-left: 1px solid var(--line);

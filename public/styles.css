@@ -1587,10 +1587,6 @@ input[type="search"]:not(.search input) {
 @media (pointer: coarse) {
   .board-tools button { min-height: 44px; }
 }
-.board-tools button.active {
-  background: #e9f0de;
-  color: #55713f;
-}
 .board-tools button:hover {
   background: #f1f5e9;
 }

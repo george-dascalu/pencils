@@ -1,10 +1,24 @@
 // Phones dock the board's tools by category: Navigate and Add each open a row of their tools above
 // the dock, which scrolls sideways; Pen and Search are the pen and board search themselves. The
-// existing tools move, retaining their handlers and state on every device.
+// existing tools move, retaining their handlers and state on every device. A category shows the
+// tool chosen in its row, filled like the tool, except the pointer, which is the default.
 export function phoneBoardTools({ icon, state }) {
   const phone = matchMedia("(max-width: 600px)");
   const categories = [["navigate", "Navigate", "cursor"], ["add", "Add", "plus"]];
+  const chosen = new MutationObserver(mark);
   let canvas, dock, rows = {}, boardId, open = null, moved = [];
+  function mark() {
+    for (const [key, , glyph] of categories) {
+      const button = rows[key]?.button, active = rows[key]?.row.querySelector("[data-tool].active");
+      if (!button) continue;
+      const shows = active?.dataset.tool || glyph;
+      if (button.dataset.shows !== shows) {
+        button.dataset.shows = shows;
+        button.innerHTML = active ? active.innerHTML : icon(glyph);
+      }
+      button.classList.toggle("active", !!active && shows !== "cursor");
+    }
+  }
   function move(element, target) {
     if (!element) return;
     const slot = document.createComment("canvas tool position");
@@ -28,6 +42,7 @@ export function phoneBoardTools({ icon, state }) {
     const nextBoard = ["board", "drawing"].includes(state.view) ? state.selectedBoard : null;
     if (!phone.matches || nextBoard !== boardId) open = null;
     boardId = nextBoard;
+    chosen.disconnect();
     for (const [el, slot] of moved.reverse()) if (slot.isConnected) slot.replaceWith(el);
     moved = [];
     dock?.remove();
@@ -76,6 +91,8 @@ export function phoneBoardTools({ icon, state }) {
     // The row lists Insert's actions with the other tools instead of opening a menu.
     const insert = rows.add.row.querySelector('[data-board-menu="insert"]');
     for (const item of insert?.querySelectorAll(".board-menu-panel > button") || []) move(item, insert.parentElement);
+    mark();
+    chosen.observe(tools, { subtree: true, attributes: true, attributeFilter: ["class"] });
     show(open);
   }
   document.addEventListener("click", event => {
