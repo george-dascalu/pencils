@@ -16,6 +16,69 @@ const app = useApp(async (store) => {
 });
 const panel = (page) => page.locator("#list-panel");
 const touch = (page) => page.evaluate(() => matchMedia("(max-width: 600px), (pointer: coarse)").matches);
+
+onDevices(["desktop", "ipad", "phone"], () => {
+  for (const view of ["documents", "board"]) test(`${view} list motion is interruptible and keeps focus and choices usable`, { tag: "@gate" }, async ({ page, device }) => {
+    await page.goto(`${app.base}/#project/${app.project.id}/${view}/${view === "documents" ? app.doc.id : app.board.id}`);
+    await page.locator(view === "documents" ? ".cm-content" : "#canvas").waitFor();
+    const tab = page.locator(`.tabs [data-view="${view}"]`);
+    if (view === "documents" && await touch(page)) await tab.click();
+    const trigger = view === "documents" && await touch(page)
+      ? page.locator('.layout-tray [data-list-toggle]') : tab;
+    for (const motion of ["reduce", "no-preference"]) {
+      await page.emulateMedia({ reducedMotion: motion });
+      // Read in the click's own task, before a fast animation can finish on a busy runner.
+      const opening = await trigger.evaluate(el => {
+        el.click();
+        const list = document.querySelector('#list-panel');
+        const animations = list.getAnimations();
+        const translate = animations.find(a => a.transitionProperty === 'translate');
+        for (const animation of animations) { animation.pause(); animation.currentTime = 60; }
+        return { properties: animations.map(a => a.transitionProperty).sort(), duration: translate?.effect.getTiming().duration,
+          x: parseFloat(getComputedStyle(list).translate), inert: list.inert,
+          typing: document.activeElement.matches('input, textarea, [contenteditable=true]') };
+      });
+      expect(opening.inert).toBe(false);
+      if (device !== "desktop") expect(opening.typing).toBe(false);
+      if (motion === "reduce") expect(opening.properties).toEqual([]);
+      else {
+        expect(opening.properties).toEqual(['opacity', 'translate']);
+        expect(opening.duration).toBe(180);
+        expect(opening.x).toBeLessThan(0);
+        expect(opening.x).toBeGreaterThan(-24);
+      }
+      // Close mid-entrance. It stops receiving input immediately, including Tab.
+      const closing = await panel(page).evaluate(el => {
+        el.querySelector('[data-list-close]').click();
+        return { hidden: el.hidden, inert: el.inert, pointer: getComputedStyle(el).pointerEvents,
+          duration: el.getAnimations().find(a => a.transitionProperty === 'translate')?.effect.getTiming().duration,
+          display: getComputedStyle(el).display,
+          focusInside: el.contains(document.activeElement), pageInert: document.querySelector('#view-content').inert };
+      });
+      expect(closing).toMatchObject({ hidden: true, inert: true, pointer: 'none', focusInside: false, pageInert: false });
+      if (motion === "no-preference") {
+        // Engines without display transitions dismiss immediately instead of trapping a fading list.
+        if (closing.duration === undefined) expect(closing.display).toBe('none');
+        else expect(closing.duration).toBeLessThanOrEqual(120);
+      }
+      // Reopen before exit finishes; no stale close may hide the newly opened list.
+      await trigger.evaluate(el => el.click());
+      await panel(page).evaluate(async el => { for (const a of el.getAnimations()) a.finish(); await new Promise(requestAnimationFrame); });
+      await expect(panel(page)).not.toHaveAttribute('hidden');
+      await expect(panel(page)).toHaveCSS('opacity', '1');
+      await expect(panel(page)).toHaveCSS('translate', motion === 'reduce' ? 'none' : '0px');
+      await expect(page.locator('#view-content')).toHaveJSProperty('inert', true);
+      await page.keyboard.press('Escape');
+      await expect(panel(page)).toBeHidden();
+      await expect(page.locator('#view-content')).toHaveJSProperty('inert', false);
+    }
+    await openList(page, view);
+    await panel(page).locator(view === 'documents' ? `[data-document-open="${app.other.id}"]` : `[data-board-open="${app.second.id}"]`).click();
+    await expect(panel(page)).toBeHidden();
+    if (view === 'documents') await expect(page.locator('.topbar')).toContainText('Second note');
+    else await expect(page.locator(`.board-tools[data-board="${app.second.id}"]`)).toBeVisible();
+  });
+});
 // Opens the list the way the device offers it: the active tab, or the tray's Documents button.
 async function openList(page, view) {
   if (view === "documents" && (await touch(page))) {

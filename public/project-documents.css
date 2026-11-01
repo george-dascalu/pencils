@@ -33,9 +33,26 @@
   border-right: 1px solid var(--line);
   box-shadow: var(--shadow-drawer);
 }
-.main.project-main > #list-panel[hidden] { display: none; }
+.main.project-main > #list-panel[hidden] { display: none; pointer-events: none; }
+/* Only a deliberate open moves the list; a page rebuilt with it open stays still. Native
+   display transitions keep the short exit paintable and reverse cleanly on another press. */
+@media (prefers-reduced-motion: no-preference) {
+  .main.project-main > #list-panel[data-user-open] {
+    opacity: 1;
+    translate: 0;
+    transition: opacity 180ms ease-out, translate 180ms cubic-bezier(0.16, 1, 0.3, 1), display 180ms allow-discrete;
+  }
+  .main.project-main > #list-panel[data-user-open][hidden] {
+    opacity: 0;
+    translate: -24px 0;
+    transition-duration: 120ms;
+  }
+  @starting-style {
+    .main.project-main > #list-panel[data-user-open]:not([hidden]) { opacity: 0; translate: -24px 0; }
+  }
+}
 /* The page stays in its column under the list, or auto-placement moves it into a new one beside it. */
-.main.project-main:has(> #list-panel:not([hidden])) > :is(#view-toolbar, #view-content) { grid-column: 1; }
+.main.project-main:has(> #list-panel) > :is(#view-toolbar, #view-content) { grid-column: 1; }
 .list-panel:not([hidden]) ~ :is(#view-toolbar, #view-content) { filter: blur(3px); pointer-events: none; user-select: none; }
 .list-panel .document-explorer > header { padding: 10px 8px 10px 16px; }
 /* The New board menu (board-explorer.js) matches the icon buttons beside it. */

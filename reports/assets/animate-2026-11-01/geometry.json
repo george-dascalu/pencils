@@ -1,0 +1,44 @@
+[
+  {
+    "name": "desktop",
+    "view": "documents",
+    "animations": 0,
+    "overflow": false,
+    "panelWidth": 1151
+  },
+  {
+    "name": "desktop",
+    "view": "board",
+    "animations": 0,
+    "overflow": false,
+    "panelWidth": 1151
+  },
+  {
+    "name": "ipad-dark",
+    "view": "documents",
+    "animations": 0,
+    "overflow": false,
+    "panelWidth": 818
+  },
+  {
+    "name": "ipad-dark",
+    "view": "board",
+    "animations": 0,
+    "overflow": false,
+    "panelWidth": 818
+  },
+  {
+    "name": "phone",
+    "view": "documents",
+    "animations": 0,
+    "overflow": false,
+    "panelWidth": 390
+  },
+  {
+    "name": "phone",
+    "view": "board",
+    "animations": 0,
+    "overflow": false,
+    "panelWidth": 390
+  }
+]

@@ -1,0 +1,14 @@
+{
+  "fixtureObjects": 5000,
+  "viewport": "1024x768 touch",
+  "cpuSlowdown": 4,
+  "cycles": 8,
+  "frames": 154,
+  "p95FrameMs": 16.799999999999727,
+  "maxFrameMs": 33.40000000000009,
+  "longTasksOver50ms": [],
+  "remainingAnimations": 0,
+  "hidden": true,
+  "inert": true,
+  "overflow": false
+}

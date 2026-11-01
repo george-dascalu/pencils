@@ -15,6 +15,7 @@ export function listPanel(state) {
   function open(button) {
     const el = panel();
     if (!el?.firstElementChild) return;
+    el.dataset.userOpen = "";
     el.hidden = false;
     openFor = where(); opener = button;
     sync();
@@ -27,7 +28,10 @@ export function listPanel(state) {
     el.hidden = true;
     sync();
     // The tray's Documents button closes with the tray, so focus goes to the open tab instead.
-    if (focus) (opener?.getClientRects().length ? opener : document.querySelector(".tabs .tab.active"))?.focus({ preventScroll: true });
+    if (focus) {
+      opener?.focus({ preventScroll: true });
+      if (document.activeElement !== opener) document.querySelector(".tabs .tab.active")?.focus({ preventScroll: true });
+    }
     opener = null;
   }
   // A press outside that closes the list, such as on the open tab, doesn't open it again.
@@ -72,6 +76,8 @@ export function listPanel(state) {
   // blurred page behind it is inert, so Tab stays in the list.
   function sync() {
     if (!panel()) openFor = null;
+    // A closing list can still be painted for its exit, but must stop receiving input at once.
+    if (panel()) panel().inert = !shown();
     for (const el of document.querySelectorAll("#view-toolbar, #view-content")) el.inert = shown();
   }
   return { html, toggle, close, sync };

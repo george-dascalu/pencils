@@ -2,6 +2,16 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.20.125 — 2026-11-01
+
+### Changed
+
+- Document and board lists open with a short reveal from the left and a quicker dismissal, with immediate controls, interruption support and a still reduced-motion alternative.
+
+### Fixed
+
+- Closing a document list on touch screens returns keyboard focus to a visible control. Dismissing lists stop accepting input as soon as they close.
+
 ## 0.20.124 — 2026-11-01
 
 ### Changed
