@@ -384,7 +384,7 @@ export function projectLayout(ctx) {
   // A disclosure opened by hand fades in (project-layout.css); one a re-render recreates open does not.
   document.addEventListener("click", (event) => {
     const menu = event.target.closest("summary")?.parentElement;
-    if (menu?.matches(".board-menu, .mobile-view-options, .selection-menu")) menu.setAttribute("data-user-open", "");
+    if (menu?.matches(".board-menu, .mobile-view-options, .selection-menu, .comment-emoji-menu, .document-search-options")) menu.setAttribute("data-user-open", "");
   }, true);
   // Native disclosures support keyboard activation and keep controls reachable.
   document.addEventListener(

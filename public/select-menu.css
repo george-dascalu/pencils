@@ -29,21 +29,23 @@
   --green: #b3c891;
   --focus-ring: 1px solid #b3c891;
 }
-/* A short fade in and out when the device allows motion (select-menu.js keeps a closing menu
-   until its fade ends). */
+/* A short fade, drop and grow in, and back out, when the device allows motion (select-menu.js
+   keeps a closing menu until its fade ends). The card editor's pickers open the same way. */
 @media (prefers-reduced-motion: no-preference) {
-  .select-menu {
-    transition: opacity 0.12s ease, translate 0.12s ease;
+  .select-menu, .task-picker > .task-picker-popover {
+    transition: opacity var(--menu-motion), translate var(--menu-motion), scale var(--menu-motion);
   }
   @starting-style {
-    .select-menu:popover-open {
+    .select-menu:popover-open, .task-picker > .task-picker-popover {
       opacity: 0;
       translate: 0 -4px;
+      scale: 0.96;
     }
   }
   .select-menu.closing {
     opacity: 0;
     translate: 0 -4px;
+    scale: 0.96;
     pointer-events: none;
   }
 }

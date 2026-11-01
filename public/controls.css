@@ -11,6 +11,8 @@
   --menu-control-height: 28px;
   /* Menus of rows stay tight, like Obsidian's. */
   --menu-panel-padding: 4px;
+  /* Dropdowns open with a short fade, drop and grow when the device allows motion. */
+  --menu-motion: 160ms cubic-bezier(0.2, 0.8, 0.2, 1);
   --text-focus-color: #737373;
   --touch-text-font-size: 16px;
   /* Type scale for the card popup and the Table view: one step per role. */

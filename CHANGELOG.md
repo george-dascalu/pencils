@@ -2,6 +2,12 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.20.106 — 2026-11-01
+
+### Changed
+
+- Dropdown menus open with a short fade, drop and grow, now including the card editor's pickers, comment reactions and document search options. Devices set to reduce motion open them at once.
+
 ## 0.20.105 — 2026-11-01
 
 ### Fixed

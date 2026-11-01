@@ -294,16 +294,18 @@
 .board-menu:not([open]) > .board-menu-panel {
   display: none;
 }
-/* Disclosure menus opened by hand (data-user-open, project-layout.js) fade in when the device
-   allows motion; one a re-render recreates open does not, and closing a native disclosure is at once. */
+/* Disclosure menus opened by hand (data-user-open, project-layout.js) fade, drop and grow in when
+   the device allows motion; one a re-render recreates open does not, and closing a native
+   disclosure is at once. */
 @media (prefers-reduced-motion: no-preference) {
-  :is(.board-menu, .mobile-view-options, .selection-menu)[data-user-open][open] > :is(.board-menu-panel, .mobile-view-options-panel, .selection-popover) {
-    transition: opacity 0.12s ease, translate 0.12s ease;
+  :is(.board-menu, .mobile-view-options, .selection-menu, .comment-emoji-menu, .document-search-options)[data-user-open][open] > :is(.board-menu-panel, .mobile-view-options-panel, .selection-popover, .comment-emoji-picker, .document-search-option-list) {
+    transition: opacity var(--menu-motion), translate var(--menu-motion), scale var(--menu-motion);
   }
   @starting-style {
-    :is(.board-menu, .mobile-view-options, .selection-menu)[data-user-open][open] > :is(.board-menu-panel, .mobile-view-options-panel, .selection-popover) {
+    :is(.board-menu, .mobile-view-options, .selection-menu, .comment-emoji-menu, .document-search-options)[data-user-open][open] > :is(.board-menu-panel, .mobile-view-options-panel, .selection-popover, .comment-emoji-picker, .document-search-option-list) {
       opacity: 0;
       translate: 0 -4px;
+      scale: 0.96;
     }
   }
 }

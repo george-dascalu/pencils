@@ -279,6 +279,8 @@
 .document-search-options { position: relative; }
 .document-search-options summary { display: flex; align-items: center; justify-content: center; list-style: none; cursor: pointer; }
 .document-search-options summary::-webkit-details-marker { display: none; }
+/* Hidden while closed, so opening it starts its motion (project-layout.css). */
+.document-search-options:not([open]) > .document-search-option-list { display: none; }
 .document-search-option-list { position: absolute; inset-inline-end: 0; top: calc(100% + 6px); display: flex; gap: 4px; padding: 6px; border: 1px solid var(--line); background: var(--surface); border-radius: calc(6px * var(--style-roundness, 1)); box-shadow: 0 4px 12px #0002; z-index: 10; }
 .document-reading-search { display: flex; flex-shrink: 0; align-items: center; gap: 4px; width: min(500px, calc(100% - 16px)); margin: 4px 8px 4px auto; padding: 4px; border: 1px solid var(--line); border-radius: calc(6px * var(--style-roundness, 1)); background: var(--surface-soft); }
 .document-reading-search[hidden] { display: none; }

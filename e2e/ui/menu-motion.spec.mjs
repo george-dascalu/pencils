@@ -4,12 +4,16 @@
 // motion, as the fixtures ask for, nothing animates and every flow still ends with the menu gone.
 import { test, expect, onDevices, useApp } from "../fixtures.mjs";
 import { clickControl } from "../helpers/menu-controls.mjs";
+import { documentTool } from "../helpers/documents.mjs";
 
 const app = useApp(async (store) => {
   const project = await store.createProject({ title: "Menu motion", key: "MM" });
-  await store.createTask(project.id, { title: "One", status: "todo" });
+  const one = await store.createTask(project.id, { title: "One", status: "todo" });
   await store.createTask(project.id, { title: "Two", status: "done" });
-  return { project };
+  const board = (await store.snapshot(project.id)).boards[0];
+  await store.updateBoard(project.id, board.id, { revision: board.revision, nodes: [{ id: "note", type: "sticky", text: "Idea", comments: [{ id: "c1", text: "A comment", author: "Alice" }], x: 150, y: 120, w: 220, h: 220 }], edges: [] });
+  const document = await store.createDocument(project.id, { title: "Notes", body: "Some notes" });
+  return { project, one, document };
 });
 const menu = (page) => page.locator("#shared-select-menu");
 // Seconds of the longest transition; reduced motion leaves a hair (0.01ms) rather than none.
@@ -75,3 +79,69 @@ onDevices(["desktop", "phone"], () => test("dropdowns fade only when motion is a
   await expect(page.locator(".task-row")).toHaveCount(1);
   expect(await details.evaluate((el, panelSelector) => el.open && el.querySelector(panelSelector).getAnimations().length, panelSelector), `${device}: no fade on a re-render`).toBe(0);
 }));
+
+// Owner request (T53, 1 November 2026): every dropdown opens with the same small motion, a fade
+// with a short drop and grow (--menu-motion in controls.css): menus, selects, the card editor's
+// pickers, comment reactions and document search options. With reduced motion none moves. A gate
+// test, since engines differ in @starting-style.
+test("every dropdown opens with a fade, drop and grow only when motion is allowed, and still works", { tag: "@gate" }, async ({ page }) => {
+  const modes = [["reduce", []], ["no-preference", ["opacity", "scale", "translate"]]];
+  // What a dropdown's panel animates once its trigger is pressed, read in the press's own task.
+  const opening = (trigger, panel) => trigger.evaluate((el, panel) => {
+    el.click();
+    return document.querySelector(panel).getAnimations().map((a) => a.transitionProperty).sort();
+  }, panel);
+  const closed = async (details) => {
+    if (await details.evaluate((el) => el.open)) await details.locator(":scope > summary").click();
+  };
+  const saved = () => app.store.snapshot(app.project.id);
+
+  await page.goto(`${app.base}/#project/${app.project.id}/list`);
+  await page.locator(".task-row").first().waitFor();
+  const filters = page.locator('[data-board-menu="filters"]');
+  for (const [reducedMotion, moves] of modes) {
+    await page.emulateMedia({ reducedMotion });
+    await closed(filters);
+    expect(await opening(filters.locator(":scope > summary"), '[data-board-menu="filters"] > .board-menu-panel'), `a menu, ${reducedMotion}`).toEqual(moves);
+    expect(await opening(page.locator("#filter-status"), "#shared-select-menu"), `a select, ${reducedMotion}`).toEqual(moves);
+    await menu(page).getByRole("option", { name: "All statuses", exact: true }).click();
+    await expect(menu(page)).toHaveCount(0);
+  }
+
+  await page.locator(`[data-action=task-open][data-id="${app.one.id}"]`).first().click();
+  const priority = page.locator('#task-form [data-task-picker="priority"]');
+  for (const [i, [reducedMotion, moves]] of modes.entries()) {
+    await page.emulateMedia({ reducedMotion });
+    expect(await opening(priority.locator(".task-picker-trigger"), '#task-form [data-task-picker="priority"] .task-picker-popover'), `a card editor picker, ${reducedMotion}`).toEqual(moves);
+    const level = ["High", "Low"][i];
+    await priority.getByRole("option", { name: level, exact: true }).click();
+    await expect.poll(async () => (await saved()).tasks.find((t) => t.id === app.one.id).priority).toBe(level.toLowerCase());
+  }
+  await page.keyboard.press("Escape");
+  await expect(page.locator("#task-form")).toBeHidden();
+
+  await page.goto(`${app.base}/#project/${app.project.id}/documents/${app.document.id}`);
+  await page.locator(".cm-content").first().waitFor();
+  await documentTool(page, "Find in document");
+  const options = page.locator(".document-search-options"), matchCase = options.getByRole("button", { name: "Match case", exact: true });
+  for (const [reducedMotion, moves] of modes) {
+    await page.emulateMedia({ reducedMotion });
+    await closed(options);
+    expect(await opening(options.locator(":scope > summary"), ".document-search-option-list"), `search options, ${reducedMotion}`).toEqual(moves);
+    const pressed = await matchCase.getAttribute("aria-pressed");
+    await matchCase.click();
+    await expect(matchCase).toHaveAttribute("aria-pressed", String(pressed !== "true"));
+  }
+
+  await page.goto(`${app.base}/#project/${app.project.id}/board`);
+  await page.locator("[data-node=note]").click();
+  await page.locator("#selection-tools [data-pro=comments]").click();
+  const reactions = page.locator('.board-comments [data-comment-id="c1"] .comment-emoji-menu');
+  for (const [i, [reducedMotion, moves]] of modes.entries()) {
+    await page.emulateMedia({ reducedMotion });
+    await closed(reactions);
+    expect(await opening(reactions.locator(":scope > summary"), '.board-comments [data-comment-id="c1"] .comment-emoji-picker'), `reactions, ${reducedMotion}`).toEqual(moves);
+    await reactions.locator('[data-emoji="👍"]').click();
+    await expect.poll(async () => ((await saved()).boards[0].nodes[0].comments[0].reactions || []).length).toBe(1 - i);
+  }
+});
