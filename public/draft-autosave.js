@@ -56,7 +56,7 @@ export function draftAutosave(
         form
           .closest("dialog")
           .querySelector(".board-task-editor-heading strong").textContent =
-          "Draft task";
+          "Draft card";
       } else {
         const n = node();
         if (!n || n.type !== "draft" || n.locked)

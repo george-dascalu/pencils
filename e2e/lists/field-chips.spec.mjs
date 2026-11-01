@@ -6,7 +6,7 @@ import { test, expect, onDevices, useApp } from "../fixtures.mjs";
 
 const app = useApp(async (store) => {
   const project = await store.createProject({ title: "Field chips", key: "FC" });
-  const parent = await store.createTask(project.id, { title: "Parent task", status: "in-progress", priority: "high", assignee: "George" });
+  const parent = await store.createTask(project.id, { title: "Parent card", status: "in-progress", priority: "high", assignee: "George" });
   const children = [];
   for (const [i, status] of ["done", "todo", "in-progress", "review"].entries())
     children.push(await store.createTask(project.id, { title: `Child task ${i}`, status, priority: ["low", "medium", "high", "urgent"][i], assignee: i % 2 ? "Alex" : "", parent: parent.id }));

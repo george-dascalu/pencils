@@ -68,7 +68,7 @@ test("a new card opens as a compact panel, the board stays usable, and the recov
   await expect(page.locator("#board-task-panel")).toHaveCount(0);
   expect((await editor(page).boundingBox()).width).toBeLessThanOrEqual(681);
   await title(page).fill("Compact task");
-  await page.locator('[aria-label="Task description"]').fill("Rich description");
+  await page.locator('[aria-label="Card description"]').fill("Rich description");
   await legacySubtasks(page.locator("#task-form"), [{ title: "Child from panel", type: "task" }]);
   // The board remains interactive; zooming it keeps the form data.
   const c = await page.locator("#canvas").boundingBox();
@@ -83,7 +83,7 @@ test("a new card opens as a compact panel, the board stays usable, and the recov
   await page.locator("[data-task-picker=priority] [data-picker-value=high]").click();
   await page.locator(".date-field:has([name=due]) [data-date-picker]").click();
   await page.locator("[data-date-clear]").click();
-  await page.getByRole("button", { name: "Close new task", exact: true }).click();
+  await page.getByRole("button", { name: "Close new card", exact: true }).click();
   await expect(editor(page)).toHaveCount(0);
   // Reopening offers the closed draft back.
   await page.locator("[data-action=board-task]").click();
@@ -215,7 +215,7 @@ test("edits in the side panel save automatically and keep one card on the board"
   await openBoard(page, project);
   await card(page).locator("[data-pro=task-details]").click();
   await title(page).fill("Updated from board panel");
-  await page.locator('[aria-label="Task description"]').fill("Updated rich description");
+  await page.locator('[aria-label="Card description"]').fill("Updated rich description");
   await title(page).press("Control+Enter");
   await page.locator("[data-autosave-status]").filter({ hasText: /^Saved automatically$/ }).waitFor();
   await page.locator("[data-action=dialog-close]").click();

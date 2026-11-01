@@ -129,5 +129,5 @@ onDevices(["ipad", "phone"], () => test("the bottom bar floats over the board an
   await page.goto(`${app.base}/#project/${app.project.id}/documents/${app.doc.id}`);
   await page.locator(".cm-content").waitFor();
   expect((await box(page, ".documents-workspace")).bottom, `${device}: the document runs under the bar`).toBeGreaterThanOrEqual(height - 0.5);
-  expect((await box(page, ".document-save")).bottom, `${device}: the word count stays above the bar`).toBeLessThanOrEqual(bar.top);
+  await expect(page.locator(".document-save"), `${device}: the word count is in Document tools, not over the text`).toBeHidden();
 }));

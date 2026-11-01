@@ -43,7 +43,7 @@ export function directory(people = [], teams = []) {
         task_capacity > 10000)
     )
       fail(
-        "Weekly task limit must be a whole number from 0 to 10000, or blank.",
+        "Weekly card limit must be a whole number from 0 to 10000, or blank.",
       );
     const working_days = p.working_days ?? [1, 2, 3, 4, 5];
     if (

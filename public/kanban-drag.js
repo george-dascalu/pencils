@@ -28,7 +28,7 @@ export function kanbanDrag(ctx) {
     return kanbanDropChanges(t, column.dataset.dropStatus, column.dataset.kanbanField, column.dataset.kanbanValue);
   }
   function dropError(t, column) {
-    return t ? kanbanDropError(state.config, t, changesFor(t, column), state.tasks) : "This task is no longer available.";
+    return t ? kanbanDropError(state.config, t, changesFor(t, column), state.tasks) : "This card is no longer available.";
   }
   const reduce = matchMedia("(prefers-reduced-motion: reduce)");
   function clean() {

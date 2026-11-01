@@ -20,7 +20,7 @@ const app = useApp(async (store) => {
     y: Math.floor(i / 3) * 350,
     w: 340,
     h: 270,
-    text: type === "frame" ? "Frame heading" : type === "query" ? "Live task view" : words,
+    text: type === "frame" ? "Frame heading" : type === "query" ? "Live card view" : words,
     ...(type === "task" ? { task: task.id } : {}),
     ...(type === "link" ? { url: "https://example.com" } : {}),
   }));
@@ -34,7 +34,7 @@ const current = () => savedBoard(app.store, app.project.id);
 const saved = (id) => current().then((b) => b.nodes.find((n) => n.id === id));
 const node = (page, id) => page.locator(`[data-node="${id}"]`);
 const rich = (page) => page.locator("#canvas-inline-form .inline-rich");
-const searchText = (id) => (id === "task" ? app.task.title : id === "locked" ? "Locked note" : id === "frame" ? "Frame heading" : id === "query" ? "Live task view" : words);
+const searchText = (id) => (id === "task" ? app.task.title : id === "locked" ? "Locked note" : id === "frame" ? "Frame heading" : id === "query" ? "Live card view" : words);
 const find = (page, id) => findOnBoard(page, id, searchText(id));
 
 test.beforeEach(async () => {

@@ -799,12 +799,12 @@ export class Store {
       if (warnings.length)
         throw new Problem(
           409,
-          "Repair unreadable tasks before changing the workflow.",
+          "Repair unreadable cards before changing the workflow.",
         );
       for (const task of items) {
         this.validateTask(task, data.schema);
         const error = hierarchyError(data.schema, task, items.find(t => t.id === task.parent));
-        if (error) throw new Problem(400, `${error} Move existing tasks before enforcing these rules.`);
+        if (error) throw new Problem(400, `${error} Move existing cards before enforcing these rules.`);
       }
     }
     if ("views" in input) data.views = validateViews(input.views);
@@ -821,7 +821,7 @@ export class Store {
             JSON.stringify(t).length > 250000,
         )
       )
-        throw new Problem(400, "Invalid task templates.");
+        throw new Problem(400, "Invalid card templates.");
       data.templates = input.templates;
     }
     const saved = await this.write(
@@ -838,7 +838,7 @@ export class Store {
       organisation: input.organisation,
       title: "A little more possibility",
       color: "#66856f",
-      body: "A sample project to explore Pencils. Make it yours, or create a fresh project.\n\nEvery task is a real Markdown file. Open the vault in Obsidian to keep working your way.\n",
+      body: "A sample project to explore Pencils. Make it yours, or create a fresh project.\n\nEvery card is a real Markdown file. Open the vault in Obsidian to keep working your way.\n",
     });
     const epic = await this.createTask(project.id, {
       title: "Build a calmer workspace",

@@ -23,7 +23,7 @@ const tasks = [
 test("table paste cannot overwrite a rich description or its attachments", () => {
   const original = { ...tasks[0], body: "First\n\nSecond\n\n[file](../attachments/a-abc.txt)" };
   const result = preparePaste("Replacement", [original], ["body"], DEFAULT_SCHEMA, [original]);
-  assert.match(result.errors.join(" "), /Description: Open the task editor/);
+  assert.match(result.errors.join(" "), /Description: Open the card editor/);
   assert.equal(result.patches.get(original.id)?.body, undefined);
   assert.match(original.body, /Second\n\n\[file\]/);
 });

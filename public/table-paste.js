@@ -29,7 +29,7 @@ export function preparePaste(
   for (let r = 0; r < rows.length; r++) {
     const task = targets[r];
     if (!task) {
-      errors.push(`Row ${r + 1}: add enough task rows before pasting.`);
+      errors.push(`Row ${r + 1}: add enough card rows before pasting.`);
       continue;
     }
     const patch = {};
@@ -38,7 +38,7 @@ export function preparePaste(
         text = rows[r][c],
         field = config.fields.find((f) => `fields.${f.id}` === key);
       if (key === "body") {
-        fieldError(r, "Description", "Open the task editor to edit its description.");
+        fieldError(r, "Description", "Open the card editor to edit its description.");
         continue;
       }
       if (!key || ["key", "created", "updated"].includes(key)) {
@@ -139,7 +139,7 @@ export function preparePaste(
       const ancestor = projected.get(parent);
       if (!ancestor) {
         errors.push(
-          `${task.key || task.title}: parent must be a task ID in this project.`,
+          `${task.key || task.title}: parent must be a card ID in this project.`,
         );
         break;
       }

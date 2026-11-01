@@ -66,7 +66,7 @@ test("a new card saves its type, priority and parent, and its Markdown preview d
   await relationships.locator("[data-relationship-toggle]").click();
   await relationships.getByLabel("Relationship type", { exact: true }).click();
   await page.locator("#shared-select-menu").getByRole("option", { name: "Parent", exact: true }).click();
-  await relationships.getByLabel("Find a task to link", { exact: true }).fill(epic.key);
+  await relationships.getByLabel("Find a card to link", { exact: true }).fill(epic.key);
   await relationships.locator(`[data-relationship-add="${epic.id}"]`).click();
   await relationships.locator(`[data-relationship-remove="${epic.id}"][data-relationship-kind="parent"]`).waitFor();
 

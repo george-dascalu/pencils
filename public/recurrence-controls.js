@@ -23,7 +23,7 @@ export function recurrenceControls(form, current, tasks, esc) {
         "Edit next occurrence and its future repeats",
       );
     if (!unit.value) {
-      host.innerHTML = `<p>This occurrence will not generate another task.${current.recurrence_next ? " Its already-created successor remains unchanged; open it to change or stop its repeats." : ""}</p>${lineage}`;
+      host.innerHTML = `<p>This occurrence will not generate another card.${current.recurrence_next ? " Its already-created successor remains unchanged; open it to change or stop its repeats." : ""}</p>${lineage}`;
       return;
     }
     if (
@@ -40,7 +40,7 @@ export function recurrenceControls(form, current, tasks, esc) {
     } catch {
       return;
     }
-    host.innerHTML = `<p>${current.recurrence_next ? "The next occurrence has already been created." : `Completing this task creates one next occurrence, due ${esc(predicted)}.`} Dates advance from this occurrence’s due date, or the UTC completion date when no due date is set. Repeats are created on completion, not by a calendar timer.</p><p>Edits apply to this occurrence and seed any successor that has not yet been created. Existing successors are separate tasks; open the next occurrence to change its future repeats. Reopening and completing this task again does not create a duplicate.</p>${lineage}`;
+    host.innerHTML = `<p>${current.recurrence_next ? "The next occurrence has already been created." : `Completing this card creates one next occurrence, due ${esc(predicted)}.`} Dates advance from this occurrence’s due date, or the UTC completion date when no due date is set. Repeats are created on completion, not by a calendar timer.</p><p>Edits apply to this occurrence and seed any successor that has not yet been created. Existing successors are separate cards; open the next occurrence to change its future repeats. Reopening and completing this card again does not create a duplicate.</p>${lineage}`;
   }
   form.addEventListener("input", (event) => {
     if (

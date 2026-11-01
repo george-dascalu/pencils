@@ -113,7 +113,7 @@ export const boardsMethods = {
         node.viewType != null &&
         !["list", "table", "kanban", "timeline"].includes(node.viewType)
       )
-        throw new Problem(400, "Invalid embedded task layout.");
+        throw new Problem(400, "Invalid embedded card layout.");
       if (
         node.visibleFields != null &&
         (!Array.isArray(node.visibleFields) ||
@@ -131,7 +131,7 @@ export const boardsMethods = {
               ].includes(f),
           ))
       )
-        throw new Problem(400, "Invalid embedded task fields.");
+        throw new Problem(400, "Invalid embedded card fields.");
       if (
         node.timelineScale != null &&
         !["day", "week", "month"].includes(node.timelineScale)
@@ -187,7 +187,7 @@ export const boardsMethods = {
         throw new Problem(400, "Invalid project frame.");
       if (node.projectFrameOwner != null) validId(node.projectFrameOwner);
       if (node.type === "draft" && !validDraftTask(node))
-        throw new Problem(400, "Invalid draft task.");
+        throw new Problem(400, "Invalid draft card.");
       if (node.type === "grid" && !validGrid(node.grid))
         throw new Problem(
           400,
@@ -229,7 +229,7 @@ export const boardsMethods = {
         node.query != null &&
         (typeof node.query !== "object" || Array.isArray(node.query))
       )
-        throw new Problem(400, "Invalid task view.");
+        throw new Problem(400, "Invalid card view.");
       if (
         node.comments &&
         (!Array.isArray(node.comments) ||

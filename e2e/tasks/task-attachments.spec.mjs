@@ -111,9 +111,9 @@ test("a file dropped on the description uploads while typing continues, keeping 
   await visit(page);
   await expect(form(page).locator(".task-extra,.task-parent-field,.task-dependencies,.file-path,.task-subtasks,.related-record-list,[data-feature=attach],[data-feature=task-template]")).toHaveCount(0);
   const upload = await holdUploads(page);
-  await drop(page, [{ name: "design [v1].txt", data: "Document contents" }], '[aria-label="Task description"]');
+  await drop(page, [{ name: "design [v1].txt", data: "Document contents" }], '[aria-label="Card description"]');
   await upload.arrived;
-  await page.getByRole("textbox", { name: "Task description", exact: true }).fill("Typed while uploading");
+  await page.getByRole("textbox", { name: "Card description", exact: true }).fill("Typed while uploading");
   upload.release();
   await expect.poll(async () => (await saved()).body).toContain("../attachments/");
   const task = await saved();
@@ -155,7 +155,7 @@ test("a multi-file drop keeps the valid files, explains the rejected ones and pr
 
 test("description edits keep the attachments, listed apart and in portable Markdown", async ({ page }) => {
   await visit(page);
-  await form(page).getByRole("textbox", { name: "Task description", exact: true }).fill("Updated notes");
+  await form(page).getByRole("textbox", { name: "Card description", exact: true }).fill("Updated notes");
   await expect.poll(async () => (await saved()).body).toMatch(/^Updated notes/);
   const task = await saved();
   expect(task.body).toMatch(/!\[preview.png\]/);

@@ -8,7 +8,7 @@ import { test, expect, useApp } from "../fixtures.mjs";
 import { APP_VERSION } from "../../public/app-version.js";
 
 const app = useApp(async (store) => {
-  const project = await store.createProject({ title: "Task details" });
+  const project = await store.createProject({ title: "Card details" });
   const original = await store.createTask(project.id, { title: "Collect inspiration and early ideas for a calmer workspace", assignee: "Alex", priority: "low", status: "todo", body: "First draft\n\nKeep this paragraph." });
   const task = await store.updateTask(project.id, original.id, {
     revision: original.revision,
@@ -117,7 +117,7 @@ test("the card editor is compact and its history shows before and after values",
   expect(Math.max(...geometry.fields) - Math.min(...geometry.fields)).toBeLessThan(2);
   expect(Math.max(...geometry.tools) - Math.min(...geometry.tools)).toBeLessThan(5);
   await page.getByRole("button", { name: "Version history", exact: true }).click();
-  const history = page.getByLabel("Task version history", { exact: true });
+  const history = page.getByLabel("Card version history", { exact: true });
   await history.locator(".task-history-version").first().waitFor();
   await history.locator("details").evaluateAll((items) => items.forEach((el) => (el.open = true)));
   await expect(history).toContainText("Before");
@@ -134,7 +134,7 @@ test("the editor's comments pane shares the card conversation and fits a phone i
   await openBoard(page);
   const before = await commentCount();
   await card(page).locator("[data-pro=task-details]").click();
-  await page.getByRole("button", { name: "Task comments", exact: true }).click();
+  await page.getByRole("button", { name: "Card comments", exact: true }).click();
   const embedded = page.locator(".task-comments-panel");
   await embedded.getByRole("textbox", { name: "Comment", exact: true }).fill("Reply from the task editor");
   await embedded.getByRole("button", { name: "Add comment", exact: true }).click();

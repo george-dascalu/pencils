@@ -2,7 +2,7 @@ import { canvasRichText, richToolbar } from "./canvas-rich-text.js";
 import { taskAttachmentContent, retainTaskAttachments } from "./task-attachment-model.js";
 
 export function taskDescriptionHTML(body, { esc, icon }) {
-  return `<section class="task-description" aria-label="Description"><div class="task-rich-tools" role="toolbar" aria-label="Format description">${richToolbar(icon, { alignment: null, previewAction: "data-rich-preview", responsive: true })}</div><div class="inline-rich canvas-markdown" role="textbox" aria-label="Task description" aria-multiline="true" contenteditable="true" data-placeholder="Add a description…" spellcheck="true"></div><textarea class="markdown-source hidden" name="body" aria-label="Task description in Markdown">${esc(body)}</textarea><div id="markdown-preview" class="inline-preview canvas-markdown hidden"></div></section>`;
+  return `<section class="task-description" aria-label="Description"><div class="task-rich-tools" role="toolbar" aria-label="Format description">${richToolbar(icon, { alignment: null, previewAction: "data-rich-preview", responsive: true })}</div><div class="inline-rich canvas-markdown" role="textbox" aria-label="Card description" aria-multiline="true" contenteditable="true" data-placeholder="Add a description…" spellcheck="true"></div><textarea class="markdown-source hidden" name="body" aria-label="Card description in Markdown">${esc(body)}</textarea><div id="markdown-preview" class="inline-preview canvas-markdown hidden"></div></section>`;
 }
 export function taskDescription(form, markdown, icon, project) {
   const controls = form.querySelector(".task-rich-tools");

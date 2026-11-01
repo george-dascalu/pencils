@@ -225,7 +225,10 @@ export function projectDocuments(ctx) {
   function updateStats() {
     if (!form) return;
     const stats = documentStats(form.elements.body.value);
-    form.querySelector("[data-document-stats]").textContent = `${stats.words.toLocaleString()} words · ${stats.characters.toLocaleString()} characters`;
+    const text = `${stats.words.toLocaleString()} words · ${stats.characters.toLocaleString()} characters`;
+    form.querySelector("[data-document-stats]").textContent = text;
+    const tools = document.querySelector(".document-tool-stats");
+    if (tools) tools.textContent = text;
   }
   function setMode(next, focus = true) {
     readingSearch?.close();
@@ -978,6 +981,8 @@ export function projectDocuments(ctx) {
           group("History and links", item("versions", "clock", "Page versions") + item("links", "link", "Backlinks and mentions") + item("comments", "comment", "Comments")),
           group("Files", item("export", "download", "Export Markdown") + item("obsidian", "external", "Open in Obsidian") + item("obsidian-settings", "settings", "Obsidian settings")),
           group("Delete", `<button type="button" class="document-panel-item danger" data-document-action="confirm-delete">${icon("trash")}Delete document</button>`),
+          // Phones and iPad show the word count here instead of the chip over the text.
+          `<p class="document-tool-stats">${esc(form.querySelector("[data-document-stats]").textContent)}</p>`,
         ].join(""));
       } else if (action === "links") {
         const unlinked = unlinkedMentions(all(), current.title, current.id);

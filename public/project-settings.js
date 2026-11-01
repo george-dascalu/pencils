@@ -19,56 +19,56 @@ export const settingsPages = [
     "General",
     "settings",
     "Project",
-    "Name, task IDs and the default view for this project.",
+    "Name, card IDs and the default view for this project.",
   ],
   [
     "teams",
     "Teams",
     "people",
     "Project",
-    "Move this project to another organisation, and choose the teams whose members can be assigned tasks.",
+    "Move this project to another organisation, and choose the teams whose members can be assigned cards.",
   ],
   [
     "workflow",
     "Statuses & workflow",
     "status",
-    "Task structure",
+    "Card structure",
     "Name and order statuses, choose defaults and define allowed transitions.",
   ],
   [
     "hierarchy",
     "Types & hierarchy",
     "tree",
-    "Task structure",
+    "Card structure",
     "Choose your card types and the parent–child relationships they allow.",
   ],
   [
     "fields",
     "Custom fields",
     "table",
-    "Task structure",
-    "Add project-specific information to tasks.",
+    "Card structure",
+    "Add project-specific information to cards.",
   ],
   [
     "sources",
     "Data sources & sync",
     "link",
     "Connections",
-    "Bring Obsidian, Jira Cloud and SharePoint Excel tasks into this project.",
+    "Bring Obsidian, Jira Cloud and SharePoint Excel cards into this project.",
   ],
   [
     "import",
     "Import notes",
     "upload",
     "Connections",
-    "Create local tasks from Markdown files. This is a one-time import.",
+    "Create local cards from Markdown files. This is a one-time import.",
   ],
   [
     "automation",
     "Automation",
     "repeat",
     "Maintenance",
-    "Preview and manage rules that update project tasks.",
+    "Preview and manage rules that update project cards.",
   ],
   [
     "diagnostics",
@@ -233,7 +233,7 @@ export function projectSettings(ctx, { sources, automations, personal, organisat
   function general() {
     const p = state.project;
     return form(
-      `${field("title", "Project name", p.title, 'required maxlength="300"')}${field("key", "Project key", p.key, 'required pattern="[A-Za-z][A-Za-z0-9]{1,11}" maxlength="12"')}<p class="field-hint">Task IDs look like <strong data-key-example>${esc(p.key)}-1</strong>. Existing IDs remain available as aliases when the key changes.</p><label class="field">Description<textarea name="body" rows="4" placeholder="What is this project for?">${esc(p.body)}</textarea></label><div class="field-row"><div class="field">Project colour${colorPicker({ label: "Project colour", value: p.color })}</div><label class="field">Default view<select name="default_view">${options(["overview", "documents", "list", "tree", "table", "kanban", "board", "calendar", "timeline", "capacity"].filter((view) => viewOn({ off: state.config?.off }, view) || view === p.default_view), p.default_view === "drawing" ? "board" : p.default_view, { board: "Boards" })}</select></label></div>${projectViews()}`,
+      `${field("title", "Project name", p.title, 'required maxlength="300"')}${field("key", "Project key", p.key, 'required pattern="[A-Za-z][A-Za-z0-9]{1,11}" maxlength="12"')}<p class="field-hint">Card IDs look like <strong data-key-example>${esc(p.key)}-1</strong>. Existing IDs remain available as aliases when the key changes.</p><label class="field">Description<textarea name="body" rows="4" placeholder="What is this project for?">${esc(p.body)}</textarea></label><div class="field-row"><div class="field">Project colour${colorPicker({ label: "Project colour", value: p.color })}</div><label class="field">Default view<select name="default_view">${options(["overview", "documents", "list", "tree", "table", "kanban", "board", "calendar", "timeline", "capacity"].filter((view) => viewOn({ off: state.config?.off }, view) || view === p.default_view), p.default_view === "drawing" ? "board" : p.default_view, { board: "Boards" })}</select></label></div>${projectViews()}`,
     );
   }
   // T39: the views and components this project offers; a component's box turns all its views on or off.
@@ -243,7 +243,7 @@ export function projectSettings(ctx, { sources, automations, personal, organisat
   }
   function teams() {
     return form(
-      `<label class="field">Organisation<select name="organisation" required>${state.organisations.map((o) => `<option value="${esc(o.id)}" ${o.id === state.project.organisation ? "selected" : ""}>${esc(o.title)}</option>`).join("")}</select></label><p class="field-hint">Moving organisations moves this project, its tasks and boards. Select teams from the destination organisation before saving.</p><div class="settings-assignee-summary"><h3>Available assignees</h3><p data-settings-assignees></p></div>`,
+      `<label class="field">Organisation<select name="organisation" required>${state.organisations.map((o) => `<option value="${esc(o.id)}" ${o.id === state.project.organisation ? "selected" : ""}>${esc(o.title)}</option>`).join("")}</select></label><p class="field-hint">Moving organisations moves this project, its cards and boards. Select teams from the destination organisation before saving.</p><div class="settings-assignee-summary"><h3>Available assignees</h3><p data-settings-assignees></p></div>`,
     );
   }
   function customField(
@@ -255,31 +255,31 @@ export function projectSettings(ctx, { sources, automations, personal, organisat
     },
   ) {
     const used = state.tasks.filter((t) => t.fields?.[f.id] != null).length;
-    return `<section class="settings-field-row" data-field-id="${esc(f.id)}"><div class="field-row"><label class="field">Field name<input data-field-name value="${esc(f.name)}" required maxlength="100"></label><label class="field">Field type<select data-field-type>${options(["text", "number", "date", "select", "checkbox"], f.type)}</select></label></div><label class="field" data-field-options-label ${f.type !== "select" ? "hidden" : ""}>Choices (one per line)<textarea data-field-options rows="3">${esc((f.options || []).join("\n"))}</textarea></label><div class="settings-field-meta"><span class="field-hint">${used ? `Used by ${used} task${used === 1 ? "" : "s"}` : "Not used yet"}</span><button type="button" class="button small" data-settings-remove-field ${used ? 'disabled title="Clear task values before removing this field"' : ""}>Remove field</button></div></section>`;
+    return `<section class="settings-field-row" data-field-id="${esc(f.id)}"><div class="field-row"><label class="field">Field name<input data-field-name value="${esc(f.name)}" required maxlength="100"></label><label class="field">Field type<select data-field-type>${options(["text", "number", "date", "select", "checkbox"], f.type)}</select></label></div><label class="field" data-field-options-label ${f.type !== "select" ? "hidden" : ""}>Choices (one per line)<textarea data-field-options rows="3">${esc((f.options || []).join("\n"))}</textarea></label><div class="settings-field-meta"><span class="field-hint">${used ? `Used by ${used} card${used === 1 ? "" : "s"}` : "Not used yet"}</span><button type="button" class="button small" data-settings-remove-field ${used ? 'disabled title="Clear card values before removing this field"' : ""}>Remove field</button></div></section>`;
   }
   function structure(section) {
     if (section === "fields")
       return form(
-        `<p class="field-hint" data-fields-empty ${state.config.fields.length ? "hidden" : ""}>No custom fields yet. Add a field when your tasks need information beyond the built-in fields.</p><div data-settings-fields>${state.config.fields.map(customField).join("")}</div><button type="button" class="button" data-settings-add-field>${icon("plus")}Add field</button>`,
+        `<p class="field-hint" data-fields-empty ${state.config.fields.length ? "hidden" : ""}>No custom fields yet. Add a field when your cards need information beyond the built-in fields.</p><div data-settings-fields>${state.config.fields.map(customField).join("")}</div><button type="button" class="button" data-settings-add-field>${icon("plus")}Add field</button>`,
         "workflow-form",
       );
     const types =
       section === "hierarchy"
-        ? `<div class="field type-list-field"><span id="type-list-label">Task types</span><input type="hidden" name="types" value="${esc(state.config.types.join(", "))}" required>${typeChipsHTML(state.config.types)}<div class="type-add"><input data-type-input aria-label="New type name" placeholder="New type…" maxlength="30"><button type="button" class="button small" data-type-add>${icon("plus")}Add type</button></div><span class="field-hint">Types in use cannot be removed.</span></div>`
+        ? `<div class="field type-list-field"><span id="type-list-label">Card types</span><input type="hidden" name="types" value="${esc(state.config.types.join(", "))}" required>${typeChipsHTML(state.config.types)}<div class="type-add"><input data-type-input aria-label="New type name" placeholder="New type…" maxlength="30"><button type="button" class="button small" data-type-add>${icon("plus")}Add type</button></div><span class="field-hint">Types in use cannot be removed.</span></div>`
         : "";
     return form(types, "workflow-form");
   }
   function importPage() {
-    return `<form id="settings-import" data-settings-form><div class="dialog-body"><p>Each selected Markdown file creates one task. Your original files are kept. To keep an Obsidian folder in sync, use ${link("sources", "Data sources & sync")} instead.</p><label class="field">Markdown notes<input type="file" name="notes" accept=".md,text/markdown" multiple required></label><p class="field-hint">Up to 200 files per import. Review the selection before creating tasks.</p><div data-import-preview aria-live="polite"></div><div class="form-error hidden" role="alert"></div></div><div class="dialog-foot"><button type="submit" class="button primary" disabled>Import selected notes</button></div></form>`;
+    return `<form id="settings-import" data-settings-form><div class="dialog-body"><p>Each selected Markdown file creates one card. Your original files are kept. To keep an Obsidian folder in sync, use ${link("sources", "Data sources & sync")} instead.</p><label class="field">Markdown notes<input type="file" name="notes" accept=".md,text/markdown" multiple required></label><p class="field-hint">Up to 200 files per import. Review the selection before creating cards.</p><div data-import-preview aria-live="polite"></div><div class="form-error hidden" role="alert"></div></div><div class="dialog-foot"><button type="submit" class="button primary" disabled>Import selected notes</button></div></form>`;
   }
   function advanced() {
-    return `<div class="settings-page-body"><section class="settings-action-row"><div><h3>Version history</h3><p>Review saved project settings and restore an earlier version.</p></div><button class="button" data-feature="project-history">Version history</button></section><section class="settings-action-row"><div><h3>${state.project.archived ? "Restore archived project" : "Archive project"}</h3><p>Keep tasks and boards while hiding the project from active planning. Restore it at any time.</p></div><button class="button" data-feature="project-archive">${state.project.archived ? "Unarchive project" : "Archive project"}</button></section><section class="settings-action-row settings-danger"><div><h3>Move project to Trash</h3><p>Moves this project and all its tasks and boards to Trash. Recover it from Settings → Recovery &amp; backups.</p></div><button class="button danger" data-feature="project-delete">Move to Trash</button></section></div>`;
+    return `<div class="settings-page-body"><section class="settings-action-row"><div><h3>Version history</h3><p>Review saved project settings and restore an earlier version.</p></div><button class="button" data-feature="project-history">Version history</button></section><section class="settings-action-row"><div><h3>${state.project.archived ? "Restore archived project" : "Archive project"}</h3><p>Keep cards and boards while hiding the project from active planning. Restore it at any time.</p></div><button class="button" data-feature="project-archive">${state.project.archived ? "Unarchive project" : "Archive project"}</button></section><section class="settings-action-row settings-danger"><div><h3>Move project to Trash</h3><p>Moves this project and all its cards and boards to Trash. Recover it from Settings → Recovery &amp; backups.</p></div><button class="button danger" data-feature="project-delete">Move to Trash</button></section></div>`;
   }
   async function diagnostics(host, valid) {
     const data = await api("/diagnostics");
     if (!valid()) return;
     const errors = Object.values(data.errors || {}).reduce((a, b) => a + b, 0);
-    host.innerHTML = `<div class="settings-page-body"><div class="settings-health-summary"><section><strong>${Math.floor(data.uptime_seconds / 60)} min</strong><span>Server uptime</span></section><section><strong>${errors}</strong><span>HTTP errors since restart</span></section><section><strong>${data.journal_conflicts?.length || 0}</strong><span>File recovery conflicts</span></section></div><section class="settings-action-row"><div><h3>Search index</h3><p>Rebuild if search results do not match the files in your vault. This does not change your tasks or boards.</p></div><button class="button" data-settings-rebuild>Rebuild search index</button></section><p role="status" data-diagnostics-result></p><details><summary>Technical details</summary><pre class="source-description">${esc(JSON.stringify(data, null, 2))}</pre></details></div>`;
+    host.innerHTML = `<div class="settings-page-body"><div class="settings-health-summary"><section><strong>${Math.floor(data.uptime_seconds / 60)} min</strong><span>Server uptime</span></section><section><strong>${errors}</strong><span>HTTP errors since restart</span></section><section><strong>${data.journal_conflicts?.length || 0}</strong><span>File recovery conflicts</span></section></div><section class="settings-action-row"><div><h3>Search index</h3><p>Rebuild if search results do not match the files in your vault. This does not change your cards or boards.</p></div><button class="button" data-settings-rebuild>Rebuild search index</button></section><p role="status" data-diagnostics-result></p><details><summary>Technical details</summary><pre class="source-description">${esc(JSON.stringify(data, null, 2))}</pre></details></div>`;
   }
   // The existing source/automation controllers keep their form logic; only their
   // presentation changes from a dialog to the current routed settings page.
@@ -496,7 +496,7 @@ export function projectSettings(ctx, { sources, automations, personal, organisat
             if (valid()) {
               f.reset();
               f.querySelector("[data-import-preview]").textContent =
-                `Imported ${result.tasks.length} ${result.tasks.length === 1 ? "note as a task" : "notes as tasks"}.`;
+                `Imported ${result.tasks.length} ${result.tasks.length === 1 ? "note as a card" : "notes as cards"}.`;
             }
             toast(
               `Imported ${result.tasks.length} note${result.tasks.length === 1 ? "" : "s"}.`,

@@ -136,7 +136,7 @@ test("the card view shows no field captions but keeps accessible names", async (
     return texts;
   });
   for (const caption of CAPTIONS) expect(visibleText, `${caption} caption is not shown: ${visibleText.join(" | ")}`).not.toContain(caption);
-  for (const [selector, name] of [['select[name="status"]', "Status"], ['select[name="assignee"]', "Assignee"], ['input[name="start"]', "Start date"], ['input[name="due"]', "Due date"], ['.inline-rich[role="textbox"]', "Task description"]])
+  for (const [selector, name] of [['select[name="status"]', "Status"], ['select[name="assignee"]', "Assignee"], ['input[name="start"]', "Start date"], ['input[name="due"]', "Due date"], ['.inline-rich[role="textbox"]', "Card description"]])
     await expect(form.locator(selector), `${selector} keeps its accessible name`).toHaveAttribute("aria-label", name);
   const tops = await form.evaluate(() => [...document.querySelectorAll(".task-metadata-main > *")].map((el) => Math.round(el.getBoundingClientRect().top)));
   expect(Math.max(...tops) - Math.min(...tops), `fields share one line: ${tops}`).toBeLessThanOrEqual(2);

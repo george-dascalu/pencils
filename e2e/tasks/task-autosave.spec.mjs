@@ -36,7 +36,7 @@ test("edits save automatically while the title keeps focus, following the workfl
   await title(page).fill("Saved while focused");
   await expect.poll(async () => (await saved(card.id)).title).toBe("Saved while focused");
   await expect(title(page)).toBeFocused();
-  await page.locator('[aria-label="Task description"]').fill("**New description**");
+  await page.locator('[aria-label="Card description"]').fill("**New description**");
   await expect.poll(async () => (await saved(card.id)).body).toContain("New description");
   await page.locator("#task-form [name=status]").selectOption("review");
   await expect.poll(async () => (await saved(card.id)).status).toBe("review");
@@ -172,7 +172,7 @@ test("the board's task panel updates its card live, keeps its header actions in 
   await expect(node.locator(".task-title")).toHaveText("Live on the board");
   await expect(title(page)).toHaveValue("Live on the board");
   const actions = await panel.locator('.task-editor-actions button, .board-task-editor-heading [data-action="dialog-close"]').evaluateAll((els) => els.map((el) => el.getAttribute("aria-label")));
-  expect(actions).toEqual(["Task details", "Version history", "Task comments", "Duplicate task", "Archive task", "Delete task", "Close task"]);
+  expect(actions).toEqual(["Card details", "Version history", "Card comments", "Duplicate card", "Archive card", "Delete card", "Close card"]);
   for (const width of [1400, 390])
     for (const theme of ["light", "dark"]) {
       await page.setViewportSize({ width, height: 1000 });

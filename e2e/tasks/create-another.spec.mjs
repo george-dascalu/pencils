@@ -56,13 +56,13 @@ test("on the board, create another keeps the shared fields and clears the rest, 
   await form.locator("[name=assignee]").selectOption("Alice");
   await form.locator("[name=due]").fill("2026-10-30");
   await form.locator("[name=title]").fill("Repeat one");
-  await form.locator('[aria-label="Task description"]').fill("Only the first description");
+  await form.locator('[aria-label="Card description"]').fill("Only the first description");
   await legacySubtasks(form, [
     { title: "Queued child", type: "task" },
     { title: "Typed child", type: "task" },
   ]);
   await createAnother(form).check();
-  await page.getByRole("button", { name: "Close new task", exact: true }).click();
+  await page.getByRole("button", { name: "Close new card", exact: true }).click();
   form = await newBoardCard(page);
   await form.locator("[data-feature=form-restore]").click();
   await expect(createAnother(form)).toBeChecked();
@@ -73,7 +73,7 @@ test("on the board, create another keeps the shared fields and clears the rest, 
   await createCard(form).click();
   await form.locator(".form-error:not(.hidden):not([hidden])").first().waitFor();
   await expect(form.locator("[name=title]")).toHaveValue("Repeat one");
-  await expect(form.locator('[aria-label="Task description"]')).toContainText(/first description/);
+  await expect(form.locator('[aria-label="Card description"]')).toContainText(/first description/);
   expect(await taskCount()).toBe(before);
   await page.unroute(url);
   await createCard(form).click();
@@ -84,7 +84,7 @@ test("on the board, create another keeps the shared fields and clears the rest, 
   expect(await page.locator("#canvas-world").getAttribute("style")).toBe(camera);
   for (const [name, value] of Object.entries({ type: "story", priority: "high", status: "review", assignee: "Alice", parent: parent.id, due: "2026-10-30", title: "", pendingSubtasks: "[]" }))
     await expect(form.locator(`[name="${name}"]`), name).toHaveValue(value);
-  await expect(form.locator('[aria-label="Task description"]')).toHaveText(/^\s*$/);
+  await expect(form.locator('[aria-label="Card description"]')).toHaveText(/^\s*$/);
   await expect(createAnother(form)).toBeChecked();
   await expect(form.locator("[name=title]")).toBeFocused();
   await form.locator("[name=title]").fill("Repeat two");

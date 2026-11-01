@@ -24,7 +24,7 @@ test("the board bar's right side holds the star and Board tools, which leads wit
   expect(right).toEqual(["save", "star", "tools"]);
   await expect(menu(page, "tools").locator("summary")).toHaveAccessibleName("Board tools");
   await expect(page.locator('.board-toolbar [data-board-menu="session"], .board-toolbar [data-board-menu="history"]')).toHaveCount(0);
-  expect(await items(page, "tools")).toEqual(["Present", "Board session", "Activity", "History", "Local checkpoints", "Rename", "Move to folder", "Copy board link", "Link tasks", "Export SVG", "Export PNG", "Obsidian .canvas", "Prepare offline drawing", "Open offline pad", "Delete board"]);
+  expect(await items(page, "tools")).toEqual(["Present", "Board session", "Activity", "History", "Local checkpoints", "Rename", "Move to folder", "Copy board link", "Link cards", "Export SVG", "Export PNG", "Obsidian .canvas", "Prepare offline drawing", "Open offline pad", "Delete board"]);
   // Dividers split the session actions, the history actions and the rest.
   expect(await menu(page, "tools").locator(".board-menu-panel > *").evaluateAll((els) => els.slice(0, 7).map((el) => el.matches(".board-menu-divider") ? "|" : el.textContent.trim()))).toEqual(["Present", "Board session", "|", "Activity", "History", "Local checkpoints", "|"]);
   // Boards are chosen, made and imported in the sidebar since 0.20.74 (board-sidebar.spec.mjs).

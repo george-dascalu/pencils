@@ -72,7 +72,7 @@ const reviewTests = (device, phone) => {
       await expect(form(page).locator('[name="title"]')).toHaveCSS("font-size", "18px");
       expect(await tools.evaluate((el) => el.scrollWidth <= el.clientWidth && el.offsetHeight <= 54), "Toolbar fits one row").toBe(true);
       for (const control of await tools.locator("button:visible,summary:visible").all()) expect((await control.boundingBox()).height).toBeGreaterThanOrEqual(44);
-      const del = form(page).locator(".task-secondary-actions").getByRole("button", { name: "Delete task", exact: true });
+      const del = form(page).locator(".task-secondary-actions").getByRole("button", { name: "Delete card", exact: true });
       await expect(del, "Delete shows without a More menu").toBeVisible();
       // Both header groups and Close fit the screen, Close last.
       const [group, close] = [await form(page).locator(".task-secondary-actions").boundingBox(), await form(page).locator('[data-action="dialog-close"]').boundingBox()];
@@ -158,7 +158,7 @@ const expectAboveKeyboard = async (page, message) => {
 };
 const touchTests = (device) => {
   const touch = touchDevices.has(device);
-  const rich = (page) => form(page).getByRole("textbox", { name: "Task description", exact: true });
+  const rich = (page) => form(page).getByRole("textbox", { name: "Card description", exact: true });
 
   test("the relationship picker opens above the editor in view, links and unlinks, and closes by tapping outside or Escape", async ({ page }) => {
     const { target } = app.touch;
@@ -227,7 +227,7 @@ const touchTests = (device) => {
       await rich(page).tap();
       await expect(rich(page)).toBeFocused();
       await showKeyboard(page);
-      await expectAboveKeyboard(page, "Task panel fits above the keyboard");
+      await expectAboveKeyboard(page, "Card panel fits above the keyboard");
       await page.waitForFunction(() => {
         const selection = getSelection();
         if (!selection.rangeCount) return false;
@@ -246,7 +246,7 @@ const touchTests = (device) => {
       await newCard(page, { tap: true });
       await form(page).waitFor();
       await showKeyboard(page);
-      await expectAboveKeyboard(page, "New task also fits the keyboard viewport");
+      await expectAboveKeyboard(page, "New card also fits the keyboard viewport");
     });
 
   test("attachments upload from the file picker without losing the description and survive a reload", async ({ page }) => {

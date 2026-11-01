@@ -348,7 +348,7 @@ export function canvasFeatures(ctx) {
     const divider = '<span class="board-menu-divider" role="separator" data-menu-home="tools"></span>';
     $(".board-toolbar")?.insertAdjacentHTML(
       "afterend",
-      `<div id="canvas-extras" class="canvas-extra-tools"><button class="button small" data-feature="canvas-history" data-menu-home="history">${icon("clock")}History</button><button class="button small" data-drawing-action="recover" data-menu-home="history">${icon("local")}Local checkpoints</button><button class="button small" data-board-action="move" data-menu-home="tools">${icon("folder")}Move to folder</button>${divider}<button class="button small" data-drawing-action="link" data-id="${esc(board().id)}" data-menu-home="tools">${icon("link")}Copy board link</button><button class="button small" data-drawing-action="link-task" data-menu-home="tools">${icon("task")}Link tasks</button>${divider}<button class="button small" data-feature="canvas-svg" data-menu-home="tools">${icon("download")}Export SVG</button><button class="button small" data-feature="canvas-png" data-menu-home="tools">${icon("download")}Export PNG</button><button class="button small" data-feature="canvas-json" data-menu-home="tools">${icon("download")}Obsidian .canvas</button>${divider}<button class="button small" data-drawing-action="offline" data-menu-home="tools">${icon("download")}Prepare offline drawing</button><a class="button small" href="/drawing-offline.html" data-menu-home="tools">${icon("external")}Open offline pad</a>${divider}<button class="button small danger" data-feature="canvas-delete" data-menu-home="tools">${icon("trash")}Delete board</button></div>`,
+      `<div id="canvas-extras" class="canvas-extra-tools"><button class="button small" data-feature="canvas-history" data-menu-home="history">${icon("clock")}History</button><button class="button small" data-drawing-action="recover" data-menu-home="history">${icon("local")}Local checkpoints</button><button class="button small" data-board-action="move" data-menu-home="tools">${icon("folder")}Move to folder</button>${divider}<button class="button small" data-drawing-action="link" data-id="${esc(board().id)}" data-menu-home="tools">${icon("link")}Copy board link</button><button class="button small" data-drawing-action="link-task" data-menu-home="tools">${icon("task")}Link cards</button>${divider}<button class="button small" data-feature="canvas-svg" data-menu-home="tools">${icon("download")}Export SVG</button><button class="button small" data-feature="canvas-png" data-menu-home="tools">${icon("download")}Export PNG</button><button class="button small" data-feature="canvas-json" data-menu-home="tools">${icon("download")}Obsidian .canvas</button>${divider}<button class="button small" data-drawing-action="offline" data-menu-home="tools">${icon("download")}Prepare offline drawing</button><a class="button small" href="/drawing-offline.html" data-menu-home="tools">${icon("external")}Open offline pad</a>${divider}<button class="button small danger" data-feature="canvas-delete" data-menu-home="tools">${icon("trash")}Delete board</button></div>`,
     );
     enhanceBase();
     selection();
@@ -1180,9 +1180,9 @@ export function canvasFeatures(ctx) {
                   ]
                     .filter(Boolean)
                     .join("\n\n")
-                : task(n.task)?.title || "Removed task"
+                : task(n.task)?.title || "Removed card"
               : n.type === "draft"
-                ? `${n.draft?.title || "Draft task"}\n\n${n.text || ""}`
+                ? `${n.draft?.title || "Draft card"}\n\n${n.text || ""}`
                 : n.text || "",
           lines = text.split("\n").flatMap((paragraph) => {
             const wrapped = paragraph.match(/.{1,32}(?:\s|$)|.{1,32}/g) || [""];
@@ -1419,7 +1419,7 @@ export function canvasFeatures(ctx) {
           // The server may list the same tasks in another order; only a change counts.
           const revisions = (tasks) => JSON.stringify(tasks.map((t) => [t.id, t.revision]).sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0)));
           if (revisions(current.tasks) !== revisions(snapshot.tasks))
-            throw Error("Tasks changed. Close and preview the update again.");
+            throw Error("Cards changed. Close and preview the update again.");
           if (signature(board()) !== base)
             throw Error("The board changed. Preview again.");
           changeBoard((b) => {

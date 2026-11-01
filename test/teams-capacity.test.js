@@ -29,7 +29,7 @@ test("Team members are unique across teams and directory validates membership an
   );
   assert.throws(
     () => directory([{ id: "p", name: "P", task_capacity: 1.5 }], []),
-    /task limit/,
+    /card limit/,
   );
   assert.equal(
     directory([{ id: "p", name: "P", capacity: 32 }], []).people[0]

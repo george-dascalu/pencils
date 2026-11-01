@@ -188,7 +188,7 @@ export function installFeatures(ctx) {
     $(".kanban-group-control")?.remove();
     $(".kanban-id-control")?.remove();
     if (state.view === "kanban") {
-      $(".toolbar-right")?.insertAdjacentHTML("afterbegin", `<label class="kanban-group-control">Swimlanes<select id="kanban-group" class="filter" aria-label="Kanban swimlanes">${options(kanbanGroups.filter((field) => fieldOn(state.config, field)), kanbanGroup(state.kanbanGroupBy), { none: "None", assignee: "Assignee", priority: "Priority", type: "Task type" })}</select></label><label class="kanban-group-control kanban-id-control"><input type="checkbox" id="kanban-show-ids" ${storage.get(`kanban-show-ids:${state.project.id}`, false) === true ? "checked" : ""}>Show card IDs</label>`);
+      $(".toolbar-right")?.insertAdjacentHTML("afterbegin", `<label class="kanban-group-control">Swimlanes<select id="kanban-group" class="filter" aria-label="Kanban swimlanes">${options(kanbanGroups.filter((field) => fieldOn(state.config, field)), kanbanGroup(state.kanbanGroupBy), { none: "None", assignee: "Assignee", priority: "Priority", type: "Card type" })}</select></label><label class="kanban-group-control kanban-id-control"><input type="checkbox" id="kanban-show-ids" ${storage.get(`kanban-show-ids:${state.project.id}`, false) === true ? "checked" : ""}>Show card IDs</label>`);
     }
     layout.projectHeader();
   }
@@ -208,7 +208,7 @@ export function installFeatures(ctx) {
       return;
     $("#view-content")?.insertAdjacentHTML(
       "beforeend",
-      `<div id="pagination" class="pagination">${button("page-prev", `${icon("chevron-left")}<span>Previous</span>`, state.page ? "" : "disabled")}<span>Page ${(state.page || 0) + 1} of ${Math.ceil(total / 100)} · ${total} ${state.view === "tree" ? "root groups" : "tasks"}</span>${button("page-next", `<span>Next</span>${icon("chevron-right")}`, (state.page || 0) + 1 >= Math.ceil(total / 100) ? "disabled" : "")}</div>`,
+      `<div id="pagination" class="pagination">${button("page-prev", `${icon("chevron-left")}<span>Previous</span>`, state.page ? "" : "disabled")}<span>Page ${(state.page || 0) + 1} of ${Math.ceil(total / 100)} · ${total} ${state.view === "tree" ? "root groups" : "cards"}</span>${button("page-next", `<span>Next</span>${icon("chevron-right")}`, (state.page || 0) + 1 >= Math.ceil(total / 100) ? "disabled" : "")}</div>`,
     );
   }
   document.addEventListener("click", (event) => {
@@ -247,7 +247,7 @@ export function installFeatures(ctx) {
     const metric = $(".stats-strip");
     if (metric)
       metric.title =
-        "Progress counts leaf tasks only, weighted by estimate when provided (otherwise 1). Parent tasks are not counted twice.";
+        "Progress counts leaf cards only, weighted by estimate when provided (otherwise 1). Parent cards are not counted twice.";
     if (state.project?.archived)
       $(".hero")?.insertAdjacentHTML(
         "afterend",
@@ -408,7 +408,7 @@ export function installFeatures(ctx) {
           onOpen: () =>
             form.closest("dialog").classList.add("with-task-comments"),
           item: () => (state.project?.id === projectId ? task(id) : null),
-          title: () => task(id)?.title || "Task",
+          title: () => task(id)?.title || "Card",
           change: (mutate) => {
             const base = structuredClone(task(id));
             mutate();
@@ -639,7 +639,7 @@ export function installFeatures(ctx) {
       ...(all || (state.project && !state.project.personal)
         ? [
             ...(cardsOn(state.project && state.config) ? [{ id: "new-task", title: "New card", run: () => taskDialog(null) }] : []),
-            ...[["workflow", "Statuses & workflow"], ["import", "Import notes"], ["templates", "Task templates"], ["quick-capture", "Quick capture"]].map(([id, title]) => ({ id, title, run: () => click(id) })),
+            ...[["workflow", "Statuses & workflow"], ["import", "Import notes"], ["templates", "Card templates"], ["quick-capture", "Quick capture"]].map(([id, title]) => ({ id, title, run: () => click(id) })),
             ...[
               "overview",
               "list",
@@ -746,7 +746,7 @@ export function installFeatures(ctx) {
   });
   function templates() {
     showDialog(
-      `<dialog class="dialog">${dialogHead("Task templates")}<div class="dialog-body"><p>Save an existing task as a template from its editor. Templates belong to this project.</p>${(state.project.templates || []).map((t, i) => `<div class="recovery-item"><strong>${esc(t.name)}</strong>${button("template-use", "Use template", `data-index="${i}"`)}${button("template-delete", "Delete", `data-index="${i}"`)}</div>`).join("") || "<p>No templates yet.</p>"}</div><div class="dialog-foot"><button class="button" data-action="dialog-close">Close</button></div></dialog>`,
+      `<dialog class="dialog">${dialogHead("Card templates")}<div class="dialog-body"><p>Save an existing card as a template from its editor. Templates belong to this project.</p>${(state.project.templates || []).map((t, i) => `<div class="recovery-item"><strong>${esc(t.name)}</strong>${button("template-use", "Use template", `data-index="${i}"`)}${button("template-delete", "Delete", `data-index="${i}"`)}</div>`).join("") || "<p>No templates yet.</p>"}</div><div class="dialog-foot"><button class="button" data-action="dialog-close">Close</button></div></dialog>`,
       "templates",
     );
   }
@@ -1214,7 +1214,7 @@ export function installFeatures(ctx) {
       if (key === "status") return fallback(tasks);
       const groups = new Map();
       for (const t of tasks) {
-        const name = key === "none" ? "All tasks" : t[key] || "Unassigned";
+        const name = key === "none" ? "All cards" : t[key] || "Unassigned";
         if (!groups.has(name)) groups.set(name, []);
         groups.get(name).push(t);
       }

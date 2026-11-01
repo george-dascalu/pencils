@@ -31,7 +31,7 @@ export function taskRelationshipsEditor(ctx, form, { flush, changed }) {
   host.innerHTML = `<div class="task-relationships-heading"><h3>Relationships</h3><details class="selection-menu task-relationship-sort"><summary class="icon-button" aria-label="Sort relationships" title="Sort relationships">${icon("sort")}</summary><div class="selection-popover task-picker-popover"><h3 class="popover-title">Sort by</h3><div role="listbox" aria-label="Sort relationships by">${[["", "Relationship order"], ["assignee", "Assignee"], ["status", "Status"], ["priority", "Priority"]].map(([value, label]) => `<button type="button" role="option" data-relationship-sort="${value}" aria-selected="false"><span>${label}</span>${icon("check")}</button>`).join("")}</div><button type="button" class="button" data-relationship-sort-direction aria-label="Reverse relationship sort">${icon("sort")}Reverse order</button></div></details><button type="button" class="icon-button" data-relationship-toggle aria-expanded="false" aria-label="Add relationship" title="Add relationship">${icon("plus")}</button></div>
     <div data-relationship-list></div>
     <div class="selection-popover task-relationship-picker" id="task-relationship-picker" data-relationship-picker popover="manual" role="dialog" aria-label="Add relationship" aria-modal="false" hidden>
-      <div class="task-relationship-controls"><select aria-label="Relationship type">${kinds().map(([value, label]) => `<option value="${value}">${label}</option>`).join("")}</select><input type="search" aria-label="Find a task to link" placeholder="Find by ID or title…"><button type="button" class="icon-button" data-relationship-close aria-label="Close relationship picker">${icon("close")}</button></div>
+      <div class="task-relationship-controls"><select aria-label="Relationship type">${kinds().map(([value, label]) => `<option value="${value}">${label}</option>`).join("")}</select><input type="search" aria-label="Find a card to link" placeholder="Find by ID or title…"><button type="button" class="icon-button" data-relationship-close aria-label="Close relationship picker">${icon("close")}</button></div>
       <div class="task-relationship-options" data-relationship-options></div>
     </div><p class="field-hint" data-relationship-status role="status" hidden></p>`;
   form.querySelector(".task-description").after(host);
@@ -132,7 +132,7 @@ export function taskRelationshipsEditor(ctx, form, { flush, changed }) {
     }
   }
   const detail = (task) =>
-    `${icon(task.type || "task")}<span class="task-relationship-key">${esc(task.key || task.id)}</span><span class="task-relationship-title">${esc(task.title || "Unavailable task")}</span>${task.title ? `<span class="task-relationship-metadata field-box" ${fieldBoxStyle(state, task.priority)}><span class="task-relationship-assignee" role="img" aria-label="Assignee: ${esc(task.assignee || "Unassigned")}" title="${esc(task.assignee || "Unassigned")}">${ctx.assigneeHTML(task)}</span><span class="field-chip field-chip-status task-relationship-status" ${taskColorAttributes(state, "status", task.status)} title="${esc(statusLabel(state.config, task.status))}" aria-label="Status: ${esc(statusLabel(state.config, task.status))}">${esc(statusLabel(state.config, task.status))}</span><span class="field-chip field-chip-priority task-relationship-priority" role="img" ${taskColorAttributes(state, "priority", task.priority)} title="${esc(priorityLabel(task.priority))}" aria-label="Priority: ${esc(priorityLabel(task.priority))}">${icon(`priority-${task.priority || "none"}`)}</span>${ctx.dueHTML(task) || `<span class="due no-date">${icon("calendar")}</span>`}</span>` : ""}`;
+    `${icon(task.type || "task")}<span class="task-relationship-key">${esc(task.key || task.id)}</span><span class="task-relationship-title">${esc(task.title || "Unavailable card")}</span>${task.title ? `<span class="task-relationship-metadata field-box" ${fieldBoxStyle(state, task.priority)}><span class="task-relationship-assignee" role="img" aria-label="Assignee: ${esc(task.assignee || "Unassigned")}" title="${esc(task.assignee || "Unassigned")}">${ctx.assigneeHTML(task)}</span><span class="field-chip field-chip-status task-relationship-status" ${taskColorAttributes(state, "status", task.status)} title="${esc(statusLabel(state.config, task.status))}" aria-label="Status: ${esc(statusLabel(state.config, task.status))}">${esc(statusLabel(state.config, task.status))}</span><span class="field-chip field-chip-priority task-relationship-priority" role="img" ${taskColorAttributes(state, "priority", task.priority)} title="${esc(priorityLabel(task.priority))}" aria-label="Priority: ${esc(priorityLabel(task.priority))}">${icon(`priority-${task.priority || "none"}`)}</span>${ctx.dueHTML(task) || `<span class="due no-date">${icon("calendar")}</span>`}</span>` : ""}`;
   function refresh() {
     if (!active()) return;
     toggle.disabled = busy;
@@ -155,7 +155,7 @@ export function taskRelationshipsEditor(ctx, form, { flush, changed }) {
                 .map((row) => {
                   const task = list.find((task) => task.id === row.target);
                   const error = problem(kind, row.target, true);
-                  return `<div class="task-relationship-row"><button type="button" class="task-relationship-link" data-relationship-open="${esc(row.target)}" title="${esc(task?.title || "Unavailable task")}" ${!task || busy ? "disabled" : ""}>${detail(task || { id: row.target })}</button><button type="button" class="icon-button" data-relationship-remove="${esc(row.target)}" data-relationship-kind="${kind}" aria-label="Remove ${label.toLowerCase()} ${esc(task?.key || row.target)}" title="${esc(error || "Remove relationship")}" ${error || busy ? "disabled" : ""}>${icon("close")}</button></div>`;
+                  return `<div class="task-relationship-row"><button type="button" class="task-relationship-link" data-relationship-open="${esc(row.target)}" title="${esc(task?.title || "Unavailable card")}" ${!task || busy ? "disabled" : ""}>${detail(task || { id: row.target })}</button><button type="button" class="icon-button" data-relationship-remove="${esc(row.target)}" data-relationship-kind="${kind}" aria-label="Remove ${label.toLowerCase()} ${esc(task?.key || row.target)}" title="${esc(error || "Remove relationship")}" ${error || busy ? "disabled" : ""}>${icon("close")}</button></div>`;
                 })
                 .join("")}</div>`
             : "";
@@ -189,7 +189,7 @@ export function taskRelationshipsEditor(ctx, form, { flush, changed }) {
                 : "");
             return `<button type="button" class="task-relationship-option" data-relationship-add="${esc(task.id)}" ${error || busy ? "disabled" : ""}><span class="task-relationship-link">${detail(task)}${icon("plus")}</span>${hint ? `<small>${esc(hint)}</small>` : ""}</button>`;
           })
-          .join("") || '<p class="field-hint">No matching tasks.</p>';
+          .join("") || '<p class="field-hint">No matching cards.</p>';
       paint(
         host.querySelector("[data-relationship-options]"),
         options +
@@ -274,7 +274,7 @@ export function taskRelationshipsEditor(ctx, form, { flush, changed }) {
     try {
       if (!(await flush()))
         throw Error(
-          "Save the task's current changes before changing relationships.",
+          "Save the card's current changes before changing relationships.",
         );
       if (!active()) return;
       if (button.dataset.relationshipOpen) {

@@ -9,7 +9,7 @@ import { savedBoard, seedBoard, findOnBoard, savesSettled } from "../helpers/boa
 
 const app = useApp(async (store) => {
   const project = await store.createProject({ title: "Live typography" });
-  const task = await store.createTask(project.id, { title: "Task typography", body: "Task description" });
+  const task = await store.createTask(project.id, { title: "Task typography", body: "Card description" });
   return { project, task };
 });
 

@@ -392,7 +392,7 @@ test.describe("Group 6: keyboard, copy, identity (findings 27–31)", { tag: "@a
     await openFirstTask(page);
     const buttons = await page.locator(".task-pane-switcher > .icon-button").evaluateAll((els) => els.map((el) => ({ text: el.textContent.trim(), name: el.getAttribute("aria-label"), title: el.title, icon: el.querySelectorAll(".icon").length })));
     expect(buttons.map((b) => b.text), "no visible text on the pane buttons").toEqual(["", "", ""]);
-    expect(buttons.map((b) => b.name)).toEqual(["Task details", "Version history", "Task comments"]);
+    expect(buttons.map((b) => b.name)).toEqual(["Card details", "Version history", "Card comments"]);
     expect(buttons.every((b) => b.title && b.icon === 1)).toBe(true);
   }));
   test("escape inside the comments pane returns to details before closing the task", async ({ page }) => {

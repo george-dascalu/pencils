@@ -24,7 +24,8 @@ export function observeKanbanLayout(board) {
   const style = getComputedStyle(board);
   const minimum = parseFloat(style.getPropertyValue("--kanban-min-column-width"));
   const gap = parseFloat(style.getPropertyValue("--kanban-gap"));
-  let available = 0, pitch = 0, first = 0;
+  // Open on the first column with cards, not an empty Backlog filling a phone screen.
+  let available = 0, pitch = 0, first = Math.max(0, [...columns(board)].findIndex((c) => Number(c.querySelector(".count")?.textContent) > 0));
   function rememberColumn() {
     // A resize can clamp scrollLeft before ResizeObserver fires. Ignore that
     // adjustment so rotating keeps the column the user was actually viewing.

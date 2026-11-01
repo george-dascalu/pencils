@@ -13,11 +13,11 @@ export function boardTaskEditor(
   const draft = dialog.querySelector("#task-form")?.dataset.draftNode;
   dialog.setAttribute(
     "aria-label",
-    draft ? "Draft task" : existing ? "Edit project task" : "New project task",
+    draft ? "Draft card" : existing ? "Edit project card" : "New project card",
   );
   dialog.setAttribute("aria-modal", "false");
   const close = dialog.querySelector('[data-action="dialog-close"]');
-  close.setAttribute("aria-label", existing ? "Close task" : "Close new task");
+  close.setAttribute("aria-label", existing ? "Close card" : "Close new card");
   const heading = document.createElement("header");
   heading.className = "board-task-editor-heading dialog-head task-editor-head";
   const oldHead = dialog.querySelector(".task-editor-head");
@@ -29,9 +29,9 @@ export function boardTaskEditor(
   const panes = document.createElement("div");
   panes.className = "task-pane-switcher";
   panes.setAttribute("role", "group");
-  panes.setAttribute("aria-label", "Task panel");
+  panes.setAttribute("aria-label", "Card panel");
   if (existing) {
-    panes.innerHTML = `<button type="button" class="icon-button" data-feature="task-details" data-editor-pane="details" aria-label="Task details" title="Task details">${icon("info")}</button>`;
+    panes.innerHTML = `<button type="button" class="icon-button" data-feature="task-details" data-editor-pane="details" aria-label="Card details" title="Card details">${icon("info")}</button>`;
     for (const pane of ["history", "comments"]) {
       const button = actions.querySelector(`[data-feature="task-${pane}"]`);
       button.dataset.editorPane = pane;
@@ -43,7 +43,7 @@ export function boardTaskEditor(
   const more = document.createElement("div");
   more.className = "task-secondary-actions";
   more.setAttribute("role", "group");
-  more.setAttribute("aria-label", "Manage task");
+  more.setAttribute("aria-label", "Manage card");
   if (existing) {
     more.append(actions.querySelector('[data-feature="task-duplicate"]'), actions.querySelector('[data-feature="task-archive"]'), actions.querySelector('[data-action="task-delete"]'));
     actions.append(more);
@@ -169,7 +169,7 @@ export function boardTaskEditor(
     grip.className = "task-panel-resizer";
     grip.tabIndex = 0;
     grip.setAttribute("role", "separator");
-    grip.setAttribute("aria-label", "Resize task panel");
+    grip.setAttribute("aria-label", "Resize card panel");
     grip.setAttribute("aria-orientation", "vertical");
     const resize = (width) => {
       panelWidth = Math.max(360, Math.min(900, width));

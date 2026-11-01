@@ -30,7 +30,7 @@ const layers = async () => (await app.store.snapshot(app.project.id)).boards[0].
 test("the tool bar holds Frames, Live task view and Insert, and the board bar has no More", async ({ page }) => {
   await open(page);
   await expect(group(page, "Navigate").locator("[data-pro=outline]")).toHaveAccessibleName("Frames");
-  await expect(group(page, "Tasks").locator("[data-pro=query-add]")).toHaveAccessibleName("Live task view");
+  await expect(group(page, "Tasks").locator("[data-pro=query-add]")).toHaveAccessibleName("Live card view");
   const insert = group(page, "Create").locator("[data-board-menu=insert]");
   await expect(insert.locator("summary")).toHaveAccessibleName("Insert");
   await insert.locator("summary").click();
@@ -86,7 +86,7 @@ test("Connections opens from the selection toolbar for the selected object", asy
 // Since 0.20.82 the dock's Navigate row holds Frames, and its Add row the others as icons.
 onDevices(["phone"], () => test("phones reach Frames, Live task view and Insert's actions in the dock's rows, each named", async ({ page }) => {
   await open(page);
-  for (const [row, names] of [["#phone-board-navigate", ["Frames"]], ["#phone-board-add", ["Live task view", "Live note", "Templates", "Bulk notes"]]])
+  for (const [row, names] of [["#phone-board-navigate", ["Frames"]], ["#phone-board-add", ["Live card view", "Live note", "Templates", "Bulk notes"]]])
     for (const name of names) {
       // By label: a role query skips the closed row's buttons.
       const button = page.locator(row).locator(`button[aria-label="${name}"]`);

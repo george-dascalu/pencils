@@ -126,7 +126,7 @@ test("comments stay anchored when a sticky becomes a task, and a live query list
   await page.locator("[data-node=note]").click();
   await clickControl(pro(page, "convert"));
   await poll(async () => (await nodeOf("note")).type).toBe("draft");
-  await page.locator("[data-node=note]").getByRole("button", { name: "Finalise task", exact: true }).click();
+  await page.locator("[data-node=note]").getByRole("button", { name: "Finalise card", exact: true }).click();
   await page.locator("#draft-finalise-confirm").click();
   await poll(async () => (await nodeOf("note")).type).toBe("task");
   expect((await nodeOf("note")).comments.length).toBe(1);

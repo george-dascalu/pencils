@@ -145,7 +145,7 @@ export function canvasPro(ctx, basic) {
   const btn = (action, text, extra = "") =>
     `<button type="button" class="button small${action === "collapse" ? " icon-button" : ""}" data-pro="${action}" ${extra}>${text}</button>`;
   const disclosure = (n) => btn("task-collapse", icon("chevron"),
-    `data-id="${esc(n.id)}" aria-label="${n.taskCollapsed ? "Expand" : "Collapse"} task description" title="${n.taskCollapsed ? "Expand" : "Collapse"} description" aria-expanded="${!n.taskCollapsed}" ${n.locked ? "disabled" : ""}`);
+    `data-id="${esc(n.id)}" aria-label="${n.taskCollapsed ? "Expand" : "Collapse"} card description" title="${n.taskCollapsed ? "Expand" : "Collapse"} description" aria-expanded="${!n.taskCollapsed}" ${n.locked ? "disabled" : ""}`);
   const input = (name, label, value = "", extra = "") =>
     extra === 'type="color"'
       ? `<div class="field">Colour${ctx.colorPicker({ name, value, label: "Colour" })}</div>`
@@ -398,11 +398,11 @@ export function canvasPro(ctx, basic) {
       );
     if (n.viewType === "timeline")
       return (
-        `<div class="query-title">${esc(n.text || "Live tasks")}</div>` +
+        `<div class="query-title">${esc(n.text || "Live cards")}</div>` +
         timelineHTML(tasks, ctx, n.timelineScale || "week", n.id, n.timelineShowWeekends !== false, n.timelineRange)
       );
     if (n.viewType === "kanban")
-      return `<div class="query-title">${esc(n.text || "Live tasks")}</div><div class="embedded-kanban">${state.config.statuses
+      return `<div class="query-title">${esc(n.text || "Live cards")}</div><div class="embedded-kanban">${state.config.statuses
         .map(
           (status) =>
             `<section data-live-status="${esc(status)}"><strong>${esc(statusLabel(state.config, status))}</strong>${tasks
@@ -422,7 +422,7 @@ export function canvasPro(ctx, basic) {
         "assignee",
         "due",
       ]).filter((field) => fieldOn(state.config, field));
-      return `<div class="query-title">${esc(n.text || "Live tasks")}</div><div class="embedded-table"><table><thead><tr>${fields.map((f) => `<th>${esc(f)}</th>`).join("")}</tr></thead><tbody>${tasks
+      return `<div class="query-title">${esc(n.text || "Live cards")}</div><div class="embedded-table"><table><thead><tr>${fields.map((f) => `<th>${esc(f)}</th>`).join("")}</tr></thead><tbody>${tasks
         .map(
           (t) =>
             `<tr>${fields
@@ -430,7 +430,7 @@ export function canvasPro(ctx, basic) {
                 (f) =>
                   `<td>${
                     f === "status"
-                      ? `<select data-canvas-status="${esc(t.id)}" ${t.source?"disabled":""} aria-label="Task status">${nextStatuses(
+                      ? `<select data-canvas-status="${esc(t.id)}" ${t.source?"disabled":""} aria-label="Card status">${nextStatuses(
                           state.config,
                           t.status,
                         )
@@ -448,14 +448,14 @@ export function canvasPro(ctx, basic) {
         )
         .join("")}</tbody></table></div>`;
     }
-    return `<div class="query-title"><span class="query-label ${defaultText(n) ? "is-placeholder" : ""}">${esc(n.text || "Live tasks")}</span> <span>${tasks.length}</span></div><div class="query-rows">${
+    return `<div class="query-title"><span class="query-label ${defaultText(n) ? "is-placeholder" : ""}">${esc(n.text || "Live cards")}</span> <span>${tasks.length}</span></div><div class="query-rows">${
       tasks
         .slice(0, 100)
         .map(
           (t) =>
             `<button data-pro="open-task" data-task="${esc(t.id)}"><span class="status-dot ${esc(t.status)}" ${taskColorAttributes(state, "status", t.status)}></span>${esc(t.title)}<small>${esc(t.assignee || t.status)}</small></button>`,
         )
-        .join("") || "<p>No matching tasks.</p>"
+        .join("") || "<p>No matching cards.</p>"
     }${tasks.length > 100 ? "<small>First 100 matches · narrow the filter to see more.</small>" : ""}</div>`;
   }
   async function loadNote(n) {
@@ -544,12 +544,12 @@ export function canvasPro(ctx, basic) {
       if (n.type === "draft") {
         const d = draftTaskData(n),
           count = n.comments?.filter((c) => !c.deleted).length || 0;
-        el.innerHTML = `<div class="live-card-heading"><span class="canvas-task-type" role="img" aria-label="${esc(ctx.label(d.type))}" title="Draft · ${esc(ctx.label(d.type))}">${icon(d.type)}</span><strong class="task-title" title="${esc(d.title)}">${esc(d.title)}</strong><div class="live-card-actions">${btn("convert", icon("task"), `data-id="${esc(n.id)}" aria-label="Finalise task" title="Finalise task" ${n.locked ? "disabled" : ""}`)}${disclosure(n)}${btn("comments", icon("comment") + (count ? `<span class="task-comment-count">${count}</span>` : ""), `data-id="${esc(n.id)}" aria-label="Comments on ${esc(d.title)}"`)}${btn("draft-edit", "↗", `data-id="${esc(n.id)}" aria-label="Edit draft task" title="Edit draft task"`)}</div></div><div class="draft-task-meta"><span class="draft-task-badge">${icon("pencil")}Draft</span>${cardAssignee(d, `data-draft-node="${esc(n.id)}" ${n.locked ? "disabled" : ""}`)}${cardPriority(d, `data-draft-node="${esc(n.id)}" ${n.locked ? "disabled" : ""}`)}</div><div class="canvas-markdown task-card-description" ${n.taskCollapsed ? "hidden" : ""}>${d.body ? markdown(d.body) : '<span class="is-placeholder">Add task notes…</span>'}</div>`;
+        el.innerHTML = `<div class="live-card-heading"><span class="canvas-task-type" role="img" aria-label="${esc(ctx.label(d.type))}" title="Draft · ${esc(ctx.label(d.type))}">${icon(d.type)}</span><strong class="task-title" title="${esc(d.title)}">${esc(d.title)}</strong><div class="live-card-actions">${btn("convert", icon("task"), `data-id="${esc(n.id)}" aria-label="Finalise card" title="Finalise card" ${n.locked ? "disabled" : ""}`)}${disclosure(n)}${btn("comments", icon("comment") + (count ? `<span class="task-comment-count">${count}</span>` : ""), `data-id="${esc(n.id)}" aria-label="Comments on ${esc(d.title)}"`)}${btn("draft-edit", "↗", `data-id="${esc(n.id)}" aria-label="Edit draft card" title="Edit draft card"`)}</div></div><div class="draft-task-meta"><span class="draft-task-badge">${icon("pencil")}Draft</span>${cardAssignee(d, `data-draft-node="${esc(n.id)}" ${n.locked ? "disabled" : ""}`)}${cardPriority(d, `data-draft-node="${esc(n.id)}" ${n.locked ? "disabled" : ""}`)}</div><div class="canvas-markdown task-card-description" ${n.taskCollapsed ? "hidden" : ""}>${d.body ? markdown(d.body) : '<span class="is-placeholder">Add card notes…</span>'}</div>`;
       } else if (n.type === "task" && !byTask.has(n.task)) {
         el.classList.remove("overdue", "blocked-task", "dimmed");
         el.setAttribute(
           "aria-label",
-          `${availability?.title || "Task"} — ${availability?.status === "deleted" ? "Deleted task" : "Task unavailable"}`,
+          `${availability?.title || "Card"} — ${availability?.status === "deleted" ? "Deleted card" : "Card unavailable"}`,
         );
         el.innerHTML = unavailableTaskHTML(n, availability, ctx);
       } else if (n.type === "task") {
@@ -577,7 +577,7 @@ export function canvasPro(ctx, basic) {
         if (asNote) {
           el.innerHTML = `<div class="note-content ${section?.text ? "has-body" : ""}"><div class="note-title canvas-markdown" data-inline-title>${esc(t.title)}</div><div class="note-body node-text canvas-markdown">${section ? (section.text ? markdown(section.text) : "") : "<p>Heading or block not found.</p>"}</div></div>`;
         } else {
-          el.innerHTML = `<div class="live-card-heading"><span class="canvas-task-identity"><span class="canvas-task-type" role="img" aria-label="${esc(ctx.label(t.type))}" title="${esc(ctx.label(t.type))}">${icon(t.type)}</span><span class="canvas-task-key" title="${esc(t.key || t.id)}">${esc(t.key || t.id)}</span></span><strong class="task-title" title="${esc(t.title)}" data-inline-title>${esc(t.title)}</strong><div class="live-card-actions">${disclosure(n)}${btn("comments", icon("comment") + (commentCount ? `<span class="task-comment-count" aria-hidden="true">${commentCount}</span>` : ""), `data-id="${esc(n.id)}" aria-label="Comments on ${esc(t.title)}${commentCount ? ` (${commentCount})` : ""}" title="Comments${commentCount ? ` (${commentCount})` : ""}"`)}${btn("task-details", "↗", `data-task="${esc(t.id)}" aria-label="Open task details" title="Open task details"`)}</div></div><div class="live-card-state"><span class="field-box" ${fieldBoxStyle(state, t.priority)}>${cardAssignee(t, `data-task="${esc(t.id)}"`)}<select class="canvas-task-status" ${taskColorAttributes(state, "status", t.status)} data-canvas-status="${esc(t.id)}" ${t.source?"disabled":""} aria-label="Task status" title="${esc(statusLabel(state.config, t.status))}">${nextStatuses(
+          el.innerHTML = `<div class="live-card-heading"><span class="canvas-task-identity"><span class="canvas-task-type" role="img" aria-label="${esc(ctx.label(t.type))}" title="${esc(ctx.label(t.type))}">${icon(t.type)}</span><span class="canvas-task-key" title="${esc(t.key || t.id)}">${esc(t.key || t.id)}</span></span><strong class="task-title" title="${esc(t.title)}" data-inline-title>${esc(t.title)}</strong><div class="live-card-actions">${disclosure(n)}${btn("comments", icon("comment") + (commentCount ? `<span class="task-comment-count" aria-hidden="true">${commentCount}</span>` : ""), `data-id="${esc(n.id)}" aria-label="Comments on ${esc(t.title)}${commentCount ? ` (${commentCount})` : ""}" title="Comments${commentCount ? ` (${commentCount})` : ""}"`)}${btn("task-details", "↗", `data-task="${esc(t.id)}" aria-label="Open card details" title="Open card details"`)}</div></div><div class="live-card-state"><span class="field-box" ${fieldBoxStyle(state, t.priority)}>${cardAssignee(t, `data-task="${esc(t.id)}"`)}<select class="canvas-task-status" ${taskColorAttributes(state, "status", t.status)} data-canvas-status="${esc(t.id)}" ${t.source?"disabled":""} aria-label="Card status" title="${esc(statusLabel(state.config, t.status))}">${nextStatuses(
             state.config,
             t.status,
           )
@@ -587,7 +587,7 @@ export function canvasPro(ctx, basic) {
             )
             .join(
               "",
-            )}</select>${cardPriority(t, `data-task="${esc(t.id)}"`)}${cardDates(t)}</span></div>${t.source?`<small class="source-badge">${esc(sourceLabel(t))} · Source fields are read-only</small>`:""}${flags.blocked ? '<div class="canvas-task-flags"><b>Blocked</b></div>' : ""}<div class="canvas-markdown task-card-description" ${n.taskCollapsed ? "hidden" : ""}>${section ? (section.text ? markdown(section.text) : '<span class="is-placeholder">Add task notes…</span>') : "<p>Heading or block not found.</p>"}</div>${n.subpath ? `<small class="embed-label">${esc(n.subpath)}</small>` : ""}`;
+            )}</select>${cardPriority(t, `data-task="${esc(t.id)}"`)}${cardDates(t)}</span></div>${t.source?`<small class="source-badge">${esc(sourceLabel(t))} · Source fields are read-only</small>`:""}${flags.blocked ? '<div class="canvas-task-flags"><b>Blocked</b></div>' : ""}<div class="canvas-markdown task-card-description" ${n.taskCollapsed ? "hidden" : ""}>${section ? (section.text ? markdown(section.text) : '<span class="is-placeholder">Add card notes…</span>') : "<p>Heading or block not found.</p>"}</div>${n.subpath ? `<small class="embed-label">${esc(n.subpath)}</small>` : ""}`;
         }
       } else if (n.type === "file") {
         const attachment = localAttachment(n);
@@ -1446,7 +1446,7 @@ export function canvasPro(ctx, basic) {
       title.setAttribute("role", "textbox");
       title.setAttribute(
         "aria-label",
-        isTaskNote(n) ? "Note title" : "Task title",
+        isTaskNote(n) ? "Note title" : "Card title",
       );
       title.addEventListener("input", () => {
         input.value = title.textContent.slice(0, 300);
@@ -1573,7 +1573,7 @@ export function canvasPro(ctx, basic) {
             ? { body, title: form.elements.title.value.trim() }
             : { body };
         if (n.type === "task" && !values.title)
-          throw new Error("Give this task a title.");
+          throw new Error("Give this card a title.");
         const changes = Object.fromEntries(
           Object.entries(values).filter(
             ([key, value]) => value !== e.note[key],
@@ -1754,7 +1754,7 @@ export function canvasPro(ctx, basic) {
   function queryDialog(n = null) {
     const q = n?.query || {};
     showDialog(
-      `<dialog class="dialog"><form id="canvas-query-form" data-id="${esc(n?.id || "")}">${dialogHead("Live task view")}<div class="dialog-body">${input("title", "Card title", n?.text || "Live tasks")}${select("viewType", "Layout", ["list", "table", "kanban", "timeline"].filter((view) => viewOn(state.config, view) || view === n?.viewType), n?.viewType || "list")}<fieldset><legend>Visible table fields</legend>${["key", "title", "status", "assignee", "due", "priority", "type"].map((f) => `<label ${fieldOn(state.config, f) ? "" : "hidden"}><input type="checkbox" name="field-${f}" ${(n?.visibleFields || ["key", "title", "status", "assignee", "due"]).includes(f) ? "checked" : ""}>${f}</label>`).join(" ")}</fieldset><label class="field">Saved project view<select name="view"><option value="">Custom filter</option>${(state.project.views || []).map((v) => `<option value="${esc(v.id)}" ${n?.view === v.id ? "selected" : ""}>${esc(v.name)}</option>`).join("")}</select></label>${select("status", "Status", ["all", ...state.config.statuses], q.status || "all")}${input("assignee", "Owner contains", q.assignee || "")}${input("search", "Text contains", q.search || "")}<p>The card always reads the current tasks. Editing a task anywhere updates every card.</p></div><div class="dialog-foot"><button type="submit" class="button primary">Save view card</button></div></form></dialog>`,
+      `<dialog class="dialog"><form id="canvas-query-form" data-id="${esc(n?.id || "")}">${dialogHead("Live card view")}<div class="dialog-body">${input("title", "Card title", n?.text || "Live cards")}${select("viewType", "Layout", ["list", "table", "kanban", "timeline"].filter((view) => viewOn(state.config, view) || view === n?.viewType), n?.viewType || "list")}<fieldset><legend>Visible table fields</legend>${["key", "title", "status", "assignee", "due", "priority", "type"].map((f) => `<label ${fieldOn(state.config, f) ? "" : "hidden"}><input type="checkbox" name="field-${f}" ${(n?.visibleFields || ["key", "title", "status", "assignee", "due"]).includes(f) ? "checked" : ""}>${f}</label>`).join(" ")}</fieldset><label class="field">Saved project view<select name="view"><option value="">Custom filter</option>${(state.project.views || []).map((v) => `<option value="${esc(v.id)}" ${n?.view === v.id ? "selected" : ""}>${esc(v.name)}</option>`).join("")}</select></label>${select("status", "Status", ["all", ...state.config.statuses], q.status || "all")}${input("assignee", "Owner contains", q.assignee || "")}${input("search", "Text contains", q.search || "")}<p>The view always reads the current cards. Editing a card anywhere updates every view.</p></div><div class="dialog-foot"><button type="submit" class="button primary">Save view card</button></div></form></dialog>`,
       "canvas-query",
     );
   }
@@ -1990,8 +1990,8 @@ export function canvasPro(ctx, basic) {
     const b=board(),nodes=b.nodes.filter(n=>!["frame","grid","draw"].includes(n.type)),name=n=>task(n.task)?.title || n.draft?.title || n.text || n.type;
     const options=selected=>nodes.map(n=>`<option value="${esc(n.id)}" ${n.id===selected?"selected":""}>${esc(name(n).slice(0,100))}</option>`).join("");
     const ports=value=>["left","right","top","bottom"].map(side=>`<option ${side===value?"selected":""}>${side}</option>`).join("");
-    showDialog(`<dialog class="dialog"><form id="keyboard-connector">${dialogHead("Connections")}<div class="dialog-body"><p>Select objects and attachment sides using the keyboard. Dependency arrows update the same relationships as task details.</p><label class="field">From object<select name="from">${options(state.selectedNode)}</select></label><label class="field">From side<select name="fromSide">${ports("right")}</select></label><label class="field">To object<select name="to">${options(nodes.find(n=>n.id!==state.selectedNode)?.id)}</select></label><label class="field">To side<select name="toSide">${ports("left")}</select></label><label class="field">Relationship<select name="relationship"><option value="relates">Related to</option><option value="blocks">Blocks (task dependency)</option></select></label><label class="field">Label<input name="label" maxlength="500"></label><p class="form-error" role="alert"></p><h3>Existing relationships</h3>${b.edges.map(e=>`<p>${esc(name(b.nodes.find(n=>n.id===e.from)||{}))} → ${esc(name(b.nodes.find(n=>n.id===e.to)||{}))} · ${esc(e.label || e.relationship || "Related")}</p>`).join("") || "<p>No connections.</p>"}</div><div class="dialog-foot"><button type="submit" class="button primary" ${nodes.length<2?"disabled":""}>Connect objects</button></div></form></dialog>`,"keyboard-connector");
-    const form=document.querySelector("#keyboard-connector");form.addEventListener("submit",async event=>{event.preventDefault();event.stopImmediatePropagation();const values=Object.fromEntries(new FormData(form));if(values.from===values.to){form.querySelector(".form-error").textContent="Choose two different objects.";return;}if(values.relationship==="blocks" && [values.from,values.to].some(id=>b.nodes.find(n=>n.id===id)?.type!=="task")){form.querySelector(".form-error").textContent="A dependency connects two finalised task cards.";return;}try {const edge={id:uid("e"),...values,routing:"elbow"};if(values.relationship==="blocks"){await ctx.flushBoard();await api(route("boards",b.id)+"/dependency",{method:"POST",body:{edge:edge.id,newEdge:edge,revision:board().revision}});await ctx.refresh(false);}else changeBoard(board=>board.edges.push(edge));closeDialog(true);ctx.renderView();}catch(error){form.querySelector(".form-error").textContent=error.message;}});
+    showDialog(`<dialog class="dialog"><form id="keyboard-connector">${dialogHead("Connections")}<div class="dialog-body"><p>Select objects and attachment sides using the keyboard. Dependency arrows update the same relationships as card details.</p><label class="field">From object<select name="from">${options(state.selectedNode)}</select></label><label class="field">From side<select name="fromSide">${ports("right")}</select></label><label class="field">To object<select name="to">${options(nodes.find(n=>n.id!==state.selectedNode)?.id)}</select></label><label class="field">To side<select name="toSide">${ports("left")}</select></label><label class="field">Relationship<select name="relationship"><option value="relates">Related to</option><option value="blocks">Blocks (card dependency)</option></select></label><label class="field">Label<input name="label" maxlength="500"></label><p class="form-error" role="alert"></p><h3>Existing relationships</h3>${b.edges.map(e=>`<p>${esc(name(b.nodes.find(n=>n.id===e.from)||{}))} → ${esc(name(b.nodes.find(n=>n.id===e.to)||{}))} · ${esc(e.label || e.relationship || "Related")}</p>`).join("") || "<p>No connections.</p>"}</div><div class="dialog-foot"><button type="submit" class="button primary" ${nodes.length<2?"disabled":""}>Connect objects</button></div></form></dialog>`,"keyboard-connector");
+    const form=document.querySelector("#keyboard-connector");form.addEventListener("submit",async event=>{event.preventDefault();event.stopImmediatePropagation();const values=Object.fromEntries(new FormData(form));if(values.from===values.to){form.querySelector(".form-error").textContent="Choose two different objects.";return;}if(values.relationship==="blocks" && [values.from,values.to].some(id=>b.nodes.find(n=>n.id===id)?.type!=="task")){form.querySelector(".form-error").textContent="A dependency connects two finalised cards.";return;}try {const edge={id:uid("e"),...values,routing:"elbow"};if(values.relationship==="blocks"){await ctx.flushBoard();await api(route("boards",b.id)+"/dependency",{method:"POST",body:{edge:edge.id,newEdge:edge,revision:board().revision}});await ctx.refresh(false);}else changeBoard(board=>board.edges.push(edge));closeDialog(true);ctx.renderView();}catch(error){form.querySelector(".form-error").textContent=error.message;}});
   }
   async function click(action, el) {
     if (action === "attachment-open") {
@@ -2005,7 +2005,7 @@ export function canvasPro(ctx, basic) {
     if(action === "task-detach" && n?.type==="task" && !n.locked){
       const unavailable=boardTaskState(n,task(n.task),state.taskAvailability);
       if(!unavailable || unavailable.status==="archived")return;
-      changeBoard(()=>{n.type="sticky";n.text=`${unavailable.title || "Unavailable task"}\n\n${unavailable.key || n.task} · detached board card`;delete n.task;});
+      changeBoard(()=>{n.type="sticky";n.text=`${unavailable.title || "Unavailable card"}\n\n${unavailable.key || n.task} · detached board card`;delete n.task;});
       toast("Card detached as a note. Undo restores the link.");return;
     }
     if (action === "task-restore" || action === "task-unarchive") {
@@ -2018,10 +2018,10 @@ export function canvasPro(ctx, basic) {
             body: {},
           });
           await ctx.refresh();
-          toast("Task restored. Its board cards are linked again.");
+          toast("Card restored. Its board cards are linked again.");
         } else {
           await patchTask(el.dataset.task, { archived: false });
-          toast("Task unarchived.");
+          toast("Card unarchived.");
         }
       } finally {
         el.disabled = false;
@@ -2142,7 +2142,7 @@ export function canvasPro(ctx, basic) {
         return true;
       if (sync.entries.size)
         throw new Error(
-          "Save the connector before creating its task dependency.",
+          "Save the connector before creating its card dependency.",
         );
       await api(route("boards", boardId) + "/dependency", {
         method: "POST",
@@ -2151,8 +2151,8 @@ export function canvasPro(ctx, basic) {
       await ctx.refresh();
       toast(
         action === "edge-dependency-remove"
-          ? "Task dependency removed."
-          : "Task dependency created.",
+          ? "Card dependency removed."
+          : "Card dependency created.",
       );
     } else if (action === "edge-edit")
       editConnector(board().edges.find((e) => e.id === state.selectedEdge));
@@ -2219,8 +2219,8 @@ export function canvasPro(ctx, basic) {
       }
       if(n.type==="draft" && el.dataset.reviewed!=="true"){
         const d=draftTaskData(n),parent=task(d.parent),signature=JSON.stringify(d);
-        const errors=[!d.title?.trim()?"A title is required.":"",!state.config.types.includes(d.type)?"Choose a current task type.":"",!state.config.statuses.includes(d.status)?"Choose a current status.":"",d.parent&&!parent?"The parent task is unavailable.":"",hierarchyError(state.config,d,parent),...(d.subtasks || []).map(child=>hierarchyError(state.config,child,d))].filter(Boolean);
-        showDialog(`<dialog class="board-comments board-object-panel draft-review-panel" aria-label="Review draft task"><div class="board-comments-head"><strong>Review draft task</strong><button type="button" class="icon-button" data-action="dialog-close" aria-label="Close review">${icon("close")}</button></div><div class="dialog-body"><p><strong>${esc(d.title)}</strong></p><p>Project: ${esc(state.project.title)}</p><p>Type: ${esc(d.type)} · Status: ${esc(statusLabel(state.config,d.status))}</p><p>Parent: ${esc(parent?.title || "No parent")} · ${(d.subtasks || []).length} subtasks</p><p>Your card position, connections and comments stay in place.</p><div class="form-error ${errors.length ? "" : "hidden"}" role="alert">${errors.map(esc).join(" ")}</div></div><div class="dialog-foot"><button type="button" class="button" data-pro="draft-edit" data-id="${esc(n.id)}">Edit draft</button><button type="button" class="button primary" id="draft-finalise-confirm" ${errors.length?"disabled":""}>Finalise task</button></div></dialog>`,"draft-review",{nodeId:n.id});
+        const errors=[!d.title?.trim()?"A title is required.":"",!state.config.types.includes(d.type)?"Choose a current card type.":"",!state.config.statuses.includes(d.status)?"Choose a current status.":"",d.parent&&!parent?"The parent card is unavailable.":"",hierarchyError(state.config,d,parent),...(d.subtasks || []).map(child=>hierarchyError(state.config,child,d))].filter(Boolean);
+        showDialog(`<dialog class="board-comments board-object-panel draft-review-panel" aria-label="Review draft card"><div class="board-comments-head"><strong>Review draft card</strong><button type="button" class="icon-button" data-action="dialog-close" aria-label="Close review">${icon("close")}</button></div><div class="dialog-body"><p><strong>${esc(d.title)}</strong></p><p>Project: ${esc(state.project.title)}</p><p>Type: ${esc(d.type)} · Status: ${esc(statusLabel(state.config,d.status))}</p><p>Parent: ${esc(parent?.title || "No parent")} · ${(d.subtasks || []).length} subtasks</p><p>Your card position, connections and comments stay in place.</p><div class="form-error ${errors.length ? "" : "hidden"}" role="alert">${errors.map(esc).join(" ")}</div></div><div class="dialog-foot"><button type="button" class="button" data-pro="draft-edit" data-id="${esc(n.id)}">Edit draft</button><button type="button" class="button primary" id="draft-finalise-confirm" ${errors.length?"disabled":""}>Finalise card</button></div></dialog>`,"draft-review",{nodeId:n.id});
         document.querySelector('#draft-finalise-confirm').onclick=async()=>{const current=board()?.nodes.find(v=>v.id===n.id);if(!current||JSON.stringify(draftTaskData(current))!==signature){const error=document.querySelector('.draft-review-panel .form-error');error.classList.remove("hidden");error.textContent="The draft changed. Close this preview and review it again.";return;}closeDialog(true);try{await click("convert",{dataset:{id:n.id,reviewed:"true"}});}catch(error){toast(error.message,true);}};
         return;
       }
@@ -2248,7 +2248,7 @@ export function canvasPro(ctx, basic) {
               .find((line) => line.trim())
               ?.replace(/^#+\s*/, "")
               .trim()
-              .slice(0, 300) || "New task";
+              .slice(0, 300) || "New card";
           changeBoard(() => {
             source.type = "draft";
             source.draft = retained || {
@@ -2274,7 +2274,7 @@ export function canvasPro(ctx, basic) {
             source.w = Math.max(220, source.w);
             source.h = Math.max(200, source.h);
           });
-          toast("Note converted to a draft task. Finalise it when ready.");
+          toast("Note converted to a draft card. Finalise it when ready.");
           return;
         }
         const draft = source.type === "draft" ? draftTaskData(source) : null;
@@ -2292,18 +2292,18 @@ export function canvasPro(ctx, basic) {
           (created.body !== text || (draft && created.title !== draft.title))
         )
           throw new Error(
-            "A project task already exists for this draft with different text. Duplicate the draft to create a separate task; both versions are preserved.",
+            "A project card already exists for this draft with different text. Duplicate the draft to create a separate card; both versions are preserved.",
           );
         if (!created)
           created = await api(route("tasks"), {
             method: "POST",
             body: {
               title:
-                (text || "New task")
+                (text || "New card")
                   .split("\n")
                   .find((line) => line.trim())
                   ?.replace(/^#+\s*/, "")
-                  .slice(0, 300) || "New task",
+                  .slice(0, 300) || "New card",
               body: text,
               ...(draft || {}),
               canvas_source: marker,
@@ -2325,7 +2325,7 @@ export function canvasPro(ctx, basic) {
             JSON.stringify(draftTaskData(current)) !== JSON.stringify(draft))
         )
           throw new Error(
-            "The draft changed while finalising. Its latest details are preserved; the project task contains the earlier version.",
+            "The draft changed while finalising. Its latest details are preserved; the project card contains the earlier version.",
           );
         changeBoard(() => {
           current.type = "task";
@@ -2335,7 +2335,7 @@ export function canvasPro(ctx, basic) {
           delete current.text;
           delete current.draft;
         });
-        toast("Draft finalised as a project task.");
+        toast("Draft finalised as a project card.");
       } finally {
         converting = false;
       }
@@ -2360,7 +2360,7 @@ export function canvasPro(ctx, basic) {
       );
     else if (action === "shortcuts")
       showDialog(
-        `<dialog class="dialog">${dialogHead("Board shortcuts")}<div class="dialog-body"><p>V: select · H: hand · N: sticky · T: text · S / R: shape<br>L: connector · P: pen · F: draw frame · D: task card · C: comment on selection<br>Click to place a sticky, text, shape or grid; Escape cancels<br>Images / GIFs: choose files from the sidebar or drop them onto the board<br>Grid: double-click its title to rename; click outside to save<br>Grid: double-click a cell to edit; Tab moves to the next cell<br>Grid: drag its top strip to move; internal borders resize one row/column<br>Grid: outer edges resize all tracks; label ends resize the final row/column<br>F: drag a frame around content, or click for 16:9<br>Click empty frame space to select it; drag selected frame space to move it<br>Drag inside an unselected frame to select objects<br>Drag a frame border/title to move contents; resizing keeps content sizes<br>Double-click or Enter: edit inline · Click outside to save<br>Selected arrow: Enter to edit its label; Enter again to save<br>Escape or Ctrl / ⌘ Enter: finish editing · Undo: revert saved text<br>Ctrl / ⌘ click or Shift-click: select multiple objects<br>Drag empty canvas with select tool: selection box<br>Right-drag, middle-drag or Space + drag: pan<br>Scroll: zoom at pointer · Shift + scroll: move up / down<br>Pinch or Ctrl / ⌘ wheel: zoom<br>Full screen: fill the window and hide browser chrome where supported<br>Ctrl / ⌘ + / −: zoom · Ctrl / ⌘ 0: 100%<br>Alt / Option 1: fit board · Alt / Option 2: focus selection<br>M: minimap · G: grid · Ctrl / ⌘ F: find on board<br>Ctrl / ⌘ A: select all · Ctrl / ⌘ D or Alt / Option drag: duplicate<br>Ctrl / ⌘ C, V: copy and paste objects<br>Ctrl / ⌘ G: group · Ctrl / ⌘ Shift G: ungroup<br>Ctrl / ⌘ Shift L: lock / unlock<br>Arrow keys: move selection or pan (Shift for larger steps)<br>Ctrl / ⌘ Z: undo · Ctrl / ⌘ Shift Z: redo<br>Shift + corner drag: resize horizontally or vertically<br>Drag near objects: align edges, centres and equal gaps<br>Resize near objects: match widths and heights<br>Hold Alt during drag: bypass snapping · Board settings: Align with nearby objects / Snap to grid<br>Drag a connection handle: curved preview and nearby port snapping<br>Drag a selected line endpoint to reconnect · Ctrl / ⌘: bypass snapping · Escape: cancel<br>P: pen · E: eraser (drawings only) · Shift: straight stroke<br>Pen presets remember colour, thickness and pressure; highlighter is translucent<br>Pen: draw with pressure; two fingers: pan and zoom<br>Escape: clear selection or exit current tool / editor / presentation</p></div></dialog>`,
+        `<dialog class="dialog">${dialogHead("Board shortcuts")}<div class="dialog-body"><p>V: select · H: hand · N: sticky · T: text · S / R: shape<br>L: connector · P: pen · F: draw frame · D: card · C: comment on selection<br>Click to place a sticky, text, shape or grid; Escape cancels<br>Images / GIFs: choose files from the sidebar or drop them onto the board<br>Grid: double-click its title to rename; click outside to save<br>Grid: double-click a cell to edit; Tab moves to the next cell<br>Grid: drag its top strip to move; internal borders resize one row/column<br>Grid: outer edges resize all tracks; label ends resize the final row/column<br>F: drag a frame around content, or click for 16:9<br>Click empty frame space to select it; drag selected frame space to move it<br>Drag inside an unselected frame to select objects<br>Drag a frame border/title to move contents; resizing keeps content sizes<br>Double-click or Enter: edit inline · Click outside to save<br>Selected arrow: Enter to edit its label; Enter again to save<br>Escape or Ctrl / ⌘ Enter: finish editing · Undo: revert saved text<br>Ctrl / ⌘ click or Shift-click: select multiple objects<br>Drag empty canvas with select tool: selection box<br>Right-drag, middle-drag or Space + drag: pan<br>Scroll: zoom at pointer · Shift + scroll: move up / down<br>Pinch or Ctrl / ⌘ wheel: zoom<br>Full screen: fill the window and hide browser chrome where supported<br>Ctrl / ⌘ + / −: zoom · Ctrl / ⌘ 0: 100%<br>Alt / Option 1: fit board · Alt / Option 2: focus selection<br>M: minimap · G: grid · Ctrl / ⌘ F: find on board<br>Ctrl / ⌘ A: select all · Ctrl / ⌘ D or Alt / Option drag: duplicate<br>Ctrl / ⌘ C, V: copy and paste objects<br>Ctrl / ⌘ G: group · Ctrl / ⌘ Shift G: ungroup<br>Ctrl / ⌘ Shift L: lock / unlock<br>Arrow keys: move selection or pan (Shift for larger steps)<br>Ctrl / ⌘ Z: undo · Ctrl / ⌘ Shift Z: redo<br>Shift + corner drag: resize horizontally or vertically<br>Drag near objects: align edges, centres and equal gaps<br>Resize near objects: match widths and heights<br>Hold Alt during drag: bypass snapping · Board settings: Align with nearby objects / Snap to grid<br>Drag a connection handle: curved preview and nearby port snapping<br>Drag a selected line endpoint to reconnect · Ctrl / ⌘: bypass snapping · Escape: cancel<br>P: pen · E: eraser (drawings only) · Shift: straight stroke<br>Pen presets remember colour, thickness and pressure; highlighter is translucent<br>Pen: draw with pressure; two fingers: pan and zoom<br>Escape: clear selection or exit current tool / editor / presentation</p></div></dialog>`,
         "canvas-shortcuts",
       );
     else return false;

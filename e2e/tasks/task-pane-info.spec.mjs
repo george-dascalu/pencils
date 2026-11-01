@@ -13,8 +13,8 @@ onDevices(["desktop", "ipad", "phone"], () => test("the Info button shows only w
   await page.locator(`[data-action="task-open"][data-id="${app.task.id}"]:visible`).first().click();
   const panes = page.locator(".task-pane-switcher");
   await expect(panes.getByRole("button", { name: "Version history", exact: true })).toBeVisible();
-  await expect(panes.getByRole("button", { name: "Task comments", exact: true })).toBeVisible();
-  const info = panes.getByRole("button", { name: "Task details", exact: true });
+  await expect(panes.getByRole("button", { name: "Card comments", exact: true })).toBeVisible();
+  const info = panes.getByRole("button", { name: "Card details", exact: true });
   if (device !== "desktop") {
     await expect(info).toBeVisible();
     return;
@@ -24,13 +24,13 @@ onDevices(["desktop", "ipad", "phone"], () => test("the Info button shows only w
   await expect(info).toBeVisible();
   await page.setViewportSize({ width: 1440, height: 900 });
   await expect(info).toBeHidden();
-  await panes.getByRole("button", { name: "Task comments", exact: true }).click();
+  await panes.getByRole("button", { name: "Card comments", exact: true }).click();
   await expect(page.locator(".task-comments-panel")).toBeVisible();
   await expect(page.locator(".task-editor-content > .dialog-body"), "the details stay beside the comments").toBeVisible();
   // With no Info button, a second tap on the open pane returns to the details alone.
-  await panes.getByRole("button", { name: "Task comments", exact: true }).click();
+  await panes.getByRole("button", { name: "Card comments", exact: true }).click();
   await expect(page.locator(".task-comments-panel")).toHaveCount(0);
-  await expect(panes.getByRole("button", { name: "Task comments", exact: true }), "focus stays on the button").toBeFocused();
+  await expect(panes.getByRole("button", { name: "Card comments", exact: true }), "focus stays on the button").toBeFocused();
   await panes.getByRole("button", { name: "Version history", exact: true }).click();
   await expect(page.locator(".task-history-panel")).toBeVisible();
   await panes.getByRole("button", { name: "Version history", exact: true }).click();

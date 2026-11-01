@@ -44,7 +44,7 @@ test("a signed-in administrator previews an Obsidian source without changing tas
   await page.locator('#source-config [name="name"]').fill("Notes");
   await page.locator('#source-config [type="submit"]').click();
   await page.locator('[data-source-action="preview"]').click();
-  await expect(page.getByText("1 records. First 1 shown. No tasks have been changed.")).toBeVisible();
+  await expect(page.getByText("1 records. First 1 shown. No cards have been changed.")).toBeVisible();
   expect((await app.store.snapshot(app.project.id)).tasks).toHaveLength(0);
   await page.locator('[data-action="dialog-close"]').click();
   await selectSettingsPage(page, "sources");

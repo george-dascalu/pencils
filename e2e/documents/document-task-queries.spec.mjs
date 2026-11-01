@@ -37,7 +37,7 @@ test("the / menu inserts a starter task query", async ({ page }) => {
   await openNewDocument(page, app, app.project.id, { body: "Intro.\n\n" });
   await page.locator(".cm-content").click();
   await page.keyboard.press("Control+End");
-  await page.keyboard.type("/task query");
-  await page.locator(".cm-tooltip-autocomplete li[role=option]").filter({ hasText: "Task query" }).click();
+  await page.keyboard.type("/card query");
+  await page.locator(".cm-tooltip-autocomplete li[role=option]").filter({ hasText: "Card query" }).click();
   await expect.poll(() => editorSource(page)).toContain("```tasks\nnot done\nsort by due\n```");
 });

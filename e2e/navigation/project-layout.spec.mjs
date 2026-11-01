@@ -130,7 +130,7 @@ async function everyViewSharesTheHeader(page, size) {
       const breadcrumb = await boxOf(page, ".breadcrumb");
       expect(breadcrumb.right <= actions.left && actions.right <= box.right, "Project navigation fits between the breadcrumb and the header's end").toBe(true);
       const nav = await boxOf(page, ".tabs");
-      expect(create.x >= nav.right && create.y >= box.y && create.bottom <= box.bottom, "New task follows the navigation in the top row").toBe(true);
+      expect(create.x >= nav.right && create.y >= box.y && create.bottom <= box.bottom, "New card follows the navigation in the top row").toBe(true);
     }
     // Since 0.20.70 no view, Board included, has saved views.
     await expect(page.locator('#saved-view,[data-feature="view-save"],[data-feature="view-save-as"],[data-feature="view-delete"]'), `${view}: no saved-view controls`).toHaveCount(0);

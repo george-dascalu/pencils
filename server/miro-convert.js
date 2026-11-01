@@ -129,7 +129,7 @@ export function convertMiro(snapshot, options, config, people = []) {
   const type =
     options.type || (config.types.includes("task") ? "task" : config.types[0]);
   if (!config.statuses.includes(status) || !config.types.includes(type))
-    throw new Problem(400, "Choose a task type and status from this project.");
+    throw new Problem(400, "Choose a card type and status from this project.");
   if (
     selected &&
     (!selected.size ||

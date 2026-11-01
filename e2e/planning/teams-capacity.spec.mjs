@@ -173,14 +173,14 @@ test("Capacity counts scheduled work against each limit, moves between weeks and
   await page.locator("#canvas").waitFor();
   await selectProjectView(page, "capacity");
   await page.getByRole("region", { name: "Team capacity" }).waitFor();
-  await expect(page.locator(".capacity-summary").getByText("1 task scheduled", { exact: true })).toBeVisible();
+  await expect(page.locator(".capacity-summary").getByText("1 card scheduled", { exact: true })).toBeVisible();
   await expect(page.locator(".capacity-table").getByText("1 over limit", { exact: true })).toBeVisible();
   expect(await page.locator(".planning-view-switcher [data-view]").evaluateAll((els) => els.map((el) => el.dataset.view))).toEqual(["calendar", "timeline", "capacity"]);
   await page.getByLabel("Next week", { exact: true }).click();
-  await expect(page.locator(".capacity-summary").getByText("0 tasks scheduled", { exact: true })).toBeVisible();
+  await expect(page.locator(".capacity-summary").getByText("0 cards scheduled", { exact: true })).toBeVisible();
   await page.getByRole("button", { name: "This week", exact: true }).click();
   await page.reload();
-  await page.locator(".capacity-summary").getByText("1 task scheduled", { exact: true }).waitFor();
+  await page.locator(".capacity-summary").getByText("1 card scheduled", { exact: true }).waitFor();
 });
 
 for (const width of [1440, 390]) {
@@ -188,7 +188,7 @@ for (const width of [1440, 390]) {
     test.use({ viewportSize: { width, height: 1000 } });
     test("Capacity fits the window in both themes", { tag: "@gate" }, async ({ page }) => {
       await page.goto(`${app.base}/#project/${app.capacity.project.id}/capacity`);
-      await page.locator(".capacity-summary").getByText("1 task scheduled", { exact: true }).waitFor();
+      await page.locator(".capacity-summary").getByText("1 card scheduled", { exact: true }).waitFor();
       for (const theme of ["light", "dark"]) {
         await page.evaluate((t) => (document.documentElement.dataset.theme = t), theme);
         expect(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), `${theme}: no horizontal overflow`).toBe(false);

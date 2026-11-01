@@ -196,7 +196,7 @@ export function encodeCanvas(board) {
             n.type === "grid"
               ? gridMarkdown(n.grid)
               : n.type === "query"
-                ? n.text || "Live task view (open in Pencils)"
+                ? n.text || "Live card view (open in Pencils)"
                 : n.text || "",
         });
       result.pencils = omit(n, [

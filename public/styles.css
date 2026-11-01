@@ -1224,6 +1224,7 @@ button svg {
   font-size: 26px !important;
   font-weight: 400 !important;
   letter-spacing: -0.5px;
+  text-overflow: ellipsis;
 }
 .markdown-source {
   font-family: ui-monospace, SFMono-Regular, monospace;

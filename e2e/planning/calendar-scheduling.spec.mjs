@@ -94,7 +94,7 @@ test("filters live in the Filters menu, an empty filtered month still shows its 
   await (await reveal(page.locator("#filter-type"))).selectOption("all");
   await card(page, seed.work.id).waitFor();
   await page.locator('[data-board-menu="filters"] > summary').click();
-  await expect(page.getByText(/tasks have no due date/)).toHaveCount(0);
+  await expect(page.getByText(/cards have no due date/)).toHaveCount(0);
   await expect(card(page, seed.source.id).locator("[data-calendar-end]")).toHaveCount(0);
 });
 

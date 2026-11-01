@@ -2,6 +2,16 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.20.109 — 2026-11-01
+
+### Changed
+
+- Buttons, labels, messages and Help call the work item a card everywhere; the Tasks tab keeps its name.
+- Timeline's undated group is called Unscheduled, and its scale options read Day, Week and Month.
+- A title too long for its space ends with an ellipsis and shows in full on hover, including Table title cells and the card editor's title.
+- Kanban opens on the first column with cards, so phones no longer start on an empty Backlog.
+- On phones and iPad the document word count is in Document tools instead of a chip over the text.
+
 ## 0.20.108 — 2026-11-01
 
 ### Changed

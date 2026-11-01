@@ -408,7 +408,6 @@ span.document-list-callout { display: block; }
 }
 @media (max-width: 600px) {
   #document-form, .document-pane { --document-page-top: 16px; --document-page-padding: 12px; }
-  .document-save { inset-inline-end: 4px; bottom: 2px; padding: 1px 4px; }
 }
 .document-empty { display: grid; place-content: center; justify-items: center; height: 100%; padding: 24px; text-align: center; }
 .document-empty > .icon { width: 32px; height: 32px; color: var(--green); }
@@ -446,7 +445,6 @@ span.document-list-callout { display: block; }
   .document-formatting select { font-size: 16px; }
   /* At least 16px, so iOS doesn't zoom into the text when it's tapped. */
   #document-form { --document-page-top: 16px; --document-page-padding: 16px; --document-font-size: max(16px, var(--style-text-size, 16px)); }
-  .document-save { font-size: 10px; }
   /* Phones have no fold column, so the text has the same margin on both sides
      in live preview and reading mode. Source mode keeps its line numbers. */
   #document-form { --document-gutter-width: 0px; }
@@ -461,8 +459,11 @@ span.document-list-callout { display: block; }
    bottom bar, which the document runs behind (project-layout.css). */
 .document-codemirror .cm-editor .cm-content { padding-bottom: calc(40px + var(--tabbar-clearance, 0px)); }
 .document-reading .document-page { padding-bottom: calc(40px + var(--tabbar-clearance, 0px)); }
+.document-tool-stats { display: none; margin: 6px 0 0; padding: 6px 8px 2px; border-top: 1px solid var(--line); color: var(--muted); font-size: var(--type-small); }
 @media (max-width: 600px), (pointer: coarse) {
-  .main.project-main .document-save { bottom: calc(var(--tabbar-clearance) + 2px); }
+  .main.project-main .document-save { display: none; }
+  .document-tool-stats { display: block; }
+  .document-codemirror .cm-editor .cm-content, .document-reading .document-page { padding-bottom: calc(12px + var(--tabbar-clearance, 0px)); }
 }
 
 /* Code blocks: a language menu above the code and syntax colours painted with

@@ -35,7 +35,7 @@ async function picker(page, kind, query = "") {
   if (!(await section(page).locator("[data-relationship-picker]").isVisible())) await section(page).locator("[data-relationship-toggle]").click();
   await section(page).getByLabel("Relationship type", { exact: true }).click();
   await page.locator("#shared-select-menu").getByRole("option", { name: relationshipTypes.find(([value]) => value === kind)[1], exact: true }).click();
-  await section(page).getByLabel("Find a task to link", { exact: true }).fill(query);
+  await section(page).getByLabel("Find a card to link", { exact: true }).fill(query);
 }
 async function add(page, kind, task) {
   await picker(page, kind, task.key);
@@ -110,7 +110,7 @@ test("the picker refuses parent/child cycles and blocking loops, and Escape clos
   await expect(section(page).locator("[data-relationship-options]")).toContainText(/parent\/child cycle/);
   await picker(page, "blocked-by", app.successor.key);
   await expect(section(page).locator(`[data-relationship-add="${app.successor.id}"]`)).toBeDisabled();
-  await page.getByLabel("Find a task to link", { exact: true }).press("Escape");
+  await page.getByLabel("Find a card to link", { exact: true }).press("Escape");
   await expect(page.locator(".task-dialog")).toBeVisible();
   await expect(section(page).locator("[data-relationship-picker]")).toBeHidden();
 });

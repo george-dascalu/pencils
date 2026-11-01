@@ -19,7 +19,7 @@ test.use({
 // A deep branch under the 13th of 35 roots, and optionally more roots for pagination.
 async function deepTree(store, title, extraRoots = 0) {
   const project = await store.createProject({ title });
-  const parent = await store.createTask(project.id, { title: "Parent task" });
+  const parent = await store.createTask(project.id, { title: "Parent card" });
   await store.createTask(project.id, { title: "Child task", parent: parent.id });
   let branch;
   for (let i = 0; i < 35; i++) {
@@ -34,7 +34,7 @@ async function deepTree(store, title, extraRoots = 0) {
 const app = useApp(async (store) => {
   const project = await store.createProject({ title: "Tree viewport" });
   const emptyProject = await store.createProject({ title: "Empty tree" });
-  const parent = await store.createTask(project.id, { title: "Parent task" });
+  const parent = await store.createTask(project.id, { title: "Parent card" });
   const child = await store.createTask(project.id, { title: "Child task", parent: parent.id });
   return { project, emptyProject, parent, child, deep: await deepTree(store, "Deep tree"), paged: await deepTree(store, "Paged tree", 66) };
 });

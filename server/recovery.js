@@ -454,7 +454,7 @@ export function installRecovery(Store) {
         (entry) =>
           entry.kind === "task" && entry.project === project && entry.id === id,
       );
-      if (!item) throw new Problem(404, "This task is no longer in the trash.");
+      if (!item) throw new Problem(404, "This card is no longer in the trash.");
       return this.restoreTrash(item.key);
     },
     async restoreTrash(key) {

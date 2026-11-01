@@ -17,6 +17,7 @@
   min-height: var(--table-row-height);
   padding: 4px 8px;
 }
+.task-table.spreadsheet td input[data-task-field="title"] { text-overflow: ellipsis; }
 .spreadsheet .table-description {
   display: block;
   width: 100%;

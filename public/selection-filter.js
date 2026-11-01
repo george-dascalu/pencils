@@ -1,7 +1,7 @@
 const types = [
   ["edge", "Arrows", "connect"],
   ["task", "Tasks", "task"],
-  ["draft", "Draft tasks", "pencil"],
+  ["draft", "Draft cards", "pencil"],
   ["sticky", "Notes", "sticky"],
   ["text", "Text", "text"],
   ["shape", "Shapes", "shape"],
@@ -11,7 +11,7 @@ const types = [
   ["draw", "Drawings", "pencil"],
   ["file", "Live notes", "file"],
   ["link", "Links", "link"],
-  ["query", "Live task views", "table"],
+  ["query", "Live card views", "table"],
 ];
 export const selectionType = (n) =>
   n.type === "task" && n.displayAs === "note" ? "sticky" : n.type;

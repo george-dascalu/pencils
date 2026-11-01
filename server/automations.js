@@ -134,7 +134,7 @@ export class Automations {
         plan.map((t) => [t.id, t.revision]),
       ]);
     if (plan.length > 200)
-      throw new Problem(413, "Narrow this automation to 200 tasks or fewer.");
+      throw new Problem(413, "Narrow this automation to 200 cards or fewer.");
     if (preview) return { rule, changes: plan };
     if (!rule.enabled)
       throw new Problem(400, "Enable this rule before running it.");
@@ -145,7 +145,7 @@ export class Automations {
     )
       throw new Problem(
         409,
-        "Tasks changed since the preview. Review the automation again.",
+        "Cards changed since the preview. Review the automation again.",
       );
     // A rejected automatic action is retried only after input changes or on another day.
     if (

@@ -147,7 +147,7 @@ test("Import turns a local Markdown note into a task", { tag: "@gate" }, async (
   await expect(page.getByText("1 note selected", { exact: true })).toBeVisible();
   const before = (await snapshot()).tasks.length;
   await page.locator('#settings-import [type="submit"]').click();
-  await expect(page.getByText("Imported 1 note as a task.", { exact: true })).toBeVisible();
+  await expect(page.getByText("Imported 1 note as a card.", { exact: true })).toBeVisible();
   expect((await snapshot()).tasks.length).toBe(before + 1);
 });
 

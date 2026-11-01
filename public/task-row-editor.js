@@ -112,7 +112,7 @@ export function taskRowEditor(ctx) {
     const current = task(id);
     if (!current || current.source || input.readOnly || input.disabled) return;
     if (field === "title") {
-      input.setCustomValidity(value ? "" : "Enter a task title.");
+      input.setCustomValidity(value ? "" : "Enter a card title.");
       if (!input.reportValidity()) {
         input.setAttribute("aria-invalid", "true");
         return;

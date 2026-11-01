@@ -42,7 +42,7 @@ test("a board draft saves its fields on close without creating a task or moving 
   await expect(page.locator("dialog:modal")).toHaveCount(0);
   await title(page).fill("Explore a draft");
   await page.locator("#task-form [name=start]").fill("2026-10-16");
-  await page.locator('[aria-label="Task description"]').fill("Ideas before commitment");
+  await page.locator('[aria-label="Card description"]').fill("Ideas before commitment");
   await legacySubtasks(page.locator("#task-form"), [{ title: "Investigate", type: "task" }]);
   const camera = await page.locator("#canvas-world").getAttribute("style");
   await expect(page.getByRole("button", { name: "Save draft", exact: true })).toHaveCount(0);

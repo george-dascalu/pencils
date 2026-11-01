@@ -100,7 +100,7 @@ test("Subtask bundles prevalidate, retry without duplicates, and enforce hierarc
             hierarchy: { ...rules, children: { ...rules.children, epic: [] } },
           },
         }),
-      /Move existing tasks/,
+      /Move existing cards/,
     );
     project = (await store.snapshot(project.id)).project;
     project = await store.updateProject(project.id, {

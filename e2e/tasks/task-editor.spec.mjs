@@ -14,7 +14,7 @@ const app = useApp(async (store) => {
     people: [{ id: "g", name: "George", capacity: 32 }],
     teams: [{ id: "team", name: "Studio team", members: ["g"] }],
   });
-  const project = await store.createProject({ title: "Task editor", organisation: organisation.id, teams: ["team"] });
+  const project = await store.createProject({ title: "Card editor", organisation: organisation.id, teams: ["team"] });
   const ancestor = await store.createTask(project.id, { title: "Release", type: "epic" });
   return { project, ancestor };
 });
@@ -51,7 +51,7 @@ const pick = async (page, name, value) => {
   await page.locator(`[data-task-picker="${name}"] [data-picker-value="${value}"]`).click();
 };
 const icon = (page, name) => page.locator(`[data-task-picker=${name}] [data-picker-symbol] path`).getAttribute("d");
-const rich = (page) => page.getByRole("textbox", { name: "Task description", exact: true });
+const rich = (page) => page.getByRole("textbox", { name: "Card description", exact: true });
 const source = (page) => page.locator('#task-form [name="body"]');
 
 test("metadata saves from the compact editor without changing the Markdown description", { tag: "@gate" }, async ({ page }) => {
@@ -132,7 +132,7 @@ test("the rich description edits bullets and Markdown, previews, fits every widt
       expect(Math.max(...layout.fields.slice(0, 3)) - Math.min(...layout.fields.slice(0, 3)), `Assignee, priority and status share the first metadata row (${where})`).toBeLessThan(2);
       expect(Math.abs(layout.fields[3] - layout.fields[4]), `Dates share a row (${where})`).toBeLessThan(2);
       if (width === 1400) expect(Math.max(...layout.fields) - Math.min(...layout.fields), "All five metadata fields share a row on desktop").toBeLessThan(2);
-      expect(layout.iconOnly, `Task type remains icon-only (${where})`).toBe(true);
+      expect(layout.iconOnly, `Card type remains icon-only (${where})`).toBe(true);
       expect(layout.overflow, `Dialog fields do not overflow (${where})`).toBe(false);
       expect(await rich(page).evaluate((el) => parseFloat(getComputedStyle(el).fontSize))).toBeLessThanOrEqual(14);
     }

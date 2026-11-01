@@ -1,6 +1,6 @@
 // Board: linked cards show the state of their task. Archived tasks get a badge with
 // Unarchive, deleted tasks become placeholders (cards and notes) with Restore, a missing task
-// file reads "Task unavailable", a deletion elsewhere reaches the open board without a reload,
+// file reads "Card unavailable", a deletion elsewhere reaches the open board without a reload,
 // connectors survive, and the board fits desktop and phone screens in both themes.
 import { test, expect, onDevices, useApp } from "../fixtures.mjs";
 import { selectProjectView } from "../helpers/menu-controls.mjs";
@@ -41,14 +41,14 @@ const taskViewsTab = (page) => page.locator(".tabs [data-view=tasks]");
 test("archived and missing cards show their state, and a deletion elsewhere reaches the open board", async ({ page }) => {
   const { project, live } = await seed();
   await openBoard(page, project);
-  await expect(taskViewsTab(page), "archived tasks are not counted").toHaveAttribute("title", /· 1 tasks$/);
+  await expect(taskViewsTab(page), "archived tasks are not counted").toHaveAttribute("title", /· 1 cards$/);
   await expect(node(page, "archived-card").getByText("Archived", { exact: true })).toBeVisible();
-  await expect(node(page, "missing-card").getByText("Task unavailable", { exact: true }).first()).toBeVisible();
+  await expect(node(page, "missing-card").getByText("Card unavailable", { exact: true }).first()).toBeVisible();
   await expect(node(page, "deleted-card").locator("select[data-canvas-status]")).toHaveCount(1);
   await app.store.deleteTask(project.id, live.id, live.revision);
   // Polling replaces the rendered card without a manual reload.
-  await expect(node(page, "deleted-card").getByText("Deleted task", { exact: true })).toBeVisible();
-  await expect(node(page, "note-card").getByText("Deleted task", { exact: true })).toBeVisible();
+  await expect(node(page, "deleted-card").getByText("Deleted card", { exact: true })).toBeVisible();
+  await expect(node(page, "note-card").getByText("Deleted card", { exact: true })).toBeVisible();
   await expect(node(page, "deleted-card")).toContainText(live.key);
   await expect(node(page, "deleted-card")).toContainText(live.title);
   await expect(node(page, "deleted-card").locator("select,[data-inline-title],[data-pro=task-details]"), "a deleted card cannot be edited").toHaveCount(0);
@@ -58,7 +58,7 @@ test("archived and missing cards show their state, and a deletion elsewhere reac
 onDevices(["desktop", "phone"], () => test("placeholder cards fit the screen in both themes", async ({ page }) => {
   const { project } = await seed({ deleteLive: true });
   await openBoard(page, project);
-  await expect(node(page, "deleted-card").getByText("Deleted task", { exact: true })).toBeAttached();
+  await expect(node(page, "deleted-card").getByText("Deleted card", { exact: true })).toBeAttached();
   for (const theme of ["light", "dark"]) {
     await page.evaluate((t) => (document.documentElement.dataset.theme = t), theme);
     expect(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), `${theme}: no horizontal scroll`).toBe(false);
@@ -68,7 +68,7 @@ onDevices(["desktop", "phone"], () => test("placeholder cards fit the screen in 
 test("Restore and Unarchive bring the cards back and the task count follows", async ({ page }) => {
   const { project, archived } = await seed({ deleteLive: true });
   await openBoard(page, project);
-  await node(page, "deleted-card").getByRole("button", { name: "Restore task", exact: true }).click();
+  await node(page, "deleted-card").getByRole("button", { name: "Restore card", exact: true }).click();
   await expect(node(page, "deleted-card").locator("select[data-canvas-status]")).toBeVisible();
   await expect(node(page, "deleted-card").locator(".board-task-availability")).toHaveCount(0);
   await expect(node(page, "note-card").locator(".node-text")).toBeAttached();
@@ -76,9 +76,9 @@ test("Restore and Unarchive bring the cards back and the task count follows", as
   await node(page, "archived-card").getByRole("button", { name: "Unarchive", exact: true }).click();
   await expect(node(page, "archived-card").locator(".board-task-availability")).toHaveCount(0);
   await selectProjectView(page, "list");
-  await expect(taskViewsTab(page)).toHaveAttribute("title", /· 2 tasks$/);
+  await expect(taskViewsTab(page)).toHaveAttribute("title", /· 2 cards$/);
   await page.reload();
-  await expect(taskViewsTab(page)).toHaveAttribute("title", /· 2 tasks$/);
+  await expect(taskViewsTab(page)).toHaveAttribute("title", /· 2 cards$/);
   const saved = await app.store.snapshot(project.id);
   expect(saved.tasks.find((t) => t.id === archived.id).archived).toBe(false);
   expect(saved.boards[0].nodes).toHaveLength(4);

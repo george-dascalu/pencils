@@ -143,7 +143,7 @@ test("Back saves task edits and never discards an invalid open editor", { tag: "
   await page.locator(`[data-action=task-open][data-id="${blocked.id}"]`).first().click();
   await page.locator("#task-form [name=title]").fill("");
   await page.goBack();
-  await page.getByText("Finish saving this task before leaving it.", { exact: true }).waitFor();
+  await page.getByText("Finish saving this card before leaving it.", { exact: true }).waitFor();
   await at(page, projectRoute("list"));
   await expect(page.locator("#task-form")).toBeVisible();
   await page.locator("#task-form [name=title]").fill("Saved during Back");

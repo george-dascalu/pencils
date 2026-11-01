@@ -100,7 +100,7 @@ export function connectorToolbar(
       ) +
       '<button type="button" data-connector-command="reset-bends">Reset bends</button><label><input type="checkbox" data-edge-field="lineJumps" ' +
       (edge.lineJumps ? "checked" : "") +
-      '> Line jumps (straight / elbow)</label><p class="conversion-hint">Use Task dependency to link two project tasks. Removing a line keeps its task dependency.</p>',
+      '> Line jumps (straight / elbow)</label><p class="conversion-hint">Use Card dependency to link two project cards. Removing a line keeps its card dependency.</p>',
   );
   const dependency = edgeDependency(ctx.board(), edge, ctx.state.tasks);
   const cyclic =
@@ -113,14 +113,14 @@ export function connectorToolbar(
     );
   const dependencyMenu = menu(
     "dependency",
-    "Task dependency",
+    "Card dependency",
     icon("connect"),
-    `<strong>Task dependency</strong>${
+    `<strong>Card dependency</strong>${
       dependency.valid
-        ? `<p class="conversion-hint">${esc(dependency.source.key || dependency.source.title)} → ${esc(dependency.target.key || dependency.target.title)}<br>The start task must finish before the end task.</p>${button("pro", dependency.active ? "edge-dependency-remove" : "edge-dependency", dependency.active ? "Remove dependency" : "Make dependency", "connect", !dependency.active && cyclic)}${cyclic && !dependency.active ? '<p class="conversion-hint">This direction would create a dependency cycle.</p>' : ""}<p class="conversion-hint">Removing the line keeps the dependency. Use Remove dependency to unlink the tasks.</p>`
+        ? `<p class="conversion-hint">${esc(dependency.source.key || dependency.source.title)} → ${esc(dependency.target.key || dependency.target.title)}<br>The start card must finish before the end card.</p>${button("pro", dependency.active ? "edge-dependency-remove" : "edge-dependency", dependency.active ? "Remove dependency" : "Make dependency", "connect", !dependency.active && cyclic)}${cyclic && !dependency.active ? '<p class="conversion-hint">This direction would create a dependency cycle.</p>' : ""}<p class="conversion-hint">Removing the line keeps the dependency. Use Remove dependency to unlink the cards.</p>`
         : edge.planRelation === "parent"
-          ? '<p class="conversion-hint">This arrow shows a parent–child relationship. Change the task parent, then choose Update plan on its Project frame.</p>'
-          : '<p class="conversion-hint">Connect two different project task cards. Finalise draft tasks first.</p>'
+          ? '<p class="conversion-hint">This arrow shows a parent–child relationship. Change the card parent, then choose Update plan on its Project frame.</p>'
+          : '<p class="conversion-hint">Connect two different project cards. Finalise draft cards first.</p>'
     }`,
   );
   const color = ctx.colorPicker({

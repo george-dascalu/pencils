@@ -63,7 +63,7 @@ export function grid(ctx) {
   const rangeRows = () => (anchor && focus ? rowIds.slice(Math.min(anchor[0], focus[0]), Math.max(anchor[0], focus[0]) + 1) : []);
   const bulkIds=()=> $("#bulk-scope")?.value === "matching" ? matchingRows.map(t=>t.id) : $("#bulk-scope")?.value === "page" ? [...rowIds] : rangeRows();
   const scopeName=()=> $("#bulk-scope")?.selectedOptions[0]?.textContent || "Selected rows";
-  const bulkAllowed=ids=>{if(ids.length>500) {toast("Narrow the filters to 500 tasks or fewer before a bulk update.",true);return false;}return ids.length>0;};
+  const bulkAllowed=ids=>{if(ids.length>500) {toast("Narrow the filters to 500 cards or fewer before a bulk update.",true);return false;}return ids.length>0;};
   const fieldValue = (t, key) =>
     key.startsWith("fields.") ? t.fields?.[key.slice(7)] : t[key];
   const fields = () => [
@@ -240,7 +240,7 @@ export function grid(ctx) {
         ) {
           const collapsed = state.tableCollapsed?.has(group),
             key = preferences.groups[level];
-          body += `<tr class="table-group-row"><td colspan="${columns.length + 1}"><button type="button" data-table-action="group-toggle" data-group="${esc(group)}" aria-expanded="${!collapsed}" style="padding-left:${12 + level * 20}px">${ctx.icon("chevron")}<span class="table-group-field">${esc(fieldName(key))}</span><strong>${esc(tools.display(key, path[level]))}</strong><span class="count">${result.counts.get(group)} tasks</span><span class="table-group-summary">${result.summaries.get(group).estimate} h · ${result.summaries.get(group).done}/${result.counts.get(group)} complete${result.summaries.get(group).unestimated ? ` · ${result.summaries.get(group).unestimated} unestimated` : ""}</span></button></td></tr>`;
+          body += `<tr class="table-group-row"><td colspan="${columns.length + 1}"><button type="button" data-table-action="group-toggle" data-group="${esc(group)}" aria-expanded="${!collapsed}" style="padding-left:${12 + level * 20}px">${ctx.icon("chevron")}<span class="table-group-field">${esc(fieldName(key))}</span><strong>${esc(tools.display(key, path[level]))}</strong><span class="count">${result.counts.get(group)} cards</span><span class="table-group-summary">${result.summaries.get(group).estimate} h · ${result.summaries.get(group).done}/${result.counts.get(group)} complete${result.summaries.get(group).unestimated ? ` · ${result.summaries.get(group).unestimated} unestimated` : ""}</span></button></td></tr>`;
         }
         if (state.tableCollapsed?.has(group)) hidden = true;
       }
@@ -248,15 +248,15 @@ export function grid(ctx) {
       if (hidden) continue;
       const r = rowIds.length;
       rowIds.push(t.id);
-      body += `<tr data-table-task="${esc(t.id)}" data-task-order-row="${esc(t.id)}" data-task-order-group="${esc(JSON.stringify(path))}"><td class="task-row-controls"><div class="task-row-actions">${taskReorderHandle(t, esc)}<button class="table-open" data-action="task-open" data-id="${t.id}" aria-label="Open ${esc(t.title)}" title="Open task details">${ctx.icon("external")}</button></div></td>${columns.map((c, k) => `<td role="gridcell" tabindex="${r === 0 && k === 0 ? 0 : -1}" data-cell="${r},${k}" data-column-key="${esc(c.key)}" style="--pin-offset:${c.pinOffset}px">${preferences.outline && c.key === "title" && t.parent ? `<small class="table-parent-context" style="padding-left:${Math.min(12,result.depths.get(t.id)||0)*12}px">↳ ${esc(parents.get(t.parent)?.key || t.parent)}${!result.depths.get(t.id)?" · parent outside this group or filter":""}</small>`:""}${c.key === "title" ? `<div class="table-title-line">${cell(t, c.key)}<button type="button" class="phone-table-key" tabindex="-1" data-action="task-open" data-id="${esc(t.id)}" aria-label="Open ${esc(t.key || t.id)}: ${esc(t.title)}" title="Open card">${esc(t.key || "")}</button></div>` : cell(t, c.key)}</td>`).join("")}</tr>`;
+      body += `<tr data-table-task="${esc(t.id)}" data-task-order-row="${esc(t.id)}" data-task-order-group="${esc(JSON.stringify(path))}"><td class="task-row-controls"><div class="task-row-actions">${taskReorderHandle(t, esc)}<button class="table-open" data-action="task-open" data-id="${t.id}" aria-label="Open ${esc(t.title)}" title="Open card details">${ctx.icon("external")}</button></div></td>${columns.map((c, k) => `<td role="gridcell" tabindex="${r === 0 && k === 0 ? 0 : -1}" data-cell="${r},${k}" data-column-key="${esc(c.key)}" style="--pin-offset:${c.pinOffset}px">${preferences.outline && c.key === "title" && t.parent ? `<small class="table-parent-context" style="padding-left:${Math.min(12,result.depths.get(t.id)||0)*12}px">↳ ${esc(parents.get(t.parent)?.key || t.parent)}${!result.depths.get(t.id)?" · parent outside this group or filter":""}</small>`:""}${c.key === "title" ? `<div class="table-title-line">${cell(t, c.key)}<button type="button" class="phone-table-key" tabindex="-1" data-action="task-open" data-id="${esc(t.id)}" aria-label="Open ${esc(t.key || t.id)}: ${esc(t.title)}" title="Open card">${esc(t.key || "")}</button></div>` : cell(t, c.key)}</td>`).join("")}</tr>`;
     }
-    return { controls: `${tools.html()}<div class="grid-tools">${columnsMenu()}<span id="grid-selection-count" class="sr-only" role="status"></span><details class="board-menu table-bulk-menu" data-board-menu="table-bulk" ${state.headerMenu === "table-bulk" ? "open" : ""}><summary>Bulk edit<svg class="icon menu-caret" viewBox="0 0 24 24" aria-hidden="true"><path d="m8 10 4 4 4-4"/></svg></summary><div class="board-menu-panel table-menu-panel" id="grid-bulk"><label class="field">Apply to<select id="bulk-scope"><option value="selected" disabled>Selected rows</option><option value="page" selected>Visible rows on this page (${rowIds.length})</option><option value="matching">All matching tasks (${matchingRows.length})</option></select></label><label class="field">Status<select id="bulk-status"><option value="">Choose…</option>${options(state.config.statuses, "")}</select></label><div class="menu-footer"><button type="button" class="button small" data-feature="bulk-archive">Archive tasks</button></div></div></details></div>`, html: `<div class="table-scroll"><table class="task-table spreadsheet" style="width:${tableWidth()}" role="grid" aria-label="Tasks spreadsheet"><colgroup><col style="width:var(--table-selection-width)">${columns.map((c) => `<col data-table-col="${esc(c.key)}" style="width:${phone.matches && c.key === "title" ? "var(--table-phone-title-width)" : `${c.width || 160}px`}">`).join("")}</colgroup><thead><tr><th><span class="sr-only">Row actions</span></th>${columns
+    return { controls: `${tools.html()}<div class="grid-tools">${columnsMenu()}<span id="grid-selection-count" class="sr-only" role="status"></span><details class="board-menu table-bulk-menu" data-board-menu="table-bulk" ${state.headerMenu === "table-bulk" ? "open" : ""}><summary>Bulk edit<svg class="icon menu-caret" viewBox="0 0 24 24" aria-hidden="true"><path d="m8 10 4 4 4-4"/></svg></summary><div class="board-menu-panel table-menu-panel" id="grid-bulk"><label class="field">Apply to<select id="bulk-scope"><option value="selected" disabled>Selected rows</option><option value="page" selected>Visible rows on this page (${rowIds.length})</option><option value="matching">All matching cards (${matchingRows.length})</option></select></label><label class="field">Status<select id="bulk-status"><option value="">Choose…</option>${options(state.config.statuses, "")}</select></label><div class="menu-footer"><button type="button" class="button small" data-feature="bulk-archive">Archive cards</button></div></div></details></div>`, html: `<div class="table-scroll"><table class="task-table spreadsheet" style="width:${tableWidth()}" role="grid" aria-label="Cards spreadsheet"><colgroup><col style="width:var(--table-selection-width)">${columns.map((c) => `<col data-table-col="${esc(c.key)}" style="width:${phone.matches && c.key === "title" ? "var(--table-phone-title-width)" : `${c.width || 160}px`}">`).join("")}</colgroup><thead><tr><th><span class="sr-only">Row actions</span></th>${columns
       .map((c) => {
         const sort = preferences.sorts.findIndex((s) => s.field === c.key),
           active = preferences.filters.some(
             (f) => f.field === c.key && activeTableFilter(f),
           );
-        return `<th data-column-key="${esc(c.key)}" style="--pin-offset:${c.pinOffset}px" aria-sort="${sort === 0 ? (preferences.sorts[sort].dir === 1 ? "ascending" : "descending") : sort > 0 ? "other" : "none"}"><div class="table-column-heading ${(c.width || 160) <= 128 ? "table-column-compact" : ""}"><button type="button" class="table-column-grip" data-column-drag="${esc(c.key)}" aria-label="Move ${esc(fieldName(c.key))} column" aria-keyshortcuts="Alt+ArrowLeft Alt+ArrowRight" title="Drag to move ${esc(fieldName(c.key))}. Alt + Left/Right moves this column.">${ctx.icon("drag")}</button><button type="button" data-table-sort-column="${esc(c.key)}" aria-keyshortcuts="Alt+ArrowLeft Alt+ArrowRight" title="Sort ${esc(fieldName(c.key))}: ascending, descending, then clear. Shift-click to add a sort." aria-label="Sort by ${esc(fieldName(c.key))}"><span class="table-column-name">${esc(fieldName(c.key))}</span>${sort >= 0 ? `<span class="table-sort-indicator">${preferences.sorts[sort].dir === 1 ? "↑" : "↓"}${preferences.sorts.length > 1 ? sort + 1 : ""}</span>` : ""}</button><details class="board-menu table-header-menu ${active ? "has-active-filter" : ""}"><summary aria-label="${esc(fieldName(c.key))} column actions${active ? ", filter active" : ""}">${ctx.icon("more")}</summary><div class="board-menu-panel"><header><strong>${esc(fieldName(c.key))}</strong><small>${esc(c.key.startsWith("fields.") ? custom(c.key)?.type || "text" : ["due", "start"].includes(c.key) ? "Date" : c.key === "estimate" ? "Number of hours" : "Task field")}</small></header>${[
+        return `<th data-column-key="${esc(c.key)}" style="--pin-offset:${c.pinOffset}px" aria-sort="${sort === 0 ? (preferences.sorts[sort].dir === 1 ? "ascending" : "descending") : sort > 0 ? "other" : "none"}"><div class="table-column-heading ${(c.width || 160) <= 128 ? "table-column-compact" : ""}"><button type="button" class="table-column-grip" data-column-drag="${esc(c.key)}" aria-label="Move ${esc(fieldName(c.key))} column" aria-keyshortcuts="Alt+ArrowLeft Alt+ArrowRight" title="Drag to move ${esc(fieldName(c.key))}. Alt + Left/Right moves this column.">${ctx.icon("drag")}</button><button type="button" data-table-sort-column="${esc(c.key)}" aria-keyshortcuts="Alt+ArrowLeft Alt+ArrowRight" title="Sort ${esc(fieldName(c.key))}: ascending, descending, then clear. Shift-click to add a sort." aria-label="Sort by ${esc(fieldName(c.key))}"><span class="table-column-name">${esc(fieldName(c.key))}</span>${sort >= 0 ? `<span class="table-sort-indicator">${preferences.sorts[sort].dir === 1 ? "↑" : "↓"}${preferences.sorts.length > 1 ? sort + 1 : ""}</span>` : ""}</button><details class="board-menu table-header-menu ${active ? "has-active-filter" : ""}"><summary aria-label="${esc(fieldName(c.key))} column actions${active ? ", filter active" : ""}">${ctx.icon("more")}</summary><div class="board-menu-panel"><header><strong>${esc(fieldName(c.key))}</strong><small>${esc(c.key.startsWith("fields.") ? custom(c.key)?.type || "text" : ["due", "start"].includes(c.key) ? "Date" : c.key === "estimate" ? "Number of hours" : "Card field")}</small></header>${[
           ["asc", "Sort ascending", "priority-high"],
           ["desc", "Sort descending", "down"],
           ["filter", "Filter column", "filter"],
@@ -276,7 +276,7 @@ export function grid(ctx) {
       })
       .join(
         "",
-      )}</tr></thead><tbody>${body || `<tr><td colspan="${columns.length + 1}"><div class="table-no-results">No tasks match these filters. <button class="button soft" data-table-action="clear-filters">Clear column filters</button><button class="button small" data-action="filters-reset">Clear all filters</button></div></td></tr>`}</tbody></table></div><span class="sr-only" data-table-reorder-status role="status" aria-live="polite"></span>${pages > 1 ? `<div class="pagination"><button class="button small" data-feature="page-prev" ${!state.page ? "disabled" : ""}>← Previous</button><span>Page ${state.page + 1} of ${pages}</span><button class="button small" data-feature="page-next" ${state.page + 1 >= pages ? "disabled" : ""}>Next →</button></div>` : ""}` };
+      )}</tr></thead><tbody>${body || `<tr><td colspan="${columns.length + 1}"><div class="table-no-results">No cards match these filters. <button class="button soft" data-table-action="clear-filters">Clear column filters</button><button class="button small" data-action="filters-reset">Clear all filters</button></div></td></tr>`}</tbody></table></div><span class="sr-only" data-table-reorder-status role="status" aria-live="polite"></span>${pages > 1 ? `<div class="pagination"><button class="button small" data-feature="page-prev" ${!state.page ? "disabled" : ""}>← Previous</button><span>Page ${state.page + 1} of ${pages}</span><button class="button small" data-feature="page-next" ${state.page + 1 >= pages ? "disabled" : ""}>Next →</button></div>` : ""}` };
   }
   function paint() {
     if (!anchor || !focus) return;
@@ -432,7 +432,7 @@ export function grid(ctx) {
     const preview = () => {
       plan = build();
       document.querySelector("#paste-preview").innerHTML =
-        `<p>${plan.patches.size} existing tasks · ${plan.rows.length} clipboard rows. Columns are mapped in clipboard order. Changes are saved individually; server rejections remain in Recovery.</p><div class="paste-mapping">${Array.from(
+        `<p>${plan.patches.size} existing cards · ${plan.rows.length} clipboard rows. Columns are mapped in clipboard order. Changes are saved individually; server rejections remain in Recovery.</p><div class="paste-mapping">${Array.from(
           { length: count },
           (_, i) =>
             `<label>Clipboard column ${i + 1}<select data-paste-map="${i}"><option value="">Choose column</option>${columns
@@ -449,7 +449,7 @@ export function grid(ctx) {
                 .map((error) => `<li>${esc(error)}</li>`)
                 .join("")}</ul></div>`
             : "<p>Values, date ranges, workflow moves and hierarchy checked. Review the mapped values below.</p>"
-        }<div class="table-scroll"><table><thead><tr><th>Task</th>${map
+        }<div class="table-scroll"><table><thead><tr><th>Card</th>${map
           .slice(0, count)
           .map((key) => `<th>${esc(fieldName(key) || "Unmapped")}</th>`)
           .join(
@@ -481,7 +481,7 @@ export function grid(ctx) {
         closeDialog(true);
         renderView(true);
         toast(
-          `Submitted changes for ${plan.patches.size} tasks. Rejected saves remain in Recovery.`,
+          `Submitted changes for ${plan.patches.size} cards. Rejected saves remain in Recovery.`,
         );
       } catch (error) {
         toast(error.message, true);
@@ -628,7 +628,7 @@ export function grid(ctx) {
         return;
       }
       if (
-        !(await confirmAction({ anchor: el, title: "Change status?", message: `Change status to ${ctx.statusNames[el.value] || el.value} for ${ids.length} tasks (${scopeName()}).`, confirmLabel: "Change status" }))
+        !(await confirmAction({ anchor: el, title: "Change status?", message: `Change status to ${ctx.statusNames[el.value] || el.value} for ${ids.length} cards (${scopeName()}).`, confirmLabel: "Change status" }))
       ) {
         el.value = "";
         return;
@@ -661,7 +661,7 @@ export function grid(ctx) {
       link.download = "matching-tasks.csv";
       link.click();
       setTimeout(() => URL.revokeObjectURL(url), 1000);
-      toast(`Exported ${matchingRows.length} matching tasks across all pages.`);
+      toast(`Exported ${matchingRows.length} matching cards across all pages.`);
       return true;
     }
     if (action === "column-up" || action === "column-down") {
@@ -686,7 +686,7 @@ export function grid(ctx) {
     if (action === "bulk-archive") {
       const ids=bulkIds();
       if(!bulkAllowed(ids)) return true;
-      if(await confirmAction({ title: "Archive these tasks?", message: `Archive ${ids.length} tasks (${scopeName()}). They remain recoverable with Include archived.`, confirmLabel: "Archive" })) {
+      if(await confirmAction({ title: "Archive these cards?", message: `Archive ${ids.length} cards (${scopeName()}). They remain recoverable with Include archived.`, confirmLabel: "Archive" })) {
         for(const id of ids) if(task(id)) await patchTask(id,{archived:true},false);
         renderView(true);
       }

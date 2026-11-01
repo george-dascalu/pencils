@@ -142,7 +142,7 @@ test("a task's title and body save as one edit, and board and linked edits undo 
   // Task title/body are one edit, without overwriting unrelated task fields.
   await find(page, "task-a", "Write specification");
   await node(page, "task-a").locator(".task-title").dblclick();
-  await page.getByRole("textbox", { name: "Task title", exact: true }).fill("Revised specification");
+  await page.getByRole("textbox", { name: "Card title", exact: true }).fill("Revised specification");
   await page.locator("[data-rich-mode=source]").click();
   await page.locator(".inline-source").fill("Revised scope");
   await outside(page);
@@ -207,7 +207,7 @@ test("undo refuses to overwrite someone else's newer task text", async ({ page }
   // This tab's history: a linked task edit, then two board text edits.
   await find(page, "task-a", "Revised specification");
   await node(page, "task-a").locator(".task-title").dblclick();
-  await page.getByRole("textbox", { name: "Task title", exact: true }).fill("Specification under review");
+  await page.getByRole("textbox", { name: "Card title", exact: true }).fill("Specification under review");
   await outside(page);
   await poll(async () => (await task()).title).toBe("Specification under review");
   await find(page, "note", "Saved after reconnect");

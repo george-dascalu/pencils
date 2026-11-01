@@ -22,7 +22,7 @@ async function setPanels(page, panels) {
 }
 const at = (id, type, y, settings = {}, w = 6, h = 5) => ({ id, type, x: 0, y, w, h, settings });
 
-test("Task list, Stat, Breakdown, Note and Document read the project and render Markdown", async ({ page }) => {
+test("Card list, Stat, Breakdown, Note and Document read the project and render Markdown", async ({ page }) => {
   const { project, doc } = app;
   await setPanels(page, [
     at("t", "tasks", 0, { project: project.id, due: "next7" }),

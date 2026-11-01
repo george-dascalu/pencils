@@ -57,7 +57,7 @@ for (const [device, width] of [["phone", 390], ["ipad-portrait", 834], ["desktop
       await focused(comment);
       await passive(page, () => click(page.locator(".task-comments-panel [data-rich-mode]")), "Comment Markdown mode");
       await closeTask();
-      await passive(page, async () => { await newCard(page, { tap: touch }); await page.locator("#task-form").waitFor(); }, "New task");
+      await passive(page, async () => { await newCard(page, { tap: touch }); await page.locator("#task-form").waitFor(); }, "New card");
       await closeTask();
     });
 

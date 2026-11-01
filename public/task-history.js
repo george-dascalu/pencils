@@ -4,8 +4,8 @@ import { statusLabel } from './workflow-model.js';
 
 const fields = {
   title: 'Title', type: 'Card type', assignee: 'Assignee', priority: 'Priority', status: 'Status',
-  start: 'Start date', due: 'Due date', body: 'Description', parent: 'Parent task',
-  dependencies: 'Blocked by', related_records: 'Related tasks', documents: 'Documents', tags: 'Tags',
+  start: 'Start date', due: 'Due date', body: 'Description', parent: 'Parent card',
+  dependencies: 'Blocked by', related_records: 'Related cards', documents: 'Documents', tags: 'Tags',
   estimate: 'Estimate', archived: 'Archived', recurrence: 'Recurrence',
 };
 const same = (a, b) => JSON.stringify(a ?? null) === JSON.stringify(b ?? null);

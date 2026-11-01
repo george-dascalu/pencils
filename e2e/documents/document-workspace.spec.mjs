@@ -180,13 +180,13 @@ test("board task cards collapse and expand their description, saved with the pla
   const card = page.locator(`[data-node="${parentId}"]`);
   await card.waitFor();
   expect(await card.locator(".live-card-actions button").evaluateAll((els) => els.map((e) => e.dataset.pro))).toEqual(["task-collapse", "comments", "task-details"]);
-  await card.getByRole("button", { name: "Collapse task description", exact: true }).click();
+  await card.getByRole("button", { name: "Collapse card description", exact: true }).click();
   await expect.poll(async () => (await node(parentId)).taskCollapsed).toBe(true);
   await expect(card.locator(".task-card-description")).toBeHidden();
   expect((await node(parentId)).h).toBeLessThan(220);
   await page.reload();
   await card.waitFor();
-  await card.getByRole("button", { name: "Expand task description", exact: true }).click();
+  await card.getByRole("button", { name: "Expand card description", exact: true }).click();
   await expect.poll(async () => (await node(parentId)).taskCollapsed).toBe(false);
   const full = await card.locator(".task-card-description").evaluate((el) => ({ client: el.clientHeight, scroll: el.scrollHeight, text: el.textContent }));
   expect(full.text, "the whole description shows").toMatch(/Paragraph 12/);
@@ -197,8 +197,8 @@ test("board task cards collapse and expand their description, saved with the pla
   await page.locator("[data-action=board-undo]").click();
   await expect.poll(async () => (await node(parentId)).taskCollapsed).toBe(true);
   const draft = page.locator('[data-node="draft"]');
-  await draft.getByRole("button", { name: "Collapse task description", exact: true }).click();
+  await draft.getByRole("button", { name: "Collapse card description", exact: true }).click();
   await expect.poll(async () => (await node("draft")).taskCollapsed).toBe(true);
-  await draft.getByRole("button", { name: "Expand task description", exact: true }).click();
+  await draft.getByRole("button", { name: "Expand card description", exact: true }).click();
   await expect(draft.getByText("Draft description", { exact: true })).toBeVisible();
 });

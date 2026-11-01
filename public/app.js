@@ -2,6 +2,7 @@ import { APP_VERSION, watchAppVersion } from "./app-version.js";
 import { DEFAULT_TASK_TYPES } from "./task-types.js";
 import { updateViewLayout } from "./view-layout.js";
 import { installEditableControlGuard } from "./editable-controls.js";
+import { installOverflowTitles } from "./overflow-title.js";
 import { taskFocus } from "./task-focus.js";
 import { focusOnOpen, prepareDialogFocus } from "./open-focus.js";
 import { randomUUID } from "./uuid.js";
@@ -62,6 +63,7 @@ installEdgeSwipeGuard({
 installPageZoomGuard();
 installAxisLockedScroll("#view-content > .table-scroll");
 installEditableControlGuard();
+installOverflowTitles();
 const $$ = (selector, root = document) => [...root.querySelectorAll(selector)];
 const esc = (value) =>
   String(value ?? "").replace(
@@ -960,10 +962,10 @@ function projectNavigationHTML() {
         ([name, group]) =>
           `<div class="view-tab-group" role="group" aria-label="${name}">${group.map((view) => {
             const active = view === "tasks" ? taskViews.includes(state.view) : view === "planning" ? planningViews.includes(state.view) : state.view === view;
-            return `<button class="tab ${active ? "active" : ""}" data-action="view" data-view="${view}" aria-label="${viewLabel(view)}" title="${viewLabel(view)}${view === "tasks" ? ` · ${total} tasks` : ""}" ${active ? 'aria-current="page"' : ""}>${icon(view === "tasks" ? "list" : view === "planning" ? "calendar" : view)}</button>`;
+            return `<button class="tab ${active ? "active" : ""}" data-action="view" data-view="${view}" aria-label="${viewLabel(view)}" title="${viewLabel(view)}${view === "tasks" ? ` · ${total} cards` : ""}" ${active ? 'aria-current="page"' : ""}>${icon(view === "tasks" ? "list" : view === "planning" ? "calendar" : view)}</button>`;
           }).join("")}</div>`,
       )
-      .join("")}${features.bottomBar.html()}</div><span class="tabs-divider" aria-hidden="true"></span><button type="button" class="tab tab-search" data-feature="global-search" aria-label="Search" title="Search tasks, documents and boards">${icon("search")}</button></nav>
+      .join("")}${features.bottomBar.html()}</div><span class="tabs-divider" aria-hidden="true"></span><button type="button" class="tab tab-search" data-feature="global-search" aria-label="Search" title="Search cards, documents and boards">${icon("search")}</button></nav>
     <label class="mobile-view-switcher">View <select id="project-view-switcher" aria-label="Project view">${["settings", "help"].includes(area) ? `<option value="${area}" selected disabled>${label(area)}</option>` : ""}${(state.project.personal ? ["documents"] : ["overview", "documents", "planning", "tasks", "board"]).filter(areaOn).map((view) => `<option value="${view}" ${view === area ? "selected" : ""}>${viewLabel(view)}</option>`).join("")}</select></label>
     ${newMenuHTML()}
   </div>`;
@@ -979,7 +981,7 @@ function projectPage() {
     done = metric.done,
     progress = metric.percent;
   return `<section class="hero"><div><div class="eyebrow project-kicker"><span class="project-mark" style="background:${safeColor(state.project.color)}"></span>PROJECT WORKSPACE</div><h1>${esc(state.project.title)}</h1><p>${esc(projectDescription())}</p></div></section>
-    <div class="stats-strip"><span class="stat">${icon("task")}<strong>${total}</strong> tasks</span><span class="stat-divider"></span><span class="stat"><span class="progress"><span style="width:${progress}%"></span></span><strong>${progress}%</strong> complete</span><span class="stat-divider"></span><span class="stat">${icon("check")}<strong>${done}</strong> done</span><span class="stat">${icon("file")}Markdown workspace</span></div>
+    <div class="stats-strip"><span class="stat">${icon("task")}<strong>${total}</strong> cards</span><span class="stat-divider"></span><span class="stat"><span class="progress"><span style="width:${progress}%"></span></span><strong>${progress}%</strong> complete</span><span class="stat-divider"></span><span class="stat">${icon("check")}<strong>${done}</strong> done</span><span class="stat">${icon("file")}Markdown workspace</span></div>
     ${warningsHTML([...state.globalWarnings, ...state.warnings])}
 
     ${lists.html()}<div id="view-toolbar"></div><section id="view-content"></section>`;
@@ -1082,7 +1084,7 @@ function renderViewNow(onlyContent) {
         ? boardToolbar()
         : state.view === "overview"
           ? ""
-          : `<div class="toolbar"><div class="toolbar-left"><label class="search">${icon("search")}<input id="search" type="search" aria-label="Search tasks" placeholder="Find a task…" value="${esc(state.search)}"></label><select id="filter-status" class="filter" aria-label="Filter by status"><option value="all">All statuses</option>${options(statuses, state.status, statusNames)}</select><select id="filter-type" class="filter" aria-label="Filter by task type"><option value="all">All types</option>${options(types, state.type)}</select>${bookmarks.button("view", state.project.id, state.view)}</div><div class="toolbar-right"><select id="sort" class="filter" aria-label="Sort tasks">${sortGroups.map(([group, values]) => [group, values.filter((value) => fieldOn(state.config, value))]).filter(([, values]) => values.length).map(([group, values]) => (group ? `<optgroup label="${group}">${options(values, state.sort, sortNames)}</optgroup>` : options(values, state.sort, sortNames))).join("")}</select></div><div class="view-controls"></div></div>`;
+          : `<div class="toolbar"><div class="toolbar-left"><label class="search">${icon("search")}<input id="search" type="search" aria-label="Search cards" placeholder="Find a card…" value="${esc(state.search)}"></label><select id="filter-status" class="filter" aria-label="Filter by status"><option value="all">All statuses</option>${options(statuses, state.status, statusNames)}</select><select id="filter-type" class="filter" aria-label="Filter by card type"><option value="all">All types</option>${options(types, state.type)}</select>${bookmarks.button("view", state.project.id, state.view)}</div><div class="toolbar-right"><select id="sort" class="filter" aria-label="Sort cards">${sortGroups.map(([group, values]) => [group, values.filter((value) => fieldOn(state.config, value))]).filter(([, values]) => values.length).map(([group, values]) => (group ? `<optgroup label="${group}">${options(values, state.sort, sortNames)}</optgroup>` : options(values, state.sort, sortNames))).join("")}</select></div><div class="view-controls"></div></div>`;
   }
   const content = $("#view-content");
   const previousKanban = onlyContent && state.view === "kanban" ? content.querySelector(".kanban") : null;
@@ -1131,7 +1133,7 @@ function renderViewNow(onlyContent) {
   const view =
     !tasks.length &&
     !["kanban", "overview", "capacity", "table", "timeline", "calendar"].includes(state.view)
-      ? `<div class="empty">${icon("leaf")}<h2>${state.tasks.length ? "No matching tasks" : "Create your first card"}</h2><p>${state.tasks.length ? "No tasks match the current filters. Archived tasks are hidden unless Include archived is selected." : ["list", "tree"].includes(state.view) ? "Use New card above to add your first card." : "Add your first card, then make the plan your own."}</p>${state.tasks.length ? '<button class="button soft" data-action="filters-reset">Clear filters</button>' : ["list", "tree"].includes(state.view) ? "" : '<button class="button soft" data-action="task-new">${icon("plus")}Add a card</button>'}</div>`
+      ? `<div class="empty">${icon("leaf")}<h2>${state.tasks.length ? "No matching cards" : "Create your first card"}</h2><p>${state.tasks.length ? "No cards match the current filters. Archived cards are hidden unless Include archived is selected." : ["list", "tree"].includes(state.view) ? "Use New card above to add your first card." : "Add your first card, then make the plan your own."}</p>${state.tasks.length ? '<button class="button soft" data-action="filters-reset">Clear filters</button>' : ["list", "tree"].includes(state.view) ? "" : '<button class="button soft" data-action="task-new">${icon("plus")}Add a card</button>'}</div>`
       : renderers[state.view](tasks);
   content.innerHTML = view.html ?? view;
   const controls = $(".view-controls");
@@ -1152,7 +1154,7 @@ function renderViewNow(onlyContent) {
       content.append(tree);
     }
     tree.setAttribute("role", "region");
-    tree.setAttribute("aria-label", "Task hierarchy");
+    tree.setAttribute("aria-label", "Card hierarchy");
     tree.tabIndex = 0;
   }
   features.timelineRender();
@@ -1210,7 +1212,7 @@ function taskRow(t, depth = null, hasChildren = false, flat = false) {
   return `<div data-task-order-row="${esc(t.id)}" data-task-order-group="${esc(depth !== null || state.groupBy === "none" ? "" : t[state.groupBy || "status"] || "")}" class="task-row ${depth !== null ? "tree-row" : ""}${flat ? " tree-flat" : ""} ${t.contextOnly ? "tree-context" : ""}" ${depth !== null ? `style="--depth:${Math.min(depth, 12)}"` : ""}>
     ${depth !== null ? `<button class="tree-toggle ${state.collapsed.has(t.id) ? "collapsed" : ""}" data-action="collapse" data-id="${esc(t.id)}" aria-label="${state.collapsed.has(t.id) ? "Expand" : "Collapse"} subtasks" ${hasChildren ? `aria-expanded="${!state.collapsed.has(t.id)}" title="${state.tasks.filter(c => c.parent === t.id).length} subtasks"` : "disabled"}>${hasChildren ? icon("chevron") : ""}</button>` : ""}
     ${taskReorderHandle(t, esc)}
-    <button type="button" class="task-type row-task-link ${esc(t.type)}" data-action="task-open" data-id="${esc(t.id)}" aria-label="Open ${esc(t.title)} (${esc(label(t.type))})" title="${esc(label(t.type))} · Open task details">${icon(t.type)}</button>
+    <button type="button" class="task-type row-task-link ${esc(t.type)}" data-action="task-open" data-id="${esc(t.id)}" aria-label="Open ${esc(t.title)} (${esc(label(t.type))})" title="${esc(label(t.type))} · Open card details">${icon(t.type)}</button>
     <button type="button" class="task-id row-task-link" data-action="task-open" data-id="${esc(t.id)}" aria-label="Open ${esc(t.key || t.id)}: ${esc(t.title)}" title="${esc(t.source ? sourceLabel(t) : t.key || t.id)}">${esc(t.key || t.id)}</button>
     <div class="row-title"><input class="task-title ${done ? "done" : ""}" data-row-field="title" data-id="${esc(t.id)}" aria-label="Title for ${esc(t.title)}" title="${esc(t.title)}" value="${esc(t.title)}" maxlength="300" required ${t.source ? 'readonly aria-description="Managed by the connected source"' : 'aria-description="Enter to save. Escape to cancel."'}>${t.contextOnly ? '<span class="context-badge">Ancestor context</span>' : ""}</div>
     <div class="row-fields field-box" ${fieldBoxStyle(state, priority)}><label class="row-assignee row-choice" title="${esc(assignee)}">${assigneeHTML(t)}<select ${control("assignee", "Assignee")}>${assigneeOptions(state, t.assignee, esc)}</select></label>
@@ -1290,7 +1292,7 @@ function tableView(tasks) {
   return `<div class="table-scroll"><table class="task-table"><thead><tr><th>#</th>${["title", "type", "status", "priority", "parent", "assignee", "due", "tags"].map((field) => `<th><button data-action="sort-column" data-field="${field}">${field === "due" ? "Due date" : label(field)}${state.sort === field ? (state.sortDir === 1 ? " ↑" : " ↓") : ""}</button></th>`).join("")}</tr></thead><tbody>${tasks.map((t, index) => `<tr><td>${index + 1}</td><td class="title-cell"><button class="table-open" data-action="task-open" data-id="${esc(t.id)}" aria-label="Open ${esc(t.title)}">${icon("external")}</button>${input(t, "title")}</td><td>${select(t, "type", types)}</td><td>${select(t, "status", statuses, statusNames)}</td><td>${select(t, "priority", priorities, priorityLabels)}</td><td><select data-task-field="parent" data-id="${esc(t.id)}" aria-label="Parent for ${esc(t.title)}">${parentOptions(t.parent, t.id)}</select></td><td>${input(t, "assignee")}</td><td>${input(t, "due", "date")}</td><td>${input(t, "tags")}</td></tr>`).join("")}</tbody></table></div><button class="add-row" data-action="task-new">${icon("plus")}New row</button>`;
 }
 function kanbanCard(t, showIds = false) {
-  return `<article class="kanban-card" draggable="true" data-drag-task="${esc(t.id)}"><div class="card-top"><span class="task-type ${esc(t.type)}" role="img" aria-label="${esc(label(t.type))}" title="${esc(label(t.type))}">${icon(t.type)}</span>${showIds ? `<span class="task-id" title="${esc(t.source ? sourceLabel(t) : t.key || t.id)}">${esc(t.key || t.id)}</span>` : ""}<button class="task-title" aria-keyshortcuts="Alt+ArrowUp Alt+ArrowDown" aria-description="Alt + Up or Down reorders this task within its column." data-action="task-open" data-id="${esc(t.id)}">${esc(t.title)}</button></div><div class="card-bottom"><span class="field-box" ${fieldBoxStyle(state, t.priority)}><span class="kanban-assignee" role="img" aria-label="Assignee: ${esc(t.assignee || "Unassigned")}" title="${esc(t.assignee || "Unassigned")}">${assigneeHTML(t)}</span>${priorityHTML(t)}${t.due ? `<span class="sr-only">Due </span>${dueHTML(t)}` : ""}</span></div></article>`;
+  return `<article class="kanban-card" draggable="true" data-drag-task="${esc(t.id)}"><div class="card-top"><span class="task-type ${esc(t.type)}" role="img" aria-label="${esc(label(t.type))}" title="${esc(label(t.type))}">${icon(t.type)}</span>${showIds ? `<span class="task-id" title="${esc(t.source ? sourceLabel(t) : t.key || t.id)}">${esc(t.key || t.id)}</span>` : ""}<button class="task-title" aria-keyshortcuts="Alt+ArrowUp Alt+ArrowDown" aria-description="Alt + Up or Down reorders this card within its column." data-action="task-open" data-id="${esc(t.id)}">${esc(t.title)}</button></div><div class="card-bottom"><span class="field-box" ${fieldBoxStyle(state, t.priority)}><span class="kanban-assignee" role="img" aria-label="Assignee: ${esc(t.assignee || "Unassigned")}" title="${esc(t.assignee || "Unassigned")}">${assigneeHTML(t)}</span>${priorityHTML(t)}${t.due ? `<span class="sr-only">Due </span>${dueHTML(t)}` : ""}</span></div></article>`;
 }
 function kanbanView(tasks) {
   const showIds = storage.get(`kanban-show-ids:${state.project.id}`, false) === true;
@@ -1491,7 +1493,7 @@ async function restoreNavigation(entry, stillCurrent = () => true) {
   state.navigation++;
   try {
     if (!(await features.flushTask())) {
-      toast("Finish saving this task before leaving it.", true);
+      toast("Finish saving this card before leaving it.", true);
       return false;
     }
     await boardQueue;
@@ -1677,7 +1679,7 @@ function projectFormHTML(edit = false) {
         default_view: "list",
         organisation: state.organisation.id,
       };
-  return `<form id="project-form" data-edit="${edit}" data-revision="${esc(p.revision || "")}">${edit ? "" : dialogHead("A fresh page for a new project")}<div class="dialog-body"><div class="form-error hidden" role="alert"></div><label class="field">Project name<input name="title" value="${esc(p.title)}" placeholder="What are we working on?" maxlength="300" required autofocus></label><label class="field">Project key<input name="key" value="${esc(p.key || "")}" placeholder="e.g. WEB" pattern="[A-Za-z][A-Za-z0-9]{1,11}" maxlength="12" ${edit ? "required" : ""}><span class="field-hint">Tasks use IDs such as WEB-1. Leave blank when creating a project to generate a key.</span></label><label class="field">Organisation<select name="organisation" required>${state.organisations.map((o) => `<option value="${esc(o.id)}" ${o.id === p.organisation ? "selected" : ""}>${esc(o.title)}</option>`).join("")}</select>${edit ? '<span class="field-hint">Changing this moves the project, including its tasks and canvases, to the selected organisation.</span>' : ""}</label><label class="field">A few words about it<textarea name="body" rows="3" placeholder="The idea, the intention, the possibilities…">${esc(p.body)}</textarea></label><div class="field-row"><div class="field">Project colour${colorPicker({ label: "Project colour", value: p.color })}</div>${edit ? `<label class="field">Default view<select name="default_view">${options(views, p.default_view === "drawing" ? "board" : p.default_view, viewLabels)}</select></label>` : ""}</div><p>Projects live in your vault as folders. Every task is a Markdown file you can open in Obsidian.</p></div><div class="dialog-foot"><button type="button" class="button" data-action="${edit ? "settings-close" : "dialog-close"}">${edit ? "Back to project" : "Cancel"}</button><button class="button primary" type="submit">${edit ? "Save project" : "Create project"} ${icon("arrow")}</button></div></form>`;
+  return `<form id="project-form" data-edit="${edit}" data-revision="${esc(p.revision || "")}">${edit ? "" : dialogHead("A fresh page for a new project")}<div class="dialog-body"><div class="form-error hidden" role="alert"></div><label class="field">Project name<input name="title" value="${esc(p.title)}" placeholder="What are we working on?" maxlength="300" required autofocus></label><label class="field">Project key<input name="key" value="${esc(p.key || "")}" placeholder="e.g. WEB" pattern="[A-Za-z][A-Za-z0-9]{1,11}" maxlength="12" ${edit ? "required" : ""}><span class="field-hint">Cards use IDs such as WEB-1. Leave blank when creating a project to generate a key.</span></label><label class="field">Organisation<select name="organisation" required>${state.organisations.map((o) => `<option value="${esc(o.id)}" ${o.id === p.organisation ? "selected" : ""}>${esc(o.title)}</option>`).join("")}</select>${edit ? '<span class="field-hint">Changing this moves the project, including its cards and canvases, to the selected organisation.</span>' : ""}</label><label class="field">A few words about it<textarea name="body" rows="3" placeholder="The idea, the intention, the possibilities…">${esc(p.body)}</textarea></label><div class="field-row"><div class="field">Project colour${colorPicker({ label: "Project colour", value: p.color })}</div>${edit ? `<label class="field">Default view<select name="default_view">${options(views, p.default_view === "drawing" ? "board" : p.default_view, viewLabels)}</select></label>` : ""}</div><p>Projects live in your vault as folders. Every card is a Markdown file you can open in Obsidian.</p></div><div class="dialog-foot"><button type="button" class="button" data-action="${edit ? "settings-close" : "dialog-close"}">${edit ? "Back to project" : "Cancel"}</button><button class="button primary" type="submit">${edit ? "Save project" : "Create project"} ${icon("arrow")}</button></div></form>`;
 }
 function projectDialog(edit = false) {
   if (!canNavigate()) return;
@@ -1740,16 +1742,16 @@ function taskDialog(id = null, defaults = {}, replace = false) {
     status: `<label class="field"><span class="sr-only">Status</span><select name="status" aria-label="Status" ${taskColorAttributes(state, "status", t.status)}>${options(id ? nextStatuses(state.config, t.status) : statuses, t.status, statusNames)}</select></label>`,
     assignee: `<label class="field task-assignee-field"><span class="sr-only">Assignee</span><span class="task-assignee-choice"><span data-assignee-avatar>${assigneeHTML(t, true)}</span><select name="assignee" aria-label="Assignee" ${taskColorAttributes(state, "assignee", t.assignee)} ${assigneeHint(state) ? 'aria-describedby="task-assignee-help"' : ""}>${assigneeOptions(state, t.assignee, esc)}</select></span></label>`,
   };
-  const html = `<dialog class="dialog task-dialog" aria-label="Task editor"><form id="task-form" class="${id ? "task-edit-form" : "task-create-form"}" data-board="${esc(!id && ["board", "drawing"].includes(state.view) ? state.selectedBoard : "")}" data-draft-node="${esc(t.draftNode || "")}" data-id="${esc(id || "")}" data-revision="${esc(t.revision || "")}">
+  const html = `<dialog class="dialog task-dialog" aria-label="Card editor"><form id="task-form" class="${id ? "task-edit-form" : "task-create-form"}" data-board="${esc(!id && ["board", "drawing"].includes(state.view) ? state.selectedBoard : "")}" data-draft-node="${esc(t.draftNode || "")}" data-id="${esc(id || "")}" data-revision="${esc(t.revision || "")}">
     <div class="dialog-head task-editor-head"><div class="task-editor-header-row"><div class="task-identity-row">
       ${picker(
         "type",
-        "Task type",
+        "Card type",
         t.type,
         types.map((value) => ({ value, label: label(value), icon: value })),
         true,
       )}
-    </div>${id ? `<div class="task-editor-actions" role="group" aria-label="Task actions"><button type="button" class="icon-button danger" data-action="task-delete" data-id="${esc(id)}" aria-label="Delete task" title="Delete task">${icon("trash")}</button><button type="button" class="icon-button" data-feature="task-duplicate" aria-label="Duplicate task" title="Duplicate task">${icon("duplicate")}</button><button type="button" class="icon-button" data-feature="task-archive" aria-label="${t.archived ? "Unarchive task" : "Archive task"}" title="${t.archived ? "Unarchive task" : "Archive task"}">${icon("archive")}</button><button type="button" class="icon-button" data-feature="task-history" aria-expanded="false" aria-label="Version history" title="Version history">${icon("clock")}</button><button type="button" class="icon-button" data-feature="task-comments" aria-expanded="false" aria-label="Task comments" title="Comments">${icon("comment")}</button></div>` : isDraft ? `<div class="task-editor-actions" role="group" aria-label="Draft actions"><button type="button" class="icon-button" data-feature="draft-finalise" aria-label="Finalise task" title="Finalise task">${icon("task")}</button></div>` : ""}<button type="button" class="icon-button" data-action="dialog-close" aria-label="Close dialog">${icon("close")}</button></div><div class="task-title-row"><input class="title-input" name="title" aria-label="Task title" value="${esc(t.title)}" placeholder="Task title" required maxlength="300" autofocus>${t.key || id ? `<span class="task-id task-key" title="${esc(t.key || id)}">${esc(t.key || id)}</span>` : isDraft ? '<span class="task-id task-key">Draft</span>' : ""}${id ? bookmarks.button("card", state.project.id, id) : ""}</div></div>
+    </div>${id ? `<div class="task-editor-actions" role="group" aria-label="Card actions"><button type="button" class="icon-button danger" data-action="task-delete" data-id="${esc(id)}" aria-label="Delete card" title="Delete card">${icon("trash")}</button><button type="button" class="icon-button" data-feature="task-duplicate" aria-label="Duplicate card" title="Duplicate card">${icon("duplicate")}</button><button type="button" class="icon-button" data-feature="task-archive" aria-label="${t.archived ? "Unarchive card" : "Archive card"}" title="${t.archived ? "Unarchive card" : "Archive card"}">${icon("archive")}</button><button type="button" class="icon-button" data-feature="task-history" aria-expanded="false" aria-label="Version history" title="Version history">${icon("clock")}</button><button type="button" class="icon-button" data-feature="task-comments" aria-expanded="false" aria-label="Card comments" title="Comments">${icon("comment")}</button></div>` : isDraft ? `<div class="task-editor-actions" role="group" aria-label="Draft actions"><button type="button" class="icon-button" data-feature="draft-finalise" aria-label="Finalise card" title="Finalise card">${icon("task")}</button></div>` : ""}<button type="button" class="icon-button" data-action="dialog-close" aria-label="Close dialog">${icon("close")}</button></div><div class="task-title-row"><input class="title-input" name="title" aria-label="Card title" value="${esc(t.title)}" placeholder="Card title" required maxlength="300" autofocus>${t.key || id ? `<span class="task-id task-key" title="${esc(t.key || id)}">${esc(t.key || id)}</span>` : isDraft ? '<span class="task-id task-key">Draft</span>' : ""}${id ? bookmarks.button("card", state.project.id, id) : ""}</div></div>
     <div class="task-editor-content"><div class="dialog-body"><div class="form-error hidden" role="alert"></div>
       <div class="task-metadata"><div class="task-metadata-main"><div class="task-fields field-box" ${fieldBoxStyle(state, t.priority)}>${metadata.assignee}${metadata.status}${metadata.priority}</div><div class="field task-dates"><span class="sr-only">Dates</span><div class="task-date-range" role="group" aria-label="Start and due dates"><input type="date" name="start" aria-label="Start date" title="Start date" value="${esc(t.start || "")}"><span aria-hidden="true">→</span><input type="date" name="due" aria-label="Due date" title="Due date" value="${esc(t.due || "")}"></div></div></div></div>
       ${assigneeHint(state) ? `<p id="task-assignee-help" class="sr-only">${esc(assigneeHint(state))}</p>` : ""}
@@ -1761,7 +1763,7 @@ function taskDialog(id = null, defaults = {}, replace = false) {
       ${(t.related_records || []).map(record => `<input type="hidden" name="related_records" value="${esc(record)}">`).join("")}
       ${(t.documents || []).map(document => `<input type="hidden" name="documents" value="${esc(document)}">`).join("")}
       </div>
-      <aside class="task-history-panel" aria-label="Task version history" hidden></aside></div>
+      <aside class="task-history-panel" aria-label="Card version history" hidden></aside></div>
     <div class="dialog-foot task-editor-foot">${id || isDraft ? '<span class="task-autosave-status" data-autosave-status role="status" aria-live="polite">Saved automatically</span>' : `<div class="task-create-actions"><label class="create-another"><input type="checkbox" name="createAnother" ${t.createAnother ? "checked" : ""}>Create another</label><button class="button primary" type="submit">Create card</button></div>`}</div></form></dialog>`;
   if (replace && $(".task-dialog")) {
     const template = document.createElement("template");
@@ -1798,7 +1800,7 @@ async function openHelp(article = "start") {
 }
 async function patchTask(id, changes, rerender = true) {
   const t = task(id);
-  if (!t) throw new Error("Task no longer exists.");
+  if (!t) throw new Error("Card no longer exists.");
   if (changes.status && !canTransition(state.config, t.status, changes.status))
     throw new Error(transitionError(state.config, t.status, changes.status));
   const base = structuredClone(t);
@@ -1817,7 +1819,7 @@ function boardToolsHTML() {
     `<button type="button" class="${state.tool === name ? "active" : ""}" aria-pressed="${state.tool === name}" data-action="${action}" data-tool="${name}" title="${title}" aria-label="${title}">${icon(glyph)}</button>`;
   const groups = [
     ["Navigate", tool("cursor", "Select / move", "board-tool") + tool("hand", "Pan canvas", "board-tool") + `<button type="button" data-pro="search-toggle" aria-label="Search board" title="Search board (Ctrl / ⌘ F)" aria-expanded="false" aria-controls="canvas-search-panel">${icon("search")}</button><button type="button" data-pro="outline" aria-label="Frames" title="Frames and layers" aria-expanded="false" aria-controls="canvas-outline">${icon("list")}</button>`],
-    ["Tasks", `<button type="button" data-action="board-task" aria-label="Project tasks" title="Project tasks" aria-expanded="${!!state.boardTaskPanel}" aria-controls="board-task-panel">${icon("task")}</button><button type="button" data-feature="project-frame-add" data-tool="project-frame" title="Project frame" aria-label="Add Project frame">${icon("project-frame")}</button><button type="button" data-pro="query-add" aria-label="Live task view" title="Live task view">${icon("table")}</button>`],
+    ["Tasks", `<button type="button" data-action="board-task" aria-label="Project cards" title="Project cards" aria-expanded="${!!state.boardTaskPanel}" aria-controls="board-task-panel">${icon("task")}</button><button type="button" data-feature="project-frame-add" data-tool="project-frame" title="Project frame" aria-label="Add Project frame">${icon("project-frame")}</button><button type="button" data-pro="query-add" aria-label="Live card view" title="Live card view">${icon("table")}</button>`],
     ["Create", tool("sticky", "Add sticky note") + tool("text", "Add text") + tool("shape", "Add shape") + `<button type="button" data-feature="image-add" aria-label="Add images or GIFs" title="Images / GIFs · PNG, JPG, WebP or GIF · Up to 10 MB each">${icon("image")}</button><button type="button" data-feature="draw-tool" data-tool="draw" aria-label="Pen" title="Pen (P)">${icon("pencil")}</button><details class="board-menu" data-board-menu="insert"><summary class="icon-summary" aria-label="Insert" title="Insert">${icon("plus")}</summary><div class="board-menu-panel"><button type="button" data-pro="note-add" aria-label="Live note">${icon("documents")}<span>Live note</span></button><button type="button" data-pro="templates" aria-label="Templates">${icon("duplicate")}<span>Templates</span></button><button type="button" data-layout-tool="bulk-notes" aria-label="Bulk notes">${icon("sticky")}<span>Bulk notes</span></button></div></details>`],
     ["Arrange", `<button type="button" data-feature="frame-add" data-tool="frame" title="Frame (F)" aria-label="Draw frame">${icon("frame")}</button>` + tool("grid", "Add grid", "board-add", "table") + tool("connect", "Connect two objects", "board-tool")],
   ];
@@ -1830,12 +1832,12 @@ function boardToolsHTML() {
 function boardView() {
   const b = board();
   if (!b)
-    return `<div class="empty">${icon("board")}<h2>A little room to think.</h2><p>Create a canvas to connect your tasks and ideas.</p><button class="button primary" data-action="board-new">Create a canvas</button></div>`;
+    return `<div class="empty">${icon("board")}<h2>A little room to think.</h2><p>Create a canvas to connect your cards and ideas.</p><button class="button primary" data-action="board-new">Create a canvas</button></div>`;
   return `<div class="canvas ${state.tool === "hand" ? "pan-mode" : state.tool === "connect" ? "connect-mode" : ""}" id="canvas" tabindex="0" aria-label="Freeform project canvas. Use tools to add objects, drag to move them, and double-click to edit.">
     <div class="canvas-world" id="canvas-world"><svg class="canvas-lines" id="canvas-lines">${edgesHTML(b)}</svg>${features.canvasNodes(b).map(nodeHTML).join("")}</div>
     ${boardToolsHTML()}
     ${boardTaskPanelHTML()}${selectionHTML()}
-    ${!b.nodes.length ? '<div class="board-empty"><h3>Give your ideas a little room.</h3><p>Add notes, tasks, images or shapes.<br>Drop image files here to get started.</p></div>' : ""}</div>`;
+    ${!b.nodes.length ? '<div class="board-empty"><h3>Give your ideas a little room.</h3><p>Add notes, cards, images or shapes.<br>Drop image files here to get started.</p></div>' : ""}</div>`;
 }
 function selectionHTML() {
   return state.selectedEdge
@@ -1845,7 +1847,7 @@ function selectionHTML() {
 function nodeHTML(n) {
   const t = n.type === "task" ? task(n.task) : null;
   const availability = boardTaskState(n, t, state.taskAvailability);
-  return `<div class="board-node ${esc(visualNodeType(n))} ${isTaskNote(n) ? "task-as-note" : ""} ${n.id === state.selectedNode ? "selected" : ""}" data-node="${esc(n.id)}" tabindex="0" role="group" aria-label="${esc(n.type === "task" ? t?.title || "Missing task" : n.text || n.type)}" style="--node-text-align:${textAlignment(n)};left:${n.x}px;top:${n.y}px;width:${n.w}px;height:${n.h}px;${n.color && n.type !== "draw" ? `background:${safeColor(n.color)};` : ""}">${n.type === "task" && !t ? unavailableTaskHTML(n, availability, { esc, icon }) : isTaskNote(n) ? `<div class="node-text">${esc(t?.title || "Note unavailable")}</div>` : n.type === "task" ? `${t ? `${typeHTML(t)}<span class="task-title">${esc(t.title)}</span><div class="board-task-bottom"><span class="task-type"><span class="status-dot ${esc(t.status)}" ${taskColorAttributes(state, "status", t.status)}></span>${esc(statusNames[t.status])}</span>${assigneeHTML(t)}</div>` : '<span class="task-title">Task was removed</span><span class="field-hint">Remove this card from the canvas.</span>'}` : `<div class="node-text">${esc(n.text)}</div>`}</div>`;
+  return `<div class="board-node ${esc(visualNodeType(n))} ${isTaskNote(n) ? "task-as-note" : ""} ${n.id === state.selectedNode ? "selected" : ""}" data-node="${esc(n.id)}" tabindex="0" role="group" aria-label="${esc(n.type === "task" ? t?.title || "Missing card" : n.text || n.type)}" style="--node-text-align:${textAlignment(n)};left:${n.x}px;top:${n.y}px;width:${n.w}px;height:${n.h}px;${n.color && n.type !== "draw" ? `background:${safeColor(n.color)};` : ""}">${n.type === "task" && !t ? unavailableTaskHTML(n, availability, { esc, icon }) : isTaskNote(n) ? `<div class="node-text">${esc(t?.title || "Note unavailable")}</div>` : n.type === "task" ? `${t ? `${typeHTML(t)}<span class="task-title">${esc(t.title)}</span><div class="board-task-bottom"><span class="task-type"><span class="status-dot ${esc(t.status)}" ${taskColorAttributes(state, "status", t.status)}></span>${esc(statusNames[t.status])}</span>${assigneeHTML(t)}</div>` : '<span class="task-title">Card was removed</span><span class="field-hint">Remove this card from the canvas.</span>'}` : `<div class="node-text">${esc(n.text)}</div>`}</div>`;
 }
 function edgesHTML(b) {
   return features.canvasEdges(b);
@@ -2057,22 +2059,22 @@ function boardTaskPanelHTML() {
   const f = state.boardTaskFilters || {};
   const filter = (name, label, values) =>
     `<label class="field">${label}<select data-board-task-filter="${name}" aria-label="${label}"><option value="">All</option>${values.map(([v, text]) => `<option value="${esc(v)}" ${f[name] === v ? "selected" : ""}>${esc(text)}</option>`).join("")}</select></label>`;
-  return `<aside id="board-task-panel" class="canvas-panel board-task-panel" aria-label="Project tasks"><header><h3>Project tasks</h3><button type="button" class="icon-button" data-action="board-task-close" aria-label="Close project tasks">${icon("close")}</button></header><input type="search" id="board-task-search" aria-label="Search project tasks" placeholder="Search by ID or title…" value="${esc(f.search || "")}"><div class="board-task-filters">${filter(
+  return `<aside id="board-task-panel" class="canvas-panel board-task-panel" aria-label="Project cards"><header><h3>Project cards</h3><button type="button" class="icon-button" data-action="board-task-close" aria-label="Close project cards">${icon("close")}</button></header><input type="search" id="board-task-search" aria-label="Search project cards" placeholder="Search by ID or title…" value="${esc(f.search || "")}"><div class="board-task-filters">${filter(
     "status",
-    "Task status",
+    "Card status",
     state.config.statuses.map((s) => [s, statusNames[s] || label(s)]),
   )}${filter(
     "type",
     "Card type",
     state.config.types.map((t) => [t, label(t)]),
-  )}${filter("assignee", "Task assignee", [["__unassigned", "Unassigned"], ...[...new Set(state.tasks.map((t) => t.assignee).filter(Boolean))].map((a) => [a, a])])}${filter(
+  )}${filter("assignee", "Card assignee", [["__unassigned", "Unassigned"], ...[...new Set(state.tasks.map((t) => t.assignee).filter(Boolean))].map((a) => [a, a])])}${filter(
     "placement",
     "Board placement",
     [
       ["off", "Not on this board"],
       ["on", "On this board"],
     ],
-  )}</div><div class="board-task-results" aria-live="polite">${boardTaskResultsHTML()}</div><footer><button type="button" class="button primary" data-action="board-create-task">${icon("plus")}New project card</button><button type="button" class="button" data-action="board-create-draft">${icon("pencil")}New draft card</button><small>Drag a task onto the board, or click to place it. Cards share the project task.</small></footer></aside>`;
+  )}</div><div class="board-task-results" aria-live="polite">${boardTaskResultsHTML()}</div><footer><button type="button" class="button primary" data-action="board-create-task">${icon("plus")}New project card</button><button type="button" class="button" data-action="board-create-draft">${icon("pencil")}New draft card</button><small>Drag a card onto the board, or click to place it. It stays linked to the project card.</small></footer></aside>`;
 }
 function boardTaskResultsHTML() {
   const f = state.boardTaskFilters || {},
@@ -2095,7 +2097,7 @@ function boardTaskResultsHTML() {
           : t.assignee === f.assignee)) &&
       (!f.placement || current.has(t.id) === (f.placement === "on")),
   );
-  return `<p class="field-hint">${tasks.length} ${tasks.length === 1 ? "task" : "tasks"}</p><div class="task-picker-list">${tasks.map((t) => `<button type="button" class="board-pick" data-action="board-pick" data-id="${esc(t.id)}" aria-label="Add ${esc(t.key || "")} ${esc(t.title)} to board">${icon(t.type)}<span><small>${esc(t.key || t.id)} · ${esc(statusNames[t.status] || t.status)}</small><strong>${esc(t.title)}</strong><small>${current.has(t.id) ? "On board · Add another card" : esc(t.assignee || "Unassigned")}</small></span>${icon("plus")}</button>`).join("") || '<p id="task-picker-empty">No matching tasks.</p>'}</div>`;
+  return `<p class="field-hint">${tasks.length} ${tasks.length === 1 ? "card" : "cards"}</p><div class="task-picker-list">${tasks.map((t) => `<button type="button" class="board-pick" data-action="board-pick" data-id="${esc(t.id)}" aria-label="Add ${esc(t.key || "")} ${esc(t.title)} to board">${icon(t.type)}<span><small>${esc(t.key || t.id)} · ${esc(statusNames[t.status] || t.status)}</small><strong>${esc(t.title)}</strong><small>${current.has(t.id) ? "On board · Add another card" : esc(t.assignee || "Unassigned")}</small></span>${icon("plus")}</button>`).join("") || '<p id="task-picker-empty">No matching cards.</p>'}</div>`;
 }
 function toggleBoardTasks() {
   if (!board()) return;
@@ -2255,7 +2257,7 @@ document.addEventListener("click", async (event) => {
       case "task-delete":
         if (!(await features.flushTask())) return;
         if (
-          await confirmAction({ anchor: el, title: "Delete this task?", message: "Its Markdown file moves to the vault’s .trash folder.", confirmLabel: "Delete task", danger: true })
+          await confirmAction({ anchor: el, title: "Delete this card?", message: "Its Markdown file moves to the vault’s .trash folder.", confirmLabel: "Delete card", danger: true })
         ) {
           await api(route("tasks", id), {
             method: "DELETE",
@@ -2263,7 +2265,7 @@ document.addEventListener("click", async (event) => {
           });
           closeDialog(true);
           await refresh();
-          toast("Task moved to .trash.");
+          toast("Card moved to .trash.");
         }
         break;
       case "view": {
@@ -2576,7 +2578,7 @@ document.addEventListener("submit", async (event) => {
         if (wasPanel) state.boardTaskPanel = true;
         await refresh();
       }
-      toast(id ? "Task saved." : "One good idea, written down.");
+      toast(id ? "Card saved." : "One good idea, written down.");
     } else if (form.id === "node-form") {
       for (const key of ["x", "y", "w", "h"]) data[key] = Number(data[key]);
       const minimum = nodeMinimum(

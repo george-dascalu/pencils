@@ -585,7 +585,7 @@ export class MiroImport {
           if (error)
             throw new Problem(
               400,
-              `${error} Choose a task type allowed without a parent, or import draft cards.`,
+              `${error} Choose a card type allowed without a parent, or import draft cards.`,
             );
         }
       p.converted = converted;
@@ -647,7 +647,7 @@ export class MiroImport {
         },
         issues: converted.issues,
         limitations:
-          "Miro does not expose comments, editable pen strokes or native tables through this API. Some unsupported objects may not be returned at all. Fonts and line routing can differ. Cards use your selected task status and Medium priority.",
+          "Miro does not expose comments, editable pen strokes or native tables through this API. Some unsupported objects may not be returned at all. Fonts and line routing can differ. Cards use your selected card status and Medium priority.",
       };
     } finally {
       this.busy.delete(owner);

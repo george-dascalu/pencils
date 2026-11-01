@@ -57,9 +57,9 @@ export function relationshipChanges(
   const current = tasks.find((task) => task.id === id);
   const target = tasks.find((task) => task.id === targetId);
   if (!current || (!target && !remove))
-    throw Error("This task is no longer available.");
+    throw Error("This card is no longer available.");
   if (id === targetId && !remove)
-    throw Error("A task cannot be related to itself.");
+    throw Error("A card cannot be related to itself.");
   const listChange = (owner, field, value) => ({
     id: owner.id,
     changes: {
@@ -71,7 +71,7 @@ export function relationshipChanges(
   if (kind === "parent" || kind === "child") {
     const child = kind === "parent" ? current : target;
     const parent = remove ? null : kind === "parent" ? target : current;
-    if (!child) throw Error("This task is no longer available.");
+    if (!child) throw Error("This card is no longer available.");
     const error = hierarchyError(config, child, parent);
     if (error) throw Error(error);
     const seen = new Set([child.id]);
@@ -87,7 +87,7 @@ export function relationshipChanges(
   if (kind === "blocks" || kind === "blocked-by") {
     const dependant = kind === "blocks" ? target : current;
     const prerequisite = kind === "blocks" ? id : targetId;
-    if (!dependant) throw Error("This task is no longer available.");
+    if (!dependant) throw Error("This card is no longer available.");
     if (!remove && dependencyCycle(tasks, dependant.id, prerequisite))
       throw Error("This would create a blocking cycle.");
     return [listChange(dependant, "dependencies", prerequisite)];

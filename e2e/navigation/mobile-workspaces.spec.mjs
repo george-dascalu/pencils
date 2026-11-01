@@ -123,7 +123,7 @@ onDevices(["phone"], () => {
     const add = await category(page, "Add");
     await fits(page, add);
     // Add holds the task and create tools in the desktop bar's order, in one row that scrolls sideways.
-    expect(await labels(add)).toEqual(["Project tasks", "Add Project frame", "Live task view", "Add sticky note", "Add text", "Add shape", "Add images or GIFs", "Live note", "Templates", "Bulk notes", "Draw frame", "Add grid", "Connect two objects"]);
+    expect(await labels(add)).toEqual(["Project cards", "Add Project frame", "Live card view", "Add sticky note", "Add text", "Add shape", "Add images or GIFs", "Live note", "Templates", "Bulk notes", "Draw frame", "Add grid", "Connect two objects"]);
     expect(await add.evaluate((row) => ({
       lines: new Set([...row.querySelectorAll("button")].filter((b) => b.offsetParent).map((b) => Math.round(b.getBoundingClientRect().top))).size,
       scrolls: row.scrollWidth > row.clientWidth && getComputedStyle(row).overflowX === "auto",

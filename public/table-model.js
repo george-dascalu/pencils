@@ -12,7 +12,7 @@ export function tableFields(config) {
     ["status", "Status", "options"],
     ["priority", "Priority", "options"],
     ["assignee", "Assignee", "options"],
-    ["parent", "Parent task", "options"],
+    ["parent", "Parent card", "options"],
     ["start", "Start date", "date"],
     ["due", "Due date", "date"],
     ["estimate", "Estimate", "number"],

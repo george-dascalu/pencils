@@ -125,7 +125,7 @@ test("a linked task's title and notes edit in place together", async ({ page }) 
   await enter(page);
   await find(page, "task-a", "Write specification");
   await page.locator('[data-node="task-a"] .task-title').dblclick();
-  await page.getByRole("textbox", { name: "Task title", exact: true }).fill("A clearer task title");
+  await page.getByRole("textbox", { name: "Card title", exact: true }).fill("A clearer task title");
   await rich(page).fill("The task notes");
   await page.keyboard.press("Control+Enter");
   await poll(async () => (await snap()).tasks.find((t) => t.id === app.a.id).title).toBe("A clearer task title");

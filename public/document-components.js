@@ -461,7 +461,7 @@ export function editableDocumentComponent({ element, raw, from, kind, editor, re
       const pre = document.createElement("pre"); code = document.createElement("code");
       code.textContent = token.text; pre.append(code); element.append(pre);
     }
-    field(code, query ? "Task query" : diagram ? "Diagram code" : "Code block", { plain: true });
+    field(code, query ? "Card query" : diagram ? "Diagram code" : "Code block", { plain: true });
     // The fence's info string; its first word is the language.
     let info = token.lang || "";
     serialize = () => {

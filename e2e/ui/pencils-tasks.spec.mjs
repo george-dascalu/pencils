@@ -274,7 +274,7 @@ onDevices(["phone"], () => test("phone card page: icon-only pane switcher aligne
   expect(geometry.statusCarets, "status control shows no dropdown arrow").toBe(0);
   expect(geometry.statusBackground, "tinted selects draw no arrow").toBe(0);
   expect(geometry.group.border, "the actions form a bordered group").toBe("solid");
-  expect(geometry.group.labels).toEqual(["Duplicate task", "Archive task", "Delete task"]);
+  expect(geometry.group.labels).toEqual(["Duplicate card", "Archive card", "Delete card"]);
   expect(geometry.group.beforeClose, "the group sits right before Close").toBe("dialog-close");
   expect(Math.abs(geometry.group.closeLeft - geometry.group.groupRight - geometry.spacing), `Close keeps the editor's spacing from the group: ${JSON.stringify(geometry.group)}`).toBeLessThanOrEqual(1);
   expect(geometry.priorityWidth, "priority is as wide as the assignee").toBe(geometry.assigneeWidth);

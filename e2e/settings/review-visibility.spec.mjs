@@ -26,8 +26,8 @@ test("Timeline pages 200 tasks at a time and lists unplanned tasks on the last p
   await selectProjectView(page, "timeline");
   await page.locator(".timeline-row").first().waitFor();
   await expect(page.locator(".timeline-row")).toHaveCount(200);
-  await expect(page.locator(".timeline-page-summary")).toHaveText(/Page 1 of 2 · 206 tasks/);
-  await page.getByRole("button", { name: "Next tasks", exact: true }).click();
+  await expect(page.locator(".timeline-page-summary")).toHaveText(/Page 1 of 2 · 206 cards/);
+  await page.getByRole("button", { name: "Next cards", exact: true }).click();
   await expect(page.locator(".timeline-row")).toHaveCount(6);
   await expect(page.locator(".timeline-unplanned")).toHaveCount(1);
 });

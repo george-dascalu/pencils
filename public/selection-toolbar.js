@@ -149,7 +149,7 @@ export function selectionToolbar(
     );
     const extraActions =
       single && n.type === "query"
-        ? pro("query-edit", "Edit live task view", "table", locked)
+        ? pro("query-edit", "Edit live card view", "table", locked)
         : "";
     const more = extraActions
       ? menu("more", "More object actions", icon("more"), extraActions)
@@ -201,9 +201,9 @@ export function selectionToolbar(
         ? menu(
             "convert",
             "Convert " +
-              (n.type === "draft" ? "Draft task" : note ? "Note" : "Task"),
-            `${icon(n.type === "draft" ? "pencil" : note ? "sticky" : "task")}<span>${n.type === "draft" ? "Draft task" : note ? "Note" : "Task"}</span>`,
-            `${pro("convert", n.type === "draft" ? "Finalise task" : n.type === "sticky" ? "Draft task" : "Task", "task", locked || (!note && n.type !== "draft"))}${pro("convert-note", "Note", "sticky", locked || note)}<p class="conversion-hint">${n.type === "draft" ? "Finalise this draft to create a project task and assign its ID." : n.type === "sticky" ? "Turn this note into a draft task. Finalise it when ready." : "Task details stay linked when shown as a note."}</p>`,
+              (n.type === "draft" ? "Draft card" : note ? "Note" : "Task"),
+            `${icon(n.type === "draft" ? "pencil" : note ? "sticky" : "task")}<span>${n.type === "draft" ? "Draft card" : note ? "Note" : "Card"}</span>`,
+            `${pro("convert", n.type === "draft" ? "Finalise card" : n.type === "sticky" ? "Draft card" : "Task", "task", locked || (!note && n.type !== "draft"))}${pro("convert-note", "Note", "sticky", locked || note)}<p class="conversion-hint">${n.type === "draft" ? "Finalise this draft to create a project card and assign its ID." : n.type === "sticky" ? "Turn this note into a draft card. Finalise it when ready." : "Card details stay linked when shown as a note."}</p>`,
             locked,
           )
         : `<span class="selection-kind" title="${nodes.length} selected">${icon(single ? { grid: "table", frame: "frame", query: "table", draw: "pencil", image: "image" }[n.type] || n.type : "group")}<span>${single ? esc((n.projectFrame ? "Project frame" : { sticky: "Note", query: "Live view", draw: "Drawing" }[n.type] || n.type).replace(/^./, (c) => c.toUpperCase())) : `${nodes.length} objects`}</span></span>`;

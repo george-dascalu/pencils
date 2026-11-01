@@ -107,7 +107,7 @@ export function installIdentity(Store) {
         )
           throw new Problem(
             422,
-            "Task identity registry is invalid. Restore identity.md from history.",
+            "Card identity registry is invalid. Restore identity.md from history.",
           );
         const { items } = await this.children(project, "tasks");
         const records = [...items].sort((a, b) => a.id < b.id ? -1 : a.id > b.id ? 1 : 0).map(task => ({
@@ -130,7 +130,7 @@ export function installIdentity(Store) {
         if (!Number.isSafeInteger(data.next))
           throw new Problem(
             409,
-            "This project has exhausted its task number range.",
+            "This project has exhausted its card number range.",
           );
         if (!ledger || JSON.stringify(data) !== JSON.stringify(ledger.data)) {
           await this.autoBackup();

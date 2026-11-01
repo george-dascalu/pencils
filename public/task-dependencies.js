@@ -6,8 +6,8 @@ export function taskDependencies(ctx, form, current) {
   const { state, esc, icon } = ctx;
   const host = document.createElement("section");
   host.className = "task-dependencies";
-  host.setAttribute("aria-label", "Task dependencies");
-  host.innerHTML = `<h3>Dependencies</h3><button type="button" class="button small" data-feature="schedule-preview">Review schedule</button><p class="field-hint">Blocked by — these tasks must finish first.</p><select name="dependencies" multiple hidden aria-label="Prerequisite tasks">${state.tasks
+  host.setAttribute("aria-label", "Card dependencies");
+  host.innerHTML = `<h3>Dependencies</h3><button type="button" class="button small" data-feature="schedule-preview">Review schedule</button><p class="field-hint">Blocked by — these cards must finish first.</p><select name="dependencies" multiple hidden aria-label="Prerequisite cards">${state.tasks
     .filter((task) => task.id !== current.id)
     .map(
       (task) =>
@@ -15,7 +15,7 @@ export function taskDependencies(ctx, form, current) {
     )
     .join(
       "",
-    )}</select><div data-prerequisites></div><details class="dependency-picker"><summary>Add prerequisite</summary><input type="search" aria-label="Search prerequisites" placeholder="Search by task ID or title…"><div data-dependency-options></div></details><div data-dependants></div>`;
+    )}</select><div data-prerequisites></div><details class="dependency-picker"><summary>Add prerequisite</summary><input type="search" aria-label="Search prerequisites" placeholder="Search by card ID or title…"><div data-dependency-options></div></details><div data-dependants></div>`;
   form.querySelector(".task-parent-field").after(host);
   const select = host.querySelector("select");
   const search = host.querySelector("input");
@@ -49,7 +49,7 @@ export function taskDependencies(ctx, form, current) {
             current.id && dependencyCycle(state.tasks, current.id, task.id);
           return `<button type="button" class="dependency-row" data-dependency-add="${esc(task.id)}" ${cycle ? 'disabled title="Would create a dependency cycle"' : ""}>${detail(task)}${icon("plus")}${cycle ? "<small>Would create a cycle</small>" : ""}</button>`;
         })
-        .join("") || '<p class="field-hint">No matching tasks.</p>';
+        .join("") || '<p class="field-hint">No matching cards.</p>';
     if (options.length > 50)
       host
         .querySelector("[data-dependency-options]")
@@ -61,7 +61,7 @@ export function taskDependencies(ctx, form, current) {
       (task.dependencies || []).includes(current.id),
     );
     host.querySelector("[data-dependants]").innerHTML = dependants.length
-      ? `<p class="field-hint">Blocks — these tasks are waiting for this task.</p>${dependants.map((task) => `<div class="dependency-row">${detail(task)}</div>`).join("")}`
+      ? `<p class="field-hint">Blocks — these cards are waiting for this card.</p>${dependants.map((task) => `<div class="dependency-row">${detail(task)}</div>`).join("")}`
       : "";
   }
   search.addEventListener("input", (event) => {

@@ -16,7 +16,7 @@ const TYPES = [
   ["recent", "Recent", "clock", { w: 4, h: 6 }],
   ["visited", "Most visited", "activity", { w: 4, h: 6 }],
   ["web", "Web page", "external", { w: 6, h: 8 }],
-  ["tasks", "Task list", "task", { w: 6, h: 6 }],
+  ["tasks", "Card list", "task", { w: 6, h: 6 }],
   ["stat", "Stat", "status", { w: 3, h: 3 }],
   ["breakdown", "Breakdown", "table", { w: 4, h: 5 }],
   ["note", "Note", "text", { w: 6, h: 4 }],

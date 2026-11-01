@@ -38,8 +38,7 @@ onDevices(["phone"], () => test("views run behind the bottom bar and scroll thei
     }
     await expect.poll(() => endBottom(page, scroller, last, text), `${view}: the end scrolls above the bar`).toBeLessThanOrEqual(bar.y);
     if (view === "documents") {
-      const stats = await page.locator("[data-document-stats]").boundingBox();
-      expect(stats.y + stats.height, "the word count stays above the bar").toBeLessThanOrEqual(bar.y);
+      await expect(page.locator("[data-document-stats]"), "the word count is in Document tools, not over the text").toBeHidden();
     }
   }
 }));

@@ -2,7 +2,7 @@ import { reorderTasks } from "./task-order-model.js";
 import { tableResult } from "./table-model.js";
 
 export function taskReorderHandle(t, esc) {
-  return `<button type="button" class="task-reorder-handle" data-task-reorder="${esc(t.id)}" aria-label="Reorder ${esc(t.title)}" aria-keyshortcuts="Alt+ArrowUp Alt+ArrowDown" title="Drag to reorder. Alt + Up/Down moves this task." ><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 5h.01M15 5h.01M9 12h.01M15 12h.01M9 19h.01M15 19h.01"/></svg></button>`;
+  return `<button type="button" class="task-reorder-handle" data-task-reorder="${esc(t.id)}" aria-label="Reorder ${esc(t.title)}" aria-keyshortcuts="Alt+ArrowUp Alt+ArrowDown" title="Drag to reorder. Alt + Up/Down moves this card." ><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 5h.01M15 5h.01M9 12h.01M15 12h.01M9 19h.01M15 19h.01"/></svg></button>`;
 }
 
 export function taskReorder(ctx, tableTools) {
@@ -97,14 +97,14 @@ export function taskReorder(ctx, tableTools) {
       handle(id)?.focus({ preventScroll: true });
       handle(id)?.scrollIntoView({ block: "nearest", inline: "nearest" });
       settle(id, before);
-      const message = crossGroup ? "Task moved. Grouping cleared to keep your manual order." : "Task moved. Manual order selected.";
+      const message = crossGroup ? "Card moved. Grouping cleared to keep your manual order." : "Card moved. Manual order selected.";
       announce(message);
       if (crossGroup) toast(message);
       await Promise.all(pending);
       if (state.project?.id === project && changes.some(({ id }) => {
         const entry = sync.entries.get(route("tasks", id));
         return entry?.blocked || entry?.conflict;
-      })) toast("The task order could not be synced. Review the pending changes in save status.", true);
+      })) toast("The card order could not be synced. Review the pending changes in save status.", true);
     } catch (error) {
       toast(error.message, true);
     } finally {
@@ -173,7 +173,7 @@ export function taskReorder(ctx, tableTools) {
     if (state.view === "table") {
       d.ghost = document.createElement("div");
       d.ghost.className = "task-reorder-ghost";
-      d.ghost.textContent = task(d.id)?.title || "Task";
+      d.ghost.textContent = task(d.id)?.title || "Card";
     } else {
       const r = d.row.getBoundingClientRect();
       d.ghost = d.row.cloneNode(true);
@@ -193,7 +193,7 @@ export function taskReorder(ctx, tableTools) {
     for (const el of [d.ghost, d.marker]) el.setAttribute("aria-hidden", "true");
     (d.row.closest(".main") || document.body).append(d.ghost);
     document.body.append(d.marker);
-    announce(hierarchy() ? "Reorder among sibling tasks. Escape cancels." : "Drag to the desired position. Escape cancels.");
+    announce(hierarchy() ? "Reorder among sibling cards. Escape cancels." : "Drag to the desired position. Escape cancels.");
     paint();
     d.frame = requestAnimationFrame(tick);
   }

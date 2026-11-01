@@ -199,7 +199,7 @@ export function validateExtras(data, config) {
         (v) => typeof v !== "string" || !/^t-[a-zA-Z0-9_-]+$/.test(v),
       ))
   )
-    fail("Dependencies must be task identifiers.");
+    fail("Dependencies must be card identifiers.");
   if (
     data.related_records != null &&
     (!Array.isArray(data.related_records) ||
@@ -208,7 +208,7 @@ export function validateExtras(data, config) {
         (v) => typeof v !== "string" || !/^t-[a-zA-Z0-9_-]+$/.test(v),
       ))
   )
-    fail("Related records must be task identifiers.");
+    fail("Related records must be card identifiers.");
   if (
     data.documents != null &&
     (!Array.isArray(data.documents) ||

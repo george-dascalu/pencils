@@ -52,12 +52,12 @@ export function drawingView(ctx) {
           n.type === "task"
             ? ctx.task(n.task)?.title
             : n.title || n.text || n.type;
-        return `<g transform="translate(${n.x} ${n.y})"><rect width="${n.w}" height="${n.h}" rx="6" fill="${n.type === "sticky" ? "#f6e8a0" : "var(--surface)"}" stroke="var(--muted)"/><text x="12" y="24" fill="var(--ink)" font-size="16">${esc(String(title || "Task").slice(0, Math.max(5, Math.floor(n.w / 10))))}</text></g>`;
+        return `<g transform="translate(${n.x} ${n.y})"><rect width="${n.w}" height="${n.h}" rx="6" fill="${n.type === "sticky" ? "#f6e8a0" : "var(--surface)"}" stroke="var(--muted)"/><text x="12" y="24" fill="var(--ink)" font-size="16">${esc(String(title || "Card").slice(0, Math.max(5, Math.floor(n.w / 10))))}</text></g>`;
       })
       .join("")}</svg>`;
   }
   function gallery() {
-    return `<section class="drawing-gallery"><header><h2>Boards</h2><p>Tasks, notes, images and sketches together. Draw with Pencil; use fingers to select, move, pan and pinch.</p><div class="canvas-gallery-actions"><button class="button primary" data-action="board-new">${icon("plus")}New board</button><button class="button" data-drawing-action="recover">Local checkpoints</button><button class="button" data-drawing-action="offline">Prepare offline drawing</button><a class="button" href="/drawing-offline.html">${icon("external")}Open offline pad</a></div></header><div class="drawing-cards">${
+    return `<section class="drawing-gallery"><header><h2>Boards</h2><p>Cards, notes, images and sketches together. Draw with Pencil; use fingers to select, move, pan and pinch.</p><div class="canvas-gallery-actions"><button class="button primary" data-action="board-new">${icon("plus")}New board</button><button class="button" data-drawing-action="recover">Local checkpoints</button><button class="button" data-drawing-action="offline">Prepare offline drawing</button><a class="button" href="/drawing-offline.html">${icon("external")}Open offline pad</a></div></header><div class="drawing-cards">${
       canvases()
         .map(
           (b) =>
@@ -298,7 +298,7 @@ export function drawingView(ctx) {
         const link = `${location.origin}/#project/${state.project.id}/board/${id}`;
         try {
           await navigator.clipboard.writeText(link);
-          toast("Canvas link copied. Paste it in a task or board note.");
+          toast("Canvas link copied. Paste it in a card or board note.");
         } catch {
           // The browser refused the clipboard: the link to copy by hand, as Copy frame link does.
           showDialog(`<dialog class="dialog">${dialogHead("Board link")}<div class="dialog-body"><input aria-label="Board link" value="${esc(link)}" readonly></div></dialog>`, "board-link");
@@ -308,7 +308,7 @@ export function drawingView(ctx) {
       if (action === "link-task") {
         const b = ctx.board();
         showDialog(
-          `<dialog class="dialog"><form id="drawing-links">${dialogHead("Link canvas to tasks")}<div class="dialog-body">${state.tasks
+          `<dialog class="dialog"><form id="drawing-links">${dialogHead("Link canvas to cards")}<div class="dialog-body">${state.tasks
             .filter((t) => !t.archived)
             .map(
               (t) =>

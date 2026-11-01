@@ -69,7 +69,7 @@ export function placeholder(node) {
       sticky: "Add a note…",
       text: "Add text…",
       shape: "Add a label…",
-      query: "Live tasks",
+      query: "Live cards",
       image: "Add a caption…",
       draw: "Add a label…",
       link: "Add a link…",

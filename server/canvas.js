@@ -324,10 +324,10 @@ export function installCanvas(Store) {
       const from = board.data.nodes.find((n) => n.id === edge.from),
         to = board.data.nodes.find((n) => n.id === edge.to);
       if (from?.type !== "task" || to?.type !== "task")
-        throw new Problem(400, "A dependency requires two task cards.");
+        throw new Problem(400, "A dependency requires two cards.");
       const file = this.file(project, "tasks", to.task),
         target = await this.read(file);
-      if (from.task === to.task) throw new Problem(400, "A task cannot depend on itself.");
+      if (from.task === to.task) throw new Problem(400, "A card cannot depend on itself.");
       const dependencies = target.data.dependencies || [];
       if (dependencies.includes(from.task) === !input.remove)
         return this.public(target, file);

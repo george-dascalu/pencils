@@ -149,7 +149,7 @@ test("card editor comments use the same composer", async ({ page }) => {
   await open(page);
   await page.locator('[data-node="c2"] [data-pro="task-details"]').click();
   await page.locator("#task-form").waitFor();
-  await page.getByRole("button", { name: "Task comments", exact: true }).click();
+  await page.getByRole("button", { name: "Card comments", exact: true }).click();
   const form = page.locator(".task-comments-panel #board-comment-form");
   await form.locator("[data-comment-submit]").click({ trial: true });
   const c = await form.evaluate((form) => {

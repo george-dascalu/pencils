@@ -344,7 +344,7 @@ test("project settings save what they're given and refuse what they can't keep",
   await assert.rejects(update({ archived: "yes" }), { status: 400, message: /Archived must be true or false/ });
   const template = { name: "Bug", task: { title: "Bug" } }, sized = (length) => ({ name: "T", task: { title: "x".repeat(length - JSON.stringify({ name: "T", task: { title: "" } }).length) } });
   const bad = [template, Array(101).fill(template), [{ ...template, name: 5 }], [{ ...template, name: " " }], [{ ...template, name: "x".repeat(101) }], [{ name: "Bug" }], [sized(250_001)]];
-  for (const templates of bad) await assert.rejects(update({ templates }), { status: 400, message: /Invalid task templates/ }, JSON.stringify(templates).slice(0, 60));
+  for (const templates of bad) await assert.rejects(update({ templates }), { status: 400, message: /Invalid card templates/ }, JSON.stringify(templates).slice(0, 60));
   // Distinct objects, as JSON gives: YAML would write one object used twice as an alias.
   current = await update({ templates: [sized(250_000), { ...template, name: "x".repeat(100) }, ...Array.from({ length: 98 }, () => structuredClone(template))] });
   assert.equal(current.templates.length, 100);
@@ -356,7 +356,7 @@ test("project settings save what they're given and refuse what they can't keep",
   await fs.writeFile(path.join(root, document.file), "---\nid: [broken\n---\n");
   await assert.rejects(update({ document_folders: [] }), { status: 409, message: /unreadable documents/ });
   await fs.writeFile(path.join(root, task.file), "---\nid: [broken\n---\n");
-  await assert.rejects(update({ schema: { statuses: ["todo", "done"], done: ["done"] } }), { status: 409, message: /unreadable tasks/ });
+  await assert.rejects(update({ schema: { statuses: ["todo", "done"], done: ["done"] } }), { status: 409, message: /unreadable cards/ });
 });
 test("organisation and project files that don't match their names, and broken parent chains, are reported", async (t) => {
   const { root, store, project } = await workspace(t);

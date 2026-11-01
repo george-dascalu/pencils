@@ -41,7 +41,7 @@ export const tasksMethods = {
           (id) => typeof id !== "string" || !idPattern.test(id),
         ))
     )
-      throw new Problem(400, "Related records must be up to 200 task IDs.");
+      throw new Problem(400, "Related records must be up to 200 card IDs.");
     if (data.parent) validId(data.parent);
     if (data.milestone != null && typeof data.milestone !== "boolean")
       throw new Problem(400, "Invalid milestone.");
@@ -60,11 +60,11 @@ export const tasksMethods = {
     let current = parent;
     while (current) {
       if (seen.has(current))
-        throw new Problem(400, "A task cannot be its own ancestor.");
+        throw new Problem(400, "A card cannot be its own ancestor.");
       if (!map.has(current))
         throw new Problem(
           400,
-          "The parent task does not exist in this project.",
+          "The parent card does not exist in this project.",
         );
       seen.add(current);
       current = map.get(current).parent;
@@ -400,7 +400,7 @@ export const tasksMethods = {
     if (warnings.length)
       throw new Problem(
         409,
-        "Repair unreadable task files before removing tasks.",
+        "Repair unreadable card files before removing cards.",
       );
     if (items.some((t) => t.parent === id))
       throw new Problem(400, "Move or remove the subtasks first.");

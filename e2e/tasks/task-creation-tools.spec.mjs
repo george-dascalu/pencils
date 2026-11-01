@@ -85,7 +85,7 @@ test("the hierarchy editor refuses rules that existing cards break, fits a phone
   await page.locator(".hierarchy-matrix > summary").click();
   await page.locator('[data-hierarchy-parent="task"][data-hierarchy-child="bug"]').uncheck();
   await page.locator("#settings-panel [type=submit]").click();
-  await expect(page.getByText(/Move existing tasks before enforcing/)).toBeVisible();
+  await expect(page.getByText(/Move existing cards before enforcing/)).toBeVisible();
   await page.locator('[data-hierarchy-parent="task"][data-hierarchy-child="bug"]').check();
   await page.locator('[data-hierarchy-parent="bug"][data-hierarchy-child="task"]').uncheck();
   for (const width of [1440, 390]) {

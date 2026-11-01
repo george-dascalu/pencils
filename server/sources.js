@@ -834,7 +834,7 @@ export class Sources {
         if (current.fields.updated !== remote.version)
           throw new Problem(
             409,
-            "Remote task changed; sync and review before publishing.",
+            "Remote card changed; sync and review before publishing.",
           );
       }
       const issue = `${base}/issue/${encodeURIComponent(input.external_id || "")}`;

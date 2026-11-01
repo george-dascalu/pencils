@@ -115,7 +115,7 @@ test.describe("editing", () => {
     await expect(area(page).locator(".timeline-row")).toHaveCount(200);
     await area(page).evaluate((el) => (el.scrollTop = 400));
     expect(await area(page).evaluate((el) => el.scrollTop > 0), "Long timelines scroll inside the component").toBe(true);
-    await page.getByRole("button", { name: "Next tasks", exact: true }).click();
+    await page.getByRole("button", { name: "Next cards", exact: true }).click();
     await expect(area(page).locator(".timeline-row")).toHaveCount(3);
     await expect(area(page).locator(".timeline-unplanned")).toHaveCount(3);
     await fits(page);

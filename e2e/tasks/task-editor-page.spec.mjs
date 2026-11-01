@@ -80,7 +80,7 @@ onDevices(["phone", "ipad-portrait", "desktop"], () => {
     await expect(form(page).locator("[data-task-list-back]"), "Close is the only exit button").toHaveCount(0);
     expect(await inert(page)).toBe(phone);
     await expect(page.locator(".task-dialog")).toHaveAttribute("aria-modal", String(phone));
-    const close = () => tapOrClick(device, page.getByRole("button", { name: "Close task", exact: true }));
+    const close = () => tapOrClick(device, page.getByRole("button", { name: "Close card", exact: true }));
     await close();
     await expect(form(page)).toHaveCount(0);
     expect(await inert(page)).toBe(false);
@@ -132,11 +132,11 @@ onDevices(["phone"], () => {
     await expect(page.locator(".task-dialog")).toHaveAttribute("aria-modal", "false");
     await page.setViewportSize({ width, height });
     await page.waitForFunction(() => document.querySelector("#app").inert);
-    await page.getByRole("button", { name: "Close task", exact: true }).tap();
+    await page.getByRole("button", { name: "Close card", exact: true }).tap();
     await newCard(page, { tap: true });
     await form(page).waitFor();
     expect(await inert(page)).toBe(true);
-    await page.getByRole("button", { name: "Close new task", exact: true }).tap();
+    await page.getByRole("button", { name: "Close new card", exact: true }).tap();
     await expect(form(page)).toHaveCount(0);
     expect(await inert(page)).toBe(false);
   });

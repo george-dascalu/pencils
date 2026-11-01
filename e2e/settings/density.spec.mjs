@@ -35,7 +35,7 @@ onDevices(["desktop", "ipad"], () => test("a setting with a one-line control is 
   expect(description.control.width, "text areas keep the full width").toBeGreaterThan(description.body.width * 0.8);
   // The key's hint belongs to its row: the divider moves below the hint.
   const hint = page.locator("#settings-panel .dialog-body > .field-hint").first();
-  await expect(hint).toContainText("Task IDs look like");
+  await expect(hint).toContainText("Card IDs look like");
   await expect(page.locator('#settings-panel .field:has(> [name="key"])')).toHaveCSS("border-bottom-width", "0px");
   await expect(hint).toHaveCSS("border-bottom-width", "1px");
   // Fields without a one-line control, such as Task types, keep their stacked layout.

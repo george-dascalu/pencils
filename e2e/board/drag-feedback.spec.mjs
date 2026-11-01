@@ -114,7 +114,7 @@ test.describe("Kanban cards", () => {
     await page.locator("#task-form").waitFor();
     await expect(page.locator("#task-form")).toHaveAttribute("data-id", a.id);
     await expect(page.locator('#task-form [name="title"]')).toHaveValue(a.title);
-    await expect(page.getByRole("textbox", { name: "Task description", exact: true })).toBeVisible();
+    await expect(page.getByRole("textbox", { name: "Card description", exact: true })).toBeVisible();
     await expect(page.locator('#task-form [name="status"]')).toBeVisible();
     await expect(page.locator('[data-task-picker="priority"]')).toBeVisible();
     await page.locator('[data-action="dialog-close"]').click();

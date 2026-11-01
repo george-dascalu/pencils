@@ -52,9 +52,9 @@ export function kanbanDropChanges(task, status, field = "none", value = "") {
 }
 
 export function kanbanDropError(config, task, changes, tasks) {
-  if (!task) return "This task is no longer available.";
+  if (!task) return "This card is no longer available.";
   if (task.source && Object.keys(changes).length)
-    return "Change this task in its source, then sync.";
+    return "Change this card in its source, then sync.";
   if (changes.status && !canTransition(config, task.status, changes.status))
     return transitionError(config, task.status, changes.status);
   if (changes.type) {
