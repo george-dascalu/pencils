@@ -99,7 +99,7 @@ export const roadmap = [
   { id: "T94", title: "Phone board: full screen keeps the toolbar above the browser's bar", status: "done", requested: "2026-11-01T10:58", started: "2026-11-01T11:11", done: "2026-11-01T11:39", version: "0.20.114" },
   { id: "T95", title: "Sweep of every board control on phone, iPad and desktop", status: "done", requested: "2026-11-01T10:58", started: "2026-11-01T11:11", done: "2026-11-01T16:38", version: "0.20.115" },
   { id: "T96", title: "Debug page in Settings: failed API calls, errors and logs", status: "done", requested: "2026-11-01T11:27", started: "2026-11-01T17:04", done: "2026-11-01T17:09", version: "0.20.117" },
-  { id: "T97", title: "Better splash page with an animated loading circle that shows progress", status: "requested", requested: "2026-11-01T11:27", started: "", done: "", version: "" },
+  { id: "T97", title: "Better splash page with an animated loading circle that shows progress", status: "done", requested: "2026-11-01T11:27", started: "2026-11-01T17:18", done: "2026-11-01T17:20", version: "0.20.118" },
 ];
 
 // "31 Oct 20:05" for a date with a time, "31 Oct" for a bare date.

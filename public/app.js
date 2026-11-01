@@ -44,6 +44,7 @@ import { installColorPickers } from "./color-picker.js";
 import { installBookmarks } from "./bookmarks.js";
 import { boardFloor } from "./layout-tray.js";
 import { recordFailure, installDebugLog } from "./debug-log.js";
+import { bootProgress } from "./boot-progress.js";
 installDebugLog();
 import { listPanel } from "./list-panel.js";
 import { fieldOn, viewOn, cardsOn, markFieldsOff } from "./card-fields.js";
@@ -3115,8 +3116,11 @@ setInterval(async () => {
 }, 30000);
 async function boot() {
   try {
+    bootProgress(0.3, "Signing in…");
     if (!(await features.session())) return;
+    bootProgress(0.6, "Loading your workspace…");
     applyWorkspace(await fetchWorkspace());
+    bootProgress(0.85, "Opening your page…");
     const lastProject = state.projects.find(
       (p) => p.id === storage.get("project", null),
     );

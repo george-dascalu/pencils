@@ -2,6 +2,12 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.20.118 — 2026-11-01
+
+### Changed
+
+- The splash screen shows Pencils’ mark in a ring that fills as the app signs in, loads the workspace and opens your page, with the step it is on beneath it.
+
 ## 0.20.117 — 2026-11-01
 
 ### Added
