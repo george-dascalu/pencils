@@ -14,6 +14,7 @@ import { Auth } from "../auth.js";
 import { Sources, sourceAccess } from "../sources.js";
 import { MiroImport } from "../miro-import.js";
 import { Automations } from "../automations.js";
+import { AuditLog } from "../audit.js";
 import { RecordIndex } from "../record-index.js";
 import { Diagnostics } from "../diagnostics.js";
 import { Capture } from "../capture.js";
@@ -113,6 +114,7 @@ export function createServer(
     visits: new Visits(store, bookmarks),
     embed: (options as { home?: Record<string, unknown> }).home || {},
     rooms: new Map(),
+    audit: new AuditLog(store),
   };
   store.watch();
   services.sources.start();
@@ -323,7 +325,7 @@ export function createServer(
   route(["/api/visits"], homeRoutes, false, 64e3);
   route(["/api/bar"], barRoutes);
   route(
-    ["/api/projects", "/api/projects/:project", "/api/demo"],
+    ["/api/projects", "/api/projects/:project", "/api/demo", "/api/projects/:project/trash", "/api/projects/:project/audit"],
     projectsRoutes,
   );
   route(
@@ -406,7 +408,16 @@ export function createServer(
   });
   ready = Promise.resolve(app.ready());
   ready.catch((error) => app.server.emit("error", error));
+  // Trash keeps deleted items for 30 days and the audit log its entries for 365 (T92, T93): a
+  // minute after starting, then hourly.
+  const maintain = () => {
+    store.purgeTrash().catch((error: Error) => console.error(`Trash: ${error.message}`));
+    services.audit.purge();
+  };
+  const maintenance = [setTimeout(maintain, 60_000), setInterval(maintain, 3_600_000)];
+  for (const timer of maintenance) timer.unref();
   app.server.on("close", () => {
+    for (const timer of maintenance) clearInterval(timer);
     services.miro.close();
     services.sources.close();
     services.automations.close();

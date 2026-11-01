@@ -1,6 +1,6 @@
 import { Problem } from "../../problem.js";
 import { sourceAccess } from "../../sources.js";
-import { input } from "../helpers.js";
+import { input, audit, audited } from "../helpers.js";
 import type { RequestContext, Input } from "../contracts.js";
 
 export async function projectsRoutes(ctx: RequestContext): Promise<unknown> {
@@ -40,6 +40,21 @@ export async function projectsRoutes(ctx: RequestContext): Promise<unknown> {
     const data = await input(req);
     auth.require(user, data.organisation || "o-default", true);
     return json(201, await mutate(() => store.demo(data)));
+  }
+  // Deleted cards, documents and boards, restored within 30 days (owner request T92).
+  if (parts.length === 4 && parts[3] === "trash") {
+    if (method === "GET") return json(200, { items: await store.projectTrash(project) });
+    if (method === "POST") {
+      const data = await input(req);
+      const item: Input = await mutate(() => store.restoreProjectTrash(project, data.key));
+      await audit(ctx, { action: "restored", ...audited({ kind: item.kind, id: item.id, title: item.title, key: item.task_key }) });
+      return json(200, { ok: true });
+    }
+  }
+  // Every change to the project's cards, documents and boards over 365 days (owner request T93).
+  if (parts.length === 4 && parts[3] === "audit" && method === "GET") {
+    const before = Number(url.searchParams.get("before")) || Infinity;
+    return json(200, { entries: await ctx.audit.list(project, { before }) });
   }
   if (parts.length === 3) {
     if (method === "GET") return json(200, await store.snapshot(project));

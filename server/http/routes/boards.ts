@@ -1,5 +1,5 @@
 import { Problem } from "../../problem.js";
-import { input, displayName } from "../helpers.js";
+import { input, displayName, audit, audited } from "../helpers.js";
 import type { RequestContext } from "../contracts.js";
 
 export async function boardsRoutes(ctx: RequestContext): Promise<unknown> {
@@ -92,10 +92,9 @@ export async function boardsRoutes(ctx: RequestContext): Promise<unknown> {
       });
     if (action === "undo" && method === "POST") {
       const data = await input(req);
-      return json(
-        200,
-        await mutate(() => store.undoBoard(project, id, data, actor)),
-      );
+      const result = await mutate(() => store.undoBoard(project, id, data, actor));
+      await audit(ctx, { action: "edited", ...audited(await store.read(store.file(project, "boards", id)).catch(() => ({ data: { kind: "board", id } }))), fields: ["undo"] });
+      return json(200, result);
     }
     if (action === "dependency" && method === "POST") {
       const data = await input(req);

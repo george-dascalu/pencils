@@ -2,6 +2,17 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.20.116 — 2026-11-01
+
+### Added
+
+- Settings → Trash lists the project's deleted cards, documents and boards with when each is deleted for good, 30 days after it was deleted, and Restore brings one back. Items deleted before today count their 30 days from 1 November 2026. The personal space has its own Trash in Settings.
+- Settings → Audit log lists who created, changed, deleted or restored each card, document and board over the last 365 days, with the fields a change touched; filter it by kind or search by item or person.
+
+### Changed
+
+- Deleting a card, document or board says it stays in Trash for 30 days.
+
 ## 0.20.115 — 2026-11-01
 
 ### Changed

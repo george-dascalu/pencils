@@ -2272,7 +2272,7 @@ document.addEventListener("click", async (event) => {
       case "task-delete":
         if (!(await features.flushTask())) return;
         if (
-          await confirmAction({ anchor: el, title: "Delete this card?", message: "Its Markdown file moves to the vault’s .trash folder.", confirmLabel: "Delete card", danger: true })
+          await confirmAction({ anchor: el, title: "Delete this card?", message: "It stays in Settings → Trash for 30 days, then is deleted for good.", confirmLabel: "Delete card", danger: true })
         ) {
           await api(route("tasks", id), {
             method: "DELETE",
@@ -2280,7 +2280,7 @@ document.addEventListener("click", async (event) => {
           });
           closeDialog(true);
           await refresh();
-          toast("Card moved to .trash.");
+          toast("Card moved to Trash for 30 days.");
         }
         break;
       case "view": {

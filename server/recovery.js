@@ -12,6 +12,13 @@ import {
 } from "../public/backup-limits.js";
 
 const digest = (value) => createHash("sha256").update(value).digest("hex");
+// Deleted cards, documents and boards stay in Trash for 30 days (owner request T92); those deleted
+// before Trash arrived get their 30 days from then.
+export const TRASH_DAYS = 30;
+const TRASH_KINDS = ["task", "document", "board"],
+  DAY = 86_400_000,
+  TRASH_ARRIVED = Date.UTC(2026, 10, 1),
+  expires = (item) => Math.max(item.deleted, TRASH_ARRIVED) + TRASH_DAYS * DAY;
 const pack = (files) =>
   new Promise((resolve, reject) =>
     zip(files, { level: 6 }, (error, data) =>
@@ -429,6 +436,33 @@ export function installRecovery(Store) {
         }
       }
       return result.sort((a, b) => b.deleted - a.deleted);
+    },
+    // A project's deleted cards, documents and boards, newest first, with when each goes for good.
+    async projectTrash(project, now = Date.now()) {
+      return (await this.trash())
+        .filter((t) => t.project === project && TRASH_KINDS.includes(t.kind) && expires(t) > now)
+        .map((t) => ({ ...t, expires: expires(t) }));
+    },
+    async restoreProjectTrash(project, key) {
+      const item = (await this.projectTrash(project)).find((t) => t.key === key);
+      if (!item) throw new Problem(404, "This item is no longer in Trash.");
+      await this.restoreTrash(key);
+      return item;
+    },
+    // Deletes for good the cards, documents and boards deleted more than 30 days ago.
+    // Queued with the writes, so a restore can't race it, without a backup or journal entry.
+    purgeTrash(now = Date.now()) {
+      const run = this.queue.then(async () => {
+        let count = 0;
+        for (const item of await this.trash())
+          if (TRASH_KINDS.includes(item.kind) && expires(item) <= now) {
+            await fs.rm(path.join(this.root, ".trash", item.key), { force: true });
+            count++;
+          }
+        return count;
+      });
+      this.queue = run.catch(() => {});
+      return run;
     },
     async removeRecord(project, kind, id, revision) {
       const file = this.file(project, kind, id),

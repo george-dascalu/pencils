@@ -957,7 +957,7 @@ export function installFeatures(ctx) {
     if (
       action === "canvas-delete" &&
       board() &&
-      (await confirmAction({ anchor: el, title: "Delete this board?", message: `${board().title} moves to Trash.`, confirmLabel: "Delete board", danger: true }))
+      (await confirmAction({ anchor: el, title: "Delete this board?", message: `${board().title} stays in Settings → Trash for 30 days, then is deleted for good.`, confirmLabel: "Delete board", danger: true }))
     ) {
       await api(route("boards", board().id), {
         method: "DELETE",

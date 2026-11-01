@@ -115,7 +115,7 @@ export function projectDocuments(ctx) {
     const action = button.dataset.documentRowAction;
     if (action === "rename") renamePanel(button, doc);
     else if (action === "move") movePanel(button, doc);
-    else showPanel(button, "Delete document", `<p>Move this document to Trash?</p><button type="button" class="button danger" data-document-action="delete" data-document-id="${esc(doc.id)}">Move to Trash</button>`);
+    else showPanel(button, "Delete document", `<p>Move this document to Trash? It stays there for 30 days.</p><button type="button" class="button danger" data-document-action="delete" data-document-id="${esc(doc.id)}">Move to Trash</button>`);
   });
   function movePanel(button, doc = selected()) {
     const box = showPanel(button, "Move document", `<form><label class="field">Folder<select name="folder">${explorer.options(doc?.folder)}</select></label><div class="document-panel-actions"><button class="button primary">Move</button></div></form>`);
@@ -1044,7 +1044,7 @@ export function projectDocuments(ctx) {
       } else if (action === "rename") {
         renamePanel(form.querySelector('[data-document-action="tools"]'));
       } else if (action === "confirm-delete") {
-        showPanel(button, "Delete document", '<p>Move this document to Trash?</p><button type="button" class="button danger" data-document-action="delete">Move to Trash</button>');
+        showPanel(button, "Delete document", '<p>Move this document to Trash? It stays there for 30 days.</p><button type="button" class="button danger" data-document-action="delete">Move to Trash</button>');
       } else if (action === "insert") {
         const categories = panelCategories(state.project.personal ? ["card"] : []);
         showPanel(button, "Insert", `<div class="document-insert-options">${categories.map(([title, items]) => `<section aria-label="${title}">${items.map(([key,label,glyph]) => `<button type="button" class="document-panel-item" ${["attach", "card", "comment", "sketch"].includes(key) ? `data-document-action="${key}"` : `data-document-format="${key}"`}>${icon(glyph)}${label}</button>`).join("")}</section>`).join("")}</div>`, 280, { menu: true });

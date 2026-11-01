@@ -1,7 +1,19 @@
-import type { RequestContext } from "./contracts.js";
+import type { RequestContext, Input } from "./contracts.js";
 
 export async function input(req: RequestContext["req"]) {
   return req.pencilsInput || {};
+}
+// Adds a change to the project's audit log (owner request T93), with who made it and when.
+export function audit(ctx: RequestContext, entry: Input): Promise<void> {
+  // As board activity names people: the sign-in name, or the name the browser gives without sign-in.
+  const user = !ctx.auth.enabled ? displayName(ctx.req) : ctx.user?.name || ctx.user?.username;
+  return ctx.audit.record(ctx.project, { at: Date.now(), user: String(user), fields: [], ...entry });
+}
+// The audit log's name and title for a card, document or board record.
+export function audited(record: Input | null | undefined): Input {
+  const data = record?.data || record || {};
+  const kind = { task: "card", document: "document", board: "board" }[String(data.kind)] || String(data.kind);
+  return { kind, id: data.id, title: data.title || "", ...(data.key ? { key: data.key } : {}) };
 }
 export function displayName(req: RequestContext["req"]): string {
   try {

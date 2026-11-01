@@ -27,6 +27,7 @@ export interface Services {
   visits: LegacyService;
   embed: Record<string, unknown>;
   rooms: Map<string, Map<string, any>>;
+  audit: LegacyService;
 }
 export interface RequestContext extends Services {
   req: IncomingMessage & {

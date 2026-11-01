@@ -238,6 +238,29 @@
 .settings-action-row button {
   flex-shrink: 0;
 }
+/* Trash and Audit log (project-records.js): rows of the shared action row, as a list. */
+.settings-record-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.settings-record-list h3 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  font-size: var(--type-body, 14px);
+}
+.settings-record-list h3 > .icon {
+  flex: none;
+  color: var(--muted);
+}
+.settings-record-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 12px;
+}
 .settings-danger h3 {
   color: #a2473c;
 }

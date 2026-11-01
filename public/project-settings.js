@@ -5,6 +5,7 @@ import { CARD_FIELDS, VIEW_GROUPS, fieldOn, viewOn } from "./card-fields.js";
 import { projectTeamControls, projectPeople } from "./teams.js";
 import { priorityOptions, priorityLabel } from "./task-priority.js";
 import { taskFieldColor, priorityColors } from "./task-colors.js";
+import { projectRecords } from "./project-records.js";
 
 export const settingsPages = [
   [
@@ -71,6 +72,20 @@ export const settingsPages = [
     "Preview and manage rules that update project cards.",
   ],
   [
+    "trash",
+    "Trash",
+    "trash",
+    "Maintenance",
+    "Deleted cards, documents and boards. Restore them within 30 days; after that they are deleted for good.",
+  ],
+  [
+    "audit",
+    "Audit log",
+    "clock",
+    "Maintenance",
+    "Who created, changed, deleted or restored each card, document and board over the last 365 days.",
+  ],
+  [
     "diagnostics",
     "Diagnostics",
     "activity",
@@ -94,8 +109,8 @@ export const settingsPages = [
 ];
 // Without an open project, Settings shows only your own and the organisation's sections.
 const workspaceSections = new Set(["personal", "organisation"]);
-// A personal space has no project or organisation settings, only yours.
-const pagesFor = (project) => (project?.personal ? settingsPages.filter(([id]) => id === "personal") : project ? settingsPages : settingsPages.filter(([id]) => workspaceSections.has(id)));
+// A personal space has no project or organisation settings: only yours, and its Trash.
+const pagesFor = (project) => (project?.personal ? settingsPages.filter(([id]) => ["personal", "trash"].includes(id)) : project ? settingsPages : settingsPages.filter(([id]) => workspaceSections.has(id)));
 export const settingsPage = (id) =>
   settingsPages.find((p) => p[0] === id) || settingsPages[0];
 
@@ -190,6 +205,7 @@ export function projectSettings(ctx, { sources, automations, personal, organisat
     refresh,
     toast,
   } = ctx;
+  const records = projectRecords(ctx);
   let sequence = 0,
     railScroll = 0,
     pageScroll = 0,
@@ -249,7 +265,7 @@ export function projectSettings(ctx, { sources, automations, personal, organisat
     state.settingsSaveState = "";
     state.settingsKeep = false;
     state.view = "settings";
-    state.settingsSection = state.project.personal ? "personal" : settingsPage(section)[0];
+    state.settingsSection = state.project.personal && section !== "trash" ? "personal" : settingsPage(section)[0];
     state.settingsDetail = detail;
     renderApp();
     document
@@ -439,6 +455,10 @@ export function projectSettings(ctx, { sources, automations, personal, organisat
       }
       if (section === "diagnostics") {
         await diagnostics(host, valid);
+        return;
+      }
+      if (section === "trash" || section === "audit") {
+        await records[section](host, valid);
         return;
       }
       host.innerHTML =
