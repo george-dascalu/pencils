@@ -238,6 +238,77 @@
   border-top: 1px solid var(--line);
   padding-top: 20px;
 }
+.help-navigation > summary > .icon {
+  display: none;
+}
+/* Phones (owner request T40, 1 Nov 2026): Back, search and the guide list share one row above the
+   article; Back and the guide list are icons, named for screen readers, and the guides open as a
+   menu below their button. */
+@media (max-width: 600px) {
+  .help-page {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    gap: 16px 8px;
+    align-items: center;
+  }
+  .help-page-heading,
+  .help-layout,
+  .help-sidebar {
+    display: contents;
+  }
+  .help-page-heading > span,
+  :is([data-action="help-back"], .help-sidebar .field, .help-navigation > summary) > span {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+  .help-sidebar .field {
+    grid-column: 2;
+    grid-row: 1;
+  }
+  .help-sidebar #help-search-status,
+  .help-article {
+    grid-column: 1 / -1;
+  }
+  .help-navigation {
+    grid-column: 3;
+    grid-row: 1;
+    position: relative;
+  }
+  .help-navigation > summary {
+    display: grid;
+    place-items: center;
+    width: var(--control-height);
+    height: var(--control-height);
+    padding: 0;
+    border: 1px solid var(--line);
+    border-radius: var(--control-radius);
+    list-style: none;
+  }
+  .help-navigation > summary::-webkit-details-marker {
+    display: none;
+  }
+  .help-navigation > summary > .icon {
+    display: block;
+  }
+  .help-navigation > nav {
+    position: absolute;
+    z-index: 20;
+    top: calc(100% + 4px);
+    right: 0;
+    width: min(320px, calc(100vw - 32px));
+    max-height: 60dvh;
+    overflow-y: auto;
+    padding: var(--menu-panel-padding, 4px);
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-popover);
+    box-shadow: 0 8px 24px rgb(0 0 0 / 0.14);
+  }
+}
 @media (max-width: 800px) {
   .help-page {
     padding: 16px;

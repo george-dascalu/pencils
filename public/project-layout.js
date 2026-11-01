@@ -94,8 +94,16 @@ export function projectLayout(ctx) {
         if (select && !select.hidden) openSelectMenu?.(select, sortButton);
       });
     }
+    // A view's options that narrow its cards (Capacity's Scope and Team) count as filters while set.
+    const filtersSummary = toolbar.querySelector(':scope > details.board-menu[data-board-menu="filters"] > summary');
+    if (filtersSummary) filtersBadge(filtersSummary, Number(filtersSummary.dataset.count || 0) + document.querySelectorAll('#view-toolbar [data-filters-option="active"]').length);
     if (!narrow.matches) {
       if (sortButton) sort.after(sortButton);
+      // A view's less-used options (Capacity's Measure, Scope and Team) wait in Filters, keeping the
+      // toolbar to one row; phones list them in View options.
+      const filters = toolbar.querySelector(':scope > details.board-menu[data-board-menu="filters"] > .board-menu-panel');
+      const footer = filters?.querySelector(":scope > .menu-footer");
+      if (filters) for (const option of document.querySelectorAll("#view-toolbar .view-controls [data-filters-option]")) moveTo(option, (el) => (footer ? footer.before(el) : filters.append(el)));
       if (tabBar.matches) {
         trayLayouts();
         if (taskViews.includes(state.view)) topBarTools(toolbar, sortButton);
@@ -292,15 +300,20 @@ export function projectLayout(ctx) {
         f.archived,
         f.completion,
       ].filter(Boolean).length;
-      // An icon with a badge counting the active filters.
-      const summary = panel.parentElement.querySelector("summary"), name = `Filters${count ? ` (${count} active)` : ""}`;
+      const summary = panel.parentElement.querySelector("summary");
       summary.className = "icon-summary";
-      summary.setAttribute("aria-label", name);
-      summary.title = name;
-      summary.innerHTML = `${icon("filter")}${count ? `<span class="filter-count" aria-hidden="true">${count}</span>` : ""}`;
+      summary.dataset.count = count;
+      filtersBadge(summary, count);
     }
     restoreMenus();
     compactToolbar();
+  }
+  // Filters is an icon with a badge counting the active filters.
+  function filtersBadge(summary, count) {
+    const name = `Filters${count ? ` (${count} active)` : ""}`;
+    summary.setAttribute("aria-label", name);
+    summary.title = name;
+    summary.innerHTML = `${icon("filter")}${count ? `<span class="filter-count" aria-hidden="true">${count}</span>` : ""}`;
   }
   function render() {
     restoreToolbar();

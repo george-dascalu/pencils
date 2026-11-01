@@ -2,6 +2,15 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.20.112 — 2026-11-01
+
+### Changed
+
+- The board's tool rail shows icons only, and the board's empty-state text, zoom level and tool icons are easier to read in the light theme.
+- Capacity's toolbar keeps to one row: Measure, Scope and Team are in Filters on desktop and iPad.
+- Settings → You starts with Appearance, and its one-line settings sit on one row like the other sections.
+- On phones, Help puts Back, search and the guide list in one row above the article, and the guide list opens as a menu.
+
 ## 0.20.111 — 2026-11-01
 
 ### Changed

@@ -47,5 +47,6 @@ onDevices(["phone"], () => test("help opened from a project scrolls its end clea
   await help.waitFor();
   await help.evaluate((el) => { el.scrollTop = el.scrollHeight; });
   const bar = await page.locator(".topbar .tabs").boundingBox();
-  await expect.poll(async () => { const box = await help.locator(":scope > :last-child").boundingBox(); return box.y + box.height; }).toBeLessThanOrEqual(bar.y);
+  // The article ends the page (phones lay Help out as one grid since T80).
+  await expect.poll(async () => { const box = await help.locator(".help-article").boundingBox(); return box.y + box.height; }).toBeLessThanOrEqual(bar.y);
 }));

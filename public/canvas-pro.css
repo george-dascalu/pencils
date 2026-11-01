@@ -897,7 +897,7 @@ html.board-expanded-view .shell {
   }
   .phone-board-row .board-tool-group { flex-direction: row; gap: 2px; }
   .phone-board-row .board-tool-group + .board-tool-group { border-top: 0; padding-top: 0; border-left: 1px solid var(--line); padding-left: 4px; }
-  .phone-board-row :is(.board-tool-category, button > span) { display: none; }
+  .phone-board-row button > span { display: none; }
   .phone-board-dock [aria-expanded="true"],
   .board-tools:has(#phone-board-add .active) > [data-phone-category="add"],
   .board-tools:has(#phone-board-navigate [data-tool="hand"].active) > [data-phone-category="navigate"] { background: var(--surface-soft); color: var(--green); }

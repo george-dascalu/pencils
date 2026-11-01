@@ -4,7 +4,7 @@
 // Capacity view counts scheduled work against each person's limit, moves between weeks, fits
 // desktop and phone screens in both themes and opens tasks in the shared editor.
 // Part of the cross-browser release gate.
-import { test, expect, useApp } from "../fixtures.mjs";
+import { test, expect, onDevices, useApp } from "../fixtures.mjs";
 import { selectProjectView, selectSettingsPage, openSettingsPage, chooseProject, settingsSaved } from "../helpers/menu-controls.mjs";
 import { newCard } from "../helpers/new-card.mjs";
 
@@ -193,6 +193,36 @@ for (const width of [1440, 390]) {
     });
   });
 }
+
+// Owner request T40, 1 November 2026 (T77, audit B14): the toolbar keeps to one row, with the less-used
+// Measure, Scope and Team in Filters (phones list them in View options).
+onDevices(["desktop", "ipad"], () => test("Capacity's toolbar is one row, with Measure, Scope and Team in Filters", async ({ page, device }) => {
+  await page.goto(`${app.base}/#project/${app.capacity.project.id}/capacity`);
+  await page.locator(".capacity-summary").getByText("1 card scheduled", { exact: true }).waitFor();
+  const filters = page.locator('#view-toolbar details[data-board-menu="filters"]');
+  for (const id of ["capacity-unit", "capacity-scope", "capacity-team"]) await expect(filters.locator(`#${id}`), `${device}: ${id}`).toBeAttached();
+  expect((await page.locator("#view-toolbar").boundingBox()).height, `${device}: one row`).toBeLessThanOrEqual(56);
+  await filters.locator("summary").click();
+  await filters.locator("#capacity-unit").selectOption("hours");
+  await page.reload();
+  await expect(page.locator("#capacity-unit"), `${device}: the choice is kept`).toHaveValue("hours");
+  await page.locator('#view-toolbar details[data-board-menu="filters"] > summary').click();
+  await page.locator("#capacity-unit").selectOption("tasks");
+}));
+
+// Out of sight in Filters, Scope and Team count as filters, and Clear filters resets them.
+test("Capacity's Scope and Team count as filters, and Clear filters resets them", async ({ page }) => {
+  await page.goto(`${app.base}/#project/${app.capacity.project.id}/capacity`);
+  await page.locator(".capacity-summary").getByText("1 card scheduled", { exact: true }).waitFor();
+  const summary = page.locator('#view-toolbar details[data-board-menu="filters"] > summary');
+  await summary.click();
+  await page.locator("#capacity-team").selectOption("design");
+  await expect(summary).toHaveAttribute("aria-label", "Filters (1 active)");
+  await expect(summary.locator(".filter-count")).toHaveText("1");
+  await page.locator('#view-toolbar details[data-board-menu="filters"] [data-action="filters-reset"]').click();
+  await expect(page.locator("#capacity-team")).toHaveValue("");
+  await expect(summary).toHaveAttribute("aria-label", "Filters");
+});
 
 test("a capacity task opens in the shared task editor", { tag: "@gate" }, async ({ page }) => {
   await page.goto(`${app.base}/#project/${app.capacity.project.id}/capacity`);

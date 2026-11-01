@@ -141,6 +141,46 @@ test("a fresh standalone Help link does not select an unrelated project", { tag:
   await expect(page.locator(".tabs"), "A fresh standalone Help link does not select an unrelated project").toHaveCount(0);
 });
 
+// Owner request T40, 1 November 2026 (T80, audit B16): on phones Back, search and the guide list share
+// one row above the article, and the Roadmap's tables scroll inside their box.
+test.describe("phone help", () => {
+  test.use({ viewportSize: { width: 390, height: 844 } });
+  test("Back, search and the guide list share one row, and tables scroll inside their box", async ({ page }) => {
+    await page.goto(`${app.base}/#help/roadmap`);
+    await page.locator("#help-title").waitFor();
+    const centre = async (locator) => { const box = await locator.boundingBox(); return box.y + box.height / 2; };
+    const back = await centre(page.locator('[data-action="help-back"]'));
+    expect(Math.abs((await centre(page.locator("#help-search"))) - back), "search beside Back").toBeLessThanOrEqual(4);
+    expect(Math.abs((await centre(page.locator(".help-navigation > summary"))) - back), "the guide list beside Back").toBeLessThanOrEqual(4);
+    expect((await page.locator("#help-title").boundingBox()).y, "the article starts near the top").toBeLessThan(200);
+    await expect(page.locator('[data-action="help-back"]')).toHaveAccessibleName("Back");
+    await expect(page.locator("#help-search")).toHaveAccessibleName("Search help");
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), "no page overflow").toBe(true);
+    const table = page.locator(".help-table").first();
+    expect(await table.evaluate((el) => el.scrollWidth > el.clientWidth && getComputedStyle(el).overflowX === "auto"), "the table scrolls in its box").toBe(true);
+    // The guide list opens below its button, inside the window, and a guide opens from it.
+    await page.locator(".help-navigation > summary").click();
+    const list = page.locator("#help-navigation");
+    await expect(list).toBeVisible();
+    const box = await list.boundingBox();
+    expect(box.x >= 0 && box.x + box.width <= 390 && box.y + Math.min(box.height, 400) <= 844, JSON.stringify(box)).toBe(true);
+    // Like a menu, it closes with Escape or a press outside.
+    await page.keyboard.press("Escape");
+    await expect(list).toBeHidden();
+    await page.locator(".help-navigation > summary").click();
+    await page.locator("#help-title").click();
+    await expect(list).toBeHidden();
+    // A search with no match shows its message, not an empty list over it.
+    await page.locator("#help-search").fill("zznomatch");
+    await expect(page.locator("#help-search-status")).toBeVisible();
+    await expect(list).toBeHidden();
+    await page.locator("#help-search").fill("obsidian");
+    await expect(list).toBeVisible();
+    await list.locator('[data-id="obsidian"]').click();
+    await expect(page.locator("#help-title")).toHaveText("Obsidian");
+  });
+});
+
 for (const width of [1600, 390]) {
   test.describe(`${width}px wide`, () => {
     test.use({ viewportSize: { width, height: 900 } });

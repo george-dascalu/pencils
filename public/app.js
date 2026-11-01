@@ -1835,7 +1835,8 @@ function boardToolsHTML() {
   // Undo, redo and the view controls (capacity, zoom level, full screen) stay at the foot of the bar
   // while the tools above them scroll.
   const historyGroup = ["History", `<button type="button" data-action="board-undo" title="Undo" aria-label="Undo canvas change" ${state.history.length ? "" : "disabled"}>${icon("undo")}</button><button type="button" data-action="board-redo" title="Redo" aria-label="Redo canvas change" ${state.future.length ? "" : "disabled"}>${icon("redo")}</button>`];
-  const group = ([name, buttons]) => `<div class="board-tool-group" role="group" aria-label="${name}"><span class="board-tool-category" aria-hidden="true">${name}</span>${buttons}</div>`;
+  // Icons only (owner request T40, 1 Nov 2026): each group is named for screen readers.
+  const group = ([name, buttons]) => `<div class="board-tool-group" role="group" aria-label="${name}">${buttons}</div>`;
   return `<div class="board-tools" role="toolbar" aria-label="Canvas tools" aria-orientation="vertical" data-board="${esc(board().id)}"><div class="board-tools-scroll">${groups.map(group).join("")}</div><div class="board-controls">${group(historyGroup)}<details class="board-menu" data-board-menu="zoom"><summary class="icon-summary board-zoom" id="zoom-label" data-action="board-zoom" title="Zoom level: double-click to fit the board (Alt+1)" aria-keyshortcuts="Alt+1">${Math.round(state.camera.z * 100)}%</summary><div class="board-menu-panel"><button type="button" data-action="board-fit" title="Alt+1">${icon("fit")}Fit board</button><button type="button" data-action="board-actual-size" title="Ctrl / ⌘ 0">${icon("search")}100%</button><button type="button" data-board-display="minimap" aria-pressed="true" title="M">${icon("board")}Minimap</button><button type="button" data-board-display="grid" aria-pressed="true" title="G">${icon("table")}Background pattern</button></div></details></div></div>`;
 }
 function boardView() {

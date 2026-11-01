@@ -11,12 +11,12 @@ export function helpPageHTML(id, { esc, icon }) {
         '<div class="help-table" tabindex="0" role="region" aria-label="Reference table">',
       );
   return `<section class="help-page" aria-label="Help wiki">
-    <header class="help-page-heading"><button class="button small" data-action="help-back">${icon("arrow")}Back</button><span>Help centre</span></header>
+    <header class="help-page-heading"><button class="button small" data-action="help-back">${icon("arrow")}<span>Back</span></button><span>Help centre</span></header>
     <div class="help-layout">
       <aside class="help-sidebar">
-        <label class="field" for="help-search">Search help<input id="help-search" type="search" placeholder="Search guides…" autocomplete="off" aria-controls="help-navigation"></label>
+        <label class="field" for="help-search"><span>Search help</span><input id="help-search" type="search" placeholder="Search guides…" autocomplete="off" aria-controls="help-navigation"></label>
         <p id="help-search-status" class="field-hint" role="status" aria-live="polite"></p>
-        <details class="help-navigation" ${mainWidth() > 780 ? "open" : ""}><summary>Browse guides</summary><nav id="help-navigation" aria-label="Help articles">
+        <details class="help-navigation" ${mainWidth() > 780 ? "open" : ""}><summary>${icon("list")}<span>Browse guides</span></summary><nav id="help-navigation" aria-label="Help articles">
           ${[...new Set(helpArticles.map((a) => a.group))]
             .map(
               (group) =>
@@ -67,7 +67,21 @@ document.addEventListener("input", (event) => {
       ? `${count} matching ${count === 1 ? "guide" : "guides"}`
       : "No guides found. Try a provider name or “sync”."
     : "";
-  if (query) document.querySelector(".help-navigation").open = true;
+  // Phones show the guide list as a menu, so a search with no match shows only its message.
+  if (query) document.querySelector(".help-navigation").open = !!count || !phone();
+  else if (phone()) document.querySelector(".help-navigation").open = false;
+});
+const phone = () => matchMedia("(max-width: 600px)").matches;
+// On phones the guide list is a menu under its button: Escape or a press outside closes it.
+document.addEventListener("pointerdown", (event) => {
+  const list = document.querySelector(".help-navigation[open]");
+  if (list && phone() && !list.contains(event.target) && event.target.id !== "help-search") list.open = false;
+});
+document.addEventListener("keydown", (event) => {
+  const list = document.querySelector(".help-navigation[open]");
+  if (event.key !== "Escape" || !list || !phone() || event.target.id === "help-search") return;
+  list.open = false;
+  list.querySelector("summary").focus();
 });
 document.addEventListener("keydown", (event) => {
   if (event.target.id !== "help-search") return;

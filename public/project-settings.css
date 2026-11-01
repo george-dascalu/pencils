@@ -147,7 +147,7 @@
   #settings-panel .dialog-body > .field-row {
     display: block;
   }
-  :is(#settings-panel .dialog-body > .field, #settings-panel .dialog-body > .field-row > .field):has(> :where(input:not([type="checkbox"], [type="radio"], [type="range"], [type="hidden"]), select, .color-picker)) {
+  :is(#settings-panel .dialog-body > .field, #settings-panel .dialog-body > .field-row > .field, #settings-panel .appearance-group:not(.style-settings) .field):has(> :where(input:not([type="checkbox"], [type="radio"], [type="range"], [type="hidden"]), select, .color-picker)) {
     display: grid;
     grid-template-columns: minmax(0, 1fr) minmax(0, 320px);
     align-items: center;
@@ -156,12 +156,20 @@
     padding-block: 8px;
     border-bottom: 1px solid var(--line);
   }
-  :is(#settings-panel .dialog-body > .field, #settings-panel .dialog-body > .field-row > .field) > :is(input, select, .color-picker) {
+  :is(#settings-panel .dialog-body > .field, #settings-panel .dialog-body > .field-row > .field, #settings-panel .appearance-group:not(.style-settings) .field) > :is(input:not([type="checkbox"], [type="radio"], [type="range"], [type="hidden"]), select, .color-picker) {
     grid-column: 2;
     grid-row: 1;
   }
-  :is(#settings-panel .dialog-body > .field, #settings-panel .dialog-body > .field-row > .field) > .color-picker {
+  :is(#settings-panel .dialog-body > .field, #settings-panel .dialog-body > .field-row > .field, #settings-panel .appearance-group:not(.style-settings) .field) > .color-picker {
     justify-self: end;
+  }
+  /* In You, each of these is a row of its own. */
+  #settings-panel .bar-editor-add {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0;
+  }
+  #settings-panel .capture-make > .field {
+    flex: 1 1 100%;
   }
   /* A hint after a row belongs to it: the divider moves below the hint. */
   #settings-panel .dialog-body > .field:has(+ .field-hint) {
