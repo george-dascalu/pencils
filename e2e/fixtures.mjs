@@ -81,7 +81,11 @@ export const test = base.extend({
     // Mobile WebKit has no mouse wheel.
     if (context.browser()?.browserType().name() === "webkit" && devices[device].touch) page.mouse.wheel = () => test.skip(true, "mobile WebKit has no mouse wheel");
     const errors = [], checks = [];
-    page.on("pageerror", (error) => errors.push(error.message));
+    // WebKit reports a request that a reload cancels as "Fetch API cannot load <url> due to access
+    // control checks.", which Playwright passes on as a page error. The app's /api requests are
+    // same-origin, so that is never a real refusal.
+    const cancelled = /^\/{1,2}127\.0\.0\.1:\d+\/api\/\S* due to access control checks\.$/;
+    page.on("pageerror", (error) => { if (!cancelled.test(error.message)) errors.push(error.message); });
     // Browsers log each refused request as "Failed to load resource": refusals (4xx) are part of
     // many flows, and server errors are caught from the responses instead. Firefox also logs the
     // live-update stream that a reload interrupts or a stopped server refuses; the app reopens it.
