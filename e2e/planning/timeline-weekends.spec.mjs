@@ -29,7 +29,8 @@ const app = useApp(async (store) => {
 
 test.use({ viewportSize: { width: 1600, height: 1000 } });
 
-const tasks = async ({ project }) => (await app.store.snapshot(project.id)).tasks;
+// In a fixed order: a snapshot lists the files in the order the vault returns them.
+const tasks = async ({ project }) => (await app.store.snapshot(project.id)).tasks.sort((a, b) => a.id.localeCompare(b.id));
 const task = async (seed, id) => (await tasks(seed)).find((t) => t.id === id);
 const timeline = (page) => page.locator('#view-content > [data-timeline="project"]');
 // Since 0.19.31 the Timeline's own controls sit on the right of the toolbar row above 600px.
