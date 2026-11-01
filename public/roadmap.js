@@ -100,6 +100,9 @@ export const roadmap = [
   { id: "T95", title: "Sweep of every board control on phone, iPad and desktop", status: "done", requested: "2026-11-01T10:58", started: "2026-11-01T11:11", done: "2026-11-01T16:38", version: "0.20.115" },
   { id: "T96", title: "Debug page in Settings: failed API calls, errors and logs", status: "done", requested: "2026-11-01T11:27", started: "2026-11-01T17:04", done: "2026-11-01T17:09", version: "0.20.117" },
   { id: "T97", title: "Better splash page with an animated loading circle that shows progress", status: "done", requested: "2026-11-01T11:27", started: "2026-11-01T17:18", done: "2026-11-01T17:20", version: "0.20.118" },
+  { id: "T98", title: "Releases find the vault after its drive is mounted at a new path, or stop", status: "done", requested: "2026-11-01T18:12", started: "2026-11-01T18:12", done: "2026-11-01T18:13", version: "0.20.119" },
+  { id: "T99", title: "Remove the board sweep’s leftover agent worktree", status: "done", requested: "2026-11-01T18:12", started: "2026-11-01T18:12", done: "2026-11-01T18:13", version: "0.20.119" },
+  { id: "T100", title: "Project rules: checks after every .js edit, tests first, computed styles checked in every engine, one allowErrors regex, no top-level browser globals", status: "done", requested: "2026-11-01T18:12", started: "2026-11-01T18:12", done: "2026-11-01T18:13", version: "0.20.119" },
 ];
 
 // "31 Oct 20:05" for a date with a time, "31 Oct" for a bare date.

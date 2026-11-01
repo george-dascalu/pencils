@@ -1,5 +1,7 @@
 // Deploys the working tree to the running Pencils container (used by npm run release).
 import { spawn } from "node:child_process";
+import fs from "node:fs";
+import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 export const projectRoot = fileURLToPath(new URL("../", import.meta.url));
@@ -30,6 +32,24 @@ export function command(command, args, { cwd = projectRoot, log, timeout = 30 * 
   });
 }
 
+// The vault to mount. A drive remounted at another path leaves the recorded vault missing, and Docker
+// recreates it as an empty folder owned by root that Pencils cannot start in. When the recorded vault
+// was this repository's own vault/ at its old path (oldRoot), use the one beside the repository now.
+export function vaultSource(recorded, oldRoot, root) {
+  // Only a missing folder counts as gone: one the release cannot read may still hold the vault.
+  const holdsFiles = dir => {
+    try { return fs.readdirSync(dir).length > 0; }
+    catch (error) {
+      if (error.code === "ENOENT") return false;
+      throw new Error(`Cannot read the vault at ${dir} (${error.code}). Deployment stopped.`);
+    }
+  };
+  if (holdsFiles(recorded)) return recorded;
+  const own = path.join(root, "vault");
+  if (oldRoot && path.resolve(recorded) === path.join(oldRoot, "vault") && holdsFiles(own)) return own;
+  throw new Error(`The vault at ${recorded} is missing or empty. Mount its drive there, or deploy from the folder beside it. Deployment stopped.`);
+}
+
 export async function deploy(root, version, { log, signal, url, rollback = `pencils:rollback-request-${Date.now()}` } = {}) {
   let env = childEnvironment();
   const run = (cmd, args, opts = {}) => command(cmd, args, { cwd: root, log, signal, env, ...opts });
@@ -44,7 +64,8 @@ export async function deploy(root, version, { log, signal, url, rollback = `penc
   if (!vaultMount) throw new Error("Cannot identify the existing vault bind mount. Deployment stopped.");
   const binding = running.HostConfig.PortBindings["3000/tcp"]?.[0];
   const [uid, gid] = running.Config.User.split(":");
-  env = { ...env, ...production, VAULT_PATH: vaultMount.Source, OBSIDIAN_CONTAINER_ROOT: production.OBSIDIAN_ROOT || "", ...(binding ? { PORT: binding.HostPort, BIND_ADDRESS: binding.HostIp || "0.0.0.0" } : {}), ...(uid ? { LOCAL_UID: uid } : {}), ...(gid ? { LOCAL_GID: gid } : {}) };
+  const vault = vaultSource(vaultMount.Source, running.Config.Labels?.["com.docker.compose.project.working_dir"], root);
+  env = { ...env, ...production, VAULT_PATH: vault, OBSIDIAN_CONTAINER_ROOT: production.OBSIDIAN_ROOT || "", ...(binding ? { PORT: binding.HostPort, BIND_ADDRESS: binding.HostIp || "0.0.0.0" } : {}), ...(uid ? { LOCAL_UID: uid } : {}), ...(gid ? { LOCAL_GID: gid } : {}) };
   const compose = args => run("docker", ["compose", "--env-file", "/dev/null", ...args]);
   await run("docker", ["tag", image, rollback]);
   await compose(["build", "pencils"]);

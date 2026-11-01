@@ -2,6 +2,12 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.20.119 — 2026-11-01
+
+### Fixed
+
+- A release after the vault’s drive is mounted at a new path uses the vault at its new place, instead of an empty folder Pencils could not start in; when the vault can’t be found or read it stops before deploying.
+
 ## 0.20.118 — 2026-11-01
 
 ### Changed
