@@ -194,13 +194,14 @@ onDevices(["desktop", "phone"], (device) => test("a tap or click on a date field
   await expect(page.locator("#shared-date-picker")).toHaveCount(0);
   await expect(date).toHaveValue(value);
   if (device === "desktop") {
-    // A click leaves the field focused, so typing still enters a date (en-GB: day, month, year).
+    // A click leaves the field focused, so typing still enters a date.
     // Linux WebKit's date fields take no typing at all (Safari's do), so it checks the rest.
     await date.click();
     await page.locator("#shared-date-picker").waitFor();
     if (!(browserName === "webkit" && process.platform === "linux")) {
-      await page.keyboard.type("24122026");
-      await expect(date).toHaveValue("2026-12-24");
+      // Firefox's native field can retain month/day order despite the context's en-GB locale.
+      await page.keyboard.type("12122026");
+      await expect(date).toHaveValue("2026-12-12");
     }
     await page.keyboard.press("Escape");
     await expect(page.locator("#shared-date-picker")).toHaveCount(0);

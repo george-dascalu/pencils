@@ -2,6 +2,16 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.20.120 — 2026-11-01
+
+### Added
+
+- Impeccable project context records Pencils' intended users, Markdown vault commitments, cross-device workflows and scale goals. Future design work defaults to code-first, as confirmed by the owner.
+
+### Fixed
+
+- The date-field keyboard check uses an unambiguous day/month value, so Firefox's native date ordering no longer causes a false failure in the release checks.
+
 ## 0.20.119 — 2026-11-01
 
 ### Fixed

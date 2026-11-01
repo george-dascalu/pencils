@@ -103,6 +103,8 @@ export const roadmap = [
   { id: "T98", title: "Releases find the vault after its drive is mounted at a new path, or stop", status: "done", requested: "2026-11-01T18:12", started: "2026-11-01T18:12", done: "2026-11-01T18:13", version: "0.20.119" },
   { id: "T99", title: "Remove the board sweep’s leftover agent worktree", status: "done", requested: "2026-11-01T18:12", started: "2026-11-01T18:12", done: "2026-11-01T18:13", version: "0.20.119" },
   { id: "T100", title: "Project rules: checks after every .js edit, tests first, computed styles checked in every engine, one allowErrors regex, no top-level browser globals", status: "done", requested: "2026-11-01T18:12", started: "2026-11-01T18:12", done: "2026-11-01T18:13", version: "0.20.119" },
+  { id: "T101", title: "Initialize Impeccable with the product context and code-first workflow", status: "done", requested: "2026-11-01", started: "2026-11-01", done: "2026-11-01", version: "0.20.120" },
+  { id: "T102", title: "Make the keyboard date check independent of native day/month order", status: "done", requested: "2026-11-01", started: "2026-11-01", done: "2026-11-01", version: "0.20.120" },
 ];
 
 // "31 Oct 20:05" for a date with a time, "31 Oct" for a bare date.
