@@ -79,10 +79,18 @@ export function validTablePreferences(p) {
 }
 export function tablePreferences(p, config) {
   if (!validTablePreferences(p)) return { outline: true, groups: [], sorts: [], filters: [] };
-  // Saved groups, sorts and filters on fields the project turned off (T23) wait until they're back.
+  // The open Table leaves out saved groups, sorts, filters and query rules on fields the project
+  // turned off (T23); the saved settings keep them unless the Table's settings change meanwhile.
   const keys = new Set(offeredFields(config).map((f) => f.key));
+  // A query group emptied this way goes too: an empty group matches every card.
+  const prune = (node) => {
+    if (!node.rules) return keys.has(node.field) ? node : null;
+    const rules = node.rules.map(prune).filter(Boolean);
+    return rules.length || !node.rules.length ? { ...node, rules } : null;
+  };
+  const query = p.query && prune(structuredClone(p.query));
   return {
-    ...(p.query ? { query: structuredClone(p.query) } : {}),
+    ...(query ? { query } : {}),
     // Outline is now standard, including older saved views with it disabled.
     outline: true,
     groups: p.groups.filter((k) => keys.has(k)),

@@ -18,6 +18,8 @@ export default defineConfig({
   timeout: 45000,
   expect: { timeout: 8000 },
   retries: 1,
+  // A test that passes only on its retry fails the batch check (RELEASE=1), so flaky tests get fixed.
+  failOnFlakyTests: process.env.RELEASE === "1",
   workers: Number(process.env.E2E_WORKERS) || 8,
   reporter: [["list"], ["html", { open: "never", outputFolder: "playwright-report" }]],
   use: { trace: "retain-on-failure", screenshot: "only-on-failure" },

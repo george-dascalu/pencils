@@ -68,9 +68,10 @@ test("the 30-second check after this browser's own save does not rebuild the pag
   const x = async () => (await app.store.snapshot(app.project.id)).boards[0].nodes.find((n) => n.id === "n-sticky").x;
   await expect.poll(x).not.toBe(120);
   await page.clock.runFor(2500);
+  // The 30-second check fetches the project; its answer must not rebuild the page.
+  const checked = page.waitForResponse((r) => r.request().method() === "GET" && new URL(r.url()).pathname === `/api/projects/${app.project.id}`);
   await page.clock.runFor(31000);
-  // Let the check's request finish.
-  await page.waitForTimeout(1000);
+  await checked;
   expect(await rebuilt(page), "the page was not rebuilt").toBe(false);
   const board = (await app.store.snapshot(app.project.id)).boards[0];
   await app.store.updateBoard(app.project.id, board.id, { revision: board.revision, nodes: board.nodes.map((n) => (n.id === "n-sticky" ? { ...n, x: 120, y: 120 } : n)) });
@@ -117,9 +118,10 @@ test("closing the card editor before its save finishes keeps focus on the task",
     await route.continue();
   });
   await page.locator(`#view-content [data-action="task-open"][data-id="${task.id}"]:visible`).first().click();
+  // Close once autosave has sent the change, while its response is held.
+  const sent = page.waitForRequest((r) => r.method() === "PATCH" && new URL(r.url()).pathname.endsWith(`/tasks/${task.id}`) && r.postData()?.includes("Slow save, renamed"));
   await page.locator("#task-form [name=title]").fill("Slow save, renamed");
-  // Long enough for autosave to send the change, short of its response.
-  await page.waitForTimeout(700);
+  await sent;
   await page.keyboard.press("Escape");
   await page.waitForFunction((id) => document.activeElement?.dataset.id === id, task.id);
   await page.evaluate(() => { document.querySelector("#view-content").dataset.before = "yes"; });

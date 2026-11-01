@@ -48,7 +48,7 @@ Keep the interface consistent across all project views: Overview, Documents, Lis
 - Run browser tests locally with `--project=chromium`; WebKit runs only in the batch check, through `GATE_BROWSERS`.
 - Judge a run by Playwright's summary (its failed and flaky counts) or the test command's own exit status, never by the exit status of a pipeline that ends in `tail` or `grep`.
 - Keep every test passing. When a change in intended behaviour breaks a test, update it in the same change. Never leave a test failing; a known bug may be marked `test.fail()` with its reason until fixed.
-- Write tests with `e2e/fixtures.mjs` (`useApp`, `onDevices`, device presets) as described in `e2e/README.md`. Wait for page state with web-first assertions instead of fixed delays.
+- Write tests with `e2e/fixtures.mjs` (`useApp`, `onDevices`, device presets) as described in `e2e/README.md`. Wait for page state with web-first assertions instead of fixed delays. Tests fail on console and server errors; allow expected ones with `test.use({ allowErrors })`. Seeded dates don't move with today: go back to them after a reload.
 - Specs started with `productionAssets` serve the built `dist/`: run `npm run build` before `npm run e2e` or `npm run release` after changing `public/`, or they test the old build.
 - When splitting or escaping Markdown by hand (table cells, links), check edge cases such as `\|` and `\\|` against marked's own output, and test them.
 - Before moving a container's edge (such as letting content run under the bottom bar), grep for what is anchored to that edge (`bottom:` rules, `clientHeight -` sums) and move it too.

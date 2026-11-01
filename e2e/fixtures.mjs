@@ -12,7 +12,8 @@
 // useApp starts one server with a temporary vault for the file; whatever the seed function
 // returns is added to the app object. onDevices() repeats the tests inside it for each device,
 // grouped as "<device> › <title>", each in a fresh browser context. Tests outside it use the
-// desktop preset. Every test fails on page errors.
+// desktop preset. Every test fails on page errors, console errors and server errors (500 and
+// above); a test that expects some lists them with test.use({ allowErrors: [/pattern/] }).
 // Touch devices always use Chromium with coarse-pointer emulation; desktop devices use the
 // project's browser (Chromium, or Firefox/WebKit in the release gate).
 import { test as base, expect } from "@playwright/test";
@@ -42,6 +43,8 @@ export const test = base.extend({
   viewportSize: [null, { option: true }],
   // Pixel density, e.g. test.use({ deviceScaleFactor: 2 }) for a retina iPad.
   deviceScaleFactor: [undefined, { option: true }],
+  // Errors a test expects (see page below), as regular expressions.
+  allowErrors: [[], { option: true }],
   touchBrowser: [async ({ playwright }, use) => {
     let browser;
     await use(async () => (browser ||= await playwright.chromium.launch({ args: touchArgs })));
@@ -55,13 +58,24 @@ export const test = base.extend({
     await use(context);
     await context.close();
   },
-  page: async ({ context }, use) => {
+  page: async ({ context, allowErrors }, use) => {
     const page = await context.newPage();
     page.setDefaultTimeout(12000);
-    const errors = [];
+    const errors = [], checks = [];
     page.on("pageerror", (error) => errors.push(error.message));
+    // Browsers log each refused request as "Failed to load resource": refusals (4xx) are part of
+    // many flows, and server errors are caught from the responses instead.
+    page.on("console", (message) => {
+      if (message.type() === "error" && !message.text().startsWith("Failed to load resource")) errors.push(`console: ${message.text()}`);
+    });
+    // A response a test fakes with page.route has no server address and is the test's own.
+    page.on("response", (response) => {
+      if (response.status() >= 500)
+        checks.push(response.serverAddr().then((address) => address && errors.push(`${response.status()} ${response.request().method()} ${new URL(response.url()).pathname}`)));
+    });
     await use(page);
-    expect(errors, "no page errors").toEqual([]);
+    await Promise.allSettled(checks);
+    expect(errors.filter((error) => !allowErrors.some((pattern) => pattern.test(error))), "no page, console or server errors").toEqual([]);
   },
 });
 

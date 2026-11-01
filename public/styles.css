@@ -949,6 +949,9 @@ button svg {
   display: flex;
   gap: var(--kanban-gap);
   overflow-x: auto;
+  /* Holds its cards' absolutely placed parts (screen-reader labels), which would otherwise
+     widen the page past the columns it scrolls and let a phone pan sideways. */
+  position: relative;
   padding-bottom: 18px;
   min-height: 380px;
 }

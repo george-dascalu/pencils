@@ -85,14 +85,18 @@ test("a dropped image lands at the pointer in board coordinates", async ({ page 
   expect(Math.abs(dropBox.y + dropBox.height / 2 - y)).toBeLessThan(2);
 });
 
-test("invalid and oversized images never create broken cards", async ({ page }) => {
-  await openBoard(page);
-  await upload(page, [{ name: "Broken.gif", mimeType: "image/gif", buffer: Buffer.from("broken") }]);
-  await page.getByText(/Broken.gif: This image could not be opened/).waitFor();
-  expect(await count()).toBe(0);
-  await upload(page, [{ name: "Too large.png", mimeType: "image/png", buffer: Buffer.alloc(10_000_001) }]);
-  await page.getByText(/Too large.png: Choose an image up to 10 MB/).waitFor();
-  expect(await count()).toBe(0);
+test.describe(() => {
+  // Chromium reports a Content Security Policy refusal of its own when it can't decode the file.
+  test.use({ allowErrors: [/^console: Connecting to 'blob:.*violates the following Content Security Policy directive: "connect-src 'self'"/] });
+  test("invalid and oversized images never create broken cards", async ({ page }) => {
+    await openBoard(page);
+    await upload(page, [{ name: "Broken.gif", mimeType: "image/gif", buffer: Buffer.from("broken") }]);
+    await page.getByText(/Broken.gif: This image could not be opened/).waitFor();
+    expect(await count()).toBe(0);
+    await upload(page, [{ name: "Too large.png", mimeType: "image/png", buffer: Buffer.alloc(10_000_001) }]);
+    await page.getByText(/Too large.png: Choose an image up to 10 MB/).waitFor();
+    expect(await count()).toBe(0);
+  });
 });
 
 test("an upload in flight is not added to another board opened meanwhile", async ({ page }) => {

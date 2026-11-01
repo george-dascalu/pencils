@@ -2,6 +2,13 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.20.102 — 2026-11-01
+
+### Fixed
+
+- Kanban on phones no longer lets the page pan sideways or zoom out when cards in later columns show dates.
+- A saved Table query's rules on card fields the project turned off no longer filter out of sight; like its saved filters, the open Table leaves them out.
+
 ## 0.20.101 — 2026-11-01
 
 ### Fixed
