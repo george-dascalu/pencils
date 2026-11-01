@@ -44,7 +44,7 @@ async function openDemo(page, view = "list") {
 
 test("an empty workspace offers the optional sample project", async ({ page }) => {
   await page.goto(app.base);
-  await expect(page.getByRole("heading", { name: /A little space for your/ })).toBeVisible();
+  await expect(page.getByRole("button", { name: /Explore an example/ })).toBeVisible();
   await click(page, "demo");
   await expect(page.getByRole("heading", { name: "A little more possibility", exact: true })).toBeVisible();
   demo = (await app.store.list()).projects[0];
@@ -248,7 +248,7 @@ test("organisations are created and renamed, scope their projects, and are remem
   await expect(page.locator("#organisation-select")).toHaveValue(studio.id);
 });
 
-test("moving a project to another organisation keeps its tasks and canvases, and the organisation overview lists it", async ({ page }) => {
+test("moving a project to another organisation keeps its tasks and canvases, and Home lists it", async ({ page }) => {
   await openDemo(page);
   await expect(page.locator("#organisation-select")).toHaveValue("o-default");
   const beforeMove = await snapshot();
@@ -268,17 +268,18 @@ test("moving a project to another organisation keeps its tasks and canvases, and
   // The default organisation is now empty, also after a reload.
   await openSidebar(page);
   await page.locator("#organisation-select").selectOption("o-default");
-  await expect(page.getByRole("heading", { name: /A little space for your/ })).toBeVisible();
+  await expect(page.getByRole("button", { name: /Explore an example/ })).toBeVisible();
   await expect(page.locator('#project-select option:not([value=""])')).toHaveCount(0);
   await expect(page.locator('[data-action="task-open"]')).toHaveCount(0);
   await page.reload();
-  await expect(page.getByRole("heading", { name: /A little space for your/ })).toBeVisible();
+  await expect(page.getByRole("button", { name: /Explore an example/ })).toBeVisible();
   await expect(page.locator("#organisation-select")).toHaveValue("o-default");
   await openSidebar(page);
   await page.locator("#organisation-select").selectOption(studio.id);
   await expect(page.getByRole("heading", { name: demo.title, exact: true })).toBeVisible();
   await click(page, "home");
-  await expect(page.getByRole("heading", { name: "Acme Collective", exact: true })).toBeVisible();
+  await expect(page.locator("#organisation-select option:checked")).toHaveText("Acme Collective");
+  await expect(page.locator('.home-panel[data-type="projects"]')).toBeVisible();
   await expect(page.locator(".project-card")).toHaveCount(3);
   await page.locator(`.project-card[data-id="${demo.id}"]`).click();
   await expect(page.getByRole("heading", { name: demo.title, exact: true })).toBeVisible();

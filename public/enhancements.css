@@ -280,8 +280,8 @@ summary:focus-visible,
 .dashboard-metrics {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 15px;
-  margin-bottom: 25px;
+  gap: 8px;
+  margin-bottom: 16px;
 }
 .dashboard-metrics > div {
   padding: 20px;
@@ -292,11 +292,7 @@ summary:focus-visible,
   gap: 8px;
   font-size: 13px;
 }
-.dashboard-metrics strong {
-  font:
-    32px Georgia,
-    serif;
-}
+.dashboard-metrics strong { font-size: var(--type-title); line-height: 1.25; font-weight: 600; }
 .dashboard-deadlines {
   margin-bottom: 32px;
 }
@@ -316,6 +312,9 @@ summary:focus-visible,
   text-align: left;
   color: #263c34;
 }
+.dashboard-deadlines > button { gap: 12px; align-items: start; }
+.dashboard-deadlines > button > span { min-width: 0; overflow-wrap: anywhere; }
+.dashboard-deadlines time { flex: none; white-space: nowrap; font-variant-numeric: tabular-nums; }
 .dashboard-deadlines small {
   display: block;
   width: fit-content;

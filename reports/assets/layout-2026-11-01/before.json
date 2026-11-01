@@ -1,0 +1,562 @@
+[
+  {
+    "device": "desktop",
+    "view": "home",
+    "metrics": {
+      "width": 1440,
+      "pageWidth": 1440,
+      "panel": {
+        "x": 38,
+        "y": 119,
+        "w": 1363.984375,
+        "h": 196,
+        "b": 315,
+        "scroll": 194,
+        "client": 194
+      },
+      "body": {
+        "x": 39,
+        "y": 146,
+        "w": 1361.984375,
+        "h": 168,
+        "b": 314,
+        "scroll": 1158,
+        "client": 168
+      },
+      "project": {
+        "x": 77,
+        "y": 1042.984375,
+        "w": 244.390625,
+        "h": 220.890625,
+        "b": 1263.875,
+        "scroll": 219,
+        "client": 219
+      },
+      "metrics": {
+        "x": 77,
+        "y": 276.984375,
+        "w": 1285.984375,
+        "h": 112,
+        "b": 388.984375,
+        "scroll": 112,
+        "client": 112
+      },
+      "summary": null,
+      "emptySummaryTail": null,
+      "deadlines": {
+        "x": 77,
+        "y": 413.984375,
+        "w": 1285.984375,
+        "h": 537,
+        "b": 950.984375,
+        "scroll": 537,
+        "client": 537
+      },
+      "firstDeadline": {
+        "x": 77,
+        "y": 446.984375,
+        "w": 1285.984375,
+        "h": 63,
+        "b": 509.984375,
+        "scroll": 62,
+        "client": 62
+      },
+      "bar": null,
+      "heading": {
+        "x": 51,
+        "y": 184,
+        "w": 255.40625,
+        "h": 43.1875,
+        "b": 227.1875,
+        "scroll": 46,
+        "client": 43
+      }
+    }
+  },
+  {
+    "device": "desktop",
+    "view": "overview",
+    "metrics": {
+      "width": 1440,
+      "pageWidth": 1440,
+      "panel": null,
+      "body": null,
+      "project": null,
+      "metrics": {
+        "x": 16,
+        "y": 68.1875,
+        "w": 1408,
+        "h": 109,
+        "b": 177.1875,
+        "scroll": 109,
+        "client": 109
+      },
+      "summary": {
+        "x": 16,
+        "y": 202.1875,
+        "w": 694,
+        "h": 617,
+        "b": 819.1875,
+        "scroll": 615,
+        "client": 615
+      },
+      "emptySummaryTail": 307,
+      "deadlines": {
+        "x": 730,
+        "y": 202.1875,
+        "w": 694,
+        "h": 585,
+        "b": 787.1875,
+        "scroll": 585,
+        "client": 585
+      },
+      "firstDeadline": {
+        "x": 730,
+        "y": 235.1875,
+        "w": 694,
+        "h": 69,
+        "b": 304.1875,
+        "scroll": 68,
+        "client": 68
+      },
+      "bar": {
+        "x": 571,
+        "y": 4.5,
+        "w": 221,
+        "h": 31,
+        "b": 35.5,
+        "scroll": 32,
+        "client": 31
+      },
+      "heading": {
+        "x": 0,
+        "y": 0,
+        "w": 0,
+        "h": 0,
+        "b": 0,
+        "scroll": 0,
+        "client": 0
+      }
+    }
+  },
+  {
+    "device": "ipad",
+    "view": "home",
+    "metrics": {
+      "width": 820,
+      "pageWidth": 820,
+      "panel": {
+        "x": 25,
+        "y": 143,
+        "w": 770,
+        "h": 196,
+        "b": 339,
+        "scroll": 194,
+        "client": 194
+      },
+      "body": {
+        "x": 26,
+        "y": 172,
+        "w": 768,
+        "h": 166,
+        "b": 338,
+        "scroll": 1138,
+        "client": 166
+      },
+      "project": {
+        "x": 51,
+        "y": 1067.984375,
+        "w": 351,
+        "h": 201.890625,
+        "b": 1269.875,
+        "scroll": 200,
+        "client": 200
+      },
+      "metrics": {
+        "x": 51,
+        "y": 299.984375,
+        "w": 718,
+        "h": 112,
+        "b": 411.984375,
+        "scroll": 112,
+        "client": 112
+      },
+      "summary": null,
+      "emptySummaryTail": null,
+      "deadlines": {
+        "x": 51,
+        "y": 436.984375,
+        "w": 718,
+        "h": 537,
+        "b": 973.984375,
+        "scroll": 537,
+        "client": 537
+      },
+      "firstDeadline": {
+        "x": 51,
+        "y": 469.984375,
+        "w": 718,
+        "h": 63,
+        "b": 532.984375,
+        "scroll": 62,
+        "client": 62
+      },
+      "bar": null,
+      "heading": {
+        "x": 38,
+        "y": 213,
+        "w": 215.40625,
+        "h": 37.1875,
+        "b": 250.1875,
+        "scroll": 39,
+        "client": 37
+      }
+    }
+  },
+  {
+    "device": "ipad",
+    "view": "overview",
+    "metrics": {
+      "width": 820,
+      "pageWidth": 820,
+      "panel": null,
+      "body": null,
+      "project": null,
+      "metrics": {
+        "x": 16,
+        "y": 80.1875,
+        "w": 788,
+        "h": 109,
+        "b": 189.1875,
+        "scroll": 109,
+        "client": 109
+      },
+      "summary": {
+        "x": 16,
+        "y": 214.1875,
+        "w": 384,
+        "h": 636,
+        "b": 850.1875,
+        "scroll": 634,
+        "client": 634
+      },
+      "emptySummaryTail": 320,
+      "deadlines": {
+        "x": 420,
+        "y": 214.1875,
+        "w": 384,
+        "h": 604,
+        "b": 818.1875,
+        "scroll": 604,
+        "client": 604
+      },
+      "firstDeadline": {
+        "x": 420,
+        "y": 250.1875,
+        "w": 384,
+        "h": 71,
+        "b": 321.1875,
+        "scroll": 70,
+        "client": 70
+      },
+      "bar": {
+        "x": 170,
+        "y": 1118,
+        "w": 480,
+        "h": 54,
+        "b": 1172,
+        "scroll": 52,
+        "client": 52
+      },
+      "heading": {
+        "x": 0,
+        "y": 0,
+        "w": 0,
+        "h": 0,
+        "b": 0,
+        "scroll": 0,
+        "client": 0
+      }
+    }
+  },
+  {
+    "device": "phone",
+    "view": "home",
+    "metrics": {
+      "width": 390,
+      "pageWidth": 390,
+      "panel": {
+        "x": 18,
+        "y": 68,
+        "w": 354,
+        "h": 1336.625,
+        "b": 1404.625,
+        "scroll": 1335,
+        "client": 1335
+      },
+      "body": {
+        "x": 19,
+        "y": 97,
+        "w": 352,
+        "h": 1306.625,
+        "b": 1403.625,
+        "scroll": 1307,
+        "client": 1307
+      },
+      "project": {
+        "x": 37,
+        "y": 1171.734375,
+        "w": 316,
+        "h": 201.890625,
+        "b": 1373.625,
+        "scroll": 200,
+        "client": 200
+      },
+      "metrics": {
+        "x": 37,
+        "y": 219.734375,
+        "w": 316,
+        "h": 239,
+        "b": 458.734375,
+        "scroll": 239,
+        "client": 239
+      },
+      "summary": null,
+      "emptySummaryTail": null,
+      "deadlines": {
+        "x": 37,
+        "y": 483.734375,
+        "w": 316,
+        "h": 594,
+        "b": 1077.734375,
+        "scroll": 594,
+        "client": 594
+      },
+      "firstDeadline": {
+        "x": 37,
+        "y": 516.734375,
+        "w": 316,
+        "h": 82,
+        "b": 598.734375,
+        "scroll": 81,
+        "client": 81
+      },
+      "bar": null,
+      "heading": {
+        "x": 31,
+        "y": 138,
+        "w": 201.40625,
+        "h": 33.59375,
+        "b": 171.59375,
+        "scroll": 35,
+        "client": 34
+      }
+    }
+  },
+  {
+    "device": "phone",
+    "view": "overview",
+    "metrics": {
+      "width": 390,
+      "pageWidth": 390,
+      "panel": null,
+      "body": null,
+      "project": null,
+      "metrics": {
+        "x": 10,
+        "y": 79.1875,
+        "w": 370,
+        "h": 233,
+        "b": 312.1875,
+        "scroll": 233,
+        "client": 233
+      },
+      "summary": {
+        "x": 10,
+        "y": 337.1875,
+        "w": 370,
+        "h": 337,
+        "b": 674.1875,
+        "scroll": 335,
+        "client": 335
+      },
+      "emptySummaryTail": 21,
+      "deadlines": {
+        "x": 10,
+        "y": 694.1875,
+        "w": 370,
+        "h": 661,
+        "b": 1355.1875,
+        "scroll": 661,
+        "client": 661
+      },
+      "firstDeadline": {
+        "x": 10,
+        "y": 730.1875,
+        "w": 370,
+        "h": 90,
+        "b": 820.1875,
+        "scroll": 89,
+        "client": 89
+      },
+      "bar": {
+        "x": 12,
+        "y": 782,
+        "w": 366,
+        "h": 54,
+        "b": 836,
+        "scroll": 52,
+        "client": 52
+      },
+      "heading": {
+        "x": 0,
+        "y": 0,
+        "w": 0,
+        "h": 0,
+        "b": 0,
+        "scroll": 0,
+        "client": 0
+      }
+    }
+  },
+  {
+    "device": "small",
+    "view": "home",
+    "metrics": {
+      "width": 320,
+      "pageWidth": 320,
+      "panel": {
+        "x": 18,
+        "y": 68,
+        "w": 284,
+        "h": 1406.625,
+        "b": 1474.625,
+        "scroll": 1405,
+        "client": 1405
+      },
+      "body": {
+        "x": 19,
+        "y": 97,
+        "w": 282,
+        "h": 1376.625,
+        "b": 1473.625,
+        "scroll": 1377,
+        "client": 1377
+      },
+      "project": {
+        "x": 37,
+        "y": 1222.734375,
+        "w": 246,
+        "h": 220.890625,
+        "b": 1443.625,
+        "scroll": 219,
+        "client": 219
+      },
+      "metrics": {
+        "x": 37,
+        "y": 219.734375,
+        "w": 246,
+        "h": 257,
+        "b": 476.734375,
+        "scroll": 257,
+        "client": 257
+      },
+      "summary": null,
+      "emptySummaryTail": null,
+      "deadlines": {
+        "x": 37,
+        "y": 501.734375,
+        "w": 246,
+        "h": 627,
+        "b": 1128.734375,
+        "scroll": 627,
+        "client": 627
+      },
+      "firstDeadline": {
+        "x": 37,
+        "y": 567.734375,
+        "w": 246,
+        "h": 82,
+        "b": 649.734375,
+        "scroll": 81,
+        "client": 81
+      },
+      "bar": null,
+      "heading": {
+        "x": 31,
+        "y": 138,
+        "w": 201.40625,
+        "h": 33.59375,
+        "b": 171.59375,
+        "scroll": 35,
+        "client": 34
+      }
+    }
+  },
+  {
+    "device": "small",
+    "view": "overview",
+    "metrics": {
+      "width": 320,
+      "pageWidth": 320,
+      "panel": null,
+      "body": null,
+      "project": null,
+      "metrics": {
+        "x": 10,
+        "y": 79.1875,
+        "w": 300,
+        "h": 233,
+        "b": 312.1875,
+        "scroll": 233,
+        "client": 233
+      },
+      "summary": {
+        "x": 10,
+        "y": 337.1875,
+        "w": 300,
+        "h": 337,
+        "b": 674.1875,
+        "scroll": 335,
+        "client": 335
+      },
+      "emptySummaryTail": 21,
+      "deadlines": {
+        "x": 10,
+        "y": 694.1875,
+        "w": 300,
+        "h": 661,
+        "b": 1355.1875,
+        "scroll": 661,
+        "client": 661
+      },
+      "firstDeadline": {
+        "x": 10,
+        "y": 730.1875,
+        "w": 300,
+        "h": 90,
+        "b": 820.1875,
+        "scroll": 89,
+        "client": 89
+      },
+      "bar": {
+        "x": 12,
+        "y": 578,
+        "w": 296,
+        "h": 54,
+        "b": 632,
+        "scroll": 52,
+        "client": 52
+      },
+      "heading": {
+        "x": 0,
+        "y": 0,
+        "w": 0,
+        "h": 0,
+        "b": 0,
+        "scroll": 0,
+        "client": 0
+      }
+    }
+  }
+]

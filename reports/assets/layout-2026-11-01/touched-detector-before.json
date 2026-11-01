@@ -1,0 +1,23 @@
+[
+  {
+    "antipattern": "border-accent-on-rounded",
+    "name": "Border accent on rounded element",
+    "description": "Thick accent border on a rounded card — the border clashes with the rounded corners. Remove the border or the border-radius.",
+    "severity": "warning",
+    "category": "slop",
+    "file": "/run/media/george/Work/Projects/pencils/public/home.css",
+    "line": 42,
+    "snippet": "border-bottom: 3px solid"
+  },
+  {
+    "antipattern": "bounce-easing",
+    "name": "Bounce or elastic easing",
+    "description": "Bounce and elastic easing feel dated and tacky. Real objects decelerate smoothly — use exponential easing (ease-out-quart/quint/expo) instead.",
+    "severity": "advisory",
+    "category": "slop",
+    "file": "/run/media/george/Work/Projects/pencils/public/project-layout.css",
+    "line": 185,
+    "snippet": "cubic-bezier(0.2, 0.9, 0.3, 1.15)",
+    "advisory": true
+  }
+]

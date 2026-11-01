@@ -16,7 +16,7 @@ export function helpPageHTML(id, { esc, icon }) {
       <aside class="help-sidebar">
         <label class="field" for="help-search"><span>Search help</span><input id="help-search" type="search" placeholder="Search guides…" autocomplete="off" aria-controls="help-navigation"></label>
         <p id="help-search-status" class="field-hint" role="status" aria-live="polite"></p>
-        <details class="help-navigation" ${mainWidth() > 780 ? "open" : ""}><summary>${icon("list")}<span>Browse guides</span></summary><nav id="help-navigation" aria-label="Help articles">
+        <details class="help-navigation" ${mainWidth() > 800 ? "open" : ""}><summary>${icon("list")}<span>Browse guides</span></summary><nav id="help-navigation" aria-label="Help articles">
           ${[...new Set(helpArticles.map((a) => a.group))]
             .map(
               (group) =>

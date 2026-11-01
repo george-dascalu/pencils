@@ -192,7 +192,7 @@ test.describe("Group 3: touch targets and axe (findings 13–14)", { tag: "@audi
   });
   test("axe finds no contrast, target or scroll-region issues on key pages", async ({ page }) => {
     const found = [];
-    for (const [name, path, wait] of [["home", `${app.base}/#home`, ".organisation-overview"], ["org", `${app.base}/#organisation/${app.project.organisation}/home`, ".organisation-overview"], ["list", url("list"), ".task-row"], ["table", url("table"), ".spreadsheet"], ["kanban", url("kanban"), ".kanban-column"], ["documents", url("documents"), ".documents-workspace"]]) {
+    for (const [name, path, wait] of [["home", `${app.base}/#home`, ".home-grid"], ["org", `${app.base}/#organisation/${app.project.organisation}/home`, ".home-grid"], ["list", url("list"), ".task-row"], ["table", url("table"), ".spreadsheet"], ["kanban", url("kanban"), ".kanban-column"], ["documents", url("documents"), ".documents-workspace"]]) {
       await page.goto(path);
       await page.locator(wait).first().waitFor();
       if (name === "documents") { const link = page.locator(".document-link").first(); if (await link.count()) { if (!(await link.isVisible())) await openList(page); await link.click(); await page.locator(".document-editor .cm-content").first().waitFor(); } }
@@ -265,13 +265,9 @@ test.describe("Group 4: vocabulary and controls (findings 17–22)", { tag: "@au
     await expect(page.locator(".list-group .count").first()).toHaveText("130");
   });
   test.describe(() => {
-    test("dashboards render dates in the shared day format", async ({ page }) => {
-      await page.goto(`${app.base}/#organisation/${app.project.organisation}/home`);
-      await page.locator(".dashboard-deadlines time").first().waitFor();
-      const org = await page.locator(".dashboard-deadlines time").first().textContent();
+    test("Overview renders dates in the shared day format", async ({ page }) => {
       await open(page, "overview", ".project-overview");
-      const project = await page.locator(".dashboard-deadlines time").first().textContent();
-      for (const text of [org, project]) expect(text.trim(), `date text ${text}`).toMatch(/^\d{1,2} [A-Z][a-z]{2}( \d{4})?$/);
+      await expect(page.locator(".dashboard-deadlines time").first()).toHaveText(/^\d{1,2} [A-Z][a-z]{2}( \d{4})?$/);
     });
   });
   test("buttons use icons instead of text glyphs", async ({ page }) => {

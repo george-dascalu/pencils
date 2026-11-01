@@ -920,28 +920,16 @@ function safeColor(value) {
   return /^#[0-9a-f]{6}$/i.test(value) ? value : "#66856f";
 }
 function welcomePage() {
-  const projects = organisationProjects(),
-    organisation = state.organisation;
+  const projects = organisationProjects();
   if (projects.length)
-    return `${warningsHTML(state.globalWarnings)}<section class="hero"><div><div class="eyebrow project-kicker"><span class="project-mark" style="background:${safeColor(organisation.color)}"></span>ORGANISATION</div><h1>${esc(organisation.title)}</h1><p>${esc(
-      String(organisation.body || "All your projects, together in one place.")
-        .split("\n")
-        .find((line) => line.trim()) ||
-        "All your projects, together in one place.",
-    )}</p></div></section><section class="content organisation-overview"><h2 class="section-title">Projects<span class="count">${projects.length}</span><span class="line"></span></h2><div class="project-grid">${projects
-      .map(
-        (project) =>
-          `<button class="project-card" data-action="project-open" data-id="${esc(project.id)}"><span class="project-card-top"><span class="project-mark" style="background:${safeColor(project.color)}"></span>${icon("arrow")}</span><strong>${esc(project.title)}</strong><span>${esc(
-            String(
-              project.body || "A little space to turn plans into progress.",
-            )
-              .split("\n")
-              .find((line) => line.trim()) || "Open project",
-          )}</span></button>`,
-      )
-      .join("")}</div></section>`;
-  return `${warningsHTML(state.globalWarnings)}<section class="welcome"><div class="eyebrow">LESS FRICTION. MORE POSSIBILITY.</div><h1>A little space for your<br><em>next big thing.</em></h1><p>Bring your projects, plans, and scattered ideas together. An open canvas for your work, with Markdown at its heart.</p><div class="welcome-actions"><button class="button primary" data-action="project-new">${icon("plus")}Create a project</button><button class="button" data-action="demo">Explore an example ${icon("arrow")}</button></div><div class="welcome-features"><div class="welcome-feature">${icon("file")}<strong>Made of Markdown</strong><p>Real files you can read, move, and open in Obsidian.</p></div><div class="welcome-feature">${icon("board")}<strong>Your work, your view</strong><p>Lists, trees, tables, kanban, and room to think on a canvas.</p></div><div class="welcome-feature">${icon("local")}<strong>Happily offline</strong><p>Runs on your network. No cloud, account, or internet required.</p></div></div></section>`;
+    return `${warningsHTML(state.globalWarnings)}<div class="project-grid">${projects.map((project) =>
+      `<button class="project-card" data-action="project-open" data-id="${esc(project.id)}"><span class="project-mark" style="background:${safeColor(project.color)}"></span><span class="project-card-copy"><strong>${esc(project.title)}</strong><small>${esc(
+        String(project.body || "A little space to turn plans into progress.").split("\n").find((line) => line.trim()) || "Open project",
+      )}</small></span>${icon("arrow")}</button>`,
+    ).join("")}</div>`;
+  return `${warningsHTML(state.globalWarnings)}<div class="home-projects-empty"><p>Bring your projects, plans, and scattered ideas together. An open canvas for your work, with Markdown at its heart.</p><div class="welcome-actions"><button class="button primary" data-action="project-new">${icon("plus")}Create a project</button><button class="button" data-action="demo">Explore an example ${icon("arrow")}</button></div></div>`;
 }
+
 function warningsHTML(warnings) {
   return warnings.length
     ? `<details class="warning"><summary>${warnings.length} vault ${warnings.length === 1 ? "issue" : "issues"} need attention</summary>${warnings.map((w) => `<div>${esc(w)}</div>`).join("")}</details>`

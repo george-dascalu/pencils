@@ -2,6 +2,18 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.20.123 — 2026-11-01
+
+### Changed
+
+- Home's Projects panel shows compact project links directly, with creation actions kept in the empty state and existing panel sizes preserved.
+- Overview brings upcoming and overdue cards before project background information, uses smaller metrics and keeps each section at its content height.
+
+### Fixed
+
+- Deadline dates stay on one line beside long titles. Capacity keeps long titles and assignees inside their rows and separates its setup buttons.
+- Help keeps its guide navigation collapsed at narrow widths where it sits above the article, including 790–800px windows.
+
 ## 0.20.122 — 2026-11-01
 
 ### Fixed

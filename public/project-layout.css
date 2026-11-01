@@ -765,21 +765,22 @@ html.table-viewport-view body {
 }
 .project-overview-columns {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 20px;
+  grid-template-columns: minmax(0, 3fr) minmax(240px, 2fr);
+  align-items: start;
+  gap: 16px;
 }
 .overview-summary {
   background: var(--surface);
   border: 1px solid var(--line);
   border-radius: 10px;
-  padding: 20px;
+  padding: 16px;
 }
 .project-overview h2 {
   font-size: var(--type-section);
-  margin: 0 0 14px;
+  margin: 0 0 12px;
 }
 .overview-summary h2:not(:first-child) {
-  margin-top: 24px;
+  margin-top: 16px;
 }
 .overview-status {
   display: flex;

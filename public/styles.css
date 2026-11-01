@@ -1154,8 +1154,10 @@ button svg {
 }
 .welcome-actions {
   display: flex;
-  gap: 10px;
+  flex-wrap: wrap;
+  gap: 8px;
 }
+.empty > .welcome-actions { justify-content: center; }
 .welcome-features {
   margin-top: 70px;
   padding-top: 27px;
@@ -2054,51 +2056,28 @@ input[type="search"]:not(.search input) {
 }
 .project-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
-  gap: 16px;
-  margin-top: 12px;
+  grid-template-columns: repeat(auto-fit, minmax(min(240px, 100%), 1fr));
+  gap: 8px;
 }
 .project-card {
-  background: #fff;
-  border: 1px solid var(--line);
-  border-radius: 9px;
-  padding: 22px;
-  display: flex;
-  flex-direction: column;
-  gap: 13px;
-  text-align: left;
-  min-height: 172px;
-}
-.project-card:hover {
-  border-color: #adc197;
-  background: #fcfdf9;
-}
-.project-card-top {
-  display: flex;
+  display: grid;
+  grid-template-columns: 12px minmax(0, 1fr) 16px;
   align-items: center;
-  justify-content: space-between;
-  color: #879976;
+  gap: 8px;
+  min-height: var(--control-height);
+  padding: 8px;
+  background: transparent;
+  border: 0;
+  border-radius: var(--control-radius, 6px);
+  text-align: left;
+  color: var(--ink);
 }
-.project-card-top .project-mark {
-  width: 13px;
-  height: 13px;
-}
-.project-card strong {
-  font-family: Georgia, serif;
-  font-size: 22px;
-  font-weight: 400;
-  line-height: 1.3;
-  overflow-wrap: anywhere;
-}
-.project-card > span:last-child {
-  font-size: 11px;
-  color: var(--muted);
-  line-height: 1.8;
-  display: -webkit-box;
-  -webkit-line-clamp: 3;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-}
+.project-card:hover { background: var(--surface-soft); }
+.project-card > .project-mark { width: 12px; height: 12px; }
+.project-card > .icon { width: 16px; height: 16px; color: var(--muted); }
+.project-card-copy { min-width: 0; }
+.project-card strong { display: block; font-size: var(--type-body); font-weight: 600; line-height: 1.4; overflow-wrap: anywhere; }
+.project-card small { display: block; margin-top: 4px; font-size: var(--type-meta); color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 @media (max-width: 780px) {
   .breadcrumb {
     flex: 1;
@@ -2708,9 +2687,9 @@ input[type="search"]:not(.search input) {
 .capacity-task:hover {
   text-decoration: underline;
 }
-.capacity-task small {
-  white-space: nowrap;
-}
+.capacity-task > span { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+.capacity-task > small { flex: 0 1 auto; max-width: 40%; min-width: 0; white-space: normal; overflow-wrap: anywhere; text-align: end; }
+.capacity-task .task-color-badge { max-width: 100%; white-space: normal; overflow-wrap: anywhere; }
 .capacity-backlog {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));

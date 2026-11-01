@@ -1,0 +1,1453 @@
+{
+  "rows": [
+    {
+      "device": "desktop",
+      "theme": "light",
+      "view": "empty-home",
+      "metrics": {
+        "width": 1440,
+        "pageWidth": 1440,
+        "panel": {
+          "x": 38,
+          "y": 119,
+          "w": 1363.984375,
+          "h": 196,
+          "b": 315,
+          "scroll": 194,
+          "client": 194
+        },
+        "body": {
+          "x": 39,
+          "y": 146,
+          "w": 1361.984375,
+          "h": 168,
+          "b": 314,
+          "scroll": 168,
+          "client": 168
+        },
+        "project": null,
+        "projectHit": false,
+        "metrics": null,
+        "summary": null,
+        "emptySummaryTail": null,
+        "deadlines": null,
+        "firstDeadline": null,
+        "date": null,
+        "dateWhiteSpace": null,
+        "bar": null,
+        "columnOrder": [],
+        "actions": [
+          {
+            "text": "Create a project",
+            "x": 51,
+            "y": 204,
+            "w": 140,
+            "h": 32,
+            "right": 191,
+            "bottom": 236,
+            "hit": true
+          },
+          {
+            "text": "Explore an example",
+            "x": 199,
+            "y": 204,
+            "w": 160,
+            "h": 32,
+            "right": 359,
+            "bottom": 236,
+            "hit": true
+          }
+        ]
+      }
+    },
+    {
+      "device": "desktop",
+      "theme": "dark",
+      "view": "empty-home",
+      "metrics": {
+        "width": 1440,
+        "pageWidth": 1440,
+        "panel": {
+          "x": 38,
+          "y": 119,
+          "w": 1363.984375,
+          "h": 196,
+          "b": 315,
+          "scroll": 194,
+          "client": 194
+        },
+        "body": {
+          "x": 39,
+          "y": 146,
+          "w": 1361.984375,
+          "h": 168,
+          "b": 314,
+          "scroll": 168,
+          "client": 168
+        },
+        "project": null,
+        "projectHit": false,
+        "metrics": null,
+        "summary": null,
+        "emptySummaryTail": null,
+        "deadlines": null,
+        "firstDeadline": null,
+        "date": null,
+        "dateWhiteSpace": null,
+        "bar": null,
+        "columnOrder": [],
+        "actions": [
+          {
+            "text": "Create a project",
+            "x": 51,
+            "y": 204,
+            "w": 140,
+            "h": 32,
+            "right": 191,
+            "bottom": 236,
+            "hit": true
+          },
+          {
+            "text": "Explore an example",
+            "x": 199,
+            "y": 204,
+            "w": 160,
+            "h": 32,
+            "right": 359,
+            "bottom": 236,
+            "hit": true
+          }
+        ]
+      }
+    },
+    {
+      "device": "ipad",
+      "theme": "light",
+      "view": "empty-home",
+      "metrics": {
+        "width": 820,
+        "pageWidth": 820,
+        "panel": {
+          "x": 25,
+          "y": 143,
+          "w": 770,
+          "h": 196,
+          "b": 339,
+          "scroll": 194,
+          "client": 194
+        },
+        "body": {
+          "x": 26,
+          "y": 172,
+          "w": 768,
+          "h": 166,
+          "b": 338,
+          "scroll": 166,
+          "client": 166
+        },
+        "project": null,
+        "projectHit": false,
+        "metrics": null,
+        "summary": null,
+        "emptySummaryTail": null,
+        "deadlines": null,
+        "firstDeadline": null,
+        "date": null,
+        "dateWhiteSpace": null,
+        "bar": null,
+        "columnOrder": [],
+        "actions": [
+          {
+            "text": "Create a project",
+            "x": 38,
+            "y": 230,
+            "w": 140,
+            "h": 44,
+            "right": 178,
+            "bottom": 274,
+            "hit": true
+          },
+          {
+            "text": "Explore an example",
+            "x": 186,
+            "y": 230,
+            "w": 160,
+            "h": 44,
+            "right": 346,
+            "bottom": 274,
+            "hit": true
+          }
+        ]
+      }
+    },
+    {
+      "device": "ipad",
+      "theme": "dark",
+      "view": "empty-home",
+      "metrics": {
+        "width": 820,
+        "pageWidth": 820,
+        "panel": {
+          "x": 25,
+          "y": 143,
+          "w": 770,
+          "h": 196,
+          "b": 339,
+          "scroll": 194,
+          "client": 194
+        },
+        "body": {
+          "x": 26,
+          "y": 172,
+          "w": 768,
+          "h": 166,
+          "b": 338,
+          "scroll": 166,
+          "client": 166
+        },
+        "project": null,
+        "projectHit": false,
+        "metrics": null,
+        "summary": null,
+        "emptySummaryTail": null,
+        "deadlines": null,
+        "firstDeadline": null,
+        "date": null,
+        "dateWhiteSpace": null,
+        "bar": null,
+        "columnOrder": [],
+        "actions": [
+          {
+            "text": "Create a project",
+            "x": 38,
+            "y": 230,
+            "w": 140,
+            "h": 44,
+            "right": 178,
+            "bottom": 274,
+            "hit": true
+          },
+          {
+            "text": "Explore an example",
+            "x": 186,
+            "y": 230,
+            "w": 160,
+            "h": 44,
+            "right": 346,
+            "bottom": 274,
+            "hit": true
+          }
+        ]
+      }
+    },
+    {
+      "device": "phone",
+      "theme": "light",
+      "view": "empty-home",
+      "metrics": {
+        "width": 390,
+        "pageWidth": 390,
+        "panel": {
+          "x": 18,
+          "y": 68,
+          "w": 354,
+          "h": 160,
+          "b": 228,
+          "scroll": 158,
+          "client": 158
+        },
+        "body": {
+          "x": 19,
+          "y": 97,
+          "w": 352,
+          "h": 130,
+          "b": 227,
+          "scroll": 130,
+          "client": 130
+        },
+        "project": null,
+        "projectHit": false,
+        "metrics": null,
+        "summary": null,
+        "emptySummaryTail": null,
+        "deadlines": null,
+        "firstDeadline": null,
+        "date": null,
+        "dateWhiteSpace": null,
+        "bar": null,
+        "columnOrder": [],
+        "actions": [
+          {
+            "text": "Create a project",
+            "x": 31,
+            "y": 174,
+            "w": 140,
+            "h": 44,
+            "right": 171,
+            "bottom": 218,
+            "hit": true
+          },
+          {
+            "text": "Explore an example",
+            "x": 179,
+            "y": 174,
+            "w": 160,
+            "h": 44,
+            "right": 339,
+            "bottom": 218,
+            "hit": true
+          }
+        ]
+      }
+    },
+    {
+      "device": "phone",
+      "theme": "dark",
+      "view": "empty-home",
+      "metrics": {
+        "width": 390,
+        "pageWidth": 390,
+        "panel": {
+          "x": 18,
+          "y": 68,
+          "w": 354,
+          "h": 160,
+          "b": 228,
+          "scroll": 158,
+          "client": 158
+        },
+        "body": {
+          "x": 19,
+          "y": 97,
+          "w": 352,
+          "h": 130,
+          "b": 227,
+          "scroll": 130,
+          "client": 130
+        },
+        "project": null,
+        "projectHit": false,
+        "metrics": null,
+        "summary": null,
+        "emptySummaryTail": null,
+        "deadlines": null,
+        "firstDeadline": null,
+        "date": null,
+        "dateWhiteSpace": null,
+        "bar": null,
+        "columnOrder": [],
+        "actions": [
+          {
+            "text": "Create a project",
+            "x": 31,
+            "y": 174,
+            "w": 140,
+            "h": 44,
+            "right": 171,
+            "bottom": 218,
+            "hit": true
+          },
+          {
+            "text": "Explore an example",
+            "x": 179,
+            "y": 174,
+            "w": 160,
+            "h": 44,
+            "right": 339,
+            "bottom": 218,
+            "hit": true
+          }
+        ]
+      }
+    },
+    {
+      "device": "small",
+      "theme": "light",
+      "view": "empty-home",
+      "metrics": {
+        "width": 320,
+        "pageWidth": 320,
+        "panel": {
+          "x": 18,
+          "y": 68,
+          "w": 284,
+          "h": 211,
+          "b": 279,
+          "scroll": 209,
+          "client": 209
+        },
+        "body": {
+          "x": 19,
+          "y": 97,
+          "w": 282,
+          "h": 181,
+          "b": 278,
+          "scroll": 181,
+          "client": 181
+        },
+        "project": null,
+        "projectHit": false,
+        "metrics": null,
+        "summary": null,
+        "emptySummaryTail": null,
+        "deadlines": null,
+        "firstDeadline": null,
+        "date": null,
+        "dateWhiteSpace": null,
+        "bar": null,
+        "columnOrder": [],
+        "actions": [
+          {
+            "text": "Create a project",
+            "x": 31,
+            "y": 174,
+            "w": 140,
+            "h": 44,
+            "right": 171,
+            "bottom": 218,
+            "hit": true
+          },
+          {
+            "text": "Explore an example",
+            "x": 31,
+            "y": 226,
+            "w": 160,
+            "h": 44,
+            "right": 191,
+            "bottom": 270,
+            "hit": true
+          }
+        ]
+      }
+    },
+    {
+      "device": "small",
+      "theme": "dark",
+      "view": "empty-home",
+      "metrics": {
+        "width": 320,
+        "pageWidth": 320,
+        "panel": {
+          "x": 18,
+          "y": 68,
+          "w": 284,
+          "h": 211,
+          "b": 279,
+          "scroll": 209,
+          "client": 209
+        },
+        "body": {
+          "x": 19,
+          "y": 97,
+          "w": 282,
+          "h": 181,
+          "b": 278,
+          "scroll": 181,
+          "client": 181
+        },
+        "project": null,
+        "projectHit": false,
+        "metrics": null,
+        "summary": null,
+        "emptySummaryTail": null,
+        "deadlines": null,
+        "firstDeadline": null,
+        "date": null,
+        "dateWhiteSpace": null,
+        "bar": null,
+        "columnOrder": [],
+        "actions": [
+          {
+            "text": "Create a project",
+            "x": 31,
+            "y": 174,
+            "w": 140,
+            "h": 44,
+            "right": 171,
+            "bottom": 218,
+            "hit": true
+          },
+          {
+            "text": "Explore an example",
+            "x": 31,
+            "y": 226,
+            "w": 160,
+            "h": 44,
+            "right": 191,
+            "bottom": 270,
+            "hit": true
+          }
+        ]
+      }
+    },
+    {
+      "device": "desktop",
+      "theme": "light",
+      "view": "home",
+      "metrics": {
+        "width": 1440,
+        "pageWidth": 1440,
+        "panel": {
+          "x": 38,
+          "y": 119,
+          "w": 1363.984375,
+          "h": 196,
+          "b": 315,
+          "scroll": 194,
+          "client": 194
+        },
+        "body": {
+          "x": 39,
+          "y": 146,
+          "w": 1361.984375,
+          "h": 168,
+          "b": 314,
+          "scroll": 168,
+          "client": 168
+        },
+        "project": {
+          "x": 51,
+          "y": 154,
+          "w": 440.65625,
+          "h": 71.375,
+          "b": 225.375,
+          "scroll": 71,
+          "client": 71
+        },
+        "projectHit": true,
+        "metrics": null,
+        "summary": null,
+        "emptySummaryTail": null,
+        "deadlines": null,
+        "firstDeadline": null,
+        "date": null,
+        "dateWhiteSpace": null,
+        "bar": null,
+        "columnOrder": [],
+        "actions": []
+      }
+    },
+    {
+      "device": "desktop",
+      "theme": "light",
+      "view": "overview",
+      "metrics": {
+        "width": 1440,
+        "pageWidth": 1440,
+        "panel": null,
+        "body": null,
+        "project": null,
+        "projectHit": false,
+        "metrics": {
+          "x": 16,
+          "y": 68.1875,
+          "w": 1408,
+          "h": 73,
+          "b": 141.1875,
+          "scroll": 73,
+          "client": 73
+        },
+        "summary": {
+          "x": 867.1875,
+          "y": 157.1875,
+          "w": 556.796875,
+          "h": 330,
+          "b": 487.1875,
+          "scroll": 328,
+          "client": 328
+        },
+        "emptySummaryTail": 17,
+        "deadlines": {
+          "x": 16,
+          "y": 157.1875,
+          "w": 835.1875,
+          "h": 640,
+          "b": 797.1875,
+          "scroll": 640,
+          "client": 640
+        },
+        "firstDeadline": {
+          "x": 16,
+          "y": 188.1875,
+          "w": 835.1875,
+          "h": 88,
+          "b": 276.1875,
+          "scroll": 87,
+          "client": 87
+        },
+        "date": {
+          "x": 802.1875,
+          "y": 200.1875,
+          "w": 37,
+          "h": 19,
+          "b": 219.1875,
+          "scroll": 19,
+          "client": 19
+        },
+        "dateWhiteSpace": "nowrap",
+        "bar": {
+          "x": 571,
+          "y": 4.5,
+          "w": 221,
+          "h": 31,
+          "b": 35.5,
+          "scroll": 32,
+          "client": 31
+        },
+        "columnOrder": [
+          "dashboard-deadlines",
+          "overview-summary"
+        ],
+        "actions": []
+      }
+    },
+    {
+      "device": "desktop",
+      "theme": "dark",
+      "view": "home",
+      "metrics": {
+        "width": 1440,
+        "pageWidth": 1440,
+        "panel": {
+          "x": 38,
+          "y": 119,
+          "w": 1363.984375,
+          "h": 196,
+          "b": 315,
+          "scroll": 194,
+          "client": 194
+        },
+        "body": {
+          "x": 39,
+          "y": 146,
+          "w": 1361.984375,
+          "h": 168,
+          "b": 314,
+          "scroll": 168,
+          "client": 168
+        },
+        "project": {
+          "x": 51,
+          "y": 154,
+          "w": 440.65625,
+          "h": 71.375,
+          "b": 225.375,
+          "scroll": 71,
+          "client": 71
+        },
+        "projectHit": true,
+        "metrics": null,
+        "summary": null,
+        "emptySummaryTail": null,
+        "deadlines": null,
+        "firstDeadline": null,
+        "date": null,
+        "dateWhiteSpace": null,
+        "bar": null,
+        "columnOrder": [],
+        "actions": []
+      }
+    },
+    {
+      "device": "desktop",
+      "theme": "dark",
+      "view": "overview",
+      "metrics": {
+        "width": 1440,
+        "pageWidth": 1440,
+        "panel": null,
+        "body": null,
+        "project": null,
+        "projectHit": false,
+        "metrics": {
+          "x": 16,
+          "y": 68.1875,
+          "w": 1408,
+          "h": 73,
+          "b": 141.1875,
+          "scroll": 73,
+          "client": 73
+        },
+        "summary": {
+          "x": 867.1875,
+          "y": 157.1875,
+          "w": 556.796875,
+          "h": 330,
+          "b": 487.1875,
+          "scroll": 328,
+          "client": 328
+        },
+        "emptySummaryTail": 17,
+        "deadlines": {
+          "x": 16,
+          "y": 157.1875,
+          "w": 835.1875,
+          "h": 640,
+          "b": 797.1875,
+          "scroll": 640,
+          "client": 640
+        },
+        "firstDeadline": {
+          "x": 16,
+          "y": 188.1875,
+          "w": 835.1875,
+          "h": 88,
+          "b": 276.1875,
+          "scroll": 87,
+          "client": 87
+        },
+        "date": {
+          "x": 802.1875,
+          "y": 200.1875,
+          "w": 37,
+          "h": 19,
+          "b": 219.1875,
+          "scroll": 19,
+          "client": 19
+        },
+        "dateWhiteSpace": "nowrap",
+        "bar": {
+          "x": 571,
+          "y": 4.5,
+          "w": 221,
+          "h": 31,
+          "b": 35.5,
+          "scroll": 32,
+          "client": 31
+        },
+        "columnOrder": [
+          "dashboard-deadlines",
+          "overview-summary"
+        ],
+        "actions": []
+      }
+    },
+    {
+      "device": "ipad",
+      "theme": "light",
+      "view": "home",
+      "metrics": {
+        "width": 820,
+        "pageWidth": 820,
+        "panel": {
+          "x": 25,
+          "y": 143,
+          "w": 770,
+          "h": 196,
+          "b": 339,
+          "scroll": 194,
+          "client": 194
+        },
+        "body": {
+          "x": 26,
+          "y": 172,
+          "w": 768,
+          "h": 166,
+          "b": 338,
+          "scroll": 166,
+          "client": 166
+        },
+        "project": {
+          "x": 38,
+          "y": 180,
+          "w": 242.65625,
+          "h": 126.5625,
+          "b": 306.5625,
+          "scroll": 127,
+          "client": 127
+        },
+        "projectHit": true,
+        "metrics": null,
+        "summary": null,
+        "emptySummaryTail": null,
+        "deadlines": null,
+        "firstDeadline": null,
+        "date": null,
+        "dateWhiteSpace": null,
+        "bar": null,
+        "columnOrder": [],
+        "actions": []
+      }
+    },
+    {
+      "device": "ipad",
+      "theme": "light",
+      "view": "overview",
+      "metrics": {
+        "width": 820,
+        "pageWidth": 820,
+        "panel": null,
+        "body": null,
+        "project": null,
+        "projectHit": false,
+        "metrics": {
+          "x": 16,
+          "y": 80.1875,
+          "w": 788,
+          "h": 74.5,
+          "b": 154.6875,
+          "scroll": 75,
+          "client": 75
+        },
+        "summary": {
+          "x": 495.1875,
+          "y": 170.6875,
+          "w": 308.796875,
+          "h": 355,
+          "b": 525.6875,
+          "scroll": 353,
+          "client": 353
+        },
+        "emptySummaryTail": 17,
+        "deadlines": {
+          "x": 16,
+          "y": 170.6875,
+          "w": 463.1875,
+          "h": 716,
+          "b": 886.6875,
+          "scroll": 716,
+          "client": 716
+        },
+        "firstDeadline": {
+          "x": 16,
+          "y": 204.6875,
+          "w": 463.1875,
+          "h": 109,
+          "b": 313.6875,
+          "scroll": 108,
+          "client": 108
+        },
+        "date": {
+          "x": 430.1875,
+          "y": 216.6875,
+          "w": 37,
+          "h": 19,
+          "b": 235.6875,
+          "scroll": 19,
+          "client": 19
+        },
+        "dateWhiteSpace": "nowrap",
+        "bar": {
+          "x": 170,
+          "y": 1118,
+          "w": 480,
+          "h": 54,
+          "b": 1172,
+          "scroll": 52,
+          "client": 52
+        },
+        "columnOrder": [
+          "dashboard-deadlines",
+          "overview-summary"
+        ],
+        "actions": []
+      }
+    },
+    {
+      "device": "ipad",
+      "theme": "dark",
+      "view": "home",
+      "metrics": {
+        "width": 820,
+        "pageWidth": 820,
+        "panel": {
+          "x": 25,
+          "y": 143,
+          "w": 770,
+          "h": 196,
+          "b": 339,
+          "scroll": 194,
+          "client": 194
+        },
+        "body": {
+          "x": 26,
+          "y": 172,
+          "w": 768,
+          "h": 166,
+          "b": 338,
+          "scroll": 166,
+          "client": 166
+        },
+        "project": {
+          "x": 38,
+          "y": 180,
+          "w": 242.65625,
+          "h": 126.5625,
+          "b": 306.5625,
+          "scroll": 127,
+          "client": 127
+        },
+        "projectHit": true,
+        "metrics": null,
+        "summary": null,
+        "emptySummaryTail": null,
+        "deadlines": null,
+        "firstDeadline": null,
+        "date": null,
+        "dateWhiteSpace": null,
+        "bar": null,
+        "columnOrder": [],
+        "actions": []
+      }
+    },
+    {
+      "device": "ipad",
+      "theme": "dark",
+      "view": "overview",
+      "metrics": {
+        "width": 820,
+        "pageWidth": 820,
+        "panel": null,
+        "body": null,
+        "project": null,
+        "projectHit": false,
+        "metrics": {
+          "x": 16,
+          "y": 80.1875,
+          "w": 788,
+          "h": 74.5,
+          "b": 154.6875,
+          "scroll": 75,
+          "client": 75
+        },
+        "summary": {
+          "x": 495.1875,
+          "y": 170.6875,
+          "w": 308.796875,
+          "h": 355,
+          "b": 525.6875,
+          "scroll": 353,
+          "client": 353
+        },
+        "emptySummaryTail": 17,
+        "deadlines": {
+          "x": 16,
+          "y": 170.6875,
+          "w": 463.1875,
+          "h": 716,
+          "b": 886.6875,
+          "scroll": 716,
+          "client": 716
+        },
+        "firstDeadline": {
+          "x": 16,
+          "y": 204.6875,
+          "w": 463.1875,
+          "h": 109,
+          "b": 313.6875,
+          "scroll": 108,
+          "client": 108
+        },
+        "date": {
+          "x": 430.1875,
+          "y": 216.6875,
+          "w": 37,
+          "h": 19,
+          "b": 235.6875,
+          "scroll": 19,
+          "client": 19
+        },
+        "dateWhiteSpace": "nowrap",
+        "bar": {
+          "x": 170,
+          "y": 1118,
+          "w": 480,
+          "h": 54,
+          "b": 1172,
+          "scroll": 52,
+          "client": 52
+        },
+        "columnOrder": [
+          "dashboard-deadlines",
+          "overview-summary"
+        ],
+        "actions": []
+      }
+    },
+    {
+      "device": "phone",
+      "theme": "light",
+      "view": "home",
+      "metrics": {
+        "width": 390,
+        "pageWidth": 390,
+        "panel": {
+          "x": 18,
+          "y": 68,
+          "w": 354,
+          "h": 329.734375,
+          "b": 397.734375,
+          "scroll": 328,
+          "client": 328
+        },
+        "body": {
+          "x": 19,
+          "y": 97,
+          "w": 352,
+          "h": 299.734375,
+          "b": 396.734375,
+          "scroll": 300,
+          "client": 300
+        },
+        "project": {
+          "x": 31,
+          "y": 105,
+          "w": 328,
+          "h": 104.171875,
+          "b": 209.171875,
+          "scroll": 104,
+          "client": 104
+        },
+        "projectHit": true,
+        "metrics": null,
+        "summary": null,
+        "emptySummaryTail": null,
+        "deadlines": null,
+        "firstDeadline": null,
+        "date": null,
+        "dateWhiteSpace": null,
+        "bar": null,
+        "columnOrder": [],
+        "actions": []
+      }
+    },
+    {
+      "device": "phone",
+      "theme": "light",
+      "view": "overview",
+      "metrics": {
+        "width": 390,
+        "pageWidth": 390,
+        "panel": null,
+        "body": null,
+        "project": null,
+        "projectHit": false,
+        "metrics": {
+          "x": 10,
+          "y": 79.1875,
+          "w": 370,
+          "h": 157,
+          "b": 236.1875,
+          "scroll": 157,
+          "client": 157
+        },
+        "summary": {
+          "x": 10,
+          "y": 1073.1875,
+          "w": 370,
+          "h": 355,
+          "b": 1428.1875,
+          "scroll": 353,
+          "client": 353
+        },
+        "emptySummaryTail": 17,
+        "deadlines": {
+          "x": 10,
+          "y": 252.1875,
+          "w": 370,
+          "h": 773,
+          "b": 1025.1875,
+          "scroll": 773,
+          "client": 773
+        },
+        "firstDeadline": {
+          "x": 10,
+          "y": 286.1875,
+          "w": 370,
+          "h": 128,
+          "b": 414.1875,
+          "scroll": 127,
+          "client": 127
+        },
+        "date": {
+          "x": 331,
+          "y": 298.1875,
+          "w": 37,
+          "h": 19,
+          "b": 317.1875,
+          "scroll": 19,
+          "client": 19
+        },
+        "dateWhiteSpace": "nowrap",
+        "bar": {
+          "x": 12,
+          "y": 782,
+          "w": 366,
+          "h": 54,
+          "b": 836,
+          "scroll": 52,
+          "client": 52
+        },
+        "columnOrder": [
+          "dashboard-deadlines",
+          "overview-summary"
+        ],
+        "actions": []
+      }
+    },
+    {
+      "device": "phone",
+      "theme": "dark",
+      "view": "home",
+      "metrics": {
+        "width": 390,
+        "pageWidth": 390,
+        "panel": {
+          "x": 18,
+          "y": 68,
+          "w": 354,
+          "h": 329.734375,
+          "b": 397.734375,
+          "scroll": 328,
+          "client": 328
+        },
+        "body": {
+          "x": 19,
+          "y": 97,
+          "w": 352,
+          "h": 299.734375,
+          "b": 396.734375,
+          "scroll": 300,
+          "client": 300
+        },
+        "project": {
+          "x": 31,
+          "y": 105,
+          "w": 328,
+          "h": 104.171875,
+          "b": 209.171875,
+          "scroll": 104,
+          "client": 104
+        },
+        "projectHit": true,
+        "metrics": null,
+        "summary": null,
+        "emptySummaryTail": null,
+        "deadlines": null,
+        "firstDeadline": null,
+        "date": null,
+        "dateWhiteSpace": null,
+        "bar": null,
+        "columnOrder": [],
+        "actions": []
+      }
+    },
+    {
+      "device": "phone",
+      "theme": "dark",
+      "view": "overview",
+      "metrics": {
+        "width": 390,
+        "pageWidth": 390,
+        "panel": null,
+        "body": null,
+        "project": null,
+        "projectHit": false,
+        "metrics": {
+          "x": 10,
+          "y": 79.1875,
+          "w": 370,
+          "h": 157,
+          "b": 236.1875,
+          "scroll": 157,
+          "client": 157
+        },
+        "summary": {
+          "x": 10,
+          "y": 1073.1875,
+          "w": 370,
+          "h": 355,
+          "b": 1428.1875,
+          "scroll": 353,
+          "client": 353
+        },
+        "emptySummaryTail": 17,
+        "deadlines": {
+          "x": 10,
+          "y": 252.1875,
+          "w": 370,
+          "h": 773,
+          "b": 1025.1875,
+          "scroll": 773,
+          "client": 773
+        },
+        "firstDeadline": {
+          "x": 10,
+          "y": 286.1875,
+          "w": 370,
+          "h": 128,
+          "b": 414.1875,
+          "scroll": 127,
+          "client": 127
+        },
+        "date": {
+          "x": 331,
+          "y": 298.1875,
+          "w": 37,
+          "h": 19,
+          "b": 317.1875,
+          "scroll": 19,
+          "client": 19
+        },
+        "dateWhiteSpace": "nowrap",
+        "bar": {
+          "x": 12,
+          "y": 782,
+          "w": 366,
+          "h": 54,
+          "b": 836,
+          "scroll": 52,
+          "client": 52
+        },
+        "columnOrder": [
+          "dashboard-deadlines",
+          "overview-summary"
+        ],
+        "actions": []
+      }
+    },
+    {
+      "device": "small",
+      "theme": "light",
+      "view": "home",
+      "metrics": {
+        "width": 320,
+        "pageWidth": 320,
+        "panel": {
+          "x": 18,
+          "y": 68,
+          "w": 284,
+          "h": 374.515625,
+          "b": 442.515625,
+          "scroll": 373,
+          "client": 373
+        },
+        "body": {
+          "x": 19,
+          "y": 97,
+          "w": 282,
+          "h": 344.515625,
+          "b": 441.515625,
+          "scroll": 345,
+          "client": 345
+        },
+        "project": {
+          "x": 31,
+          "y": 105,
+          "w": 258,
+          "h": 126.5625,
+          "b": 231.5625,
+          "scroll": 127,
+          "client": 127
+        },
+        "projectHit": true,
+        "metrics": null,
+        "summary": null,
+        "emptySummaryTail": null,
+        "deadlines": null,
+        "firstDeadline": null,
+        "date": null,
+        "dateWhiteSpace": null,
+        "bar": null,
+        "columnOrder": [],
+        "actions": []
+      }
+    },
+    {
+      "device": "small",
+      "theme": "light",
+      "view": "overview",
+      "metrics": {
+        "width": 320,
+        "pageWidth": 320,
+        "panel": null,
+        "body": null,
+        "project": null,
+        "projectHit": false,
+        "metrics": {
+          "x": 10,
+          "y": 79.1875,
+          "w": 300,
+          "h": 157,
+          "b": 236.1875,
+          "scroll": 157,
+          "client": 157
+        },
+        "summary": {
+          "x": 10,
+          "y": 1073.1875,
+          "w": 300,
+          "h": 355,
+          "b": 1428.1875,
+          "scroll": 353,
+          "client": 353
+        },
+        "emptySummaryTail": 17,
+        "deadlines": {
+          "x": 10,
+          "y": 252.1875,
+          "w": 300,
+          "h": 773,
+          "b": 1025.1875,
+          "scroll": 773,
+          "client": 773
+        },
+        "firstDeadline": {
+          "x": 10,
+          "y": 286.1875,
+          "w": 300,
+          "h": 128,
+          "b": 414.1875,
+          "scroll": 127,
+          "client": 127
+        },
+        "date": {
+          "x": 261,
+          "y": 298.1875,
+          "w": 37,
+          "h": 19,
+          "b": 317.1875,
+          "scroll": 19,
+          "client": 19
+        },
+        "dateWhiteSpace": "nowrap",
+        "bar": {
+          "x": 12,
+          "y": 578,
+          "w": 296,
+          "h": 54,
+          "b": 632,
+          "scroll": 52,
+          "client": 52
+        },
+        "columnOrder": [
+          "dashboard-deadlines",
+          "overview-summary"
+        ],
+        "actions": []
+      }
+    },
+    {
+      "device": "small",
+      "theme": "dark",
+      "view": "home",
+      "metrics": {
+        "width": 320,
+        "pageWidth": 320,
+        "panel": {
+          "x": 18,
+          "y": 68,
+          "w": 284,
+          "h": 374.515625,
+          "b": 442.515625,
+          "scroll": 373,
+          "client": 373
+        },
+        "body": {
+          "x": 19,
+          "y": 97,
+          "w": 282,
+          "h": 344.515625,
+          "b": 441.515625,
+          "scroll": 345,
+          "client": 345
+        },
+        "project": {
+          "x": 31,
+          "y": 105,
+          "w": 258,
+          "h": 126.5625,
+          "b": 231.5625,
+          "scroll": 127,
+          "client": 127
+        },
+        "projectHit": true,
+        "metrics": null,
+        "summary": null,
+        "emptySummaryTail": null,
+        "deadlines": null,
+        "firstDeadline": null,
+        "date": null,
+        "dateWhiteSpace": null,
+        "bar": null,
+        "columnOrder": [],
+        "actions": []
+      }
+    },
+    {
+      "device": "small",
+      "theme": "dark",
+      "view": "overview",
+      "metrics": {
+        "width": 320,
+        "pageWidth": 320,
+        "panel": null,
+        "body": null,
+        "project": null,
+        "projectHit": false,
+        "metrics": {
+          "x": 10,
+          "y": 79.1875,
+          "w": 300,
+          "h": 157,
+          "b": 236.1875,
+          "scroll": 157,
+          "client": 157
+        },
+        "summary": {
+          "x": 10,
+          "y": 1073.1875,
+          "w": 300,
+          "h": 355,
+          "b": 1428.1875,
+          "scroll": 353,
+          "client": 353
+        },
+        "emptySummaryTail": 17,
+        "deadlines": {
+          "x": 10,
+          "y": 252.1875,
+          "w": 300,
+          "h": 773,
+          "b": 1025.1875,
+          "scroll": 773,
+          "client": 773
+        },
+        "firstDeadline": {
+          "x": 10,
+          "y": 286.1875,
+          "w": 300,
+          "h": 128,
+          "b": 414.1875,
+          "scroll": 127,
+          "client": 127
+        },
+        "date": {
+          "x": 261,
+          "y": 298.1875,
+          "w": 37,
+          "h": 19,
+          "b": 317.1875,
+          "scroll": 19,
+          "client": 19
+        },
+        "dateWhiteSpace": "nowrap",
+        "bar": {
+          "x": 12,
+          "y": 578,
+          "w": 296,
+          "h": 54,
+          "b": 632,
+          "scroll": 52,
+          "client": 52
+        },
+        "columnOrder": [
+          "dashboard-deadlines",
+          "overview-summary"
+        ],
+        "actions": []
+      }
+    }
+  ],
+  "errors": []
+}

@@ -5,7 +5,7 @@ import { capacityView } from "./capacity.js";
 import { calendarView } from "./calendar.js";
 import { timelineHTML, timelineInteractions } from "./task-timeline.js";
 export function planning(ctx) {
-  const { state, esc, api, $, renderView } = ctx;
+  const { state, esc, api, renderView } = ctx;
   const capacity = capacityView(ctx);
   const today = localDate;
   const calendar = calendarView(ctx);
@@ -41,39 +41,11 @@ export function planning(ctx) {
         ),
       ),
     );
-    return `<div class="project-overview"><p class="field-hint">${tasks.length} active cards${state.tasks.length-tasks.length ? ` · ${state.tasks.length-tasks.length} archived` : ""}. List filters do not apply here.</p><div class="dashboard-metrics"><button class="dashboard-metric" data-feature="overview-open" data-query="done"><strong>${metric.percent}%</strong>Complete</button><button class="dashboard-metric" data-feature="overview-open" data-query="open"><strong>${open.length}</strong>Open cards</button><button class="dashboard-metric" data-feature="overview-open" data-query="blocked"><strong>${blocked.length}</strong>Blocked</button><button class="dashboard-metric" data-feature="overview-open" data-query="overdue"><strong>${open.filter((t) => t.due && t.due < today()).length}</strong>Overdue</button></div><div class="project-overview-columns"><section class="overview-summary"><h2>About this project</h2><div class="canvas-markdown">${ctx.markdown(state.project.body || "Add a description in Project settings.")}</div><h2>Work by status</h2>${state.config.statuses.map((status) => `<div class="overview-status"><span>${taskColorDot(state, "status", status)}${esc(ctx.statusNames[status] || status)}</span><strong>${tasks.filter((t) => t.status === status).length}</strong></div>`).join("")}</section><section class="dashboard-deadlines"><h2>Upcoming and overdue</h2>${due.map((t) => `<button data-action="task-open" data-id="${esc(t.id)}"><span>${esc(t.title)}<small class="task-color-badge" ${taskColorAttributes(state, "assignee", t.assignee)}>${esc(t.assignee || "Unassigned")}</small></span><time datetime="${esc(t.due)}">${esc(formatDay(t.due))}</time></button>`).join("") || "<p>No open cards have deadlines.</p>"}</section></div></div>`;
+    return `<div class="project-overview"><p class="field-hint">${tasks.length} active cards${state.tasks.length-tasks.length ? ` · ${state.tasks.length-tasks.length} archived` : ""}. List filters do not apply here.</p><div class="dashboard-metrics"><button class="dashboard-metric" data-feature="overview-open" data-query="done"><strong>${metric.percent}%</strong>Complete</button><button class="dashboard-metric" data-feature="overview-open" data-query="open"><strong>${open.length}</strong>Open cards</button><button class="dashboard-metric" data-feature="overview-open" data-query="blocked"><strong>${blocked.length}</strong>Blocked</button><button class="dashboard-metric" data-feature="overview-open" data-query="overdue"><strong>${open.filter((t) => t.due && t.due < today()).length}</strong>Overdue</button></div><div class="project-overview-columns"><section class="dashboard-deadlines"><h2>Upcoming and overdue</h2>${due.map((t) => `<button data-action="task-open" data-id="${esc(t.id)}"><span>${esc(t.title)}<small class="task-color-badge" ${taskColorAttributes(state, "assignee", t.assignee)}>${esc(t.assignee || "Unassigned")}</small></span><time datetime="${esc(t.due)}">${esc(formatDay(t.due))}</time></button>`).join("") || "<p>No open cards have deadlines.</p>"}</section><section class="overview-summary"><h2>About this project</h2><div class="canvas-markdown">${ctx.markdown(state.project.body || "Add a description in Project settings.")}</div><h2>Work by status</h2>${state.config.statuses.map((status) => `<div class="overview-status"><span>${taskColorDot(state, "status", status)}${esc(ctx.statusNames[status] || status)}</span><strong>${tasks.filter((t) => t.status === status).length}</strong></div>`).join("")}</section></div></div>`;
   }
   async function dashboard() {
-    const data = await api("/overview");
-    state.overview = data;
-    if (state.project || !$(".organisation-overview")) return;
-    const projects = data.projects.filter(
-        (p) => p.organisation === state.organisation?.id && !p.archived,
-      ),
-      tasks = data.tasks.filter(
-        (t) =>
-          t.organisation === state.organisation?.id &&
-          !t.archived &&
-          !t.completed,
-      );
-    const due = tasks
-      .filter((t) => t.due)
-      .sort((a, b) => a.due.localeCompare(b.due))
-      .slice(0, 8);
-    // Each load replaces the last one's, so overlapping loads show the dashboard once.
-    $(".organisation-overview").querySelectorAll(":scope > :is(.dashboard-metrics, .dashboard-deadlines)").forEach((el) => el.remove());
-    $(".organisation-overview").insertAdjacentHTML(
-      "afterbegin",
-      `<div class="dashboard-metrics"><div><strong>${tasks.length}</strong>Open cards</div><div><strong>${tasks.filter((t) => t.blocked).length}</strong>Blocked</div><div><strong>${tasks.filter((t) => t.due && t.due < today()).length}</strong>Overdue</div><div><strong>${projects.length}</strong>Active projects</div></div><div class="dashboard-deadlines"><h2>Upcoming and overdue</h2>${due.map((t) => `<button data-feature="global-open" data-project="${esc(t.project)}" data-id="${esc(t.id)}"><span>${esc(t.title)}<small>${esc(t.project_title)}${t.blocked ? " · Blocked" : ""}</small></span><time datetime="${esc(t.due)}">${esc(formatDay(t.due))}</time></button>`).join("") || "<p>No open cards have deadlines.</p>"}</div>`,
-    );
-    for (const p of projects) {
-      const card = $(`.project-card[data-id="${p.id}"]`);
-      card?.querySelector(".project-health")?.remove();
-      card?.insertAdjacentHTML(
-        "beforeend",
-        `<span class="project-health">${p.progress.percent}% complete · ${p.overdue ? "Needs attention" : p.blocked ? "Blocked work" : "On track"}<small>${p.blocked} blocked · ${p.overdue} overdue</small></span>`,
-      );
-    }
+    // Cross-project Markdown references still use the shared overview data.
+    state.overview = await api("/overview");
   }
   function click(action, el) {
     if (action === "overview-open") {

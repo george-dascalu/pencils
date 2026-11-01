@@ -1,0 +1,918 @@
+[
+  {
+    "name": "help-780-light",
+    "width": 780,
+    "height": 900,
+    "article": {
+      "x": 16,
+      "y": 273,
+      "width": 748,
+      "height": 1176.625,
+      "top": 273,
+      "right": 764,
+      "bottom": 1449.625,
+      "left": 16
+    },
+    "sidebar": {
+      "x": 16,
+      "y": 137,
+      "width": 748,
+      "height": 112,
+      "top": 137,
+      "right": 764,
+      "bottom": 249,
+      "left": 16
+    },
+    "navOpen": false
+  },
+  {
+    "name": "help-780-dark",
+    "width": 780,
+    "height": 900,
+    "article": {
+      "x": 16,
+      "y": 273,
+      "width": 748,
+      "height": 1176.625,
+      "top": 273,
+      "right": 764,
+      "bottom": 1449.625,
+      "left": 16
+    },
+    "sidebar": {
+      "x": 16,
+      "y": 137,
+      "width": 748,
+      "height": 112,
+      "top": 137,
+      "right": 764,
+      "bottom": 249,
+      "left": 16
+    },
+    "navOpen": false
+  },
+  {
+    "name": "help-790-light",
+    "width": 790,
+    "height": 900,
+    "article": {
+      "x": 16,
+      "y": 273,
+      "width": 758,
+      "height": 1176.625,
+      "top": 273,
+      "right": 774,
+      "bottom": 1449.625,
+      "left": 16
+    },
+    "sidebar": {
+      "x": 16,
+      "y": 137,
+      "width": 758,
+      "height": 112,
+      "top": 137,
+      "right": 774,
+      "bottom": 249,
+      "left": 16
+    },
+    "navOpen": false
+  },
+  {
+    "name": "help-790-dark",
+    "width": 790,
+    "height": 900,
+    "article": {
+      "x": 16,
+      "y": 273,
+      "width": 758,
+      "height": 1176.625,
+      "top": 273,
+      "right": 774,
+      "bottom": 1449.625,
+      "left": 16
+    },
+    "sidebar": {
+      "x": 16,
+      "y": 137,
+      "width": 758,
+      "height": 112,
+      "top": 137,
+      "right": 774,
+      "bottom": 249,
+      "left": 16
+    },
+    "navOpen": false
+  },
+  {
+    "name": "help-800-light",
+    "width": 800,
+    "height": 900,
+    "article": {
+      "x": 16,
+      "y": 273,
+      "width": 768,
+      "height": 1176.625,
+      "top": 273,
+      "right": 784,
+      "bottom": 1449.625,
+      "left": 16
+    },
+    "sidebar": {
+      "x": 16,
+      "y": 137,
+      "width": 768,
+      "height": 112,
+      "top": 137,
+      "right": 784,
+      "bottom": 249,
+      "left": 16
+    },
+    "navOpen": false
+  },
+  {
+    "name": "help-800-dark",
+    "width": 800,
+    "height": 900,
+    "article": {
+      "x": 16,
+      "y": 273,
+      "width": 768,
+      "height": 1176.625,
+      "top": 273,
+      "right": 784,
+      "bottom": 1449.625,
+      "left": 16
+    },
+    "sidebar": {
+      "x": 16,
+      "y": 137,
+      "width": 768,
+      "height": 112,
+      "top": 137,
+      "right": 784,
+      "bottom": 249,
+      "left": 16
+    },
+    "navOpen": false
+  },
+  {
+    "name": "help-810-light",
+    "width": 810,
+    "height": 900,
+    "article": {
+      "x": 280,
+      "y": 145,
+      "width": 506,
+      "height": 1119.375,
+      "top": 145,
+      "right": 786,
+      "bottom": 1264.375,
+      "left": 280
+    },
+    "sidebar": {
+      "x": 24,
+      "y": 145,
+      "width": 220,
+      "height": 694,
+      "top": 145,
+      "right": 244,
+      "bottom": 839,
+      "left": 24
+    },
+    "navOpen": true
+  },
+  {
+    "name": "help-810-dark",
+    "width": 810,
+    "height": 900,
+    "article": {
+      "x": 280,
+      "y": 145,
+      "width": 506,
+      "height": 1119.375,
+      "top": 145,
+      "right": 786,
+      "bottom": 1264.375,
+      "left": 280
+    },
+    "sidebar": {
+      "x": 24,
+      "y": 145,
+      "width": 220,
+      "height": 694,
+      "top": 145,
+      "right": 244,
+      "bottom": 839,
+      "left": 24
+    },
+    "navOpen": true
+  },
+  {
+    "name": "capacity-empty-820-light",
+    "width": 820,
+    "pageWidth": 820,
+    "actions": [
+      {
+        "text": "People and teams",
+        "rect": {
+          "x": 265,
+          "y": 306.5625,
+          "width": 128,
+          "height": 44,
+          "top": 306.5625,
+          "right": 393,
+          "bottom": 350.5625,
+          "left": 265
+        }
+      },
+      {
+        "text": "Choose project teams",
+        "rect": {
+          "x": 401,
+          "y": 306.5625,
+          "width": 154,
+          "height": 44,
+          "top": 306.5625,
+          "right": 555,
+          "bottom": 350.5625,
+          "left": 401
+        }
+      }
+    ],
+    "actionGap": 8,
+    "tasks": [
+      {
+        "rect": {
+          "x": 12,
+          "y": 481.75,
+          "width": 796,
+          "height": 44,
+          "top": 481.75,
+          "right": 808,
+          "bottom": 525.75,
+          "left": 12
+        },
+        "span": {
+          "x": 12,
+          "y": 492.75,
+          "width": 705,
+          "height": 22,
+          "top": 492.75,
+          "right": 717,
+          "bottom": 514.75,
+          "left": 12
+        },
+        "small": {
+          "x": 729,
+          "y": 492.25,
+          "width": 79,
+          "height": 23,
+          "top": 492.25,
+          "right": 808,
+          "bottom": 515.25,
+          "left": 729
+        },
+        "badge": {
+          "x": 729,
+          "y": 492.25,
+          "width": 79,
+          "height": 23,
+          "top": 492.25,
+          "right": 808,
+          "bottom": 515.25,
+          "left": 729
+        },
+        "scrollWidth": 796,
+        "clientWidth": 796
+      },
+      {
+        "rect": {
+          "x": 12,
+          "y": 525.75,
+          "width": 796,
+          "height": 104,
+          "top": 525.75,
+          "right": 808,
+          "bottom": 629.75,
+          "left": 12
+        },
+        "span": {
+          "x": 12,
+          "y": 533.75,
+          "width": 705,
+          "height": 88,
+          "top": 533.75,
+          "right": 717,
+          "bottom": 621.75,
+          "left": 12
+        },
+        "small": {
+          "x": 729,
+          "y": 566.25,
+          "width": 79,
+          "height": 23,
+          "top": 566.25,
+          "right": 808,
+          "bottom": 589.25,
+          "left": 729
+        },
+        "badge": {
+          "x": 729,
+          "y": 566.25,
+          "width": 79,
+          "height": 23,
+          "top": 566.25,
+          "right": 808,
+          "bottom": 589.25,
+          "left": 729
+        },
+        "scrollWidth": 796,
+        "clientWidth": 796
+      }
+    ]
+  },
+  {
+    "name": "capacity-assigned-820-light",
+    "width": 820,
+    "pageWidth": 820,
+    "actions": [],
+    "actionGap": null,
+    "tasks": [
+      {
+        "rect": {
+          "x": 12,
+          "y": 467.5625,
+          "width": 796,
+          "height": 148,
+          "top": 467.5625,
+          "right": 808,
+          "bottom": 615.5625,
+          "left": 12
+        },
+        "span": {
+          "x": 12,
+          "y": 475.5625,
+          "width": 465.609375,
+          "height": 132,
+          "top": 475.5625,
+          "right": 477.609375,
+          "bottom": 607.5625,
+          "left": 12
+        },
+        "small": {
+          "x": 489.609375,
+          "y": 513.0625,
+          "width": 318.390625,
+          "height": 57,
+          "top": 513.0625,
+          "right": 808,
+          "bottom": 570.0625,
+          "left": 489.609375
+        },
+        "badge": {
+          "x": 489.609375,
+          "y": 513.0625,
+          "width": 318.390625,
+          "height": 57,
+          "top": 513.0625,
+          "right": 808,
+          "bottom": 570.0625,
+          "left": 489.609375
+        },
+        "scrollWidth": 796,
+        "clientWidth": 796
+      }
+    ]
+  },
+  {
+    "name": "capacity-empty-820-dark",
+    "width": 820,
+    "pageWidth": 820,
+    "actions": [
+      {
+        "text": "People and teams",
+        "rect": {
+          "x": 265,
+          "y": 306.5625,
+          "width": 128,
+          "height": 44,
+          "top": 306.5625,
+          "right": 393,
+          "bottom": 350.5625,
+          "left": 265
+        }
+      },
+      {
+        "text": "Choose project teams",
+        "rect": {
+          "x": 401,
+          "y": 306.5625,
+          "width": 154,
+          "height": 44,
+          "top": 306.5625,
+          "right": 555,
+          "bottom": 350.5625,
+          "left": 401
+        }
+      }
+    ],
+    "actionGap": 8,
+    "tasks": [
+      {
+        "rect": {
+          "x": 12,
+          "y": 481.75,
+          "width": 796,
+          "height": 44,
+          "top": 481.75,
+          "right": 808,
+          "bottom": 525.75,
+          "left": 12
+        },
+        "span": {
+          "x": 12,
+          "y": 492.75,
+          "width": 705,
+          "height": 22,
+          "top": 492.75,
+          "right": 717,
+          "bottom": 514.75,
+          "left": 12
+        },
+        "small": {
+          "x": 729,
+          "y": 492.25,
+          "width": 79,
+          "height": 23,
+          "top": 492.25,
+          "right": 808,
+          "bottom": 515.25,
+          "left": 729
+        },
+        "badge": {
+          "x": 729,
+          "y": 492.25,
+          "width": 79,
+          "height": 23,
+          "top": 492.25,
+          "right": 808,
+          "bottom": 515.25,
+          "left": 729
+        },
+        "scrollWidth": 796,
+        "clientWidth": 796
+      },
+      {
+        "rect": {
+          "x": 12,
+          "y": 525.75,
+          "width": 796,
+          "height": 104,
+          "top": 525.75,
+          "right": 808,
+          "bottom": 629.75,
+          "left": 12
+        },
+        "span": {
+          "x": 12,
+          "y": 533.75,
+          "width": 705,
+          "height": 88,
+          "top": 533.75,
+          "right": 717,
+          "bottom": 621.75,
+          "left": 12
+        },
+        "small": {
+          "x": 729,
+          "y": 566.25,
+          "width": 79,
+          "height": 23,
+          "top": 566.25,
+          "right": 808,
+          "bottom": 589.25,
+          "left": 729
+        },
+        "badge": {
+          "x": 729,
+          "y": 566.25,
+          "width": 79,
+          "height": 23,
+          "top": 566.25,
+          "right": 808,
+          "bottom": 589.25,
+          "left": 729
+        },
+        "scrollWidth": 796,
+        "clientWidth": 796
+      }
+    ]
+  },
+  {
+    "name": "capacity-assigned-820-dark",
+    "width": 820,
+    "pageWidth": 820,
+    "actions": [],
+    "actionGap": null,
+    "tasks": [
+      {
+        "rect": {
+          "x": 12,
+          "y": 467.5625,
+          "width": 796,
+          "height": 148,
+          "top": 467.5625,
+          "right": 808,
+          "bottom": 615.5625,
+          "left": 12
+        },
+        "span": {
+          "x": 12,
+          "y": 475.5625,
+          "width": 465.609375,
+          "height": 132,
+          "top": 475.5625,
+          "right": 477.609375,
+          "bottom": 607.5625,
+          "left": 12
+        },
+        "small": {
+          "x": 489.609375,
+          "y": 513.0625,
+          "width": 318.390625,
+          "height": 57,
+          "top": 513.0625,
+          "right": 808,
+          "bottom": 570.0625,
+          "left": 489.609375
+        },
+        "badge": {
+          "x": 489.609375,
+          "y": 513.0625,
+          "width": 318.390625,
+          "height": 57,
+          "top": 513.0625,
+          "right": 808,
+          "bottom": 570.0625,
+          "left": 489.609375
+        },
+        "scrollWidth": 796,
+        "clientWidth": 796
+      }
+    ]
+  },
+  {
+    "name": "capacity-empty-390-light",
+    "width": 390,
+    "pageWidth": 390,
+    "actions": [
+      {
+        "text": "People and teams",
+        "rect": {
+          "x": 50,
+          "y": 263.96875,
+          "width": 128,
+          "height": 44,
+          "top": 263.96875,
+          "right": 178,
+          "bottom": 307.96875,
+          "left": 50
+        }
+      },
+      {
+        "text": "Choose project teams",
+        "rect": {
+          "x": 186,
+          "y": 263.96875,
+          "width": 154,
+          "height": 44,
+          "top": 263.96875,
+          "right": 340,
+          "bottom": 307.96875,
+          "left": 186
+        }
+      }
+    ],
+    "actionGap": 8,
+    "tasks": [
+      {
+        "rect": {
+          "x": 6,
+          "y": 439.15625,
+          "width": 378,
+          "height": 44,
+          "top": 439.15625,
+          "right": 384,
+          "bottom": 483.15625,
+          "left": 6
+        },
+        "span": {
+          "x": 6,
+          "y": 450.15625,
+          "width": 287,
+          "height": 22,
+          "top": 450.15625,
+          "right": 293,
+          "bottom": 472.15625,
+          "left": 6
+        },
+        "small": {
+          "x": 305,
+          "y": 449.65625,
+          "width": 79,
+          "height": 23,
+          "top": 449.65625,
+          "right": 384,
+          "bottom": 472.65625,
+          "left": 305
+        },
+        "badge": {
+          "x": 305,
+          "y": 449.65625,
+          "width": 79,
+          "height": 23,
+          "top": 449.65625,
+          "right": 384,
+          "bottom": 472.65625,
+          "left": 305
+        },
+        "scrollWidth": 378,
+        "clientWidth": 378
+      },
+      {
+        "rect": {
+          "x": 6,
+          "y": 483.15625,
+          "width": 378,
+          "height": 214,
+          "top": 483.15625,
+          "right": 384,
+          "bottom": 697.15625,
+          "left": 6
+        },
+        "span": {
+          "x": 6,
+          "y": 491.15625,
+          "width": 287,
+          "height": 198,
+          "top": 491.15625,
+          "right": 293,
+          "bottom": 689.15625,
+          "left": 6
+        },
+        "small": {
+          "x": 305,
+          "y": 578.65625,
+          "width": 79,
+          "height": 23,
+          "top": 578.65625,
+          "right": 384,
+          "bottom": 601.65625,
+          "left": 305
+        },
+        "badge": {
+          "x": 305,
+          "y": 578.65625,
+          "width": 79,
+          "height": 23,
+          "top": 578.65625,
+          "right": 384,
+          "bottom": 601.65625,
+          "left": 305
+        },
+        "scrollWidth": 378,
+        "clientWidth": 378
+      }
+    ]
+  },
+  {
+    "name": "capacity-assigned-390-light",
+    "width": 390,
+    "pageWidth": 390,
+    "actions": [],
+    "actionGap": null,
+    "tasks": [
+      {
+        "rect": {
+          "x": 6,
+          "y": 424.96875,
+          "width": 378,
+          "height": 258,
+          "top": 424.96875,
+          "right": 384,
+          "bottom": 682.96875,
+          "left": 6
+        },
+        "span": {
+          "x": 6,
+          "y": 432.96875,
+          "width": 214.8125,
+          "height": 242,
+          "top": 432.96875,
+          "right": 220.8125,
+          "bottom": 674.96875,
+          "left": 6
+        },
+        "small": {
+          "x": 232.8125,
+          "y": 508.46875,
+          "width": 151.1875,
+          "height": 91,
+          "top": 508.46875,
+          "right": 384,
+          "bottom": 599.46875,
+          "left": 232.8125
+        },
+        "badge": {
+          "x": 232.8125,
+          "y": 508.46875,
+          "width": 151.1875,
+          "height": 91,
+          "top": 508.46875,
+          "right": 384,
+          "bottom": 599.46875,
+          "left": 232.8125
+        },
+        "scrollWidth": 378,
+        "clientWidth": 378
+      }
+    ]
+  },
+  {
+    "name": "capacity-empty-390-dark",
+    "width": 390,
+    "pageWidth": 390,
+    "actions": [
+      {
+        "text": "People and teams",
+        "rect": {
+          "x": 50,
+          "y": 263.96875,
+          "width": 128,
+          "height": 44,
+          "top": 263.96875,
+          "right": 178,
+          "bottom": 307.96875,
+          "left": 50
+        }
+      },
+      {
+        "text": "Choose project teams",
+        "rect": {
+          "x": 186,
+          "y": 263.96875,
+          "width": 154,
+          "height": 44,
+          "top": 263.96875,
+          "right": 340,
+          "bottom": 307.96875,
+          "left": 186
+        }
+      }
+    ],
+    "actionGap": 8,
+    "tasks": [
+      {
+        "rect": {
+          "x": 6,
+          "y": 439.15625,
+          "width": 378,
+          "height": 44,
+          "top": 439.15625,
+          "right": 384,
+          "bottom": 483.15625,
+          "left": 6
+        },
+        "span": {
+          "x": 6,
+          "y": 450.15625,
+          "width": 287,
+          "height": 22,
+          "top": 450.15625,
+          "right": 293,
+          "bottom": 472.15625,
+          "left": 6
+        },
+        "small": {
+          "x": 305,
+          "y": 449.65625,
+          "width": 79,
+          "height": 23,
+          "top": 449.65625,
+          "right": 384,
+          "bottom": 472.65625,
+          "left": 305
+        },
+        "badge": {
+          "x": 305,
+          "y": 449.65625,
+          "width": 79,
+          "height": 23,
+          "top": 449.65625,
+          "right": 384,
+          "bottom": 472.65625,
+          "left": 305
+        },
+        "scrollWidth": 378,
+        "clientWidth": 378
+      },
+      {
+        "rect": {
+          "x": 6,
+          "y": 483.15625,
+          "width": 378,
+          "height": 214,
+          "top": 483.15625,
+          "right": 384,
+          "bottom": 697.15625,
+          "left": 6
+        },
+        "span": {
+          "x": 6,
+          "y": 491.15625,
+          "width": 287,
+          "height": 198,
+          "top": 491.15625,
+          "right": 293,
+          "bottom": 689.15625,
+          "left": 6
+        },
+        "small": {
+          "x": 305,
+          "y": 578.65625,
+          "width": 79,
+          "height": 23,
+          "top": 578.65625,
+          "right": 384,
+          "bottom": 601.65625,
+          "left": 305
+        },
+        "badge": {
+          "x": 305,
+          "y": 578.65625,
+          "width": 79,
+          "height": 23,
+          "top": 578.65625,
+          "right": 384,
+          "bottom": 601.65625,
+          "left": 305
+        },
+        "scrollWidth": 378,
+        "clientWidth": 378
+      }
+    ]
+  },
+  {
+    "name": "capacity-assigned-390-dark",
+    "width": 390,
+    "pageWidth": 390,
+    "actions": [],
+    "actionGap": null,
+    "tasks": [
+      {
+        "rect": {
+          "x": 6,
+          "y": 424.96875,
+          "width": 378,
+          "height": 258,
+          "top": 424.96875,
+          "right": 384,
+          "bottom": 682.96875,
+          "left": 6
+        },
+        "span": {
+          "x": 6,
+          "y": 432.96875,
+          "width": 214.8125,
+          "height": 242,
+          "top": 432.96875,
+          "right": 220.8125,
+          "bottom": 674.96875,
+          "left": 6
+        },
+        "small": {
+          "x": 232.8125,
+          "y": 508.46875,
+          "width": 151.1875,
+          "height": 91,
+          "top": 508.46875,
+          "right": 384,
+          "bottom": 599.46875,
+          "left": 232.8125
+        },
+        "badge": {
+          "x": 232.8125,
+          "y": 508.46875,
+          "width": 151.1875,
+          "height": 91,
+          "top": 508.46875,
+          "right": 384,
+          "bottom": 599.46875,
+          "left": 232.8125
+        },
+        "scrollWidth": 378,
+        "clientWidth": 378
+      }
+    ]
+  }
+]

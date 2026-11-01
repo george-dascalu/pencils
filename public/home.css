@@ -33,8 +33,8 @@
 }
 .home-panel-head h2 { flex: 1; min-width: 0; margin: 0; font-size: var(--type-small); font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .home-panel-body { flex: 1; min-height: 0; overflow: auto; padding: 8px 12px; }
-.home-panel[data-type="web"] .home-panel-body, .home-panel[data-type="projects"] .home-panel-body { padding: 0; }
-.home-panel[data-type="projects"] .home-panel-body :is(.hero, .welcome) { padding: 12px; }
+.home-panel[data-type="web"] .home-panel-body { padding: 0; }
+.home-projects-empty p { margin: 0 0 12px; max-width: 65ch; }
 [data-home-drag] { cursor: grab; touch-action: none; }
 .home-panel.moving [data-home-drag] { cursor: grabbing; }
 .home-panel-resize {

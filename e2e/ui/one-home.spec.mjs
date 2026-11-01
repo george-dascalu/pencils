@@ -45,7 +45,7 @@ onDevices(["desktop", "phone"], () => test("the sidebar has one New project butt
 // Owner request (T3, 0.20.75): the organisation's home leaves New project to the sidebar's +.
 test("the organisation home has no New project button of its own", async ({ page }) => {
   await page.goto(`${app.base}/#organisation/${app.project.organisation}/home`);
-  await page.locator(".organisation-overview .project-card").first().waitFor();
+  await page.locator(".home-panel[data-type=projects] .project-card").first().waitFor();
   await expect(page.locator('.main [data-action="project-new"]')).toHaveCount(0);
   await openSidebar(page);
   await page.locator('.sidebar [data-action="project-new"]').click();

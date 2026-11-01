@@ -30,11 +30,11 @@ test("the Table refuses a due date before the start date, says why and puts the 
   expect((await app.store.snapshot(app.project.id)).tasks.find((t) => t.id === app.dated.id).due).toBe("2026-11-05");
 });
 
-test("Home opens in the organisation in use, with its dashboard once and bookmarked views named", async ({ page }) => {
+test("Home opens in the organisation in use, with direct project links and bookmarked views named", async ({ page }) => {
   await page.goto(url("list"));
   await page.locator(".task-row").first().waitFor();
   await page.evaluate((project) => fetch("/api/bookmarks", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ kind: "view", project, id: "kanban" }) }), app.project.id);
-  // Home's first redraws each load the dashboard; on a busy server both answers arrive after them.
+  // Cross-project reference data may arrive after Home has drawn its project links.
   const held = [];
   let answered = 0;
   await page.route("**/api/overview", (route) => held.push(route));
@@ -48,11 +48,10 @@ test("Home opens in the organisation in use, with its dashboard once and bookmar
   await page.unroute("**/api/overview");
   await expect.poll(() => answered).toBe(held.length);
   await page.evaluate(() => new Promise((done) => requestAnimationFrame(() => setTimeout(done))));
-  // Each answer fills the same place: never two dashboards, even for a moment (a later redraw
-  // would hide a second one from a retrying check).
+  // Late answers must not put the old full dashboard back inside the Projects panel.
   for (const part of [".dashboard-metrics", ".dashboard-deadlines", ".project-health"])
-    expect(await projects.locator(part).count(), part).toBeLessThanOrEqual(1);
-  await expect(projects.locator(".dashboard-metrics")).toHaveCount(1);
+    expect(await projects.locator(part).count(), part).toBe(0);
+  await expect(projects.locator(".project-card")).toHaveCount(1);
   await expect(page.locator('.home-panel[data-type="bookmarks"] .home-item')).toHaveText(["Kanban · Sweep"]);
 });
 
