@@ -14,14 +14,16 @@ const open = async (page) => {
 const menu = (page, key) => page.locator(`.board-toolbar [data-board-menu="${key}"]`);
 const items = (page, key) => menu(page, key).locator(".board-menu-panel > :is(button, a)").evaluateAll((els) => els.map((el) => el.textContent.trim()));
 
-test("the board bar's right side holds the star and Board tools, which leads with the session and history actions", async ({ page }) => {
+// The bookmark star sits before the title in the top bar (T74, owner request T40, 1 November 2026).
+test("the board bar's right side holds Board tools, which leads with the session and history actions", async ({ page }) => {
   await open(page);
   const right = await page.locator(".board-toolbar").evaluate((bar) => {
     const name = (el) => el.matches(".bookmark-button") ? "star" : el.dataset.boardMenu || (el.id === "board-save" ? "save" : "");
     const save = bar.querySelector("#board-save").getBoundingClientRect().left;
     return [...bar.children].filter((el) => el.getBoundingClientRect().left >= save).map(name).filter(Boolean);
   });
-  expect(right).toEqual(["save", "star", "tools"]);
+  expect(right).toEqual(["save", "tools"]);
+  await expect(page.locator('.topbar .breadcrumb .bookmark-button[data-kind="board"]')).toBeVisible();
   await expect(menu(page, "tools").locator("summary")).toHaveAccessibleName("Board tools");
   await expect(page.locator('.board-toolbar [data-board-menu="session"], .board-toolbar [data-board-menu="history"]')).toHaveCount(0);
   expect(await items(page, "tools")).toEqual(["Present", "Board session", "Activity", "History", "Local checkpoints", "Rename", "Move to folder", "Copy board link", "Link cards", "Export SVG", "Export PNG", "Obsidian .canvas", "Prepare offline drawing", "Open offline pad", "Delete board"]);

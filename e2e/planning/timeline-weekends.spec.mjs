@@ -133,10 +133,10 @@ test("an embedded Timeline saves its own weekend preference with the board", { t
   const embedded = page.locator('[data-timeline="live-timeline"]');
   await embedded.waitFor();
   const embeddedToggle = embedded.locator("[data-timeline-weekends]").first();
-  if ((await embeddedToggle.getAttribute("aria-pressed")) === "true") await embeddedToggle.click();
+  await embeddedToggle.uncheck();
   await expect(embedded).toHaveAttribute("data-weekends", "false");
   await expect.poll(async () => (await app.store.snapshot(project.id)).boards.find((b) => b.id === board.id).nodes.find((n) => n.id === "live-timeline").timelineShowWeekends).toBe(false);
   await page.reload();
   await embedded.waitFor();
-  await expect(embedded.locator("[data-timeline-weekends]").first()).toHaveAttribute("aria-pressed", "false");
+  await expect(embedded.getByRole("checkbox", { name: "Show weekends", exact: true })).not.toBeChecked();
 });

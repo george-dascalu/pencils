@@ -189,8 +189,6 @@
   align-items: center;
   gap: 8px;
 }
-.timeline-weekends { cursor: pointer; white-space: nowrap; }
-.timeline-weekends input { margin: 0; }
 .timeline-header > .timeline-task-label {
   display: flex;
   align-items: center;

@@ -188,7 +188,7 @@ export function installFeatures(ctx) {
     $(".kanban-group-control")?.remove();
     $(".kanban-id-control")?.remove();
     if (state.view === "kanban") {
-      $(".toolbar-right")?.insertAdjacentHTML("afterbegin", `<label class="kanban-group-control">Swimlanes<select id="kanban-group" class="filter" aria-label="Kanban swimlanes">${options(kanbanGroups.filter((field) => fieldOn(state.config, field)), kanbanGroup(state.kanbanGroupBy), { none: "None", assignee: "Assignee", priority: "Priority", type: "Card type" })}</select></label><label class="kanban-group-control kanban-id-control"><input type="checkbox" id="kanban-show-ids" ${storage.get(`kanban-show-ids:${state.project.id}`, false) === true ? "checked" : ""}>Show card IDs</label>`);
+      $(".toolbar-right")?.insertAdjacentHTML("afterbegin", `<label class="kanban-group-control">Swimlanes<select id="kanban-group" class="filter" aria-label="Kanban swimlanes">${options(kanbanGroups.filter((field) => fieldOn(state.config, field)), kanbanGroup(state.kanbanGroupBy), { none: "None", assignee: "Assignee", priority: "Priority", type: "Card type" })}</select></label><label class="kanban-group-control kanban-id-control check-control"><input type="checkbox" id="kanban-show-ids" ${storage.get(`kanban-show-ids:${state.project.id}`, false) === true ? "checked" : ""}>Show card IDs</label>`);
     }
     layout.projectHeader();
   }

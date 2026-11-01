@@ -857,13 +857,13 @@ function keepFocus(render) {
   // A Settings field is found again by its place in its form, or is the same field when the page
   // kept it across a save.
   const settings = focused?.closest("#settings-panel") && state.settingsSection;
-  const field = !key && settings && focused.form?.id && [focused.form.id, [...focused.form.elements].indexOf(focused)];
+  const field = !key && settings && focused.form?.id && [focused.form.id, [...focused.form.elements].indexOf(focused), focused.name];
   const result = render();
   if (focused && (!focused.isConnected || settings) && document.activeElement === document.body) {
     // A control in the closed sidebar can't take focus (the menu button shares its close button's action).
     const again = focused.isConnected ? focused : key
       ? [...document.querySelectorAll(key)].find((el) => el.getClientRects().length && !el.closest(".sidebar:not(.open)"))
-      : field && state.settingsSection === settings ? document.getElementById(field[0])?.elements[field[1]] : null;
+      : field && state.settingsSection === settings ? [document.getElementById(field[0])?.elements[field[1]]].find((el) => el?.name === field[2]) : null;
     again?.focus({ preventScroll: true });
   }
   return result;
@@ -2665,7 +2665,8 @@ document.addEventListener("submit", async (event) => {
     } else toast(error.message, true);
   } finally {
     submit.disabled = false;
-    if (form.id === "organisation-form") state.settingsSaving = false;
+    // Only a Settings save set it; creating an organisation leaves another save's alone.
+    if (form.id === "organisation-form" && form.dataset.id) state.settingsSaving = false;
   }
 });
 document.addEventListener("input", (event) => {

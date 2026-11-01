@@ -191,6 +191,21 @@ test.describe("desktop", () => {
     await expect(page.locator('th[data-column-key="title"]')).toHaveAttribute("aria-sort", "descending");
   });
 
+  // Owner request T40 (1 November 2026; T74): Sort is an icon menu like the other views', with a
+  // badge counting its sorts.
+  test("Sort is an icon menu with a badge counting the sorts", async ({ page }) => {
+    await open(page);
+    const sort = page.locator('[data-board-menu="table-sorts"] > summary');
+    await expect(sort).toHaveAttribute("aria-label", "Sort");
+    expect(await sort.evaluate((el) => el.innerText.trim()), "an icon, no text").toBe("");
+    await sort.click();
+    await page.locator('[data-table-action="add-sort"]').click();
+    await expect(sort).toHaveAttribute("aria-label", "Sort (1 active)");
+    await expect(sort.locator(".filter-count")).toHaveText("1");
+    await page.locator('[data-table-action="clear-sorts"]').click();
+    await expect(sort).toHaveAttribute("aria-label", "Sort");
+  });
+
   test("titles sort naturally, Shift adds a second sort, and a third click clears sorting", gate, async ({ page }) => {
     await open(page);
     const sortBy = (name) => page.getByRole("button", { name: `Sort by ${name}`, exact: true });

@@ -67,7 +67,7 @@ export function projectLayout(ctx) {
     const ipad = tabBar.matches && !narrow.matches;
     if (!(ipad && taskViews.includes(state.view))) lowerTools();
     phoneBoard.sync();
-    if (ipad && !taskViews.includes(state.view)) starBeforeTitle();
+    if (!narrow.matches) starBeforeTitle();
     const toolbar = $(".toolbar-left") || $(".board-toolbar");
     if (!toolbar) return;
     // Sorting is an icon button that opens the (hidden) select's options: beside the view's
@@ -139,8 +139,8 @@ export function projectLayout(ctx) {
     positionCompact();
   }
   // iPad (owner request, 30 Oct 2026): a task view's search, filters and sort sit in the middle of
-  // the top bar, which the bottom bar's view tabs leave empty, and the bookmark star before the
-  // title. The toolbar row keeps the view's other controls, or goes when none are left.
+  // the top bar, which the bottom bar's view tabs leave empty. The toolbar row keeps the view's
+  // other controls, or goes when none are left.
   function topBarTools(toolbar, sortButton) {
     const title = $(".topbar .breadcrumb strong");
     if (!title) return;
@@ -153,12 +153,11 @@ export function projectLayout(ctx) {
     moveTo(toolbar.querySelector(":scope > .search"), (el) => tools.append(el));
     moveTo(toolbar.querySelector(':scope > details.board-menu[data-board-menu="filters"]'), (el) => tools.append(el));
     if (sortButton) tools.append(sortButton);
-    moveTo(toolbar.querySelector(":scope > .bookmark-button"), (el) => title.before(el));
     const row = $("#view-toolbar");
     row?.toggleAttribute("data-empty", ![...row.querySelectorAll(".toolbar > * > *")].some((el) => el.getClientRects().length));
   }
-  // iPad (owner request, 31 Oct 2026): Board, Planning and an open document put their star before
-  // the title too.
+  // Every view's bookmark star sits before the title, on desktop and iPad (owner requests, 31 Oct and
+  // 1 Nov 2026); phones show no title.
   function starBeforeTitle() {
     const title = $(".topbar .breadcrumb strong");
     if (title) moveTo($("#view-toolbar .bookmark-button, .board-toolbar > .bookmark-button, .document-heading > .bookmark-button"), (el) => title.before(el));
@@ -167,7 +166,7 @@ export function projectLayout(ctx) {
   // an earlier document's star goes with its heading.
   function documentStar() {
     lowerTools();
-    if (tabBar.matches && !narrow.matches) starBeforeTitle();
+    if (!narrow.matches) starBeforeTitle();
   }
   // Moves a control, leaving a marker for restoreToolbar to put it back.
   function moveTo(element, place) {

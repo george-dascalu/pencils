@@ -410,6 +410,12 @@ export function projectSettings(ctx, { sources, automations, personal, organisat
     host.addEventListener("input", markDirty, true);
     host.addEventListener("change", markDirty, true);
     try {
+      // A section opened during a save would show the project from before it, and a change made in
+      // it would be lost or undo the save: it shows Loading… until the save has finished.
+      if (state.settingsSaving) {
+        while (state.settingsSaving) await new Promise((resolve) => setTimeout(resolve, 50));
+        if (!valid()) return;
+      }
       if (section === "personal") {
         host.innerHTML = personal().html();
         personal().mounted(host);
@@ -497,6 +503,8 @@ export function projectSettings(ctx, { sources, automations, personal, organisat
       f.addEventListener("submit", async (event) => {
         event.preventDefault();
         event.stopPropagation();
+        // One save at a time: a change made meanwhile is saved after it (autosaveSettings).
+        if (state.settingsSaving) return;
         const submit = f.querySelector('[type="submit"]'),
           error = f.querySelector(".form-error"),
           edits = state.settingsEdits,

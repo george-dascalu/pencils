@@ -26,8 +26,8 @@
 .mobile-view-options-panel > button.bookmark-button[aria-label] { width: auto !important; flex: none !important; justify-content: flex-start; gap: 8px; padding-inline: 8px !important; }
 .mobile-view-options-panel > .bookmark-button::after { content: attr(aria-label); }
 /* So do the board's icon menus (Session, Version history, Board tools). */
-.mobile-view-options-panel > details.board-menu > summary.icon-summary[aria-label] { width: auto !important; flex: none !important; justify-content: flex-start; gap: 8px; padding-inline: 8px !important; }
-.mobile-view-options-panel > details.board-menu > summary.icon-summary::after { content: attr(aria-label); }
+:is(.mobile-view-options-panel, .mobile-view-options-panel > .table-view-tools) > details.board-menu > summary.icon-summary[aria-label] { width: auto !important; flex: none !important; justify-content: flex-start; gap: 8px; padding-inline: 8px !important; }
+:is(.mobile-view-options-panel, .mobile-view-options-panel > .table-view-tools) > details.board-menu > summary.icon-summary::after { content: attr(aria-label); }
 /* Filters show as a plain list on phones; sorting opens from its own icon button. */
 .mobile-view-options-panel .board-menu[data-expanded] > summary { display: none; }
 .mobile-view-options-panel .board-menu[data-expanded] > .board-menu-panel {
@@ -957,7 +957,9 @@ html.table-viewport-view body {
   .main.project-main > .topbar > .board-project-tools { grid-column: 2; grid-row: 1; }
   .main.project-main > .topbar > .top-actions { grid-column: 3; }
 }
-.kanban-id-control { min-height: var(--control-height); cursor: pointer; }
+/* An on/off option: a checkbox before its name (Kanban's Show card IDs, Show weekends). */
+.check-control { display: inline-flex; align-items: center; gap: 8px; white-space: nowrap; min-height: var(--control-height); cursor: pointer; }
+.check-control > input { margin: 0; }
 
 .planning-period, .planning-options { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 .planning-period > h2 { margin: 0; }
@@ -1141,15 +1143,16 @@ html.table-viewport-view body {
 #sort-button > .sort-direction { position: absolute; right: 2px; bottom: 2px; display: flex; }
 #sort-button > .sort-direction > .icon { width: 9px; height: 9px; stroke-width: 2.5; }
 
-/* iPad: a task view's search, filters and sort sit in the middle of the top bar, and the bookmark
-   star before the title (project-layout.js topBarTools); the toolbar row goes when it's left empty. */
+/* The bookmark star sits before the title (project-layout.js starBeforeTitle). */
+.topbar .breadcrumb > .bookmark-button { flex: none; }
+/* iPad: a task view's search, filters and sort sit in the middle of the top bar
+   (project-layout.js topBarTools); the toolbar row goes when it's left empty. */
 @media (min-width: 601px) and (pointer: coarse) {
   .main.project-main > .topbar:has(> .topbar-view-tools) { grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr) auto; }
   .main.project-main > .topbar > .topbar-view-tools { grid-column: 2; grid-row: 1; display: flex; align-items: center; gap: 8px; min-width: 0; }
   .main.project-main > .topbar:has(> .topbar-view-tools) > .board-project-tools { grid-column: 3; justify-self: end; }
   .main.project-main > .topbar:has(> .topbar-view-tools) > .top-actions { grid-column: 4; }
   .topbar .topbar-view-tools > .search { flex: 0 1 260px; min-width: 160px; }
-  .topbar .breadcrumb > .bookmark-button { flex: none; }
   .main.project-main > #view-toolbar[data-empty] { display: none; }
 }
 /* The phone bar's Home tab (home.js); desktop reaches Home from the brand and the sidebar. */

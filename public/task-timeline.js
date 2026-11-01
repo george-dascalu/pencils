@@ -52,7 +52,7 @@ export function timelineHTML(
       ? `<div class="timeline-page-summary" role="status">Page ${page.page + 1} of ${page.pages} · ${tasks.length} cards<button class="button small" data-timeline-page="${page.page - 1}" ${!page.page ? "disabled" : ""}>Previous cards</button><button class="button small" data-timeline-page="${page.page + 1}" ${page.page + 1 >= page.pages ? "disabled" : ""}>Next cards</button></div>`
       : "";
   // The project Timeline shows its options in the toolbar row; a board's Timeline keeps them inside.
-  const head = `<div class="planning-head" data-timeline-options="${esc(scope)}" ${scope === "project" ? "data-phone-options" : ""}><div class="timeline-options"><label><span class="control-label">Scale</span> <select data-timeline-scale aria-label="Timeline scale">${["day", "week", "month"].map((s) => `<option value="${s}" ${scale === s ? "selected" : ""}>${ctx.label(s)}</option>`).join("")}</select></label><button type="button" class="button small" data-timeline-weekends data-weekends-toggle aria-pressed="${showWeekends}" title="${showWeekends ? "Hide" : "Show"} weekends">${ctx.icon("calendar")}<span>${showWeekends ? "Hide" : "Show"} weekends</span></button><button type="button" class="button small" data-timeline-range aria-haspopup="dialog" aria-expanded="false" title="${range ? `${range.start} to ${range.end}` : "Fit dates automatically"}">${ctx.icon("width-full")}Timeline range${range ? " · Custom" : ""}</button></div><span class="timeline-hint" role="status">${range && axis.end(max) === 0 ? "No weekdays in this range. Show weekends or change the range." : "Choose a row to set its start and end dates. Drag bars to move or resize."}</span><button type="button" class="button small" data-feature="schedule-preview">Review schedule</button></div>`;
+  const head = `<div class="planning-head" data-timeline-options="${esc(scope)}" ${scope === "project" ? "data-phone-options" : ""}><div class="timeline-options"><label><span class="control-label">Scale</span> <select data-timeline-scale aria-label="Timeline scale">${["day", "week", "month"].map((s) => `<option value="${s}" ${scale === s ? "selected" : ""}>${ctx.label(s)}</option>`).join("")}</select></label><label class="check-control"><input type="checkbox" data-timeline-weekends data-weekends-toggle ${showWeekends ? "checked" : ""}>Show weekends</label><button type="button" class="button small" data-timeline-range aria-haspopup="dialog" aria-expanded="false" title="${range ? `${range.start} to ${range.end}` : "Fit dates automatically"}">${ctx.icon("width-full")}Timeline range${range ? " · Custom" : ""}</button></div><span class="timeline-hint" role="status">${range && axis.end(max) === 0 ? "No weekdays in this range. Show weekends or change the range." : "Choose a row to set its start and end dates. Drag bars to move or resize."}</span><button type="button" class="button small" data-feature="schedule-preview">Review schedule</button></div>`;
   const section = (options) => `<section class="task-timeline" data-timeline="${esc(scope)}" data-min="${min}" data-unit="${unit}" data-scale="${scale}" data-weekends="${showWeekends}" data-range-start="${range?.start || ""}" data-range-end="${range?.end || ""}" data-auto-end="${axis.dateAt(width - 1)}" style="--timeline-unit:${unit}px;--timeline-step:${step * unit}px;--timeline-week:${7 * unit}px;--timeline-work:${5 * unit}px">
     ${options}${pager}
     <div class="timeline-scroll" tabindex="0" role="region" aria-label="Project timeline"><div class="timeline-sheet" style="width:${width + 240}px">
@@ -371,13 +371,6 @@ export function timelineInteractions(ctx, onOption) {
           `${state.project.id}/${paging.closest("[data-timeline]").dataset.timeline}`
         ] = Number(paging.dataset.timelinePage);
         renderView(true);
-        return;
-      }
-      const weekendsToggle = e.target.closest("button[data-timeline-weekends]");
-      if (weekendsToggle) {
-        stop(e);
-        const root = timelineRoot(weekendsToggle);
-        onOption(root.dataset.timeline, "weekends", root.dataset.weekends === "false");
         return;
       }
       const id = e.target.closest("[data-milestone]")?.dataset.milestone;

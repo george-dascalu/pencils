@@ -2,6 +2,18 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.20.111 — 2026-11-01
+
+### Changed
+
+- The bookmark star sits before the title on desktop too, as on iPad.
+- Table's Sort is an icon with a badge counting its sorts, like the other views' sort.
+- Calendar and Timeline show weekends with a Show weekends checkbox, like Kanban's Show card IDs.
+
+### Fixed
+
+- A Settings section opened while a change is still saving waits for the save, so a change made in it is no longer lost and can't undo the save.
+
 ## 0.20.110 — 2026-11-01
 
 ### Changed

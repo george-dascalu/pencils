@@ -55,10 +55,11 @@ onDevices(["desktop", "phone"], () => test("desktop and phones keep search, filt
 }));
 
 // Owner request, 31 October 2026 (iPad): Board, Planning and an open document put the bookmark star
-// before the title too, as the task views do.
-onDevices(["ipad", "ipad-portrait"], () => test("Board, Planning and documents put the star before the title", async ({ page, device }) => {
+// before the title too, as the task views do; since T74 (owner request T40, 1 November 2026) desktop
+// does too. Phones show no title.
+onDevices(["ipad", "ipad-portrait", "desktop"], () => test("every view puts the star before the title", async ({ page, device }) => {
   const { project, board, doc, second } = app;
-  for (const [name, path, kind] of [["board", `board/${board.id}`, "board"], ["calendar", "calendar", "view"], ["timeline", "timeline", "view"], ["capacity", "capacity", "view"], ["document", `documents/${doc.id}`, "doc"]]) {
+  for (const [name, path, kind] of [["list", "list", "view"], ["table", "table", "view"], ["board", `board/${board.id}`, "board"], ["calendar", "calendar", "view"], ["timeline", "timeline", "view"], ["capacity", "capacity", "view"], ["document", `documents/${doc.id}`, "doc"]]) {
     await page.goto(`${app.base}/#project/${project.id}/${path}`);
     const star = page.locator(".topbar .breadcrumb .bookmark-button");
     await expect(star, `${device} ${name}: the star is in the top bar`).toHaveAttribute("data-kind", kind);
@@ -95,10 +96,11 @@ onDevices(["ipad", "ipad-portrait"], () => test("Board, Planning and documents p
   await page.setViewportSize(size);
   await expect(page.locator(".topbar .breadcrumb .bookmark-button"), `${device}: back before the title`).toHaveAttribute("data-id", second.id);
   await expect(page.locator(".bookmark-button")).toHaveCount(1);
-  await expect(page.locator(".layout-tray"), `${device}: the documents tray`).toHaveCount(1);
+  // Only touch screens have the documents tray.
+  await expect(page.locator(".layout-tray"), `${device}: the documents tray`).toHaveCount(device === "desktop" ? 0 : 1);
 }));
 
-onDevices(["desktop", "phone"], () => test("desktop and phones keep Planning's star out of the top bar", async ({ page, device }) => {
+onDevices(["phone"], () => test("phones keep Planning's star out of the top bar, which shows no title", async ({ page, device }) => {
   await page.goto(`${app.base}/#project/${app.project.id}/calendar`);
   await expect(page.locator(".bookmark-button"), device).toHaveCount(1);
   await expect(page.locator(".topbar .breadcrumb .bookmark-button"), device).toHaveCount(0);

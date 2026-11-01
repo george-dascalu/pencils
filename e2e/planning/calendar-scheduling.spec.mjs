@@ -145,7 +145,8 @@ test("hiding weekends removes weekend days and their cards, and is remembered af
   const seed = app.weekends;
   await openMonth(page, seed);
   await card(page, seed.weekend.id).waitFor();
-  await page.locator("[data-calendar-weekends]").click();
+  // A checkbox like Kanban's Show card IDs (owner request T40, 1 November 2026; T74).
+  await page.getByRole("checkbox", { name: "Show weekends", exact: true }).uncheck();
   await expect(page.locator(".calendar-day.weekend")).toHaveCount(0);
   await expect(card(page, seed.weekend.id)).toHaveCount(0);
   await page.reload();
@@ -153,7 +154,7 @@ test("hiding weekends removes weekend days and their cards, and is remembered af
   await setMonth(page);
   await card(page, seed.work.id).waitFor();
   await expect(page.locator(".calendar")).toHaveAttribute("data-weekends", "false");
-  await page.locator("[data-calendar-weekends]").click();
+  await page.getByRole("checkbox", { name: "Show weekends", exact: true }).check();
   await expect(page.locator(".calendar")).toHaveAttribute("data-weekends", "true");
   await card(page, seed.weekend.id).waitFor();
 });

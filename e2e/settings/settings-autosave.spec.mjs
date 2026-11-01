@@ -89,6 +89,31 @@ test("focus stays on the next field when a save redraws the page", async ({ page
   expect(next).toBeTruthy();
 });
 
+// Another section opened during a save would show the project from before it, and a change made
+// there would be lost or undo the save.
+test("a section opened during a save shows the project once the save has finished", async ({ page }) => {
+  await page.goto(url("workflow"));
+  let release;
+  const held = new Promise((resolve) => (release = resolve));
+  await page.route(`**/api/projects/${app.project.id}`, async (route) => {
+    if (route.request().method() === "PATCH") await held;
+    await route.continue();
+  });
+  await page.getByRole("group", { name: "Card fields" }).getByRole("checkbox", { name: "Start date", exact: true }).uncheck();
+  await expect(status(page)).toHaveText("Saving…");
+  await page.locator('nav[aria-label="Settings sections"] [data-settings-section="general"]').click();
+  await expect(page.locator("#settings-panel .settings-loading")).toBeVisible();
+  const name = page.locator('#project-form [name="title"]');
+  await expect(name, "nothing to edit until the save is in").toHaveCount(0);
+  release();
+  await name.fill("Changed on the next page");
+  await name.blur();
+  await expect(status(page)).toHaveText("Saved");
+  await expect(page.locator("#project-form .form-error")).toBeHidden();
+  const project = await saved(app.project.id);
+  expect([project.title, project.schema.off]).toEqual(["Changed on the next page", expect.arrayContaining(["start"])]);
+});
+
 test("a view turned off and on again is saved on", async ({ page }) => {
   await page.goto(url("general"));
   const kanban = page.getByRole("checkbox", { name: "Kanban", exact: true });

@@ -50,21 +50,23 @@ onDevices(["small"], () => test("on phones the star sits in View options and the
   await expect(page.locator(".board-toolbar .mobile-view-options-panel [data-bookmark]")).toHaveCount(1);
 }));
 
-onDevices(["desktop", "phone"], () => test("bookmarks made from each bar come first in search and open what they mark", async ({ page }) => {
+onDevices(["desktop", "phone"], () => test("bookmarks made from each bar come first in search and open what they mark", async ({ page, device }) => {
   await fs.rm(path.join(app.store.root, ".pencils", "bookmarks.json"), { force: true });
   const { project, card, doc } = app;
+  // Desktop puts the view's, document's and board's star before the title; phones keep it in the bar.
+  const bar = (phone) => (device === "phone" ? phone : ".topbar .breadcrumb");
   await page.goto(`${app.base}/#project/${project.id}/list`);
-  await star(page, "#view-toolbar");
+  await star(page, bar("#view-toolbar"));
   await page.locator(`[data-action=task-open][data-id="${card.id}"]:visible`).first().click();
   await star(page, ".task-title-row");
   await page.keyboard.press("Escape");
   await page.goto(`${app.base}/#project/${project.id}/documents/${doc.id}`);
-  await star(page, ".document-heading");
+  await star(page, bar(".document-heading"));
   await page.goto(`${app.base}/#project/${project.id}/board`);
-  await star(page, ".board-toolbar");
+  await star(page, bar(".board-toolbar"));
 
   await page.reload();
-  await expect(page.locator(".board-toolbar [data-bookmark]"), "bookmarks stay after a reload").toHaveAttribute("aria-pressed", "true");
+  await expect(page.locator(`${bar(".board-toolbar")} [data-bookmark]`), "bookmarks stay after a reload").toHaveAttribute("aria-pressed", "true");
   const bookmarks = await search(page);
   await expect(bookmarks, "all of them before typing, newest first").toHaveText([/Project canvas/, /Planting plan/, /GA-1 Plant bulbs/, /List/]);
   await page.locator("#global-search-input").fill("plant");
@@ -78,7 +80,7 @@ onDevices(["desktop", "phone"], () => test("bookmarks made from each bar come fi
   await expect(page.locator(".task-row")).toHaveCount(1);
 
   // Pressing the star again removes the bookmark.
-  const view = page.locator("#view-toolbar [data-bookmark]");
+  const view = page.locator(`${bar("#view-toolbar")} [data-bookmark]`);
   await clickControl(view);
   await expect(view).toHaveAttribute("aria-pressed", "false");
   await page.keyboard.press("Escape");
