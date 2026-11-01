@@ -821,7 +821,7 @@ button svg {
 }
 .empty h2 {
   font-family: Georgia, serif;
-  font-size: 25px;
+  font-size: var(--type-title);
   font-weight: 400;
 }
 .empty p {
@@ -1021,7 +1021,6 @@ button svg {
   line-height: 17.4px;
 }
 .kanban-card .task-title {
-  font-size: 12px;
   line-height: 1.45;
   display: block;
   flex: 1;
@@ -1166,7 +1165,7 @@ button svg {
 .dialog-head h2 {
   font-family: Georgia, serif;
   font-weight: 400;
-  font-size: 25px;
+  font-size: var(--type-title);
   letter-spacing: -0.5px;
 }
 .dialog-body {
@@ -1878,9 +1877,6 @@ input[type="search"]:not(.search input) {
   }
   .row-meta {
     gap: 10px;
-  }
-  .task-title {
-    font-size: 11px;
   }
   .row-title {
     gap: 6px;
@@ -2658,7 +2654,7 @@ input[type="search"]:not(.search input) {
   margin-top: 24px;
 }
 .capacity-backlog h3 {
-  font-size: 15px;
+  font-size: var(--type-section);
 }
 .task-history-panel [data-history-error]:empty {
   display: none;

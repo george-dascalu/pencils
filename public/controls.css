@@ -97,6 +97,11 @@ textarea,
   --control-option-padding: 4px;
   font-size: var(--control-font-size);
 }
+@media (pointer: coarse) {
+  /* On touch screens menu rows read at the body size, like the rest of their 44px rows. */
+  :is(.board-menu-panel, .select-menu, .task-picker-popover, .document-panel,
+      .selection-menu > .selection-popover) { --control-font-size: var(--type-body); }
+}
 /* Rows run edge to edge, like Obsidian's menus. */
 .board-menu .board-menu-panel {
   padding: var(--menu-panel-padding);
@@ -270,6 +275,10 @@ textarea,
     .side-label, .version, .side-footer) { font-size: 12px; }
   .main .task-assignee { font-size: 10px; }
 }
+/* One task title size in every view: the body size, 16px on touch screens. */
+:is(.task-row .task-title, .phone-task-title, .task-relationship-title, .kanban-card .task-title, .timeline-task-label, .calendar-card-title, .agenda-task, .capacity-task) {
+  font-size: var(--type-body);
+}
 
 /* Frequent touch actions outside the shared control list still get 44px targets. */
 @media (pointer: coarse) {
@@ -318,6 +327,9 @@ textarea,
   margin: 0;
   font-size: 10px !important;
 }
+/* An empty field shows a faint icon: a person for no assignee, a calendar for no date. */
+:is(.task-assignee.unassigned, .due.no-date) { color: var(--muted); opacity: 0.7; }
+:is(.task-assignee.unassigned, .due.no-date) > .icon { width: var(--list-field-icon); height: var(--list-field-icon); }
 /* No display on the targets: each view decides whether a field shows (phones hide row fields). */
 .field-chip,
 .spreadsheet td:is([data-column-key="status"], [data-column-key="priority"]) .table-cell-value {

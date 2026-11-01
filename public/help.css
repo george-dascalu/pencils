@@ -104,7 +104,7 @@
   margin-bottom: 12px;
 }
 .help-article h1 {
-  font-size: 32px;
+  font-size: var(--type-title);
   line-height: 1.2;
   margin: 0 0 16px;
 }
@@ -148,7 +148,7 @@
   margin: 0 0 32px;
 }
 .help-section h2 {
-  font-size: 21px;
+  font-size: var(--type-section);
   line-height: 1.4;
   margin: 0 0 14px;
   scroll-margin-top: 24px;
@@ -256,8 +256,5 @@
   .help-nav-group a,
   .help-contents button {
     min-height: 44px;
-  }
-  .help-article h1 {
-    font-size: 28px;
   }
 }

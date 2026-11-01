@@ -27,7 +27,7 @@
 }
 .settings-navigation h1 {
   margin: 0;
-  font-size: 21px;
+  font-size: var(--type-title);
 }
 .settings-navigation > p {
   color: var(--muted);
@@ -83,7 +83,7 @@
   margin-bottom: 16px;
 }
 .settings-section-heading h2 {
-  font-size: 25px;
+  font-size: var(--type-section);
   margin: 0 0 8px;
 }
 .settings-section-heading h2:focus {

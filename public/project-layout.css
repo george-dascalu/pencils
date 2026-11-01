@@ -773,7 +773,7 @@ html.table-viewport-view body {
   padding: 20px;
 }
 .project-overview h2 {
-  font-size: 15px;
+  font-size: var(--type-section);
   margin: 0 0 14px;
 }
 .overview-summary h2:not(:first-child) {
@@ -1084,7 +1084,9 @@ html.table-viewport-view body {
   .mobile-view-options-panel .field > :is(select, input) { width: 100%; }
   /* One size for names, values, checkboxes and the bookmark (T34); a name keeps one line and the
      control gives way (Table's "Add column filter"). */
-  .mobile-view-options-panel :is(.field, .field > select, .field > input, .filter-checks > label, .bookmark-button) { font-size: var(--type-body); }
+  .mobile-view-options .mobile-view-options-panel { --control-font-size: var(--type-body); }
+  .mobile-view-options .mobile-view-options-panel :is(label, select, input, summary, button, .control-label) { font-size: var(--type-body); }
+  .mobile-view-options-panel .filter-checks { flex-direction: column; align-items: stretch; }
 }
 .dialog.compact-dialog { width: min(420px, calc(100vw - 32px)); }
 

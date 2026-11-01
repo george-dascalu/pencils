@@ -130,7 +130,9 @@ onDevices(["desktop", "phone"], () => {
     await browserTabShortcuts(cell("assignee"));
     await choose("assignee", "Unassigned");
     await expect.poll(async () => (await saved()).assignee).toBe("");
-    await expect(visual("assignee")).toHaveText("–");
+    // No one is a faint person icon (T66).
+    await expect(visual("assignee")).toHaveText("");
+    await expect(visual("assignee").locator(".task-assignee.unassigned .icon")).toHaveCount(1);
     await choose("assignee", "George");
     await expect.poll(async () => (await saved()).assignee).toBe("George");
     await expect(field("assignee")).toBeEnabled();

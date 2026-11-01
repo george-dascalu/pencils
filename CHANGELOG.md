@@ -2,6 +2,16 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.20.108 — 2026-11-01
+
+### Changed
+
+- Task titles are one size in every view: 13px on desktop, 16px on phones and iPad.
+- An empty assignee or date shows a faint person or calendar icon instead of a dash, and the card editor shows the assignee's full name.
+- Menus on phones and iPad use the body text size.
+- Headings follow one type scale: page, dialog and empty-view titles at the title size, section headings at the section size.
+- Phones' View options use one text size throughout, with Blocked and Include archived on rows of their own.
+
 ## 0.20.107 — 2026-11-01
 
 ### Fixed

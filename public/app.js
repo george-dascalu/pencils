@@ -1179,10 +1179,11 @@ function tagsHTML(t) {
     )
     .join("")}</span>`;
 }
-// The person's short name (Geo for George unless set in Settings → Organisation); the tooltip keeps the full name.
-function assigneeHTML(t) {
-  const initials = shortName(state, t.assignee);
-  return `<span class="task-assignee ${initials ? "" : "unassigned"}" ${taskColorAttributes(state, "assignee", t.assignee)} title="${esc(t.assignee || "Unassigned")}">${esc(initials) || "–"}</span>`;
+// The person's short name (Geo for George unless set in Settings → Organisation), or the full name
+// where there's room (the card editor); the tooltip keeps the full name, and no one is a faint person.
+function assigneeHTML(t, full = false) {
+  const name = full ? t.assignee : shortName(state, t.assignee);
+  return `<span class="task-assignee ${name ? "" : "unassigned"}" ${taskColorAttributes(state, "assignee", t.assignee)} title="${esc(t.assignee || "Unassigned")}">${name ? esc(name) : icon("person")}</span>`;
 }
 function priorityHTML(t) {
   return `<span class="field-chip field-chip-priority priority ${esc(t.priority)}" role="img" aria-label="Priority: ${esc(priorityLabel(t.priority))}" ${taskColorAttributes(state, "priority", t.priority)} title="${esc(priorityLabel(t.priority))} priority">${icon(`priority-${t.priority || "none"}`)}</span>`;
@@ -1204,7 +1205,7 @@ function taskRow(t, depth = null, hasChildren = false, flat = false) {
   // With the due date off (T23) the button shows the start date and names only the dates that are on.
   const dueOn = fieldOn(state.config, "due"), startOn = fieldOn(state.config, "start"), shownDate = dueOn ? t.due : t.start;
   const day = (value) => new Date(`${value}T12:00:00`).toLocaleDateString(undefined, { day: "numeric", month: "short" });
-  const dates = className => `<button type="button" class="${className}" data-row-dates="${esc(t.id)}" aria-label="${esc(shownDate ? day(shownDate) : "Set dates")} — edit dates for ${esc(t.title)}" aria-haspopup="dialog" aria-expanded="false" title="${esc([startOn && `Start: ${t.start || "Not set"}`, dueOn && `Due: ${t.due || "Not set"}`].filter(Boolean).join(" · "))}">${(dueOn ? dueHTML(t) : t.start && `<span class="due">${esc(day(t.start))}</span>`) || '<span class="due">—</span>'}</button>`;
+  const dates = className => `<button type="button" class="${className}" data-row-dates="${esc(t.id)}" aria-label="${esc(shownDate ? day(shownDate) : "Set dates")} — edit dates for ${esc(t.title)}" aria-haspopup="dialog" aria-expanded="false" title="${esc([startOn && `Start: ${t.start || "Not set"}`, dueOn && `Due: ${t.due || "Not set"}`].filter(Boolean).join(" · "))}">${(dueOn ? dueHTML(t) : t.start && `<span class="due">${esc(day(t.start))}</span>`) || `<span class="due no-date">${icon("calendar")}</span>`}</button>`;
   const phoneField = (field, name, value, chip) => `<button type="button" class="phone-field" data-action="phone-field" data-field="${field}" data-id="${esc(t.id)}" aria-haspopup="listbox" aria-label="${name} for ${esc(t.title)}: ${esc(value)}" ${t.source ? "disabled" : ""}>${chip}</button>`;
   return `<div data-task-order-row="${esc(t.id)}" data-task-order-group="${esc(depth !== null || state.groupBy === "none" ? "" : t[state.groupBy || "status"] || "")}" class="task-row ${depth !== null ? "tree-row" : ""}${flat ? " tree-flat" : ""} ${t.contextOnly ? "tree-context" : ""}" ${depth !== null ? `style="--depth:${Math.min(depth, 12)}"` : ""}>
     ${depth !== null ? `<button class="tree-toggle ${state.collapsed.has(t.id) ? "collapsed" : ""}" data-action="collapse" data-id="${esc(t.id)}" aria-label="${state.collapsed.has(t.id) ? "Expand" : "Collapse"} subtasks" ${hasChildren ? `aria-expanded="${!state.collapsed.has(t.id)}" title="${state.tasks.filter(c => c.parent === t.id).length} subtasks"` : "disabled"}>${hasChildren ? icon("chevron") : ""}</button>` : ""}
@@ -1737,7 +1738,7 @@ function taskDialog(id = null, defaults = {}, replace = false) {
       true,
     )}</div>`,
     status: `<label class="field"><span class="sr-only">Status</span><select name="status" aria-label="Status" ${taskColorAttributes(state, "status", t.status)}>${options(id ? nextStatuses(state.config, t.status) : statuses, t.status, statusNames)}</select></label>`,
-    assignee: `<label class="field task-assignee-field"><span class="sr-only">Assignee</span><span class="task-assignee-choice"><span data-assignee-avatar>${assigneeHTML(t)}</span><select name="assignee" aria-label="Assignee" ${taskColorAttributes(state, "assignee", t.assignee)} ${assigneeHint(state) ? 'aria-describedby="task-assignee-help"' : ""}>${assigneeOptions(state, t.assignee, esc)}</select></span></label>`,
+    assignee: `<label class="field task-assignee-field"><span class="sr-only">Assignee</span><span class="task-assignee-choice"><span data-assignee-avatar>${assigneeHTML(t, true)}</span><select name="assignee" aria-label="Assignee" ${taskColorAttributes(state, "assignee", t.assignee)} ${assigneeHint(state) ? 'aria-describedby="task-assignee-help"' : ""}>${assigneeOptions(state, t.assignee, esc)}</select></span></label>`,
   };
   const html = `<dialog class="dialog task-dialog" aria-label="Task editor"><form id="task-form" class="${id ? "task-edit-form" : "task-create-form"}" data-board="${esc(!id && ["board", "drawing"].includes(state.view) ? state.selectedBoard : "")}" data-draft-node="${esc(t.draftNode || "")}" data-id="${esc(id || "")}" data-revision="${esc(t.revision || "")}">
     <div class="dialog-head task-editor-head"><div class="task-editor-header-row"><div class="task-identity-row">
