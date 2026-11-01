@@ -423,6 +423,7 @@ body {
     .project-card:hover,
     .tab.active,
     .tab:hover,
+    .topbar .document-tab-open[aria-current="page"],
     .board-tools button.active,
     .board-tools button:hover,
     .spreadsheet .range-selected,

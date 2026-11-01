@@ -28,7 +28,9 @@ onDevices(["desktop", "ipad", "ipad-portrait"], () => test("the tabs take the ti
   await expect(title).toHaveText("Beta note");
   expect(await title.evaluate((el) => el.getBoundingClientRect().width), `${device}: the title is hidden`).toBeLessThanOrEqual(1);
   const [active, other, heading] = [await tabs.locator("[aria-current=page]").evaluate(look), await tabs.locator(".document-tab-open:not([aria-current])").evaluate(look), await title.evaluate(look)];
-  expect(active, `${device}: the open tab looks like the title`).toEqual(heading);
+  // In the title's type; since T86 (owner request, 1 November 2026) its colour and an underline, like
+  // the open view's tab, mark it as the open document.
+  expect([active[0], active[1], active[3]], `${device}: the open tab is in the title's type`).toEqual([heading[0], heading[1], heading[3]]);
   expect(other.slice(0, 1), `${device}: other tabs share its size`).toEqual(heading.slice(0, 1));
   expect(other[2], `${device}: other tabs are muted`).not.toBe(heading[2]);
   // The document's bar is the first thing in the content.

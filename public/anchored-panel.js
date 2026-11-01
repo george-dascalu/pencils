@@ -6,14 +6,17 @@ import { focusOnOpen } from "./open-focus.js";
 // The last control pressed, during its click only: a panel's opener pressed again closes the panel,
 // while a panel shown from inside the open one (such as Rename from Document tools, anchored to the
 // same button) opens as before (owner request T26).
-let pressed = null;
+// iPad Safari dismisses the panel as the finger touches its opener, before the click; that opener's
+// click then doesn't open it again either.
+let pressed = null, down = null;
 document.addEventListener("click", (event) => {
   pressed = event.target;
   setTimeout(() => { if (pressed === event.target) pressed = null; }, 0);
 }, true);
+document.addEventListener("pointerdown", (event) => { down = event.target; }, true);
 
 export function anchoredPanel({ state, esc, icon }) {
-  let panel = null, opener = null;
+  let panel = null, opener = null, dismissed = null;
   function close(focus = false) {
     if (!panel) return;
     if (opener?.hasAttribute("aria-expanded")) opener.setAttribute("aria-expanded", "false");
@@ -28,6 +31,8 @@ export function anchoredPanel({ state, esc, icon }) {
     // Pressed again, its opener closes this panel; it opens another panel (one shown from inside
     // this one, such as Backlinks) as before.
     if (panel && button === opener && panel.getAttribute("aria-label") === title && pressed instanceof Node && button.contains(pressed)) return close(true);
+    if (dismissed?.button === button && Date.now() - dismissed.at < 700 && pressed instanceof Node && button.contains(pressed)) { dismissed = null; return; }
+    dismissed = null;
     if (panel?.contains(button)) button = opener;
     close();
     opener = button;
@@ -53,7 +58,9 @@ export function anchoredPanel({ state, esc, icon }) {
       if (panel === openedPanel) {
         if (button.hasAttribute("aria-expanded")) button.setAttribute("aria-expanded", "false");
         if (state.dialog === "document-panel") state.dialog = null;
-        // Dismissed from outside: forgotten, so its button opens it again next time.
+        // Dismissed from outside: forgotten, so its button opens it again next time, unless the press
+        // that dismissed it was on that button.
+        dismissed = down instanceof Node && button.contains(down) ? { button, at: Date.now() } : null;
         panel = null; opener = null;
       }
     });

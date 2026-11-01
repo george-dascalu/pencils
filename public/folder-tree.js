@@ -5,7 +5,7 @@ import { focusOnOpen } from "./open-focus.js";
 // drag and drop to move items and folders, and a panel to add, rename or delete a folder. `kind`
 // ("document" or "board") names the ids, the data attributes (data-<kind>-open, -folder,
 // -folder-edit, -folder-drop, -root), the drag types and the project's list (<kind>_folders).
-export function folderTree({ kind, label, placeholder, glyph, state, api, esc, icon, toast, panels, items, selected, matches, moveItem }) {
+export function folderTree({ kind, label, placeholder, glyph, state, api, esc, icon, toast, panels, items, selected, matches, moveItem, itemMenu }) {
   const plural = label.toLowerCase(), field = `${kind}_folders`, searchKey = `${kind}Search`;
   const attr = name => `data-${kind}-${name}`;
   const type = folder => `application/x-pencils-${kind}${folder ? "-folder" : ""}`;
@@ -33,7 +33,9 @@ export function folderTree({ kind, label, placeholder, glyph, state, api, esc, i
     const query = (state[searchKey] || "").trim().toLocaleLowerCase(), current = selected();
     const list = items().filter(d => !query || matches(d, query))
       .sort((a, b) => a.title.localeCompare(b.title, undefined, { numeric: true, sensitivity: "base" }) || a.id.localeCompare(b.id));
-    const item = d => `<li><button type="button" draggable="true" class="document-link ${d.id === current ? "active" : ""}" ${attr("open")}="${esc(d.id)}" ${d.id === current ? 'aria-current="page"' : ""} title="${esc([name(d.folder), d.title].filter(Boolean).join(" / "))}">${icon(glyph)}<span>${esc(d.title)}</span></button></li>`;
+    // An item with a menu (documents) has ⋯ beside it, as folders do.
+    const link = d => `<button type="button" draggable="true" class="document-link ${d.id === current ? "active" : ""}" ${attr("open")}="${esc(d.id)}" ${d.id === current ? 'aria-current="page"' : ""} title="${esc([name(d.folder), d.title].filter(Boolean).join(" / "))}">${icon(glyph)}<span>${esc(d.title)}</span></button>`;
+    const item = d => `<li>${itemMenu ? `<div class="document-item-row">${link(d)}<button type="button" class="icon-button" ${attr("item-menu")}="${esc(d.id)}" aria-label="Actions for ${esc(d.title)}" title="More actions">${icon("more")}</button></div>` : link(d)}</li>`;
     if (query) return list.map(item).join("") || `<li class="document-explorer-empty">No matching ${plural}.</li>`;
     const branch = (parent, seen = new Set()) => {
       const children = folders().filter(f => (f.parent || null) === parent && !seen.has(f.id)).sort((a,b) => a.title.localeCompare(b.title));
@@ -143,6 +145,8 @@ export function folderTree({ kind, label, placeholder, glyph, state, api, esc, i
     }
     const edit = event.target.closest(`[${attr("folder-edit")}]`);
     if (edit) return panel(edit, edit.getAttribute(attr("folder-edit")));
+    const more = event.target.closest(`[${attr("item-menu")}]`);
+    if (more) return itemMenu(more, more.getAttribute(attr("item-menu")));
     if (event.target.closest(`[${attr("root")}]`)) { active = null; update(); }
   });
   function clearDropTargets() {
@@ -206,6 +210,75 @@ export function folderTree({ kind, label, placeholder, glyph, state, api, esc, i
     void (item.what === "folder" ? moveFolder(item.id, parent) : moveItem(item.id, parent)).catch(error => toast(error.message, true));
   });
   document.addEventListener("dragend", reset);
+  // Touch screens (owner requests T82, T83): a long press marks the item or folder as held; lifting
+  // the finger then opens its menu (an item's ⋯ menu, a folder's panel), while moving it drags it
+  // onto a folder, as a mouse drags. The menu opens on lifting because lifting would dismiss it.
+  let press = null, swallow = 0, touched = false;
+  const pressable = el => el?.closest?.(`.document-explorer [${attr("open")}], .document-explorer [${attr("folder")}]`);
+  const dropAt = (x, y) => document.elementFromPoint(x, y)?.closest(`[${attr("folder-drop")}]`);
+  // Ends a touch press, leaving a mouse drag (which shares `drag`) alone.
+  function endPress() {
+    if (!press) return;
+    clearTimeout(press.timer);
+    press.target.classList.remove("document-held", "document-dragging");
+    if (press.dragging) { drag = null; clearDropTargets(); }
+    press = null;
+  }
+  // A new touch clears a release that no click followed.
+  document.addEventListener("pointerdown", event => { swallow = 0; touched = event.pointerType !== "mouse"; }, true);
+  document.addEventListener("pointerdown", event => {
+    const target = event.pointerType !== "mouse" && pressable(event.target);
+    if (!target) return;
+    endPress();
+    const what = target.hasAttribute(attr("folder")) ? "folder" : "item";
+    press = { target, what, id: target.getAttribute(attr(what === "folder" ? "folder" : "open")), x: event.clientX, y: event.clientY, held: false, dragging: false };
+    press.timer = setTimeout(() => { press.held = true; target.classList.add("document-held"); }, 500);
+  });
+  document.addEventListener("pointermove", event => {
+    if (!press || event.pointerType === "mouse") return;
+    const moved = Math.hypot(event.clientX - press.x, event.clientY - press.y) > 10;
+    // Moving before the hold is a scroll.
+    if (!press.held) return void (moved && endPress());
+    if (!press.dragging && moved) {
+      press.dragging = true;
+      press.target.classList.add("document-dragging");
+      drag = { what: press.what, id: press.id, project: state.project.id };
+    }
+    if (!press.dragging) return;
+    clearDropTargets();
+    const folder = dropAt(event.clientX, event.clientY);
+    if (folder && accepts(drag, folder.getAttribute(attr("folder-drop")) || null)) folder.classList.add("document-drop-target");
+  });
+  document.addEventListener("pointerup", event => {
+    if (!press || event.pointerType === "mouse") return;
+    const { what, id, held, dragging } = press, item = drag;
+    endPress();
+    // An item without a menu (a board) lets its tap through when it isn't dragged.
+    if (!held || (!dragging && what === "item" && !itemMenu)) return;
+    swallow = Date.now();
+    if (dragging) {
+      const folder = dropAt(event.clientX, event.clientY), parent = folder?.getAttribute(attr("folder-drop")) || null;
+      if (folder && accepts(item, parent)) void (what === "folder" ? moveFolder(id, parent) : moveItem(id, parent)).catch(error => toast(error.message, true));
+      return;
+    }
+    setTimeout(() => {
+      // The list may have been redrawn during the hold.
+      const row = document.querySelector(`.document-explorer [${attr(what === "folder" ? "folder" : "open")}="${CSS.escape(id)}"]`)?.parentElement;
+      if (!row) return;
+      if (what === "folder") panel(row.querySelector(`[${attr("folder-edit")}]`), id);
+      else itemMenu(row.querySelector(`[${attr("item-menu")}]`), id);
+    });
+  });
+  document.addEventListener("pointercancel", endPress);
+  // While held, the finger drags instead of scrolling the list, and the click that ends the press
+  // neither opens the item nor folds the folder.
+  document.addEventListener("touchmove", event => { if (press?.held) event.preventDefault(); }, { passive: false });
+  window.addEventListener("click", event => {
+    if (Date.now() - swallow > 700 || !pressable(event.target)) return;
+    swallow = 0;
+    event.preventDefault(); event.stopImmediatePropagation();
+  }, true);
+  document.addEventListener("contextmenu", event => { if (touched && pressable(event.target)) event.preventDefault(); });
   return {
     html, update, panel, expand, updateFolders, reset, folders, name, options,
     // A folder chosen in another project (or since deleted) is no folder here.

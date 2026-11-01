@@ -34,7 +34,7 @@ export function projectDocuments(ctx) {
   // showPanel returns the panel, or nothing when its opener, pressed again, closed it.
   const panels = anchoredPanel(ctx), showPanel = panels.show, closePanel = panels.close;
   const explorer = folderTree({ ...ctx, kind: "document", label: "Documents", placeholder: "Find a document or #tag…", glyph: "file", panels,
-    items: all, selected: () => state.selectedDocument, matches: matchesDocument, moveItem: moveDocument });
+    items: all, selected: () => state.selectedDocument, matches: matchesDocument, moveItem: moveDocument, itemMenu: (button, id) => rowMenu(button, id) });
   const folders = explorer.folders, updateExplorer = explorer.update;
   const endpoint = (pid, id = "") => `/projects/${pid}/documents${id ? `/${id}` : ""}`;
   const selected = () => all().find(d => d.id === state.selectedDocument);
@@ -92,25 +92,55 @@ export function projectDocuments(ctx) {
     updateExplorer(); syncChanged();
     toast("Document moved.");
   }
-  function movePanel(button) {
-    const box = showPanel(button, "Move document", `<form><label class="field">Folder<select name="folder">${explorer.options(selected()?.folder)}</select></label><div class="document-panel-actions"><button class="button primary">Move</button></div></form>`);
+  // Renames a document other than the open one (whose title field saves its own name).
+  async function renameDocument(id, title) {
+    const pid = state.project.id;
+    await flushDocument(id);
+    const url = endpoint(pid, id), latest = await api(url);
+    const record = await api(url, { method: "PATCH", body: { revision: latest.revision, title } });
+    if (state.project?.id !== pid) return;
+    state.documents = all().map(d => d.id === id ? record : d);
+    updateExplorer(); updateTabs();
+  }
+  // A document's ⋯ menu in the list (owner request T84), for any document, open or not.
+  function rowMenu(button, id) {
+    if (!all().some(d => d.id === id)) return;
+    const item = (action, glyph, label, extra = "") => `<button type="button" class="document-panel-item ${extra}" data-document-row-action="${action}" data-document-id="${esc(id)}">${icon(glyph)}${label}</button>`;
+    showPanel(button, "Document actions", `<section class="document-tool-group">${item("rename", "pencil", "Rename")}${item("move", "folder", "Move to folder")}</section><section class="document-tool-group">${item("delete", "trash", "Delete", "danger")}</section>`, 240, { menu: true });
+  }
+  document.addEventListener("click", event => {
+    const button = event.target.closest("[data-document-row-action]");
+    const doc = button && all().find(d => d.id === button.dataset.documentId);
+    if (!doc) return;
+    const action = button.dataset.documentRowAction;
+    if (action === "rename") renamePanel(button, doc);
+    else if (action === "move") movePanel(button, doc);
+    else showPanel(button, "Delete document", `<p>Move this document to Trash?</p><button type="button" class="button danger" data-document-action="delete" data-document-id="${esc(doc.id)}">Move to Trash</button>`);
+  });
+  function movePanel(button, doc = selected()) {
+    const box = showPanel(button, "Move document", `<form><label class="field">Folder<select name="folder">${explorer.options(doc?.folder)}</select></label><div class="document-panel-actions"><button class="button primary">Move</button></div></form>`);
     if (!box) return;
     box.querySelector("form").addEventListener("submit", async event => {
       event.preventDefault();
       const submit = event.submitter; submit.disabled = true;
-      try { await moveDocument(current.id, event.target.elements.folder.value); closePanel(true); }
+      try { await moveDocument(doc.id, event.target.elements.folder.value); closePanel(true); }
       catch (error) { toast(error.message, true); submit.disabled = false; }
     });
   }
   // Names a document; new documents open with this panel.
-  function renamePanel(button) {
-    const box = showPanel(button, "Rename document", `<form><label class="field">Document name<input name="title" required maxlength="300" value="${esc(current.title)}" autocomplete="off"></label><div class="document-panel-actions"><button type="submit" class="button primary">Rename</button></div></form>`);
+  function renamePanel(button, doc = current) {
+    const box = showPanel(button, "Rename document", `<form><label class="field">Document name<input name="title" required maxlength="300" value="${esc(doc.title)}" autocomplete="off"></label><div class="document-panel-actions"><button type="submit" class="button primary">Rename</button></div></form>`);
     if (!box) return;
     const field = box.querySelector("input");
     if (focusOnOpen(field, box.querySelector("button"))) field.select();
-    box.querySelector("form").addEventListener("submit", (event) => {
+    box.querySelector("form").addEventListener("submit", async (event) => {
       event.preventDefault();
-      form.elements.title.value = field.value.trim() || "Untitled document";
+      const title = field.value.trim() || "Untitled document";
+      if (doc.id !== current?.id) {
+        try { await renameDocument(doc.id, title); closePanel(true); } catch (error) { toast(error.message, true); }
+        return;
+      }
+      form.elements.title.value = title;
       form.elements.title.dispatchEvent(new Event("input", { bubbles: true }));
       closePanel(true);
     });
@@ -749,8 +779,7 @@ export function projectDocuments(ctx) {
     const host = document.querySelector("#list-panel");
     if (host) {
       host.innerHTML = explorer.html({
-        actions: `<button type="button" class="icon-button" data-document-action="create" aria-label="New document" title="New document">${icon("plus")}</button><button type="button" class="icon-button" data-document-action="new-folder" aria-label="New folder" title="New folder">${icon("folder")}</button>`,
-        footer: `<footer><button type="button" class="button small" data-document-action="import">${icon("plus")}Import Markdown</button><input type="file" id="document-import" accept=".md,.markdown,text/markdown,text/plain" multiple hidden></footer>`,
+        actions: `<button type="button" class="icon-button" data-document-action="create" aria-label="New document" title="New document">${icon("plus")}</button><button type="button" class="icon-button" data-document-action="new-folder" aria-label="New folder" title="New folder">${icon("folder")}</button><button type="button" class="icon-button" data-document-action="import" aria-label="Import Markdown" title="Import Markdown">${icon("upload")}</button><input type="file" id="document-import" accept=".md,.markdown,text/markdown,text/plain" multiple hidden>`,
       });
       host.setAttribute("aria-label", "Documents");
       host.dataset.kind = "documents";
@@ -1048,7 +1077,9 @@ export function projectDocuments(ctx) {
         if (selected()) download(selected());
       } else if (action === "delete") {
         editor?.flush();
-        const record = selected(), pid = state.project.id;
+        // From a list row's menu, the document may not be the open one.
+        const record = button.dataset.documentId ? all().find(d => d.id === button.dataset.documentId) : selected(), pid = state.project.id;
+        if (!record) throw new Error("This document is no longer in the project.");
         const url = endpoint(pid, record.id), entry = sync.entries.get(url);
         button.disabled = true;
         if (entry) await sync.run(entry);
@@ -1056,6 +1087,12 @@ export function projectDocuments(ctx) {
         const revision = all().find(d => d.id === record.id)?.revision;
         await api(url, { method: "DELETE", body: { revision } });
         if (state.project?.id !== pid) return;
+        if (record.id !== state.selectedDocument) {
+          state.documents = all().filter(d => d.id !== record.id);
+          closePanel(); updateExplorer(); updateTabs(); showPane();
+          toast("Document moved to Trash.");
+          return;
+        }
         reset();
         state.documents = all().filter(d => d.id !== record.id);
         state.selectedDocument = null;

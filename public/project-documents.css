@@ -68,9 +68,18 @@
 .document-explorer h2 { flex: 1; min-width: 0; }
 .document-root { color: inherit; background: transparent; border: 0; padding: 0; font: inherit; white-space: nowrap; }
 .document-explorer-actions [data-document-action="sidebar"] .icon { transform: rotate(90deg); }
-.document-folder-row { display: flex; align-items: center; border-radius: calc(6px * var(--style-roundness, 1)); }
-.document-folder-row .document-link { flex: 1; min-width: 0; margin: 0; }
-.document-folder-row .icon-button { flex-shrink: 0; }
+:is(.document-folder-row, .document-item-row) { display: flex; align-items: center; border-radius: calc(6px * var(--style-roundness, 1)); }
+:is(.document-folder-row, .document-item-row) .document-link { flex: 1; min-width: 0; margin: 0; }
+:is(.document-folder-row, .document-item-row) .icon-button { flex-shrink: 0; }
+/* A long press holds a row (folder-tree.js), shown before its menu opens or it's dragged. */
+.document-explorer .document-link:is(.document-held, .document-dragging) { background: var(--surface-soft); box-shadow: inset 0 0 0 2px var(--green); }
+.document-explorer .document-link.document-dragging { opacity: 0.6; }
+@media (pointer: coarse) {
+  .document-explorer .document-link { -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; -webkit-user-drag: none; }
+}
+/* The open document's tab is underlined, as the open view's tab is. */
+.topbar .document-tab-open { border-bottom: 2px solid transparent; }
+.topbar .document-tab-open[aria-current="page"] { color: #445e3d; border-bottom-color: #62804b; }
 .document-folder-row.active { background: var(--surface); }
 .document-folder-row [aria-expanded="false"] > .icon:first-child { transform: rotate(-90deg); }
 .document-folder-row [aria-expanded="true"] > .icon:first-child { transform: none; }

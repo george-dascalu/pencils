@@ -2,6 +2,22 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.20.113 — 2026-11-01
+
+### Added
+
+- Documents in the document list have a ⋯ menu like folders, with Rename, Move to folder and Delete for any document, open or not.
+- On iPad and phones, a long press on a document or folder in the list opens its menu, and a long press then a move drags it onto a folder.
+
+### Changed
+
+- Import Markdown is an icon in the document list's header.
+- The open document's tab in the top bar is underlined, like the open view's tab.
+
+### Fixed
+
+- On iPad, pressing a folder's ⋯ again closes its panel instead of opening it again.
+
 ## 0.20.112 — 2026-11-01
 
 ### Changed
