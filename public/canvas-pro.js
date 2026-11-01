@@ -1011,7 +1011,7 @@ export function canvasPro(ctx, basic) {
           .map(ctx.nodeHTML)
           .join(""),
       );
-      basic.enhanceBase(added);
+      basic.enhanceBase(added, index);
       enhance(added);
     } else if (restored.length) basic.selection();
     for (const n of batch) detailTransition.show($(`[data-node="${CSS.escape(n.id)}"]`), true, true);
@@ -1089,7 +1089,7 @@ export function canvasPro(ctx, basic) {
     if (next) world.insertBefore(el, next);
     if (!cached) {
       const added = new Set([n.id]);
-      basic.enhanceBase(added);
+      basic.enhanceBase(added, index);
       enhance(added);
     }
     paintOverviewDOM();
@@ -1098,8 +1098,17 @@ export function canvasPro(ctx, basic) {
   function paintOverviewDOM() {
     if (scene) paintOverview(new Set($$(".board-node").map(el => el.dataset.node)));
   }
-  let touchNavigation = false, overviewSnapshot = null;
+  let touchNavigation = false, overviewSnapshot = null, wheelUntil = 0, navigationIdle = null;
+  window.addEventListener("wheel", event => {
+    if (event.target.closest?.("#canvas")) wheelUntil = performance.now() + 160;
+  }, { capture: true, passive: true });
   function camera({ navigating = false } = {}) {
+    clearTimeout(navigationIdle);
+    if (wheelUntil <= performance.now()) wheelUntil = 0;
+    if (wheelUntil || state.cameraAnimating) {
+      navigating = true;
+      navigationIdle = setTimeout(() => camera(), 160);
+    }
     commentPanel.position();
     positionInline();
     basic.positionToolbar({ navigating });
@@ -1191,8 +1200,9 @@ export function canvasPro(ctx, basic) {
       mapImage = document.createElement("canvas"); mapImage.width = 200; mapImage.height = 125;
       const m = mapImage.getContext("2d");
       m.fillStyle = themeColor("--surface", "#fafbf7"); m.fillRect(0, 0, 200, 125);
+      const fallback = themeColor("--green", "#a4b69a");
       for (const n of board().nodes) if (!hidden.has(n.id)) {
-        m.fillStyle = nodeFill(n, themeColor("--green", "#a4b69a"));
+        m.fillStyle = nodeFill(n, fallback);
         m.fillRect(5 + (n.x - box.x) * scale, 5 + (n.y - box.y) * scale,
           Math.max(1, n.w * scale), Math.max(1, (n.collapsed ? 48 : n.h) * scale));
       }
@@ -3488,6 +3498,8 @@ export function canvasPro(ctx, basic) {
     // the comments panel once the board it belongs to is no longer shown.
     commentPanel.position();
     touchNavigation = false;
+    clearTimeout(navigationIdle);
+    wheelUntil = 0;
     overviewSnapshot = null;
     $("#canvas")?.classList.remove("touch-navigating");
     parkedDetails.clear();

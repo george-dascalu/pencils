@@ -203,12 +203,15 @@ textarea,
 .planning-head > h2 { overflow-wrap: anywhere; }
 .task-table.spreadsheet {
   /* The drag handle, plus the open button where it is shown. */
-  --table-selection-width: calc(38px + var(--table-open-slot, 24px));
+  --table-selection-width: calc(var(--control-height) + 8px + var(--table-open-slot, 24px));
   --table-row-height: var(--control-height);
   --table-row-action-height: var(--control-height);
   --table-header-height: var(--control-height);
 }
 .task-table.spreadsheet .task-row-actions { gap: 2px; }
+.spreadsheet .task-row-actions > .table-open {
+  width: var(--table-open-slot, 24px); flex-basis: var(--table-open-slot, 24px);
+}
 .task-row > .task-type, .row-fields > :is(.row-assignee, .row-priority) {
   flex-basis: var(--control-height);
 }
@@ -411,4 +414,13 @@ textarea,
 @media not (pointer: coarse) {
   .main .task-row > .task-reorder-handle { width: 16px !important; min-width: 16px !important; flex: 0 0 16px !important; }
   .main .task-row > .tree-toggle { width: 24px !important; min-width: 24px !important; flex: 0 0 24px !important; }
+}
+
+/* Shared chrome changes state at once with reduced motion. Component-specific
+   loading, drag and board feedback keep their own static alternatives. */
+@media (prefers-reduced-motion: reduce) {
+  .sidebar, .sidebar.open,
+  .board-menu > summary > .menu-caret,
+  .document-properties > summary > .icon,
+  .participant-cursor { transition: none; }
 }

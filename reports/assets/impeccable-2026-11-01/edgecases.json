@@ -1,0 +1,493 @@
+[
+  {
+    "name": "small-phone",
+    "view": "list",
+    "dimensions": {
+      "width": 320,
+      "page": 320,
+      "clipped": [
+        {
+          "label": "Pencils home",
+          "right": -64
+        },
+        {
+          "label": "Close navigation",
+          "right": -12
+        },
+        {
+          "label": "Home",
+          "right": -188.671875
+        },
+        {
+          "label": "Personal",
+          "right": -100.328125
+        },
+        {
+          "label": "Today",
+          "right": -12
+        },
+        {
+          "label": "New organisation",
+          "right": -24
+        },
+        {
+          "label": "Switch organisation",
+          "right": -12
+        },
+        {
+          "label": "New project",
+          "right": -24
+        },
+        {
+          "label": "Open project",
+          "right": -12
+        },
+        {
+          "label": "Settings",
+          "right": -188
+        },
+        {
+          "label": "Roadmap",
+          "right": -100
+        },
+        {
+          "label": "Help & guides",
+          "right": -12
+        }
+      ]
+    }
+  },
+  {
+    "name": "small-phone",
+    "view": "table",
+    "dimensions": {
+      "width": 320,
+      "page": 320,
+      "clipped": [
+        {
+          "label": "Pencils home",
+          "right": -64
+        },
+        {
+          "label": "Close navigation",
+          "right": -12
+        },
+        {
+          "label": "Home",
+          "right": -188.671875
+        },
+        {
+          "label": "Personal",
+          "right": -100.328125
+        },
+        {
+          "label": "Today",
+          "right": -12
+        },
+        {
+          "label": "New organisation",
+          "right": -24
+        },
+        {
+          "label": "Switch organisation",
+          "right": -12
+        },
+        {
+          "label": "New project",
+          "right": -24
+        },
+        {
+          "label": "Open project",
+          "right": -12
+        },
+        {
+          "label": "Settings",
+          "right": -188
+        },
+        {
+          "label": "Roadmap",
+          "right": -100
+        },
+        {
+          "label": "Help & guides",
+          "right": -12
+        }
+      ]
+    }
+  },
+  {
+    "name": "small-phone",
+    "view": "documents/d-f0577435-2a4c-4695-9a76-ab24a9502bb5",
+    "dimensions": {
+      "width": 320,
+      "page": 320,
+      "clipped": [
+        {
+          "label": "Pencils home",
+          "right": -64
+        },
+        {
+          "label": "Close navigation",
+          "right": -12
+        },
+        {
+          "label": "Home",
+          "right": -188.671875
+        },
+        {
+          "label": "Personal",
+          "right": -100.328125
+        },
+        {
+          "label": "Today",
+          "right": -12
+        },
+        {
+          "label": "New organisation",
+          "right": -24
+        },
+        {
+          "label": "Switch organisation",
+          "right": -12
+        },
+        {
+          "label": "New project",
+          "right": -24
+        },
+        {
+          "label": "Open project",
+          "right": -12
+        },
+        {
+          "label": "Settings",
+          "right": -188
+        },
+        {
+          "label": "Roadmap",
+          "right": -100
+        },
+        {
+          "label": "Help & guides",
+          "right": -12
+        },
+        {
+          "label": "Bullet list",
+          "right": 340
+        }
+      ]
+    }
+  },
+  {
+    "name": "small-phone",
+    "view": "settings/general",
+    "dimensions": {
+      "width": 320,
+      "page": 320,
+      "clipped": [
+        {
+          "label": "Pencils home",
+          "right": -64
+        },
+        {
+          "label": "Close navigation",
+          "right": -12
+        },
+        {
+          "label": "Home",
+          "right": -188.671875
+        },
+        {
+          "label": "Personal",
+          "right": -100.328125
+        },
+        {
+          "label": "Today",
+          "right": -12
+        },
+        {
+          "label": "New organisation",
+          "right": -24
+        },
+        {
+          "label": "Switch organisation",
+          "right": -12
+        },
+        {
+          "label": "New project",
+          "right": -24
+        },
+        {
+          "label": "Open project",
+          "right": -12
+        },
+        {
+          "label": "Settings",
+          "right": -188
+        },
+        {
+          "label": "Roadmap",
+          "right": -100
+        },
+        {
+          "label": "Help & guides",
+          "right": -12
+        }
+      ]
+    }
+  },
+  {
+    "name": "zoom-equivalent",
+    "view": "list",
+    "dimensions": {
+      "width": 720,
+      "page": 720,
+      "clipped": [
+        {
+          "label": "Pencils home",
+          "right": -64
+        },
+        {
+          "label": "Close navigation",
+          "right": -12
+        },
+        {
+          "label": "Home",
+          "right": -156.671875
+        },
+        {
+          "label": "Personal",
+          "right": -84.328125
+        },
+        {
+          "label": "Today",
+          "right": -12
+        },
+        {
+          "label": "New organisation",
+          "right": -25
+        },
+        {
+          "label": "Switch organisation",
+          "right": -25
+        },
+        {
+          "label": "New project",
+          "right": -25
+        },
+        {
+          "label": "Open project",
+          "right": -25
+        },
+        {
+          "label": "Settings",
+          "right": -156
+        },
+        {
+          "label": "Roadmap",
+          "right": -84
+        },
+        {
+          "label": "Help & guides",
+          "right": -12
+        }
+      ]
+    }
+  },
+  {
+    "name": "zoom-equivalent",
+    "view": "table",
+    "dimensions": {
+      "width": 720,
+      "page": 720,
+      "clipped": [
+        {
+          "label": "Pencils home",
+          "right": -64
+        },
+        {
+          "label": "Close navigation",
+          "right": -12
+        },
+        {
+          "label": "Home",
+          "right": -156.671875
+        },
+        {
+          "label": "Personal",
+          "right": -84.328125
+        },
+        {
+          "label": "Today",
+          "right": -12
+        },
+        {
+          "label": "New organisation",
+          "right": -25
+        },
+        {
+          "label": "Switch organisation",
+          "right": -25
+        },
+        {
+          "label": "New project",
+          "right": -25
+        },
+        {
+          "label": "Open project",
+          "right": -25
+        },
+        {
+          "label": "Settings",
+          "right": -156
+        },
+        {
+          "label": "Roadmap",
+          "right": -84
+        },
+        {
+          "label": "Help & guides",
+          "right": -12
+        },
+        {
+          "label": "Selected rowsVisible rows on t",
+          "right": 826
+        },
+        {
+          "label": "Choose…BacklogTodoIn-progressR",
+          "right": 782.5
+        },
+        {
+          "label": "Archive cards",
+          "right": 780.5
+        }
+      ]
+    }
+  },
+  {
+    "name": "zoom-equivalent",
+    "view": "documents/d-f0577435-2a4c-4695-9a76-ab24a9502bb5",
+    "dimensions": {
+      "width": 720,
+      "page": 720,
+      "clipped": [
+        {
+          "label": "Pencils home",
+          "right": -64
+        },
+        {
+          "label": "Close navigation",
+          "right": -12
+        },
+        {
+          "label": "Home",
+          "right": -156.671875
+        },
+        {
+          "label": "Personal",
+          "right": -84.328125
+        },
+        {
+          "label": "Today",
+          "right": -12
+        },
+        {
+          "label": "New organisation",
+          "right": -25
+        },
+        {
+          "label": "Switch organisation",
+          "right": -25
+        },
+        {
+          "label": "New project",
+          "right": -25
+        },
+        {
+          "label": "Open project",
+          "right": -25
+        },
+        {
+          "label": "Settings",
+          "right": -156
+        },
+        {
+          "label": "Roadmap",
+          "right": -84
+        },
+        {
+          "label": "Help & guides",
+          "right": -12
+        }
+      ]
+    }
+  },
+  {
+    "name": "zoom-equivalent",
+    "view": "settings/general",
+    "dimensions": {
+      "width": 720,
+      "page": 720,
+      "clipped": [
+        {
+          "label": "Pencils home",
+          "right": -64
+        },
+        {
+          "label": "Close navigation",
+          "right": -12
+        },
+        {
+          "label": "Home",
+          "right": -156.671875
+        },
+        {
+          "label": "Personal",
+          "right": -84.328125
+        },
+        {
+          "label": "Today",
+          "right": -12
+        },
+        {
+          "label": "New organisation",
+          "right": -25
+        },
+        {
+          "label": "Switch organisation",
+          "right": -25
+        },
+        {
+          "label": "New project",
+          "right": -25
+        },
+        {
+          "label": "Open project",
+          "right": -25
+        },
+        {
+          "label": "Settings",
+          "right": -156
+        },
+        {
+          "label": "Roadmap",
+          "right": -84
+        },
+        {
+          "label": "Help & guides",
+          "right": -12
+        }
+      ]
+    }
+  },
+  {
+    "name": "home-resize-interruption",
+    "afterBlur": {
+      "moving": true,
+      "h": "5"
+    },
+    "afterMove": {
+      "moving": true,
+      "h": "7"
+    }
+  }
+]

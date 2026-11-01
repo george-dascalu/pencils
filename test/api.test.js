@@ -166,3 +166,55 @@ test("organisation API creates, renames and scopes multiple projects, including 
   });
   assert.equal(response.status, 404);
 });
+
+test("compact board acknowledgements preserve canonical data, retries and concurrent edits", async t => {
+  const { request, store } = await serverFixture(t);
+  const { boardDifference, applyBoardDelta } = await import('../public/board-delta.js');
+  const project = await store.createProject({ title: 'Compact saves' });
+  let board = (await store.snapshot(project.id)).boards[0];
+  const url = `/api/projects/${project.id}/boards/${board.id}`;
+  board = await (await request(url, 'PATCH', { revision: board.revision, nodes: Array.from({ length: 1000 }, (_, i) => ({ id: `n${i}`, type: 'sticky', text: 'Original', x: i * 250, y: 0, w: 240, h: 180 })), edges: [] })).json();
+  const changed = { ...board, nodes: board.nodes.map((n, i) => i ? n : { ...n, x: 12.7 }) };
+  const body = { changes: boardDifference(board, changed), revision: board.revision, operationId: 'compact-move', response: 'delta' };
+  const response = await request(url, 'PATCH', body), ack = await response.json();
+  assert.equal(response.status, 200);
+  assert.equal(ack.type, 'board-ack-v1');
+  assert.equal(ack.operationId, body.operationId);
+  assert.equal(ack.baseRevision, board.revision);
+  assert.ok(JSON.stringify(ack).length < 2000);
+  let remote = await (await request(url)).json();
+  assert.deepEqual(applyBoardDelta(board, ack.changes, { guard: false }).nodes, remote.nodes);
+  assert.equal(remote.nodes[0].x, 13, 'reply carries persisted rounding');
+  assert.equal(ack.revision, remote.revision);
+  // Lost acknowledgements and older bases return a full authoritative snapshot.
+  const retry = await (await request(url, 'PATCH', body)).json();
+  assert.deepEqual(retry, remote);
+  const stale = await (await request(url, 'PATCH', { response: 'delta', revision: board.revision, operationId: 'independent', changes: [{ kind: 'nodes', id: 'n1', key: 'text', before: 'Original', after: 'Another edit' }] })).json();
+  assert.equal(stale.type, undefined);
+  assert.equal(stale.nodes[0].x, 13);
+  assert.equal(stale.nodes[1].text, 'Another edit');
+  const conflict = await request(url, 'PATCH', { ...body, operationId: 'conflict', changes: [{ kind: 'nodes', id: 'n0', key: 'x', before: 0, after: 99 }] });
+  assert.equal(conflict.status, 409);
+  // Older clients keep the existing full-record contract.
+  const legacy = await (await request(url, 'PATCH', { revision: stale.revision, changes: [], operationId: 'legacy' })).json();
+  assert.ok(Array.isArray(legacy.nodes));
+  const desired = { ...legacy, nodes: [...legacy.nodes.filter(n => n.id !== 'n3'), { id: 'added', type: 'shape', x: 1.6, y: 2.4, w: 40, h: 50, text: '' }],
+    edges: [{ id: 'connection', from: 'n0', to: 'added', routing: 'elbow' }], settings: { snap: false } };
+  const batch = await (await request(url, 'PATCH', { response: 'delta', revision: legacy.revision, operationId: 'mixed', changes: boardDifference(legacy, desired) })).json();
+  remote = await (await request(url)).json();
+  const rebuilt = applyBoardDelta(legacy, batch.changes, { guard: false });
+  assert.deepEqual(rebuilt.nodes, remote.nodes);
+  assert.deepEqual(rebuilt.edges, remote.edges);
+  assert.deepEqual(rebuilt.settings, remote.settings);
+  assert.deepEqual(batch.operations.map(o => o.id), remote.operations.map(o => o.id));
+  assert.ok(batch.operations.every(o => !Object.hasOwn(o, 'changes')), 'undo controls need metadata, not the full history');
+  const reordered = { ...remote, nodes: [...remote.nodes].reverse(), edges: [] };
+  const order = await (await request(url, 'PATCH', { response: 'delta', revision: remote.revision, operationId: 'order', changes: boardDifference(remote, reordered) })).json();
+  const ordered = applyBoardDelta(remote, order.changes, { guard: false });
+  const final = await (await request(url)).json();
+  assert.deepEqual(ordered.nodes, final.nodes);
+  assert.deepEqual(ordered.edges, []);
+  const folderReply = await (await request(url, 'PATCH', { response: 'delta', revision: final.revision, operationId: 'folder-and-title', folder: null,
+    changes: [{ key: 'title', before: final.title, after: 'Updated title' }] })).json();
+  assert.equal(folderReply.folder, null, 'include canonical metadata outside the delta fields');
+});

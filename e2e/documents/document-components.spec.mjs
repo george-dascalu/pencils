@@ -2,7 +2,7 @@
 // code and math are edited in place in Live preview and autosave as Markdown,
 // without rewriting the rest of the file. Switching modes stays lossless, and the
 // workspace passes accessibility checks on desktop and phone widths in both themes.
-import { test, expect, useApp } from "../fixtures.mjs";
+import { test, expect, useApp, onDevices } from "../fixtures.mjs";
 import { browserTabShortcuts } from "../helpers/browser-tab-shortcuts.mjs";
 import { axeViolations, chooseDocumentView, noHorizontalScroll, setTheme } from "../helpers/documents.mjs";
 
@@ -152,4 +152,27 @@ test("components stay accessible at desktop and phone widths in both themes", as
       expect(await noHorizontalScroll(page), `${width} ${theme} fits`).toBe(true);
     }
   }
+});
+
+
+onDevices(["desktop", "phone", "ipad"], () => {
+  test.use({ viewportSize: null });
+  test("callout titles have a full control-height editing target without changing text size", { tag: "@gate" }, async ({ page, device }) => {
+  const { saved } = await open(page);
+  const title = textbox(page, "Callout title");
+  const size = await title.evaluate(el => ({ height: el.getBoundingClientRect().height, minHeight: parseFloat(getComputedStyle(el).minHeight), control: parseFloat(getComputedStyle(el).getPropertyValue('--control-height')), font: getComputedStyle(el).fontSize }));
+  expect(size.height).toBeGreaterThanOrEqual(size.control);
+  expect(size.minHeight).toBe(size.control);
+  expect(size.height).toBeGreaterThanOrEqual(device === 'desktop' ? 24 : 44);
+  await title.click({ position: { x: 4, y: size.height - 3 } });
+  await expect(title).toBeFocused();
+  await title.fill('A reachable title');
+  await expect.poll(saved).toContain('> [!note]+ A reachable title');
+  expect(await title.evaluate(el => getComputedStyle(el).fontSize)).toBe(size.font);
+  await page.getByRole('button', { name: 'Collapse callout', exact: true }).click();
+  await expect(textbox(page, 'Callout content')).toBeHidden();
+  await page.getByRole('button', { name: 'Expand callout', exact: true }).click();
+  await textbox(page, 'Callout content').fill('Body still editable.');
+  await expect.poll(saved).toContain('> Body still editable.');
+});
 });

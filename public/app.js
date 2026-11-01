@@ -690,6 +690,9 @@ function deltaChangesState(records) {
   const stable = (value) => JSON.stringify(value, (_, v) => (v && typeof v === "object" && !Array.isArray(v) ? Object.fromEntries(Object.entries(v).sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))) : v));
   return records.some(({ kind, value }) => {
     const current = kind === "project" ? state.project : state[kind]?.find((item) => item.id === value.id);
+    // Compact save replies keep only operation metadata; a full record of the
+    // same file revision must not rebuild the board or steal its focus.
+    if (kind === "boards" && current && current.revision === value.revision) return false;
     return !current || stable(current) !== stable(value);
   });
 }

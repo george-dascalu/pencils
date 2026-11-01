@@ -286,7 +286,22 @@ export function installCanvas(Store) {
       // Always retain the latest operation, even if it alone exceeds the cap.
       data.operations = recent.slice(first);
       data.updated = operation.time;
-      return this.write(file, data, current.body, current);
+      const saved = await this.write(file, data, current.body, current);
+      // Only an exact base can use a delta reply; stale writers and retries
+      // need the authoritative snapshot, including other people's changes.
+      if (input.response === "delta" && Array.isArray(input.changes) && input.revision === current.revision) {
+        const canonical = changes.filter(c => !["nodes", "edges"].includes(c.kind));
+        for (const kind of ["nodes", "edges"]) {
+          const ids = new Set(changes.filter(c => c.kind === kind).map(c => c.id));
+          for (const node of saved[kind]) if (ids.delete(node.id))
+            canonical.push({ kind, id: node.id, before: null, after: node });
+          for (const id of ids) canonical.push({ kind, id, before: null, after: null });
+        }
+        return { type: "board-ack-v1", operationId, baseRevision: current.revision,
+          revision: saved.revision, updated: saved.updated, file: saved.file, folder: saved.folder ?? null, changes: canonical,
+          operations: saved.operations.map(({ changes, ...metadata }) => metadata) };
+      }
+      return saved;
     },
     async undoBoard(project, id, input, actor) {
       const file = this.file(project, "boards", id),

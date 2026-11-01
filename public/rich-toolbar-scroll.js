@@ -19,7 +19,7 @@ export function installToolbarScroll(shell) {
     if (edges.end) edges.end.hidden = !end;
   }
   const step = (direction) =>
-    scroller.scrollBy({ left: direction * Math.max(96, scroller.clientWidth * 0.7), behavior: "smooth" });
+    scroller.scrollBy({ left: direction * Math.max(96, scroller.clientWidth * 0.7), behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "instant" : "smooth" });
   edges.start?.addEventListener("click", () => step(-1));
   edges.end?.addEventListener("click", () => step(1));
   scroller.addEventListener("scroll", update, { passive: true });

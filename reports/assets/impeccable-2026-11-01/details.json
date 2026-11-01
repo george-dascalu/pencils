@@ -1,0 +1,358 @@
+[
+  {
+    "name": "chromium-desktop-task",
+    "axe": []
+  },
+  {
+    "name": "chromium-desktop-comments",
+    "axe": []
+  },
+  {
+    "name": "chromium-desktop-checkbox-target",
+    "value": {
+      "input": {
+        "x": 1291,
+        "y": 54.5,
+        "width": 13,
+        "height": 13,
+        "top": 54.5,
+        "right": 1304,
+        "bottom": 67.5,
+        "left": 1291
+      },
+      "label": {
+        "x": 1291,
+        "y": 45,
+        "width": 97,
+        "height": 32,
+        "top": 45,
+        "right": 1388,
+        "bottom": 77,
+        "left": 1291
+      },
+      "styles": {
+        "height": "13px",
+        "width": "13px",
+        "appearance": "auto"
+      }
+    }
+  },
+  {
+    "name": "chromium-desktop-label-click",
+    "checked": true
+  },
+  {
+    "name": "chromium-desktop-callout",
+    "value": {
+      "rect": {
+        "x": 426,
+        "y": 204.046875,
+        "width": 69,
+        "height": 21,
+        "top": 204.046875,
+        "right": 495,
+        "bottom": 225.046875,
+        "left": 426
+      },
+      "parent": {
+        "x": 426,
+        "y": 204.046875,
+        "width": 69,
+        "height": 21,
+        "top": 204.046875,
+        "right": 495,
+        "bottom": 225.046875,
+        "left": 426
+      },
+      "below": "<aside class=\"document-callout\" data-document-callout=\"[!NOTE]\"><strong><span contenteditable=\"true\" role=\"textbox\" aria-label=\"Callout title\" aria-multiline=\"false\" tabindex=\"0\" data-component-field=\"0\">Next step</span></strong><div class=\"document-"
+    }
+  },
+  {
+    "name": "chromium-desktop-callout-edit",
+    "axe": [
+      {
+        "id": "target-size",
+        "impact": "serious",
+        "nodes": [
+          {
+            "target": [
+              "span[aria-label=\"Callout title\"]"
+            ],
+            "summary": "Fix any of the following:\n  Target has insufficient size (113px by 21px, should be at least 24px by 24px)\n  Target has insufficient space to its closest neighbors. Safe clickable space has a diameter of 21px instead of at least 24px."
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "chromium-desktop-settings-light",
+    "axe": []
+  },
+  {
+    "name": "chromium-desktop-settings-dark",
+    "axe": []
+  },
+  {
+    "name": "chromium-phone-row-target",
+    "value": {
+      "rect": {
+        "x": 15,
+        "y": 117,
+        "width": 316,
+        "height": 20.796875,
+        "top": 117,
+        "right": 331,
+        "bottom": 137.796875,
+        "left": 15
+      },
+      "box": {
+        "x": 9,
+        "y": 113,
+        "width": 328,
+        "height": 66.796875,
+        "top": 113,
+        "right": 337,
+        "bottom": 179.796875,
+        "left": 9
+      },
+      "below": "phone-task-open"
+    }
+  },
+  {
+    "name": "chromium-phone-task",
+    "axe": []
+  },
+  {
+    "name": "chromium-phone-comments",
+    "axe": []
+  },
+  {
+    "name": "chromium-phone-callout",
+    "value": {
+      "rect": {
+        "x": 33,
+        "y": 213.3125,
+        "width": 123,
+        "height": 22,
+        "top": 213.3125,
+        "right": 156,
+        "bottom": 235.3125,
+        "left": 33
+      },
+      "parent": {
+        "x": 33,
+        "y": 213.3125,
+        "width": 123,
+        "height": 22,
+        "top": 213.3125,
+        "right": 156,
+        "bottom": 235.3125,
+        "left": 33
+      },
+      "below": "<aside class=\"document-callout\" data-document-callout=\"[!NOTE]\"><strong><span contenteditable=\"true\" role=\"textbox\" aria-label=\"Callout title\" aria-multiline=\"false\" tabindex=\"0\" data-component-field=\"0\">Next step ready</span></strong><div class=\"doc"
+    }
+  },
+  {
+    "name": "chromium-phone-callout-edit",
+    "axe": [
+      {
+        "id": "target-size",
+        "impact": "serious",
+        "nodes": [
+          {
+            "target": [
+              "span[aria-label=\"Callout title\"]"
+            ],
+            "summary": "Fix any of the following:\n  Target has insufficient size (170px by 22px, should be at least 24px by 24px)\n  Target has insufficient space to its closest neighbors. Safe clickable space has a diameter of 22px instead of at least 24px."
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "chromium-phone-settings-light",
+    "axe": []
+  },
+  {
+    "name": "chromium-phone-settings-dark",
+    "axe": []
+  },
+  {
+    "name": "webkit-desktop-task",
+    "axe": []
+  },
+  {
+    "name": "webkit-desktop-comments",
+    "axe": []
+  },
+  {
+    "name": "webkit-desktop-checkbox-target",
+    "value": {
+      "input": {
+        "x": 1290.859375,
+        "y": 55,
+        "width": 12,
+        "height": 12,
+        "top": 55,
+        "right": 1302.859375,
+        "bottom": 67,
+        "left": 1290.859375
+      },
+      "label": {
+        "x": 1290.859375,
+        "y": 45,
+        "width": 97.140625,
+        "height": 32,
+        "top": 45,
+        "right": 1388,
+        "bottom": 77,
+        "left": 1290.859375
+      },
+      "styles": {
+        "height": "12px",
+        "width": "12px",
+        "appearance": "auto"
+      }
+    }
+  },
+  {
+    "name": "webkit-desktop-label-click",
+    "checked": true
+  },
+  {
+    "name": "webkit-desktop-callout",
+    "value": {
+      "rect": {
+        "x": 420.15625,
+        "y": 204.671875,
+        "width": 155.2861328125,
+        "height": 21,
+        "top": 204.671875,
+        "right": 575.4423828125,
+        "bottom": 225.671875,
+        "left": 420.15625
+      },
+      "parent": {
+        "x": 420.15625,
+        "y": 204.671875,
+        "width": 155.2861328125,
+        "height": 21,
+        "top": 204.671875,
+        "right": 575.4423828125,
+        "bottom": 225.671875,
+        "left": 420.15625
+      },
+      "below": "<aside class=\"document-callout\" data-document-callout=\"[!NOTE]\"><strong><span contenteditable=\"true\" role=\"textbox\" aria-label=\"Callout title\" aria-multiline=\"false\" tabindex=\"0\" data-component-field=\"0\">Next step ready ready</span></strong><div clas"
+    }
+  },
+  {
+    "name": "webkit-desktop-callout-edit",
+    "axe": [
+      {
+        "id": "target-size",
+        "impact": "serious",
+        "nodes": [
+          {
+            "target": [
+              "span[aria-label=\"Callout title\"]"
+            ],
+            "summary": "Fix any of the following:\n  Target has insufficient size (198.6px by 21px, should be at least 24px by 24px)\n  Target has insufficient space to its closest neighbors. Safe clickable space has a diameter of 21px instead of at least 24px."
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "webkit-desktop-settings-light",
+    "axe": []
+  },
+  {
+    "name": "webkit-desktop-settings-dark",
+    "axe": []
+  },
+  {
+    "name": "webkit-phone-row-target",
+    "value": {
+      "rect": {
+        "x": 15,
+        "y": 117,
+        "width": 316,
+        "height": 20.796875,
+        "top": 117,
+        "right": 331,
+        "bottom": 137.796875,
+        "left": 15
+      },
+      "box": {
+        "x": 9,
+        "y": 113,
+        "width": 328,
+        "height": 66.796875,
+        "top": 113,
+        "right": 337,
+        "bottom": 179.796875,
+        "left": 9
+      },
+      "below": "phone-task-open"
+    }
+  },
+  {
+    "name": "webkit-phone-task",
+    "axe": []
+  },
+  {
+    "name": "webkit-phone-comments",
+    "axe": []
+  },
+  {
+    "name": "webkit-phone-callout",
+    "value": {
+      "rect": {
+        "x": 33,
+        "y": 213.3125,
+        "width": 211.8692626953125,
+        "height": 22,
+        "top": 213.3125,
+        "right": 244.8692626953125,
+        "bottom": 235.3125,
+        "left": 33
+      },
+      "parent": {
+        "x": 33,
+        "y": 213.3125,
+        "width": 211.8692626953125,
+        "height": 22,
+        "top": 213.3125,
+        "right": 244.8692626953125,
+        "bottom": 235.3125,
+        "left": 33
+      },
+      "below": "<aside class=\"document-callout\" data-document-callout=\"[!NOTE]\"><strong><span contenteditable=\"true\" role=\"textbox\" aria-label=\"Callout title\" aria-multiline=\"false\" tabindex=\"0\" data-component-field=\"0\">Next step ready ready ready</span></strong><di"
+    }
+  },
+  {
+    "name": "webkit-phone-callout-edit",
+    "axe": [
+      {
+        "id": "target-size",
+        "impact": "serious",
+        "nodes": [
+          {
+            "target": [
+              "span[aria-label=\"Callout title\"]"
+            ],
+            "summary": "Fix any of the following:\n  Target has insufficient size (258.1px by 22px, should be at least 24px by 24px)\n  Target has insufficient space to its closest neighbors. Safe clickable space has a diameter of 22px instead of at least 24px."
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "webkit-phone-settings-light",
+    "axe": []
+  },
+  {
+    "name": "webkit-phone-settings-dark",
+    "axe": []
+  }
+]

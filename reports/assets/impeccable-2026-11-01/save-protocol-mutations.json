@@ -1,0 +1,122 @@
+[
+  {
+    "module": "server/canvas.js",
+    "line": 292,
+    "status": "killed",
+    "from": "&&",
+    "to": "||",
+    "code": "      if (input.response === \"delta\" && Array.isArray(input.changes) && input.revision === current.revision) {"
+  },
+  {
+    "module": "server/canvas.js",
+    "line": 292,
+    "status": "killed",
+    "from": "===",
+    "to": "!==",
+    "code": "      if (input.response === \"delta\" && Array.isArray(input.changes) && input.revision === current.revision) {"
+  },
+  {
+    "module": "server/canvas.js",
+    "line": 292,
+    "status": "killed",
+    "from": "===",
+    "to": "!==",
+    "code": "      if (input.response === \"delta\" && Array.isArray(input.changes) && input.revision === current.revision) {"
+  },
+  {
+    "module": "server/canvas.js",
+    "line": 295,
+    "status": "killed",
+    "from": "===",
+    "to": "!==",
+    "code": "          const ids = new Set(changes.filter(c => c.kind === kind).map(c => c.id));"
+  },
+  {
+    "module": "server/canvas.js",
+    "line": 297,
+    "status": "killed",
+    "from": "canonical.push({ kind, id: node.id, before: null, after: node });",
+    "to": ";",
+    "code": "            canonical.push({ kind, id: node.id, before: null, after: node });"
+  },
+  {
+    "module": "server/canvas.js",
+    "line": 298,
+    "status": "killed",
+    "from": "canonical.push({ kind, id, before: null, after: null });",
+    "to": ";",
+    "code": "          for (const id of ids) canonical.push({ kind, id, before: null, after: null });"
+  },
+  {
+    "module": "server/canvas.js",
+    "line": 292,
+    "status": "killed",
+    "from": "&&",
+    "to": "||",
+    "code": "      if (input.response === \"delta\" && Array.isArray(input.changes) && input.revision === current.revision) {"
+  },
+  {
+    "module": "server/canvas.js",
+    "line": 293,
+    "status": "killed",
+    "from": "!",
+    "to": "",
+    "code": "        const canonical = changes.filter(c => ![\"nodes\", \"edges\"].includes(c.kind));"
+  },
+  {
+    "module": "public/sync.js",
+    "line": 278,
+    "status": "killed",
+    "from": "&&",
+    "to": "||",
+    "code": "      if (isBoard && result.type === \"board-ack-v1\") {"
+  },
+  {
+    "module": "public/sync.js",
+    "line": 278,
+    "status": "killed",
+    "from": "===",
+    "to": "!==",
+    "code": "      if (isBoard && result.type === \"board-ack-v1\") {"
+  },
+  {
+    "module": "public/sync.js",
+    "line": 279,
+    "status": "killed",
+    "from": "||",
+    "to": "&&",
+    "code": "        if (result.operationId !== operationId || result.baseRevision !== base.revision)"
+  },
+  {
+    "module": "public/sync.js",
+    "line": 279,
+    "status": "killed",
+    "from": "!==",
+    "to": "===",
+    "code": "        if (result.operationId !== operationId || result.baseRevision !== base.revision)"
+  },
+  {
+    "module": "public/sync.js",
+    "line": 280,
+    "status": "killed",
+    "from": "throw new Error(\"The board save acknowledgement did not match. Your draft is retained for retry.\");",
+    "to": ";",
+    "code": "          throw new Error(\"The board save acknowledgement did not match. Your draft is retained for retry.\");"
+  },
+  {
+    "module": "public/sync.js",
+    "line": 281,
+    "status": "killed",
+    "from": "false",
+    "to": "true",
+    "code": "        result = { ...applyBoardDelta(base, result.changes, { guard: false }),"
+  },
+  {
+    "module": "public/sync.js",
+    "line": 279,
+    "status": "killed",
+    "from": "!==",
+    "to": "===",
+    "code": "        if (result.operationId !== operationId || result.baseRevision !== base.revision)"
+  }
+]

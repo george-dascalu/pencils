@@ -2,7 +2,7 @@
 // (reports/2026-10-27-ui-ux-assessment.md). Each test names the finding it guards,
 // grouped as in the report. An audit (tag @audit): it reports findings rather than
 // guarding a change, so it runs only with `npx playwright test --project=audit`.
-import AxeBuilder from "@axe-core/playwright";
+import { accessibilityReport } from "../helpers/accessibility.mjs";
 import fs from "node:fs/promises";
 import { test, expect, onDevices, useApp } from "../fixtures.mjs";
 import { newCard } from "../helpers/new-card.mjs";
@@ -179,18 +179,24 @@ test.describe("Group 3: touch targets and axe (findings 13–14)", { tag: "@audi
       expect(small, `${small.length} small comment controls: ${small.join(" | ")}`).toEqual([]);
     });
   });
-  test("table row checkboxes offer a 24px target on desktop", async ({ page }) => {
+  test("table row actions offer a 24px target on desktop", async ({ page }) => {
     await open(page, "table", ".spreadsheet");
-    const sizes = await page.evaluate(() => [...document.querySelectorAll(".spreadsheet input[type=checkbox]")].slice(0, 3).map((el) => { const r = el.getBoundingClientRect(); return [Math.round(r.width), Math.round(r.height)]; }));
-    expect(sizes.length && sizes.every(([w, h]) => w >= 24 && h >= 24), `checkbox sizes ${JSON.stringify(sizes)}`).toBeTruthy();
+    const buttons = page.locator('.spreadsheet .table-open');
+    expect(await buttons.count()).toBeGreaterThan(0);
+    for (const button of (await buttons.all()).slice(0, 3)) {
+      const r = await button.boundingBox();
+      expect(Math.min(r.width, r.height)).toBeGreaterThanOrEqual(24);
+    }
+    await buttons.first().click();
+    await expect(page.locator('#task-form')).toBeVisible();
   });
   test("axe finds no contrast, target or scroll-region issues on key pages", async ({ page }) => {
     const found = [];
     for (const [name, path, wait] of [["home", `${app.base}/#home`, ".organisation-overview"], ["org", `${app.base}/#organisation/${app.project.organisation}/home`, ".organisation-overview"], ["list", url("list"), ".task-row"], ["table", url("table"), ".spreadsheet"], ["kanban", url("kanban"), ".kanban-column"], ["documents", url("documents"), ".documents-workspace"]]) {
       await page.goto(path);
       await page.locator(wait).first().waitFor();
-      if (name === "documents") { const link = page.locator(".document-link").first(); if (await link.count()) { await link.click(); await page.locator(".document-editor .cm-content").first().waitFor(); } }
-      const res = await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa", "wcag21aa", "wcag22aa"]).analyze();
+      if (name === "documents") { const link = page.locator(".document-link").first(); if (await link.count()) { if (!(await link.isVisible())) await openList(page); await link.click(); await page.locator(".document-editor .cm-content").first().waitFor(); } }
+      const res = await accessibilityReport(page);
       for (const v of res.violations) found.push(`${name}: ${v.id} ×${v.nodes.length} (${v.nodes[0].target.join(" ")})`);
     }
     expect(found, `axe: ${found.join(" | ")}`).toEqual([]);
@@ -226,12 +232,14 @@ test.describe("Group 4: vocabulary and controls (findings 17–22)", { tag: "@au
     const hits = (await visibleText(page, "#dialogs")).split("\n").filter((l) => banned.test(l) || /Workflow & fields/.test(l)).map((l) => `palette: ${l}`);
     expect(hits, `wording: ${hits.join(" | ")}`).toEqual([]);
   });
-  test("calendar and timeline share the weekends toggle button", async ({ page }) => {
-    await open(page, "calendar", ".calendar, .calendar-agenda");
-    await expect(page.locator("button[data-weekends-toggle]"), "calendar toggle").toHaveCount(1);
-    await open(page, "timeline", ".task-timeline");
-    await expect(page.locator("button[data-weekends-toggle]"), "timeline toggle").toHaveCount(1);
-    await expect(page.locator("input[data-timeline-weekends]"), "no checkbox").toHaveCount(0);
+  test("calendar and timeline share the labelled weekends checkbox", async ({ page }) => {
+    for (const [view, ready] of [['calendar', '.calendar, .calendar-agenda'], ['timeline', '.task-timeline']]) {
+      await open(page, view, ready);
+      const toggle = page.getByRole('checkbox', { name: 'Show weekends' });
+      const checked = await toggle.isChecked();
+      await toggle.locator('..').click();
+      await expect(toggle).toBeChecked({ checked: !checked });
+    }
   });
   test("planning views hide the task sort and group controls", async ({ page }) => {
     for (const [view, wait] of [["calendar", ".calendar, .calendar-agenda"], ["timeline", ".task-timeline"], ["capacity", ".capacity-view"]]) {
@@ -246,7 +254,10 @@ test.describe("Group 4: vocabulary and controls (findings 17–22)", { tag: "@au
     await open(page, "table", ".spreadsheet");
     const top = await page.evaluate(() => [...document.querySelectorAll(".table-view-tools > *, .grid-tools > *")].filter((el) => el.getBoundingClientRect().height).map((el) => el.textContent.trim().slice(0, 24)));
     expect(top.some((t) => /Advanced filters|Export matching CSV/.test(t)), `toolbar: ${top.join(" | ")}`).toBe(false);
-    expect(top.length, `toolbar has ${top.length} controls: ${top.join(" | ")}`).toBeLessThanOrEqual(5);
+    const boxes = await page.locator('.table-view-tools > :is(button, details, label), .grid-tools > :is(button, details, label)').evaluateAll(els => els.filter(el => el.getBoundingClientRect().height).map(el => { const r = el.getBoundingClientRect(); return { left: r.left, right: r.right, top: r.top, bottom: r.bottom }; }));
+    expect(boxes.length).toBeGreaterThan(0);
+    for (const box of boxes) { expect(box.left).toBeGreaterThanOrEqual(0); expect(box.right).toBeLessThanOrEqual(page.viewportSize().width); }
+    expect(Math.max(...boxes.map(b => b.top)) - Math.min(...boxes.map(b => b.top))).toBeLessThanOrEqual(4);
   });
   test("list group badges show the true total across pages", async ({ page }) => {
     await page.goto(`${app.base}/#project/${app.bigProject.id}/list`);
@@ -319,12 +330,13 @@ test.describe("Group 5: dialog contract (findings 23–26)", { tag: "@audit" }, 
     expect(newPanel.right - newClose.right, `new task close sits ${newPanel.right - newClose.right}px from the right edge`).toBeLessThan(40);
     expect(Math.abs((newPanel.right - newClose.right) - (editPanel.right - editClose.right)), "same corner").toBeLessThanOrEqual(4);
   });
-  test("the board More menu groups its items", async ({ page }) => {
+  test("Board tools groups its actions with dividers", async ({ page }) => {
     await openBoard(page);
-    await page.locator("details > summary:visible", { hasText: /^more/i }).first().click();
-    await page.locator("details[open] > .board-menu-panel").first().waitFor();
-    const headings = await page.locator("details[open] > .board-menu-panel .board-menu-heading:visible").allTextContents();
-    expect(headings.length, `headings: ${headings.join(", ")}`).toBeGreaterThanOrEqual(3);
+    await page.getByLabel('Board tools', { exact: true }).click();
+    const menu = page.locator('details[data-board-menu="tools"][open] > .board-menu-panel');
+    await expect(menu).toBeVisible();
+    expect(await menu.getByRole('separator').count()).toBeGreaterThanOrEqual(2);
+    await expect(menu.getByRole('button', { name: 'Present', exact: true })).toBeVisible();
   });
   test("filters panel fields are left-aligned and full width", async ({ page }) => {
     await open(page, "list", ".task-row");
@@ -339,7 +351,7 @@ test.describe("Group 5: dialog contract (findings 23–26)", { tag: "@audit" }, 
     await page.locator(".mobile-view-options > summary").first().click();
     // Since 0.19.2 the filters list is expanded inside the panel (PEN-9); there is no summary to click.
     await page.locator(".mobile-view-options-panel").waitFor();
-    const [position, clearVisible] = await page.evaluate(() => { const panel = document.querySelector('details[data-board-menu="filters"] .board-menu-panel'); const options = document.querySelector(".mobile-view-options-panel"); const clear = [...panel.querySelectorAll("button")].find((b) => /clear filters/i.test(b.textContent)); clear?.scrollIntoView({ block: "nearest" }); const r = clear?.getBoundingClientRect(); const o = options.getBoundingClientRect(); return [getComputedStyle(panel).position, !!r && options.contains(clear) && r.bottom <= o.bottom + 1 && r.bottom <= innerHeight && r.top >= o.top - 1]; });
+    const [position, clearVisible] = await page.evaluate(() => { const panel = document.querySelector('details[data-board-menu="filters"] .board-menu-panel'); const options = document.querySelector(".mobile-view-options-panel"); const clear = options.querySelector('[aria-label="Clear filters"]'); clear?.scrollIntoView({ block: "nearest" }); const r = clear?.getBoundingClientRect(); const o = options.getBoundingClientRect(); return [getComputedStyle(panel).position, !!r && options.contains(clear) && r.bottom <= o.bottom + 1 && r.bottom <= innerHeight && r.top >= o.top - 1]; });
     expect(position, "filters panel flows inside the view options").toBe("static");
     expect(clearVisible, "Clear filters stays inside the panel").toBe(true);
   }));
@@ -348,7 +360,7 @@ test.describe("Group 5: dialog contract (findings 23–26)", { tag: "@audit" }, 
 test.describe("Group 6: keyboard, copy, identity (findings 27–31)", { tag: "@audit" }, () => {
   test("presence shows the signed-in name instead of a guest id", async ({ page }) => {
     await openBoard(page);
-    await expect(page.locator(".main"), "signed-in name missing from presence").toContainText("George");
+    await expect(page.locator("#canvas-presence button")).toHaveAccessibleName(/Your name: George/);
     expect(await page.evaluate(() => document.querySelector(".main").innerText), "guest id still shown").not.toMatch(/Guest [a-z0-9]{4}/);
   });
   test("the document title names the current view", async ({ page }) => {

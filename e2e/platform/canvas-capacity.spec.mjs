@@ -48,7 +48,7 @@ test.afterAll(async () => {
   await fs.mkdir("artifacts", { recursive: true });
   await fs.writeFile(
     process.env.CAPACITY_OUTPUT || "artifacts/board-capacity-100k.json",
-    JSON.stringify({ date: "2026-10-21", cpu: os.cpus()[0].model, cores: os.cpus().length, browser: browserVersion, viewport: "1440x1050", production: true, results }, null, 2),
+    JSON.stringify({ date: new Date().toISOString(), cpu: os.cpus()[0].model, cores: os.cpus().length, browser: browserVersion, viewport: "1440x1050", production: true, results }, null, 2),
   );
 });
 
@@ -120,11 +120,14 @@ for (const scenario of cases.filter((s) => !selectedCases || selectedCases.inclu
     delete baseRecord.native;
     delete baseRecord.operations;
     const moved = { ...baseRecord, nodes: baseRecord.nodes.map((n, i) => (i === 0 ? { ...n, x: n.x + 10 } : n)) };
-    const body = JSON.stringify({ changes: boardDifference(baseRecord, moved), revision: board.revision, client: "capacity", operationId: `op-${scenario.name}` });
+    const body = JSON.stringify({ changes: boardDifference(baseRecord, moved), revision: board.revision, client: "capacity", response: "delta", operationId: `op-${scenario.name}` });
     const saveStart = performance.now();
     const response = await fetch(`${app.base}/api/projects/${project.id}/boards/${board.id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body });
     const saved = await response.json();
     expect(response.ok, JSON.stringify(saved).slice(0, 300)).toBe(true);
+    expect(saved.type).toBe('board-ack-v1');
+    expect(Buffer.byteLength(JSON.stringify(saved))).toBeLessThan(4096);
+    expect(saved.changes.find(c => c.kind === 'nodes' && c.id === 'node-0').after.x).toBe(nodes[0].x + 10);
     const result = {
       ...scenario,
       loadMs: Math.round(loadMs),

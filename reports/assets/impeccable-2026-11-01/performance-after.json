@@ -1,0 +1,57 @@
+{
+  "date": "2026-11-01T21:36:42.094Z",
+  "cpu": "AMD Ryzen 9 9950X3D 16-Core Processor",
+  "cores": 32,
+  "browser": "149.0.7827.55",
+  "viewport": "1440x1050",
+  "production": true,
+  "results": [
+    {
+      "name": "dense-100000",
+      "count": 100000,
+      "edges": 200000,
+      "columns": 400,
+      "gap": 30,
+      "loadMs": 2737,
+      "detailedDOM": 240,
+      "panMedianMs": 33,
+      "panP95Ms": 33,
+      "fitMs": 641,
+      "saveMs": 2357,
+      "savePayloadBytes": 225,
+      "savePayloadKiB": 0.22,
+      "snapshotKiB": 1,
+      "initialLongestTaskMs": 551,
+      "detailed": 0,
+      "elements": 436,
+      "connectors": 0,
+      "heapMiB": 468,
+      "longTasks": [
+        265,
+        297
+      ]
+    },
+    {
+      "name": "maximum-10000",
+      "count": 10000,
+      "edges": 20000,
+      "columns": 100,
+      "gap": 320,
+      "loadMs": 468,
+      "detailedDOM": 63,
+      "panMedianMs": 33,
+      "panP95Ms": 33,
+      "fitMs": 114,
+      "saveMs": 249,
+      "savePayloadBytes": 226,
+      "savePayloadKiB": 0.22,
+      "snapshotKiB": 1,
+      "initialLongestTaskMs": 107,
+      "detailed": 63,
+      "elements": 2001,
+      "connectors": 187,
+      "heapMiB": 61,
+      "longTasks": []
+    }
+  ]
+}

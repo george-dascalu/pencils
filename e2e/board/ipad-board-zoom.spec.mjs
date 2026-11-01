@@ -198,3 +198,27 @@ onDevices(["ipad"], () => {
 });
 
 onDevices(["ipad-portrait"], () => test("card field menus keep full touch targets in portrait", async ({ page }) => fieldMenusKeepTouchTargets(page)));
+
+test('wheel navigation reuses the overview and resumes detail after settling', { tag: '@gate' }, async ({ page }) => {
+  await openBoard(page, { x: 15, y: 0, z: 0.5 });
+  const result = await page.evaluate(async () => {
+    const canvas = document.querySelector('#canvas'), overview = document.querySelector('#canvas-overview');
+    const context = overview.getContext('2d'), clear = context.clearRect;
+    let paints = 0;
+    context.clearRect = function(...args) { paints++; return clear.apply(this, args); };
+    for (let i = 0; i < 8; i++) {
+      canvas.dispatchEvent(new WheelEvent('wheel', { bubbles: true, cancelable: true, deltaX: 10, deltaY: 0, shiftKey: true }));
+      await new Promise(requestAnimationFrame);
+    }
+    const moving = canvas.classList.contains('touch-navigating');
+    context.clearRect = clear;
+    return { paints, moving, transform: overview.style.transform };
+  });
+  expect(result.moving).toBe(true);
+  expect(result.paints).toBeLessThanOrEqual(2);
+  expect(result.transform).toContain('scale(');
+  await expect(page.locator('#canvas')).not.toHaveClass(/touch-navigating/);
+  await expect.poll(() => page.locator('.board-node').count()).toBeGreaterThan(0);
+  // The cached overview never changes board data.
+  expect((await savedBoard()).nodes).toEqual(app.board.nodes);
+});

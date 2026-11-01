@@ -1989,11 +1989,6 @@ input[type="search"]:not(.search input) {
     margin-right: 18px;
   }
 }
-@media (prefers-reduced-motion: reduce) {
-  * {
-    transition: none !important;
-  }
-}
 
 @media (max-width: 480px) {
   .topbar .save-state {

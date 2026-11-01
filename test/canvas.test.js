@@ -936,3 +936,43 @@ test("board delta drafts recover after reload, including conflict with a deleted
   assert.equal(result.nodes.find(n => n.id === 'a').text, 'Offline work');
   assert.equal(second.entries.size, 0);
 });
+
+test('compact acknowledgements merge edits queued during flight and reject mismatched replies', async t => {
+  const previous = { window: globalThis.window, localStorage: globalThis.localStorage, sessionStorage: globalThis.sessionStorage };
+  const storage = () => { const data = new Map(); return { getItem: k => data.get(k) ?? null, setItem: (k,v) => data.set(k,v), removeItem: k => data.delete(k) }; };
+  globalThis.window = { addEventListener() {} }; globalThis.localStorage = storage(); globalThis.sessionStorage = storage();
+  const { SaveQueue } = await import('../public/sync.js');
+  const { applyBoardDelta } = await import('../public/board-delta.js');
+  const base = { id: 'board', revision: 'r0', nodes: [sticky('a')], edges: [] };
+  let remote = base, release, started, calls = 0, reads = 0, invalid = false, latest;
+  const entered = new Promise(resolve => started = resolve), held = new Promise(resolve => release = resolve);
+  const queue = new SaveQueue({ changed() {}, saved: (_, record) => latest = record, api: async (_, options) => {
+    if (!options) { reads++; return remote; }
+    const { operationId, revision, changes, response } = options.body;
+    assert.equal(response, 'delta');
+    if (invalid) return { type: 'board-ack-v1', baseRevision: revision, operationId: 'wrong-operation', changes: [] };
+    remote = { ...applyBoardDelta(remote, changes), revision: `r${++calls}` };
+    const result = { type: 'board-ack-v1', baseRevision: revision, operationId, revision: remote.revision, folder: null, changes: changes.map(c => c.kind === 'nodes' ? { kind: 'nodes', id: c.id, before: null, after: remote.nodes.find(n => n.id === c.id) ?? null } : c), operations: [] };
+    if (calls === 1) { started(); await held; }
+    return result;
+  } });
+  t.after(() => { clearInterval(queue.timer); for (const [k,v] of Object.entries(previous)) v === undefined ? delete globalThis[k] : globalThis[k] = v; });
+  const url = '/projects/p/boards/board';
+  const first = queue.enqueue(url, base, { nodes: [{ ...base.nodes[0], x: 100 }] });
+  await entered;
+  queue.enqueue(url, base, { nodes: [{ ...base.nodes[0], x: 100, text: 'Typed while saving' }] });
+  release(); await first;
+  assert.equal(calls, 2); assert.equal(reads, 0, 'an accepted compact reply never rereads the whole board'); assert.equal(queue.entries.size, 0);
+  assert.deepEqual(latest.nodes, remote.nodes); assert.equal(latest.folder, null);
+  assert.equal(latest.nodes[0].text, 'Typed while saving'); assert.equal(latest.nodes[0].x, 100);
+  invalid = true;
+  await queue.enqueue(url, latest, { nodes: [{ ...latest.nodes[0], text: 'Keep this draft' }] });
+  const pending = queue.entries.get(url);
+  assert.match(pending.error, /acknowledgement did not match/);
+  assert.equal(pending.local.nodes[0].text, 'Keep this draft');
+  assert.ok(pending.delivery, 'retain the operation for idempotent retry');
+  invalid = false;
+  await queue.run(pending);
+  assert.equal(queue.entries.size, 0);
+  assert.equal(latest.nodes[0].text, 'Keep this draft');
+});

@@ -1181,16 +1181,6 @@ html.task-page-open,
     display: none;
   }
 }
-@media (prefers-reduced-motion: reduce) {
-  *,
-  *::before,
-  *::after {
-    scroll-behavior: auto !important;
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
-  }
-}
 /* Wide screens float the pane beside the editor, aligned with its top. */
 @media (min-width: 1320px) {
   .project-task-editor:is(.with-task-history, .with-task-comments) {

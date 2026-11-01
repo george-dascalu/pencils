@@ -268,13 +268,19 @@ export class SaveQueue {
       base: entry.base,
     };
     try {
-      const result = await this.api(entry.url, {
+      let result = await this.api(entry.url, {
         method: "PATCH",
         body: {
-          ...(isBoard ? { changes: entry.delivery.changes, client: this.client, operationId } : sent),
+          ...(isBoard ? { changes: entry.delivery.changes, client: this.client, operationId, response: "delta" } : sent),
           revision: base.revision,
         },
       });
+      if (isBoard && result.type === "board-ack-v1") {
+        if (result.operationId !== operationId || result.baseRevision !== base.revision)
+          throw new Error("The board save acknowledgement did not match. Your draft is retained for retry.");
+        result = { ...applyBoardDelta(base, result.changes, { guard: false }),
+          revision: result.revision, updated: result.updated, file: result.file, folder: result.folder, operations: result.operations };
+      }
       delete entry.delivery;
       if (generation === entry.generation) {
         this.entries.delete(entry.url);

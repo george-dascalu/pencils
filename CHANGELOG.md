@@ -2,6 +2,17 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.20.122 — 2026-11-01
+
+### Fixed
+
+- Small edits on large boards receive compact save acknowledgements, preserving server-normalized values, concurrent edits, retry recovery and undo history.
+- Wheel and trackpad navigation reuse the board overview while moving, with fewer whole-board selection scans and repeated minimap style reads.
+- Callout titles have full-height editing targets on touch screens; Table's open-card buttons fill their reserved desktop target width.
+- Home panel moves and resizes end cleanly on focus loss, lost pointer capture or cancellation, saving the last visible layout once.
+- Reduced motion uses explicit static feedback for navigation, loading and document controls instead of overriding every animation in the app.
+- UI diagnostics follow the current menus and controls, and accessibility checks include WCAG 2.2 target sizing with verified label and enlarged-hit-area exceptions.
+
 ## 0.20.121 — 2026-11-01
 
 ### Fixed

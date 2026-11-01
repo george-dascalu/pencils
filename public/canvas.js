@@ -76,9 +76,9 @@ export function canvasFeatures(ctx) {
   const selected = new Set();
   const selectedEdges = (state.selectedEdges = new Set());
   const pickEdges = () =>
-    board()?.edges.filter(
+    (selectedEdges.size || state.selectedEdge) ? board()?.edges.filter(
       (e) => selectedEdges.has(e.id) || e.id === state.selectedEdge,
-    ) || [];
+    ) || [] : [];
   const pickAll = () => [
     ...pick(),
     ...pickEdges().map((e) => ({ ...e, id: `edge:${e.id}`, type: "edge" })),
@@ -124,9 +124,9 @@ export function canvasFeatures(ctx) {
   const uid = (prefix) =>
     `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
   const pick = () =>
-    board()?.nodes.filter(
+    (selected.size || state.selectedNode) ? board()?.nodes.filter(
       (n) => selected.has(n.id) || n.id === state.selectedNode,
-    ) || [];
+    ) || [] : [];
   const point = (event) => {
     const r = $("#canvas").getBoundingClientRect();
     return {
@@ -263,8 +263,7 @@ export function canvasFeatures(ctx) {
       focusSelection();
     },
   });
-  function enhanceBase(only = null) {
-    const nodes = new Map((board()?.nodes || []).map((n) => [n.id, n]));
+  function enhanceBase(only = null, nodes = new Map((board()?.nodes || []).map((n) => [n.id, n]))) {
     for (const el of $$(".board-node")) {
       const n = nodes.get(el.dataset.node);
       if (
@@ -299,8 +298,8 @@ export function canvasFeatures(ctx) {
       selectedEdges.clear();
       selectedEdges.add(state.selectedEdge);
     }
-    const edgeIds = new Set(board()?.edges.map(e => e.id));
-    const nodeIds = new Set(board()?.nodes.map(n => n.id));
+    const edgeIds = selectedEdges.size ? new Set(board()?.edges.map(e => e.id)) : null;
+    const nodeIds = selected.size || state.selectedNode ? new Set(board()?.nodes.map(n => n.id)) : null;
     for (const id of selectedEdges)
       if (!edgeIds.has(id)) selectedEdges.delete(id);
     state.selectedEdge =

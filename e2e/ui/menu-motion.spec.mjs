@@ -3,7 +3,7 @@
 // View options fade in (their panels are native disclosures, which close at once). With reduced
 // motion, as the fixtures ask for, nothing animates and every flow still ends with the menu gone.
 import { test, expect, onDevices, useApp } from "../fixtures.mjs";
-import { clickControl } from "../helpers/menu-controls.mjs";
+import { clickControl, openSidebar } from "../helpers/menu-controls.mjs";
 import { documentTool } from "../helpers/documents.mjs";
 
 const app = useApp(async (store) => {
@@ -143,5 +143,29 @@ test("every dropdown opens with a fade, drop and grow only when motion is allowe
     expect(await opening(reactions.locator(":scope > summary"), '.board-comments [data-comment-id="c1"] .comment-emoji-picker'), `reactions, ${reducedMotion}`).toEqual(moves);
     await reactions.locator('[data-emoji="👍"]').click();
     await expect.poll(async () => ((await saved()).boards[0].nodes[0].comments[0].reactions || []).length).toBe(1 - i);
+  }
+});
+
+test('reduced motion preserves static loading feedback and immediate sidebar controls', { tag: '@gate' }, async ({ page }) => {
+  for (const motion of ['reduce', 'no-preference']) {
+    await page.emulateMedia({ reducedMotion: motion });
+    await page.goto(`${app.base}/#project/${app.project.id}/list`);
+    await page.locator('.task-row').first().waitFor();
+    await openSidebar(page);
+    await expect(page.locator('.sidebar')).toHaveClass(/open/);
+    const sidebar = await page.locator('.sidebar').evaluate(el => getComputedStyle(el).transitionDuration);
+    if (motion === 'reduce') expect(sidebar).toBe('0s');
+    else expect(sidebar).not.toBe('0s');
+    await page.keyboard.press('Escape');
+    await expect(page.locator('.sidebar')).not.toHaveClass(/open/);
+    // Loading is an indeterminate bar normally and a static visible bar with reduced motion.
+    const loading = await page.evaluate(() => {
+      const el = document.querySelector('#loading-bar'); el.dataset.active = '';
+      const style = getComputedStyle(el, '::before');
+      const result = { animation: style.animationName, width: parseFloat(style.width), opacity: Number(style.opacity) };
+      delete el.dataset.active; return result;
+    });
+    if (motion === 'reduce') { expect(loading.animation).toBe('none'); expect(loading.width).toBeGreaterThan(0); expect(loading.opacity).toBeGreaterThan(0); }
+    else expect(loading.animation).toBe('loading-bar');
   }
 });

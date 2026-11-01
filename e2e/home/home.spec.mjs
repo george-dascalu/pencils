@@ -118,3 +118,33 @@ onDevices(["phone"], () => test("phones stack the panels in reading order withou
   await page.locator('[data-home-panel-action="remove"]:visible').click();
   await expect(panel(page, "note")).toHaveCount(0);
 }));
+
+onDevices(['desktop', 'ipad'], () => {
+  for (const interruption of ['blur', 'pointercancel', 'lostpointercapture'])
+    test(`Home resize ends on ${interruption}, saves once and accepts another gesture`, async ({ page }) => {
+      await page.goto(app.base);
+      await page.locator('.home-grid').waitFor();
+      await page.evaluate(panels => fetch('/api/home', { method: 'PATCH', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ panels }) }), defaultPanels());
+      await page.reload();
+      await page.locator('[data-home="edit"]').click();
+      const card = panel(page, 'stat'), handle = card.locator('[data-home-resize]');
+      await handle.scrollIntoViewIfNeeded();
+      const box = await handle.boundingBox(), x = box.x + box.width / 2, y = box.y + box.height / 2;
+      let saves = 0;
+      page.on('request', request => { if (request.method() === 'PATCH' && new URL(request.url()).pathname === '/api/home') saves++; });
+      await page.mouse.move(x, y); await page.mouse.down(); await page.mouse.move(x, y + 52);
+      await expect(card).toHaveClass(/moving/);
+      const stopped = await at(page, 'stat');
+      await handle.evaluate((el, name) => {
+        if (name === 'blur') window.dispatchEvent(new Event('blur'));
+        else el.dispatchEvent(new PointerEvent(name, { bubbles: true, pointerId: 1 }));
+      }, interruption);
+      await expect(card).not.toHaveClass(/moving/);
+      await page.mouse.move(x, y + 104); await page.mouse.up();
+      expect(await at(page, 'stat')).toEqual(stopped);
+      await expect.poll(() => layout(page).then(ps => ps.find(p => p.type === 'stat').h)).toBe(stopped[3]);
+      expect(saves).toBe(1);
+      await dragBy(page, handle, 0, 52);
+      await expect.poll(() => at(page, 'stat').then(p => p[3])).toBe(stopped[3] + 1);
+    });
+});

@@ -319,6 +319,11 @@
 .document-callout-content > :last-child { margin-bottom: 0; }
 .document-callout-heading { display: flex; gap: 8px; align-items: center; }
 .document-callout-heading > strong { flex: 1; min-width: 0; }
+.document-editable-component [aria-label="Callout title"] {
+  display: inline-block; vertical-align: middle; min-width: var(--control-height);
+  padding-block: max(0px, calc((var(--control-height) - 1lh) / 2));
+  min-height: var(--control-height); max-width: 100%;
+}
 .document-callout-heading [aria-expanded="false"] svg { transform: rotate(-90deg); }
 .document-component-actions { display: flex; gap: 8px; margin-top: 8px; flex-wrap: wrap; }
 .document-formula-input { font-family: var(--font-mono, monospace); color: var(--muted); padding: 8px 0; white-space: pre-wrap; }

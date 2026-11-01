@@ -1,7 +1,7 @@
 // Board performance budgets on a 5,000-object board with 2,000 connectors (1440×1050, touch
 // enabled with a fine pointer): the board loads in under 6 seconds with culled DOM (under 700
-// cards) and panning keeps a p95 frame under 150 ms. Cards preload during a held pan and during an
-// animated zoom without rebuilding existing cards, the fit overview stays bounded, two fingers
+// cards) and panning keeps a p95 frame under 150 ms. Cards preload during a held pan; animated
+// zoom uses a cached overview and preloads after settling without rebuilding existing cards. Two fingers
 // pinch-zoom, and a pen stroke keeps its pressure samples.
 import { test, expect, useApp } from "../fixtures.mjs";
 import { openBoardSearch, chooseProject } from "../helpers/menu-controls.mjs";
@@ -110,7 +110,7 @@ test("panning keeps a p95 frame under 150 ms and leaves the zoom and participant
   expect(p95, `Pan p95 ${Math.round(p95)} ms exceeds 150ms regression budget`).toBeLessThan(150);
 });
 
-test("cards preload during an animated zoom without rebuilding the cards already shown", async ({ page }) => {
+test("animated zoom reuses the overview then preloads cards without rebuilding retained detail", async ({ page }) => {
   await open(page);
   const duringZoom = await page.evaluate(async () => {
     const canvas = document.querySelector("#canvas"), world = document.querySelector("#canvas-world");
@@ -127,9 +127,12 @@ test("cards preload during an animated zoom without rebuilding the cards already
     const start = performance.now();
     while (canvas.classList.contains("zooming") && performance.now() - start < 1500) await new Promise(requestAnimationFrame);
     observer.disconnect();
-    return { added, retained: !retained || retained.isConnected };
+    return { added, ids: [...ids], cached: canvas.classList.contains("touch-navigating"), retained: !retained || retained.isConnected };
   });
-  expect(duringZoom.added, "Cards preload before animated zoom finishes").toBe(true);
+  expect(duringZoom.added, "New card hydration waits until animated zoom finishes").toBe(false);
+  expect(duringZoom.cached, "The cached overview covers navigation").toBe(true);
+  await expect(page.locator('#canvas')).not.toHaveClass(/touch-navigating/);
+  await expect.poll(() => page.locator('.board-node').evaluateAll((els, ids) => els.some(el => !ids.includes(el.dataset.node)), duringZoom.ids)).toBe(true);
   expect(duringZoom.retained, "Existing card content is not rebuilt when neighbours load").toBe(true);
 });
 

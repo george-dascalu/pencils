@@ -205,7 +205,7 @@ export function installHome(ctx) {
     event.preventDefault();
     handle.setPointerCapture(event.pointerId);
     // A column's pitch is its width plus the gap, as a row's is ROW plus the gap.
-    drag = { id: p.id, resize: handle.hasAttribute("data-home-resize"), x: event.clientX, y: event.clientY, start: { ...p }, cell: (grid.getBoundingClientRect().width + GAP) / COLUMNS, pointer: event.pointerId };
+    drag = { id: p.id, handle, resize: handle.hasAttribute("data-home-resize"), x: event.clientX, y: event.clientY, start: { ...p }, cell: (grid.getBoundingClientRect().width + GAP) / COLUMNS, pointer: event.pointerId };
     el.classList.add("moving");
   }, true);
   document.addEventListener("pointermove", (event) => {
@@ -234,13 +234,18 @@ export function installHome(ctx) {
     if (step(p.id, { ...p }, delta[0], delta[1], handle.hasAttribute("data-home-resize"))) void save();
   });
   const finish = (event) => {
-    if (!drag || event.pointerId !== drag.pointer) return;
+    if (!drag || (event.type !== "blur" && event.pointerId !== drag.pointer)) return;
     document.querySelector(`.home .home-panel[data-panel="${CSS.escape(drag.id)}"]`)?.classList.remove("moving");
+    const { handle, pointer } = drag;
     drag = null;
+    if (handle.hasPointerCapture(pointer)) handle.releasePointerCapture(pointer);
+    // An interrupted gesture keeps its last visible layout, exactly once.
     void save();
   };
   document.addEventListener("pointerup", finish, true);
   document.addEventListener("pointercancel", finish, true);
+  document.addEventListener("lostpointercapture", finish, true);
+  window.addEventListener("blur", finish);
 
   // ----- Settings -----
   function settingsHTML(p) {
