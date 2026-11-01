@@ -1,4 +1,6 @@
 import { taskHistoryHTML } from "./task-history.js";
+import { historyPages } from "./history-pages.js";
+import { formatDateTime, formatMonth } from "./format-date.js";
 import { nextStatuses } from "./workflow-model.js";
 import { positionPopover } from "./popover-position.js";
 import { focusOnOpen } from "./open-focus.js";
@@ -229,12 +231,41 @@ export function taskModalControls(ctx, form, restoreVersion) {
     panel.innerHTML = `<div class="task-history-head"><h3 tabindex="-1">Version history</h3><button type="button" class="icon-button" data-task-modal="history-close" aria-label="Close version history">${icon("close")}</button></div><div data-history-content aria-live="polite">Loading history…</div><p data-history-error class="form-error" role="alert"></p>`;
     panel.querySelector(".task-history-head h3").focus({ preventScroll: true });
     try {
-      const data = await api(
-        `/history?file=${encodeURIComponent(target.file)}`,
-      );
+      const pages = historyPages(api, target.file), data = await pages.more();
       if (disposed || !panel.isConnected) return;
-      panel.querySelector("[data-history-content]").innerHTML =
-        taskHistoryHTML(data.versions, target, ctx);
+      const content = panel.querySelector("[data-history-content]");
+      content.innerHTML = "";
+      let month;
+      const append = rows => {
+        for (const row of rows) {
+          if (!row.current && row.revision === target.revision) continue;
+          const nextMonth = String(row.updated || "").slice(0, 7);
+          if (month !== nextMonth) {
+            const heading = document.createElement("h4"); heading.className = "task-history-month";
+            heading.textContent = formatMonth(row.updated) || "Undated"; content.append(heading); month = nextMonth;
+          }
+          const details = document.createElement("details");
+          details.className = "task-history-version recovery-item";
+          details.innerHTML = `<summary><span class="task-history-date">${icon("clock")}<strong>${esc(row.current ? "Current version" : formatDateTime(row.updated))}</strong></span></summary><div role="status">Loading version…</div>${row.current ? "" : `<button type="button" class="button small" data-task-modal="history-restore" data-version="${esc(row.revision)}">Restore this version</button>`}`;
+          let loaded = false;
+          details.addEventListener("toggle", async () => {
+            if (!details.open || loaded) return;
+            loaded = true;
+            try {
+              const [version, previous] = await Promise.all([row.current ? target : pages.version(row.revision), row.previous ? pages.version(row.previous) : null]);
+              const rendered = document.createElement("div");
+              rendered.innerHTML = taskHistoryHTML(previous ? [previous] : [], { ...version, current: !!row.current }, ctx, true);
+              details.innerHTML = rendered.querySelector("details").innerHTML;
+            } catch (error) { loaded = false; details.querySelector('[role="status"]').textContent = error.message + " Close and reopen to retry."; }
+          });
+          content.append(details);
+          if (row.current) details.open = true;
+        }
+      };
+      append([{ ...target, current: true, previous: data.versions.find(row => row.revision !== target.revision)?.revision }, ...data.versions]);
+      const more = document.createElement("button"); more.type = "button"; more.className = "button small"; more.textContent = "Load older versions";
+      panel.querySelector("[data-history-content]").after(more); more.hidden = !data.next;
+      more.onclick = async () => { more.disabled = true; try { const next = await pages.more(); append(next.versions); more.hidden = !next.next; } catch (error) { panel.querySelector("[data-history-error]").textContent = error.message; } finally { more.disabled = false; } };
     } catch (error) {
       if (!disposed)
         panel.querySelector("[data-history-content]").innerHTML =

@@ -1,6 +1,6 @@
 import { Problem } from "../../problem.js";
 import { sourceAccess } from "../../sources.js";
-import { input, audit, audited } from "../helpers.js";
+import { input } from "../helpers.js";
 import type { RequestContext, Input } from "../contracts.js";
 
 export async function projectsRoutes(ctx: RequestContext): Promise<unknown> {
@@ -46,8 +46,7 @@ export async function projectsRoutes(ctx: RequestContext): Promise<unknown> {
     if (method === "GET") return json(200, { items: await store.projectTrash(project) });
     if (method === "POST") {
       const data = await input(req);
-      const item: Input = await mutate(() => store.restoreProjectTrash(project, data.key));
-      await audit(ctx, { action: "restored", ...audited({ kind: item.kind, id: item.id, title: item.title, key: item.task_key }) });
+      await mutate(() => store.restoreProjectTrash(project, data.key));
       return json(200, { ok: true });
     }
   }
@@ -57,7 +56,7 @@ export async function projectsRoutes(ctx: RequestContext): Promise<unknown> {
     return json(200, { entries: await ctx.audit.list(project, { before }) });
   }
   if (parts.length === 3) {
-    if (method === "GET") return json(200, await store.snapshot(project));
+    if (method === "GET") return json(200, await store.snapshot(project, { summaries: url.searchParams.get("boards") === "summary", board: url.searchParams.get("board") }));
     const data = await input(req);
     if (method === "PATCH") {
       if (data.organisation) auth.require(user, data.organisation, true);

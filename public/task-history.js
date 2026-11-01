@@ -33,8 +33,8 @@ export function taskChanges(previous, next) {
   return changes;
 }
 
-export function taskHistoryHTML(versions, current, { esc, icon, state, label, task }) {
-  const rows = [{ ...current, current: true }, ...versions.filter(v => v.revision !== current.revision)];
+export function taskHistoryHTML(versions, current, { esc, icon, state, label, task }, single = false) {
+  const rows = [{ ...current, current: current.current !== false }, ...versions.filter(v => v.revision !== current.revision)];
   const format = (key, value) => {
     if (value == null || value === '' || Array.isArray(value) && !value.length) return 'Not set';
     if (key === 'priority') return priorityLabel(value);
@@ -58,6 +58,7 @@ export function taskHistoryHTML(versions, current, { esc, icon, state, label, ta
   };
   const monthOf = (version) => String(version.updated || "").slice(0, 7);
   return rows.map((version, index) => {
+    if (single && index) return "";
     const prior = rows[index + 1], changes = prior ? taskChanges(prior, version) : [];
     // Versions are listed newest first and grouped under one heading per month.
     const month = index === 0 || monthOf(rows[index - 1]) !== monthOf(version) ? `<h4 class="task-history-month">${esc(formatMonth(version.updated) || "Undated")}</h4>` : "";

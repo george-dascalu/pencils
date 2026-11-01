@@ -15,7 +15,7 @@ const SKIP = new Set(["id", "kind", "project", "created", "updated", "revision",
 export function changedFields(before, after) {
   if (!before || !after) return [];
   const old = { ...before.data, body: before.body };
-  return Object.keys(after)
+  return [...new Set([...Object.keys(old), ...Object.keys(after)])]
     .filter((k) => !SKIP.has(k) && !(after.kind === "board" && k === "body"))
     .filter((k) => JSON.stringify(old[k] ?? null) !== JSON.stringify(after[k] ?? null))
     .sort();

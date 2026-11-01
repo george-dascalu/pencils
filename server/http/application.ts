@@ -24,6 +24,7 @@ import { Problem } from "../problem.js";
 import { staticAssets } from "../static-assets.js";
 import { BACKUP_BYTES } from "../../public/backup-limits.js";
 import { authorizeWrite } from "./access.js";
+import { displayName } from "./helpers.js";
 import { mime } from "./helpers.js";
 import type {
   Handler,
@@ -117,6 +118,7 @@ export function createServer(
     audit: new AuditLog(store),
   };
   store.watch();
+  store.audit = services.audit;
   services.sources.start();
   store.automations = services.automations;
   // Keep the Node server interface used by tools/tests. Requests wait for Fastify
@@ -258,7 +260,8 @@ export function createServer(
           store.mutate(async () => {
             await authorizeWrite(ctx);
             return fn();
-          }),
+          }, { user: !auth.enabled ? displayName(req) : user?.name || user?.username,
+            action: resource === "history" ? "restored" : undefined }),
       };
       if (resource === "projects" && project) {
         const record = await store.read(store.file(project, "project"));

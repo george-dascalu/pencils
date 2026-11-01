@@ -94,7 +94,7 @@ onDevices(["phone"], () => test("a refresh in flight does not steal search focus
   const gate = new Promise((resolve) => (unblock = resolve));
   const intercepted = new Promise((resolve) => (reached = resolve));
   let delayed = false;
-  await page.route(`**/api/projects/${app.project.id}`, async (route) => {
+  await page.route(url => url.pathname === `/api/projects/${app.project.id}`, async (route) => {
     if (!delayed && route.request().method() === "GET") {
       delayed = true;
       const response = await route.fetch();

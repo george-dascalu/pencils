@@ -1,3 +1,4 @@
+import { historyPages } from "./history-pages.js";
 import { syncTopbarTitle } from "./topbar-title.js";
 import { panelCategories } from "./document-insert.js";
 import { markdownDocumentEditor } from "./document-editor.js";
@@ -205,7 +206,7 @@ export function projectDocuments(ctx) {
     const pid = project, id = current.id;
     await flushDocument(id);
     const latest = await api(endpoint(pid, id));
-    const result = await api(`/history?${new URLSearchParams({ file: latest.file })}`);
+    const pages = historyPages(api, latest.file), result = await pages.more();
     if (project !== pid || current?.id !== id) return;
     // Saving a comment keeps a copy without making a version; show each version once.
     const seen = new Set();
@@ -213,9 +214,26 @@ export function projectDocuments(ctx) {
     const label = v => v.data.version ? `Version ${v.data.version}` : v.current ? "Version 1" : "Earlier save";
     const box = showPanel(button, "Page versions", `<div class="document-version-list">${versions.map((v,i) => `<button type="button" class="document-panel-item" data-version-index="${i}"><span>${esc(label(v))}${v.current ? " · Current" : ""}</span><time>${esc(v.updated ? new Date(v.updated).toLocaleString() : "")}</time></button>`).join("")}</div><section class="document-version-detail" hidden></section>`, 520);
     if (!box) return;
-    box.querySelector(".document-version-list").addEventListener("click", event => {
+    const more = document.createElement("button"); more.type = "button"; more.className = "button small"; more.textContent = "Load older versions"; more.hidden = !result.next;
+    box.querySelector(".document-version-list").after(more);
+    more.onclick = async () => { more.disabled = true; try {
+      const page = await pages.more();
+      for (const v of page.versions) {
+        if (v.data.version && seen.has(v.data.version)) continue;
+        if (v.data.version) seen.add(v.data.version);
+        const i = versions.push(v) - 1;
+        box.querySelector(".document-version-list").insertAdjacentHTML("beforeend", `<button type="button" class="document-panel-item" data-version-index="${i}"><span>${esc(label(v))}</span><time>${esc(v.updated ? new Date(v.updated).toLocaleString() : "")}</time></button>`);
+      }
+      more.hidden = !page.next;
+    } catch (error) { toast(error.message, true); } finally { more.disabled = false; } };
+    let selection = 0;
+    box.querySelector(".document-version-list").addEventListener("click", async event => {
       const item = event.target.closest("[data-version-index]"); if (!item) return;
-      const version = versions[Number(item.dataset.versionIndex)];
+      const row = versions[Number(item.dataset.versionIndex)], token = ++selection;
+      let version;
+      try { version = row.current ? row : await pages.version(row.revision); }
+      catch (error) { toast(error.message, true); return; }
+      if (selection !== token || !box.isConnected) return;
       box.querySelectorAll("[data-version-index]").forEach(b => b.setAttribute("aria-pressed", String(b === item)));
       const detail = box.querySelector(".document-version-detail"); detail.hidden = false;
       detail.innerHTML = `<h3>${esc(version.title)}</h3><article class="document-prose">${renderer.render(version.body)}</article>${version.current ? "" : '<div class="document-panel-actions"><button type="button" class="button primary" data-restore-document-version>Restore this version</button></div>'}`;

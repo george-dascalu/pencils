@@ -90,6 +90,7 @@ export class Capture {
       if (!account) throw new Problem(401, "Unknown capture token. Make a new one in Settings → You.");
       if (typeof text !== "string" || !text.trim() || text.length > 50_000) throw new Problem(400, "Send the text to capture, up to 50,000 characters.");
       await this.project(this.auth.public(account), entry.project);
+      this.store.auditUser = account.username;
       const card = await this.store.createTask(entry.project, captureCard(text));
       return { id: card.id, key: card.key, title: card.title, project: entry.project };
     });

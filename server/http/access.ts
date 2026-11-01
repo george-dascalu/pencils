@@ -40,9 +40,7 @@ export async function authorizeWrite(ctx: RequestContext): Promise<void> {
               .organisation;
     auth.require(active, organisation, true);
     if (current.data.kind === "project") {
-      const previous = (await store.history(data.file)).find(
-        (v: { revision: string }) => v.revision === data.version,
-      );
+      const previous = await store.historyVersion(data.file, data.version);
       if (previous) auth.require(active, previous.data.organisation, true);
     }
   }

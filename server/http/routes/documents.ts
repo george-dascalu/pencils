@@ -1,6 +1,5 @@
 import { Problem } from "../../problem.js";
-import { input, audit, audited } from "../helpers.js";
-import { changedFields } from "../../audit.js";
+import { input } from "../helpers.js";
 import type { RequestContext, Input } from "../contracts.js";
 
 export async function documentsRoutes(ctx: RequestContext): Promise<unknown> {
@@ -17,23 +16,14 @@ export async function documentsRoutes(ctx: RequestContext): Promise<unknown> {
     const data = await input(req);
     if (method === "POST" && !id) {
       const created: Input = await mutate(() => store.createDocument(project, data));
-      await audit(ctx, { action: "created", ...audited(created) });
       return json(201, created);
     }
     if (method === "PATCH" && id) {
-      const before = await store.read(store.file(project, "documents", id)).catch(() => null);
       const after: Input = await mutate(() => store.updateDocument(project, id, data));
-      const fields = changedFields(before, after);
-      if (fields.length) await audit(ctx, { action: "edited", ...audited(after), fields });
       return json(200, after);
     }
     if (method === "DELETE" && id) {
-      let removed: Input | undefined;
-      const result = await mutate(async () => {
-        removed = await store.getDocument(project, id);
-        return store.removeRecord(project, "documents", id, data.revision);
-      });
-      await audit(ctx, { action: "deleted", ...audited(removed) });
+      const result = await mutate(() => store.removeRecord(project, "documents", id, data.revision));
       return json(200, result);
     }
   }

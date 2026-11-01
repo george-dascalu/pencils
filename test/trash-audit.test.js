@@ -8,9 +8,12 @@ import os from "node:os";
 import path from "node:path";
 import { Store } from "../server/store.js";
 import { createServer } from "../server/index.js";
-import { AuditLog } from "../server/audit.js";
+import { AuditLog, changedFields } from "../server/audit.js";
 
 const DAY = 86_400_000;
+test("audit fields include removed optional values", () => {
+  assert.deepEqual(changedFields({ data: { kind: "task", due: "2026-11-01" }, body: "Same" }, { kind: "task", body: "Same" }), ["due"]);
+});
 async function setup(t) {
   const root = await fs.mkdtemp(path.join(os.tmpdir(), "pencils-trash-"));
   const store = new Store(root);
@@ -32,7 +35,7 @@ async function setup(t) {
     return data;
   };
   const project = await store.createProject({ title: "Records", key: "RC" });
-  return { root, store, project, api };
+  return { root, store, project, api, base };
 }
 
 test("deleted cards, documents and boards wait in the project's Trash, restore, and go for good after 30 days", async (t) => {
@@ -110,4 +113,37 @@ test("the audit log drops entries older than 365 days and starts a new entry ten
   await log.purge(now);
   const text = await fs.readFile(path.join(root, ".audit", "p-1.jsonl"), "utf8");
   assert.equal(text.trim().split("\n").length, 2, "and purged from the file");
+});
+
+test("history restore, quick capture and imported cards appear in the audit log", async t => {
+  const { project, api, base, store } = await setup(t), p = `/projects/${project.id}`;
+  const doc = await api(`${p}/documents`, "POST", { title: "Restore me", body: "before" });
+  const changed = await api(`${p}/documents/${doc.id}`, "PATCH", { revision: doc.revision, body: "after" });
+  const history = await api(`/history?file=${encodeURIComponent(doc.file)}`);
+  await api("/history", "POST", { file: doc.file, version: history.versions[0].revision, revision: changed.revision });
+  const card = await api(`${p}/tasks`, "POST", { title: "Original card" });
+  const edited = await api(`${p}/tasks/${card.id}`, "PATCH", { revision: card.revision, title: "Renamed card" });
+  const cardHistory = await api(`/history?file=${encodeURIComponent(card.file)}`);
+  await api("/history", "POST", { file: card.file, version: cardHistory.versions[0].revision, revision: edited.revision });
+  const imported = await api(`${p}/import`, "POST", { notes: [{ name: "Imported.md", content: "Imported description" }] });
+  assert.ok(imported);
+  const token = await api("/capture-tokens", "POST", { project: project.id });
+  const response = await fetch(`${base}/capture`, { method: "POST", headers: { "content-type": "application/json", authorization: `Bearer ${token.token}` }, body: JSON.stringify({ text: "Quick capture" }) });
+  assert.equal(response.status, 201);
+  const captured = await response.json();
+  const rule = { id: "audit-rule", name: "Generated priority", trigger: "manual", field: "priority", value: "high", enabled: false };
+  await api(`${p}/automations`, "POST", { rules: [rule] });
+  await api(`${p}/automations`, "POST", { rules: [{ ...rule, enabled: true }] });
+  await api(`${p}/automations/${rule.id}`, "POST", { preview: false });
+  await assert.rejects(store.mutate(async () => { await store.createTask(project.id, { title: "Rolled back" }); throw Error("rollback"); }), /rollback/);
+  const entries = (await api(`${p}/audit`)).entries;
+  assert.ok(entries.some(e => e.action === "restored" && e.id === doc.id && e.user === "Ada"));
+  assert.ok(entries.some(e => e.action === "restored" && e.id === card.id && e.fields.includes("title")));
+  assert.ok(entries.some(e => e.action === "created" && e.title === "Imported" && e.user === "Ada"));
+  assert.ok(entries.some(e => e.action === "created" && e.id === captured.id && e.user === token.username));
+  assert.ok(entries.some(e => e.action === "edited" && e.id === captured.id && e.fields.includes("priority") && e.user === "Ada"));
+  assert.ok(!entries.some(e => e.title === "Rolled back"));
+  const current = await store.read(store.resolveFile(card.file));
+  await store.mutate(() => store.write(store.resolveFile(card.file), { ...current.data, updated: new Date().toISOString() }, current.body, current), { user: "Ada" });
+  assert.equal((await api(`${p}/audit`)).entries.length, entries.length, "metadata-only writes add no change entry");
 });

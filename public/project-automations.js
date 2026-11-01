@@ -117,6 +117,7 @@ export function projectAutomations(ctx) {
   document.addEventListener("click", async (e) => {
     const b = e.target.closest("[data-automation]");
     if (!b) return;
+    const controls = [...(b.closest(".source-card")?.querySelectorAll("[data-automation]") || [b])];
     e.preventDefault();
     try {
       if (b.dataset.automation === "open")
@@ -127,7 +128,7 @@ export function projectAutomations(ctx) {
           : add(b.dataset.id);
       const r = rules.find((r) => r.id === b.dataset.id);
       if (!r) return;
-      b.disabled = true;
+      controls.forEach(control => { control.disabled = true; });
       state.settingsSaving = !!ctx.settingsCurrent?.();
       if (["toggle", "remove"].includes(b.dataset.automation)) {
         await api(`/projects/${project}/automations`, {
@@ -174,7 +175,7 @@ export function projectAutomations(ctx) {
       toast(error.message, true);
     } finally {
       state.settingsSaving = false;
-      b.disabled = false;
+      controls.forEach(control => { control.disabled = false; });
     }
   });
   return { open, renderPage: open };

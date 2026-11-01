@@ -12,6 +12,8 @@ import {
 } from "../public/backup-limits.js";
 
 const digest = (value) => createHash("sha256").update(value).digest("hex");
+const summary = record => ({ revision: record.revision, updated: record.data.updated, title: record.data.title,
+  data: { kind: record.data.kind, version: record.data.version, organisation: record.data.organisation, title: record.data.title } });
 // Deleted cards, documents and boards stay in Trash for 30 days (owner request T92); those deleted
 // before Trash arrived get their 30 days from then.
 export const TRASH_DAYS = 30;
@@ -122,6 +124,39 @@ export function installRecovery(Store) {
         path.join(folder, "file.json"),
         JSON.stringify({ file: relative }),
       );
+      await fs.writeFile(path.join(folder, `${record.revision}.json`), JSON.stringify(summary(record)));
+    },
+    async historyVersion(relative, revision) {
+      this.resolveFile(relative);
+      if (!/^[a-f0-9]{64}$/.test(revision)) throw new Problem(400, "Invalid version.");
+      const record = await this.read(path.join(this.root, ".history", digest(relative), `${revision}.md`));
+      return { ...summary(record), revision, body: record.body, data: record.data };
+    },
+    async historyPage(relative, { limit = 20, cursor = "" } = {}) {
+      this.resolveFile(relative);
+      limit = Math.max(1, Math.min(50, Number(limit) || 20));
+      const folder = path.join(this.root, ".history", digest(relative));
+      await this.safe(folder);
+      const names = await fs.readdir(folder).catch(error => { if (error.code === "ENOENT") return []; throw error; });
+      const rows = [];
+      for (const name of names.filter(name => /^[a-f0-9]{64}\.md$/.test(name))) {
+        const metadata = path.join(folder, name.replace(/\.md$/, ".json"));
+        await this.safe(metadata);
+        let row;
+        try { row = JSON.parse(await fs.readFile(metadata, "utf8")); }
+        catch (error) {
+          if (error.code !== "ENOENT" && !(error instanceof SyntaxError)) throw error;
+          row = summary(await this.read(path.join(folder, name)));
+          // Rebuildable summaries also cover versions saved before pagination existed.
+          await fs.writeFile(metadata, JSON.stringify(row));
+        }
+        rows.push({ ...row, revision: name.slice(0, -3) });
+      }
+      rows.sort((a, b) => String(b.updated).localeCompare(String(a.updated)) || b.revision.localeCompare(a.revision));
+      const start = cursor ? rows.findIndex(row => row.revision === cursor) + 1 : 0;
+      if (cursor && !start) throw new Problem(400, "This history page changed. Reopen version history.");
+      const versions = rows.slice(start, start + limit).map((row, i) => ({ ...row, previous: rows[start + i + 1]?.revision || null }));
+      return { versions, next: start + limit < rows.length ? versions.at(-1).revision : null };
     },
     async history(relative) {
       this.resolveFile(relative);
@@ -197,7 +232,7 @@ export function installRecovery(Store) {
         file,
         { ...old.data, updated: new Date().toISOString() },
         old.body,
-        { ...current, doc: old.doc, data: old.data, plain: old.plain },
+        { ...current, doc: old.doc, plain: old.plain },
       );
     },
     async createBackup(reason = "manual") {
@@ -205,8 +240,14 @@ export function installRecovery(Store) {
       const folder = path.join(this.root, ".backups");
       await this.safe(folder);
       await fs.mkdir(folder, { recursive: true });
-      const files = await collect(this.root, "Projects");
-      await collect(this.root, "Organisations", files);
+      let files;
+      try {
+        files = await collect(this.root, "Projects");
+        await collect(this.root, "Organisations", files);
+      } catch (error) {
+        if (error.status !== 413) throw error;
+        return this.createDirectoryBackup(reason);
+      }
       const totalBytes = Object.values(files).reduce(
         (sum, bytes) => sum + bytes.length,
         0,
@@ -239,6 +280,31 @@ export function installRecovery(Store) {
       );
       this.lastBackupDay = new Date().toISOString().slice(0, 10);
       return { id, size: bytes.length, files: Object.keys(files).length };
+    },
+    async createDirectoryBackup(reason) {
+      const id = `${new Date().toISOString().replace(/[:.]/g, "-")}-${randomUUID().slice(0, 8)}`;
+      const folder = path.join(this.root, ".backups"), target = path.join(folder, `${id}.files`);
+      const metadata = { id, created: new Date().toISOString(), reason, format: "directory", files: 0, size: 0 };
+      try {
+        for (const name of ["Projects", "Organisations"]) await fs.cp(path.join(this.root, name), path.join(target, name), {
+          recursive: true, mode: fs.constants.COPYFILE_FICLONE,
+          filter: async file => {
+            const stat = await fs.lstat(file);
+            if (path.basename(file).startsWith(".") || file.endsWith(".tmp") || stat.isSymbolicLink()) return false;
+            if (stat.isFile()) { metadata.files++; metadata.size += stat.size; }
+            return true;
+          },
+        });
+        await fs.writeFile(path.join(folder, `${id}.json`), JSON.stringify(metadata), { flag: "wx" });
+      } catch (error) { await fs.rm(target, { recursive: true, force: true }); throw error; }
+      this.lastBackupDay = new Date().toISOString().slice(0, 10);
+      return metadata;
+    },
+    async backupDirectory(id) {
+      if (typeof id !== "string" || !/^[a-zA-Z0-9_-]{10,100}$/.test(id)) throw new Problem(400, "Invalid backup.");
+      const dir = path.join(this.root, ".backups", `${id}.files`);
+      await this.safe(dir);
+      return (await fs.stat(dir).catch(error => { if (error.code !== "ENOENT") throw error; }))?.isDirectory() ? dir : null;
     },
     async importBackup(input) {
       if (
@@ -282,6 +348,21 @@ export function installRecovery(Store) {
       return metadata;
     },
     async verifyBackup(id) {
+      const dir = await this.backupDirectory(id);
+      if (dir) {
+        let files = 0, bytes = 0, organisations = 0;
+        for (const entry of await fs.readdir(dir, { recursive: true, withFileTypes: true })) {
+          const file = path.join(entry.parentPath, entry.name);
+          await this.safe(file);
+          const relative = path.relative(dir, file).split(path.sep).join("/");
+          if (entry.isFile()) {
+            this.resolveFile(relative); files++; bytes += (await fs.stat(file)).size;
+            if (/^Organisations\/[^/]+\.md$/.test(relative)) organisations++;
+          }
+        }
+        if (!organisations) throw new Problem(400, "Backup has no organisations.");
+        return { ok: true, files, bytes };
+      }
       const entries = await unpack(await this.backupBytes(id));
       for (const name of Object.keys(entries)) this.resolveFile(name);
       if (
@@ -332,6 +413,7 @@ export function installRecovery(Store) {
       return result.sort((a, b) => b.created.localeCompare(a.created));
     },
     async backupBytes(id) {
+      if (await this.backupDirectory(id)) throw new Problem(413, "This large backup is stored as files on the server. Copy its .backups folder for an off-device backup.");
       if (typeof id !== "string" || !/^[a-zA-Z0-9_-]{10,100}$/.test(id))
         throw new Problem(400, "Invalid backup.");
       const file = path.join(this.root, ".backups", `${id}.zip`);
@@ -345,49 +427,36 @@ export function installRecovery(Store) {
       }
     },
     async restoreBackup(id) {
-      const entries = await unpack(await this.backupBytes(id));
+      if (!this.journal.active) return this.mutate(() => this.restoreBackup(id));
+      const directory = await this.backupDirectory(id);
+      if (directory) await this.verifyBackup(id);
+      const entries = directory ? null : await unpack(await this.backupBytes(id));
       if (
-        !Object.keys(entries).some((name) =>
+        entries && !Object.keys(entries).some((name) =>
           /^Organisations\/[^/]+\.md$/.test(name),
         )
       )
         throw new Problem(400, "Backup has no organisations.");
-      for (const name of Object.keys(entries)) this.resolveFile(name);
+      for (const name of Object.keys(entries || {})) this.resolveFile(name);
       const backup = await this.createBackup("before restore");
-      const staging = path.join(this.root, `.restore-${randomUUID()}`),
+      const staging = path.join(this.journal.root, this.journal.active.id, "restore"),
         old = path.join(staging, "old");
       await fs.mkdir(old, { recursive: true });
-      for (const [name, bytes] of Object.entries(entries)) {
+      if (directory) await fs.cp(directory, path.join(staging, "new"), { recursive: true, mode: fs.constants.COPYFILE_FICLONE });
+      for (const [name, bytes] of Object.entries(entries || {})) {
         if (name.endsWith("/")) continue;
         const file = path.join(staging, "new", name);
         await fs.mkdir(path.dirname(file), { recursive: true });
         await fs.writeFile(file, bytes);
       }
-      const moved = [],
-        installed = [];
-      try {
-        for (const name of ["Projects", "Organisations"]) {
+      for (const name of ["Projects", "Organisations"]) {
           await this.safe(path.join(this.root, name));
           await fs.mkdir(path.join(staging, "new", name), { recursive: true });
-          await fs.rename(path.join(this.root, name), path.join(old, name));
-          moved.push(name);
-          await fs.rename(
+          await this.journal.move(path.join(this.root, name), path.join(old, name));
+          await this.journal.move(
             path.join(staging, "new", name),
             path.join(this.root, name),
           );
-          installed.push(name);
-        }
-      } catch (error) {
-        for (const name of installed)
-          await fs.rm(path.join(this.root, name), {
-            recursive: true,
-            force: true,
-          });
-        for (const name of moved)
-          await fs.rename(path.join(old, name), path.join(this.root, name));
-        throw error;
-      } finally {
-        await fs.rm(staging, { recursive: true, force: true });
       }
       this.cache.clear();
       this.changed();
@@ -477,6 +546,7 @@ export function installRecovery(Store) {
         `${Date.now()}-${kind === "project" ? project : id}${kind === "project" ? "" : path.extname(file)}`,
       );
       await this.journal.move(source, target);
+      this.auditRecord(current, null, "deleted");
       this.changed();
       return { ok: true };
     },
@@ -515,6 +585,7 @@ export function installRecovery(Store) {
       }
       await fs.mkdir(path.dirname(target), { recursive: true });
       await this.journal.move(path.join(this.root, ".trash", key), target);
+      if (item.kind !== "project") this.auditRecord(null, await this.read(target), "restored");
       this.changed();
       return { ok: true };
     },

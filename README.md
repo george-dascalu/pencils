@@ -188,7 +188,7 @@ vault/
     attachments/a-….*
   .history/                  previous note versions
   .trash/                    recoverable removed records
-  .backups/                  ZIP snapshots of Projects/ and Organisations/
+  .backups/                  ZIP or file-directory snapshots of Projects/ and Organisations/
   .pencils/accounts.json     optional password hashes and access rules
   .pencils/legacy-boards/     exact sources retained during canvas migration
 ```
@@ -205,7 +205,7 @@ Filesystem notifications refresh idle browsers when notes change externally. Onl
 
 - **History:** before a note is overwritten by the app, its previous exact contents are retained. Task/project/board history can restore a version while retaining the displaced version. External edits are captured when the app next replaces that note; this is not a complete filesystem audit log.
 - **Trash:** tasks, boards and projects can be restored in the app. Removing a task with children or dependants is rejected to avoid dangling relationships. A restored task may need relationship repairs if its related tasks were subsequently removed.
-- **Backups:** before the first app mutation each day, a ZIP backup of `Projects/` and `Organisations/` is created. Manual backups, downloads, binary upload and verification of backup ZIPs up to 220 MB, and full restore are available. Restore first backs up the current state and rolls back directory replacement if an I/O operation fails. Restore supports archives up to 200 MB uncompressed / 30,000 files.
+- **Backups:** before the first app mutation each day, Pencils backs up `Projects/` and `Organisations/`. Vaults up to 200 MB expanded / 30,000 files use ZIP; larger vaults use a file copy in `.backups/<id>.files` with its `<id>.json` metadata. Both formats can be verified and restored in Recovery. Large backups stay on the server; copy both the directory and metadata to another device. ZIP download and binary upload support archives up to 220 MB. Restore first backs up the current state and journals each directory replacement, so a failed operation or interrupted process rolls back on restart.
 - **Browser drafts:** task, project and organisation editor drafts are retained locally and offered when that editor is reopened. Task, live-note and canvas save queues survive reload and retry connectivity failures. Clearing browser storage removes these drafts; the app must already be loaded to keep editing during a server interruption.
 - **Conflicts:** independent fields and independent board objects are merged automatically. If both writers change the same value, Recovery shows both versions and lets you choose which conflicting values to keep, while preserving independent changes. Drafts can be exported before discarding them.
 
@@ -213,7 +213,7 @@ Backups do not include `.history`, `.trash`, account credentials or unrelated fo
 
 ### Complete installation recovery
 
-Project ZIPs are portable project-data snapshots, not installation backups. Use **Verify** in Recovery before restoring a downloaded ZIP. Supported project snapshots contain at most 200 MB expanded data and 30,000 files; archives can be up to 220 MB. An over-limit automatic backup stops the edit with an error instead of falsely claiming the edit was protected. Large vaults need an installation backup plan before reaching that limit.
+Project ZIPs are portable project-data snapshots, not installation backups. Use **Verify** in Recovery before restoring a downloaded ZIP. Supported project snapshots contain at most 200 MB expanded data and 30,000 files; archives can be up to 220 MB. Above those ZIP limits Pencils automatically makes a file-directory backup, so vault growth does not block edits. Backups still need enough free disk space; a failed backup stops the edit to keep it protected. File-directory backups do not replace complete installation backups.
 
 For an installation backup, stop Pencils and pause every Obsidian/sync writer, then copy the **entire** `VAULT_PATH`, including hidden directories (`.history`, `.trash`, `.pencils` and account storage), plus the deployment `.env`, compose/service configuration and any external TLS certificates or credentials. Preserve file ownership and permissions. Encrypt backups containing credentials. Keep at least one copy on another device; a reasonable starting retention is seven daily and four weekly copies, adjusted to available disk space.
 
@@ -435,7 +435,7 @@ Project settings offers disabled-by-default automation rules for manual, status-
 
 **Diagnostics** is administrator-only and reports aggregate request timings, HTTP errors, index rebuilds and retained journal conflicts without request bodies or tokens. Markdown/canvas files remain authoritative. SQLite is a rebuildable search/query index; use `npm run index:rebuild` or the Diagnostics button to recreate it. Node **22.12 or later** is required (tested with 22.22.1); its built-in SQLite API can print an experimental warning.
 
-Related local writes have a recoverable journal and a process writer lock. A crash rolls back incomplete known writes; external edits are preserved as conflicts under `.pencils/journal`. Do not delete a writer lock while a server may be using it. These guarantees cover local vault records, not a distributed transaction with Jira, Microsoft or an external Obsidian vault. Project subscriptions send record deltas, with full refresh when safe delta reconstruction is unavailable.
+Related local writes have a recoverable journal and an OS-held writer lock. The Docker image includes Linux `flock` (util-linux); a direct Linux installation needs it on PATH. The lock is released by the kernel when the process dies, including container replacement; older, unverifiable writer locks are left for an administrator to inspect. A crash rolls back incomplete known writes; external edits are preserved as conflicts under `.pencils/journal`. Do not delete a writer lock while a server may be using it. These guarantees cover local vault records, not a distributed transaction with Jira, Microsoft or an external Obsidian vault. Project subscriptions send record deltas, with full refresh when safe delta reconstruction is unavailable. The app requests board summaries in snapshots and deltas and loads full contents only for the open board. API clients can request this with `?boards=summary&board=<open-id>`; omitting the option preserves full snapshots. History returns 20 summaries per page (`limit`, maximum 50; `cursor` from `next`); `GET /api/history?file=<path>&version=<revision>` retrieves one version. Summaries for older history files are cached on their first read. Audit entries are recorded after a transaction commits, covering ordinary edits, restores, imports, quick capture and generated changes; failed transactions leave no change entries.
 
 ## Review implementation checks
 

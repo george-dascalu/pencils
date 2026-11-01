@@ -33,7 +33,7 @@ test("a change made while a save is under way is kept and saved after it", async
   await page.goto(url("general"));
   let release;
   const held = new Promise((resolve) => (release = resolve));
-  await page.route(`**/api/projects/${app.project.id}`, async (route) => {
+  await page.route(url => url.pathname === `/api/projects/${app.project.id}`, async (route) => {
     if (route.request().method() === "PATCH") await held;
     await route.continue();
   });
@@ -95,7 +95,7 @@ test("a section opened during a save shows the project once the save has finishe
   await page.goto(url("workflow"));
   let release;
   const held = new Promise((resolve) => (release = resolve));
-  await page.route(`**/api/projects/${app.project.id}`, async (route) => {
+  await page.route(url => url.pathname === `/api/projects/${app.project.id}`, async (route) => {
     if (route.request().method() === "PATCH") await held;
     await route.continue();
   });
@@ -135,7 +135,7 @@ test("a later save does not overwrite an edit made elsewhere, even one made duri
     else if (armed && !held) { held = true; await gate; }
     await route.continue();
   };
-  await page.route(`**/api/projects/${app.project.id}`, hold);
+  await page.route(url => url.pathname === `/api/projects/${app.project.id}`, hold);
   await page.route(`**/api/projects/${app.project.id}/**`, hold);
   await name.fill("First save");
   await name.blur();
@@ -166,7 +166,7 @@ test("an edit that can't be saved says so, and leaving asks first", async ({ pag
 
 test("a save that fails says so, and leaving asks first", async ({ page }) => {
   await page.goto(url("general"));
-  await page.route(`**/api/projects/${app.project.id}`, (route) => route.request().method() === "PATCH" ? route.fulfill({ status: 500, json: { error: "The vault is unavailable." } }) : route.continue());
+  await page.route(url => url.pathname === `/api/projects/${app.project.id}`, (route) => route.request().method() === "PATCH" ? route.fulfill({ status: 500, json: { error: "The vault is unavailable." } }) : route.continue());
   const name = page.locator('#project-form [name="title"]');
   await name.fill("Will not save");
   await name.blur();
@@ -182,7 +182,7 @@ test("leaving while a save is under way, with an edit made since, waits", async 
   await page.goto(url("general"));
   let release;
   const held = new Promise((resolve) => (release = resolve));
-  await page.route(`**/api/projects/${app.project.id}`, async (route) => {
+  await page.route(url => url.pathname === `/api/projects/${app.project.id}`, async (route) => {
     if (route.request().method() === "PATCH") await held;
     await route.continue();
   });

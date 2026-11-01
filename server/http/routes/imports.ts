@@ -61,7 +61,7 @@ export async function importsRoutes(ctx: RequestContext): Promise<unknown> {
   if (kind === "delta" && method === "GET")
     return json(
       200,
-      await store.delta(project, Number(url.searchParams.get("since"))),
+      await store.delta(project, Number(url.searchParams.get("since")), { summaries: url.searchParams.get("boards") === "summary", board: url.searchParams.get("board") }),
     );
   if (kind === "query" && method === "POST") {
     const data = await input(req);

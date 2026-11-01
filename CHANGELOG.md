@@ -2,6 +2,18 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.20.121 — 2026-11-01
+
+### Fixed
+
+- Interrupted backup restores recover on restart instead of leaving missing project folders. The vault writer lock now releases when its process dies, including after container replacement.
+- Vaults larger than 200 MB or 30,000 files keep saving: automatic backups switch to a restorable directory of files on the server. Smaller backups keep ZIP download and upload.
+- Home's web-page check connects only to the address it validated, preventing a DNS change from redirecting the check to a private server.
+- Version history loads summaries in pages, fetching a version's full contents when opened, while retaining restore and before/after comparisons.
+- Project views and background refreshes transfer summaries of closed boards; full contents load when a board is opened.
+- The audit log also records history restores, quick capture, imports and generated changes, with the actor and changed fields, after a successful save.
+- Automation controls wait for a rule's enable/disable change before opening its preview, preventing a preview of the previous setting.
+
 ## 0.20.120 — 2026-11-01
 
 ### Added

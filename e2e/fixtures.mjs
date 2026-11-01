@@ -121,6 +121,8 @@ export async function startApp(name = "app") {
     async close() {
       server.closeAllConnections?.();
       await new Promise((resolve) => server.close(resolve));
+      await store.queue;
+      await store.audit?.queue;
       await store.close?.();
       await fs.rm(root, { recursive: true, force: true });
     },

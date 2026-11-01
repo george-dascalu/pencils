@@ -1,5 +1,8 @@
 import dns from "node:dns/promises";
 import net from "node:net";
+import http from "node:http";
+import https from "node:https";
+import { Readable } from "node:stream";
 import { Problem } from "./problem.js";
 
 // Whether a web page may be shown in Home's Web page panel: a site that forbids framing gets a link
@@ -59,7 +62,20 @@ async function readSome(response, limit) {
   reader.cancel().catch(() => {});
   return text.slice(0, limit);
 }
-export async function checkEmbed(url, { fetch: doFetch = globalThis.fetch, lookup = (host) => dns.lookup(host, { all: true }), allowPrivate = false, self = "" } = {}) {
+export function fetchEmbed(url, { addresses, signal, headers }) {
+  return new Promise((resolve, reject) => {
+    const request = (url.protocol === "https:" ? https : http).get(url, {
+      signal, headers: { ...headers, "accept-encoding": "identity" }, agent: false,
+      // Use exactly the addresses guard checked, while retaining Host and TLS certificate checks.
+      lookup: (_host, options, done) => options.all ? done(null, addresses) : done(null, addresses[0].address, addresses[0].family),
+    }, response => resolve({ status: response.statusCode,
+      headers: new Headers(Object.entries(response.headers).filter(([, value]) => value !== undefined).map(([key, value]) => [key, Array.isArray(value) ? value.join(", ") : value])),
+      body: Readable.toWeb(response),
+    }));
+    request.on("error", reject);
+  });
+}
+export async function checkEmbed(url, { fetch: doFetch = fetchEmbed, lookup = (host) => dns.lookup(host, { all: true }), allowPrivate = false, self = "" } = {}) {
   let target;
   try {
     target = new URL(String(url));
@@ -69,17 +85,17 @@ export async function checkEmbed(url, { fetch: doFetch = globalThis.fetch, looku
   const guard = async (address) => {
     if (!["http:", "https:"].includes(address.protocol)) throw new Problem(400, "Only http and https pages can be shown.");
     if (self && address.host.toLowerCase() === self.toLowerCase()) throw new Problem(400, "Pencils' own pages can't be shown in a panel.");
-    if (allowPrivate) return;
     const host = address.hostname.replace(/^\[|\]$/g, "");
-    if (host === "localhost" || host.endsWith(".localhost") || host.endsWith(".local")) throw new Problem(400, "Private and local addresses can't be shown here.");
-    const addresses = net.isIP(host) ? [{ address: host }] : await lookup(host).catch(() => { throw new Problem(400, "That address could not be found."); });
-    if (!addresses.length || addresses.some((a) => privateAddress(a.address))) throw new Problem(400, "Private and local addresses can't be shown here.");
+    if (!allowPrivate && (host === "localhost" || host.endsWith(".localhost") || host.endsWith(".local"))) throw new Problem(400, "Private and local addresses can't be shown here.");
+    const addresses = net.isIP(host) ? [{ address: host, family: net.isIP(host) }] : await lookup(host).catch(() => { throw new Problem(400, "That address could not be found."); });
+    if (!addresses.length || (!allowPrivate && addresses.some((a) => privateAddress(a.address)))) throw new Problem(400, "Private and local addresses can't be shown here.");
+    return addresses;
   };
   const controller = new AbortController(), timer = setTimeout(() => controller.abort(), 6000);
   try {
     for (let hop = 0; hop < 4; hop++) {
-      await guard(target);
-      const response = await doFetch(target, { redirect: "manual", signal: controller.signal, headers: { accept: "text/html,*/*;q=0.5" } });
+      const addresses = await guard(target);
+      const response = await doFetch(target, { addresses, redirect: "manual", signal: controller.signal, headers: { accept: "text/html,*/*;q=0.5" } });
       const location = [301, 302, 303, 307, 308].includes(response.status) && response.headers.get("location");
       if (location) {
         response.body?.cancel?.().catch?.(() => {});

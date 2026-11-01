@@ -104,6 +104,7 @@ export const roadmap = [
   { id: "T99", title: "Remove the board sweep’s leftover agent worktree", status: "done", requested: "2026-11-01T18:12", started: "2026-11-01T18:12", done: "2026-11-01T18:13", version: "0.20.119" },
   { id: "T100", title: "Project rules: checks after every .js edit, tests first, computed styles checked in every engine, one allowErrors regex, no top-level browser globals", status: "done", requested: "2026-11-01T18:12", started: "2026-11-01T18:12", done: "2026-11-01T18:13", version: "0.20.119" },
   { id: "T101", title: "Initialize Impeccable with the product context and code-first workflow", status: "done", requested: "2026-11-01", started: "2026-11-01", done: "2026-11-01", version: "0.20.120" },
+  { id: "T103", title: "Fix the seven Ponytail audit findings: recovery, large backups, writer locks, web checks, history, board loading and audit coverage", status: "done", requested: "2026-11-01", started: "2026-11-01", done: "2026-11-01", version: "0.20.121" },
   { id: "T102", title: "Make the keyboard date check independent of native day/month order", status: "done", requested: "2026-11-01", started: "2026-11-01", done: "2026-11-01", version: "0.20.120" },
 ];
 

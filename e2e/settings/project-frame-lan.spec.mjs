@@ -100,7 +100,7 @@ test("dismissing a pending update neither applies it nor closes a newer preview"
   let release, received, heldRequest;
   const held = new Promise((resolve) => (release = resolve));
   const requested = new Promise((resolve) => (received = resolve));
-  await page.route(`${app.base}/api/projects/${app.project.id}`, async (route) => {
+  await page.route(url => url.pathname === `/api/projects/${app.project.id}`, async (route) => {
     heldRequest = route.request();
     received();
     await held;

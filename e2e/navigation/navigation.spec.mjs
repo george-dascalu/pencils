@@ -160,16 +160,17 @@ test("the latest destination wins when a second Back arrives during a project re
   await chooseProject(page, project.id);
   await at(page, projectRoute("overview"));
   // A slow response for the second project keeps its request in flight while Back is pressed again.
-  await page.route(`**/api/projects/${second.id}`, async (route) => {
+  const secondProject = url => url.pathname === `/api/projects/${second.id}`;
+  await page.route(secondProject, async (route) => {
     await new Promise((resolve) => setTimeout(resolve, 200));
     await route.continue();
   });
-  const loadingProject = page.waitForRequest((req) => req.url().endsWith(`/api/projects/${second.id}`));
+  const loadingProject = page.waitForRequest((req) => new URL(req.url()).pathname === `/api/projects/${second.id}`);
   await page.evaluate(() => history.back());
   await loadingProject;
   await page.evaluate(() => history.back());
   await at(page, projectRoute("overview"));
-  await page.unroute(`**/api/projects/${second.id}`);
+  await page.unroute(secondProject);
 });
 
 test("a missing destination keeps the current page and Forward history", { tag: "@gate" }, async ({ page }) => {
@@ -177,13 +178,14 @@ test("a missing destination keeps the current page and Forward history", { tag: 
   await start(page);
   await chooseProject(page, second.id);
   await at(page, projectRoute("list", second.id));
-  await page.route(`**/api/projects/${project.id}`, (route) =>
+  const missingProject = url => url.pathname === `/api/projects/${project.id}`;
+  await page.route(missingProject, (route) =>
     route.fulfill({ status: 404, contentType: "application/json", body: JSON.stringify({ error: "Project no longer available" }) }),
   );
   await page.goBack();
   await page.getByText("Project no longer available", { exact: true }).waitFor();
   await at(page, projectRoute("list", second.id));
-  await page.unroute(`**/api/projects/${project.id}`);
+  await page.unroute(missingProject);
   await back(page, projectRoute("overview"));
 });
 

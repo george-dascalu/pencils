@@ -6,10 +6,11 @@ import assert from "node:assert/strict";
 import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
+import http from "node:http";
 import { Store } from "../server/store.js";
 import { Home, defaultPanels, PANEL_TYPES } from "../server/home.js";
 import { Visits } from "../server/visits.js";
-import { framingAllowed, privateAddress, checkEmbed } from "../server/embed-check.js";
+import { framingAllowed, privateAddress, checkEmbed, fetchEmbed } from "../server/embed-check.js";
 import { compact, stackOrder } from "../public/home-grid.js";
 
 const user = { username: "george", name: "George" };
@@ -86,6 +87,45 @@ test("private, loopback and link-local addresses are refused by the embed check 
   const redirecting = async () => ({ status: 302, headers: { get: (k) => (k === "location" ? "http://127.0.0.1/admin" : null) }, body: null });
   await assert.rejects(() => checkEmbed("http://example.com/", { lookup: publicLookup, fetch: redirecting }), (e) => e.status === 400 && /Private/.test(e.message));
   await assert.rejects(() => checkEmbed("http://pencils.test:3000/x", { lookup: publicLookup, self: "pencils.test:3000" }), (e) => e.status === 400 && /own pages/.test(e.message));
+});
+
+test("embed connections use the checked DNS addresses, including after redirects", async () => {
+  const addresses = [{ address: "93.184.216.34", family: 4 }];
+  let calls = 0;
+  await checkEmbed("https://example.com/", {
+    lookup: async () => addresses,
+    fetch: async (url, options) => {
+      assert.deepEqual(options.addresses, addresses, "the transport must not resolve the hostname again");
+      calls++;
+      return new Response(calls === 1 ? "" : "<title>Checked</title>", { status: calls === 1 ? 302 : 200, headers: calls === 1 ? { location: "https://another.example/" } : { "content-type": "text/html" } });
+    },
+  });
+  assert.equal(calls, 2);
+});
+test("the embed transport connects to the pinned address without resolving the hostname again", async t => {
+  const server = http.createServer((req, res) => { res.setHeader("x-frame-options", "DENY"); res.end(req.headers.host); });
+  await new Promise(resolve => server.listen(0, "127.0.0.1", resolve));
+  t.after(() => new Promise(resolve => server.close(resolve)));
+  const url = new URL(`http://does-not-resolve.invalid:${server.address().port}/`);
+  const response = await fetchEmbed(url, { addresses: [{ address: "127.0.0.1", family: 4 }], signal: AbortSignal.timeout(3000), headers: {} });
+  assert.equal(response.headers.get("x-frame-options"), "DENY");
+  assert.equal(await new Response(response.body).text(), url.host);
+  assert.deepEqual(await checkEmbed(`http://localhost:${server.address().port}`, { allowPrivate: true }), { embeddable: false, title: "" });
+  await assert.rejects(fetchEmbed(url, { addresses: [{ address: "127.0.0.1", family: 4 }], signal: AbortSignal.abort(), headers: {} }), { name: "AbortError" });
+});
+test("embed checks refuse local names before lookup, empty DNS answers, network failures and redirect loops", async () => {
+  let lookups = 0, requests = 0;
+  const lookup = async () => { lookups++; return [{ address: "93.184.216.34", family: 4 }]; };
+  const fetch = async () => { requests++; return new Response(""); };
+  for (const host of ["localhost", "x.localhost", "x.local"]) await assert.rejects(checkEmbed(`http://${host}`, { lookup, fetch }), /Private/);
+  assert.equal(lookups, 0);
+  await assert.rejects(checkEmbed("http://example.test", { lookup: async () => [], fetch }), /Private/);
+  assert.equal(requests, 0);
+  await assert.rejects(checkEmbed("http://example.test", { lookup: async () => { throw Error("DNS failed"); }, fetch }), /could not be found/);
+  await assert.rejects(checkEmbed("http://example.test", { lookup, fetch: async () => { throw Error("Network failed"); } }), /could not be reached/);
+  let redirects = 0;
+  await assert.rejects(checkEmbed("http://example.test", { lookup, fetch: async () => { redirects++; return new Response("", { status: 302, headers: { location: "http://example.test" } }); } }), /redirects too often/);
+  assert.equal(redirects, 4);
 });
 
 test("the grid pushes overlapped panels down and keeps a reading order", () => {

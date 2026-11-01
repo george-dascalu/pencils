@@ -2,6 +2,7 @@ import { boardsMethods } from "./services/boards.js";
 import { tasksMethods } from "./services/tasks.js";
 import { documentsMethods } from "./services/documents.js";
 import { WriteJournal } from "./journal.js";
+import { changedFields } from "./audit.js";
 import { documentFolders, documentFolder } from "./document-folders.js";
 import { hierarchyError } from "../public/hierarchy-model.js";
 import { directory, projectTeams } from "./teams.js";
@@ -170,19 +171,36 @@ export class Store {
     }
   }
   // Serialize app writers; file revisions also detect edits from Obsidian/other clients.
-  mutate(fn) {
+  mutate(fn, { user = "System", action } = {}) {
     const next = this.queue.then(async () => {
       await this.init();
       await this.journal.start();
+      this.auditPending = new Map(); this.auditUser = user; this.auditAction = action;
       const version=this.version;
       try {await this.autoBackup();const result=await fn();await this.journal.finish(true);
         const changes=this.changeLog.filter(c=>c.version>version);
         if(changes.length){const projects=new Set(changes.map(c=>c.record?.kind!=="project"?c.record?.project:null));if(projects.has(null)||projects.has(undefined))this.events.emit("change",this.version,{});else for(const project of projects)this.events.emit("change",this.version,{project});}
+        if (this.audit) for (const entry of this.auditPending.values()) {
+          const { project, ...record } = entry;
+          await this.audit.record(project, { at: Date.now(), user: this.auditUser, ...record });
+        }
         return result;}
       catch(error){await this.journal.finish(false);this.changed();throw error;}
+      finally { this.auditPending = null; this.auditUser = null; this.auditAction = null; }
     });
     this.queue = next.catch(() => {});
     return next;
+  }
+  auditRecord(before, after, action = this.auditAction) {
+    if (!this.auditPending) return;
+    const data = after?.data || before?.data;
+    const kind = { task: "card", document: "document", board: "board" }[data?.kind];
+    if (!kind) return;
+    const key = `${data.project}/${kind}/${data.id}`, previous = this.auditPending.get(key);
+    const fields = changedFields(before, after && { ...after.data, body: after.body });
+    if (!action && before && after && !fields.length && data.kind !== "board") return;
+    this.auditPending.set(key, { project: data.project, kind, id: data.id, title: data.title || "", ...(data.key ? { key: data.key } : {}),
+      action: previous?.action === "created" ? "created" : action || (before ? "edited" : "created"), fields: [...new Set([...(previous?.fields || []), ...fields])].sort() });
   }
   changed(file=null, value=null) {
     this.version++;
@@ -207,11 +225,11 @@ export class Store {
     this.changeLog.push({version:this.version,record});if(this.changeLog.length>1000)this.changeLog.shift();
     if(!this.journal.active)this.events.emit("change",this.version,{project:record?.kind!=="project"?record?.project:null});
   }
-  async delta(project,since){
+  async delta(project,since,options = {}){
     const version=this.version;if(!Number.isInteger(since) || since<0 || since>version || (this.changeLog[0] && since<this.changeLog[0].version-1))return {full:true,version};
     const changes=this.changeLog.filter(c=>c.version>since);if(changes.some(c=>!c.record))return {full:true,version};
     const records=new Map();for(const {record:r} of changes)if(r.project===project && r.kind!=="identity")records.set(`${r.kind}/${r.id}`,r);
-    const result=[];for(const r of records.values()){try{const file=this.file(project,r.kind,r.id),record=await this.read(file);if(r.kind==="tasks")this.validateTask(record.data,schema((await this.read(this.file(project,"project"))).data.schema));if(r.kind==="boards")this.validateBoard(record.data);if(r.kind==="documents")this.validateDocument(record.data);result.push({kind:r.kind,value:this.public(record,file)});}catch{return {full:true,version};}}
+    const result=[];for(const r of records.values()){try{const file=this.file(project,r.kind,r.id),record=await this.read(file);if(r.kind==="tasks")this.validateTask(record.data,schema((await this.read(this.file(project,"project"))).data.schema));if(r.kind==="boards")this.validateBoard(record.data);if(r.kind==="documents")this.validateDocument(record.data);result.push({kind:r.kind,value:r.kind === "boards" && options.summaries && options.board !== r.id ? this.boardSummary(record,file) : this.public(record,file)});}catch{return {full:true,version};}}
     return {full:false,version,records:result};
   }
   watch() {
@@ -365,6 +383,10 @@ export class Store {
       file: path.relative(this.root, file).split(path.sep).join("/"),
     };
   }
+  boardSummary(record, file) {
+    const { nodes, edges, operations, native, body, templates, ...value } = this.public(record, file);
+    return { ...value, summary: true, nodeCount: nodes.length, strokeCount: nodes.filter(n => n.type === "draw").length };
+  }
   async write(file, data, markdown, existing) {
     await this.safe(file);
     await fs.mkdir(path.dirname(file), { recursive: true });
@@ -428,6 +450,7 @@ export class Store {
       try{await directory.sync();}finally{await directory.close();}
       this.cache.delete(file);
       written = parse(text, file);
+      this.auditRecord(existing, written);
       this.changed(file, this.public(written, file));
     } finally {
       await fs.rm(temporary, { force: true });
@@ -548,7 +571,8 @@ export class Store {
     projects.sort((a, b) => String(a.title).localeCompare(String(b.title)));
     return { projects, warnings };
   }
-  async children(project, kind) {
+  async children(project, kind, options = {}) {
+    if (kind === "boards" && options.summaries) return this.readChildren(project, kind, options);
     const key = `${project}/${kind}`;
     const cached = this.childrenCache.get(key);
     // Watcher events invalidate external edits; the bounded TTL also covers
@@ -568,7 +592,7 @@ export class Store {
       return structuredClone(value);
     } finally { if (this.childrenReads.get(key) === entry) this.childrenReads.delete(key); }
   }
-  async readChildren(project, kind) {
+  async readChildren(project, kind, options = {}) {
     if (kind === "boards") await this.migrateBoards(project);
     const dir = path.join(this.projectDir(project), kind);
     await this.safe(dir);
@@ -599,7 +623,7 @@ export class Store {
         if (kind === "tasks") this.validateTask(record.data, config);
         if (kind === "boards") this.validateBoard(record.data);
         if (kind === "documents") this.validateDocument(record.data);
-        return { item: this.public(record, file) };
+        return { item: kind === "boards" && options.summaries && options.board !== record.data.id ? this.boardSummary(record, file) : this.public(record, file) };
       } catch (error) {
         return { warning: `${kind}/${entry.name}: ${error.message}` };
       }
@@ -611,7 +635,8 @@ export class Store {
     }
     return { items, warnings };
   }
-  async snapshot(id) {
+  async snapshot(id, options = {}) {
+    if (options.summaries) return this.readSnapshot(id, options);
     const requiredVersion = this.version;
     const existing = this.snapshots.get(id);
     if (existing) {
@@ -625,7 +650,7 @@ export class Store {
     try { return structuredClone(await entry.work); }
     finally { if (this.snapshots.get(id) === entry) this.snapshots.delete(id); }
   }
-  async readSnapshot(id) {
+  async readSnapshot(id, options = {}) {
     await this.init();
     await this.ensureTaskIdentities(id);
     const snapshotVersion=this.version;
@@ -634,7 +659,7 @@ export class Store {
     const organisation = await this.getOrganisation(project.organisation);
     const [tasks, boards, documents] = await Promise.all([
       this.children(id, "tasks"),
-      this.children(id, "boards"),
+      this.children(id, "boards", options),
       this.children(id, "documents"),
     ]);
     const warnings = [...tasks.warnings, ...boards.warnings, ...documents.warnings];
@@ -666,7 +691,7 @@ export class Store {
     // Keep board references useful after deletion without returning deleted
     // tasks as active project tasks or guessing that an unreadable file is gone.
     const taskAvailability = Object.create(null);
-    const missing = [...new Set(boards.items.flatMap((b) => b.nodes
+    const missing = [...new Set(boards.items.flatMap((b) => (b.nodes || [])
       .filter((n) => n.type === "task" && !byId.has(n.task)).map((n) => n.task)))];
     if (missing.length) {
       const trash = (await this.trash()).filter((t) => t.kind === "task" && t.project === id);

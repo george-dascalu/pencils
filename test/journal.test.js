@@ -129,6 +129,8 @@ test("the writer lock refuses a live writer, another host and a half-made lock, 
     };
   // Above the largest process ID Linux and macOS assign, so no process can hold it.
   const host = os.hostname(), dead = 2 ** 22 + 1;
+  // Simulate an installation that has not adopted the kernel lock yet.
+  await fs.rm(path.join(store.root, ".pencils", "writer.guard"), { force: true });
   await owner({ pid: process.pid, host });
   await assert.rejects(store.journal.acquire(), { status: 423, message: /Another Pencils process/ });
   await assert.rejects(store.journal.start(), { status: 423 }, "a transaction takes the lock");

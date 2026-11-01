@@ -38,3 +38,11 @@ for (const step of ["write", "read"])
     expect(result.status, `${result.stdout}\n${result.stderr}`).toBe(0);
     expect(result.stdout).toMatch(/PASS/);
   });
+
+test("a replacement container recovers an interrupted writer with a different hostname", () => {
+  const args = ["run", "--rm", "--network", "none", "--user", `${os.userInfo().uid}:${os.userInfo().gid}`, "-v", `${vault}:/data`, image, "node", "--input-type=module", "-e"];
+  const crash = run("docker", [...args, `import { Store } from './server/store.js'; const store = new Store('/data'); await store.init(); await store.journal.start(); process.exit(73);`]);
+  expect(crash.status, crash.stderr).toBe(73);
+  const recover = run("docker", [...args, `import assert from 'node:assert/strict'; import { Store } from './server/store.js'; const store = new Store('/data'); await store.init(); assert.deepEqual(await store.journal.issues(), []); assert.ok((await store.list()).projects.length); store.close();`]);
+  expect(recover.status, recover.stderr).toBe(0);
+});

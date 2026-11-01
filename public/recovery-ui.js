@@ -1,3 +1,4 @@
+import { historyPages } from "./history-pages.js";
 import { confirmAction } from "./confirm-popover.js";
 import { BACKUP_BYTES } from "./backup-limits.js";
 export function recoveryUI(ctx) {
@@ -33,11 +34,11 @@ export function recoveryUI(ctx) {
     showDialog(
       `<dialog class="dialog wide-dialog">${dialogHead("Recovery & backups")}<div class="dialog-body"><h3>Pending saves</h3>${[...sync.entries.values()].map((e) => `<section class="recovery-item"><strong>${esc(e.local?.title || e.url)}</strong><p>${esc(e.error || "Waiting to save")}</p>${e.conflict ? `<ul>${e.conflict.conflicts.map((c) => `<li><strong>${esc(c.path)}</strong><div class="conflict-values"><pre>Your edit: ${esc(JSON.stringify(c.local))}</pre><pre>On disk: ${esc(JSON.stringify(c.remote))}</pre></div></li>`).join("")}</ul><button class="button small" data-feature="resolve-local" data-url="${esc(e.url)}">Keep my conflicting values</button><button class="button small" data-feature="resolve-remote" data-url="${esc(e.url)}">Use disk values for conflicts</button>` : ""}<button class="button small" data-feature="draft-download" data-url="${esc(e.url)}">Export draft</button><button class="button small" data-feature="draft-retry" data-url="${esc(e.url)}">Retry</button><button class="button small danger" data-feature="draft-discard" data-url="${esc(e.url)}">Discard draft</button></section>`).join("") || "<p>All queued changes are saved.</p>"}<p class="field-hint">Editor drafts are restored when you reopen the same card, or a new card's editor, in this browser. Drafts are separate from vault backups.</p>${
         unavailable ? '<p role="status">Server backups and trash are unavailable. You can still export your browser drafts above.</p>' : state.session?.user?.admin
-          ? `<h3>Project backups</h3><p>Includes Projects and Organisations. Accounts, history, trash and other vault folders require an installation backup. Automatic backup before the first edit each day. Keep a copy on another disk.</p><p class="field-hint">Up to 220 MB per ZIP, 200 MB expanded and 30,000 files. Verify a backup before restoring it.</p><button class="button" data-feature="backup-create">Create backup now</button> <button class="button" data-feature="backup-upload">Upload backup ZIP</button>${backups.backups
+          ? `<h3>Project backups</h3><p>Includes Projects and Organisations. Accounts, history, trash and other vault folders require an installation backup. Automatic backup before the first edit each day. Keep a copy on another disk.</p><p class="field-hint">ZIP exports support 220 MB compressed, 200 MB expanded and 30,000 files. Larger backups are stored as files on the server and can be restored here. Verify a backup before restoring it.</p><button class="button" data-feature="backup-create">Create backup now</button> <button class="button" data-feature="backup-upload">Upload backup ZIP</button>${backups.backups
               .slice(0, 40)
               .map(
                 (b) =>
-                  `<div class="recovery-item"><strong>${esc(new Date(b.created).toLocaleString())}</strong><p>${esc(b.reason)} · ${b.files} files · ${(b.size / 1024).toFixed(0)} KB</p><a class="button small" href="/api/backups/${esc(b.id)}" download>Download ZIP</a><button class="button small" data-feature="backup-verify" data-id="${esc(b.id)}">Verify</button><button class="button small danger" data-feature="backup-restore" data-id="${esc(b.id)}">Restore vault</button></div>`,
+                  `<div class="recovery-item"><strong>${esc(new Date(b.created).toLocaleString())}</strong><p>${esc(b.reason)} · ${b.files} files · ${(b.size / 1024).toFixed(0)} KB</p>${b.format === "directory" ? `<span>Files stored on server</span>` : `<a class="button small" href="/api/backups/${esc(b.id)}" download>Download ZIP</a>`}<button class="button small" data-feature="backup-verify" data-id="${esc(b.id)}">Verify</button><button class="button small danger" data-feature="backup-restore" data-id="${esc(b.id)}">Restore vault</button></div>`,
               )
               .join(
                 "",
@@ -49,12 +50,30 @@ export function recoveryUI(ctx) {
   }
   async function history(target) {
     record = target;
-    const data = await api(`/history?file=${encodeURIComponent(target.file)}`);
+    const pages = historyPages(api, target.file), data = await pages.more();
     showDialog(
-      `<dialog class="dialog wide-dialog">${dialogHead(`History · ${target.title}`)}<div class="dialog-body"><p>Restore a previous version of this note, including its properties. The current version will remain in history.</p>${data.versions.map((v) => `<details class="recovery-item"><summary>${esc(new Date(v.updated).toLocaleString())} · ${esc(v.title)}</summary><pre>${esc(v.body)}</pre><button class="button" data-feature="version-restore" data-version="${v.revision}">Restore this version</button></details>`).join("") || "<p>No earlier versions yet.</p>"}</div><div class="dialog-foot"><button class="button" data-action="dialog-close">Close</button></div></dialog>`,
+      `<dialog class="dialog wide-dialog">${dialogHead(`History · ${target.title}`)}<div class="dialog-body"><p>Restore a previous version. The current version will remain in history.</p><div data-version-list></div><button type="button" class="button small" data-older-versions>Load older versions</button><p data-history-error role="alert"></p></div><div class="dialog-foot"><button class="button" data-action="dialog-close">Close</button></div></dialog>`,
       "history",
     );
+    const list = document.querySelector("[data-version-list]"), more = document.querySelector("[data-older-versions]");
+    const append = rows => {
+      for (const row of rows) {
+        const details = document.createElement("details"); details.className = "recovery-item";
+        details.innerHTML = `<summary>${esc(new Date(row.updated).toLocaleString())} · ${esc(row.title)}</summary><pre>Loading version…</pre><button class="button" data-feature="version-restore" data-version="${row.revision}">Restore this version</button>`;
+        let loaded = false;
+        details.addEventListener("toggle", async () => {
+          if (!details.open || loaded) return;
+          loaded = true;
+          try { const version = await pages.version(row.revision); details.querySelector("pre").textContent = version.body || (version.data.kind === "board" ? `${version.data.nodes?.length || 0} objects · ${version.data.edges?.length || 0} connectors` : "No description"); }
+          catch (error) { loaded = false; details.querySelector("pre").textContent = error.message + " Close and reopen to retry."; }
+        });
+        list.append(details);
+      }
+    };
+    append(data.versions); more.hidden = !data.next;
+    more.onclick = async () => { more.disabled = true; try { const next = await pages.more(); append(next.versions); more.hidden = !next.next; } catch (error) { more.parentElement.querySelector("[data-history-error]").textContent = error.message; } finally { more.disabled = false; } };
   }
+
   async function click(action, el) {
     if (action === "recovery") {
       await open();

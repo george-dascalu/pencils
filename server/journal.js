@@ -1,6 +1,7 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import os from "node:os";
+import { spawn } from "node:child_process";
 import { createHash, randomUUID } from "node:crypto";
 import { Problem } from "./problem.js";
 const digest = (bytes) => createHash("sha256").update(bytes).digest("hex");
@@ -29,8 +30,28 @@ export class WriteJournal {
     this.active = null;
   }
   async acquire() {
+    if (this.handle) throw new Problem(423, "Another Pencils process is writing this vault. Retry shortly.");
     await this.store.safe(this.lock);
     await fs.mkdir(path.dirname(this.lock), { recursive: true });
+    const guard = path.join(path.dirname(this.lock), "writer.guard");
+    await this.store.safe(guard);
+    const handle = await fs.open(guard, "a+", 0o600);
+    try {
+      // flock belongs to the inherited open file description: our descriptor holds it until close/crash.
+      await new Promise((resolve, reject) => {
+        const child = spawn("flock", ["-n", "3"], { stdio: ["ignore", "ignore", "pipe", handle.fd] });
+        child.on("error", reject);
+        child.on("exit", code => code === 0 ? resolve() : reject(new Problem(423, "Another Pencils process is writing this vault. Retry shortly.")));
+      });
+      this.kernelProtocol = (await handle.readFile("utf8")) === "kernel\n";
+      if (!this.kernelProtocol && !(await fs.stat(this.lock).catch(error => { if (error.code !== "ENOENT") throw error; }))) {
+        await handle.writeFile("kernel\n"); await handle.sync(); this.kernelProtocol = true;
+      }
+      await this.acquireOwner(handle);
+      this.handle = handle;
+    } catch (error) { await handle.close(); throw error; }
+  }
+  async acquireOwner(handle) {
     try {
       await fs.mkdir(this.lock);
     } catch (e) {
@@ -41,24 +62,28 @@ export class WriteJournal {
           await fs.readFile(path.join(this.lock, "owner.json"), "utf8"),
         );
       } catch {
-        throw new Problem(
+        if (this.kernelProtocol) old = { kernel: true };
+        else throw new Problem(
           423,
           "Vault writer lock is incomplete. Stop other servers and inspect .pencils/writer.lock before removing it.",
         );
       }
-      if (old.host !== os.hostname())
+      if (!old.kernel && old.host !== os.hostname())
         throw new Problem(423, "Another host owns the vault writer lock.");
+      if (!old.kernel && !Number.isInteger(old.pid))
+        throw new Problem(423, "The legacy writer lock has no valid process ID. Stop other servers and inspect it before removing it.");
       let alive = true;
       try {
-        process.kill(old.pid, 0);
+        if (!old.kernel) process.kill(old.pid, 0);
       } catch (e) {
         if (e.code === "ESRCH") alive = false;
       }
-      if (alive)
+      if (!old.kernel && alive)
         throw new Problem(
           423,
           "Another Pencils process is writing this vault. Retry shortly.",
         );
+      if (!this.kernelProtocol) { await handle.writeFile("kernel\n"); await handle.sync(); this.kernelProtocol = true; }
       await fs.rm(this.lock, { recursive: true });
       await fs.mkdir(this.lock);
     }
@@ -68,12 +93,15 @@ export class WriteJournal {
         pid: process.pid,
         host: os.hostname(),
         created: new Date().toISOString(),
+        kernel: true,
       }),
       { flag: "wx", mode: 0o600 },
     );
   }
   async release() {
-    await fs.rm(this.lock, { recursive: true, force: true });
+    if (!this.handle) return;
+    try { await fs.rm(this.lock, { recursive: true, force: true }); }
+    finally { await this.handle.close(); this.handle = null; }
   }
   async start() {
     await this.acquire();

@@ -16,7 +16,7 @@ const app = useApp(async (store) => {
 async function hold(page, project) {
   let release;
   const held = new Promise((resolve) => (release = resolve));
-  await page.route(`**/api/projects/${project.id}`, async (route) => {
+  await page.route(url => url.pathname === `/api/projects/${project.id}`, async (route) => {
     await held;
     await route.continue();
   });

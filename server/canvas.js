@@ -389,6 +389,7 @@ export function installCanvas(Store) {
         });
       const file = this.resolveFile(input.file),
         raw = await fs.readFile(file, "utf8"),
+        current = await this.read(file),
         temporary = `${file}.${randomUUID()}.tmp`;
       try {
         const handle = await fs.open(temporary, "wx");
@@ -405,9 +406,11 @@ export function installCanvas(Store) {
             409,
             "This note changed in Obsidian. Your draft is retained.",
           );
-        await this.recordHistory(file, { revision: note.revision, raw });
+        await this.recordHistory(file, { ...current, revision: note.revision, raw });
+        await this.journal.stage(file, raw.slice(0, raw.length - note.body.length) + body);
         await fs.rename(temporary, file);
         this.cache.delete(file);
+        this.auditRecord(current, { data: current.data, body });
         this.changed();
       } finally {
         await fs.rm(temporary, { force: true });

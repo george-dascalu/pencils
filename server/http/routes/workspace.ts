@@ -155,12 +155,11 @@ export async function workspaceRoutes(ctx: RequestContext): Promise<unknown> {
         throw new Problem(403, "This project contains private source data.");
     }
     if (method === "GET")
-      return json(200, { versions: await store.history(data.file) });
+      return json(200, data.version ? await store.historyVersion(data.file, data.version)
+        : await store.historyPage(data.file, { cursor: url.searchParams.get("cursor") || "", limit: url.searchParams.get("limit") }));
     if (method === "POST") {
       if (record.data.kind === "project") {
-        const previous = (await store.history(data.file)).find(
-          (version: Input) => version.revision === data.version,
-        );
+        const previous = await store.historyVersion(data.file, data.version);
         if (previous) auth.require(user, previous.data.organisation, true);
       }
       return json(

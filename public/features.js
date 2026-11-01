@@ -1125,9 +1125,9 @@ export function installFeatures(ctx) {
   return {
     bottomBar,
     viewReady: () => state.view === "documents" ? documentFeature.ready()
-      : ["board", "drawing"].includes(state.view) ? canvasFeature.ready() && drawingFeature.ready() : true,
+      : ["board", "drawing"].includes(state.view) ? (state.boardGallery || !state.boards.find(b => b.id === state.selectedBoard)?.summary) && canvasFeature.ready() && drawingFeature.ready() : true,
     prepareView: () => state.view === "documents" ? documentFeature.load()
-      : Promise.all([canvasFeature.load(), drawingFeature.load()]),
+      : Promise.all([canvasFeature.load(), drawingFeature.load(), state.boardGallery ? null : ctx.ensureBoard()]),
     documentsRender: documents.render,
     documentsReset: documents.reset,
     documentsSyncChanged: documents.syncChanged,

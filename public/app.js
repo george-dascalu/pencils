@@ -369,6 +369,7 @@ const sync = new SaveQueue({
       const current = state.boards.find((b) => b.id === record.id);
       if (current) {
         Object.assign(current, record);
+        delete current.summary;
         features.canvasSaved();
         features.drawingCheckpoint(sync.entries.has(url), current, state.project);
       }
@@ -414,6 +415,10 @@ document.addEventListener("keydown", (event) => {
 async function api(url, options = {}) {
   let response;
   const method = options.method || "GET";
+  if (method === "GET" && /^\/projects\/[\w-]+(?:\/delta\?since=\d+)?$/.test(url)) {
+    const active = ["board", "drawing"].includes(state.view) && url.split("/")[2].split("?")[0] === state.project?.id ? state.selectedBoard : "";
+    url += `${url.includes("?") ? "&" : "?"}boards=summary${active ? `&board=${encodeURIComponent(active)}` : ""}`;
+  }
   try {
     response = await fetch(`/api${url}`, {
       ...options,
@@ -451,7 +456,28 @@ function route(kind = "", id = "") {
   return `/projects/${state.project.id}${kind ? `/${kind}` : ""}${id ? `/${id}` : ""}`;
 }
 function board() {
-  return state.boards.find((b) => b.id === state.selectedBoard);
+  const selected = state.boards.find((b) => b.id === state.selectedBoard);
+  return selected?.summary ? undefined : selected;
+}
+const boardLoads = new Map();
+async function ensureBoard(id = state.selectedBoard) {
+  const existing = state.boards.find(b => b.id === id);
+  if (!existing?.summary) return existing;
+  const project = state.project.id, key = `${project}/${id}`;
+  if (!boardLoads.has(key)) boardLoads.set(key, (async () => {
+    const snapshot = await api(`/projects/${project}?boards=summary&board=${encodeURIComponent(id)}`);
+    if (state.project?.id !== project) return;
+    const loaded = snapshot.boards.find(b => b.id === id);
+    if (!loaded || loaded.summary) throw Error("This board is no longer available.");
+    state.boards = state.boards.map(b => b.id === id ? loaded : b);
+    state.taskAvailability = { ...state.taskAvailability, ...snapshot.taskAvailability };
+    state.boardBases = { ...state.boardBases, [id]: structuredClone(loaded) };
+    const pending = sync.entries.get(`/projects/${project}/boards/${id}`);
+    if (pending?.packedBoard) sync.hydrate(pending, loaded);
+    if (pending?.local) state.boards = state.boards.map(b => b.id === id ? pending.local : b);
+    return loaded;
+  })().finally(() => boardLoads.delete(key)));
+  return boardLoads.get(key);
 }
 function task(id) {
   return state.tasks.find((t) => t.id === id);
@@ -705,7 +731,7 @@ function applySnapshot(snapshot) {
   for (const entry of sync.entries.values()) {
     if (entry.packedBoard) {
       const current = snapshot.boards.find(b => entry.url.endsWith(`/boards/${b.id}`));
-      if (current) sync.hydrate(entry, current); else continue;
+      if (current && !current.summary) sync.hydrate(entry, current); else continue;
     }
     if (entry.url.startsWith(`/projects/${state.project.id}/documents/`))
       state.documents = state.documents.map(d => d.id === entry.local.id ? entry.local : d);
@@ -719,12 +745,12 @@ function applySnapshot(snapshot) {
       );
   }
   state.boardBases = Object.fromEntries(
-    snapshot.boards.map((b) => [b.id, structuredClone(b)]),
+    snapshot.boards.filter(b => !b.summary).map((b) => [b.id, state.boardBases?.[b.id]?.revision === b.revision ? state.boardBases[b.id] : structuredClone(b)]),
   );
   state.organisation =
     state.organisations.find((o) => o.id === snapshot.project.organisation) ||
     state.organisation;
-  if (!board()) state.selectedBoard = state.boards[0]?.id || null;
+  if (!state.boards.some(b => b.id === state.selectedBoard)) state.selectedBoard = state.boards[0]?.id || null;
 }
 function activateProject(snapshot) {
   clearProject();
@@ -750,7 +776,7 @@ function activateProject(snapshot) {
   if (![...views, "settings"].includes(state.view)) state.view = "list";
   if (snapshot.project.personal) state.view = "documents";
   state.selectedBoard = storage.get(`board:${id}`, state.boards[0]?.id);
-  if (!board()) state.selectedBoard = state.boards[0]?.id;
+  if (!state.boards.some(b => b.id === state.selectedBoard)) state.selectedBoard = state.boards[0]?.id;
   loadCamera();
   storage.set("project", id);
   if (snapshot.project.personal) return;
@@ -1621,6 +1647,7 @@ const navigation = browserNavigation({
   onError: (error) => toast(error.message, true),
 });
 const features = installFeatures({ welcomePage,
+  ensureBoard,
   closeList: () => lists.close(false),
   state,
   taskViews,
@@ -1966,7 +1993,7 @@ function remember(snapshot = boardSnapshot()) {
 }
 function saveBoard() {
   const b = board(), project = state.project;
-  if (!b) return;
+  if (!b || b.summary) return;
   features.drawingCheckpoint(true, b, project);
   const base = state.boardBases?.[b.id] || b;
   boardQueue = sync

@@ -24,11 +24,11 @@ const HEAVY = [/^public\/(canvas|board-(delta|scene|session|limits|preview|detai
 // public/ file name prefixes per area; a file may belong to several.
 const AREAS = {
   board: /^(alignment-guides|board-|list-panel|camera-motion|canvas|comment-model|connector-|dependency-style|drag-feedback|drawing-|edge-labels|frame-|grid-merge|ink-|miro-import|node-layout|note-style|object-|orthogonal-route|pen-|phone-board-tools|project-frame|query-|rule-diagram|scroll-gestures|select-symbols|selection-|spatial-index|text-alignment|viewport-cache)/,
-  documents: /^(document-|project-documents|list-panel|markdown|rich-toolbar-scroll|sketch-|ink-capture)/,
-  tasks: /^(task-(?!timeline)|card-fields|draft-|attachment-preview|recurrence-|dependency-model|hierarchy-model)/,
+  documents: /^(history-pages|document-|project-documents|list-panel|markdown|rich-toolbar-scroll|sketch-|ink-capture)/,
+  tasks: /^(history-pages|task-(?!timeline)|card-fields|draft-|attachment-preview|recurrence-|dependency-model|hierarchy-model)/,
   lists: /^(grid(?!-merge)|table-|kanban-|view-layout|drag-feedback|task-row-editor|task-order-model|task-reorder|task-colors)/,
   planning: /^(calendar|capacity|planning|timeline-|task-timeline|schedule-|teams)/,
-  settings: /^(project-settings|project-records|debug-log|personal-settings|capture-settings|style-settings|project-sources|source-model|project-automations|workflow-|teams|recovery-ui|backup-limits)/,
+  settings: /^(history-pages|project-settings|project-records|debug-log|personal-settings|capture-settings|style-settings|project-sources|source-model|project-automations|workflow-|teams|recovery-ui|backup-limits)/,
   navigation: /^(boot-progress|help|topbar-title|bookmarks|bottom-bar|roadmap)/,
   home: /^home/,
   ui: /^(color-|select-menu|date-picker|confirm-popover|format-date|in-place-editing)/,

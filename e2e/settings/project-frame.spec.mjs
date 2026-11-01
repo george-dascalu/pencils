@@ -173,7 +173,7 @@ test("Update plan applies when the server lists the same tasks in another order"
   await openBoard(page);
   await frameElement(page).getByRole("button", { name: "Update plan", exact: true }).click();
   await page.locator("#frame-apply").waitFor();
-  await page.route(`**/api/projects/${app.project.id}`, async (route) => {
+  await page.route(url => url.pathname === `/api/projects/${app.project.id}`, async (route) => {
     if (route.request().method() !== "GET") return route.continue();
     const response = await route.fetch();
     const body = await response.json();

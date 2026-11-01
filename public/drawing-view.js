@@ -36,6 +36,7 @@ export function drawingView(ctx) {
     checkedKey = checkingKey = null;
   }
   function svg(board) {
+    if (board.summary) return `<div class="drawing-thumb-empty" aria-hidden="true">${icon("board")}</div>`;
     const nodes = board.nodes.filter((n) => !n.layerHidden);
     if (!nodes.length) return '<div class="drawing-thumb-empty" aria-hidden="true">Empty board</div>';
     const
@@ -61,7 +62,7 @@ export function drawingView(ctx) {
       canvases()
         .map(
           (b) =>
-            `<article><button type="button" data-drawing-action="open" data-id="${esc(b.id)}">${svg(b)}<strong>${esc(b.title)}</strong><small>${b.nodes.length} objects · ${b.nodes.filter((n) => n.type === "draw").length} strokes</small></button><button type="button" class="button small" data-drawing-action="link" data-id="${esc(b.id)}">Copy board link</button></article>`,
+            `<article><button type="button" data-drawing-action="open" data-id="${esc(b.id)}">${svg(b)}<strong>${esc(b.title)}</strong><small>${b.nodeCount ?? b.nodes.length} objects · ${b.strokeCount ?? b.nodes.filter((n) => n.type === "draw").length} strokes</small></button><button type="button" class="button small" data-drawing-action="link" data-id="${esc(b.id)}">Copy board link</button></article>`,
         )
         .join("") || "<p>No canvases yet. Create one to start.</p>"
     }</div></section>`;
@@ -174,7 +175,7 @@ export function drawingView(ctx) {
       toast("Resolve the canvas conflict before changing canvases.", true);
       return false;
     }
-    const b = canvases().find((b) => b.id === id);
+    const b = await ctx.ensureBoard(id);
     if (!b) return false;
     reset();
     state.boardGallery = false;
@@ -206,7 +207,7 @@ export function drawingView(ctx) {
     board = ctx.board(),
     project = state.project,
   ) {
-    if (!board || !project) return;
+    if (!board || board.summary || !project) return;
     const b = structuredClone(board),
       p = structuredClone(project),
       user = owner();

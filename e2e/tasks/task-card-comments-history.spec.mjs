@@ -101,6 +101,11 @@ test("card comments format rich text and Markdown safely and take emoji reaction
 });
 
 test("the card editor is compact and its history shows before and after values", async ({ page }) => {
+  // A rolled-back save may have recorded the current revision before it failed.
+  const file = app.store.resolveFile(app.task.file);
+  const current = await app.store.read(file);
+  await app.store.recordHistory(file, current);
+  const versions = (await app.store.historyPage(app.task.file)).versions;
   await openBoard(page);
   await card(page).locator("[data-pro=task-details]").click();
   await page.locator("#task-form").waitFor();
@@ -119,6 +124,10 @@ test("the card editor is compact and its history shows before and after values",
   await page.getByRole("button", { name: "Version history", exact: true }).click();
   const history = page.getByLabel("Card version history", { exact: true });
   await history.locator(".task-history-version").first().waitFor();
+  await expect(history.locator(".task-history-version")).toHaveCount(versions.length);
+  await expect(history.locator(`[data-version="${current.revision}"]`)).toHaveCount(0);
+  await expect(history.locator(".task-history-version").first()).toContainText("Before");
+  await expect(history.locator(".task-history-month").first()).toBeVisible();
   await history.locator("details").evaluateAll((items) => items.forEach((el) => (el.open = true)));
   await expect(history).toContainText("Before");
   await expect(history).toContainText("After");
