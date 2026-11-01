@@ -2629,8 +2629,8 @@ export function canvasPro(ctx, basic) {
         showSearch(false, true);
         return;
       }
-      // Escape closes the outline, back to the tool bar's Frames (an inline edit keeps its Escape).
-      if (outlineOpen && event.key === "Escape" && (!editor || event.target.closest("#canvas-outline"))) {
+      // Escape closes the outline, back to the tool bar's Frames (an inline edit and a presentation keep their Escape).
+      if (outlineOpen && presenting < 0 && event.key === "Escape" && (!editor || event.target.closest("#canvas-outline"))) {
         event.preventDefault();
         event.stopImmediatePropagation();
         outlineOpen = false;
