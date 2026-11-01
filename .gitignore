@@ -233,3 +233,6 @@ test-results/
 .release-backups/
 .request-work/
 .request-input/
+
+# Claude Code agent worktrees
+.claude/worktrees/
