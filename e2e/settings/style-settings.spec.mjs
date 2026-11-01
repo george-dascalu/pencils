@@ -34,6 +34,8 @@ onDevices(["desktop", "phone"], () => test("style options change the documents a
   await style.getByRole("group", { name: "Accent colour" }).getByRole("button", { name: "Rose" }).click();
   expect(await rootStyle(page, "--green")).toBe("#f1a9a0");
   await page.reload();
+  // A hash-only jump must wait for the reload's initial route to finish restoring.
+  await expect(style).toBeVisible();
   await page.goto(`${app.base}/#project/${app.project.id}/documents/${app.doc.id}`);
   await page.locator(".cm-content").waitFor();
   const editor = page.locator(".document-codemirror .cm-content");

@@ -2,6 +2,12 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.20.126 — 2026-11-01
+
+### Fixed
+
+- The style-preference reload check waits for Settings to finish restoring before opening a document, preventing intermittent phone WebKit verification failures.
+
 ## 0.20.125 — 2026-11-01
 
 ### Changed
