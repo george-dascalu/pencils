@@ -88,8 +88,7 @@ onDevices(["desktop", "phone"], () => test("the panel stays on screen in both th
   }
 }));
 
-onDevices(["phone"], () => test("a refresh in flight does not steal search focus or reset the field", async ({ page, device, browserName }) => {
-  test.fail(browserName === "webkit", "T51: in WebKit, Escape from board search leaves focus off the board");
+onDevices(["phone"], () => test("a refresh in flight does not steal search focus or reset the field", async ({ page }) => {
   await openBoard(page);
   let unblock, reached;
   const gate = new Promise((resolve) => (unblock = resolve));
@@ -115,9 +114,14 @@ onDevices(["phone"], () => test("a refresh in flight does not steal search focus
   await expect(field(page)).toHaveValue("Keep this search");
   await expect(field(page)).toHaveAttribute("data-refresh-probe", "same");
   await expect(field(page), "the in-flight refresh does not steal search focus").toBeFocused();
-  // Escape closes search. The toggle sits in the closed tools panel, so focus returns to the
-  // board rather than staying in the hidden field (which would hold back every later refresh).
+  // Escape closes search and returns focus to its toggle in the tool dock, out of the hidden field
+  // (which would hold back every later refresh). A refresh that rebuilds the board hands focus to
+  // the board, as after any board control, so its shortcuts work.
   await page.keyboard.press("Escape");
   await expect(panel(page)).toBeHidden();
+  await expect(toggle(page)).toBeFocused();
+  await toggle(page).evaluate((el) => (el.dataset.refreshProbe = "old"));
+  app.store.changed();
+  await expect(toggle(page)).not.toHaveAttribute("data-refresh-probe", "old");
   await expect(page.locator("#canvas")).toBeFocused();
 }));

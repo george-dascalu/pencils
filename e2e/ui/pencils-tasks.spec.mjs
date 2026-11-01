@@ -330,8 +330,7 @@ onDevices(["phone"], () => test("phone history pane is left-aligned and grouped 
   expect(Math.abs(geometry.months[0].left - geometry.panelLeft), "month heading is left-aligned").toBeLessThanOrEqual(2);
 }));
 
-onDevices(["phone"], () => test("phone comment composer keeps its formatting controls on one line with a More menu", async ({ page, browserName }) => {
-  test.fail(browserName === "webkit", "T51: in WebKit the comment toolbar shows no end chevron");
+onDevices(["phone"], () => test("phone comment composer keeps its formatting controls on one line with a More menu", async ({ page }) => {
   await open(page, "list", ".task-row");
   await openTask(page, app.tasks[3].id);
   await page.locator('.task-pane-switcher [data-editor-pane="comments"]').tap();

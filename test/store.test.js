@@ -288,3 +288,106 @@ test("the optional example project contains useful tasks and a connected canvas"
   assert.equal(snapshot.boards[0].edges.length, 2);
   assert.deepEqual(snapshot.warnings, []);
 });
+// Guards that no test failed without (npm run test:mutants).
+test("paths outside the vault are refused even where a caller builds them", async (t) => {
+  const { root, store } = await workspace(t);
+  for (const file of [path.dirname(root), path.join(root, "..", "elsewhere.md")])
+    await assert.rejects(store.safe(file), { status: 400, message: "Path is outside the vault." }, file);
+});
+test("files Pencils can't trust are reported and left out: broken frontmatter, the wrong identity, invalid fields", async (t) => {
+  const { root, store, project } = await workspace(t);
+  const good = await store.createTask(project.id, { title: "Readable" }),
+    raw = await fs.readFile(path.join(root, good.file), "utf8"),
+    tasks = path.join(root, "Projects", project.id, "tasks");
+  const files = {
+    "t-open": "---\nid: t-open\ntitle: Never closed\n",
+    "t-list": "---\n- a list\n---\n",
+    "t-json": "{ not a canvas",
+    "t-renamed": raw,
+    "t-moved": raw.replaceAll(good.id, "t-moved").replace(`project: ${project.id}`, "project: p-elsewhere"),
+    "t-shipped": raw.replaceAll(good.id, "t-shipped").replace("status: todo", "status: shipped"),
+  };
+  for (const [name, text] of Object.entries(files)) await fs.writeFile(path.join(tasks, `${name}.md`), text);
+  const { items, warnings } = await store.children(project.id, "tasks");
+  assert.deepEqual(items.map((task) => task.id), [good.id]);
+  const reasons = Object.fromEntries(warnings.map((warning) => warning.match(/^tasks\/(.+?)\.md: (.*)$/).slice(1)));
+  assert.match(reasons["t-open"], /Invalid YAML frontmatter/);
+  assert.match(reasons["t-list"], /must be a YAML mapping/);
+  assert.match(reasons["t-json"], /Invalid canvas/);
+  assert.match(reasons["t-renamed"], /ID must match the filename/);
+  assert.match(reasons["t-moved"], /Project ID does not match the folder/);
+  assert.match(reasons["t-shipped"], /status/i);
+  const document = await store.createDocument(project.id, { title: "Notes" }), file = path.join(root, document.file);
+  await fs.writeFile(file, (await fs.readFile(file, "utf8")).replace("kind: document", "kind: task"));
+  assert.match((await store.children(project.id, "documents")).warnings.join("\n"), /Expected a document/);
+  await assert.rejects(store.write(path.join(root, good.file), { title: "Again" }, ""), { status: 409, message: "File already exists." });
+});
+test("a reopened vault undoes an interrupted write before anything reads it", async (t) => {
+  const { root, store, project } = await workspace(t);
+  const task = await store.createTask(project.id, { title: "Original" });
+  await store.journal.start();
+  await store.updateTask(project.id, task.id, { revision: task.revision, title: "Uncommitted" });
+  // The server stops mid-write.
+  store.journal.active = null;
+  await store.journal.release();
+  store.close();
+  const reopened = new Store(root);
+  t.after(() => reopened.close());
+  assert.equal((await reopened.snapshot(project.id)).tasks[0].title, "Original");
+});
+test("project settings save what they're given and refuse what they can't keep", async (t) => {
+  const { root, store, project } = await workspace(t);
+  let current = await store.updateProject(project.id, { title: "Renamed", color: "#336699", revision: project.revision });
+  assert.equal(current.title, "Renamed");
+  assert.equal(current.color, "#336699");
+  const update = (input) => store.updateProject(project.id, { ...input, revision: current.revision });
+  await assert.rejects(update({ archived: "yes" }), { status: 400, message: /Archived must be true or false/ });
+  const template = { name: "Bug", task: { title: "Bug" } }, sized = (length) => ({ name: "T", task: { title: "x".repeat(length - JSON.stringify({ name: "T", task: { title: "" } }).length) } });
+  const bad = [template, Array(101).fill(template), [{ ...template, name: 5 }], [{ ...template, name: " " }], [{ ...template, name: "x".repeat(101) }], [{ name: "Bug" }], [sized(250_001)]];
+  for (const templates of bad) await assert.rejects(update({ templates }), { status: 400, message: /Invalid task templates/ }, JSON.stringify(templates).slice(0, 60));
+  // Distinct objects, as JSON gives: YAML would write one object used twice as an alias.
+  current = await update({ templates: [sized(250_000), { ...template, name: "x".repeat(100) }, ...Array.from({ length: 98 }, () => structuredClone(template))] });
+  assert.equal(current.templates.length, 100);
+  // Changing the workflow or folders needs every task, document and board readable.
+  const task = await store.createTask(project.id, { title: "Readable" }), document = await store.createDocument(project.id, { title: "Notes" });
+  await fs.mkdir(path.join(root, "Projects", project.id, "boards"), { recursive: true });
+  await fs.writeFile(path.join(root, "Projects", project.id, "boards", "Broken.canvas"), "{ broken");
+  await assert.rejects(update({ board_folders: [] }), { status: 409, message: /unreadable boards/ });
+  await fs.writeFile(path.join(root, document.file), "---\nid: [broken\n---\n");
+  await assert.rejects(update({ document_folders: [] }), { status: 409, message: /unreadable documents/ });
+  await fs.writeFile(path.join(root, task.file), "---\nid: [broken\n---\n");
+  await assert.rejects(update({ schema: { statuses: ["todo", "done"], done: ["done"] } }), { status: 409, message: /unreadable tasks/ });
+});
+test("organisation and project files that don't match their names, and broken parent chains, are reported", async (t) => {
+  const { root, store, project } = await workspace(t);
+  const second = await store.createOrganisation({ title: "Second" }), raw = await fs.readFile(path.join(root, second.file), "utf8");
+  const organisations = {
+    "o-copied": raw,
+    "o-kind": raw.replaceAll(second.id, "o-kind").replace("kind: organisation", "kind: project"),
+    "o-untitled": raw.replaceAll(second.id, "o-untitled").replace("title: Second", 'title: ""'),
+    "o-colour": raw.replaceAll(second.id, "o-colour").replace(/^color: .*$/m, "color: red"),
+  };
+  for (const [id, text] of Object.entries(organisations)) await fs.writeFile(path.join(root, "Organisations", `${id}.md`), text);
+  await fs.mkdir(path.join(root, "Projects", "p-copied"));
+  await fs.copyFile(path.join(root, project.file), path.join(root, "Projects", "p-copied", "project.md"));
+  const { projects, warnings } = await store.list();
+  assert.deepEqual(projects.map((p) => p.id), [project.id]);
+  for (const id of Object.keys(organisations)) assert.match(warnings.join("\n"), new RegExp(`Organisations/${id}\\.md: `), id);
+  assert.match(warnings.join("\n"), /Organisations\/o-copied\.md: Organisation ID and kind must match its file/);
+  assert.match(warnings.join("\n"), /Project ID must match its folder name/);
+  // A task whose parent is gone, and one whose ancestors loop without it.
+  const [orphan, start, b, c] = await Promise.all(["Orphan", "Start", "B", "C"].map((title) => store.createTask(project.id, { title })));
+  const parent = async (task, id) => fs.writeFile(path.join(root, task.file), (await fs.readFile(path.join(root, task.file), "utf8")).replace("parent: null", `parent: ${id}`));
+  await parent(orphan, "t-missing");
+  await parent(start, b.id);
+  await parent(b, c.id);
+  await parent(c, b.id);
+  const found = (await store.snapshot(project.id)).warnings.join("\n");
+  assert.match(found, /Missing parent for Orphan/);
+  assert.match(found, /Hierarchy cycle involving Start/);
+});
+test("the changes feed sends everything again when asked from a version it can't answer from", async (t) => {
+  const { store, project } = await workspace(t);
+  for (const since of [-1, 1.5, store.version + 1]) assert.equal((await store.delta(project.id, since)).full, true, String(since));
+  assert.equal((await store.delta(project.id, store.version)).full, false);
+});

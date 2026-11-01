@@ -16,12 +16,14 @@
 // above); a test that expects some lists them with test.use({ allowErrors: [/pattern/] }).
 // Touch devices use Chromium with coarse-pointer emulation, or WebKit in the ios project (onDevices
 // tags them @touch); desktop devices use the project's browser (Chromium, or Firefox/WebKit in the gate).
+// With COVERAGE=1 (npm run e2e:coverage), Chromium pages record which code of the app's modules ran.
 import { test as base, expect } from "@playwright/test";
 import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { Store } from "../server/store.js";
 import { createServer } from "../server/index.js";
+import { records, merge, flatten } from "../scripts/browser-coverage.mjs";
 
 export { expect };
 
@@ -52,6 +54,15 @@ export const test = base.extend({
     await use(async () => (browser ||= await (touchEngine === "webkit" ? playwright.webkit.launch(launchOptions) : playwright.chromium.launch({ args: touchArgs }))));
     await browser?.close();
   }, { scope: "worker" }],
+  // What this worker's pages ran, written to test-results/coverage when the worker ends.
+  coverage: [async ({}, use, workerInfo) => {
+    const merged = new Map();
+    await use(merged);
+    if (!merged.size) return;
+    const folder = path.join(workerInfo.project.outputDir, "coverage");
+    await fs.mkdir(folder, { recursive: true });
+    await fs.writeFile(path.join(folder, `worker-${workerInfo.workerIndex}.json`), JSON.stringify(flatten(merged)));
+  }, { scope: "worker" }],
   context: async ({ browser, touchBrowser, device, viewportSize, deviceScaleFactor }, use) => {
     const { width, height, touch } = devices[device];
     const owner = touch ? await touchBrowser() : browser;
@@ -62,8 +73,10 @@ export const test = base.extend({
     await use(context);
     await context.close();
   },
-  page: async ({ context, allowErrors, device }, use) => {
+  page: async ({ context, allowErrors, device, coverage }, use) => {
     const page = await context.newPage();
+    const measure = process.env.COVERAGE === "1" && context.browser()?.browserType().name() === "chromium";
+    if (measure) await page.coverage.startJSCoverage({ resetOnNavigation: false });
     page.setDefaultTimeout(12000);
     // Mobile WebKit has no mouse wheel.
     if (context.browser()?.browserType().name() === "webkit" && devices[device].touch) page.mouse.wheel = () => test.skip(true, "mobile WebKit has no mouse wheel");
@@ -80,6 +93,7 @@ export const test = base.extend({
         checks.push(response.serverAddr().then((address) => address && errors.push(`${response.status()} ${response.request().method()} ${new URL(response.url()).pathname}`)));
     });
     await use(page);
+    if (measure) merge([records(await page.coverage.stopJSCoverage().catch(() => []))], coverage);
     await Promise.allSettled(checks);
     expect(errors.filter((error) => !allowErrors.some((pattern) => pattern.test(error))), "no page, console or server errors").toEqual([]);
   },

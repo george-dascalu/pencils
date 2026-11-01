@@ -112,7 +112,8 @@ export function canvasRichText(
     lastHTML = rich.innerHTML;
     source.dispatchEvent(new Event("input", { bubbles: true }));
   }
-  function show(next) {
+  // Opening leaves focus where it is on touch; a mode switch keeps it on the mode control.
+  function show(next, { opening = false } = {}) {
     flush();
     mode = next;
     if (next === "rich") {
@@ -166,7 +167,7 @@ export function canvasRichText(
     form.dataset.editorMode = next;
     reposition();
     if (next !== "preview")
-      focusOnOpen(next === "rich" ? rich : source, modeButton.closest("details")?.querySelector("summary") || modeButton);
+      focusOnOpen(next === "rich" ? rich : source, opening ? null : modeButton.closest("details")?.querySelector("summary") || modeButton);
   }
   const remember = () => {
     const s = window.getSelection();
@@ -492,7 +493,7 @@ export function canvasRichText(
     buttons[index]?.scrollIntoView({ block: "nearest", inline: "nearest" });
   });
   controls.querySelector(".rich-modes").classList.toggle("hidden", plain);
-  show("rich");
+  show("rich", { opening: true });
   function togglePreview() {
     if (mode === "preview") show(previous);
     else {

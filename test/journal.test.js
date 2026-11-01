@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
+import { randomUUID } from "node:crypto";
 import { Store } from "../server/store.js";
 async function fixture(t) {
   const root = await fs.mkdtemp(path.join(os.tmpdir(), "pencils-journal-")),
@@ -116,4 +117,81 @@ test("files staged at once keep their own backups", async (t) => {
   assert.equal(new Set(backups).size, files.length, backups.join(", "));
   await store.journal.finish(false);
   for (const [i, file] of files.entries()) assert.equal(await fs.readFile(file, "utf8"), `before ${i}`);
+});
+// The writer lock, rollback of moves and created files, and recovery's identity check had no test
+// that failed with them broken (npm run test:mutants).
+test("the writer lock refuses a live writer, another host and a half-made lock, and takes over a dead writer's", async (t) => {
+  const { store } = await fixture(t),
+    lock = path.join(store.root, ".pencils", "writer.lock"),
+    owner = async (data) => {
+      await fs.mkdir(lock, { recursive: true });
+      await fs.writeFile(path.join(lock, "owner.json"), JSON.stringify(data));
+    };
+  // Above the largest process ID Linux and macOS assign, so no process can hold it.
+  const host = os.hostname(), dead = 2 ** 22 + 1;
+  await owner({ pid: process.pid, host });
+  await assert.rejects(store.journal.acquire(), { status: 423, message: /Another Pencils process/ });
+  await assert.rejects(store.journal.start(), { status: 423 }, "a transaction takes the lock");
+  await assert.rejects(store.journal.recover(), { status: 423 }, "so does recovery");
+  await owner({ pid: process.pid, host: `${host}-elsewhere` });
+  await assert.rejects(store.journal.acquire(), { status: 423, message: /Another host/ });
+  await fs.rm(path.join(lock, "owner.json"));
+  await assert.rejects(store.journal.acquire(), { status: 423, message: /incomplete/ });
+  await owner({ pid: dead, host });
+  await store.journal.acquire();
+  assert.equal(JSON.parse(await fs.readFile(path.join(lock, "owner.json"), "utf8")).pid, process.pid, "the lock is ours now");
+  await store.journal.release();
+  await assert.rejects(fs.stat(lock), /ENOENT/);
+});
+test("a failed write moves files back and removes files it created, and no write leaves a record", async (t) => {
+  const { store } = await fixture(t),
+    [source, target, created] = ["from.md", "to.md", "new.md"].map((name) => path.join(store.root, name));
+  await fs.writeFile(source, "moved");
+  await assert.rejects(
+    store.mutate(async () => {
+      await store.journal.move(source, target);
+      await store.journal.stage(created, "new");
+      await fs.writeFile(created, "new");
+      throw Error("Injected failure");
+    }),
+    /Injected/,
+  );
+  assert.equal(await fs.readFile(source, "utf8"), "moved");
+  await assert.rejects(fs.stat(target), /ENOENT/);
+  await assert.rejects(fs.stat(created), /ENOENT/);
+  assert.deepEqual(await fs.readdir(store.journal.root), []);
+  await store.mutate(() => store.journal.move(source, target));
+  assert.equal(await fs.readFile(target, "utf8"), "moved");
+  assert.deepEqual(await fs.readdir(store.journal.root), [], "a commit removes its record");
+});
+test("a moved folder changed before the rollback stays where it is, as a conflict", async (t) => {
+  const { store } = await fixture(t),
+    folder = path.join(store.root, "folder"),
+    moved = path.join(store.root, "moved");
+  await fs.mkdir(folder);
+  await fs.writeFile(path.join(folder, "note.md"), "before");
+  await assert.rejects(
+    store.mutate(async () => {
+      await store.journal.move(folder, moved);
+      await fs.writeFile(path.join(moved, "note.md"), "changed meanwhile");
+      throw Error("Injected failure");
+    }),
+    /Injected/,
+  );
+  assert.equal(await fs.readFile(path.join(moved, "note.md"), "utf8"), "changed meanwhile");
+  assert.deepEqual((await store.journal.issues()).map((issue) => issue.files), [["folder"]]);
+});
+test("recovery stops at a journal record whose identity doesn't match its folder", async (t) => {
+  const { store } = await fixture(t),
+    folder = path.join(store.journal.root, randomUUID());
+  await fs.mkdir(folder, { recursive: true });
+  await fs.writeFile(path.join(folder, "transaction.json"), JSON.stringify({ id: randomUUID(), phase: "active", files: [], moves: [] }));
+  await assert.rejects(store.journal.recover(), { status: 409, message: /Invalid journal identity/ });
+});
+test("a journaled move refuses a folder holding a symlink, which a rollback would follow", async (t) => {
+  const { store } = await fixture(t),
+    folder = path.join(store.root, "folder");
+  await fs.mkdir(folder);
+  await fs.symlink(os.tmpdir(), path.join(folder, "elsewhere"));
+  await assert.rejects(store.mutate(() => store.journal.move(folder, path.join(store.root, "moved"))), { status: 400, message: /cannot follow symlinks/ });
 });

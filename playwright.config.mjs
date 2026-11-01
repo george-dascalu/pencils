@@ -14,6 +14,9 @@ const chromium = { browserName: "chromium", launchOptions: { args: ["--no-sandbo
 // at. scripts/webkit-local.sh adds the libraries a host without sudo lacks.
 const { GIO_MODULE_DIR, ...webkitEnv } = process.env;
 if (!GIO_MODULE_DIR?.includes("/snap/")) webkitEnv.GIO_MODULE_DIR = GIO_MODULE_DIR;
+// The tests need no desktop services, and WebKit waits 25 seconds per page for a failed desktop
+// portal on the session bus.
+webkitEnv.DBUS_SESSION_BUS_ADDRESS = "unix:path=/nonexistent";
 const webkit = { browserName: "webkit", launchOptions: { env: webkitEnv } };
 
 export default defineConfig({

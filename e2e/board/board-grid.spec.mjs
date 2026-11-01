@@ -4,6 +4,7 @@
 // keyboard navigation, CSV export, duplicate/undo, reload, a phone screen, and a title that stays
 // attached and readable at any zoom without changing the saved grid.
 import { test, expect, onDevices, useApp } from "../fixtures.mjs";
+import { newGrid } from "../../public/grid-model.js";
 
 const app = useApp(async (store) => {
   const project = await store.createProject({ title: "Grid lab" });
@@ -240,8 +241,11 @@ test("the grid's title, cells and text survive a reload", async ({ page }) => {
 
 onDevices(["phone"], () => {
   test.use({ viewportSize: null });
-  test("on a phone the toolbar fits, resize targets stay 8px and the title stays 24px high and editable at any zoom", async ({ page, browserName }) => {
-    test.fail(browserName === "webkit", "T51: in WebKit the grid object doesn't show on the phone board");
+  test("on a phone the toolbar fits, resize targets stay 8px and the title stays 24px high and editable at any zoom", async ({ page }) => {
+    // The ios project runs only the touch tests, without the journey that places the grid.
+    const board = await current();
+    if (!board.nodes.some((node) => node.type === "grid"))
+      await app.store.updateBoard(app.project.id, board.id, { revision: board.revision, nodes: [{ id: "grid", type: "grid", x: 400, y: 300, w: 540, h: 312, grid: newGrid() }], edges: [] });
     await openGrid(page);
     await page.evaluate(() => (document.documentElement.dataset.theme = "dark"));
     // Since 0.20.33 the board has no zoom buttons: double-tap the zoom level to fit, Ctrl+-/= to zoom.

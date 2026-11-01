@@ -54,6 +54,7 @@ Keep the interface consistent across all project views: Overview, Documents, Lis
 - Before moving a container's edge (such as letting content run under the bottom bar), grep for what is anchored to that edge (`bottom:` rules, `clientHeight -` sums) and move it too.
 - The fixtures reduce motion. A change that animates only when motion is allowed needs a test that turns it on (`page.emulateMedia({ reducedMotion: "no-preference" })`) and runs the flows through it, not just the animation.
 - Audits, which report findings instead of guarding a change (such as `ui-assessment`), are tagged `@audit` and run only with `--project=audit`.
+- Two reports show where tests are thin: `npm run e2e:coverage` (how much of each `public/` module the browser tests run, and the modules no page loads) and `npm run test:mutants` (small faults put into the journal, store, model and write access, or the modules named, that no unit test notices). Run the mutants after changing a data or access rule and cover what survives, unless the fault can't change behaviour.
 
 ## Deployment
 

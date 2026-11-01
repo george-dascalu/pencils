@@ -2,6 +2,13 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.20.104 — 2026-11-01
+
+### Fixed
+
+- Opening comments or a formatting toolbar on a phone or iPad leaves focus where it was instead of moving it to the Markdown button, so in Safari the toolbar starts at its first tools with the arrow to the rest.
+- In Safari, the Table's narrow Assignee column fits its heading and names.
+
 ## 0.20.103 — 2026-11-01
 
 ### Fixed

@@ -55,6 +55,8 @@
   height: 100%;
   opacity: 0;
   cursor: pointer;
+  /* WebKit lets the chosen option's text widen the cell. */
+  contain: paint;
 }
 .table-cell-value {
   display: flex;
@@ -555,6 +557,8 @@
   .spreadsheet .table-column-grip { flex-basis: 44px; width: 44px; }
   .spreadsheet .table-column-compact .table-column-grip { flex-basis: 28px; width: 28px; }
   .spreadsheet .table-column-compact .table-header-menu > summary { width: 28px; }
+  /* The wider grip and menu leave the label 64px: "Assignee" needs 61px in WebKit. */
+  .spreadsheet .table-column-compact > [data-table-sort-column] { padding-inline: 0; }
 }
 .spreadsheet [role="gridcell"]:focus {
   outline: 1px solid var(--accent);

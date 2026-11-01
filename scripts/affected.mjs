@@ -12,12 +12,12 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { command, projectRoot } from "./deploy.mjs";
 
-const NONE = [/\.md$/, /^test\//, /^reports\//, /^artifacts\//, /^\.claude\//, /^scripts\/(release|deploy|affected)\.mjs$/];
+const NONE = [/\.md$/, /^test\//, /^reports\//, /^artifacts\//, /^\.claude\//, /^scripts\/(release|deploy|affected|mutants)\.mjs$/];
 const SHARED = [
   /^public\/(app|features|navigation|project-layout|sync|save-state|open-focus|editable-controls|app-status|app-version|appearance|layout-width|popover-position|deferred-controller|uuid|layout-tray)\.js$/,
   /^public\/(controls|styles|appearance|enhancements|project-layout|fonts|themes)\.css$/,
   /^public\/[^/]+\.html$/,
-  /^server\//, /^e2e\/fixtures\.mjs$/, /^e2e\/helpers\//, /^playwright\.config/, /^package(-lock)?\.json$/,
+  /^server\//, /^e2e\/fixtures\.mjs$/, /^scripts\/browser-coverage\.mjs$/, /^e2e\/helpers\//, /^playwright\.config/, /^package(-lock)?\.json$/,
   /^scripts\/(build|postinstall)/, /^tsconfig/, /^(Dockerfile|compose|\.dockerignore)/,
 ];
 const HEAVY = [/^public\/(canvas|board-(delta|scene|session|limits|preview|detail-transition)|selection-|spatial-index|viewport-cache|drawing-(store|worker))/, /^server\//];
