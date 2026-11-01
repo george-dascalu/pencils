@@ -158,9 +158,12 @@ test.describe("desktop", () => {
     await page.locator('[data-board-menu="table-groups"] > summary').click();
     await page.locator('[data-table-group="0"]').selectOption("status");
     await page.keyboard.press("Escape");
-    await drag(page, c.id, b.id, true);
+    // Just before a To do card it doesn't already precede, so the drop moves it whatever earlier tests did.
+    const order = byOrder((await tasks()).filter((t) => !t.archived && !t.parent));
+    const target = [b, app.a, app.d].find((t) => order[order.indexOf(t.id) - 1] !== c.id);
+    await drag(page, c.id, target.id);
     await expect(page.locator(".table-group-row"), "Cross-group table drop clears grouping").toHaveCount(0);
-    await expect.poll(async () => follows(await ids(page), c.id, b.id)).toBe(true);
+    await expect.poll(async () => follows(await ids(page), target.id, c.id)).toBe(true);
   });
 
   test("ordering across pages keeps off-page rows stable, and holding a drag at the edge scrolls the table", gate, async ({ page }) => {

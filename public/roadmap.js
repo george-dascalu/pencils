@@ -54,6 +54,7 @@ export const roadmap = [
   { id: "T49", title: "Tests: mutation testing of journal, store, access and model", status: "done", requested: "2026-10-31T23:35", started: "2026-11-01T01:13", done: "2026-11-01T01:50", version: "0.20.104" },
   { id: "T50", title: "Tests: browser code coverage report", status: "done", requested: "2026-10-31T23:35", started: "2026-11-01T01:05", done: "2026-11-01T01:25", version: "0.20.104" },
   { id: "T51", title: "WebKit differences: grid on the phone board, focus after board search, Table Assignee heading, comment toolbar chevron", status: "done", requested: "2026-11-01T00:52", started: "2026-11-01T01:52", done: "2026-11-01T01:59", version: "0.20.104" },
+  { id: "T52", title: "Batch check: Firefox and desktop WebKit gate failures", status: "done", requested: "2026-11-01T03:05", started: "2026-11-01T03:05", done: "2026-11-01T03:21", version: "0.20.105" },
 ];
 
 // "31 Oct 20:05" for a date with a time, "31 Oct" for a bare date.

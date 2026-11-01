@@ -224,8 +224,11 @@ export function kanbanDrag(ctx) {
       lift();
     });
   });
+  // Entering a column places the lifted card at once, before the next dragover.
   document.addEventListener("dragenter", (e) => {
-    if (drag && e.target.closest("[data-drop-status]")) e.preventDefault();
+    if (!drag || !e.target.closest("[data-drop-status]")) return;
+    e.preventDefault();
+    if (drag.card.classList.contains("kanban-drag-source")) update(e.clientX, e.clientY);
   });
   document.addEventListener("dragover", (e) => {
     if (!drag) return;

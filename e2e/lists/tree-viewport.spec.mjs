@@ -11,7 +11,8 @@ import { newCard } from "../helpers/new-card.mjs";
 const gate = { tag: "@gate" };
 // Real scrollbars take space, as for most desktop users (Chromium hides them by default in tests).
 test.use({
-  launchOptions: [async ({ browserName }, use) => use(browserName === "chromium" ? { args: ["--no-sandbox"], ignoreDefaultArgs: ["--hide-scrollbars"] } : {}), { scope: "worker" }],
+  // Chromium hides scrollbars by default; other engines keep their project's launch options.
+  launchOptions: [async ({ browserName, launchOptions }, use) => use(browserName === "chromium" ? { ...launchOptions, ignoreDefaultArgs: ["--hide-scrollbars"] } : launchOptions), { scope: "worker" }],
   viewportSize: { width: 1600, height: 1000 },
 });
 

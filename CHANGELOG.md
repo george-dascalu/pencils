@@ -2,6 +2,12 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.20.105 — 2026-11-01
+
+### Fixed
+
+- A Kanban card dragged with a mouse shows where it will land as soon as it enters a column, so holding it near a long column's end scrolls that column in every browser.
+
 ## 0.20.104 — 2026-11-01
 
 ### Fixed

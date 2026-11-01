@@ -83,9 +83,11 @@ export const test = base.extend({
     const errors = [], checks = [];
     page.on("pageerror", (error) => errors.push(error.message));
     // Browsers log each refused request as "Failed to load resource": refusals (4xx) are part of
-    // many flows, and server errors are caught from the responses instead.
+    // many flows, and server errors are caught from the responses instead. Firefox also logs the
+    // live-update stream that a reload interrupts or a stopped server refuses; the app reopens it.
+    const noise = /^Failed to load resource|^\[JavaScript Error: "(The connection to \S+\/api\/events\S* was interrupted while the page was loading|Firefox can’t establish a connection to the server at \S+\/api\/events\S*)/;
     page.on("console", (message) => {
-      if (message.type() === "error" && !message.text().startsWith("Failed to load resource")) errors.push(`console: ${message.text()}`);
+      if (message.type() === "error" && !noise.test(message.text())) errors.push(`console: ${message.text()}`);
     });
     // A response a test fakes with page.route has no server address and is the test's own.
     page.on("response", (response) => {

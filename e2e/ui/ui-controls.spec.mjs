@@ -171,7 +171,7 @@ test("sliders use the shared range styling with a live value", async ({ page }) 
 // Owner request (T15, 31 October 2026): a tap or click on a date field opens the app's calendar,
 // never the platform's picker (iOS wheels, Firefox's popup); a tap leaves the field unfocused, as
 // iOS opens its wheels on focus, and the keyboard still types a date.
-onDevices(["desktop", "phone"], (device) => test("a tap or click on a date field opens only the app's calendar", device === "desktop" ? { tag: "@gate" } : {}, async ({ page, device }) => {
+onDevices(["desktop", "phone"], (device) => test("a tap or click on a date field opens only the app's calendar", device === "desktop" ? { tag: "@gate" } : {}, async ({ page, device, browserName }) => {
   await open(page, "list", ".task-row");
   await page.locator('.task-row [data-action="task-open"]:visible').first().click();
   await page.locator("#task-form").waitFor();
@@ -195,10 +195,13 @@ onDevices(["desktop", "phone"], (device) => test("a tap or click on a date field
   await expect(date).toHaveValue(value);
   if (device === "desktop") {
     // A click leaves the field focused, so typing still enters a date (en-GB: day, month, year).
+    // Linux WebKit's date fields take no typing at all (Safari's do), so it checks the rest.
     await date.click();
     await page.locator("#shared-date-picker").waitFor();
-    await page.keyboard.type("24122026");
-    await expect(date).toHaveValue("2026-12-24");
+    if (!(browserName === "webkit" && process.platform === "linux")) {
+      await page.keyboard.type("24122026");
+      await expect(date).toHaveValue("2026-12-24");
+    }
     await page.keyboard.press("Escape");
     await expect(page.locator("#shared-date-picker")).toHaveCount(0);
     // A double click leaves the calendar open.
