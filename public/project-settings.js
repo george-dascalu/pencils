@@ -6,6 +6,8 @@ import { projectTeamControls, projectPeople } from "./teams.js";
 import { priorityOptions, priorityLabel } from "./task-priority.js";
 import { taskFieldColor, priorityColors } from "./task-colors.js";
 import { projectRecords } from "./project-records.js";
+import { debugEntries, clearDebugLog } from "./debug-log.js";
+import { formatDateTime } from "./format-date.js";
 
 export const settingsPages = [
   [
@@ -87,10 +89,10 @@ export const settingsPages = [
   ],
   [
     "diagnostics",
-    "Diagnostics",
+    "Debug",
     "activity",
     "Maintenance",
-    "Check server health and troubleshoot search. These metrics cover the whole workspace.",
+    "What failed, newest first: this browser's API calls and errors, and the server's failed requests and errors. Server details cover the whole workspace.",
   ],
   [
     "advanced",
@@ -336,11 +338,36 @@ export function projectSettings(ctx, { sources, automations, personal, organisat
   function advanced() {
     return `<div class="settings-page-body"><section class="settings-action-row"><div><h3>Version history</h3><p>Review saved project settings and restore an earlier version.</p></div><button class="button" data-feature="project-history">Version history</button></section><section class="settings-action-row"><div><h3>${state.project.archived ? "Restore archived project" : "Archive project"}</h3><p>Keep cards and boards while hiding the project from active planning. Restore it at any time.</p></div><button class="button" data-feature="project-archive">${state.project.archived ? "Unarchive project" : "Archive project"}</button></section><section class="settings-action-row settings-danger"><div><h3>Move project to Trash</h3><p>Moves this project and all its cards and boards to Trash. Recover it from Settings → Recovery &amp; backups.</p></div><button class="button danger" data-feature="project-delete">Move to Trash</button></section></div>`;
   }
+  // Settings → Debug (owner request T96): what failed, newest first. This browser's list is for
+  // everyone; the server's (failed requests, errors and warnings) is for administrators.
+  const failureRow = (title, at, message) => `<li class="settings-action-row"><div><h3>${esc(title)}</h3><p>${esc(formatDateTime(at))}${message ? ` · ${esc(message)}` : ""}</p></div></li>`;
+  const browserRow = (e) => failureRow(e.kind === "request" ? `${e.method} ${e.url} · ${e.status || "no answer"}` : e.kind === "console" ? "Console error" : `Error${e.source ? ` in ${e.source}` : ""}`, e.at, e.message);
   async function diagnostics(host, valid) {
-    const data = await api("/diagnostics");
+    // The server's part is for administrators; others don't ask for it.
+    const data = state.session?.user?.admin ? await api("/diagnostics").catch(() => null) : null;
     if (!valid()) return;
-    const errors = Object.values(data.errors || {}).reduce((a, b) => a + b, 0);
-    host.innerHTML = `<div class="settings-page-body"><div class="settings-health-summary"><section><strong>${Math.floor(data.uptime_seconds / 60)} min</strong><span>Server uptime</span></section><section><strong>${errors}</strong><span>HTTP errors since restart</span></section><section><strong>${data.journal_conflicts?.length || 0}</strong><span>File recovery conflicts</span></section></div><section class="settings-action-row"><div><h3>Search index</h3><p>Rebuild if search results do not match the files in your vault. This does not change your cards or boards.</p></div><button class="button" data-settings-rebuild>Rebuild search index</button></section><p role="status" data-diagnostics-result></p><details><summary>Technical details</summary><pre class="source-description">${esc(JSON.stringify(data, null, 2))}</pre></details></div>`;
+    const browser = debugEntries();
+    const errors = Object.values(data?.errors || {}).reduce((a, b) => a + b, 0);
+    const summary = data
+      ? `<div class="settings-health-summary"><section><strong>${Math.floor(data.uptime_seconds / 60)} min</strong><span>Server uptime</span></section><section><strong>${errors}</strong><span>HTTP errors since restart</span></section><section><strong>${data.journal_conflicts?.length || 0}</strong><span>File recovery conflicts</span></section></div>`
+      : "";
+    const server = data
+      ? `<section class="settings-debug-group"><h3>Server: failed requests</h3>${data.failures.length ? `<ol class="settings-record-list" data-debug-server aria-label="Server's failed requests">${data.failures.map((f) => failureRow(`${f.method} ${f.path} · ${f.status}`, f.at, f.message)).join("")}</ol>` : '<p class="field-hint">No failed requests since the server started.</p>'}</section><section class="settings-debug-group"><h3>Server: errors and warnings</h3>${data.log.length ? `<ol class="settings-record-list" data-debug-log aria-label="Server errors and warnings">${data.log.map((l) => failureRow(l.level === "warn" ? "Warning" : "Error", l.at, l.message)).join("")}</ol>` : '<p class="field-hint">No errors or warnings since the server started.</p>'}</section><section class="settings-action-row settings-debug-group"><div><h3>Search index</h3><p>Rebuild if search results do not match the files in your vault. This does not change your cards or boards.</p></div><button class="button" data-settings-rebuild>Rebuild search index</button></section><p role="status" data-diagnostics-result></p><details><summary>Technical details</summary><pre class="source-description">${esc(JSON.stringify(data, null, 2))}</pre></details>`
+      : '<p class="field-hint settings-debug-group">The server’s failed requests and log are for administrators.</p>';
+    host.innerHTML = `<div class="settings-page-body">${summary}<section class="settings-debug-group"><div class="settings-debug-head"><h3>This browser</h3><button type="button" class="button small" data-debug-copy>${icon("duplicate")}Copy</button><button type="button" class="button small" data-debug-clear aria-label="Clear this browser's list">${icon("trash")}Clear</button></div>${browser.length ? `<ol class="settings-record-list" data-debug-browser aria-label="This browser's failures">${browser.map(browserRow).join("")}</ol>` : ""}<p class="field-hint" data-debug-browser-empty ${browser.length ? "hidden" : ""}>Nothing has failed in this browser this session.</p></section>${server}</div>`;
+    host.querySelector("[data-debug-clear]").onclick = () => {
+      clearDebugLog();
+      host.querySelector("[data-debug-browser]")?.remove();
+      host.querySelector("[data-debug-browser-empty]").hidden = false;
+    };
+    host.querySelector("[data-debug-copy]").onclick = async () => {
+      try {
+        await navigator.clipboard.writeText(JSON.stringify({ browser: debugEntries(), server: data && { failures: data.failures, log: data.log } }, null, 2));
+        toast("Copied.");
+      } catch {
+        toast("This browser doesn’t allow copying here.", true);
+      }
+    };
   }
   // The existing source/automation controllers keep their form logic; only their
   // presentation changes from a dialog to the current routed settings page.

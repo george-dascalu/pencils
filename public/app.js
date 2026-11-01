@@ -43,6 +43,8 @@ import { paintBoardBackground } from "./board-background.js";
 import { installColorPickers } from "./color-picker.js";
 import { installBookmarks } from "./bookmarks.js";
 import { boardFloor } from "./layout-tray.js";
+import { recordFailure, installDebugLog } from "./debug-log.js";
+installDebugLog();
 import { listPanel } from "./list-panel.js";
 import { fieldOn, viewOn, cardsOn, markFieldsOff } from "./card-fields.js";
 import { kanbanDrag } from "./kanban-drag.js";
@@ -410,6 +412,7 @@ document.addEventListener("keydown", (event) => {
 });
 async function api(url, options = {}) {
   let response;
+  const method = options.method || "GET";
   try {
     response = await fetch(`/api${url}`, {
       ...options,
@@ -428,6 +431,7 @@ async function api(url, options = {}) {
     });
   } catch {
     state.online = false;
+    recordFailure({ kind: "request", method, url: `/api${url.split("?")[0]}`, status: 0, message: "No answer from the server." });
     throw new Error(
       "Cannot reach the local server. Keep it running and stay connected to its network.",
     );
@@ -435,6 +439,7 @@ async function api(url, options = {}) {
   state.online = true;
   const data = await response.json();
   if (!response.ok) {
+    recordFailure({ kind: "request", method, url: `/api${url.split("?")[0]}`, status: response.status, message: data.error });
     const error = new Error(data.error || "Request failed.");
     error.status = response.status;
     throw error;

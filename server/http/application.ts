@@ -166,12 +166,13 @@ export function createServer(
     reply.headers(headers);
     const started = performance.now();
     reply.raw.once("finish", () => {
-      if (request.url.startsWith("/api/"))
-        services.diagnostics.request(
-          request.url.split("?")[0],
-          performance.now() - started,
-          reply.raw.statusCode,
-        );
+      if (!request.url.startsWith("/api/")) return;
+      const path = request.url.split("?")[0],
+        duration = performance.now() - started,
+        status = reply.raw.statusCode;
+      services.diagnostics.request(path, duration, status);
+      if (status >= 400)
+        services.diagnostics.failure(request.method, path, status, duration, (req as { pencilsError?: string }).pencilsError);
     });
     if (!request.url.startsWith("/api/")) return;
     if (!methods.includes(request.method as HTTPMethods))
@@ -199,9 +200,11 @@ export function createServer(
       }
     }
   });
-  app.setErrorHandler((error: any, _request, reply) => {
+  app.setErrorHandler((error: any, request, reply) => {
     const status = error.status || error.statusCode || 500;
     if (status >= 500) console.error(error);
+    // Settings → Debug shows administrators the real message, also of a server error.
+    (request.raw as { pencilsError?: string }).pencilsError = String(error.message || error);
     reply
       .code(status)
       .header("Cache-Control", "no-store")

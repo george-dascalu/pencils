@@ -2,6 +2,12 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.20.117 — 2026-11-01
+
+### Added
+
+- Settings → Debug (formerly Diagnostics) lists what failed, newest first: this browser's failed API calls and errors this session, which Copy and Clear handle, and, for administrators, the server's failed requests with their error messages and its errors and warnings since it started.
+
 ## 0.20.116 — 2026-11-01
 
 ### Added

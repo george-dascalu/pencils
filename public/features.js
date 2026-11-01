@@ -28,6 +28,7 @@ import { grid } from "./grid.js";
 import { taskReorder } from "./task-reorder.js";
 import { taskRowEditor } from "./task-row-editor.js";
 import { recoveryUI } from "./recovery-ui.js";
+import { clearDebugLog } from "./debug-log.js";
 import { fieldOn, viewOn, cardsOn } from "./card-fields.js";
 
 export function installFeatures(ctx) {
@@ -1001,6 +1002,8 @@ export function installFeatures(ctx) {
     }
     if (action === "logout") {
       await api("/session", { method: "DELETE", body: {} });
+      // The next person in this tab doesn't see what failed for this one (Settings → Debug).
+      clearDebugLog();
       events?.close();
       location.reload();
     }
