@@ -397,7 +397,7 @@ export function canvasRichText(
       linkField.classList.remove("hidden");
       linkButton.setAttribute("aria-expanded", "true");
       positionMenus();
-      controls.querySelector("[name=rich-url]").focus({ preventScroll: true });
+      focusOnOpen(controls.querySelector("[name=rich-url]"), linkButton);
     }
     if (el.hasAttribute("data-rich-link-save")) {
       const input = controls.querySelector("[name=rich-url]"),

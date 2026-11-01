@@ -295,10 +295,14 @@ export function drawingView(ctx) {
         return await enter(b.id);
       }
       if (action === "link") {
-        await navigator.clipboard.writeText(
-          `${location.origin}/#project/${state.project.id}/board/${id}`,
-        );
-        toast("Canvas link copied. Paste it in a task or board note.");
+        const link = `${location.origin}/#project/${state.project.id}/board/${id}`;
+        try {
+          await navigator.clipboard.writeText(link);
+          toast("Canvas link copied. Paste it in a task or board note.");
+        } catch {
+          // The browser refused the clipboard: the link to copy by hand, as Copy frame link does.
+          showDialog(`<dialog class="dialog">${dialogHead("Board link")}<div class="dialog-body"><input aria-label="Board link" value="${esc(link)}" readonly></div></dialog>`, "board-link");
+        }
         return;
       }
       if (action === "link-task") {

@@ -1,6 +1,9 @@
 // Settings → You → "Capture from your phone" (server/capture.js): make, copy and revoke the tokens
 // an iPhone Shortcut uses to send text to a project as a card tagged "inbox". A new token is shown
 // once, in this page only.
+// Tokens a person may hold at once (server/capture.js).
+const LIMIT = 10;
+
 export function captureSettings({ state, api, esc, toast }) {
   const projects = () => (state.projects || []).filter((p) => !p.personal && !p.archived);
   const projectTitle = (id) => projects().find((p) => p.id === id)?.title || "A project you can't open";
@@ -13,6 +16,10 @@ export function captureSettings({ state, api, esc, toast }) {
     if (!list) return;
     try {
       const { tokens } = await api("/capture-tokens");
+      const box = list.closest("[data-capture-settings]");
+      box.dataset.captureFull = String(tokens.length >= LIMIT);
+      const create = box.querySelector('[data-capture-action="create"]');
+      if (create) create.disabled = tokens.length >= LIMIT;
       if (list.isConnected)
         list.innerHTML = tokens.map((t) => `<li><span>${esc(projectTitle(t.project))}<span class="field-hint"> · made ${esc(new Date(t.created).toLocaleDateString())}</span></span><button type="button" class="button small" data-capture-action="revoke" data-capture-id="${esc(t.id)}" aria-label="Revoke the token for ${esc(projectTitle(t.project))}">Revoke</button></li>`).join("") || '<li class="field-hint">No capture tokens yet.</li>';
     } catch (error) {
@@ -46,7 +53,7 @@ export function captureSettings({ state, api, esc, toast }) {
     } catch (error) {
       toast(error.message, true);
     } finally {
-      button.disabled = false;
+      button.disabled = button.dataset.captureAction === "create" && box.dataset.captureFull === "true";
     }
   });
   return { html, load };

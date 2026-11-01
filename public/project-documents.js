@@ -31,6 +31,7 @@ export function projectDocuments(ctx) {
   let documentWidth = storage.get("document-width", "page") === "full" ? "full" : "page";
   if (!["live", "source", "reading"].includes(mode)) mode = "live";
   const all = () => state.documents || [];
+  // showPanel returns the panel, or nothing when its opener, pressed again, closed it.
   const panels = anchoredPanel(ctx), showPanel = panels.show, closePanel = panels.close;
   const explorer = folderTree({ ...ctx, kind: "document", label: "Documents", placeholder: "Find a document or #tag…", glyph: "file", panels,
     items: all, selected: () => state.selectedDocument, matches: matchesDocument, moveItem: moveDocument });
@@ -93,6 +94,7 @@ export function projectDocuments(ctx) {
   }
   function movePanel(button) {
     const box = showPanel(button, "Move document", `<form><label class="field">Folder<select name="folder">${explorer.options(selected()?.folder)}</select></label><div class="document-panel-actions"><button class="button primary">Move</button></div></form>`);
+    if (!box) return;
     box.querySelector("form").addEventListener("submit", async event => {
       event.preventDefault();
       const submit = event.submitter; submit.disabled = true;
@@ -103,6 +105,7 @@ export function projectDocuments(ctx) {
   // Names a document; new documents open with this panel.
   function renamePanel(button) {
     const box = showPanel(button, "Rename document", `<form><label class="field">Document name<input name="title" required maxlength="300" value="${esc(current.title)}" autocomplete="off"></label><div class="document-panel-actions"><button type="submit" class="button primary">Rename</button></div></form>`);
+    if (!box) return;
     const field = box.querySelector("input");
     if (focusOnOpen(field, box.querySelector("button"))) field.select();
     box.querySelector("form").addEventListener("submit", (event) => {
@@ -119,6 +122,7 @@ export function projectDocuments(ctx) {
     const box = showPanel(button, "New from template", templates.length
       ? `<div class="document-template-list">${templates.map(t => `<button type="button" class="document-panel-item" data-template="${esc(t.id)}">${icon("file")}<span>${esc(t.title)}</span></button>`).join("")}</div>`
       : `<p class="field-hint">Put documents in a folder named Templates to start new documents from them. Templates can use {{title}}, {{date}}, {{time}}, {{project}}, {{cursor}} and {{prompt:Question}}.</p>`);
+    if (!box) return;
     box.addEventListener("click", event => {
       const template = templates.find(t => t.id === event.target.closest("[data-template]")?.dataset.template);
       if (template) templateForm(button, template);
@@ -127,6 +131,7 @@ export function projectDocuments(ctx) {
   function templateForm(button, template) {
     const prompts = templatePrompts(template.body || "");
     const box = showPanel(button, template.title, `<form><label class="field">Document name<input name="title" required maxlength="300" value="${esc(template.title)}" autocomplete="off"></label>${prompts.map((label, i) => `<label class="field">${esc(label)}<input name="prompt-${i}" maxlength="500" autocomplete="off"></label>`).join("")}<p class="form-error" role="alert" hidden></p><div class="document-panel-actions"><button type="submit" class="button primary">Create document</button></div></form>`);
+    if (!box) return;
     const field = box.querySelector("input");
     if (focusOnOpen(field, box.querySelector("button"))) field.select();
     box.querySelector("form").addEventListener("submit", async (event) => {
@@ -177,6 +182,7 @@ export function projectDocuments(ctx) {
     const versions = [{ ...latest, data: latest, current: true }, ...result.versions].filter(v => !v.data.version || !seen.has(v.data.version) && seen.add(v.data.version));
     const label = v => v.data.version ? `Version ${v.data.version}` : v.current ? "Version 1" : "Earlier save";
     const box = showPanel(button, "Page versions", `<div class="document-version-list">${versions.map((v,i) => `<button type="button" class="document-panel-item" data-version-index="${i}"><span>${esc(label(v))}${v.current ? " · Current" : ""}</span><time>${esc(v.updated ? new Date(v.updated).toLocaleString() : "")}</time></button>`).join("")}</div><section class="document-version-detail" hidden></section>`, 520);
+    if (!box) return;
     box.querySelector(".document-version-list").addEventListener("click", event => {
       const item = event.target.closest("[data-version-index]"); if (!item) return;
       const version = versions[Number(item.dataset.versionIndex)];
@@ -423,6 +429,7 @@ export function projectDocuments(ctx) {
   function addPropertyPanel(button) {
     const types = [["text", "Text"], ["number", "Number"], ["date", "Date"], ["checkbox", "Checkbox"], ["list", "List"]];
     const box = showPanel(button, "Add property", `<form><label class="field">Name<input name="name" required maxlength="60" autocomplete="off"></label><label class="field">Type<select name="type">${types.map(([value, label]) => `<option value="${value}">${label}</option>`).join("")}</select></label><p class="form-error" role="alert" hidden></p><div class="document-panel-actions"><button type="submit" class="button primary">Add</button></div></form>`);
+    if (!box) return;
     box.querySelector("form").addEventListener("submit", async event => {
       event.preventDefault();
       const data = new FormData(event.target), name = data.get("name").trim();
@@ -559,6 +566,7 @@ export function projectDocuments(ctx) {
   function obsidianSettings(button) {
     const prefs = storage.get("obsidian-documents", {});
     const box = showPanel(button, "Open in Obsidian", `<p>Open these same Markdown files in Obsidian to use its plugins. Obsidian must be installed and have access to this folder on your device.</p><form id="document-obsidian-settings"><label class="field">Obsidian vault name<input name="vault" value="${esc(prefs.vault || "")}" required maxlength="300" placeholder="Your vault name"></label><label class="field">Pencils folder inside that vault <span class="field-hint">(optional)</span><input name="folder" value="${esc(prefs.folder || "")}" placeholder="Leave blank if Pencils is the vault root"></label><p class="field-hint">Saved on this device. Documents open from <code>Projects/…/documents/…</code>. The browser does not copy or sync your vault to another device.</p><div class="document-panel-actions"><button class="button primary" type="submit">Save settings</button></div><p class="form-error" role="alert" hidden></p></form>`, 420);
+    if (!box) return;
     box.querySelector("form").addEventListener("submit", event => {
       event.preventDefault(); event.stopPropagation();
       const data = new FormData(event.target);
@@ -808,6 +816,14 @@ export function projectDocuments(ctx) {
     installToolbarScroll(form.querySelector(".document-formatting .rich-toolbar-shell"));
     form.addEventListener("input", changed);
     form.addEventListener("submit", e => { e.preventDefault(); editor.flush(); });
+    // Escape closes an open formatting menu first, back on its button.
+    const closeFormatMenu = () => {
+      const menu = form.querySelector(".document-formatting details[open]");
+      if (!menu) return false;
+      menu.open = false; floatMenuPanel(menu);
+      menu.querySelector(":scope > summary").focus({ preventScroll: true });
+      return true;
+    };
     form.addEventListener("keydown", e => {
       if (mode === "reading" && (e.ctrlKey || e.metaKey) && !e.altKey && e.key.toLowerCase() === "f") {
         e.preventDefault(); e.stopPropagation(); closePanel(); readingSearch.open(); return;
@@ -818,7 +834,7 @@ export function projectDocuments(ctx) {
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "e") {
         e.preventDefault(); setMode(mode === "source" ? "live" : "source");
       }
-      if (e.key === "Escape" && (readingSearch.close(true) || editor.escape())) {
+      if (e.key === "Escape" && (closeFormatMenu() || readingSearch.close(true) || editor.escape())) {
         e.preventDefault(); e.stopPropagation();
       }
     });

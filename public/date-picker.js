@@ -116,8 +116,11 @@ export function installDatePickers({ icon, esc }) {
       if (date.parentElement.classList.contains("date-field")) continue;
       const wrap = document.createElement("span");
       wrap.className = "date-field";
+      // Moving the field drops its focus; an editor that just focused it keeps it.
+      const focused = document.activeElement === date;
       date.before(wrap);
       wrap.append(date);
+      if (focused) date.focus({ preventScroll: true });
       const b = document.createElement("button");
       b.type = "button";
       b.dataset.datePicker = "";

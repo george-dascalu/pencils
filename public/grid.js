@@ -224,7 +224,7 @@ export function grid(ctx) {
           .join("")}`, parents.get(value)?.title || "No parent");
       if (field?.type === "checkbox")
         return select(options(["false", "true"], String(value || false)), label(String(value || false)));
-      return `<input ${attrs} type="${["start", "due"].includes(key) || field?.type === "date" ? "date" : key === "estimate" || field?.type === "number" ? "number" : "text"}" value="${esc(Array.isArray(value) ? value.join(", ") : (value ?? ""))}" ${key === "title" ? 'maxlength="300" required' : ""}>`;
+      return `<input ${attrs} type="${["start", "due"].includes(key) || field?.type === "date" ? "date" : key === "estimate" || field?.type === "number" ? "number" : "text"}" value="${esc(Array.isArray(value) ? value.join(", ") : (value ?? ""))}" ${key === "title" ? 'maxlength="300" required' : key === "start" && t.due ? `max="${esc(t.due)}"` : key === "due" && t.start ? `min="${esc(t.start)}"` : ""}>`;
     };
     let previous = [],
       body = "";

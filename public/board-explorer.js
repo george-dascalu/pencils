@@ -24,6 +24,7 @@ export function boardExplorer(ctx, { canvases, enter }) {
     const board = ctx.board();
     if (!board) return;
     const box = panels.show(document.querySelector("#board-menu-tools") || button, "Move board", `<form><label class="field">Folder<select name="folder">${explorer.options(board.folder)}</select></label><div class="document-panel-actions"><button class="button primary">Move</button></div></form>`);
+    if (!box) return;
     box.querySelector("form").addEventListener("submit", async event => {
       event.preventDefault();
       const submit = event.submitter; submit.disabled = true;

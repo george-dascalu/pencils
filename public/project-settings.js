@@ -1,4 +1,5 @@
 import { randomUUID } from "./uuid.js";
+import { focusOnOpen } from "./open-focus.js";
 import { workflowEditor } from "./workflow-editor.js";
 import { CARD_FIELDS, VIEW_GROUPS, fieldOn, viewOn } from "./card-fields.js";
 import { projectTeamControls, projectPeople } from "./teams.js";
@@ -116,13 +117,13 @@ function updateTypes(field, types) {
   field.dispatchEvent(new Event("change", { bubbles: true }));
 }
 function addType(host) {
-  const input = host.querySelector("[data-type-input]"), field = host.querySelector('input[name="types"]');
+  const input = host.querySelector("[data-type-input]"), field = host.querySelector('input[name="types"]'), add = host.querySelector("[data-type-add]");
   const value = input.value.trim().toLowerCase().replace(/\s+/g, "-");
-  if (!value) return input.focus();
+  if (!value) return focusOnOpen(input, add);
   const types = typeList(field);
   if (!types.includes(value)) updateTypes(field, [...types, value]);
   input.value = "";
-  input.focus();
+  focusOnOpen(input, add);
 }
 if (typeof document !== "undefined") document.addEventListener("click", (event) => {
   const host = event.target.closest(".type-list-field");
@@ -132,7 +133,7 @@ if (typeof document !== "undefined") document.addEventListener("click", (event) 
   if (remove) {
     const field = host.querySelector('input[name="types"]');
     updateTypes(field, typeList(field).filter((t) => t !== remove.dataset.typeRemove));
-    host.querySelector("[data-type-input]")?.focus();
+    focusOnOpen(host.querySelector("[data-type-input]"), host.querySelector("[data-type-add]"));
   }
 });
 if (typeof document !== "undefined") document.addEventListener("keydown", (event) => {
@@ -565,9 +566,7 @@ export function projectSettings(ctx, { sources, automations, personal, organisat
       state.settingsDirty = state.dirty = true;
       document.querySelector("[data-settings-save-state]").textContent =
         "Unsaved changes";
-      document
-        .querySelector("[data-settings-fields] section:last-child input")
-        ?.focus();
+      focusOnOpen(document.querySelector("[data-settings-fields] section:last-child input"), target);
     }
     if (target.hasAttribute("data-settings-remove-field")) {
       target.closest("[data-field-id]").remove();

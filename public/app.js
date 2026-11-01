@@ -858,11 +858,13 @@ function keepFocus(render) {
   return result;
 }
 // A selector that finds the same control after a rebuild: a board object (or the board), an
-// element with an id, or a control named by its data-action / data-id / data-feature / data-pro.
+// element with an id, a control named by its data-action / data-id / data-feature / data-pro, or
+// the weekends toggle.
 function focusKey(el) {
   const node = el?.closest("#canvas [data-node], #canvas");
   if (node) return node.id === "canvas" ? "#canvas" : `#canvas [data-node="${CSS.escape(node.dataset.node)}"]`;
   if (el?.id) return `#${CSS.escape(el.id)}`;
+  if (el?.matches("[data-weekends-toggle]")) return "[data-weekends-toggle]";
   const keys = ["action", "id", "feature", "pro"].filter((key) => el?.dataset[key]);
   return keys.length ? keys.map((key) => `[data-${key}="${CSS.escape(el.dataset[key])}"]`).join("") : null;
 }
@@ -1309,9 +1311,9 @@ function kanbanView(tasks) {
   }).join("")}</div></div>`;
 }
 
-let taskPanelController = null, restoreTaskFocus = null;
+let taskPanelController = null, restoreDialogFocus = null;
 // Small operations open at a width sized to their content instead of the full dialog.
-const COMPACT_DIALOGS = ["board", "canvas-note", "canvas-name", "bulk-stickies", "quick-capture", "view", "keyboard-connector", "frame-link"];
+const COMPACT_DIALOGS = ["board", "canvas-note", "canvas-name", "bulk-stickies", "quick-capture", "view", "keyboard-connector", "frame-link", "board-link"];
 function showDialog(html, kind, { boardPanel = false, nodeId = null } = {}) {
   const opener = document.activeElement;
   if (taskPanelController && !closeDialog(false, { confirmDirty: false }))
@@ -1329,9 +1331,13 @@ function showDialog(html, kind, { boardPanel = false, nodeId = null } = {}) {
   const dialog = $("dialog");
   if (COMPACT_DIALOGS.includes(kind)) dialog.classList.add("compact-dialog");
   prepareDialogFocus(dialog);
-  restoreTaskFocus = kind === "task"
+  restoreDialogFocus = kind === "task"
     ? taskFocus(opener, dialog.querySelector("#task-form")?.dataset.id)
-    : null;
+    : () => {
+        // Back on the control that opened it, or the menu button when that sits in the closed sidebar.
+        const target = opener?.closest?.(".sidebar:not(.open)") ? $(".mobile-menu") : opener;
+        if (document.activeElement === document.body && target?.isConnected) focusOnOpen(target);
+      };
   if (kind === "task")
     taskPanelController = boardTaskEditor(dialog, {
       $,
@@ -1421,8 +1427,8 @@ function closeDialog(force = false, { confirmDirty = true, keepDraft = false } =
   $("#dialogs").innerHTML = "";
   state.dialog = null;
   state.dirty = false;
-  const restore = restoreTaskFocus;
-  restoreTaskFocus = null;
+  const restore = restoreDialogFocus;
+  restoreDialogFocus = null;
   requestAnimationFrame(() => {
     if (!$("#dialogs").children.length) restore?.();
   });
@@ -2158,7 +2164,7 @@ document.addEventListener("click", async (event) => {
         renderApp();
         break;
       case "settings":
-        features.settingsOpen();
+        features.settingsOpen(el.dataset.section);
         break;
       case "project-edit":
         projectDialog(true);
@@ -2663,8 +2669,15 @@ document.addEventListener("change", async (event) => {
       let value = el.value;
       value = features.cellValue(field, value);
       if (JSON.stringify(t[field]) === JSON.stringify(value)) return;
+      const patch = features.cellPatch(id, field, value), next = { ...t, ...patch };
+      // A range that ends before it starts can't be saved: say why and put the date back.
+      if (["start", "due"].includes(field) && next.start && next.due && next.start > next.due) {
+        el.value = t[field] ?? "";
+        toast("Start must be on or before the due date.", true);
+        return;
+      }
       el.disabled = true;
-      await patchTask(id, features.cellPatch(id, field, value), false);
+      await patchTask(id, patch, false);
       el.disabled = false;
       if (field === "status")
         el.innerHTML = options(
@@ -2677,10 +2690,11 @@ document.addEventListener("change", async (event) => {
         document.dispatchEvent(
           new CustomEvent("table-cell-saved", { detail: field }),
         );
+      // A save the server refused says why; one waiting to retry points to Recovery.
+      const entry = sync.entries.get(route("tasks", id)), refused = !!(entry?.blocked || entry?.conflict);
       toast(
-        sync.entries.has(route("tasks", id))
-          ? "Edit retained. Open Recovery to review pending saves."
-          : "Cell saved.",
+        refused && entry.error ? entry.error : entry ? "Edit retained. Open Recovery to review pending saves." : "Cell saved.",
+        refused,
       );
     }
   } catch (error) {
@@ -3059,6 +3073,8 @@ async function boot() {
     const organisation =
       state.organisations.find((o) => o.id === lastOrganisation) ||
       state.organisations[0];
+    // Home and the other pages without a project open in the last organisation, not the first.
+    if (organisation) state.organisation = organisation;
     const destination = navigation.initial();
     const bare = /^#project\/([\w-]+)$/.exec(location.hash);
     if (destination) {
@@ -3066,11 +3082,8 @@ async function boot() {
     } else if (bare && state.projects.some((p) => p.id === bare[1])) {
       await openProject(bare[1]);
     } else {
-      // The app starts on Home (0.20.93), in the last organisation.
-      if (organisation) {
-        state.organisation = organisation;
-        storage.set("organisation", organisation.id);
-      }
+      // The app starts on Home (0.20.93).
+      if (organisation) storage.set("organisation", organisation.id);
       renderApp();
     }
     navigation.start();

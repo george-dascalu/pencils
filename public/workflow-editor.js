@@ -87,6 +87,11 @@ export function workflowEditor(form, config, tasks, { esc, icon }, { section = "
   }
   let detailsOpen = section === "workflow";
   function paint() {
+    // The rebuild keeps focus on the control that had it when no other control matches it, such as
+    // Restrict status changes (a status row's buttons repeat on every row).
+    const data = host.contains(document.activeElement) && [...document.activeElement.attributes].find((a) => a.name.startsWith("data-"));
+    const had = data && `[${data.name}="${CSS.escape(data.value)}"]`;
+    const again = had && host.querySelectorAll(had).length === 1 && had;
     detailsOpen =
       host.querySelector("[data-status-details]")?.open ?? detailsOpen;
     host.innerHTML = `<legend>${section === "hierarchy" ? "Card hierarchy" : "Statuses & workflow"}</legend><input type="hidden" name="workflowSchema"><div data-workflow-section ${section === "hierarchy" ? "hidden" : ""}><p class="field-hint">Set the column order and names for this project. A completed status counts towards progress. Names can change without changing task data.</p><div class="workflow-mode"><label><input type="checkbox" data-workflow-rules ${model.transitions ? "checked" : ""}> Restrict status changes</label><span class="field-hint">${model.transitions ? "Tasks can only follow the allowed moves below." : "Tasks can move freely between any statuses."}</span></div><div data-workflow-diagram></div><details data-status-details ${detailsOpen ? "open" : ""}><summary>Statuses</summary><div class="workflow-statuses"><div class="workflow-status-head" aria-hidden="true"><span>Status</span><span>Completed</span><span>Default</span><span></span></div><ul class="workflow-status-list">${model.statuses
@@ -116,6 +121,7 @@ export function workflowEditor(form, config, tasks, { esc, icon }, { section = "
     );
     diagrams();
     sync();
+    if (again) host.querySelector(again)?.focus({ preventScroll: true });
   }
   function changed() {
     sync();

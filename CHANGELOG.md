@@ -2,6 +2,21 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## Unreleased
+
+### Fixed
+
+- The Table refuses a due date before the start date, says why and keeps the saved date; its calendars offer only dates that keep the range in order. A Table edit the server refuses now gives the reason.
+- Home's Projects panel shows the organisation dashboard once, and its Bookmarks panel names bookmarked views, such as "Kanban · Website".
+- A link to Home opens it in the organisation you last used, not the first one alphabetically.
+- Capacity's "Choose project teams" opens the project's Teams settings.
+- Pressing a document's Add property, Rename, Move or template button, New folder or Move board again closes its panel instead of failing.
+- Escape closes the List, Tree and Timeline date editors and the Timeline range (which now take keyboard focus), a document's formatting menus and the board's Frames panel.
+- Keyboard focus returns to the button that opened a dialog such as New project, and stays on Restrict status changes and Hide weekends when the page redraws.
+- On phones and iPad, Add person, Add team, Add type, Add field, a description's Link and Clear dates no longer open the keyboard.
+- Copy board link shows the link to copy by hand when the browser refuses the clipboard.
+- Make a capture token is off while you hold the limit of ten tokens.
+
 ## 0.20.106 — 2026-11-01
 
 ### Changed

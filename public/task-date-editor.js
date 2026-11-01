@@ -1,4 +1,5 @@
 import { positionPopover } from "./popover-position.js";
+import { focusOnOpen } from "./open-focus.js";
 
 // Compact task scheduling uses the same date fields/calendar as every task form.
 export function taskDateEditor(ctx) {
@@ -151,7 +152,7 @@ export function taskDateEditor(ctx) {
         start.value = due.value = "";
         limits();
         void current.save();
-        start.focus({ preventScroll: true });
+        focusOnOpen(start, panel.querySelector("[data-task-dates-clear]"));
       });
     panel.querySelector("[data-task-dates-pick]")?.addEventListener("click", () => {
       close();

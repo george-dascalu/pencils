@@ -427,7 +427,9 @@ export function canvasControls(ctx, basic) {
         state.dialog ||
         state.canvasEditing ||
         // Keys in the outline and search panels are theirs, not the canvas's.
-        e.target.closest(editable + ",.board-task-editor,.canvas-panel")
+        e.target.closest(editable + ",.board-task-editor,.canvas-panel") ||
+        // An open Frames panel takes Escape first (canvas-pro.js).
+        (e.key === "Escape" && document.querySelector("#canvas-outline:not(.hidden)"))
       )
         return;
       if ($("#canvas").classList.contains("presenting")) return;

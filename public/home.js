@@ -29,7 +29,7 @@ const DUE = [["", "Any time"], ["overdue", "Overdue"], ["today", "Due today"], [
 const BY = [["status", "Status"], ["priority", "Priority"], ["assignee", "Assignee"]];
 
 export function installHome(ctx) {
-  const { state, api, esc, icon, toast, bookmarks, commands, markdown, welcomePage, renderApp } = ctx;
+  const { state, api, esc, icon, toast, bookmarks, commands, markdown, welcomePage, renderApp, viewLabel } = ctx;
   let panels = null, loading = null, saving = Promise.resolve(), snapshots = new Map(), visitsCache = new Map(), lastVisit = "", onHome = false;
   const panelsUI = anchoredPanel(ctx);
   const me = () => state.session?.user?.name || state.session?.user?.username || "";
@@ -37,7 +37,9 @@ export function installHome(ctx) {
   const projectOf = (settings) => projects().find((p) => p.id === settings.project) || projects()[0] || null;
   const newId = () => `p-${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
   const bottom = () => panels.reduce((max, p) => Math.max(max, p.y + p.h), 0);
-  const itemButton = (item, extra = "") => `<button type="button" class="home-item" data-feature="search-open" data-kind="${esc(item.kind)}" data-id="${esc(item.id)}" data-project="${esc(item.project)}" title="${esc(item.title)}">${icon(item.kind === "view" ? item.id : itemIcons[item.kind] || "file")}<span>${esc(item.title)}</span>${extra}</button>`;
+  // A bookmarked view is named by its view and project, as on the bottom bar.
+  const itemTitle = (item) => (item.kind === "view" ? `${viewLabel(item.id)} · ${item.project_title}` : item.title);
+  const itemButton = (item, extra = "") => `<button type="button" class="home-item" data-feature="search-open" data-kind="${esc(item.kind)}" data-id="${esc(item.id)}" data-project="${esc(item.project)}" title="${esc(itemTitle(item))}">${icon(item.kind === "view" ? item.id : itemIcons[item.kind] || "file")}<span>${esc(itemTitle(item))}</span>${extra}</button>`;
 
   async function load() {
     if (!loading) loading = api("/home").then((data) => (panels = data.panels)).catch((error) => { loading = null; throw error; });

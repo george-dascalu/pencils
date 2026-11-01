@@ -60,12 +60,15 @@ export function planning(ctx) {
       .filter((t) => t.due)
       .sort((a, b) => a.due.localeCompare(b.due))
       .slice(0, 8);
+    // Each load replaces the last one's, so overlapping loads show the dashboard once.
+    $(".organisation-overview").querySelectorAll(":scope > :is(.dashboard-metrics, .dashboard-deadlines)").forEach((el) => el.remove());
     $(".organisation-overview").insertAdjacentHTML(
       "afterbegin",
       `<div class="dashboard-metrics"><div><strong>${tasks.length}</strong>Open tasks</div><div><strong>${tasks.filter((t) => t.blocked).length}</strong>Blocked</div><div><strong>${tasks.filter((t) => t.due && t.due < today()).length}</strong>Overdue</div><div><strong>${projects.length}</strong>Active projects</div></div><div class="dashboard-deadlines"><h2>Upcoming and overdue</h2>${due.map((t) => `<button data-feature="global-open" data-project="${esc(t.project)}" data-id="${esc(t.id)}"><span>${esc(t.title)}<small>${esc(t.project_title)}${t.blocked ? " · Blocked" : ""}</small></span><time datetime="${esc(t.due)}">${esc(formatDay(t.due))}</time></button>`).join("") || "<p>No open tasks have deadlines.</p>"}</div>`,
     );
     for (const p of projects) {
       const card = $(`.project-card[data-id="${p.id}"]`);
+      card?.querySelector(".project-health")?.remove();
       card?.insertAdjacentHTML(
         "beforeend",
         `<span class="project-health">${p.progress.percent}% complete · ${p.overdue ? "Needs attention" : p.blocked ? "Blocked work" : "On track"}<small>${p.blocked} blocked · ${p.overdue} overdue</small></span>`,

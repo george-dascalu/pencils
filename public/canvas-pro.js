@@ -2035,6 +2035,7 @@ export function canvasPro(ctx, basic) {
       } catch {
         showDialog(
           `<dialog class="dialog">${dialogHead("Frame link")}<div class="dialog-body"><input aria-label="Frame link" value="${esc(url.href)}" readonly></div></dialog>`,
+          "frame-link",
         );
       }
     } else if (action === "search-toggle") showSearch(!searchOpen, true);
@@ -2628,8 +2629,8 @@ export function canvasPro(ctx, basic) {
         showSearch(false, true);
         return;
       }
-      // Escape closes the outline from inside it, back to the tool bar's Frames.
-      if (outlineOpen && event.key === "Escape" && event.target.closest("#canvas-outline")) {
+      // Escape closes the outline, back to the tool bar's Frames (an inline edit keeps its Escape).
+      if (outlineOpen && event.key === "Escape" && (!editor || event.target.closest("#canvas-outline"))) {
         event.preventDefault();
         event.stopImmediatePropagation();
         outlineOpen = false;

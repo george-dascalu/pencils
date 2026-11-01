@@ -1,3 +1,5 @@
+import { focusOnOpen } from "./open-focus.js";
+
 const newId = () =>
   `person-${Date.now().toString(36)}-${Array.from(crypto.getRandomValues(new Uint32Array(2)), (n) => n.toString(36)).join("")}`;
 // A person's short name, set in Settings → Organisation, or the first three letters of their name, such as Geo for George.
@@ -125,15 +127,16 @@ export function organisationTeams(form, organisation, esc) {
       teams = teams.filter((t) => t.id !== b.dataset.removeTeam);
     else return;
     paint();
-    host
-      .querySelector(
+    focusOnOpen(
+      host.querySelector(
         b.hasAttribute("data-add-person")
           ? ".person-row:last-child input"
           : b.hasAttribute("data-add-team")
             ? "fieldset:last-of-type input"
             : "[data-add-person]",
-      )
-      ?.focus();
+      ),
+      host.querySelector(b.hasAttribute("data-add-team") ? "[data-add-team]" : "[data-add-person]"),
+    );
     form.elements.people.dispatchEvent(new Event("input", { bubbles: true }));
   });
   paint();

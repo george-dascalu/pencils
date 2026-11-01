@@ -100,6 +100,7 @@ export function folderTree({ kind, label, placeholder, glyph, state, api, esc, i
   function panel(button, id = null) {
     const folder = folders().find(f => f.id === id);
     const box = panels.show(button, folder ? "Edit folder" : "New folder", `<form><label class="field">Folder name<input name="title" required maxlength="100" value="${esc(folder?.title || "")}" autocomplete="off"></label><label class="field">Parent folder<select name="parent">${options(folder ? folder.parent : active, id)}</select></label><p class="form-error" role="alert" hidden></p><div class="document-panel-actions">${folder ? '<button type="button" class="button danger" data-delete-folder>Delete folder</button>' : ""}<button type="submit" class="button primary">${folder ? "Save" : "Create folder"}</button></div></form>`);
+    if (!box) return;
     const save = async (remove = false) => {
       const values = new FormData(box.querySelector("form"));
       const buttons = box.querySelectorAll("button"); buttons.forEach(b => b.disabled = true);
