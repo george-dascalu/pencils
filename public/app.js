@@ -1,3 +1,4 @@
+import { projectCreateHTML } from "./project-create.js";
 import { taskTimeFields } from "./task-time-fields.js";
 import { APP_VERSION, watchAppVersion } from "./app-version.js";
 import { DEFAULT_TASK_TYPES } from "./task-types.js";
@@ -1706,18 +1707,6 @@ function organisationFormHTML(organisation = state.organisation) {
 function organisationDialog() {
   showDialog(`<dialog class="dialog">${organisationFormHTML({ title: "", body: "", color: "#66856f" })}</dialog>`, "organisation");
 }
-function projectFormHTML(edit = false) {
-  const p = edit
-    ? state.project
-    : {
-        title: "",
-        body: "",
-        color: "#66856f",
-        default_view: "list",
-        organisation: state.organisation.id,
-      };
-  return `<form id="project-form" data-edit="${edit}" data-revision="${esc(p.revision || "")}">${edit ? "" : dialogHead("A fresh page for a new project")}<div class="dialog-body"><div class="form-error hidden" role="alert"></div><label class="field">Project name<input name="title" value="${esc(p.title)}" placeholder="What are we working on?" maxlength="300" required autofocus></label><label class="field">Project key<input name="key" value="${esc(p.key || "")}" placeholder="e.g. WEB" pattern="[A-Za-z][A-Za-z0-9]{1,11}" maxlength="12" ${edit ? "required" : ""}><span class="field-hint">Cards use IDs such as WEB-1. Leave blank when creating a project to generate a key.</span></label><label class="field">Organisation<select name="organisation" required>${state.organisations.map((o) => `<option value="${esc(o.id)}" ${o.id === p.organisation ? "selected" : ""}>${esc(o.title)}</option>`).join("")}</select>${edit ? '<span class="field-hint">Changing this moves the project, including its cards and canvases, to the selected organisation.</span>' : ""}</label><label class="field">A few words about it<textarea name="body" rows="3" placeholder="The idea, the intention, the possibilities…">${esc(p.body)}</textarea></label><div class="field-row"><div class="field">Project colour${colorPicker({ label: "Project colour", value: p.color })}</div>${edit ? `<label class="field">Default view<select name="default_view">${options(views, p.default_view === "drawing" ? "board" : p.default_view, viewLabels)}</select></label>` : ""}</div><p>Projects live in your vault as folders. Every card is a Markdown file you can open in Obsidian.</p></div><div class="dialog-foot"><button type="button" class="button" data-action="${edit ? "settings-close" : "dialog-close"}">${edit ? "Back to project" : "Cancel"}</button><button class="button primary" type="submit">${edit ? "Save project" : "Create project"} ${icon("arrow")}</button></div></form>`;
-}
 function projectDialog(edit = false) {
   if (!canNavigate()) return;
   if (!state.organisation) return organisationDialog();
@@ -1725,7 +1714,7 @@ function projectDialog(edit = false) {
     features.settingsOpen("general");
   } else
     showDialog(
-      `<dialog class="dialog">${projectFormHTML(false)}</dialog>`,
+      projectCreateHTML({ state, esc, icon, colorPicker, dialogHead }),
       "project",
     );
 }

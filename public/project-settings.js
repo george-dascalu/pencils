@@ -129,8 +129,11 @@ export const settingsPage = (id) =>
 // save flow and dirty tracking stay unchanged.
 const escapeType = (value) => String(value).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
 const closeIcon = '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg>';
-function typeChipsHTML(types) {
+export function typeChipsHTML(types) {
   return `<ul class="type-chips" data-type-chips aria-labelledby="type-list-label">${types.map((t) => `<li class="type-chip"><span>${escapeType(t)}</span><button type="button" class="icon-button" data-type-remove="${escapeType(t)}" aria-label="Remove ${escapeType(t)}" title="Remove">${closeIcon}</button></li>`).join("")}</ul>`;
+}
+export function typeFieldHTML(types, { esc, icon }, hint = "Types in use cannot be removed.") {
+  return `<div class="field type-list-field"><span id="type-list-label">Card types</span><input type="hidden" name="types" value="${esc(types.join(", "))}" required>${typeChipsHTML(types)}<div class="type-add"><input data-type-input data-settings-staging aria-label="New type name" placeholder="New type…" maxlength="30"><button type="button" class="button small" data-type-add>${icon("plus")}Add type</button></div><span class="field-hint">${esc(hint)}</span></div>`;
 }
 function typeList(field) {
   return field.value.split(",").map((t) => t.trim()).filter(Boolean);
@@ -340,7 +343,7 @@ export function projectSettings(ctx, { sources, automations, personal, organisat
       );
     const types =
       section === "hierarchy"
-        ? `<div class="field type-list-field"><span id="type-list-label">Card types</span><input type="hidden" name="types" value="${esc(state.config.types.join(", "))}" required>${typeChipsHTML(state.config.types)}<div class="type-add"><input data-type-input data-settings-staging aria-label="New type name" placeholder="New type…" maxlength="30"><button type="button" class="button small" data-type-add>${icon("plus")}Add type</button></div><span class="field-hint">Types in use cannot be removed.</span></div>`
+        ? typeFieldHTML(state.config.types, { esc, icon })
         : "";
     return form(types, "workflow-form");
   }

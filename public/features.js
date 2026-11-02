@@ -17,6 +17,7 @@ import { installBottomBar } from "./bottom-bar.js";
 import { taskAutosave } from "./task-autosave.js";
 import { boardComments } from "./board-comments.js";
 import { workflowEditor } from "./workflow-editor.js";
+import { projectCreateSteps } from "./project-create.js";
 import { organisationTeams, projectTeamControls } from "./teams.js";
 import { taskModalControls } from "./task-modal.js";
 import { taskAttachments } from "./task-attachments.js";
@@ -458,6 +459,10 @@ export function installFeatures(ctx) {
         form.dataset.edit === "true" ? state.tasks : [],
         ctx,
       );
+      if (form.closest(".project-create-dialog")) {
+        const reload = reloadWorkflow, reloadSteps = projectCreateSteps(form, ctx);
+        reloadWorkflow = () => { reload(); reloadSteps(); };
+      }
     }
     if (kind === "project" && form?.dataset.edit === "true")
       $(".dialog-body", form).insertAdjacentHTML(

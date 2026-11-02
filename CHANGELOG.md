@@ -2,6 +2,11 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.21.8 — 2026-11-02
+
+### Changed
+- Feature F0.21-8: New projects use a wider, three-step dialog: project details and People, card types and hierarchy, then statuses and workflow. Back/Next preserves every entry, each step validates before continuing, and browser drafts restore the complete setup. People uses the organisation's existing teams and shows their members.
+
 ## 0.21.7 — 2026-11-02
 
 ### Fixed

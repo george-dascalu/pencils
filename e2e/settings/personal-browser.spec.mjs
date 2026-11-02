@@ -139,6 +139,8 @@ test("a new project can start with its own workflow", async ({ page }) => {
   await openProject(page);
   await clickControl(page.locator('.sidebar .side-label [data-action="project-new"]'));
   await page.locator("#project-form [name=title]").fill("Independent workflow");
+  await page.getByRole("button", { name: "Next", exact: true }).click();
+  await page.getByRole("button", { name: "Next", exact: true }).click();
   await setStatuses(page, ["queued", "complete"], "complete");
   await page.locator("#project-form [type=submit]").click();
   await page.locator(".breadcrumb strong").filter({ hasText: "Independent workflow" }).waitFor();

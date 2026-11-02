@@ -121,6 +121,9 @@ test("focus stays on a control after Hide weekends, closing New project and Rest
   await openSidebar(page);
   await page.locator('.sidebar [data-action="project-new"]').first().click();
   const restrict = page.locator("dialog[open] [data-workflow-rules]");
+  await page.locator('#project-form [name="title"]').fill("Workflow focus");
+  await page.getByRole("button", { name: "Next", exact: true }).click();
+  await page.getByRole("button", { name: "Next", exact: true }).click();
   await restrict.check();
   await expect(restrict).toBeChecked();
   await expect(restrict).toBeFocused();

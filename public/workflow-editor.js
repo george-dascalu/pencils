@@ -1,6 +1,7 @@
 import { ruleDiagram } from "./rule-diagram.js";
 import { hierarchyRules } from "./hierarchy-model.js";
 import { initialStatus, statusLabel } from "./workflow-model.js";
+import { focusOnOpen } from "./open-focus.js";
 export function workflowEditor(form, config, tasks, { esc, icon }, { section = "all" } = {}) {
   let model = structuredClone(config);
   model.initial_status = initialStatus(model);
@@ -253,7 +254,7 @@ export function workflowEditor(form, config, tasks, { esc, icon }, { section = "
     paint();
     changed();
     if (b.hasAttribute("data-status-add"))
-      host.querySelector("[data-new-status]").focus();
+      focusOnOpen(host.querySelector("[data-new-status]"), host.querySelector("[data-status-add]"));
   });
   host.addEventListener("keydown", (e) => {
     if (e.target.hasAttribute("data-new-status") && e.key === "Enter") {

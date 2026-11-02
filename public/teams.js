@@ -152,11 +152,12 @@ export function projectTeamControls(form, state, esc) {
   const host = document.createElement("fieldset");
   host.className = "project-team-settings";
   form.querySelector('[name="organisation"]').closest("label").after(host);
+  const creating = !!form.closest(".project-create-dialog");
   function paint() {
     const org = state.organisations.find(
       (o) => o.id === form.elements.organisation.value,
     );
-    host.innerHTML = `<legend>Project teams</legend><input type="hidden" name="teams" value="${esc(JSON.stringify(selected))}"><div class="team-members">${(org?.teams || []).map((t) => `<label><input type="checkbox" data-project-team="${esc(t.id)}" ${selected.includes(t.id) ? "checked" : ""}> ${esc(t.name)} <small>(${t.members.length ? `${t.members.length} members` : "No members"})</small></label>`).join("") || '<p class="field-hint">Add people and teams in Settings → Organisation first.</p>'}</div><p class="field-hint">Assignees come from the selected teams. A person in several teams appears once.</p>`;
+    host.innerHTML = `<legend>${creating ? "People" : "Project teams"}</legend><input type="hidden" name="teams" value="${esc(JSON.stringify(selected))}"><div class="team-members">${(org?.teams || []).map((t) => `<label><input type="checkbox" data-project-team="${esc(t.id)}" ${selected.includes(t.id) ? "checked" : ""}> ${esc(t.name)} <small>(${creating ? (org.people || []).filter(p => t.members.includes(p.id)).map(p => esc(p.name)).join(", ") || "No members" : t.members.length ? `${t.members.length} members` : "No members"})</small></label>`).join("") || '<p class="field-hint">Add people and teams in Settings → Organisation first.</p>'}</div><p class="field-hint">${creating ? "Choose the teams whose people can be assigned cards in this project." : "Assignees come from the selected teams. A person in several teams appears once."}</p>`;
   }
   host.addEventListener("change", (e) => {
     if (!e.target.dataset.projectTeam) return;

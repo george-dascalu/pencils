@@ -1,0 +1,29 @@
+.project-create-dialog {
+  width: min(960px, calc(100vw - 24px));
+  height: min(780px, calc(100dvh - 24px));
+  max-height: calc(100dvh - 24px);
+  overflow: hidden;
+}
+.project-create-dialog form { display: flex; flex-direction: column; height: 100%; min-height: 0; }
+.project-create-dialog :is(.dialog-head, .dialog-foot, .project-steps) { flex: none; }
+.project-create-dialog .dialog-body { flex: 1; min-height: 0; overflow: auto; overscroll-behavior: contain; padding: var(--dialog-pad); }
+.project-create-dialog .dialog-foot > [data-action="dialog-close"] { margin-right: auto; }
+.project-create-dialog .project-create-details { max-width: 760px; margin-inline: auto; }
+.project-create-dialog h3 { margin: 0 0 16px; font-size: var(--type-section); }
+.project-steps { padding: 8px var(--dialog-pad); border-bottom: 1px solid var(--line); }
+.project-steps ol { display: flex; gap: 8px; padding: 0; margin: 0; list-style: none; }
+.project-steps li { flex: 1; min-width: 0; }
+.project-steps .button { width: 100%; gap: 8px; white-space: nowrap; }
+.project-steps [aria-current="step"] { background: var(--surface-soft); border-color: var(--green); font-weight: 600; }
+.project-create-dialog .workflow-editor { margin: 0; padding: 0; border: 0; }
+.project-create-dialog .workflow-editor > legend { display: none; }
+.project-create-dialog .hierarchy-editor { border: 0; padding: 0; }
+.project-create-dialog :is(.team-members, .workflow-mode, .rule-diagram-toolbar, .workflow-status-main) > label { min-height: var(--control-height); }
+.project-create-dialog [data-step="1"] .workflow-editor,
+.project-create-dialog [data-step="2"] [data-workflow-section],
+.project-create-dialog [data-step="3"] .hierarchy-editor { display: none; }
+@media (max-width: 600px) {
+  .project-create-dialog .field-row { grid-template-columns: 1fr; gap: 0; }
+  .project-create-dialog .project-steps ol { gap: 4px; }
+  .project-create-dialog .project-steps .button { gap: 4px; }
+}

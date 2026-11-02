@@ -225,6 +225,8 @@ test("organisations are created and renamed, scope their projects, and are remem
     await click(page, "project-new");
     await expect(page.locator('#project-form [name="organisation"]')).toHaveValue(studio.id);
     await page.locator('#project-form [name="title"]').fill(title);
+    await page.getByRole("button", { name: "Next", exact: true }).click();
+    await page.getByRole("button", { name: "Next", exact: true }).click();
     await page.locator('#project-form [type="submit"]').click();
     await expect(page.getByRole("heading", { name: title, exact: true })).toBeVisible();
   }
