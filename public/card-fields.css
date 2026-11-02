@@ -1,7 +1,7 @@
 /* Card fields a project turned off (T23, card-fields.js) leave every surface: List and Tree rows,
    phone summaries, the card editor and date editor, Kanban and board cards, relationship rows and
    the filters. The root lists them in data-fields-off; values stay in the files. */
-:root[data-fields-off~="type"] :is(.task-row .task-type, .phone-task-meta > .icon:first-child, .kanban-card .task-type, .task-identity-row > [data-task-picker="type"], .canvas-task-type, .task-relationship-link > .icon:first-child, label.field:has(> #filter-type)),
+:root[data-fields-off~="type"] :is(.task-row .task-type, .phone-task-meta > .icon:first-child, .kanban-card .task-type, .task-title-row > .task-identity-row, .canvas-task-type, .task-relationship-link > .icon:first-child, label.field:has(> #filter-type)),
 :root[data-fields-off~="assignee"] :is(.calendar-event-assignee, .row-assignee, .phone-field[data-field="assignee"], .task-assignee-field, .kanban-assignee, .task-relationship-assignee, .canvas-task-assignee, label.field:has(> #filter-assignee), [data-relationship-sort="assignee"]),
 :root[data-fields-off~="status"] :is(.calendar-event-fields > .field-chip-status, .row-status, .phone-field[data-field="status"], #task-form .field:has(> select[name="status"]), .task-relationship-status, .canvas-task-status, label.field:has(> :is(#filter-status, #filter-completion)), [data-relationship-sort="status"]),
 :root[data-fields-off~="priority"] :is(.calendar-event-fields > .field-chip-priority, .row-priority, .phone-field[data-field="priority"], #task-form .field:has(> [data-task-picker="priority"]), .kanban-card .field-chip-priority, .task-relationship-priority, .canvas-task-priority, [data-relationship-sort="priority"]),

@@ -80,20 +80,20 @@ onDevices(["phone", "ipad", "ipad-portrait"], () => test("PEN-10 the shell does 
 }));
 
 // ----- PEN-4: card layout -----
-test("PEN-4 the card key follows the title and icon pickers have no caret", async ({ page }) => {
+test("PEN-4 the card key precedes the title and icon pickers have no caret", async ({ page }) => {
   await open(page, "list", ".task-row");
   await openTask(page, app.tasks[0].id);
-  const key = page.locator(".task-title-row > .title-input + .task-key");
-  await expect(key, "key sits after the title").toHaveCount(1);
+  const key = page.locator(".task-title-row > .task-identity-row + .task-key");
+  await expect(key, "key sits before the bookmark and title").toHaveCount(1);
   await expect(key).toHaveText(app.tasks[0].key);
   await expect(page.locator(".task-picker.icon-only .task-picker-trigger > .icon"), "icon-only pickers show no dropdown arrow").toHaveCount(0);
 });
 
-onDevices(["phone"], () => test("PEN-4 the card key follows the title on phones too", async ({ page }) => {
+onDevices(["phone"], () => test("PEN-4 the card key precedes the title on phones too", async ({ page }) => {
   await open(page, "list", ".task-row");
   await openTask(page, app.tasks[0].id);
   const [title, key] = await Promise.all([rect(page.locator(".task-title-row .title-input")), rect(page.locator(".task-title-row .task-key"))]);
-  expect(key.top >= title.top - 1 || key.left >= title.right - 1, `key is after the title: ${JSON.stringify({ title, key })}`).toBe(true);
+  expect(key.right, "key is before the title").toBeLessThanOrEqual(title.left);
   await expect(page.locator(".task-identity-row .task-key"), "key no longer sits under the type button").toHaveCount(0);
 }));
 

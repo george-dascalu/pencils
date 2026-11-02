@@ -81,9 +81,6 @@ export function boardTaskEditor(
       window.scrollTo(x, y);
     };
   }
-  const identity = heading.querySelector(".task-identity-row");
-  const titleRow = heading.querySelector(".task-title-row");
-  let wasPhone;
   function updatePanes() {
     const pane = dialog.classList.contains("with-task-comments") ? "comments" : dialog.classList.contains("with-task-history") ? "history" : "details";
     const auxiliary = innerWidth < 1100 && pane !== "details";
@@ -95,11 +92,6 @@ export function boardTaskEditor(
     if (!dialog.isConnected) return;
     updatePageMode();
     updatePanes();
-    if (wasPhone !== phone()) {
-      wasPhone = phone();
-      if (wasPhone) titleRow.prepend(identity);
-      else heading.querySelector(".task-editor-header-row").prepend(identity);
-    }
     if (phone()) {
       // iOS keeps the layout viewport tall when the software keyboard opens.
       // Fit both existing and new task panels to the part that is visible.

@@ -287,9 +287,8 @@ test("the editor layout and the attachment preview fit desktop, tablet and phone
       });
       // Field order is assignee, status, priority (0.19.9).
       expect(geometry.names).toEqual(["assignee", "status", "priority", "start", "due"]);
-      // The key follows the title (PEN-4): type, title, key on phones; type above a title row elsewhere.
-      if (width <= 600) expect(geometry.identity[2].x >= geometry.identity[0].right - 1 && geometry.identity[1].x >= geometry.identity[2].x, where).toBe(true);
-      else expect(geometry.identity[0].y < geometry.identity[2].y && geometry.identity[1].x > geometry.identity[2].x, where).toBe(true);
+      // The type and key precede the bookmark and title in one row on every device.
+      expect(geometry.identity[1].x >= geometry.identity[0].right - 1 && geometry.identity[2].x >= geometry.identity[1].right - 1, where).toBe(true);
       expect(geometry.description.y, `description below the fields: ${where}`).toBeGreaterThan(geometry.fields[4].y);
       expect(geometry.overflow, where).toBe(false);
       if (width >= 768) expect(Math.max(...geometry.fields.map((f) => f.y)) - Math.min(...geometry.fields.map((f) => f.y)), `fields share a row: ${where}`).toBeLessThan(2);

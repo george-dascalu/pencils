@@ -128,7 +128,7 @@ test("the rich description edits bullets and Markdown, previews, fits every widt
       });
       const where = `${width}px ${theme}`;
       if (width === 1400)
-        expect(Math.abs(layout.identity[1] - layout.identity[2]) < 2 && layout.identity[2] > layout.identity[0] + 20, `Title has its own row below the type, with the ID beside the title (${where})`).toBe(true);
+        expect(Math.max(...layout.identity) - Math.min(...layout.identity), `Type, ID and title share one row (${where})`).toBeLessThanOrEqual(2);
       expect(Math.max(...layout.fields.slice(0, 3)) - Math.min(...layout.fields.slice(0, 3)), `Assignee, priority and status share the first metadata row (${where})`).toBeLessThan(2);
       expect(Math.abs(layout.fields[3] - layout.fields[4]), `Dates share a row (${where})`).toBeLessThan(2);
       if (width === 1400) expect(Math.max(...layout.fields) - Math.min(...layout.fields), "All five metadata fields share a row on desktop").toBeLessThan(2);

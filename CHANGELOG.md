@@ -1,5 +1,12 @@
 # Changelog
 
+User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
+
+## 0.21.21 — 2026-11-02
+
+### Changed
+- Feature F0.21-21: The card editor keeps card type, ID, bookmark and title together in that order on one line, on desktop, iPad and phones. List and Tree field focus outlines now fit the visible field instead of extending above and below it, while preserving full-height touch targets.
+
 ## 0.21.20 — 2026-11-02
 
 ### Changed
@@ -24,8 +31,6 @@
 
 ### Changed
 - Feature F0.21-16: Desktop boards put the presence name, Board appearance and Board tools together at the top right, removing the extra toolbar row. Phone and iPad controls keep their existing positions.
-
-User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
 ## 0.21.15 — 2026-11-02
 

@@ -120,8 +120,8 @@ onDevices(["desktop", "phone"], () => test("the new card panel fits the screen w
     await checkMetadataLayout(page);
     const titleBox = await title(page).boundingBox();
     const typeBox = await typeTrigger(page).boundingBox();
-    if (device === "phone") expect(titleBox.x, "phone title follows the type selector").toBeGreaterThanOrEqual(typeBox.x + typeBox.width);
-    else expect(titleBox.y, "desktop title has its own row below the type selector").toBeGreaterThanOrEqual(typeBox.y + typeBox.height);
+    expect(titleBox.x, "title follows the type, ID and bookmark").toBeGreaterThanOrEqual(typeBox.x + typeBox.width);
+    expect(titleBox.y + titleBox.height/2).toBeCloseTo(typeBox.y + typeBox.height/2, 0);
     expect(titleBox.width, "the title spans the panel width").toBeGreaterThan(typeBox.width * 3);
     await title(page).evaluate((el) => el.focus({ focusVisible: true }));
     const focused = await title(page).evaluate(focusStyle);
@@ -131,7 +131,7 @@ onDevices(["desktop", "phone"], () => test("the new card panel fits the screen w
     expect(focused.shadow).toBe("none");
     // Keyboard order follows the visible title layout.
     await page.keyboard.press("Shift+Tab");
-    await expect(device === "phone" ? typeTrigger(page) : page.locator('#task-form [data-action="dialog-close"]')).toBeFocused();
+    await expect(typeTrigger(page)).toBeFocused();
     await typeTrigger(page).evaluate((el) => el.focus({ focusVisible: true }));
     const keyboardFocus = await typeTrigger(page).evaluate(focusStyle);
     expect(keyboardFocus.color).toBe(keyboardFocus.expected);

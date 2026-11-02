@@ -160,7 +160,6 @@ body.task-reordering, body.task-reordering * { cursor: grabbing !important; user
 .row-choice:has(select:disabled) select { cursor: default; }
 .row-choice:has(select:enabled):hover,
 .task-row > .row-task-link:hover { background-color: var(--surface-soft); }
-.row-choice:focus-within,
 .task-row :is(.row-due, .row-task-link):focus-visible { outline: var(--focus-ring); outline-offset: 1px; }
 .row-status {
   display: flex;
@@ -1359,8 +1358,8 @@ html.task-page-open,
 .task-dialog.board-task-editor .task-editor-header-row .task-key { max-width: 90px; overflow: hidden; text-overflow: ellipsis; }
 .task-dialog.board-task-editor .task-editor-header-row .task-editor-actions { order: 0; flex: 1 1 auto; flex-basis: auto; min-width: 0; justify-content: flex-end; flex-wrap: nowrap; overflow-x: auto; }
 .task-editor-header-row > button { flex-shrink: 0; }
-.task-dialog .task-title-row { width: 100%; }
-.task-dialog.board-task-editor .task-title-row .title-input { display: block; width: 100%; font-size: var(--type-title) !important; line-height: 1.4; padding: 5px 4px; }
+.task-dialog .task-title-row { display: flex; align-items: center; gap: 8px; width: 100%; min-width: 0; }
+.task-dialog.board-task-editor .task-title-row .title-input { display: block; width: 0; flex: 1; min-width: 0; font-size: var(--type-title) !important; line-height: 1.4; padding: 5px 4px; }
 .task-dialog .task-metadata { padding-bottom: 16px; border-bottom: 1px solid var(--line); }
 /* Assignee and priority columns are exactly their square controls, so Status ends where the header's action group does. */
 .task-dialog .task-metadata-main { display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; }
@@ -1429,9 +1428,6 @@ html.task-page-open,
 }
 @media (max-width: 600px) {
   .task-dialog.board-task-editor .task-editor-header-row .task-editor-actions { justify-content: flex-end; overflow: visible; }
-  .task-dialog .task-title-row { display: flex; align-items: center; gap: 10px; }
-  .task-dialog.board-task-editor .task-title-row .task-identity-row { display: flex; flex-direction: column; flex: none; gap: 2px; width: calc(var(--control-height) + 12px); }
-  .task-dialog.board-task-editor .task-title-row .task-key { flex: none; max-width: 96px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: var(--type-meta); }
   .task-dialog.board-task-editor .task-title-row .title-input { min-width: 0; flex: 1; font-size: var(--type-title) !important; }
 }
 .board-node.task .live-card-state { overflow: visible; }
@@ -1562,3 +1558,15 @@ html.task-page-open,
 .task-time-controls .check-control > input[type="checkbox"] { width: auto; min-width: 0; flex: none; }
 
 .task-row > .row-fields > .row-assignee { flex: 0 0 var(--row-assignee-width); width: var(--row-assignee-width); }
+
+/* The focus indicator follows the chip; its click/touch target remains full-height. */
+.row-choice:focus-within, .phone-field:focus-visible { outline: none; }
+.phone-field { position: relative; }
+:is(.row-choice:focus-within, .phone-field:focus-visible)::after {
+  content: ""; position: absolute; z-index: 2; pointer-events: none;
+  inset-block: calc(50% - var(--list-field-height) / 2); inset-inline: 0;
+  outline: var(--focus-ring); outline-offset: -1px; border-radius: var(--field-radius);
+}
+.task-dialog.board-task-editor .task-title-row > .task-identity-row { display: flex; flex: none; width: var(--control-height); gap: 0; }
+.task-dialog.board-task-editor .task-title-row > .task-key { flex: 0 1 auto; min-width: 0; max-width: min(96px, 20%); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: var(--type-meta); }
+.task-title-row > .bookmark-button { flex: none; }
