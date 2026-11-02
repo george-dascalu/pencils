@@ -2,6 +2,11 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.21.9 — 2026-11-02
+
+### Changed
+- Feature F0.21-9: Remove the default “A little space to turn plans into progress” tagline from Home project cards and project pages. Projects without a description leave out that text row; written descriptions remain visible.
+
 ## 0.21.8 — 2026-11-02
 
 ### Changed

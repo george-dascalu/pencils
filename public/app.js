@@ -498,7 +498,7 @@ function projectDescription() {
     String(state.project.body || "")
       .split("\n")
       .find((l) => l.trim() && !l.startsWith("#")) ||
-    "A little space to turn plans into progress."
+    ""
   );
 }
 // Revisions are sorted: the server may list the same records in another order.
@@ -925,11 +925,10 @@ function safeColor(value) {
 function welcomePage() {
   const projects = organisationProjects();
   if (projects.length)
-    return `${warningsHTML(state.globalWarnings)}<div class="project-grid">${projects.map((project) =>
-      `<button class="project-card" data-action="project-open" data-id="${esc(project.id)}"><span class="project-mark" style="background:${safeColor(project.color)}"></span><span class="project-card-copy"><strong>${esc(project.title)}</strong><small>${esc(
-        String(project.body || "A little space to turn plans into progress.").split("\n").find((line) => line.trim()) || "Open project",
-      )}</small></span>${icon("arrow")}</button>`,
-    ).join("")}</div>`;
+    return `${warningsHTML(state.globalWarnings)}<div class="project-grid">${projects.map((project) => {
+      const description = String(project.body || "").split("\n").find((line) => line.trim());
+      return `<button class="project-card" data-action="project-open" data-id="${esc(project.id)}"><span class="project-mark" style="background:${safeColor(project.color)}"></span><span class="project-card-copy"><strong>${esc(project.title)}</strong>${description ? `<small>${esc(description)}</small>` : ""}</span>${icon("arrow")}</button>`;
+    }).join("")}</div>`;
   return `${warningsHTML(state.globalWarnings)}<div class="home-projects-empty"><p>Bring your projects, plans, and scattered ideas together. An open canvas for your work, with Markdown at its heart.</p><div class="welcome-actions"><button class="button primary" data-action="project-new">${icon("plus")}Create a project</button><button class="button" data-action="demo">Explore an example ${icon("arrow")}</button></div></div>`;
 }
 
@@ -1013,11 +1012,12 @@ function projectPage() {
     storage.set(`task-view:${state.project.id}`, state.view);
   if (planningViews.includes(state.view))
     storage.set(`planning-view:${state.project.id}`, state.view);
-  const total = state.tasks.filter((t) => !t.archived).length,
+  const description = projectDescription(),
+    total = state.tasks.filter((t) => !t.archived).length,
     metric = features.progress(),
     done = metric.done,
     progress = metric.percent;
-  return `<section class="hero"><div><div class="eyebrow project-kicker"><span class="project-mark" style="background:${safeColor(state.project.color)}"></span>PROJECT WORKSPACE</div><h1>${esc(state.project.title)}</h1><p>${esc(projectDescription())}</p></div></section>
+  return `<section class="hero"><div><div class="eyebrow project-kicker"><span class="project-mark" style="background:${safeColor(state.project.color)}"></span>PROJECT WORKSPACE</div><h1>${esc(state.project.title)}</h1>${description ? `<p>${esc(description)}</p>` : ""}</div></section>
     <div class="stats-strip"><span class="stat">${icon("task")}<strong>${total}</strong> cards</span><span class="stat-divider"></span><span class="stat"><span class="progress"><span style="width:${progress}%"></span></span><strong>${progress}%</strong> complete</span><span class="stat-divider"></span><span class="stat">${icon("check")}<strong>${done}</strong> done</span><span class="stat">${icon("file")}Markdown workspace</span></div>
     ${warningsHTML([...state.globalWarnings, ...state.warnings])}
 
