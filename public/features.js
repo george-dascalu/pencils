@@ -1,3 +1,4 @@
+import { installTaskTimes } from "./task-time-fields.js";
 import { confirmAction } from "./confirm-popover.js";
 import { deferredController } from "./deferred-controller.js";
 import { DEFAULT_TASK_TYPES } from "./task-types.js";
@@ -264,6 +265,8 @@ export function installFeatures(ctx) {
     const comment = String(data.get("new-comment") || "").trim();
     return {
       start: data.get("start") || null,
+      start_time: data.has("start_time") ? data.get("start_time") || null : t.start_time || null,
+      due_time: data.has("due_time") ? data.get("due_time") || null : t.due_time || null,
       estimate: t.estimate ?? null,
       dependencies: data.getAll("dependencies"),
       related_records: data.getAll("related_records"),
@@ -323,6 +326,7 @@ export function installFeatures(ctx) {
     if (kind === "task" && form) {
       const t = task(form.dataset.id) || state.dialogTask || {};
       formBases.set(form, structuredClone(t));
+      installTaskTimes(form);
       sources.decorateTask(form,t);
       const linkedDrawings=state.boards.filter(b=>b.settings?.linked_tasks?.includes(t.id));
       if(linkedDrawings.length)form.querySelector('.dialog-body').insertAdjacentHTML('beforeend',`<section><h3>Canvases</h3>${linkedDrawings.map(b=>`<a class="button small" href="#project/${state.project.id}/board/${b.id}" target="_blank">${esc(b.title)} ↗</a>`).join('')}</section>`);

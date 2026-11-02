@@ -41,7 +41,7 @@ const typeTrigger = (page) => page.locator("[data-task-picker=type] .task-picker
 const card = (page) => page.locator('[data-node="card"]');
 
 async function checkMetadataLayout(page) {
-  const fields = await page.locator(".task-metadata [name]").evaluateAll((fields) => fields.map((el) => ({ name: el.name, x: el.closest(".field").getBoundingClientRect().x, y: el.closest(".field").getBoundingClientRect().y })));
+  const fields = await page.locator(".task-fields [name], .task-date-range [name]").evaluateAll((fields) => fields.map((el) => ({ name: el.name, x: el.closest(".field").getBoundingClientRect().x, y: el.closest(".field").getBoundingClientRect().y })));
   // Field order is assignee, status, priority (0.19.9).
   expect(fields.map((f) => f.name)).toEqual(["assignee", "status", "priority", "start", "due"]);
   expect(fields[0].x < fields[1].x && fields[1].x < fields[2].x, "assignee, status and priority left to right").toBe(true);

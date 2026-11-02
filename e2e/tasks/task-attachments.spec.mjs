@@ -271,7 +271,7 @@ test("the editor layout and the attachment preview fit desktop, tablet and phone
       const where = `${width}px ${theme}`;
       await page.evaluate((theme) => window.PencilsAppearance.write({ theme }), theme);
       const geometry = await form(page).evaluate((el) => {
-        const fields = [...el.querySelectorAll(".task-metadata [name]")];
+        const fields = [...el.querySelectorAll(".task-fields [name], .task-date-range [name]")];
         const identity = [el.querySelector('[data-task-picker="type"]'), el.querySelector(".task-key"), el.querySelector("[name=title]")];
         const rect = (node) => {
           const r = node.getBoundingClientRect();

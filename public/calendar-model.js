@@ -10,8 +10,15 @@ export function calendarRange(task) {
 export function calendarDateChange(task, grabbed, target, handle = null) {
   const range = calendarRange(task);
   if (!range) return { due: target };
-  if (handle === "start") return { start: target > range.end ? range.end : target, ...(!task.due ? { due: range.end } : {}) };
-  if (handle === "due") return { due: target < range.start ? range.start : target, ...(!task.start ? { start: range.start } : {}) };
+  const overnight = task.start_time && task.due_time && task.start_time >= task.due_time;
+  if (handle === "start") {
+    const latest = overnight ? shiftDate(range.end, -1) : range.end;
+    return { start: target > latest ? latest : target, ...(!task.due ? { due: range.end } : {}) };
+  }
+  if (handle === "due") {
+    const earliest = overnight ? shiftDate(range.start, 1) : range.start;
+    return { due: target < earliest ? earliest : target, ...(!task.start ? { start: range.start } : {}) };
+  }
   const delta = (Date.parse(target) - Date.parse(grabbed)) / DAY;
   return {
     ...(task.start ? { start: shiftDate(task.start, delta) } : {}),

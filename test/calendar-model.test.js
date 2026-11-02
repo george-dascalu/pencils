@@ -45,3 +45,9 @@ test("the week layout holds the anchor's week, with the part of a longer card in
   assert.deepEqual(weeks[0].days, ["2026-10-26", "2026-10-27", "2026-10-28", "2026-10-29", "2026-10-30", "2026-10-31", "2026-11-01"]);
   assert.deepEqual(weeks[0].segments.map((s) => [s.task.id, s.from, s.to]), [["span", 0, 2], ["in", 4, 4]]);
 });
+
+test('resizing an overnight timed card by date keeps a positive time range', () => {
+  const task={start:'2026-11-02',due:'2026-11-04',start_time:'23:00',due_time:'01:00'};
+  assert.deepEqual(calendarDateChange(task,null,'2026-11-04','start'),{start:'2026-11-03'});
+  assert.deepEqual(calendarDateChange(task,null,'2026-11-02','due'),{due:'2026-11-03'});
+});

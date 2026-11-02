@@ -4,7 +4,7 @@ import { statusLabel } from './workflow-model.js';
 
 const fields = {
   title: 'Title', type: 'Card type', assignee: 'Assignee', priority: 'Priority', status: 'Status',
-  start: 'Start date', due: 'Due date', body: 'Description', parent: 'Parent card',
+  start: 'Start date', due: 'Due date', start_time: 'Start time', due_time: 'End time', body: 'Description', parent: 'Parent card',
   dependencies: 'Blocked by', related_records: 'Related cards', documents: 'Documents', tags: 'Tags',
   estimate: 'Estimate', archived: 'Archived', recurrence: 'Recurrence',
 };

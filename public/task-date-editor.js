@@ -1,3 +1,4 @@
+import { taskTimeFields, installTaskTimes } from "./task-time-fields.js";
 import { positionPopover } from "./popover-position.js";
 import { focusOnOpen } from "./open-focus.js";
 
@@ -59,6 +60,7 @@ export function taskDateEditor(ctx) {
       <header class="task-dates-actions">${sourceDue ? "" : '<button type="button" class="text-link" data-task-dates-clear>Clear dates</button>'}<button type="button" class="icon-button" data-task-dates-close aria-label="Close date editor">${icon("close")}</button></header>
       <label class="field">Start date<input type="date" name="start" aria-label="Start date" value="${esc(value.start || "")}"></label>
       <label class="field">Due date<input type="date" name="due" aria-label="Due date" value="${esc(value.due || "")}" ${sourceDue ? 'disabled aria-describedby="task-dates-source"' : ""}></label>
+      ${sourceDue ? "" : taskTimeFields(value, esc)}
       ${sourceDue ? '<p id="task-dates-source" class="field-hint">The due date is managed by the connected source.</p>' : ""}
       ${chooseOnTimeline && !sourceDue ? '<button type="button" class="text-link" data-task-dates-pick>Choose on timeline</button>' : ""}
       <p class="form-error" role="alert" hidden></p>
@@ -76,13 +78,14 @@ export function taskDateEditor(ctx) {
     anchor()?.setAttribute("aria-controls", panel.id);
     panel.showPopover();
     const form = panel.querySelector("form");
+    installTaskTimes(form);
     const start = form.elements.start,
       due = form.elements.due;
     const error = panel.querySelector(".form-error");
     const url = ctx.route?.("tasks", id);
     const values = () => ({
       start: start.value || null,
-      ...(!sourceDue ? { due: due.value || null } : {}),
+      ...(!sourceDue ? { due: due.value || null, start_time: form.elements.start_time.value || null, due_time: form.elements.due_time.value || null } : {}),
     });
     let lastValues = JSON.stringify(values());
     function limits() {
@@ -94,7 +97,6 @@ export function taskDateEditor(ctx) {
       if (event.target === start || event.target === due) limits();
     });
     form.addEventListener("change", (event) => {
-      if (event.target !== start && event.target !== due) return;
       limits();
       void current.save();
     });
@@ -106,7 +108,7 @@ export function taskDateEditor(ctx) {
         return;
       }
       if (!form.checkValidity()) {
-        error.textContent = "Enter a valid date.";
+        error.textContent = "Check the dates and times. The end must be after the start.";
         error.hidden = false;
         return;
       }
@@ -150,6 +152,7 @@ export function taskDateEditor(ctx) {
       .querySelector("[data-task-dates-clear]")
       ?.addEventListener("click", () => {
         start.value = due.value = "";
+        start.dispatchEvent(new Event("change", { bubbles: true }));
         limits();
         void current.save();
         focusOnOpen(start, panel.querySelector("[data-task-dates-clear]"));

@@ -391,3 +391,16 @@ test("the changes feed sends everything again when asked from a version it can't
   for (const since of [-1, 1.5, store.version + 1]) assert.equal((await store.delta(project.id, since)).full, true, String(since));
   assert.equal((await store.delta(project.id, store.version)).full, false);
 });
+
+test('timed cards keep their hours in Markdown, updates, history and a reopened vault', async t => {
+  const {root,store,project}=await workspace(t);
+  const hours={start:'2026-11-02',due:'2026-11-02',start_time:'09:15',due_time:'10:45'};
+  const card=await store.createTask(project.id,{title:'Scheduled review',...hours});
+  assert.match(await fs.readFile(path.join(root,card.file),'utf8'),/start_time: ["']?09:15/);
+  const edited=await store.updateTask(project.id,card.id,{revision:card.revision,due_time:'11:00'});
+  const reopened=new Store(root), found=(await reopened.snapshot(project.id)).tasks.find(t=>t.id===card.id);
+  assert.equal(found.start_time,'09:15');assert.equal(found.due_time,'11:00');
+  await assert.rejects(()=>store.updateTask(project.id,card.id,{revision:edited.revision,due_time:'09:15'}),{status:400});
+  const allDay=await store.updateTask(project.id,card.id,{revision:edited.revision,start_time:null,due_time:null});
+  assert.equal(allDay.start,hours.start);assert.equal(allDay.start_time,null);
+});

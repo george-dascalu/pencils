@@ -29,12 +29,7 @@
   min-height: calc(var(--control-height) * 3);
   padding-bottom: 8px;
 }
-/* The Week layout's one week fills the space, its cards in rows at the top of each day. */
-.calendar[data-layout="week"] .calendar-week {
-  grid-template-rows: var(--control-height) repeat(var(--calendar-lanes), minmax(var(--control-height), auto)) 1fr;
-  min-height: min(60dvh, 560px);
-}
-.calendar[data-layout="week"] .calendar-day { grid-row: 1 / -1 !important; }
+.calendar-day { grid-row: 1 / -1 !important; }
 .calendar-day {
   min-height: 0;
   padding: 0;
@@ -143,3 +138,20 @@
 
 .calendar-empty { padding: 8px 0; }
 .calendar-empty p { margin: 0 0 8px; }
+
+/* The hour gutter and all-day strip share the same day columns. */
+.calendar-hourly { --hour-height: 64px; --hour-gutter: 56px; min-width: calc(var(--calendar-columns) * 90px + var(--hour-gutter)); }
+.calendar-hourly > .calendar-weekdays, .calendar-hourly > .calendar-all-day { margin-left: var(--hour-gutter); }
+.calendar-hourly > .calendar-all-day { min-height: calc(var(--control-height) * 2); }
+.calendar-all-day::before { content: "All day"; position: absolute; right: 100%; top: 8px; width: var(--hour-gutter); text-align: center; color: var(--muted); font-size: var(--type-small); }
+.calendar-hours-scroll { max-height: max(240px, calc(100dvh - 260px - var(--tabbar-clearance, 0px))); overflow-y: auto; overscroll-behavior: contain; }
+.calendar-hours { display: grid; grid-template-columns: var(--hour-gutter) repeat(var(--calendar-columns), minmax(0, 1fr)); }
+.calendar-hour-labels { display: grid; grid-template-rows: repeat(24, var(--hour-height)); position: sticky; left: 0; background: var(--surface); z-index: 2; }
+.calendar-hour-labels > span { font-size: var(--type-small); color: var(--muted); text-align: right; padding: 2px 8px; }
+.calendar-hours-day { position: relative; height: calc(24 * var(--hour-height)); border-right: 1px solid var(--line); }
+.calendar-hours-day > .calendar-hour-slot { display: block; width: 100%; height: var(--hour-height) !important; border-radius: 0; border-top: 1px solid var(--line); padding: 0; background: transparent; touch-action: auto; user-select: none; -webkit-touch-callout: none; }
+.calendar-hour-slot:hover { background: var(--surface-soft); }
+.calendar-timed-card { position: absolute; z-index: 1; box-sizing: border-box; padding: 1px 2px; }
+.calendar-timed-card > button { display: flex; flex-direction: column; align-items: flex-start; width: 100%; height: 100%; min-height: 0 !important; padding: 3px 6px; border: 1px solid color-mix(in srgb, var(--task-field-color) 55%, var(--line)); background: color-mix(in srgb, var(--task-field-color) 12%, var(--surface)); border-radius: var(--field-radius); font-size: var(--type-small); overflow: hidden; }
+.calendar-timed-card :is(strong,span) { max-width: 100%; overflow: hidden; text-overflow: ellipsis; }
+.calendar-time-selection { position: absolute; z-index: 3; inset-inline: 2px; min-height: 16px; padding: 2px 4px; pointer-events: none; border: 1px solid var(--green); border-radius: var(--field-radius); background: color-mix(in srgb, var(--green) 20%, var(--surface)); color: var(--ink); font-size: var(--type-small); }

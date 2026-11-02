@@ -2,6 +2,15 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.21.2 — 2026-11-02
+
+### Added
+- **F0.21-2:** Week calendar with an hourly scale, separate all-day cards and overlapping timed cards. Drag a time range to open a new card with its dates and times filled in; on touch screens, hold before dragging or tap a time. Keyboard users can activate an hour slot.
+- Optional start and end times in the card editor and date picker, saved in the card's Markdown file. Existing date-only cards stay all-day.
+
+### Fixed
+- Centre the assignee and status controls when creating cards, remove empty columns for disabled fields, and align dates with the shared field box.
+
 ## 0.21.1 — 2026-11-02
 
 ### Changed

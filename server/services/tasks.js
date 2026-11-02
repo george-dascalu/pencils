@@ -246,6 +246,8 @@ export const tasksMethods = {
     };
     for (const key of [
       "start",
+      "start_time",
+      "due_time",
       "milestone",
       "estimate",
       "dependencies",
@@ -307,6 +309,8 @@ export const tasksMethods = {
       "due",
       "tags",
       "start",
+      "start_time",
+      "due_time",
       "milestone",
       "estimate",
       "dependencies",

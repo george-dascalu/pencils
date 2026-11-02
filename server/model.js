@@ -178,6 +178,13 @@ export function validDate(value) {
 }
 export function validateExtras(data, config) {
   if (!validDate(data.start)) fail("Start must be a valid date.");
+  if (data.start_time != null && data.start_time !== "" || data.due_time != null && data.due_time !== "") {
+    const time = value => typeof value === "string" && /^([01]\d|2[0-3]):[0-5]\d$/.test(value);
+    if (!data.start || !data.due || !validDate(data.due) || !time(data.start_time) || !time(data.due_time))
+      fail("Timed cards need start and due dates and times in HH:mm format.");
+    if (`${data.start}T${data.start_time}` >= `${data.due}T${data.due_time}`)
+      fail("End time must be after the start time.");
+  }
   if (data.start && data.due && data.start > data.due)
     fail("Start must be on or before the due date.");
   if (

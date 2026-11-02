@@ -23,7 +23,7 @@ onDevices(["desktop", "phone"], () => test("the Week layout shows one week and m
   await expect(page.locator(".calendar-week .calendar-day")).toHaveCount(7);
   await expect(page.locator(".calendar-task")).toHaveText([/Spanning card/, /This week/]);
   // Taller than a week in the month grid, so each day has room for its cards.
-  const height = (await page.locator(".calendar-week").boundingBox()).height;
+  const height = (await page.locator(".calendar-hours").boundingBox()).height;
   expect(height, `${device}: a tall week`).toBeGreaterThan(300);
   await page.locator('[data-feature="month-next"]').click();
   await expect(heading).toHaveText("2 Nov – 8 Nov 2026");

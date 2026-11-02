@@ -121,7 +121,7 @@ test("the rich description edits bullets and Markdown, previews, fits every widt
             const r = rect(s);
             return r.top + r.height / 2;
           }),
-          fields: [...form.querySelectorAll(".task-metadata [name]")].map((el) => el.closest(".field").getBoundingClientRect().top),
+          fields: [...form.querySelectorAll(".task-fields [name], .task-date-range [name]")].map((el) => el.closest(".field").getBoundingClientRect().top),
           overflow: form.scrollWidth > form.clientWidth,
           iconOnly: form.querySelector('[data-task-picker="type"]').classList.contains("icon-only"),
         };

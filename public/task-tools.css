@@ -1363,7 +1363,14 @@ html.task-page-open,
 .task-dialog .task-metadata { padding-bottom: 16px; border-bottom: 1px solid var(--line); }
 /* Assignee and priority columns are exactly their square controls, so Status ends where the header's action group does. */
 .task-dialog .task-metadata-main { display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; }
-.task-dialog .task-fields { container: card-fields / inline-size; display: grid; grid-template-columns: max-content minmax(0, 1fr) var(--control-height); }
+.task-dialog .task-fields { container: card-fields / inline-size; display: flex; min-width: 0; }
+.task-dialog .task-fields > .field { width: auto; flex: 0 0 auto; margin: 0; }
+.task-dialog .task-fields > .field:has(> select[name="status"]) { flex: 1; }
+.task-dialog .task-metadata-main { align-items: start; }
+.task-time-controls { display: grid; gap: 4px; }
+.task-time-range { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.task-time-range > .field { margin: 0; }
+.task-time-range input { min-width: 0; width: 100%; }
 .task-dialog .task-metadata-main > .task-dates { display: flex; flex-direction: column; gap: 5px; grid-column: 1 / -1; margin: 0; }
 .task-assignee-choice { position: relative; display: grid; place-items: center; min-width: var(--control-height); height: var(--control-height); }
 .task-assignee-choice .task-assignee { min-width: var(--control-height); width: auto; height: var(--control-height); padding-inline: 8px; font-size: var(--type-body); }
@@ -1556,3 +1563,5 @@ html.task-page-open,
 
 /* Checklist items in the rich editor keep a gap between the box and the text. */
 .inline-rich li > input[type="checkbox"] { margin: 0 6px 0 0; vertical-align: middle; }
+.task-time-controls .check-control { align-self: start; font-size: var(--type-body); }
+.task-time-controls .check-control > input[type="checkbox"] { width: auto; min-width: 0; flex: none; }
