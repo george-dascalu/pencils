@@ -1,0 +1,315 @@
+[
+  {
+    "device": "desktop",
+    "theme": "light",
+    "view": "home",
+    "findings": [
+      "%cundersized-ui-text%c 10px functional text \"Saved automatically\" (below 11px floor)",
+      "%cstraggler%c \"view.\" alone on the last of 2 lines (7% of the measure)",
+      "%ctiny-text%c 11px body text"
+    ],
+    "pageErrors": [],
+    "httpErrors": []
+  },
+  {
+    "device": "desktop",
+    "theme": "light",
+    "view": "list",
+    "findings": [
+      "%clow-contrast%c placeholder \"Find a card…\" 2.5:1 (need 4.5:1) — text #9ba290 on #f9f9f5",
+      "%cundersized-ui-text%c 10px functional text \"Ann\" (below 11px floor)",
+      "%cundersized-ui-text%c 10px functional text \"Ann\" (below 11px floor)",
+      "%cundersized-ui-text%c 10px functional text \"Geo\" (below 11px floor)",
+      "%cundersized-ui-text%c 10px functional text \"Geo\" (below 11px floor)",
+      "%cundersized-ui-text%c 10px functional text \"Mor\" (below 11px floor)"
+    ],
+    "pageErrors": [],
+    "httpErrors": []
+  },
+  {
+    "device": "desktop",
+    "theme": "light",
+    "view": "documents",
+    "findings": [
+      "%cnested-cards%c Card inside card"
+    ],
+    "pageErrors": [],
+    "httpErrors": []
+  },
+  {
+    "device": "desktop",
+    "theme": "light",
+    "view": "board",
+    "findings": [
+      "%cundersized-ui-text%c 10px functional text \"Geo\" (below 11px floor)"
+    ],
+    "pageErrors": [],
+    "httpErrors": []
+  },
+  {
+    "device": "desktop",
+    "theme": "light",
+    "view": "settings",
+    "findings": [],
+    "pageErrors": [],
+    "httpErrors": []
+  },
+  {
+    "device": "desktop",
+    "theme": "dark",
+    "view": "home",
+    "findings": [
+      "%cundersized-ui-text%c 10px functional text \"Saved automatically\" (below 11px floor)",
+      "%cstraggler%c \"view.\" alone on the last of 2 lines (7% of the measure)",
+      "%ctiny-text%c 11px body text"
+    ],
+    "pageErrors": [],
+    "httpErrors": []
+  },
+  {
+    "device": "desktop",
+    "theme": "dark",
+    "view": "list",
+    "findings": [
+      "%cundersized-ui-text%c 10px functional text \"Ann\" (below 11px floor)",
+      "%cundersized-ui-text%c 10px functional text \"Ann\" (below 11px floor)",
+      "%cundersized-ui-text%c 10px functional text \"Geo\" (below 11px floor)",
+      "%cundersized-ui-text%c 10px functional text \"Geo\" (below 11px floor)",
+      "%cundersized-ui-text%c 10px functional text \"Mor\" (below 11px floor)"
+    ],
+    "pageErrors": [],
+    "httpErrors": []
+  },
+  {
+    "device": "desktop",
+    "theme": "dark",
+    "view": "documents",
+    "findings": [
+      "%cnested-cards%c Card inside card"
+    ],
+    "pageErrors": [],
+    "httpErrors": []
+  },
+  {
+    "device": "desktop",
+    "theme": "dark",
+    "view": "board",
+    "findings": [
+      "%cundersized-ui-text%c 10px functional text \"Geo\" (below 11px floor)"
+    ],
+    "pageErrors": [],
+    "httpErrors": []
+  },
+  {
+    "device": "desktop",
+    "theme": "dark",
+    "view": "settings",
+    "findings": [],
+    "pageErrors": [],
+    "httpErrors": []
+  },
+  {
+    "device": "phone",
+    "theme": "light",
+    "view": "home",
+    "findings": [],
+    "pageErrors": [],
+    "httpErrors": []
+  },
+  {
+    "device": "phone",
+    "theme": "light",
+    "view": "list",
+    "findings": [
+      "%clow-contrast%c placeholder \"Find a card…\" 2.5:1 (need 4.5:1) — text #9ba290 on #f9f9f5",
+      "%cundersized-ui-text%c 10px functional text \"Ann\" (below 11px floor)",
+      "%cundersized-ui-text%c 10px functional text \"Ann\" (below 11px floor)",
+      "%cundersized-ui-text%c 10px functional text \"Geo\" (below 11px floor)",
+      "%cundersized-ui-text%c 10px functional text \"Geo\" (below 11px floor)",
+      "%cundersized-ui-text%c 10px functional text \"Mor\" (below 11px floor)"
+    ],
+    "pageErrors": [],
+    "httpErrors": []
+  },
+  {
+    "device": "phone",
+    "theme": "light",
+    "view": "documents",
+    "findings": [],
+    "pageErrors": [],
+    "httpErrors": []
+  },
+  {
+    "device": "phone",
+    "theme": "light",
+    "view": "board",
+    "findings": [
+      "%cundersized-ui-text%c 10px functional text \"Geo\" (below 11px floor)",
+      "%cbody-text-viewport-edge%c <p> with 47-char body bleeds to viewport edge (right 12px)"
+    ],
+    "pageErrors": [],
+    "httpErrors": []
+  },
+  {
+    "device": "phone",
+    "theme": "light",
+    "view": "settings",
+    "findings": [],
+    "pageErrors": [],
+    "httpErrors": []
+  },
+  {
+    "device": "phone",
+    "theme": "dark",
+    "view": "home",
+    "findings": [],
+    "pageErrors": [],
+    "httpErrors": []
+  },
+  {
+    "device": "phone",
+    "theme": "dark",
+    "view": "list",
+    "findings": [
+      "%cundersized-ui-text%c 10px functional text \"Ann\" (below 11px floor)",
+      "%cundersized-ui-text%c 10px functional text \"Ann\" (below 11px floor)",
+      "%cundersized-ui-text%c 10px functional text \"Geo\" (below 11px floor)",
+      "%cundersized-ui-text%c 10px functional text \"Geo\" (below 11px floor)",
+      "%cundersized-ui-text%c 10px functional text \"Mor\" (below 11px floor)"
+    ],
+    "pageErrors": [],
+    "httpErrors": []
+  },
+  {
+    "device": "phone",
+    "theme": "dark",
+    "view": "documents",
+    "findings": [],
+    "pageErrors": [],
+    "httpErrors": []
+  },
+  {
+    "device": "phone",
+    "theme": "dark",
+    "view": "board",
+    "findings": [
+      "%cundersized-ui-text%c 10px functional text \"Geo\" (below 11px floor)",
+      "%cbody-text-viewport-edge%c <p> with 47-char body bleeds to viewport edge (right 12px)"
+    ],
+    "pageErrors": [],
+    "httpErrors": []
+  },
+  {
+    "device": "phone",
+    "theme": "dark",
+    "view": "settings",
+    "findings": [],
+    "pageErrors": [],
+    "httpErrors": []
+  },
+  {
+    "device": "ipad",
+    "theme": "light",
+    "view": "home",
+    "findings": [
+      "%cundersized-ui-text%c 10px functional text \"Saved automatically\" (below 11px floor)"
+    ],
+    "pageErrors": [],
+    "httpErrors": []
+  },
+  {
+    "device": "ipad",
+    "theme": "light",
+    "view": "list",
+    "findings": [
+      "%clow-contrast%c placeholder \"Find a card…\" 2.6:1 (need 4.5:1) — text #9ba290 on #fdfdf9",
+      "%cundersized-ui-text%c 10px functional text \"Ann\" (below 11px floor)",
+      "%cundersized-ui-text%c 10px functional text \"Ann\" (below 11px floor)",
+      "%cundersized-ui-text%c 10px functional text \"Geo\" (below 11px floor)",
+      "%cundersized-ui-text%c 10px functional text \"Geo\" (below 11px floor)",
+      "%cundersized-ui-text%c 10px functional text \"Mor\" (below 11px floor)"
+    ],
+    "pageErrors": [],
+    "httpErrors": []
+  },
+  {
+    "device": "ipad",
+    "theme": "light",
+    "view": "documents",
+    "findings": [
+      "%cnested-cards%c Card inside card"
+    ],
+    "pageErrors": [],
+    "httpErrors": []
+  },
+  {
+    "device": "ipad",
+    "theme": "light",
+    "view": "board",
+    "findings": [
+      "%cundersized-ui-text%c 10px functional text \"Geo\" (below 11px floor)"
+    ],
+    "pageErrors": [],
+    "httpErrors": []
+  },
+  {
+    "device": "ipad",
+    "theme": "light",
+    "view": "settings",
+    "findings": [],
+    "pageErrors": [],
+    "httpErrors": []
+  },
+  {
+    "device": "ipad",
+    "theme": "dark",
+    "view": "home",
+    "findings": [
+      "%cundersized-ui-text%c 10px functional text \"Saved automatically\" (below 11px floor)"
+    ],
+    "pageErrors": [],
+    "httpErrors": []
+  },
+  {
+    "device": "ipad",
+    "theme": "dark",
+    "view": "list",
+    "findings": [
+      "%cundersized-ui-text%c 10px functional text \"Ann\" (below 11px floor)",
+      "%cundersized-ui-text%c 10px functional text \"Ann\" (below 11px floor)",
+      "%cundersized-ui-text%c 10px functional text \"Geo\" (below 11px floor)",
+      "%cundersized-ui-text%c 10px functional text \"Geo\" (below 11px floor)",
+      "%cundersized-ui-text%c 10px functional text \"Mor\" (below 11px floor)"
+    ],
+    "pageErrors": [],
+    "httpErrors": []
+  },
+  {
+    "device": "ipad",
+    "theme": "dark",
+    "view": "documents",
+    "findings": [
+      "%cnested-cards%c Card inside card"
+    ],
+    "pageErrors": [],
+    "httpErrors": []
+  },
+  {
+    "device": "ipad",
+    "theme": "dark",
+    "view": "board",
+    "findings": [
+      "%cundersized-ui-text%c 10px functional text \"Geo\" (below 11px floor)"
+    ],
+    "pageErrors": [],
+    "httpErrors": []
+  },
+  {
+    "device": "ipad",
+    "theme": "dark",
+    "view": "settings",
+    "findings": [],
+    "pageErrors": [],
+    "httpErrors": []
+  }
+]

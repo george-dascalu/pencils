@@ -1,9 +1,9 @@
 {
   "name": "pencils",
-  "version": "0.20.129",
+  "version": "0.20.130",
   "private": true,
   "type": "module",
-  "description": "An offline, Markdown-backed project workspace",
+  "description": "A Markdown-backed workspace for documents, cards and boards",
   "scripts": {
     "postinstall": "node scripts/postinstall.mjs",
     "build:editor": "node scripts/build-editor.mjs",

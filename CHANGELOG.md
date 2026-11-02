@@ -2,6 +2,19 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.20.130 — 2026-11-02
+
+### Fixed
+
+- Document checklist taps have full touch targets, including near the checkbox, without opening the keyboard; swipes still scroll. Document property and task-query checkboxes use the same target.
+- Empty Timeline results and their recovery action fit phone screens; Calendar distinguishes filtered results from an empty schedule and offers Clear filters.
+- Home uses each project's status names and short dates, respects hidden fields, and gives phone card titles their own line. Breakdown labels have more room.
+- Phone boards expose the bookmark star and Board tools directly; save feedback stays in Board tools without an extra View options menu.
+- New Table layouts lead with Type, ID, Title, Assignee, Status, Priority and dates. Existing customized columns retain their order and widths.
+- Search hints have readable contrast, save feedback uses the shared metadata size, and empty-card guidance names the actual New → Card action.
+- The app description accurately describes the Markdown workspace without promising general offline operation.
+- The document tag-search check waits for its document to load before opening the list, avoiding an intermittent startup race in verification.
+
 ## 0.20.129 — 2026-11-02
 
 ### Fixed

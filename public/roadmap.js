@@ -4,6 +4,7 @@
 // YYYY-MM-DDTHH:MM (local time; blank when not on record; done is when the work finished, the
 // release follows within minutes); version is the release.
 export const roadmap = [
+  { id: "T112", title: "Fix critique findings across document touch targets, Home, planning recovery, board menus and Table defaults", status: "done", requested: "2026-11-02", started: "2026-11-02", done: "2026-11-02", version: "0.20.130" },
   { id: "T111", title: "Make date-picker verification independent of the Today shortcut", status: "done", requested: "", started: "2026-11-02", done: "2026-11-02", version: "0.20.129" },
   { id: "T110", title: "Keep card fields inside their box in narrow mouse-driven desktop windows", status: "done", requested: "", started: "2026-11-01", done: "2026-11-01", version: "0.20.128" },
   { id: "T109", title: "Adapt card controls to narrow phones and iPad windows, with readable dates and bounded assignee names", status: "done", requested: "2026-11-01", started: "2026-11-01", done: "2026-11-01", version: "0.20.127" },

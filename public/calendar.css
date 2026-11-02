@@ -140,3 +140,6 @@
   .agenda-row > .calendar-dates { width: var(--control-height); padding-inline: 0 !important; justify-content: center; }
   .agenda-row > .calendar-dates > span { display: none; }
 }
+
+.calendar-empty { padding: 8px 0; }
+.calendar-empty p { margin: 0 0 8px; }

@@ -261,3 +261,7 @@ test("saved table preferences reject malformed rules and drop removed fields", (
   assert.deepEqual(tablePreferences(null, config), prefs({ outline: true }));
   assert.equal(tablePreferences(prefs(), config).outline, true);
 });
+
+test("default table fields lead with the shared identity, fields and dates", () => {
+  assert.deepEqual(tableFields(config).slice(0, 8).map(f => f.key), ["type", "key", "title", "assignee", "status", "priority", "start", "due"]);
+});

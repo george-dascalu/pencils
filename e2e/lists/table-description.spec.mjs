@@ -86,9 +86,10 @@ onDevices(["desktop", "phone"], () => {
     await expect(page.locator('thead th[data-column-key="body"]')).toHaveCount(0);
     await page.locator('[data-column-visible="body"]').check();
     await page.locator('[data-feature="columns-close"]').click();
+    const previousIndex = (await headers(page)).indexOf("body");
     await page.locator('[data-column-drag="body"]').focus();
     await page.keyboard.press("Alt+ArrowRight");
-    await expect.poll(async () => (await headers(page))[3]).toBe("body");
+    await expect.poll(async () => (await headers(page))[previousIndex + 1]).toBe("body");
     const order = await headers(page);
     await expect(page.locator('[data-resize-column="body"]')).toHaveAttribute("aria-valuenow", "300");
     await page.reload();

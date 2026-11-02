@@ -3,7 +3,7 @@
 // top. A tap on a checkbox now toggles it without focusing the editor, and a
 // refresh of the Documents view keeps the open document's scroll position.
 import { test, expect, onDevices, useApp } from "../fixtures.mjs";
-import { documentName, openNewDocument } from "../helpers/documents.mjs";
+import { documentName, openNewDocument, editorSource } from "../helpers/documents.mjs";
 
 const app = useApp(async (store) => ({ project: await store.createProject({ title: "Docs", key: "DC" }) }));
 const body = "# Plan\n\n" + Array.from({ length: 40 }, (_, i) => `Paragraph ${i} with enough words to fill a line or two on a phone screen.\n\n- [ ] Task ${i}\n`).join("\n");
@@ -82,3 +82,58 @@ onDevices(["phone"], () => {
     expect(await scrollTop(page)).toBe(0);
   });
 });
+
+// A near tap must hit the same target as a centred tap, without waking the keyboard.
+onDevices(["phone", "ipad"], () => test("checklist targets accept off-centre taps without entering text @gate", async ({ page }) => {
+  const doc = await open(page);
+  const box = await visibleCheckbox(page);
+  const checkbox = page.getByRole("checkbox", { name: box.label, exact: true });
+  const target = checkbox.locator("..");
+  const size = await target.boundingBox();
+  expect(size.width).toBeGreaterThanOrEqual(44);
+  expect(size.height).toBeGreaterThanOrEqual(44);
+  await page.touchscreen.tap(box.x + 12, box.y);
+  await expect(checkbox).toBeChecked();
+  expect(await page.evaluate(() => !!document.activeElement?.closest(".cm-editor"))).toBe(false);
+  expect(await editorSource(page)).toContain(`- [x] ${box.label}`);
+  await expect.poll(async () => (await app.store.getDocument(app.project.id, doc.id)).body).toContain(`- [x] ${box.label}`);
+  expect((await editorSource(page)).match(/\[x\]/g)).toHaveLength(1);
+  await page.touchscreen.tap(box.x + 12, box.y);
+  await expect(checkbox).not.toBeChecked();
+}));
+
+onDevices(['phone'], () => test('a swipe starting on a checklist target scrolls without toggling', async ({ page, browserName }) => {
+  test.skip(browserName !== 'chromium', 'Native touch swipes use Chromium DevTools');
+  await open(page);
+  const box = await visibleCheckbox(page), before = await scrollTop(page);
+  const cdp = await page.context().newCDPSession(page);
+  try {
+    const touch = (type, y) => cdp.send('Input.dispatchTouchEvent', { type, touchPoints: y == null ? [] : [{ id: 1, x: box.x + 12, y }] });
+    await touch('touchStart', box.y);
+    for (let i = 1; i <= 8; i++) await touch('touchMove', box.y - i * 8);
+    await touch('touchEnd');
+    await expect.poll(() => scrollTop(page)).toBeGreaterThan(before + 20);
+    expect(await editorSource(page)).not.toContain('[x]');
+    expect(await page.evaluate(() => !!document.activeElement?.closest('.cm-editor'))).toBe(false);
+  } finally { await cdp.detach(); }
+}));
+
+onDevices(['phone', 'ipad'], () => test('property and task-query checkboxes share the touch target @gate', async ({ page }) => {
+  const title = `Touch query ${Date.now()}`;
+  const task = await app.store.createTask(app.project.id, { title, status: 'todo' });
+  let doc = await app.store.createDocument(app.project.id, { title, body: `\`\`\`tasks\ntitle includes ${title}\n\`\`\`` });
+  doc = await app.store.updateDocument(app.project.id, doc.id, { revision: doc.revision, document_properties: { set: { Approved: false } } });
+  await page.goto(`${app.base}/#project/${app.project.id}/documents/${doc.id}`);
+  await page.locator('.document-properties > summary').click();
+  for (const checkbox of [page.getByRole('checkbox', { name: 'Approved', exact: true }), page.getByRole('checkbox', { name: `Done: ${title}`, exact: true })]) {
+    await checkbox.scrollIntoViewIfNeeded();
+    const target = await checkbox.locator('..').boundingBox(), box = await checkbox.boundingBox();
+    expect(target.width).toBeGreaterThanOrEqual(44);
+    expect(target.height).toBeGreaterThanOrEqual(44);
+    await page.touchscreen.tap(box.x + box.width / 2 + 12, box.y + box.height / 2);
+    await expect(checkbox).toBeChecked();
+    expect(await page.evaluate(() => !!document.activeElement?.closest('.cm-editor'))).toBe(false);
+  }
+  await expect.poll(async () => (await app.store.getDocument(app.project.id, doc.id)).Approved).toBe(true);
+  await expect.poll(async () => (await app.store.snapshot(app.project.id)).tasks.find(t => t.id === task.id).status).toBe('done');
+}));

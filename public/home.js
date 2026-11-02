@@ -1,6 +1,10 @@
 import { compact, stackOrder } from "./home-grid.js";
 import { anchoredPanel } from "./anchored-panel.js";
 import { markdownSlice } from "./canvas-format.js";
+import { statusLabel } from "./workflow-model.js";
+import { priorityLabel } from "./task-priority.js";
+import { formatDay } from "./format-date.js";
+import { fieldOn } from "./card-fields.js";
 import { localDate } from "./task-visibility.js";
 
 // The personal Home (owner request T22, 31 October 2026): each person's own page of panels on a
@@ -140,10 +144,10 @@ export function installHome(ctx) {
     }
     const project = projectOf(s);
     if (!project) return '<p class="field-hint">No project in this organisation yet.</p>';
-    const snap = await snapshot(project.id);
+    const snap = await snapshot(project.id), schema = config(snap);
     if (p.type === "tasks") {
       const list = matching(snap, s), shown = list.slice(0, s.limit || 20);
-      return `<p class="home-count">${list.length} ${list.length === 1 ? "card" : "cards"} · ${esc(project.title)}</p>${shown.length ? `<div class="home-list">${shown.map((t) => `<button type="button" class="home-item home-task" data-feature="search-open" data-kind="card" data-id="${esc(t.id)}" data-project="${esc(project.id)}"><span class="home-task-key">${esc(t.key || "")}</span><span>${esc(t.title)}</span><span class="home-task-status">${esc(t.status)}</span>${t.due ? `<span class="home-task-due">${esc(t.due)}</span>` : ""}</button>`).join("")}</div>` : '<p class="field-hint">No cards match.</p>'}`;
+      return `<p class="home-count">${list.length} ${list.length === 1 ? "card" : "cards"} · ${esc(project.title)}</p>${shown.length ? `<div class="home-list">${shown.map((t) => `<button type="button" class="home-item home-task" title="${esc(t.title)}" data-feature="search-open" data-kind="card" data-id="${esc(t.id)}" data-project="${esc(project.id)}"><span class="home-task-key">${esc(t.key || "")}</span><span class="home-task-title">${esc(t.title)}</span>${fieldOn(schema, "status") ? `<span class="home-task-status" title="${esc(statusLabel(schema, t.status))}">${esc(statusLabel(schema, t.status))}</span>` : ""}${fieldOn(schema, "due") && t.due ? `<span class="home-task-due">${esc(formatDay(t.due))}</span>` : ""}</button>`).join("")}</div>` : '<p class="field-hint">No cards match.</p>'}`;
     }
     if (p.type === "stat") {
       const count = matching(snap, s).length, over = s.threshold != null && s.threshold > 0 && count >= s.threshold;
@@ -151,9 +155,11 @@ export function installHome(ctx) {
     }
     if (p.type === "breakdown") {
       const by = s.by || "status", counts = new Map();
+      if (!fieldOn(schema, by)) return '<p class="field-hint">This field is turned off in the project.</p>';
+      const display = value => by === "status" ? statusLabel(schema, value) : by === "priority" ? priorityLabel(value) : value;
       for (const t of snap.tasks.filter((t) => !t.archived)) counts.set(t[by] || "—", (counts.get(t[by] || "—") || 0) + 1);
       const max = Math.max(1, ...counts.values());
-      return counts.size ? `<div class="home-bars">${[...counts].sort((a, b) => b[1] - a[1]).map(([name, n]) => `<div class="home-bar"><span>${esc(name)}</span><i style="--share:${n / max}"></i><b>${n}</b></div>`).join("")}</div>` : '<p class="field-hint">No cards yet.</p>';
+      return counts.size ? `<div class="home-bars">${[...counts].sort((a, b) => b[1] - a[1]).map(([name, n]) => `<div class="home-bar"><span title="${esc(display(name))}">${esc(display(name))}</span><i style="--share:${n / max}"></i><b>${n}</b></div>`).join("")}</div>` : '<p class="field-hint">No cards yet.</p>';
     }
     if (p.type === "document") {
       const doc = (snap.documents || []).find((d) => d.id === s.document);

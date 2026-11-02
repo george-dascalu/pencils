@@ -155,8 +155,8 @@ test.describe("desktop", () => {
     await expect(rows(page)).toHaveCount(100);
     await page.locator('[data-board-menu="table-groups"] > summary').click();
     // Collapsing a group clears the selected rows, so a later bulk action can't reach hidden tasks.
-    await page.locator('td[data-cell="0,0"]').click();
-    await page.locator('td[data-cell="2,0"]').click({ modifiers: ["Shift"] });
+    await page.locator('tr[data-table-task] td[data-column-key="key"]').nth(0).click();
+    await page.locator('tr[data-table-task] td[data-column-key="key"]').nth(2).click({ modifiers: ["Shift"] });
     await expect(page.locator('#bulk-scope option[value="selected"]')).toHaveText("Selected rows (3)");
     await page.locator('[data-table-action="group-toggle"]').first().click();
     await expect(page.locator('#bulk-scope option[value="selected"]')).toHaveJSProperty("disabled", true);

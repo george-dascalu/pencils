@@ -1,0 +1,295 @@
+[
+  {
+    "device": "phone",
+    "view": "list",
+    "data": {
+      "placeholder": {
+        "html": "<input id=\"search\" type=\"search\" aria-label=\"Search cards\" placeholder=\"Find a card…\" value=\"\">",
+        "color": "rgb(155, 162, 144)",
+        "opacity": "1",
+        "background": "rgba(0, 0, 0, 0)",
+        "fontSize": "16px",
+        "ancestors": [
+          {
+            "tag": "INPUT",
+            "cls": "",
+            "bg": "rgba(0, 0, 0, 0)"
+          },
+          {
+            "tag": "LABEL",
+            "cls": "search",
+            "bg": "rgba(0, 0, 0, 0)"
+          },
+          {
+            "tag": "DIV",
+            "cls": "toolbar-left",
+            "bg": "rgba(0, 0, 0, 0)"
+          },
+          {
+            "tag": "DIV",
+            "cls": "toolbar",
+            "bg": "rgba(0, 0, 0, 0)"
+          },
+          {
+            "tag": "DIV",
+            "cls": "",
+            "bg": "rgba(0, 0, 0, 0)"
+          },
+          {
+            "tag": "MAIN",
+            "cls": "main project-main",
+            "bg": "rgba(0, 0, 0, 0)"
+          },
+          {
+            "tag": "DIV",
+            "cls": "shell",
+            "bg": "rgba(0, 0, 0, 0)"
+          },
+          {
+            "tag": "DIV",
+            "cls": "",
+            "bg": "rgba(0, 0, 0, 0)"
+          },
+          {
+            "tag": "BODY",
+            "cls": "",
+            "bg": "rgba(0, 0, 0, 0)"
+          },
+          {
+            "tag": "HTML",
+            "cls": "",
+            "bg": "rgb(249, 249, 245)"
+          }
+        ]
+      },
+      "phoneRow": {
+        "x": 9,
+        "y": 113,
+        "width": 328,
+        "height": 66.796875,
+        "top": 113,
+        "right": 337,
+        "bottom": 179.796875,
+        "left": 9
+      },
+      "phoneHit": [
+        {
+          "x": 2,
+          "y": 2,
+          "hit": "<button type=\"button\" class=\"phone-task-open\" data-action=\"task-open\" data-id=\"t-63172471\" aria-label=\"Open TT-1: An ordinary project card\"><span class=\"phone-task-title \">An ordinary project card</sp"
+        },
+        {
+          "x": 25,
+          "y": 2,
+          "hit": "<button type=\"button\" class=\"phone-task-open\" data-action=\"task-open\" data-id=\"t-63172471\" aria-label=\"Open TT-1: An ordinary project card\"><span class=\"phone-task-title \">An ordinary project card</sp"
+        },
+        {
+          "x": 2,
+          "y": 43,
+          "hit": "<button type=\"button\" class=\"phone-task-open\" data-action=\"task-open\" data-id=\"t-63172471\" aria-label=\"Open TT-1: An ordinary project card\"><span class=\"phone-task-title \">An ordinary project card</sp"
+        },
+        {
+          "x": 25,
+          "y": 43,
+          "hit": "<button type=\"button\" class=\"phone-task-open\" data-action=\"task-open\" data-id=\"t-63172471\" aria-label=\"Open TT-1: An ordinary project card\"><span class=\"phone-task-title \">An ordinary project card</sp"
+        }
+      ]
+    }
+  },
+  {
+    "device": "phone",
+    "view": "documents",
+    "before": {
+      "html": "<input type=\"checkbox\" class=\"document-checkbox\" aria-label=\"Agree release scope\" contenteditable=\"false\">",
+      "rect": {
+        "x": 30,
+        "y": 198.5,
+        "width": 13,
+        "height": 13,
+        "top": 198.5,
+        "right": 43,
+        "bottom": 211.5,
+        "left": 30
+      },
+      "labels": 0,
+      "pseudo": "none",
+      "parent": "<div class=\"cm-line\"><span class=\"ͼv\">-</span> <img class=\"cm-widgetBuffer\" aria-hidden=\"true\"><input type=\"checkbox\" class=\"document-checkbox\" aria-label=\"Agree release scope\" contenteditable=\"false\"><img class=\"cm-widgetBuffer\" aria-hidden=\"true\"> Agree release scope</div>",
+      "lineHeight": "28px",
+      "hitAtRight12": "<div class=\"cm-line\"><span class=\"ͼv\">-</span> <img class=\"cm-widgetBuffer\" aria-hidden=\"true\"><input type=\"checkbox\" class=\"document-checkbox\" aria-label=\"Agree release scope\" contenteditable=\"false\"><img class=\"cm-widgetBuffer\" aria-hidden=\"true\"> Agree release scope</div>"
+    },
+    "after": {
+      "focused": "<div spellcheck=\"true\" autocorrect=\"off\" autocapitalize=\"off\" writingsuggestions=\"false\" translate=\"no\" contenteditable=\"true\" style=\"tab-size: 4;\" class=\"cm-content cm-lineWrapping\" role=\"textbox\" aria-multiline=\"true\" aria-label=\"Document content\" tabindex=\"0\" aria-placeholder=\"Start writing…\" data-language=\"markdown\" aria-autocomplete=\"list\"><di",
+      "editorFocused": true,
+      "firstBox": "<input type=\"checkbox\" class=\"document-checkbox\" aria-label=\"Agree release scope\" contenteditable=\"false\">",
+      "text": "# Plan\n\n\n-  Agree release scope\n-  Publish the update\n-  Share the prototype\n\n"
+    }
+  },
+  {
+    "device": "phone",
+    "view": "board",
+    "data": {
+      "html": "<button type=\"button\" class=\"button small icon-button\" data-pro=\"collapse\" data-id=\"frame\" aria-label=\"Collapse frame\"><svg class=\"icon\" viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M5 12h14\"></path></svg></button>",
+      "rect": {
+        "x": 670.4000244140625,
+        "y": 93.6500015258789,
+        "width": 37.4000244140625,
+        "height": 37.400001525878906,
+        "top": 93.6500015258789,
+        "right": 707.800048828125,
+        "bottom": 131.0500030517578,
+        "left": 670.4000244140625
+      },
+      "css": {
+        "width": "44px",
+        "height": "44px",
+        "transform": "none"
+      },
+      "worldTransform": "matrix(0.85, 0, 0, 0.85, 15, 0)",
+      "zoom": "85%"
+    }
+  },
+  {
+    "device": "ipad",
+    "view": "list",
+    "data": {
+      "placeholder": {
+        "html": "<input id=\"search\" type=\"search\" aria-label=\"Search cards\" placeholder=\"Find a card…\" value=\"\">",
+        "color": "rgb(155, 162, 144)",
+        "opacity": "1",
+        "background": "rgba(0, 0, 0, 0)",
+        "fontSize": "16px",
+        "ancestors": [
+          {
+            "tag": "INPUT",
+            "cls": "",
+            "bg": "rgba(0, 0, 0, 0)"
+          },
+          {
+            "tag": "LABEL",
+            "cls": "search",
+            "bg": "rgba(0, 0, 0, 0)"
+          },
+          {
+            "tag": "DIV",
+            "cls": "topbar-view-tools",
+            "bg": "rgba(0, 0, 0, 0)"
+          },
+          {
+            "tag": "HEADER",
+            "cls": "topbar",
+            "bg": "rgb(253, 253, 249)"
+          },
+          {
+            "tag": "MAIN",
+            "cls": "main project-main",
+            "bg": "rgba(0, 0, 0, 0)"
+          },
+          {
+            "tag": "DIV",
+            "cls": "shell",
+            "bg": "rgba(0, 0, 0, 0)"
+          },
+          {
+            "tag": "DIV",
+            "cls": "",
+            "bg": "rgba(0, 0, 0, 0)"
+          },
+          {
+            "tag": "BODY",
+            "cls": "",
+            "bg": "rgba(0, 0, 0, 0)"
+          },
+          {
+            "tag": "HTML",
+            "cls": "",
+            "bg": "rgb(249, 249, 245)"
+          }
+        ]
+      },
+      "phoneRow": {
+        "x": 0,
+        "y": 0,
+        "width": 0,
+        "height": 0,
+        "top": 0,
+        "right": 0,
+        "bottom": 0,
+        "left": 0
+      },
+      "phoneHit": [
+        {
+          "x": 2,
+          "y": 2,
+          "hit": "<header class=\"topbar\"><div class=\"breadcrumb\"><button class=\"icon-button mobile-menu\" data-action=\"menu\" aria-label=\"Toggle sidebar\" aria-controls=\"workspace-sidebar\" aria-expanded=\"false\"><svg class"
+        },
+        {
+          "x": 25,
+          "y": 2,
+          "hit": "<header class=\"topbar\"><div class=\"breadcrumb\"><button class=\"icon-button mobile-menu\" data-action=\"menu\" aria-label=\"Toggle sidebar\" aria-controls=\"workspace-sidebar\" aria-expanded=\"false\"><svg class"
+        },
+        {
+          "x": 2,
+          "y": 43,
+          "hit": "<header class=\"topbar\"><div class=\"breadcrumb\"><button class=\"icon-button mobile-menu\" data-action=\"menu\" aria-label=\"Toggle sidebar\" aria-controls=\"workspace-sidebar\" aria-expanded=\"false\"><svg class"
+        },
+        {
+          "x": 25,
+          "y": 43,
+          "hit": "<button class=\"icon-button mobile-menu\" data-action=\"menu\" aria-label=\"Toggle sidebar\" aria-controls=\"workspace-sidebar\" aria-expanded=\"false\"><svg class=\"icon\" viewBox=\"0 0 24 24\" aria-hidden=\"true\">"
+        }
+      ]
+    }
+  },
+  {
+    "device": "ipad",
+    "view": "documents",
+    "before": {
+      "html": "<input type=\"checkbox\" class=\"document-checkbox\" aria-label=\"Agree release scope\" contenteditable=\"false\">",
+      "rect": {
+        "x": 176,
+        "y": 218.5,
+        "width": 13,
+        "height": 13,
+        "top": 218.5,
+        "right": 189,
+        "bottom": 231.5,
+        "left": 176
+      },
+      "labels": 0,
+      "pseudo": "none",
+      "parent": "<div class=\"cm-line\"><span class=\"ͼv\">-</span> <img class=\"cm-widgetBuffer\" aria-hidden=\"true\"><input type=\"checkbox\" class=\"document-checkbox\" aria-label=\"Agree release scope\" contenteditable=\"false\"><img class=\"cm-widgetBuffer\" aria-hidden=\"true\"> Agree release scope</div>",
+      "lineHeight": "28px",
+      "hitAtRight12": "<div class=\"cm-line\"><span class=\"ͼv\">-</span> <img class=\"cm-widgetBuffer\" aria-hidden=\"true\"><input type=\"checkbox\" class=\"document-checkbox\" aria-label=\"Agree release scope\" contenteditable=\"false\"><img class=\"cm-widgetBuffer\" aria-hidden=\"true\"> Agree release scope</div>"
+    },
+    "after": {
+      "focused": "<div spellcheck=\"true\" autocorrect=\"off\" autocapitalize=\"off\" writingsuggestions=\"false\" translate=\"no\" contenteditable=\"true\" style=\"tab-size: 4;\" class=\"cm-content cm-lineWrapping\" role=\"textbox\" aria-multiline=\"true\" aria-label=\"Document content\" tabindex=\"0\" aria-placeholder=\"Start writing…\" data-language=\"markdown\" aria-autocomplete=\"list\"><di",
+      "editorFocused": true,
+      "firstBox": "<input type=\"checkbox\" class=\"document-checkbox\" aria-label=\"Agree release scope\" contenteditable=\"false\">",
+      "text": "# Plan\n\n\n-  Agree release scope\n-  Publish the update\n-  Share the prototype\n\n"
+    }
+  },
+  {
+    "device": "ipad",
+    "view": "board",
+    "data": {
+      "html": "<button type=\"button\" class=\"button small icon-button\" data-pro=\"collapse\" data-id=\"frame\" aria-label=\"Collapse frame\"><svg class=\"icon\" viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M5 12h14\"></path></svg></button>",
+      "rect": {
+        "x": 676.4000244140625,
+        "y": 146.64999389648438,
+        "width": 37.4000244140625,
+        "height": 37.40000915527344,
+        "top": 146.64999389648438,
+        "right": 713.800048828125,
+        "bottom": 184.0500030517578,
+        "left": 676.4000244140625
+      },
+      "css": {
+        "width": "44px",
+        "height": "44px",
+        "transform": "none"
+      },
+      "worldTransform": "matrix(0.85, 0, 0, 0.85, 15, 0)",
+      "zoom": "85%"
+    }
+  }
+]

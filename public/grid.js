@@ -39,20 +39,7 @@ export function grid(ctx) {
     if (editing) editing.addEventListener("blur", () => requestAnimationFrame(() => state.view === "table" && renderView(true)), { once: true });
     else renderView(true);
   });
-  const standard = [
-    "key",
-    "title",
-    "body",
-    "type",
-    "assignee",
-    "status",
-    "priority",
-    "parent",
-    "start",
-    "due",
-    "estimate",
-    "tags",
-  ];
+  const standard = ["type", "key", "title", "assignee", "status", "priority", "start", "due", "body", "parent", "estimate", "tags"];
   let cells = [],
     anchor = null,
     focus = null,

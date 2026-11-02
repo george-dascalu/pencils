@@ -627,9 +627,6 @@ button svg {
   background: transparent;
   border-color: #e3e6dc;
 }
-.search input::placeholder {
-  color: #9ba290;
-}
 .filter {
   padding: 8px 26px 8px 10px;
   font-size: 11px;
@@ -1475,7 +1472,7 @@ input[type="search"]:not(.search input) {
   max-width: 200px;
 }
 .board-save {
-  font-size: 10px;
+  font-size: var(--type-meta);
   color: var(--muted);
 }
 .canvas {

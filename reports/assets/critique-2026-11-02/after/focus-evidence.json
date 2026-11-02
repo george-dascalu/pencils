@@ -1,0 +1,286 @@
+{
+  "screens": [
+    {
+      "device": "desktop",
+      "theme": "light",
+      "name": "configured-home",
+      "file": "focus-desktop-light-configured-home.png",
+      "text": "Home\nSaved automatically\nCards this week\n\n2 cards · Research notebook\n\nRN-1\nShare the research notes\nMaking progress\n5 Nov\nRN-2\nChoose the next small step\nReady to start\n3 Nov\nBreakdown\nMaking progress\n1\nReady to start\n1"
+    },
+    {
+      "device": "desktop",
+      "theme": "light",
+      "name": "filtered-calendar",
+      "file": "focus-desktop-light-filtered-calendar.png",
+      "text": "Research notebook\nNew\nCalendar\nTimeline\nCapacity\nNovember 2026\nShow weekends\nLayout\nMonth\nWeek\nAgenda\n\nNo matching cards. Clear the filters to see the schedule.\n\nClear filters\nMon\nTue\nWed\nThu\nFri\nSat\nSun\n26\n27\n28\n29\n30\n31\n1\n2\n3\n4\n5\n6\n7\n8\n9\n10\n11\n12\n13\n14\n15\n16\n17\n18\n19\n20\n21\n22\n23\n24\n25\n26\n27\n28\n29\n30\n1\n2\n3\n4\n5\n6\nUnscheduled (0)"
+    },
+    {
+      "device": "desktop",
+      "theme": "light",
+      "name": "filtered-timeline",
+      "file": "focus-desktop-light-filtered-timeline.png",
+      "text": "Research notebook\nNew\nCalendar\nTimeline\nCapacity\nScale\nDay\nWeek\nMonth\nShow weekends\nTimeline range\nChoose a row to set its start and end dates. Drag bars to move or resize.\nReview schedule\nCard\nNov\nDec\nJan 2027\n2\n9\n16\n23\n30\n7\n14\n21\n28\n4\n11\nNo matching cards\nClear filters"
+    },
+    {
+      "device": "desktop",
+      "theme": "light",
+      "name": "filtered-capacity",
+      "file": "focus-desktop-light-filtered-capacity.png",
+      "text": "Research notebook\nNew\nCalendar\nTimeline\nCapacity\nWeek of 2 November 2026\nThis week\n\nThis project and current filters. Each open card counts once per overlapping week. Daily counts show active cards. Configure hours, card limits, working days and time off in Settings → Organisation.\n\nAdd a project team\n\nCreate people and teams in Organisation settings, then choose teams in Project settings to see their capacity.\n\nPeople and teams\nChoose project teams\nUnscheduled · 0 cards\n\nAdd a start or due date to include this work in the weekly counts."
+    },
+    {
+      "device": "desktop",
+      "theme": "light",
+      "name": "help-no-results",
+      "file": "focus-desktop-light-help-no-results.png",
+      "text": "Research notebook\nNew\nBack\nHelp centre\nSearch help\n\nNo guides found. Try a provider name or “sync”.\n\nBrowse guides\nHelp\n/\nStart here\nHelp & guides\n\nSet up your workspace, connect project data and find your way around Pencils.\n\nOn this page\nBring your project together\nEveryday help\nBring your project together\n\nA project can show local cards alongside Obsidian notes, Jira Cloud issues and rows from a SharePoint Excel table. Imported cards retain their source identity and a link to the original.\n\nConnect a project\nCombine sources and understand sync.\nObsidian\nOpen the same vault or import a separate folder.\nJira Cloud\nChoose issues with a project-scoped query.\nSharePoint Excel\nImport rows from a named Excel table.\nImport from Miro\nCopy a board into an editable Pencils canvas.\nEveryday help\n\nFind sync troubleshooting, keyboard shortcuts and local access, and server setup in the sidebar. Search looks through all guide text. Browser Back and Forward return to previous articles and project views.\n\nThese guides describe the features shipped in Pencils. Provider documentation was checked on 17 October 2026. Live consent, account permissions and Microsoft tenant policies still need verification with your own accounts.\n\nGuides for this installation · Documentation checked 17 October 2026"
+    },
+    {
+      "device": "desktop",
+      "theme": "dark",
+      "name": "configured-home",
+      "file": "focus-desktop-dark-configured-home.png",
+      "text": "Home\nSaved automatically\nCards this week\n\n2 cards · Research notebook\n\nRN-1\nShare the research notes\nMaking progress\n5 Nov\nRN-2\nChoose the next small step\nReady to start\n3 Nov\nBreakdown\nMaking progress\n1\nReady to start\n1"
+    },
+    {
+      "device": "desktop",
+      "theme": "dark",
+      "name": "filtered-calendar",
+      "file": "focus-desktop-dark-filtered-calendar.png",
+      "text": "Research notebook\nNew\nCalendar\nTimeline\nCapacity\nNovember 2026\nShow weekends\nLayout\nMonth\nWeek\nAgenda\n\nNo matching cards. Clear the filters to see the schedule.\n\nClear filters\nMon\nTue\nWed\nThu\nFri\nSat\nSun\n26\n27\n28\n29\n30\n31\n1\n2\n3\n4\n5\n6\n7\n8\n9\n10\n11\n12\n13\n14\n15\n16\n17\n18\n19\n20\n21\n22\n23\n24\n25\n26\n27\n28\n29\n30\n1\n2\n3\n4\n5\n6\nUnscheduled (0)"
+    },
+    {
+      "device": "desktop",
+      "theme": "dark",
+      "name": "filtered-timeline",
+      "file": "focus-desktop-dark-filtered-timeline.png",
+      "text": "Research notebook\nNew\nCalendar\nTimeline\nCapacity\nScale\nDay\nWeek\nMonth\nShow weekends\nTimeline range\nChoose a row to set its start and end dates. Drag bars to move or resize.\nReview schedule\nCard\nNov\nDec\nJan 2027\n2\n9\n16\n23\n30\n7\n14\n21\n28\n4\n11\nNo matching cards\nClear filters"
+    },
+    {
+      "device": "desktop",
+      "theme": "dark",
+      "name": "filtered-capacity",
+      "file": "focus-desktop-dark-filtered-capacity.png",
+      "text": "Research notebook\nNew\nCalendar\nTimeline\nCapacity\nWeek of 2 November 2026\nThis week\n\nThis project and current filters. Each open card counts once per overlapping week. Daily counts show active cards. Configure hours, card limits, working days and time off in Settings → Organisation.\n\nAdd a project team\n\nCreate people and teams in Organisation settings, then choose teams in Project settings to see their capacity.\n\nPeople and teams\nChoose project teams\nUnscheduled · 0 cards\n\nAdd a start or due date to include this work in the weekly counts."
+    },
+    {
+      "device": "desktop",
+      "theme": "dark",
+      "name": "help-no-results",
+      "file": "focus-desktop-dark-help-no-results.png",
+      "text": "Research notebook\nNew\nBack\nHelp centre\nSearch help\n\nNo guides found. Try a provider name or “sync”.\n\nBrowse guides\nHelp\n/\nStart here\nHelp & guides\n\nSet up your workspace, connect project data and find your way around Pencils.\n\nOn this page\nBring your project together\nEveryday help\nBring your project together\n\nA project can show local cards alongside Obsidian notes, Jira Cloud issues and rows from a SharePoint Excel table. Imported cards retain their source identity and a link to the original.\n\nConnect a project\nCombine sources and understand sync.\nObsidian\nOpen the same vault or import a separate folder.\nJira Cloud\nChoose issues with a project-scoped query.\nSharePoint Excel\nImport rows from a named Excel table.\nImport from Miro\nCopy a board into an editable Pencils canvas.\nEveryday help\n\nFind sync troubleshooting, keyboard shortcuts and local access, and server setup in the sidebar. Search looks through all guide text. Browser Back and Forward return to previous articles and project views.\n\nThese guides describe the features shipped in Pencils. Provider documentation was checked on 17 October 2026. Live consent, account permissions and Microsoft tenant policies still need verification with your own accounts.\n\nGuides for this installation · Documentation checked 17 October 2026"
+    },
+    {
+      "device": "ipad",
+      "theme": "light",
+      "name": "configured-home",
+      "file": "focus-ipad-light-configured-home.png",
+      "text": "Home\nSaved automatically\nCards this week\n\n2 cards · Research notebook\n\nRN-1\nShare the research notes\nMaking progress\n5 Nov\nRN-2\nChoose the next small step\nReady to start\n3 Nov\nBreakdown\nMaking progress\n1\nReady to start\n1"
+    },
+    {
+      "device": "ipad",
+      "theme": "light",
+      "name": "filtered-calendar",
+      "file": "focus-ipad-light-filtered-calendar.png",
+      "text": "Research notebook\nNew\nNovember 2026\nShow weekends\nLayout\nMonth\nWeek\nAgenda\n\nNo matching cards. Clear the filters to see the schedule.\n\nClear filters\nMon\nTue\nWed\nThu\nFri\nSat\nSun\n26\n27\n28\n29\n30\n31\n1\n2\n3\n4\n5\n6\n7\n8\n9\n10\n11\n12\n13\n14\n15\n16\n17\n18\n19\n20\n21\n22\n23\n24\n25\n26\n27\n28\n29\n30\n1\n2\n3\n4\n5\n6\nUnscheduled (0)"
+    },
+    {
+      "device": "ipad",
+      "theme": "light",
+      "name": "filtered-timeline",
+      "file": "focus-ipad-light-filtered-timeline.png",
+      "text": "Research notebook\nNew\nScale\nDay\nWeek\nMonth\nShow weekends\nTimeline range\nChoose a row to set its start and end dates. Drag bars to move or resize.\nReview schedule\nCard\nNov\nDec\n2\n9\n16\n23\n30\n7\n14\nNo matching cards\nClear filters"
+    },
+    {
+      "device": "ipad",
+      "theme": "light",
+      "name": "filtered-capacity",
+      "file": "focus-ipad-light-filtered-capacity.png",
+      "text": "Research notebook\nNew\nWeek of 2 November 2026\nThis week\n\nThis project and current filters. Each open card counts once per overlapping week. Daily counts show active cards. Configure hours, card limits, working days and time off in Settings → Organisation.\n\nAdd a project team\n\nCreate people and teams in Organisation settings, then choose teams in Project settings to see their capacity.\n\nPeople and teams\nChoose project teams\nUnscheduled · 0 cards\n\nAdd a start or due date to include this work in the weekly counts."
+    },
+    {
+      "device": "ipad",
+      "theme": "light",
+      "name": "help-no-results",
+      "file": "focus-ipad-light-help-no-results.png",
+      "text": "Research notebook\nNew\nBack\nHelp centre\nSearch help\n\nNo guides found. Try a provider name or “sync”.\n\nBrowse guides\nHelp\n/\nStart here\nHelp & guides\n\nSet up your workspace, connect project data and find your way around Pencils.\n\nOn this page\nBring your project together\nEveryday help\nBring your project together\n\nA project can show local cards alongside Obsidian notes, Jira Cloud issues and rows from a SharePoint Excel table. Imported cards retain their source identity and a link to the original.\n\nConnect a project\nCombine sources and understand sync.\nObsidian\nOpen the same vault or import a separate folder.\nJira Cloud\nChoose issues with a project-scoped query.\nSharePoint Excel\nImport rows from a named Excel table.\nImport from Miro\nCopy a board into an editable Pencils canvas.\nEveryday help\n\nFind sync troubleshooting, keyboard shortcuts and local access, and server setup in the sidebar. Search looks through all guide text. Browser Back and Forward return to previous articles and project views.\n\nThese guides describe the features shipped in Pencils. Provider documentation was checked on 17 October 2026. Live consent, account permissions and Microsoft tenant policies still need verification with your own accounts.\n\nGuides for this installation · Documentation checked 17 October 2026"
+    },
+    {
+      "device": "ipad",
+      "theme": "dark",
+      "name": "configured-home",
+      "file": "focus-ipad-dark-configured-home.png",
+      "text": "Home\nSaved automatically\nCards this week\n\n2 cards · Research notebook\n\nRN-1\nShare the research notes\nMaking progress\n5 Nov\nRN-2\nChoose the next small step\nReady to start\n3 Nov\nBreakdown\nMaking progress\n1\nReady to start\n1"
+    },
+    {
+      "device": "ipad",
+      "theme": "dark",
+      "name": "filtered-calendar",
+      "file": "focus-ipad-dark-filtered-calendar.png",
+      "text": "Research notebook\nNew\nNovember 2026\nShow weekends\nLayout\nMonth\nWeek\nAgenda\n\nNo matching cards. Clear the filters to see the schedule.\n\nClear filters\nMon\nTue\nWed\nThu\nFri\nSat\nSun\n26\n27\n28\n29\n30\n31\n1\n2\n3\n4\n5\n6\n7\n8\n9\n10\n11\n12\n13\n14\n15\n16\n17\n18\n19\n20\n21\n22\n23\n24\n25\n26\n27\n28\n29\n30\n1\n2\n3\n4\n5\n6\nUnscheduled (0)"
+    },
+    {
+      "device": "ipad",
+      "theme": "dark",
+      "name": "filtered-timeline",
+      "file": "focus-ipad-dark-filtered-timeline.png",
+      "text": "Research notebook\nNew\nScale\nDay\nWeek\nMonth\nShow weekends\nTimeline range\nChoose a row to set its start and end dates. Drag bars to move or resize.\nReview schedule\nCard\nNov\nDec\n2\n9\n16\n23\n30\n7\n14\nNo matching cards\nClear filters"
+    },
+    {
+      "device": "ipad",
+      "theme": "dark",
+      "name": "filtered-capacity",
+      "file": "focus-ipad-dark-filtered-capacity.png",
+      "text": "Research notebook\nNew\nWeek of 2 November 2026\nThis week\n\nThis project and current filters. Each open card counts once per overlapping week. Daily counts show active cards. Configure hours, card limits, working days and time off in Settings → Organisation.\n\nAdd a project team\n\nCreate people and teams in Organisation settings, then choose teams in Project settings to see their capacity.\n\nPeople and teams\nChoose project teams\nUnscheduled · 0 cards\n\nAdd a start or due date to include this work in the weekly counts."
+    },
+    {
+      "device": "ipad",
+      "theme": "dark",
+      "name": "help-no-results",
+      "file": "focus-ipad-dark-help-no-results.png",
+      "text": "Research notebook\nNew\nBack\nHelp centre\nSearch help\n\nNo guides found. Try a provider name or “sync”.\n\nBrowse guides\nHelp\n/\nStart here\nHelp & guides\n\nSet up your workspace, connect project data and find your way around Pencils.\n\nOn this page\nBring your project together\nEveryday help\nBring your project together\n\nA project can show local cards alongside Obsidian notes, Jira Cloud issues and rows from a SharePoint Excel table. Imported cards retain their source identity and a link to the original.\n\nConnect a project\nCombine sources and understand sync.\nObsidian\nOpen the same vault or import a separate folder.\nJira Cloud\nChoose issues with a project-scoped query.\nSharePoint Excel\nImport rows from a named Excel table.\nImport from Miro\nCopy a board into an editable Pencils canvas.\nEveryday help\n\nFind sync troubleshooting, keyboard shortcuts and local access, and server setup in the sidebar. Search looks through all guide text. Browser Back and Forward return to previous articles and project views.\n\nThese guides describe the features shipped in Pencils. Provider documentation was checked on 17 October 2026. Live consent, account permissions and Microsoft tenant policies still need verification with your own accounts.\n\nGuides for this installation · Documentation checked 17 October 2026"
+    },
+    {
+      "device": "phone",
+      "theme": "light",
+      "name": "configured-home",
+      "file": "focus-phone-light-configured-home.png",
+      "text": "Home\nCards this week\n\n2 cards · Research notebook\n\nRN-1\nShare the research notes\nMaking progress\n5 Nov\nRN-2\nChoose the next small step\nReady to start\n3 Nov\nBreakdown\nMaking progress\n1\nReady to start\n1"
+    },
+    {
+      "device": "phone",
+      "theme": "light",
+      "name": "positioned-view-options",
+      "file": "focus-phone-light-positioned-view-options.png",
+      "text": "Research notebook\nView options\nStatus\nAll statuses\nReady to start\nMaking progress\nFinished\nType\nAll types\nEpic\nMilestone\nStory\nTask\nActivity\nBug\nAssignee\nTag\nDeadline\nAny deadline\nOverdue\nNext 7 days\nNo deadline\nCompletion\nAny completion\nOpen\nCompleted\nGroup by\nStatus\nType\nAssignee\nPriority\nNo grouping\nBlocked\nInclude archived\nReady to start\n1\nChoose the next small step\nRN-2\nGeo\nReady to start\n3 Nov\nMaking progress\n1\nShare the research notes\nRN-1\nGeo\nMaking progress\n5 Nov"
+    },
+    {
+      "device": "phone",
+      "theme": "light",
+      "name": "board-tools",
+      "file": "focus-phone-light-board-tools.png",
+      "text": "Project canvas\nGeo\nPresent\nBoard session\nActivity\nHistory\nLocal checkpoints\nRename\nMove to folder\nCopy board link\nLink cards\nConnections\nExport SVG\nExport PNG\nObsidian .canvas\nPrepare offline drawing\nOpen offline pad\nDelete board\nSaved automatically\nDevice checkpoint available\nGive your ideas a little room.\n\nAdd notes, cards, images or shapes.\nDrop image files here to get started.\n\n85%"
+    },
+    {
+      "device": "phone",
+      "theme": "light",
+      "name": "filtered-calendar",
+      "file": "focus-phone-light-filtered-calendar.png",
+      "text": "Research notebook\n2 Nov – 8 Nov 2026\n\nNo matching cards. Clear the filters to see the schedule.\n\nClear filters\nUnscheduled (0)"
+    },
+    {
+      "device": "phone",
+      "theme": "light",
+      "name": "filtered-timeline",
+      "file": "focus-phone-light-filtered-timeline.png",
+      "text": "Research notebook\nCard\nNov\n2\n9\nNo matching cards\nClear filters"
+    },
+    {
+      "device": "phone",
+      "theme": "light",
+      "name": "filtered-capacity",
+      "file": "focus-phone-light-filtered-capacity.png",
+      "text": "Research notebook\nWeek of 2 November 2026\nAdd a project team\n\nCreate people and teams in Organisation settings, then choose teams in Project settings to see their capacity.\n\nPeople and teams\nChoose project teams\nUnscheduled · 0 cards\n\nAdd a start or due date to include this work in the weekly counts."
+    },
+    {
+      "device": "phone",
+      "theme": "light",
+      "name": "help-no-results",
+      "file": "focus-phone-light-help-no-results.png",
+      "text": "Research notebook\nBack\nHelp centre\nSearch help\n\nNo guides found. Try a provider name or “sync”.\n\nBrowse guides\nHelp\n/\nStart here\nHelp & guides\n\nSet up your workspace, connect project data and find your way around Pencils.\n\nOn this page\nBring your project together\nEveryday help\nBring your project together\n\nA project can show local cards alongside Obsidian notes, Jira Cloud issues and rows from a SharePoint Excel table. Imported cards retain their source identity and a link to the original.\n\nConnect a project\nCombine sources and understand sync.\nObsidian\nOpen the same vault or import a separate folder.\nJira Cloud\nChoose issues with a project-scoped query.\nSharePoint Excel\nImport rows from a named Excel table.\nImport from Miro\nCopy a board into an editable Pencils canvas.\nEveryday help\n\nFind sync troubleshooting, keyboard shortcuts and local access, and server setup in the sidebar. Search looks through all guide text. Browser Back and Forward return to previous articles and project views.\n\nThese guides describe the features shipped in Pencils. Provider documentation was checked on 17 October 2026. Live consent, account permissions and Microsoft tenant policies still need verification with your own accounts.\n\nGuides for this installation · Documentation checked 17 October 2026"
+    },
+    {
+      "device": "phone",
+      "theme": "dark",
+      "name": "configured-home",
+      "file": "focus-phone-dark-configured-home.png",
+      "text": "Home\nCards this week\n\n2 cards · Research notebook\n\nRN-1\nShare the research notes\nMaking progress\n5 Nov\nRN-2\nChoose the next small step\nReady to start\n3 Nov\nBreakdown\nMaking progress\n1\nReady to start\n1"
+    },
+    {
+      "device": "phone",
+      "theme": "dark",
+      "name": "positioned-view-options",
+      "file": "focus-phone-dark-positioned-view-options.png",
+      "text": "Research notebook\nView options\nStatus\nAll statuses\nReady to start\nMaking progress\nFinished\nType\nAll types\nEpic\nMilestone\nStory\nTask\nActivity\nBug\nAssignee\nTag\nDeadline\nAny deadline\nOverdue\nNext 7 days\nNo deadline\nCompletion\nAny completion\nOpen\nCompleted\nGroup by\nStatus\nType\nAssignee\nPriority\nNo grouping\nBlocked\nInclude archived\nReady to start\n1\nChoose the next small step\nRN-2\nGeo\nReady to start\n3 Nov\nMaking progress\n1\nShare the research notes\nRN-1\nGeo\nMaking progress\n5 Nov"
+    },
+    {
+      "device": "phone",
+      "theme": "dark",
+      "name": "board-tools",
+      "file": "focus-phone-dark-board-tools.png",
+      "text": "Project canvas\nGeo\nPresent\nBoard session\nActivity\nHistory\nLocal checkpoints\nRename\nMove to folder\nCopy board link\nLink cards\nConnections\nExport SVG\nExport PNG\nObsidian .canvas\nPrepare offline drawing\nOpen offline pad\nDelete board\nSaved automatically\nDevice checkpoint available\nGive your ideas a little room.\n\nAdd notes, cards, images or shapes.\nDrop image files here to get started.\n\n85%"
+    },
+    {
+      "device": "phone",
+      "theme": "dark",
+      "name": "filtered-calendar",
+      "file": "focus-phone-dark-filtered-calendar.png",
+      "text": "Research notebook\n2 Nov – 8 Nov 2026\n\nNo matching cards. Clear the filters to see the schedule.\n\nClear filters\nUnscheduled (0)"
+    },
+    {
+      "device": "phone",
+      "theme": "dark",
+      "name": "filtered-timeline",
+      "file": "focus-phone-dark-filtered-timeline.png",
+      "text": "Research notebook\nCard\nNov\n2\n9\nNo matching cards\nClear filters"
+    },
+    {
+      "device": "phone",
+      "theme": "dark",
+      "name": "filtered-capacity",
+      "file": "focus-phone-dark-filtered-capacity.png",
+      "text": "Research notebook\nWeek of 2 November 2026\nAdd a project team\n\nCreate people and teams in Organisation settings, then choose teams in Project settings to see their capacity.\n\nPeople and teams\nChoose project teams\nUnscheduled · 0 cards\n\nAdd a start or due date to include this work in the weekly counts."
+    },
+    {
+      "device": "phone",
+      "theme": "dark",
+      "name": "help-no-results",
+      "file": "focus-phone-dark-help-no-results.png",
+      "text": "Research notebook\nBack\nHelp centre\nSearch help\n\nNo guides found. Try a provider name or “sync”.\n\nBrowse guides\nHelp\n/\nStart here\nHelp & guides\n\nSet up your workspace, connect project data and find your way around Pencils.\n\nOn this page\nBring your project together\nEveryday help\nBring your project together\n\nA project can show local cards alongside Obsidian notes, Jira Cloud issues and rows from a SharePoint Excel table. Imported cards retain their source identity and a link to the original.\n\nConnect a project\nCombine sources and understand sync.\nObsidian\nOpen the same vault or import a separate folder.\nJira Cloud\nChoose issues with a project-scoped query.\nSharePoint Excel\nImport rows from a named Excel table.\nImport from Miro\nCopy a board into an editable Pencils canvas.\nEveryday help\n\nFind sync troubleshooting, keyboard shortcuts and local access, and server setup in the sidebar. Search looks through all guide text. Browser Back and Forward return to previous articles and project views.\n\nThese guides describe the features shipped in Pencils. Provider documentation was checked on 17 October 2026. Live consent, account permissions and Microsoft tenant policies still need verification with your own accounts.\n\nGuides for this installation · Documentation checked 17 October 2026"
+    }
+  ],
+  "checks": [
+    {
+      "device": "phone",
+      "theme": "light",
+      "check": "opening a card leaves focus outside text",
+      "focus": "<button type=\"button\" class=\"icon-button\" data-action=\"dialog-close\" aria-label=\"Close card\" autofocus=\"\"><svg class=\"icon\" viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"m6 6 12 12M18 6 6 18\"></path></svg></button>"
+    },
+    {
+      "device": "phone",
+      "theme": "light",
+      "check": "View options bounds after toggle positioning",
+      "rect": {
+        "x": 22,
+        "y": 52,
+        "width": 360,
+        "height": 542,
+        "top": 52,
+        "right": 382,
+        "bottom": 594,
+        "left": 22
+      }
+    },
+    {
+      "device": "phone",
+      "theme": "dark",
+      "check": "opening a card leaves focus outside text",
+      "focus": "<button type=\"button\" class=\"icon-button\" data-action=\"dialog-close\" aria-label=\"Close card\" autofocus=\"\"><svg class=\"icon\" viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"m6 6 12 12M18 6 6 18\"></path></svg></button>"
+    },
+    {
+      "device": "phone",
+      "theme": "dark",
+      "check": "View options bounds after toggle positioning",
+      "rect": {
+        "x": 22,
+        "y": 52,
+        "width": 360,
+        "height": 542,
+        "top": 52,
+        "right": 382,
+        "bottom": 594,
+        "left": 22
+      }
+    }
+  ]
+}

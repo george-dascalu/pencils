@@ -105,32 +105,34 @@ export function markdownDocumentEditor({ parent, text, mode = "live", renderer, 
     constructor(checked, from) { super(); this.checked = checked; this.from = from; }
     eq(other) { return this.checked === other.checked && this.from === other.from; }
     toDOM(editor) {
-      const input = document.createElement("input");
+      const target = document.createElement("label"), input = document.createElement("input");
+      target.className = "document-checkbox-target";
+      target.append(input);
       input.type = "checkbox"; input.checked = this.checked; input.className = "document-checkbox";
       input.setAttribute("aria-label", listCalloutLabel(editor.state.doc.lineAt(this.from).text.replace(/^\s*[-*+]\s+\[[ xX]\]\s*/, "")) || "Checklist item");
-      input.addEventListener("mousedown", e => e.stopPropagation());
+      target.addEventListener("mousedown", e => { e.preventDefault(); e.stopPropagation(); });
       const save = () => editor.dispatch({ changes: { from: this.from, to: this.from + 3, insert: input.checked ? "[x]" : "[ ]" } });
       input.addEventListener("change", save);
       // A tap toggles the box without focusing the editor: iOS places a caret
       // and opens the keyboard when the tap completes. Cancelling touchend
       // stops that (and the click); a touch that moves stays a scroll.
       let tap = null;
-      input.addEventListener("touchstart", e => {
+      target.addEventListener("touchstart", e => {
         tap = e.touches.length === 1 ? { x: e.touches[0].clientX, y: e.touches[0].clientY } : null;
       }, { passive: true });
-      input.addEventListener("touchmove", e => {
+      target.addEventListener("touchmove", e => {
         const t = e.touches[0];
         if (tap && (!t || Math.hypot(t.clientX - tap.x, t.clientY - tap.y) > 10)) tap = null;
       }, { passive: true });
-      input.addEventListener("touchcancel", () => { tap = null; });
-      input.addEventListener("touchend", e => {
+      target.addEventListener("touchcancel", () => { tap = null; });
+      target.addEventListener("touchend", e => {
         if (!tap) return;
         tap = null;
         e.preventDefault();
         input.checked = !input.checked;
         save();
       });
-      return input;
+      return target;
     }
     ignoreEvent() { return true; }
   }

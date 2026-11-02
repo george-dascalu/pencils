@@ -1,0 +1,224 @@
+{
+  "samples": [
+    {
+      "device": "phone",
+      "zoom": 0.85,
+      "errors": [],
+      "world": {
+        "rect": {
+          "x": 534.4000244140625,
+          "y": 93.6500015258789,
+          "width": 37.39996337890625,
+          "height": 37.400001525878906,
+          "top": 93.6500015258789,
+          "right": 571.7999877929688,
+          "bottom": 131.0500030517578,
+          "left": 534.4000244140625
+        },
+        "cssWidth": "44px",
+        "cssHeight": "44px",
+        "worldTransform": "matrix(0.85, 0, 0, 0.85, 15, 0)"
+      },
+      "opener": {
+        "x": 120,
+        "y": 664,
+        "width": 44,
+        "height": 44
+      },
+      "outlineBefore": {
+        "html": "<button type=\"button\" class=\"button small icon-button\" data-pro=\"collapse\" data-id=\"review\" aria-label=\"Collapse frame\"><svg class=\"icon\" viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M5 12h14\"></path></svg></button>",
+        "rect": {
+          "x": 103,
+          "y": 320.5,
+          "width": 44,
+          "height": 44,
+          "top": 320.5,
+          "right": 147,
+          "bottom": 364.5,
+          "left": 103
+        },
+        "inWorld": false
+      },
+      "collapseSaved": true,
+      "outlineCollapsed": {
+        "x": 103,
+        "y": 320.5,
+        "width": 44,
+        "height": 44
+      },
+      "expandSaved": true,
+      "outlineAfter": {
+        "x": 103,
+        "y": 320.5,
+        "width": 44,
+        "height": 44
+      }
+    },
+    {
+      "device": "phone",
+      "zoom": 0.5,
+      "errors": [],
+      "world": {
+        "rect": {
+          "x": 323,
+          "y": 76.5,
+          "width": 22,
+          "height": 22,
+          "top": 76.5,
+          "right": 345,
+          "bottom": 98.5,
+          "left": 323
+        },
+        "cssWidth": "44px",
+        "cssHeight": "44px",
+        "worldTransform": "matrix(0.5, 0, 0, 0.5, 15, 0)"
+      },
+      "opener": {
+        "x": 120,
+        "y": 664,
+        "width": 44,
+        "height": 44
+      },
+      "outlineBefore": {
+        "html": "<button type=\"button\" class=\"button small icon-button\" data-pro=\"collapse\" data-id=\"review\" aria-label=\"Collapse frame\"><svg class=\"icon\" viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M5 12h14\"></path></svg></button>",
+        "rect": {
+          "x": 103,
+          "y": 320.5,
+          "width": 44,
+          "height": 44,
+          "top": 320.5,
+          "right": 147,
+          "bottom": 364.5,
+          "left": 103
+        },
+        "inWorld": false
+      },
+      "collapseSaved": true,
+      "outlineCollapsed": {
+        "x": 103,
+        "y": 320.5,
+        "width": 44,
+        "height": 44
+      },
+      "expandSaved": true,
+      "outlineAfter": {
+        "x": 103,
+        "y": 320.5,
+        "width": 44,
+        "height": 44
+      }
+    },
+    {
+      "device": "ipad",
+      "zoom": 0.85,
+      "errors": [],
+      "world": {
+        "rect": {
+          "x": 540.4000244140625,
+          "y": 146.64999389648438,
+          "width": 37.39996337890625,
+          "height": 37.40000915527344,
+          "top": 146.64999389648438,
+          "right": 577.7999877929688,
+          "bottom": 184.0500030517578,
+          "left": 540.4000244140625
+        },
+        "cssWidth": "44px",
+        "cssHeight": "44px",
+        "worldTransform": "matrix(0.85, 0, 0, 0.85, 15, 0)"
+      },
+      "opener": {
+        "x": 37,
+        "y": 271,
+        "width": 44,
+        "height": 44
+      },
+      "outlineBefore": {
+        "html": "<button type=\"button\" class=\"button small icon-button\" data-pro=\"collapse\" data-id=\"review\" aria-label=\"Collapse frame\"><svg class=\"icon\" viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M5 12h14\"></path></svg></button>",
+        "rect": {
+          "x": 109,
+          "y": 373.5,
+          "width": 44,
+          "height": 44,
+          "top": 373.5,
+          "right": 153,
+          "bottom": 417.5,
+          "left": 109
+        },
+        "inWorld": false
+      },
+      "collapseSaved": true,
+      "outlineCollapsed": {
+        "x": 109,
+        "y": 373.5,
+        "width": 44,
+        "height": 44
+      },
+      "expandSaved": true,
+      "outlineAfter": {
+        "x": 109,
+        "y": 373.5,
+        "width": 44,
+        "height": 44
+      }
+    },
+    {
+      "device": "ipad",
+      "zoom": 0.5,
+      "errors": [],
+      "world": {
+        "rect": {
+          "x": 329,
+          "y": 129.5,
+          "width": 22,
+          "height": 22,
+          "top": 129.5,
+          "right": 351,
+          "bottom": 151.5,
+          "left": 329
+        },
+        "cssWidth": "44px",
+        "cssHeight": "44px",
+        "worldTransform": "matrix(0.5, 0, 0, 0.5, 15, 0)"
+      },
+      "opener": {
+        "x": 37,
+        "y": 271,
+        "width": 44,
+        "height": 44
+      },
+      "outlineBefore": {
+        "html": "<button type=\"button\" class=\"button small icon-button\" data-pro=\"collapse\" data-id=\"review\" aria-label=\"Collapse frame\"><svg class=\"icon\" viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M5 12h14\"></path></svg></button>",
+        "rect": {
+          "x": 109,
+          "y": 373.5,
+          "width": 44,
+          "height": 44,
+          "top": 373.5,
+          "right": 153,
+          "bottom": 417.5,
+          "left": 109
+        },
+        "inWorld": false
+      },
+      "collapseSaved": true,
+      "outlineCollapsed": {
+        "x": 109,
+        "y": 373.5,
+        "width": 44,
+        "height": 44
+      },
+      "expandSaved": true,
+      "outlineAfter": {
+        "x": 109,
+        "y": 373.5,
+        "width": 44,
+        "height": 44
+      }
+    }
+  ],
+  "start": "2026-11-02T00:30:52.570Z",
+  "temporaryVault": "/tmp/pencils-critique-B-frame-adjudication-2LxHfJ",
+  "cleanup": "Browser closed and disposable app/vault removed; no visualization server started.",
+  "end": "2026-11-02T00:30:54.541Z"
+}

@@ -105,14 +105,13 @@ onDevices(["ipad", "phone"], () => {
     await newCard(page);
     await page.locator("[data-action=dialog-close]").first().click();
     for (const key of ["tools"]) {
-      // Since 0.18.26 phones keep the board menus in the View options panel;
-      // reveal opens it, then the menu, as summary(key).click() does elsewhere.
+      // Board tools opens directly from the bar on every device.
       const menuPanel = page.locator(`[data-board-menu=${key}] .board-menu-panel`);
       await reveal(menuPanel);
       // Menus are placed in the frame after they open, before they paint.
       let box;
       await expect.poll(async () => { box = await menuPanel.boundingBox(); return box.x >= 0 && box.x + box.width <= viewport.width; }, { message: `${key} menu within the width` }).toBe(true);
-      // There the menu flows inline and View options scrolls, so it must fit.
+      // The shared popover stays within the viewport.
       const options = page.locator(".mobile-view-options-panel");
       const fit = (await options.isVisible()) ? await options.boundingBox() : box;
       expect(fit.y + fit.height, `${key} menu within the height`).toBeLessThanOrEqual(viewport.height);

@@ -37,7 +37,7 @@ test("Card list, Stat, Breakdown, Note and Document read the project and render 
   await expect(panel(page, "stat").locator(".home-stat")).toHaveClass(/over/);
   const bars = panel(page, "breakdown").locator(".home-bar");
   await expect(bars).toHaveCount(3);
-  expect(await bars.evaluateAll((els) => els.map((el) => [el.querySelector("span").textContent, el.querySelector("b").textContent]))).toEqual([["todo", "1"], ["in-progress", "1"], ["done", "1"]]);
+  expect(await bars.evaluateAll((els) => els.map((el) => [el.querySelector("span").textContent, el.querySelector("b").textContent]))).toEqual([["To do", "1"], ["In progress", "1"], ["Done", "1"]]);
   await expect(panel(page, "note").locator("strong")).toHaveText("bold");
   await expect(panel(page, "document").locator(".home-note")).toContainText("Ship Home.");
   await expect(panel(page, "document").locator(".home-note")).not.toContainText("Intro text");

@@ -347,6 +347,10 @@
 .document-inline-preview { display: inline; }
 .document-inline-preview a { color: var(--green); text-decoration: underline; }
 .document-checkbox { vertical-align: middle; }
+.document-checkbox-target { display: inline-grid; place-items: center; vertical-align: middle; flex: none; cursor: pointer; }
+@media (pointer: coarse) {
+  .document-checkbox-target { width: var(--control-height); min-height: var(--control-height); }
+}
 .document-reading { height: 100%; overflow: auto; padding: 0 0 0 var(--document-gutter-width); }
 .document-prose {
   --document-block-gap: calc(var(--document-font-size, 15px) * var(--document-line-height, 1.75));
@@ -537,7 +541,7 @@ span.document-list-callout { display: block; }
 .document-tag { padding: 0 8px; border: 1px solid var(--line); border-radius: 999px; color: var(--green); font-size: 12px; line-height: 20px; }
 .document-property-list { display: grid; gap: 6px; padding: 4px 10px 8px; }
 .document-property { display: grid; grid-template-columns: clamp(72px, 28%, 160px) minmax(0, 1fr) var(--control-height); align-items: center; gap: 8px; }
-.document-property > input[type="checkbox"] { justify-self: start; }
+.document-property > .document-checkbox-target { justify-self: start; }
 .document-property-name { overflow: hidden; color: var(--muted); text-overflow: ellipsis; white-space: nowrap; }
 .document-property > input:not([type="checkbox"]) { width: 100%; min-width: 0; }
 .document-properties > [data-property-add] { margin: 0 10px 10px; }

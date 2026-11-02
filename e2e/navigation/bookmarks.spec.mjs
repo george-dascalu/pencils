@@ -46,8 +46,8 @@ onDevices(["small"], () => test("on phones the star sits in View options and the
   await page.getByRole("button", { name: "Close view options", exact: true }).click();
   await page.goto(`${app.base}/#project/${app.project.id}/board`);
   await page.locator(".board-toolbar").waitFor();
-  await expect(page.locator(".board-toolbar > [data-bookmark]")).toHaveCount(0);
-  await expect(page.locator(".board-toolbar .mobile-view-options-panel [data-bookmark]")).toHaveCount(1);
+  await expect(page.locator(".board-toolbar > [data-bookmark]")).toHaveCount(1);
+  await expect(page.locator(".board-toolbar .mobile-view-options-panel [data-bookmark]")).toHaveCount(0);
 }));
 
 onDevices(["desktop", "phone"], () => test("bookmarks made from each bar come first in search and open what they mark", async ({ page, device }) => {

@@ -1167,7 +1167,7 @@ function renderViewNow(onlyContent) {
   const view =
     !tasks.length &&
     !["kanban", "overview", "capacity", "table", "timeline", "calendar"].includes(state.view)
-      ? `<div class="empty">${icon("leaf")}<h2>${state.tasks.length ? "No matching cards" : "Create your first card"}</h2><p>${state.tasks.length ? "No cards match the current filters. Archived cards are hidden unless Include archived is selected." : ["list", "tree"].includes(state.view) ? "Use New card above to add your first card." : "Add your first card, then make the plan your own."}</p>${state.tasks.length ? '<button class="button soft" data-action="filters-reset">Clear filters</button>' : ["list", "tree"].includes(state.view) ? "" : '<button class="button soft" data-action="task-new">${icon("plus")}Add a card</button>'}</div>`
+      ? `<div class="empty">${icon("leaf")}<h2>${state.tasks.length ? "No matching cards" : "Create your first card"}</h2><p>${state.tasks.length ? "No cards match the current filters. Archived cards are hidden unless Include archived is selected." : ["list", "tree"].includes(state.view) ? "Choose New → Card to add your first card." : "Add your first card, then make the plan your own."}</p>${state.tasks.length ? '<button class="button soft" data-action="filters-reset">Clear filters</button>' : ["list", "tree"].includes(state.view) ? "" : '<button class="button soft" data-action="task-new">${icon("plus")}Add a card</button>'}</div>`
       : renderers[state.view](tasks);
   content.innerHTML = view.html ?? view;
   const controls = $(".view-controls");

@@ -58,12 +58,13 @@ test("Board tools → Delete board moves it to Trash, and Rename goes with the l
   await expect(page.locator('[data-action="board-rename"]'), "nothing to rename").toHaveCount(0);
 });
 
-onDevices(["phone"], () => test("phones reach the same menus from View options, each named", async ({ page }) => {
+onDevices(["phone"], () => test("phones reach Board tools directly from its named icon", async ({ page }) => {
   await open(page);
   for (const [key, name] of [["tools", "Board tools"]]) {
-    const summary = page.locator(`.mobile-view-options-panel > [data-board-menu="${key}"] > summary`);
+    const summary = page.locator(`.board-toolbar > [data-board-menu="${key}"] > summary`);
     await expect(summary).toHaveCount(1);
-    expect(await summary.evaluate((el) => [getComputedStyle(el, "::after").content, el.scrollWidth <= el.clientWidth]), `${key} shows its name, inside the button`).toEqual([`"${name}"`, true]);
+    await expect(summary).toHaveAttribute("aria-label", name);
+    expect(await summary.evaluate(el => el.scrollWidth <= el.clientWidth), `${key} icon fits`).toBe(true);
   }
   for (const selector of ['[data-pro="present"]', '[data-pro="activity"]', '[data-action="board-rename"]']) {
     const item = page.locator(`.board-toolbar ${selector}`);

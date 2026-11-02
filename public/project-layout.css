@@ -988,9 +988,7 @@ html.table-viewport-view body {
   .spreadsheet [data-column-key="title"] input { font-weight: 500; }
   .spreadsheet [data-column-key="title"] .table-column-grip,
   .spreadsheet [data-column-key="title"] [data-resize-column] { display: none; }
-  .board-toolbar:has(.mobile-view-options) { display: flex; flex-wrap: nowrap; padding: 6px 8px; gap: 8px; }
-  .board-toolbar .mobile-view-options { flex: none; }
-  .mobile-view-options-panel > .board-save { display: block; }
+  .board-toolbar > [data-board-menu="tools"] > .board-menu-panel > .board-save { display: block; padding: 8px; }
 }
 
 /* Menu carets are icons like every other glyph; they turn when a menu is open. */

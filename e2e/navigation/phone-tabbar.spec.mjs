@@ -256,7 +256,8 @@ onDevices(["phone", "small"], () => test("the view's row sits between the floati
     }
     const [menu, create] = await Promise.all([page.locator(".topbar .mobile-menu").boundingBox(), page.locator(".topbar .phone-new-task > summary").boundingBox()]);
     const first = page.locator(view === "board" ? "#view-toolbar .board-toolbar > :visible" : "#view-toolbar .search").first();
-    const options = page.locator("#view-toolbar .mobile-view-options > summary");
+    const panelSelector = view === "board" ? '[data-board-menu="tools"] > .board-menu-panel' : ".mobile-view-options-panel";
+    const options = page.locator(view === "board" ? '#view-toolbar [data-board-menu="tools"] > summary' : "#view-toolbar .mobile-view-options > summary");
     const row = await page.locator(view === "board" ? "#view-toolbar .board-toolbar > :visible" : "#view-toolbar .toolbar-left > *").evaluateAll((els) => els.map((el) => el.getBoundingClientRect().toJSON()));
     for (let i = 1; i < row.length; i++) expect(row[i].left, `${device} ${view}: the row's controls don't overlap`).toBeGreaterThanOrEqual(row[i - 1].right - 1);
     for (const control of [first, options]) {
@@ -268,12 +269,12 @@ onDevices(["phone", "small"], () => test("the view's row sits between the floati
       expect(hit, `${device} ${view}: the control takes taps`).toBe(true);
     }
     await options.click();
-    await expect(page.locator(".mobile-view-options[open]")).toHaveCount(1);
+    await expect(options.locator("..")).toHaveAttribute("open", "");
     // The panel opens over the view's sticky headers and the bottom bar.
-    await expect(page.locator(".mobile-view-options-panel")).toHaveAttribute("style", /top:/);
-    const panel = await page.locator(".mobile-view-options-panel").boundingBox();
+    await expect(page.locator(panelSelector)).toHaveAttribute("style", /top:/);
+    const panel = await page.locator(panelSelector).boundingBox();
     for (const y of [panel.y + 12, panel.y + panel.height - 12]) {
-      const hit = await page.evaluate(({ x, y }) => !!document.elementFromPoint(x, y)?.closest(".mobile-view-options-panel"), { x: panel.x + panel.width / 2, y });
+      const hit = await page.evaluate(({ x, y, selector }) => !!document.elementFromPoint(x, y)?.closest(selector), { x: panel.x + panel.width / 2, y, selector: panelSelector });
       expect(hit, `${device} ${view}: the panel takes taps`).toBe(true);
     }
     await page.keyboard.press("Escape");

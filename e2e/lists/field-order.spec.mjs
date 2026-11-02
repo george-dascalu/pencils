@@ -131,5 +131,5 @@ test("table default columns put assignee before status before priority", async (
   const keys = await page.locator(".spreadsheet th[data-column-key]").evaluateAll((els) => els.map((el) => el.dataset.columnKey));
   const at = (k) => keys.indexOf(k);
   expect(at("type") < at("assignee") && at("assignee") < at("status") && at("status") < at("priority"), `column order ${keys}`).toBe(true);
-  expect(keys.slice(0, 2), "ID and title stay pinned first").toEqual(["key", "title"]);
+  expect(keys.slice(0, 8), "shared default field order").toEqual(["type", "key", "title", "assignee", "status", "priority", "start", "due"]);
 });

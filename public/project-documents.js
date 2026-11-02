@@ -418,7 +418,7 @@ export function projectDocuments(ctx) {
   const splitList = (text) => text.split(",").map(t => t.trim()).filter(Boolean);
   function propertyInput(name, value, type) {
     const label = `aria-label="${esc(name)}"`;
-    if (type === "checkbox") return `<input type="checkbox" class="document-checkbox" ${label} ${value ? "checked" : ""}>`;
+    if (type === "checkbox") return `<label class="document-checkbox-target"><input type="checkbox" class="document-checkbox" ${label} ${value ? "checked" : ""}></label>`;
     if (type === "number") return `<input type="number" step="any" ${label} value="${esc(String(value))}">`;
     if (type === "date") return `<input type="date" ${label} value="${esc(value)}">`;
     if (type === "list") return `<input type="text" ${label} value="${esc(value.join(", "))}" placeholder="Values, separated by commas">`;
@@ -512,7 +512,7 @@ export function projectDocuments(ctx) {
   function taskRow(t) {
     const config = queryConfig(t), colors = { ...state, config };
     const done = (config.done || []).includes(t.status);
-    return `<div class="document-task-row"><input type="checkbox" class="document-checkbox" ${done ? "checked" : ""} data-task-query-done="${esc(t.id)}" data-task-query-project="${esc(t.project || "")}" aria-label="Done: ${esc(t.title)}"><button type="button" class="document-task-open" data-task-query-open="${esc(t.id)}" data-task-query-project="${esc(t.project || "")}" aria-label="Open ${esc(t.key || t.id)}: ${esc(t.title)}">${icon(t.type || "task")}<span class="document-card-key">${esc(t.key || t.id)}</span><span class="document-task-title">${esc(t.title)}</span></button><span class="document-task-fields field-box" ${fieldBoxStyle(colors, t.priority)}>${ctx.assigneeHTML(t)}<span class="field-chip field-chip-status" ${taskColorAttributes(colors, "status", t.status)}>${esc(statusLabel(config, t.status))}</span><span class="field-chip field-chip-priority" role="img" aria-label="Priority: ${esc(priorityLabel(t.priority || "none"))}" ${taskColorAttributes(colors, "priority", t.priority)}>${icon(`priority-${t.priority || "none"}`)}</span></span></div>`;
+    return `<div class="document-task-row"><label class="document-checkbox-target"><input type="checkbox" class="document-checkbox" ${done ? "checked" : ""} data-task-query-done="${esc(t.id)}" data-task-query-project="${esc(t.project || "")}" aria-label="Done: ${esc(t.title)}"></label><button type="button" class="document-task-open" data-task-query-open="${esc(t.id)}" data-task-query-project="${esc(t.project || "")}" aria-label="Open ${esc(t.key || t.id)}: ${esc(t.title)}">${icon(t.type || "task")}<span class="document-card-key">${esc(t.key || t.id)}</span><span class="document-task-title">${esc(t.title)}</span></button><span class="document-task-fields field-box" ${fieldBoxStyle(colors, t.priority)}>${ctx.assigneeHTML(t)}<span class="field-chip field-chip-status" ${taskColorAttributes(colors, "status", t.status)}>${esc(statusLabel(config, t.status))}</span><span class="field-chip field-chip-priority" role="img" aria-label="Priority: ${esc(priorityLabel(t.priority || "none"))}" ${taskColorAttributes(colors, "priority", t.priority)}>${icon(`priority-${t.priority || "none"}`)}</span></span></div>`;
   }
   const queryTasks = () => state.project?.personal ? everywhere?.tasks || [] : state.tasks || [];
   function renderTaskQueries(root) {

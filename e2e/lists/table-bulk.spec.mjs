@@ -28,7 +28,7 @@ const reset = async () => {
 test("dragging across rows picks them for Bulk edit, and Shift-click extends", async ({ page }) => {
   await reset();
   await page.goto(`${app.base}/#project/${app.project.id}/table`);
-  const id = (i) => page.locator(`td[data-cell="${i},0"]`);
+  const id = (i) => page.locator(`tr[data-table-task]:nth-of-type(${i + 1}) td[data-column-key="key"]`);
   await expect(id(3)).toBeVisible();
   await expect(page.locator('.spreadsheet input[type="checkbox"]'), "no checkboxes").toHaveCount(0);
   await fitsRowActions(page);

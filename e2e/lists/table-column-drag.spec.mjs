@@ -70,7 +70,7 @@ test.describe("desktop", () => {
   test("a moved Type column keeps its own width, resizes to a narrow minimum and keeps its header actions", async ({ page }) => {
     await open(page);
     // Reordering must not transfer the old title-column minimum to Type.
-    await dragBefore(page, "type", "key");
+    await dragBefore(page, "type", "title");
     const typeColumn = page.locator('.spreadsheet th[data-column-key="type"]');
     const typeWidth = () => typeColumn.evaluate((el) => el.getBoundingClientRect().width);
     await expect.poll(async () => near(await typeWidth(), 100), "Type starts narrow").toBe(true);
@@ -134,12 +134,12 @@ test.describe("desktop", () => {
     expect(await order(page)).toEqual(initialOrder);
     expect(await sort(page)).toEqual(sorted);
     await dragBefore(page, "priority", "type");
-    // Default columns run type, assignee, status, priority (0.19.9).
-    await expect.poll(async () => (await order(page)).slice(0, 6)).toEqual(["key", "title", "body", "priority", "type", "assignee"]);
+    // Default identity and common fields lead; the dragged priority moves ahead of Type.
+    await expect.poll(async () => (await order(page)).slice(0, 6)).toEqual(["priority", "type", "key", "title", "assignee", "status"]);
     expect(await sort(page), "Dragging must not change sorting").toEqual(sorted);
     await expect(grip(page, "priority")).toBeFocused();
     expect(await page.locator(`[data-table-task="${app.task.id}"] td[data-column-key]`).evaluateAll((els) => els.map((el) => el.dataset.columnKey))).toEqual(await order(page));
-    await expect(page.locator("[data-table-reorder-status]")).toHaveText(/Priority moved to column 4/);
+    await expect(page.locator("[data-table-reorder-status]")).toHaveText(/Priority moved to column 1/);
     await header(page, "priority").click();
     await expect(header(page, "priority").locator("xpath=ancestor::th")).toHaveAttribute("aria-sort", "ascending");
   });
@@ -154,7 +154,7 @@ test.describe("desktop", () => {
     expect(width).toBeGreaterThanOrEqual(oldWidth + 45);
     expect(await order(page)).toEqual(beforeResize);
     await dragBefore(page, "priority", "title");
-    await expect.poll(async () => (await order(page))[1]).toBe("priority");
+    await expect.poll(async () => (await order(page))[2]).toBe("priority");
     expect(await columnWidth(page, "priority")).toBe(width);
   });
 
@@ -188,17 +188,17 @@ test.describe("desktop", () => {
     await resize(page, "priority", 50);
     const width = await columnWidth(page, "priority");
     await dragBefore(page, "priority", "title");
-    await expect.poll(async () => (await order(page))[1]).toBe("priority");
+    await expect.poll(async () => (await order(page))[2]).toBe("priority");
 
     // Keyboard controls and the existing popover use exactly the same ordering.
     await header(page, "priority").focus();
     await page.keyboard.press("Alt+ArrowRight");
-    await expect.poll(async () => (await order(page))[2]).toBe("priority");
+    await expect.poll(async () => (await order(page))[3]).toBe("priority");
     await page.keyboard.press("Alt+ArrowLeft");
-    await expect.poll(async () => (await order(page))[1]).toBe("priority");
+    await expect.poll(async () => (await order(page))[2]).toBe("priority");
     await columns(page);
     await page.locator('[data-column-visible="status"]').uncheck();
-    await page.locator('[data-column-setting="type"] [data-feature="column-up"]').click();
+    await page.locator('[data-column-setting="type"] [data-feature="column-down"]').click();
     await page.locator('[data-feature="columns-close"]').click();
     expect(await order(page)).not.toContain("status");
     // Desktop users can still drag the title itself.
@@ -251,8 +251,8 @@ onDevices(["ipad-portrait"], () => {
   test("touch: swiping header labels scrolls, the grip drags a column and a second finger cancels", async ({ page }) => {
     await open(page);
     await page.evaluate(() => window.PencilsAppearance.write({ theme: "dark" }));
-    // Assignee now precedes Status by default (0.19.9), so start one 160px column further right.
-    await scroll(page, 640);
+    // Keep Assignee and Status grips beside the pinned identity columns.
+    await scroll(page, 100);
     const touchBefore = await order(page);
     const cdp = await page.context().newCDPSession(page);
     const touch = (type, p) => cdp.send("Input.dispatchTouchEvent", { type, touchPoints: p ? [{ ...p, id: 1, radiusX: 4, radiusY: 4 }] : [] });
@@ -262,14 +262,14 @@ onDevices(["ipad-portrait"], () => {
     await touch("touchEnd");
     await expect(page.locator(".table-column-drag-ghost"), "Swiping labels scrolls instead of dragging").toHaveCount(0);
     expect(await order(page)).toEqual(touchBefore);
-    await expect.poll(() => page.locator(".table-scroll").evaluate((el) => el.scrollLeft), "Header labels allow native touch scrolling").toBeGreaterThan(640);
-    await scroll(page, 640);
-    const from = await point(grip(page, "status")), to = await point(grip(page, "type"));
+    await expect.poll(() => page.locator(".table-scroll").evaluate((el) => el.scrollLeft), "Header labels allow native touch scrolling").toBeGreaterThan(100);
+    await scroll(page, 100);
+    const from = await point(grip(page, "status")), to = await point(grip(page, "assignee"));
     await touch("touchStart", from);
     for (let i = 1; i <= 10; i++) await touch("touchMove", { x: from.x + ((to.x - from.x) * i) / 10, y: from.y });
     await page.locator(".table-column-drag-ghost").waitFor();
     await touch("touchEnd");
-    await expect.poll(async () => { const o = await order(page); return o.indexOf("status") < o.indexOf("type"); }).toBe(true);
+    await expect.poll(async () => { const o = await order(page); return o.indexOf("status") < o.indexOf("assignee"); }).toBe(true);
     const afterDrop = await order(page);
     const again = await point(grip(page, "status"));
     await touch("touchStart", again);
@@ -281,7 +281,7 @@ onDevices(["ipad-portrait"], () => {
     await cdp.detach();
     const touchAfter = await order(page);
     expect(touchAfter).not.toEqual(touchBefore);
-    expect(touchAfter.indexOf("status")).toBeLessThan(touchAfter.indexOf("type"));
+    expect(touchAfter.indexOf("status")).toBeLessThan(touchAfter.indexOf("assignee"));
     await expect(page.locator(".table-sort-indicator")).toHaveCount(0);
     const touchHeight = await page.locator(".spreadsheet th").first().evaluate((el) => el.getBoundingClientRect().height);
     expect(touchHeight >= 44 && touchHeight <= 45, `44px touch headers: ${touchHeight}`).toBe(true);

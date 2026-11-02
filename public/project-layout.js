@@ -110,6 +110,12 @@ export function projectLayout(ctx) {
       } else state.layoutTray = null;
       return;
     }
+    if (toolbar.classList.contains("board-toolbar")) {
+      // Board actions already live in Tools; an extra View options would contain only save feedback.
+      const tools = toolbar.querySelector('[data-board-menu="tools"] > .board-menu-panel');
+      if (tools) for (const el of toolbar.querySelectorAll(':scope > .board-save, :scope > [data-feature=recovery]')) moveTo(el, el => tools.append(el));
+      return;
+    }
     compact = document.createElement("details");
     compact.className = "mobile-view-options";
     compact.open = !!state.mobileViewOptions;
@@ -118,9 +124,7 @@ export function projectLayout(ctx) {
     const name = `View options${count ? ` (${count} ${count === 1 ? "filter" : "filters"} active)` : ""}`;
     compact.innerHTML = `<summary class="icon-button${count ? " filter-active" : ""}" aria-label="${name}" title="${name}">${icon("filter")}${count ? `<span class="filter-count" aria-hidden="true">${count}</span>` : ""}</summary><div class="mobile-view-options-panel" aria-label="View options"><header><strong>View options</strong><button type="button" class="icon-button" aria-label="Close view options">${icon("close")}</button></header></div>`;
     const panel = compact.lastElementChild;
-    const selectors = toolbar.classList.contains("board-toolbar")
-      ? ".board-toolbar > .board-menu, .board-toolbar > .bookmark-button, .board-toolbar > .board-save, .board-toolbar > [data-feature=recovery]"
-      : ".toolbar-left > .filter:not(#sort), .toolbar-left > .board-menu, .toolbar-left > .bookmark-button, .toolbar-right, .table-view-tools, .grid-tools, #view-toolbar [data-phone-options], #view-content [data-phone-options]";
+    const selectors = ".toolbar-left > .filter:not(#sort), .toolbar-left > .board-menu, .toolbar-left > .bookmark-button, .toolbar-right, .table-view-tools, .grid-tools, #view-toolbar [data-phone-options], #view-content [data-phone-options]";
     for (const element of document.querySelectorAll(selectors)) {
       const slot = document.createComment("view control position");
       element.before(slot);

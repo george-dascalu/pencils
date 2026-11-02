@@ -58,8 +58,8 @@ onDevices(["phone"], () => {
     await expect(page.locator('#task-form [name="title"]')).toHaveValue(updated);
     await page.locator('[data-action="dialog-close"]').first().click();
     await page.setViewportSize({ width: 1440, height: 900 });
-    await page.waitForFunction(() => document.querySelector(".spreadsheet th[data-column-key]")?.dataset.columnKey === "key");
-    expect((await headings()).slice(0, 2), "Phone layout did not rewrite desktop preferences").toEqual(["key", "title"]);
+    await page.waitForFunction(() => document.querySelector(".spreadsheet th[data-column-key]")?.dataset.columnKey === "type");
+    expect((await headings()).slice(0, 3), "Phone layout did not rewrite desktop preferences").toEqual(["type", "key", "title"]);
   });
 
   test("Calendar options, period navigation and agenda cards work on a phone", async ({ page }) => {
@@ -182,9 +182,9 @@ onDevices(["phone"], () => {
       for (const theme of ["light", "dark"]) await page.evaluate((t) => window.PencilsAppearance.write({ theme: t }), theme);
       await page.keyboard.press("Escape");
     }
-    await options(page);
+    await page.locator('.board-toolbar > [data-board-menu="tools"] > summary').click();
     await page.keyboard.press("Escape");
-    expect(await page.locator(".mobile-view-options").evaluate((el) => el.open)).toBe(false);
+    expect(await page.locator('.board-toolbar > [data-board-menu="tools"]').evaluate((el) => el.open)).toBe(false);
     // The minimap is in the zoom level's menu since 0.20.73.
     await page.locator("#zoom-label").click();
     await page.getByRole("button", { name: "Minimap", exact: true }).click();

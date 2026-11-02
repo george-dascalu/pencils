@@ -5,16 +5,16 @@ export const tableFieldKeys =
   /^(key|created|updated|title|body|type|status|priority|parent|assignee|start|due|estimate|tags|fields\.[a-zA-Z][a-zA-Z0-9_-]*)$/;
 export function tableFields(config) {
   return [
+    ["type", "Type", "options"],
     ["key", "ID", "text"],
     ["title", "Title", "text"],
-    ["body", "Description", "text"],
-    ["type", "Type", "options"],
+    ["assignee", "Assignee", "options"],
     ["status", "Status", "options"],
     ["priority", "Priority", "options"],
-    ["assignee", "Assignee", "options"],
-    ["parent", "Parent card", "options"],
     ["start", "Start date", "date"],
     ["due", "Due date", "date"],
+    ["body", "Description", "text"],
+    ["parent", "Parent card", "options"],
     ["estimate", "Estimate", "number"],
     ["tags", "Tags", "options"],
     ["created", "Created", "date"],

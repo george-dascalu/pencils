@@ -45,6 +45,7 @@ test("the document finder matches #tags", async ({ page }) => {
   const tagged = await app.store.createDocument(app.project.id, { title: "Tagged note", body: "About #harbour things" });
   await app.store.createDocument(app.project.id, { title: "Harbour without tag", body: "harbour" });
   await page.goto(`${app.base}/#project/${app.project.id}/documents/${tagged.id}`);
+  await expect(page.locator(".cm-content")).toContainText("About #harbour things");
   await openList(page);
   await page.locator("#document-search").fill("#harbour");
   await expect(page.locator("#document-list [data-document-open]")).toHaveText(["Tagged note"]);
