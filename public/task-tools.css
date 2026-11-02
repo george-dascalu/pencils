@@ -1363,10 +1363,18 @@ html.task-page-open,
 .task-dialog .task-metadata { padding-bottom: 16px; border-bottom: 1px solid var(--line); }
 /* Assignee and priority columns are exactly their square controls, so Status ends where the header's action group does. */
 .task-dialog .task-metadata-main { display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; }
-.task-dialog .task-fields { display: grid; grid-template-columns: max-content minmax(90px, 1fr) var(--control-height); }
+.task-dialog .task-fields { container: card-fields / inline-size; display: grid; grid-template-columns: max-content minmax(0, 1fr) var(--control-height); }
 .task-dialog .task-metadata-main > .task-dates { display: flex; flex-direction: column; gap: 5px; grid-column: 1 / -1; margin: 0; }
 .task-assignee-choice { position: relative; display: grid; place-items: center; min-width: var(--control-height); height: var(--control-height); }
 .task-assignee-choice .task-assignee { min-width: var(--control-height); width: auto; height: var(--control-height); padding-inline: 8px; font-size: var(--type-body); }
+/* Long names keep their tooltip and select value; compact touch boxes show the person's short name. */
+.task-assignee-choice .task-assignee[data-short-name] { display: block; max-width: 10ch; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; line-height: var(--control-height); }
+@media (pointer: coarse) {
+  @container card-fields (max-width: 320px) {
+    .task-assignee-choice .task-assignee[data-short-name] { width: var(--control-height); max-width: none; padding: 0; font-size: 0; }
+    .task-assignee-choice .task-assignee[data-short-name]::after { content: attr(data-short-name); font-size: var(--type-small); }
+  }
+}
 .task-dialog .task-assignee-choice select { position: absolute; inset: 0; width: 100%; opacity: 0; cursor: pointer; }
 .task-assignee-choice:focus-within { outline: var(--focus-ring); outline-offset: 2px; border-radius: var(--field-radius); }
 .task-date-range { display: flex; align-items: center; gap: 4px; min-width: 0; padding-inline: 3px; border: 1px solid var(--line); border-radius: 7px; }
@@ -1377,7 +1385,6 @@ html.task-page-open,
 .task-dialog .task-relationships { margin-top: 20px; }
 @container task-editor (min-width: 580px) {
   .task-dialog .task-metadata-main { grid-template-columns: minmax(170px, 1fr) minmax(260px, 1.8fr); }
-  .task-dialog .task-fields { grid-template-columns: max-content minmax(110px, 1fr) var(--control-height); }
   .task-dialog .task-metadata-main > .task-dates { grid-column: auto; }
   .task-dialog .task-description > .task-rich-tools, .task-dialog .task-description .rich-toolbar { flex-wrap: nowrap; }
 }
@@ -1523,6 +1530,19 @@ html.task-page-open,
 .task-dialog.task-editor-page .task-editor-header-row .task-editor-actions { justify-content: flex-start; }
 .task-dialog.task-editor-page .task-editor-header-row .task-secondary-actions { margin-inline-start: auto; }
 .task-dialog.task-editor-page .task-title-row .task-identity-row { width: var(--control-height); }
+
+/* Seven touch targets cannot share a 320px row. Keep Close beside the panes, with management
+   actions below; dates use the same range box vertically when their full values cannot fit. */
+@container task-editor (max-width: 340px) {
+  .task-dialog.board-task-editor .task-editor-header-row { display: grid; grid-template-columns: minmax(0, 1fr) var(--control-height); row-gap: 4px; }
+  .task-dialog.board-task-editor .task-editor-header-row .task-editor-actions { display: contents; }
+  .task-editor-header-row .task-pane-switcher { grid-area: 1 / 1; justify-self: start; }
+  .task-editor-header-row .task-secondary-actions { grid-area: 2 / 1 / 3 / -1; justify-self: end; }
+  .task-editor-header-row > [data-action="dialog-close"] { grid-area: 1 / 2; }
+  .task-dialog .task-date-range { display: grid; grid-template-columns: 16px minmax(0, 1fr); gap: 0; }
+  .task-date-range > .date-field { grid-column: 2; }
+  .task-date-range > [aria-hidden] { grid-area: 1 / 1 / 3 / 2; rotate: 90deg; }
+}
 
 /* Popover titles share one size; the dates editor header keeps its actions on the right. */
 .popover-title { margin: 0 auto 0 0; font-size: 14px; font-weight: 600; }

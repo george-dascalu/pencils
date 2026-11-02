@@ -1219,7 +1219,7 @@ function tagsHTML(t) {
 // where there's room (the card editor); the tooltip keeps the full name, and no one is a faint person.
 function assigneeHTML(t, full = false) {
   const name = full ? t.assignee : shortName(state, t.assignee);
-  return `<span class="task-assignee ${name ? "" : "unassigned"}" ${taskColorAttributes(state, "assignee", t.assignee)} title="${esc(t.assignee || "Unassigned")}">${name ? esc(name) : icon("person")}</span>`;
+  return `<span class="task-assignee ${name ? "" : "unassigned"}" ${full && name ? `data-short-name="${esc(shortName(state, t.assignee))}" aria-hidden="true"` : ""} ${taskColorAttributes(state, "assignee", t.assignee)} title="${esc(t.assignee || "Unassigned")}">${name ? esc(name) : icon("person")}</span>`;
 }
 function priorityHTML(t) {
   return `<span class="field-chip field-chip-priority priority ${esc(t.priority)}" role="img" aria-label="Priority: ${esc(priorityLabel(t.priority))}" ${taskColorAttributes(state, "priority", t.priority)} title="${esc(priorityLabel(t.priority))} priority">${icon(`priority-${t.priority || "none"}`)}</span>`;

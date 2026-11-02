@@ -1,0 +1,43 @@
+[
+  {
+    "name": "mouse-narrow",
+    "view": "card",
+    "width": 640,
+    "height": 800,
+    "bodyWidth": 640,
+    "overflow": [
+      {
+        "selector": "task-fields field-box",
+        "w": 205,
+        "scroll": 221,
+        "h": 37
+      }
+    ],
+    "clipped": []
+  },
+  {
+    "name": "mouse-edge",
+    "view": "card",
+    "width": 620,
+    "height": 800,
+    "bodyWidth": 620,
+    "overflow": [
+      {
+        "selector": "task-fields field-box",
+        "w": 198,
+        "scroll": 221,
+        "h": 37
+      }
+    ],
+    "clipped": []
+  },
+  {
+    "name": "mouse-small",
+    "view": "card",
+    "width": 700,
+    "height": 800,
+    "bodyWidth": 700,
+    "overflow": [],
+    "clipped": []
+  }
+]

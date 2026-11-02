@@ -1,0 +1,1062 @@
+[
+  {
+    "name": "small",
+    "view": "home",
+    "width": 320,
+    "height": 568,
+    "bodyWidth": 320,
+    "overflow": [],
+    "clipped": []
+  },
+  {
+    "name": "small",
+    "view": "overview",
+    "width": 320,
+    "height": 568,
+    "bodyWidth": 320,
+    "overflow": [],
+    "clipped": []
+  },
+  {
+    "name": "small",
+    "view": "documents",
+    "width": 320,
+    "height": 568,
+    "bodyWidth": 320,
+    "overflow": [],
+    "clipped": []
+  },
+  {
+    "name": "small",
+    "view": "list",
+    "width": 320,
+    "height": 568,
+    "bodyWidth": 320,
+    "overflow": [],
+    "clipped": []
+  },
+  {
+    "name": "small",
+    "view": "tree",
+    "width": 320,
+    "height": 568,
+    "bodyWidth": 320,
+    "overflow": [],
+    "clipped": []
+  },
+  {
+    "name": "small",
+    "view": "table",
+    "width": 320,
+    "height": 568,
+    "bodyWidth": 320,
+    "overflow": [],
+    "clipped": [
+      {
+        "label": "Move ID column",
+        "rect": {
+          "x": 309,
+          "y": 53,
+          "width": 28,
+          "height": 44,
+          "top": 53,
+          "right": 337,
+          "bottom": 97,
+          "left": 309
+        }
+      },
+      {
+        "label": "Sort by ID",
+        "rect": {
+          "x": 337,
+          "y": 53,
+          "width": 26,
+          "height": 44,
+          "top": 53,
+          "right": 363,
+          "bottom": 97,
+          "left": 337
+        }
+      },
+      {
+        "label": "ID column actions",
+        "rect": {
+          "x": 363,
+          "y": 53,
+          "width": 28,
+          "height": 44,
+          "top": 53,
+          "right": 391,
+          "bottom": 97,
+          "left": 363
+        }
+      },
+      {
+        "label": "Move Description column",
+        "rect": {
+          "x": 399,
+          "y": 53,
+          "width": 44,
+          "height": 44,
+          "top": 53,
+          "right": 443,
+          "bottom": 97,
+          "left": 399
+        }
+      },
+      {
+        "label": "Sort by Description",
+        "rect": {
+          "x": 443,
+          "y": 53,
+          "width": 204,
+          "height": 44,
+          "top": 53,
+          "right": 647,
+          "bottom": 97,
+          "left": 443
+        }
+      },
+      {
+        "label": "Description column actions",
+        "rect": {
+          "x": 647,
+          "y": 53,
+          "width": 44,
+          "height": 44,
+          "top": 53,
+          "right": 691,
+          "bottom": 97,
+          "left": 647
+        }
+      },
+      {
+        "label": "Move Type column",
+        "rect": {
+          "x": 699,
+          "y": 53,
+          "width": 28,
+          "height": 44,
+          "top": 53,
+          "right": 727,
+          "bottom": 97,
+          "left": 699
+        }
+      },
+      {
+        "label": "Sort by Type",
+        "rect": {
+          "x": 727,
+          "y": 53,
+          "width": 36,
+          "height": 44,
+          "top": 53,
+          "right": 763,
+          "bottom": 97,
+          "left": 727
+        }
+      },
+      {
+        "label": "Type column actions",
+        "rect": {
+          "x": 763,
+          "y": 53,
+          "width": 28,
+          "height": 44,
+          "top": 53,
+          "right": 791,
+          "bottom": 97,
+          "left": 763
+        }
+      },
+      {
+        "label": "Move Assignee column",
+        "rect": {
+          "x": 799,
+          "y": 53,
+          "width": 28,
+          "height": 44,
+          "top": 53,
+          "right": 827,
+          "bottom": 97,
+          "left": 799
+        }
+      },
+      {
+        "label": "Sort by Assignee",
+        "rect": {
+          "x": 827,
+          "y": 53,
+          "width": 64,
+          "height": 44,
+          "top": 53,
+          "right": 891,
+          "bottom": 97,
+          "left": 827
+        }
+      },
+      {
+        "label": "Assignee column actions",
+        "rect": {
+          "x": 891,
+          "y": 53,
+          "width": 28,
+          "height": 44,
+          "top": 53,
+          "right": 919,
+          "bottom": 97,
+          "left": 891
+        }
+      }
+    ]
+  },
+  {
+    "name": "small",
+    "view": "kanban",
+    "width": 320,
+    "height": 568,
+    "bodyWidth": 320,
+    "overflow": [],
+    "clipped": []
+  },
+  {
+    "name": "small",
+    "view": "calendar",
+    "width": 320,
+    "height": 568,
+    "bodyWidth": 320,
+    "overflow": [],
+    "clipped": []
+  },
+  {
+    "name": "small",
+    "view": "timeline",
+    "width": 320,
+    "height": 568,
+    "bodyWidth": 320,
+    "overflow": [],
+    "clipped": []
+  },
+  {
+    "name": "small",
+    "view": "capacity",
+    "width": 320,
+    "height": 568,
+    "bodyWidth": 320,
+    "overflow": [],
+    "clipped": []
+  },
+  {
+    "name": "small",
+    "view": "settings",
+    "width": 320,
+    "height": 568,
+    "bodyWidth": 320,
+    "overflow": [],
+    "clipped": []
+  },
+  {
+    "name": "small",
+    "view": "card",
+    "width": 320,
+    "height": 568,
+    "bodyWidth": 320,
+    "overflow": [],
+    "clipped": []
+  },
+  {
+    "name": "landscape",
+    "view": "home",
+    "width": 844,
+    "height": 390,
+    "bodyWidth": 844,
+    "overflow": [],
+    "clipped": []
+  },
+  {
+    "name": "landscape",
+    "view": "overview",
+    "width": 844,
+    "height": 390,
+    "bodyWidth": 844,
+    "overflow": [],
+    "clipped": []
+  },
+  {
+    "name": "landscape",
+    "view": "documents",
+    "width": 844,
+    "height": 390,
+    "bodyWidth": 844,
+    "overflow": [],
+    "clipped": []
+  },
+  {
+    "name": "landscape",
+    "view": "list",
+    "width": 844,
+    "height": 390,
+    "bodyWidth": 844,
+    "overflow": [],
+    "clipped": []
+  },
+  {
+    "name": "landscape",
+    "view": "tree",
+    "width": 844,
+    "height": 390,
+    "bodyWidth": 844,
+    "overflow": [],
+    "clipped": []
+  },
+  {
+    "name": "landscape",
+    "view": "table",
+    "width": 844,
+    "height": 390,
+    "bodyWidth": 844,
+    "overflow": [],
+    "clipped": [
+      {
+        "label": "Selected rowsVisible rows on this page (8)All",
+        "rect": {
+          "x": 753,
+          "y": 145,
+          "width": 222,
+          "height": 44,
+          "top": 145,
+          "right": 975,
+          "bottom": 189,
+          "left": 753
+        }
+      },
+      {
+        "label": "Choose…BacklogTodoIn-progressReviewDone",
+        "rect": {
+          "x": 804.5,
+          "y": 229,
+          "width": 119,
+          "height": 44,
+          "top": 229,
+          "right": 923.5,
+          "bottom": 273,
+          "left": 804.5
+        }
+      },
+      {
+        "label": "Archive cards",
+        "rect": {
+          "x": 1003,
+          "y": 133,
+          "width": 119,
+          "height": 44,
+          "top": 133,
+          "right": 1122,
+          "bottom": 177,
+          "left": 1003
+        }
+      },
+      {
+        "label": "Sort by Type",
+        "rect": {
+          "x": 827,
+          "y": 106,
+          "width": 36,
+          "height": 44,
+          "top": 106,
+          "right": 863,
+          "bottom": 150,
+          "left": 827
+        }
+      },
+      {
+        "label": "Type column actions",
+        "rect": {
+          "x": 863,
+          "y": 106,
+          "width": 28,
+          "height": 44,
+          "top": 106,
+          "right": 891,
+          "bottom": 150,
+          "left": 863
+        }
+      },
+      {
+        "label": "Move Assignee column",
+        "rect": {
+          "x": 899,
+          "y": 106,
+          "width": 28,
+          "height": 44,
+          "top": 106,
+          "right": 927,
+          "bottom": 150,
+          "left": 899
+        }
+      },
+      {
+        "label": "Sort by Assignee",
+        "rect": {
+          "x": 927,
+          "y": 106,
+          "width": 64,
+          "height": 44,
+          "top": 106,
+          "right": 991,
+          "bottom": 150,
+          "left": 927
+        }
+      },
+      {
+        "label": "Assignee column actions",
+        "rect": {
+          "x": 991,
+          "y": 106,
+          "width": 28,
+          "height": 44,
+          "top": 106,
+          "right": 1019,
+          "bottom": 150,
+          "left": 991
+        }
+      },
+      {
+        "label": "Move Status column",
+        "rect": {
+          "x": 1027,
+          "y": 106,
+          "width": 44,
+          "height": 44,
+          "top": 106,
+          "right": 1071,
+          "bottom": 150,
+          "left": 1027
+        }
+      },
+      {
+        "label": "Sort by Status",
+        "rect": {
+          "x": 1071,
+          "y": 106,
+          "width": 64,
+          "height": 44,
+          "top": 106,
+          "right": 1135,
+          "bottom": 150,
+          "left": 1071
+        }
+      },
+      {
+        "label": "Status column actions",
+        "rect": {
+          "x": 1135,
+          "y": 106,
+          "width": 44,
+          "height": 44,
+          "top": 106,
+          "right": 1179,
+          "bottom": 150,
+          "left": 1135
+        }
+      },
+      {
+        "label": "Move Priority column",
+        "rect": {
+          "x": 1187,
+          "y": 106,
+          "width": 44,
+          "height": 44,
+          "top": 106,
+          "right": 1231,
+          "bottom": 150,
+          "left": 1187
+        }
+      }
+    ]
+  },
+  {
+    "name": "landscape",
+    "view": "kanban",
+    "width": 844,
+    "height": 390,
+    "bodyWidth": 844,
+    "overflow": [],
+    "clipped": []
+  },
+  {
+    "name": "landscape",
+    "view": "calendar",
+    "width": 844,
+    "height": 390,
+    "bodyWidth": 844,
+    "overflow": [],
+    "clipped": []
+  },
+  {
+    "name": "landscape",
+    "view": "timeline",
+    "width": 844,
+    "height": 390,
+    "bodyWidth": 844,
+    "overflow": [],
+    "clipped": []
+  },
+  {
+    "name": "landscape",
+    "view": "capacity",
+    "width": 844,
+    "height": 390,
+    "bodyWidth": 844,
+    "overflow": [],
+    "clipped": []
+  },
+  {
+    "name": "landscape",
+    "view": "settings",
+    "width": 844,
+    "height": 390,
+    "bodyWidth": 844,
+    "overflow": [],
+    "clipped": []
+  },
+  {
+    "name": "landscape",
+    "view": "card",
+    "width": 844,
+    "height": 390,
+    "bodyWidth": 844,
+    "overflow": [],
+    "clipped": []
+  },
+  {
+    "name": "split",
+    "view": "home",
+    "width": 640,
+    "height": 800,
+    "bodyWidth": 640,
+    "overflow": [],
+    "clipped": []
+  },
+  {
+    "name": "split",
+    "view": "overview",
+    "width": 640,
+    "height": 800,
+    "bodyWidth": 640,
+    "overflow": [],
+    "clipped": []
+  },
+  {
+    "name": "split",
+    "view": "documents",
+    "width": 640,
+    "height": 800,
+    "bodyWidth": 640,
+    "overflow": [],
+    "clipped": []
+  },
+  {
+    "name": "split",
+    "view": "list",
+    "width": 640,
+    "height": 800,
+    "bodyWidth": 640,
+    "overflow": [],
+    "clipped": []
+  },
+  {
+    "name": "split",
+    "view": "tree",
+    "width": 640,
+    "height": 800,
+    "bodyWidth": 640,
+    "overflow": [],
+    "clipped": []
+  },
+  {
+    "name": "split",
+    "view": "table",
+    "width": 640,
+    "height": 800,
+    "bodyWidth": 640,
+    "overflow": [],
+    "clipped": [
+      {
+        "label": "Selected rowsVisible rows on this page (8)All",
+        "rect": {
+          "x": 549,
+          "y": 145,
+          "width": 222,
+          "height": 44,
+          "top": 145,
+          "right": 771,
+          "bottom": 189,
+          "left": 549
+        }
+      },
+      {
+        "label": "Choose…BacklogTodoIn-progressReviewDone",
+        "rect": {
+          "x": 600.5,
+          "y": 229,
+          "width": 119,
+          "height": 44,
+          "top": 229,
+          "right": 719.5,
+          "bottom": 273,
+          "left": 600.5
+        }
+      },
+      {
+        "label": "Archive cards",
+        "rect": {
+          "x": 600.5,
+          "y": 301,
+          "width": 119,
+          "height": 44,
+          "top": 301,
+          "right": 719.5,
+          "bottom": 345,
+          "left": 600.5
+        }
+      },
+      {
+        "label": "Sort by Description",
+        "rect": {
+          "x": 543,
+          "y": 106,
+          "width": 204,
+          "height": 44,
+          "top": 106,
+          "right": 747,
+          "bottom": 150,
+          "left": 543
+        }
+      },
+      {
+        "label": "Description column actions",
+        "rect": {
+          "x": 747,
+          "y": 106,
+          "width": 44,
+          "height": 44,
+          "top": 106,
+          "right": 791,
+          "bottom": 150,
+          "left": 747
+        }
+      },
+      {
+        "label": "Move Type column",
+        "rect": {
+          "x": 799,
+          "y": 106,
+          "width": 28,
+          "height": 44,
+          "top": 106,
+          "right": 827,
+          "bottom": 150,
+          "left": 799
+        }
+      },
+      {
+        "label": "Sort by Type",
+        "rect": {
+          "x": 827,
+          "y": 106,
+          "width": 36,
+          "height": 44,
+          "top": 106,
+          "right": 863,
+          "bottom": 150,
+          "left": 827
+        }
+      },
+      {
+        "label": "Type column actions",
+        "rect": {
+          "x": 863,
+          "y": 106,
+          "width": 28,
+          "height": 44,
+          "top": 106,
+          "right": 891,
+          "bottom": 150,
+          "left": 863
+        }
+      },
+      {
+        "label": "Move Assignee column",
+        "rect": {
+          "x": 899,
+          "y": 106,
+          "width": 28,
+          "height": 44,
+          "top": 106,
+          "right": 927,
+          "bottom": 150,
+          "left": 899
+        }
+      },
+      {
+        "label": "Sort by Assignee",
+        "rect": {
+          "x": 927,
+          "y": 106,
+          "width": 64,
+          "height": 44,
+          "top": 106,
+          "right": 991,
+          "bottom": 150,
+          "left": 927
+        }
+      },
+      {
+        "label": "Assignee column actions",
+        "rect": {
+          "x": 991,
+          "y": 106,
+          "width": 28,
+          "height": 44,
+          "top": 106,
+          "right": 1019,
+          "bottom": 150,
+          "left": 991
+        }
+      },
+      {
+        "label": "Move Status column",
+        "rect": {
+          "x": 1027,
+          "y": 106,
+          "width": 44,
+          "height": 44,
+          "top": 106,
+          "right": 1071,
+          "bottom": 150,
+          "left": 1027
+        }
+      }
+    ]
+  },
+  {
+    "name": "split",
+    "view": "kanban",
+    "width": 640,
+    "height": 800,
+    "bodyWidth": 640,
+    "overflow": [],
+    "clipped": []
+  },
+  {
+    "name": "split",
+    "view": "calendar",
+    "width": 640,
+    "height": 800,
+    "bodyWidth": 640,
+    "overflow": [],
+    "clipped": []
+  },
+  {
+    "name": "split",
+    "view": "timeline",
+    "width": 640,
+    "height": 800,
+    "bodyWidth": 640,
+    "overflow": [],
+    "clipped": []
+  },
+  {
+    "name": "split",
+    "view": "capacity",
+    "width": 640,
+    "height": 800,
+    "bodyWidth": 640,
+    "overflow": [],
+    "clipped": []
+  },
+  {
+    "name": "split",
+    "view": "settings",
+    "width": 640,
+    "height": 800,
+    "bodyWidth": 640,
+    "overflow": [],
+    "clipped": []
+  },
+  {
+    "name": "split",
+    "view": "card",
+    "width": 640,
+    "height": 800,
+    "bodyWidth": 640,
+    "overflow": [],
+    "clipped": []
+  },
+  {
+    "name": "desktop",
+    "view": "home",
+    "width": 1440,
+    "height": 900,
+    "bodyWidth": 1440,
+    "overflow": [],
+    "clipped": []
+  },
+  {
+    "name": "desktop",
+    "view": "overview",
+    "width": 1440,
+    "height": 900,
+    "bodyWidth": 1440,
+    "overflow": [],
+    "clipped": []
+  },
+  {
+    "name": "desktop",
+    "view": "documents",
+    "width": 1440,
+    "height": 900,
+    "bodyWidth": 1440,
+    "overflow": [],
+    "clipped": []
+  },
+  {
+    "name": "desktop",
+    "view": "list",
+    "width": 1440,
+    "height": 900,
+    "bodyWidth": 1440,
+    "overflow": [],
+    "clipped": []
+  },
+  {
+    "name": "desktop",
+    "view": "tree",
+    "width": 1440,
+    "height": 900,
+    "bodyWidth": 1440,
+    "overflow": [],
+    "clipped": []
+  },
+  {
+    "name": "desktop",
+    "view": "table",
+    "width": 1440,
+    "height": 900,
+    "bodyWidth": 1440,
+    "overflow": [],
+    "clipped": [
+      {
+        "label": "Selected rowsVisible rows on this page (8)All",
+        "rect": {
+          "x": 1361,
+          "y": 116,
+          "width": 186,
+          "height": 28,
+          "top": 116,
+          "right": 1547,
+          "bottom": 144,
+          "left": 1361
+        }
+      },
+      {
+        "label": "Choose…BacklogTodoIn-progressReviewDone",
+        "rect": {
+          "x": 1405.5,
+          "y": 179,
+          "width": 97,
+          "height": 28,
+          "top": 179,
+          "right": 1502.5,
+          "bottom": 207,
+          "left": 1405.5
+        }
+      },
+      {
+        "label": "Archive cards",
+        "rect": {
+          "x": 1407.5,
+          "y": 235,
+          "width": 93,
+          "height": 28,
+          "top": 235,
+          "right": 1500.5,
+          "bottom": 263,
+          "left": 1407.5
+        }
+      },
+      {
+        "label": "Parent column actions",
+        "rect": {
+          "x": 1435,
+          "y": 82,
+          "width": 32,
+          "height": 32,
+          "top": 82,
+          "right": 1467,
+          "bottom": 114,
+          "left": 1435
+        }
+      },
+      {
+        "label": "Move Start column",
+        "rect": {
+          "x": 1475,
+          "y": 82,
+          "width": 20,
+          "height": 32,
+          "top": 82,
+          "right": 1495,
+          "bottom": 114,
+          "left": 1475
+        }
+      },
+      {
+        "label": "Sort by Start",
+        "rect": {
+          "x": 1495,
+          "y": 82,
+          "width": 100,
+          "height": 32,
+          "top": 82,
+          "right": 1595,
+          "bottom": 114,
+          "left": 1495
+        }
+      },
+      {
+        "label": "Start column actions",
+        "rect": {
+          "x": 1595,
+          "y": 82,
+          "width": 32,
+          "height": 32,
+          "top": 82,
+          "right": 1627,
+          "bottom": 114,
+          "left": 1595
+        }
+      },
+      {
+        "label": "Move Due column",
+        "rect": {
+          "x": 1635,
+          "y": 82,
+          "width": 20,
+          "height": 32,
+          "top": 82,
+          "right": 1655,
+          "bottom": 114,
+          "left": 1635
+        }
+      },
+      {
+        "label": "Sort by Due",
+        "rect": {
+          "x": 1655,
+          "y": 82,
+          "width": 100,
+          "height": 32,
+          "top": 82,
+          "right": 1755,
+          "bottom": 114,
+          "left": 1655
+        }
+      },
+      {
+        "label": "Due column actions",
+        "rect": {
+          "x": 1755,
+          "y": 82,
+          "width": 32,
+          "height": 32,
+          "top": 82,
+          "right": 1787,
+          "bottom": 114,
+          "left": 1755
+        }
+      },
+      {
+        "label": "Move Estimate column",
+        "rect": {
+          "x": 1795,
+          "y": 82,
+          "width": 20,
+          "height": 32,
+          "top": 82,
+          "right": 1815,
+          "bottom": 114,
+          "left": 1795
+        }
+      },
+      {
+        "label": "Sort by Estimate",
+        "rect": {
+          "x": 1815,
+          "y": 82,
+          "width": 100,
+          "height": 32,
+          "top": 82,
+          "right": 1915,
+          "bottom": 114,
+          "left": 1815
+        }
+      }
+    ]
+  },
+  {
+    "name": "desktop",
+    "view": "kanban",
+    "width": 1440,
+    "height": 900,
+    "bodyWidth": 1440,
+    "overflow": [],
+    "clipped": []
+  },
+  {
+    "name": "desktop",
+    "view": "calendar",
+    "width": 1440,
+    "height": 900,
+    "bodyWidth": 1440,
+    "overflow": [],
+    "clipped": []
+  },
+  {
+    "name": "desktop",
+    "view": "timeline",
+    "width": 1440,
+    "height": 900,
+    "bodyWidth": 1440,
+    "overflow": [],
+    "clipped": []
+  },
+  {
+    "name": "desktop",
+    "view": "capacity",
+    "width": 1440,
+    "height": 900,
+    "bodyWidth": 1440,
+    "overflow": [],
+    "clipped": []
+  },
+  {
+    "name": "desktop",
+    "view": "settings",
+    "width": 1440,
+    "height": 900,
+    "bodyWidth": 1440,
+    "overflow": [],
+    "clipped": []
+  },
+  {
+    "name": "desktop",
+    "view": "card",
+    "width": 1440,
+    "height": 900,
+    "bodyWidth": 1440,
+    "overflow": [],
+    "clipped": []
+  }
+]

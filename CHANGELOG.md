@@ -2,6 +2,19 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.20.128 — 2026-11-02
+
+### Fixed
+
+- The card editor's status field uses the available width in narrow desktop windows, keeping priority inside its field box even with a long assignee name.
+
+## 0.20.127 — 2026-11-01
+
+### Fixed
+
+- Card editor controls fit narrow phones and iPad windows: Close stays clear of the other actions, compact field boxes use assignee short names, and full start/due dates stack when space is tight.
+- Long assignee names stay within the card's field box, with the full name available in the picker and tooltip.
+
 ## 0.20.126 — 2026-11-01
 
 ### Fixed

@@ -4,6 +4,8 @@
 // YYYY-MM-DDTHH:MM (local time; blank when not on record; done is when the work finished, the
 // release follows within minutes); version is the release.
 export const roadmap = [
+  { id: "T110", title: "Keep card fields inside their box in narrow mouse-driven desktop windows", status: "done", requested: "", started: "2026-11-01", done: "2026-11-01", version: "0.20.128" },
+  { id: "T109", title: "Adapt card controls to narrow phones and iPad windows, with readable dates and bounded assignee names", status: "done", requested: "2026-11-01", started: "2026-11-01", done: "2026-11-01", version: "0.20.127" },
   { id: "T108", title: "Stabilise phone WebKit style-preference verification after reload", status: "done", requested: "", started: "2026-11-01", done: "2026-11-01", version: "0.20.126" },
   { id: "T107", title: "Purposeful document and board list motion, with reduced motion and reliable touch focus", status: "done", requested: "2026-11-01", started: "2026-11-01", done: "2026-11-01", version: "0.20.125" },
   { id: "T106", title: "Clarify recovery, backup and offline drawing copy; keep confirmations reachable and long board names readable", status: "done", requested: "2026-11-01", started: "2026-11-01", done: "2026-11-01", version: "0.20.124" },
