@@ -15,8 +15,10 @@ onDevices(['desktop','ipad','phone'],()=>test('names use the available space and
   if(device==='desktop') await expect(name).toHaveText('George');
   if(['list','tree'].includes(view)) {
    const field=page.locator(device==='phone'?'.phone-task-fields .phone-field[data-field="status"]':'.row-fields > .row-status').first();
-   const shadow=await field.evaluate(el=>getComputedStyle(el).boxShadow);
-   expect(shadow==='none').toBe(device==='phone');
+   const divider=await field.evaluate(el=>({shadow:getComputedStyle(el).boxShadow,content:getComputedStyle(el,'::before').content,width:getComputedStyle(el,'::before').width}));
+   expect(divider.shadow).toBe('none');
+   if(device!=='phone') { expect(divider.content).toBe('""');expect(divider.width).toBe('1px'); }
+   else expect(divider.content).toBe('none');
   }
  }
  await page.screenshot({path:`/tmp/assignee-names-${device}.png`});

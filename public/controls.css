@@ -374,6 +374,7 @@ textarea,
 .phone-field > .field-chip-status { flex: 0 1 auto; width: auto; min-width: 0; }
 /* The targets around the chips stay transparent and full height. */
 .row-fields > :is(.row-status, .row-priority) { padding: 0 !important; background: transparent !important; border: 0 !important; }
+.row-fields > .row-due { position: relative; }
 .row-fields > .row-priority { flex: 0 0 max(var(--control-height), var(--list-field-priority-width)) !important; width: max(var(--control-height), var(--list-field-priority-width)) !important; }
 .spreadsheet td:is([data-column-key="status"], [data-column-key="priority"], [data-column-key="assignee"]) .table-cell-select { padding: 0 6px; background: transparent !important; border: 0 !important; }
 .spreadsheet td:is([data-column-key="status"], [data-column-key="priority"], [data-column-key="assignee"]) .table-cell-chevron { display: none; }
@@ -437,9 +438,21 @@ textarea,
 .card-bottom > .field-box { max-width: 100%; }
 .document-task-fields > .task-assignee { width: 100px; flex: 0 1 100px; }
 @media (min-width: 601px) {
-  :root:not([data-fields-off~="assignee"], [data-fields-off~="status"], [data-fields-off~="priority"]) .field-box > :not(:first-child, .sr-only, [data-field-first-visible]) {
+  :root:not([data-fields-off~="assignee"], [data-fields-off~="status"], [data-fields-off~="priority"]) .field-box:not(.row-fields) > :not(:first-child, .sr-only, [data-field-first-visible]) {
     /* A divider cannot share background-image with a select's arrow. */
     box-shadow: inset 1px 0 var(--line);
+  }
+  /* List and Tree targets extend above and below their painted box. Draw a
+     short line inside that box instead of an inset shadow around the target,
+     which can paint a rounded block when the browser scales the page. */
+  :root:not([data-fields-off~="assignee"], [data-fields-off~="status"], [data-fields-off~="priority"]) .field-box.row-fields > :not(:first-child, .sr-only, [data-field-first-visible])::before {
+    content: "";
+    position: absolute;
+    inset-block: calc(50% - var(--list-field-height) / 2 + 4px);
+    inset-inline-start: 0;
+    width: 1px;
+    background: var(--line);
+    pointer-events: none;
   }
 }
 

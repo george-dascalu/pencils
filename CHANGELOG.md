@@ -2,6 +2,11 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.21.33 — 2026-11-02
+
+### Fixed
+- Feature F0.21-33: Status and Priority in List and Tree no longer draw rounded separator shadows outside their shared field box. Thin dividers stay inside the box while full-size click and touch targets, hover feedback and keyboard focus remain available.
+
 ## 0.21.32 — 2026-11-02
 
 ### Added
