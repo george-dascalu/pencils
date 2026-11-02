@@ -1,3 +1,4 @@
+import { installAssigneeNames } from "./assignee-name.js";
 import { projectCreateHTML } from "./project-create.js";
 import { taskTimeFields } from "./task-time-fields.js";
 import { APP_VERSION, watchAppVersion } from "./app-version.js";
@@ -234,6 +235,7 @@ const icon = (name) =>
   `<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="${paths[name] || paths.task}"/></svg>`;
 const colorPicker = installColorPickers({ esc, icon });
 const bookmarks = installBookmarks({ api, esc, icon, toast });
+installAssigneeNames();
 const selectMenus = installSelectMenus({ esc, icon, taskColor: (field, value) => taskFieldColor(state, field, value) });
 installTaskControlColors(() => state);
 installDatePickers({ esc, icon });
@@ -1219,11 +1221,10 @@ function tagsHTML(t) {
     )
     .join("")}</span>`;
 }
-// The person's short name (Geo for George unless set in Settings → Organisation), or the full name
-// where there's room (the card editor); the tooltip keeps the full name, and no one is a faint person.
-function assigneeHTML(t, full = false) {
-  const name = full ? t.assignee : shortName(state, t.assignee);
-  return `<span class="task-assignee ${name ? "" : "unassigned"}" ${full && name ? `data-short-name="${esc(shortName(state, t.assignee))}" aria-hidden="true"` : ""} ${taskColorAttributes(state, "assignee", t.assignee)} title="${esc(t.assignee || "Unassigned")}">${name ? esc(name) : icon("person")}</span>`;
+// Each name fits its allotted field; the full name remains available to assistive technology.
+function assigneeHTML(t) {
+  const name = t.assignee || "";
+  return `<span class="task-assignee ${name ? "" : "unassigned"}" ${name ? `data-full-name="${esc(name)}" data-short-name="${esc(shortName(state, name))}" role="img" aria-label="${esc(name)}"` : ""} ${taskColorAttributes(state, "assignee", name)} title="${esc(name || "Unassigned")}">${name ? esc(name) : icon("person")}</span>`;
 }
 function priorityHTML(t) {
   return `<span class="field-chip field-chip-priority priority ${esc(t.priority)}" role="img" aria-label="Priority: ${esc(priorityLabel(t.priority))}" ${taskColorAttributes(state, "priority", t.priority)} title="${esc(priorityLabel(t.priority))} priority">${icon(`priority-${t.priority || "none"}`)}</span>`;
@@ -1767,7 +1768,7 @@ function taskDialog(id = null, defaults = {}, replace = false) {
       true,
     )}</div>`,
     status: `<label class="field"><span class="sr-only">Status</span><select name="status" aria-label="Status" ${taskColorAttributes(state, "status", t.status)}>${options(id ? nextStatuses(state.config, t.status) : statuses, t.status, statusNames)}</select></label>`,
-    assignee: `<label class="field task-assignee-field"><span class="sr-only">Assignee</span><span class="task-assignee-choice"><span data-assignee-avatar>${assigneeHTML(t, true)}</span><select name="assignee" aria-label="Assignee" ${taskColorAttributes(state, "assignee", t.assignee)} ${assigneeHint(state) ? 'aria-describedby="task-assignee-help"' : ""}>${assigneeOptions(state, t.assignee, esc)}</select></span></label>`,
+    assignee: `<label class="field task-assignee-field"><span class="sr-only">Assignee</span><span class="task-assignee-choice"><span data-assignee-avatar>${assigneeHTML(t)}</span><select name="assignee" aria-label="Assignee" ${taskColorAttributes(state, "assignee", t.assignee)} ${assigneeHint(state) ? 'aria-describedby="task-assignee-help"' : ""}>${assigneeOptions(state, t.assignee, esc)}</select></span></label>`,
   };
   const html = `<dialog class="dialog task-dialog" aria-label="Card editor"><form id="task-form" class="${id ? "task-edit-form" : "task-create-form"}" data-board="${esc(!id && ["board", "drawing"].includes(state.view) ? state.selectedBoard : "")}" data-draft-node="${esc(t.draftNode || "")}" data-id="${esc(id || "")}" data-revision="${esc(t.revision || "")}">
     <div class="dialog-head task-editor-head"><div class="task-editor-header-row"><div class="task-identity-row">

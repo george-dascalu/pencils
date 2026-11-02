@@ -17,16 +17,16 @@ const app = useApp(async (store) => {
   return { project, organisation, named };
 });
 
-onDevices(["desktop", "phone"], () => test("assignees show three letters that fit their box", async ({ page, device }) => {
+onDevices(["desktop", "phone"], () => test("assignee names adapt to their box", async ({ page, device }) => {
   const densities = device === "desktop" ? ["comfortable", "compact"] : ["comfortable"];
   for (const density of densities) for (const view of ["list", "kanban", "table"]) {
     await page.goto(`${app.base}/#project/${app.project.id}/${view}`);
     await page.evaluate((density) => window.PencilsAppearance.write({ density }), density);
     const avatars = page.locator("#view-content .task-assignee:visible");
     await expect(avatars.first()).toBeVisible();
-    const labels = await avatars.evaluateAll((els) => els.map((el) => ({ text: el.textContent, title: el.title, fits: el.scrollWidth <= el.clientWidth })));
-    expect(labels.map((l) => [l.title, l.text]).sort(), `${device} ${view}`).toEqual([["Mmmwide", "Mmm"], ["Wilhelmina Moss", "Wil"], ["george", "Geo"]]);
-    for (const l of labels) expect(l.fits, `${device} ${density} ${view}: ${l.text} fits`).toBe(true);
+    await expect.poll(() => avatars.evaluateAll(els => els.every(el => el.scrollWidth <= el.clientWidth + 1)), {message:`${device} ${density} ${view}: names fit`}).toBe(true);
+    const labels = await avatars.evaluateAll(els => els.map(el => [el.title, el.textContent]));
+    for (const [full, text] of labels) expect([full, full[0].toUpperCase()+full.slice(1,3), full[0]], 'full name or a readable fallback').toContain(text);
   }
 }));
 
@@ -44,6 +44,9 @@ test("a short name set in Settings → Organisation replaces the three letters a
   await page.evaluate(() => window.PencilsAppearance.write({ density: "compact" }));
   const avatars = page.locator("#view-content .task-assignee:visible");
   await expect(avatars).toHaveCount(2);
+  await avatars.evaluateAll(els => els.forEach(el => {el.style.setProperty('width','36px','important');el.style.setProperty('min-width','0','important');}));
+  await expect(avatars.filter({hasText:'MWa'})).toHaveCount(1);
+  await expect(avatars.filter({hasText:'Wil'})).toHaveCount(1);
   const labels = await avatars.evaluateAll((els) => els.map((el) => [el.title, el.textContent, el.scrollWidth <= el.clientWidth]));
   expect(labels.sort(), "George's short name; Wilma's default letters; both fit").toEqual([["George", "MWa", true], ["Wilma", "Wil", true]]);
 });

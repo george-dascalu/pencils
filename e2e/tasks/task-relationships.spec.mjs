@@ -70,10 +70,10 @@ test("related rows show assignee, status and priority, and sorting never changes
   const order = () => relatedGroup.locator("[data-relationship-open]").evaluateAll((els) => els.map((el) => el.dataset.relationshipOpen));
   const beforeSort = (await app.store.snapshot(app.project.id)).tasks;
   const meta = section(page).locator(`[data-relationship-open="${related.id}"] .task-relationship-metadata`);
-  // Assignee is an avatar with its name in the accessible label, then status, then priority (0.19.9).
+  // Assignee uses its full name when there is room, then status and priority.
   await expect(meta.getByRole("img", { name: /^Assignee: George/ })).toHaveAttribute("title", /George/);
   await expect(meta).toContainText("In progress");
-  expect(await meta.innerText()).not.toMatch(/George/);
+  await expect(meta).toContainText("George");
   await expect(meta.getByRole("img", { name: "Priority: High" })).toHaveAttribute("title", "High");
   await expect(meta.locator('[data-task-color="assignee"],[data-task-color="priority"],[data-task-color="status"]')).toHaveCount(3);
   await section(page).locator(".task-relationship-sort > summary").click();

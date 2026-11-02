@@ -54,7 +54,7 @@ const room = (page, chip, holder) => page.evaluate(([chip, holder]) => {
 // border; Table cells, which hold one field each, keep their own.
 function listChips(ref, list, chips, label, boxed = true) {
   expect(chips.assignee.h, `${label} assignee ${JSON.stringify(chips.assignee)}`).toBe(list.size);
-  expect(chips.assignee.w, `${label} assignee width`).toBe(list.size);
+  expect(chips.assignee.w, `${label} assignee keeps room for its name`).toBeGreaterThanOrEqual(list.size);
   expect(chips.assignee.radius, `${label} assignee is a rounded square like the status`).toBe(ref.status.radius);
   if (chips.status) {
     expect(chips.status.h, `${label} status ${JSON.stringify(chips.status)}`).toBe(list.size);

@@ -40,7 +40,7 @@ export function taskModalControls(ctx, form, restoreVersion) {
   }
   function paintPickers() {
     const avatar = form.querySelector('[data-assignee-avatar]');
-    if (avatar) avatar.innerHTML = ctx.assigneeHTML({ assignee: form.elements.assignee.value }, true);
+    if (avatar) avatar.innerHTML = ctx.assigneeHTML({ assignee: form.elements.assignee.value });
     refreshTaskControlColors(form, state);
     form.querySelector(".task-fields")?.style.setProperty("--field-box-color", taskFieldColor(state, "priority", form.elements.priority?.value));
     for (const picker of form.querySelectorAll("[data-task-picker]")) {

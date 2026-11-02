@@ -79,17 +79,16 @@ onDevices(["desktop", "ipad", "phone"], () => {
     assertIncreasing(await lefts(fields, [".task-assignee-choice", 'select[name="status"]', '[data-task-picker="priority"] .task-picker-trigger']), ["assignee", "status", "priority"], "card fields");
   });
 
-  test("relationship rows read type, ID, title, assignee avatar, status, priority", async ({ page }) => {
+  test("relationship rows read type, ID, title, assignee, status, priority", async ({ page, device }) => {
     await openCard(page);
     const row = page.locator(".task-relationship-row .task-relationship-link").first();
     await row.waitFor();
     await assertRelationshipOrder(row, [":scope > .icon", ".task-relationship-key", ".task-relationship-title", ".task-relationship-assignee", ".task-relationship-status", ".task-relationship-priority"], "relationship row");
-    const assigneeText = await row.locator(".task-relationship-assignee").evaluate((el) => el.innerText.replace(/\s+/g, " ").trim());
-    expect(assigneeText, "assignee shows the avatar only").toBe("Geo");
+    await expect(row.locator(".task-relationship-assignee"), "assignee fits its available track").toHaveText(device === "phone" ? "George Dascalu" : "Geo");
     await expect(row.locator(".task-relationship-assignee"), "assignee name stays available to assistive tech").toHaveAttribute("aria-label", /George Dascalu/);
   });
 
-  test("the Add relationship panel keeps one row without a caption and lists results in field order", async ({ page }) => {
+  test("the Add relationship panel keeps one row without a caption and lists results in field order", async ({ page, device }) => {
     await openCard(page);
     await page.locator("[data-relationship-toggle]").click();
     const picker = page.locator("[data-relationship-picker]");
@@ -108,7 +107,7 @@ onDevices(["desktop", "ipad", "phone"], () => {
     const option = picker.locator("[data-relationship-options] button").filter({ hasText: "Ordered task 2" }).first();
     await option.waitFor();
     await assertRelationshipOrder(option, [".task-relationship-link > .icon:first-child", ".task-relationship-key", ".task-relationship-title", ".task-relationship-assignee", ".task-relationship-status", ".task-relationship-priority"], "search result");
-    expect(await option.locator(".task-relationship-assignee").evaluate((el) => el.innerText.trim()), "search result assignee shows the avatar only").toBe("Geo");
+    await expect(option.locator(".task-relationship-assignee")).toHaveText(device === "phone" ? "George Dascalu" : "Geo");
   });
 });
 

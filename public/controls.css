@@ -324,11 +324,11 @@ textarea,
 :is(.row-assignee, .task-relationship-assignee, .kanban-assignee, .phone-field, .spreadsheet td[data-column-key="assignee"] .table-cell-value) > .task-assignee {
   box-sizing: border-box;
   flex: none;
-  width: max-content !important;
+  width: 100% !important;
   height: var(--list-field-height) !important;
   min-width: var(--list-field-height);
   margin: 0;
-  font-size: 10px !important;
+  font-size: var(--type-small) !important;
 }
 /* An empty field shows a faint icon: a person for no assignee, a calendar for no date. */
 :is(.task-assignee.unassigned, .due.no-date) { color: var(--muted); opacity: 0.7; }
@@ -407,7 +407,7 @@ textarea,
 .field-box > .row-choice:has(select:enabled):hover > :is(.field-chip, .task-assignee) { background-color: var(--surface-soft) !important; }
 /* Board cards keep their document-scale sizes with the same shape. */
 #canvas .board-node.task :is(.canvas-task-status, .canvas-task-priority) { border-radius: var(--field-radius) !important; }
-#canvas .board-node.task .canvas-task-status { padding-inline: 10px !important; background-image: none !important; }
+#canvas .board-node.task .canvas-task-status { padding-inline: 10px !important; }
 
 /* Mouse rows keep the drag handle and tree toggle narrow so the card starts
    near the edge; touch keeps 44px targets. */
@@ -423,4 +423,16 @@ textarea,
   .board-menu > summary > .menu-caret,
   .document-properties > summary > .icon,
   .participant-cursor { transition: none; }
+}
+
+/* Full, short and initial names share one stable slot, including zoomed board cards. */
+.main .task-assignee[data-full-name], #dialogs .task-assignee[data-full-name] { width: 100%; min-width: 0; overflow: hidden; }
+.kanban-assignee { flex: 0 1 128px; width: 128px; }
+.card-bottom > .field-box { max-width: 100%; }
+.document-task-fields > .task-assignee { width: 100px; flex: 0 1 100px; }
+@media (min-width: 601px) {
+  :root:not([data-fields-off~="assignee"], [data-fields-off~="status"], [data-fields-off~="priority"]) .field-box > :not(:first-child, .sr-only) {
+    background-image: linear-gradient(var(--line), var(--line)) !important;
+    background-size: 1px 60%; background-position: left center; background-repeat: no-repeat;
+  }
 }

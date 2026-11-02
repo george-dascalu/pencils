@@ -24,7 +24,7 @@ onDevices(["phone", "ipad", "desktop"], device => {
         const overlap = actions.flatMap((a, i) => actions.slice(i + 1).filter(b => Math.min(a.right, b.right) - Math.max(a.left, b.left) > 1 && Math.min(a.bottom, b.bottom) - Math.max(a.top, b.top) > 1).map(b => `${a.name} / ${b.name}`));
         return { actions, overlap, overflow: fields.scrollWidth - fields.clientWidth,
           contained: [...fields.querySelectorAll('select[name=status], .task-picker-trigger, .task-assignee-choice')].every(e => { const r = e.getBoundingClientRect(); return r.left >= bounds.left && r.right <= bounds.right; }),
-          short: getComputedStyle(fields.querySelector('.task-assignee'), '::after').content,
+          short: fields.querySelector('.task-assignee').textContent,
           dates: [...el.querySelectorAll('.task-date-range .date-field')].map(e => ({ ...e.getBoundingClientRect().toJSON(), room: e.clientWidth - parseFloat(getComputedStyle(e.querySelector('input')).paddingRight) })),
           dateLayout: getComputedStyle(el.querySelector('.task-date-range')).display,
         };
@@ -37,7 +37,7 @@ onDevices(["phone", "ipad", "desktop"], device => {
       }
       expect(geometry.overflow, theme).toBeLessThanOrEqual(1);
       expect(geometry.contained, theme).toBe(true);
-      if (device !== 'desktop' && [320, 640, 844, 1024].includes(width)) expect(geometry.short).toBe('"AL"');
+      if (device !== 'desktop' && [320, 640, 844, 1024].includes(width)) expect(geometry.short).toBe('AL');
       if (width === 320) {
         expect(geometry.dateLayout).toBe('grid');
         expect(geometry.dates[1].top).toBeGreaterThanOrEqual(geometry.dates[0].bottom);

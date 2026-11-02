@@ -277,7 +277,8 @@ onDevices(["phone"], () => test("phone card page: icon-only pane switcher aligne
   expect(geometry.group.labels).toEqual(["Duplicate card", "Archive card", "Delete card"]);
   expect(geometry.group.beforeClose, "the group sits right before Close").toBe("dialog-close");
   expect(Math.abs(geometry.group.closeLeft - geometry.group.groupRight - geometry.spacing), `Close keeps the editor's spacing from the group: ${JSON.stringify(geometry.group)}`).toBeLessThanOrEqual(1);
-  expect(geometry.priorityWidth, "priority is as wide as the assignee").toBe(geometry.assigneeWidth);
+  expect(geometry.priorityWidth, "priority keeps its square touch target").toBe(44);
+  expect(geometry.assigneeWidth, "assignee has at least a full touch target for its name").toBeGreaterThanOrEqual(44);
   // 29 Oct (item 15): assignee, status and priority share one box, which ends where Close does.
   expect(Math.abs(geometry.closeRight - geometry.fieldsRight), `the field box ends where Close ends: ${geometry.closeRight} vs ${geometry.fieldsRight}`).toBeLessThanOrEqual(1);
   expect(geometry.closeColor, "Close is red, like Delete").toBe(geometry.deleteColor);

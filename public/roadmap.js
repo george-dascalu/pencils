@@ -6,6 +6,7 @@
 // From the 0.21.0 baseline, new features use F<major>.<minor>-<1..100>: F0.21-1 releases
 // as 0.21.1, F0.21-100 as 0.22.0, then F0.22-1 as 0.22.1. Historical T IDs stay intact.
 export const roadmap = [
+  { id: "F0.21-18", title: "Adaptive assignee names and subtle field separators", status: "done", requested: "2026-11-02", started: "2026-11-02", done: "2026-11-02", version: "0.21.18" },
   { id: "F0.21-17", title: "Local planning edits on imported cards", status: "done", requested: "2026-11-02", started: "2026-11-02", done: "2026-11-02", version: "0.21.17" },
   { id: "F0.21-16", title: "Desktop board controls in the top bar", status: "done", requested: "2026-11-02", started: "2026-11-02", done: "2026-11-02", version: "0.21.16" },
   { id: "F0.21-15", title: "Centred calendar navigation with themed controls and a weekends icon", status: "done", requested: "2026-11-02", started: "2026-11-02", done: "2026-11-02", version: "0.21.15" },

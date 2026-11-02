@@ -31,7 +31,7 @@ const AREAS = {
   settings: /^(hotkey|history-pages|project-create|project-settings|project-records|debug-log|personal-settings|capture-settings|style-settings|project-sources|source-model|project-automations|workflow-|teams|recovery-ui|backup-limits)/,
   navigation: /^(hotkey|boot-progress|help|topbar-title|bookmarks|bottom-bar|roadmap)/,
   home: /^home/,
-  ui: /^(color-|select-menu|date-picker|confirm-popover|format-date|in-place-editing)/,
+  ui: /^(assignee-name|color-|select-menu|date-picker|confirm-popover|format-date|in-place-editing)/,
 };
 const shared = (file) => SHARED.some((rule) => rule.test(file));
 const areasOf = (name) => Object.keys(AREAS).filter((area) => AREAS[area].test(name));

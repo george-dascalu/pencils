@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.21.18 — 2026-11-02
+
+### Changed
+- Feature F0.21-18: Assignee fields show the full name when it fits, the configured short name when space is tighter, and one initial in the smallest slots. Shared field boxes add subtle separators on wider screens; board zoom keeps names stable.
+
 ## 0.21.17 — 2026-11-02
 
 ### Added

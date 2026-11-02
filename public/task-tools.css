@@ -86,6 +86,7 @@ body.task-reordering, body.task-reordering * { cursor: grabbing !important; user
 #view-content[data-layout-view="tree"] > .section-title > .button { min-height: 32px; }
 .list-group { min-width: 768px; }
 .task-row {
+  --row-assignee-width: clamp(var(--control-height), calc(25vw - 180px), 128px);
   min-height: 32px;
   min-width: 768px;
   gap: 8px;
@@ -121,7 +122,7 @@ body.task-reordering, body.task-reordering * { cursor: grabbing !important; user
 
 /* The field box is exactly its fields wide (assignee, status, priority and the date), so every row's
    box has one width and holds them: Firefox and Safari otherwise size it from the fields' text. */
-.task-row > .row-fields { flex: none; width: calc(var(--control-height) + var(--list-field-status-width) + max(var(--control-height), var(--list-field-priority-width)) + 68px); }
+.task-row > .row-fields { flex: none; width: calc(var(--row-assignee-width) + var(--list-field-status-width) + max(var(--control-height), var(--list-field-priority-width)) + 68px); }
 .row-fields > .row-priority { display: flex; align-items: center; justify-content: center; }
 .row-due { flex: 0 0 68px; }
 .task-row .due { font-size: 11px; }
@@ -201,7 +202,7 @@ body.task-reordering, body.task-reordering * { cursor: grabbing !important; user
     height: 44px;
     min-height: 44px;
   }
-  .task-row > .row-fields { width: calc(88px + var(--list-field-status-width) + 68px); }
+  .task-row > .row-fields { width: calc(var(--row-assignee-width) + 44px + var(--list-field-status-width) + 68px); }
   .task-row :is(input.task-title, .row-choice, .row-due, .row-task-link) { height: 44px; min-height: 44px; }
 }
 
@@ -510,7 +511,7 @@ body.task-reordering, body.task-reordering * { cursor: grabbing !important; user
 .board-node.task .live-card-state > .field-box {
   overflow: visible;
   display: grid;
-  grid-template-columns: var(--card-control-size) minmax(0, 1fr) calc(var(--card-control-size) + 12px) auto;
+  grid-template-columns: clamp(var(--card-control-size), calc(30cqw - 60px), 120px) minmax(0, 1fr) calc(var(--card-control-size) + 12px) auto;
   align-items: center;
   min-width: 0;
 }
@@ -794,7 +795,7 @@ body.task-reordering, body.task-reordering * { cursor: grabbing !important; user
 .task-relationship-sort { flex: none; }
 .task-relationship-sort > .selection-popover { position: fixed; inset: auto; }
 /* Fixed metadata tracks keep columns aligned across every relationship row. */
-.task-relationship-metadata { display: grid; grid-template-columns: var(--list-field-height) var(--list-field-status-width) var(--list-field-priority-width); align-items: center; flex-shrink: 0; gap: 8px; font-size: var(--type-meta); }
+.task-relationship-metadata { display: grid; grid-template-columns: clamp(var(--list-field-height), 12cqw, 100px) var(--list-field-status-width) var(--list-field-priority-width); align-items: center; flex-shrink: 0; gap: 8px; font-size: var(--type-meta); }
 .task-relationship-assignee { display: flex; align-items: center; min-width: 0; }
 .task-relationship-group { margin-top: 12px; }
 .task-relationship-group h4 { margin: 0 0 4px; font-size: var(--type-small); color: var(--muted); font-weight: 600; }
@@ -1292,7 +1293,7 @@ html.task-page-open,
 .board-node.task .canvas-task-priority { width: calc(var(--card-control-size) + 12px); height: var(--card-control-size); }
 
 .board-node.task .canvas-task-type { align-self: center; padding-top: 0; }
-.board-node.task .canvas-task-assignee { position: relative; display: grid; place-items: center; width: var(--card-control-size); height: var(--card-control-size); }
+.board-node.task .canvas-task-assignee { position: relative; display: grid; place-items: center; width: 100%; height: var(--card-control-size); }
 .board-node.task .canvas-task-assignee .task-assignee { width: var(--card-control-size); height: var(--card-control-size); margin: 0; font-size: 10px; }
 .board-node.task .canvas-task-assignee select { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; }
 .board-node.task .canvas-task-assignee:focus-within { outline: var(--focus-ring); outline-offset: -1px; border-radius: var(--field-radius); }
@@ -1374,14 +1375,8 @@ html.task-page-open,
 .task-dialog .task-metadata-main > .task-dates { display: flex; flex-direction: column; gap: 5px; grid-column: 1 / -1; margin: 0; }
 .task-assignee-choice { position: relative; display: grid; place-items: center; min-width: var(--control-height); height: var(--control-height); }
 .task-assignee-choice .task-assignee { min-width: var(--control-height); width: auto; height: var(--control-height); padding-inline: 8px; font-size: var(--type-body); }
-/* Long names keep their tooltip and select value; compact touch boxes show the person's short name. */
-.task-assignee-choice .task-assignee[data-short-name] { display: block; max-width: 10ch; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; line-height: var(--control-height); }
-@media (pointer: coarse) {
-  @container card-fields (max-width: 320px) {
-    .task-assignee-choice .task-assignee[data-short-name] { width: var(--control-height); max-width: none; padding: 0; font-size: 0; }
-    .task-assignee-choice .task-assignee[data-short-name]::after { content: attr(data-short-name); font-size: var(--type-small); }
-  }
-}
+.task-assignee-choice { width: clamp(var(--control-height), 32cqw, 128px); }
+.task-assignee-choice [data-assignee-avatar] { width: 100%; min-width: 0; }
 .task-dialog .task-assignee-choice select { position: absolute; inset: 0; width: 100%; opacity: 0; cursor: pointer; }
 .task-assignee-choice:focus-within { outline: var(--focus-ring); outline-offset: 2px; border-radius: var(--field-radius); }
 .task-date-range { display: flex; align-items: center; gap: 4px; min-width: 0; padding-inline: 3px; border: 1px solid var(--line); border-radius: 7px; }
@@ -1565,3 +1560,5 @@ html.task-page-open,
 .inline-rich li > input[type="checkbox"] { margin: 0 6px 0 0; vertical-align: middle; }
 .task-time-controls .check-control { align-self: start; font-size: var(--type-body); }
 .task-time-controls .check-control > input[type="checkbox"] { width: auto; min-width: 0; flex: none; }
+
+.task-row > .row-fields > .row-assignee { flex: 0 0 var(--row-assignee-width); width: var(--row-assignee-width); }
