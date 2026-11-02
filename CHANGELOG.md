@@ -2,6 +2,11 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.21.35 — 2026-11-02
+
+### Fixed
+- Feature F0.21-35: Field groups use straight vertical dividers without curved ends on board cards, in the card editor, relationships and other shared field groups. Group corners remain rounded, dividers stay contained, and status dropdown arrows retain their own size.
+
 ## 0.21.34 — 2026-11-02
 
 ### Changed

@@ -393,7 +393,7 @@ textarea,
 :where(.field-box) { display: flex; flex: none; align-items: center; }
 .field-box :is(.field-chip, .task-assignee, select, .task-picker-trigger, .canvas-task-priority, .due, .row-due, .canvas-task-dates) { border-color: transparent !important; background-color: transparent !important; }
 /* List and Tree targets (and the phone summary's) are taller than the fields, so their box is drawn at list-chip height behind them. */
-.field-box:is(.row-fields, .phone-task-fields, .task-relationship-metadata) { position: relative; isolation: isolate; border: 0; background: none; }
+.field-box:is(.row-fields, .phone-task-fields, .task-relationship-metadata) { --field-divider-height: calc(var(--list-field-height) - 8px); position: relative; isolation: isolate; border: 0; background: none; }
 .field-box:is(.row-fields, .phone-task-fields, .task-relationship-metadata)::before,
 .field-box:is(.row-fields, .phone-task-fields, .task-relationship-metadata)::after {
   content: "";
@@ -439,8 +439,13 @@ textarea,
 .document-task-fields > .task-assignee { width: 100px; flex: 0 1 100px; }
 @media (min-width: 601px) {
   :root:not([data-fields-off~="assignee"], [data-fields-off~="status"], [data-fields-off~="priority"]) .field-box:not(.row-fields) > :not(:first-child, .sr-only, [data-field-first-visible]) {
-    /* A divider cannot share background-image with a select's arrow. */
-    box-shadow: inset 1px 0 var(--line);
+    /* Paint a straight stroke independently of the control's rounded corners.
+       Native select arrows keep their own layer and size instead of stretching
+       to the divider's dimensions. */
+    background-image: linear-gradient(var(--line), var(--line)), var(--task-select-arrow, none) !important;
+    background-size: 1px var(--field-divider-height, calc(100% - 8px)), 0.85em 0.85em !important;
+    background-position: left center, right 0.5em center !important;
+    background-repeat: no-repeat !important;
   }
   /* List and Tree targets extend above and below their painted box. Draw a
      short line inside that box instead of an inset shadow around the target,

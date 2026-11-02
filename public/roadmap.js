@@ -6,6 +6,7 @@
 // From the 0.21.0 baseline, new features use F<major>.<minor>-<1..100>: F0.21-1 releases
 // as 0.21.1, F0.21-100 as 0.22.0, then F0.22-1 as 0.22.1. Historical T IDs stay intact.
 export const roadmap = [
+  { id: "F0.21-35", title: "Straight vertical dividers across shared card field groups", status: "done", requested: "2026-11-02", started: "2026-11-02", done: "2026-11-02", version: "0.21.35" },
   { id: "F0.21-34", title: "Silent successful cell and card saves", status: "done", requested: "2026-11-02", started: "2026-11-02", done: "2026-11-02", version: "0.21.34" },
   { id: "F0.21-33", title: "Clean List and Tree field backgrounds with contained dividers", status: "done", requested: "2026-11-02", started: "2026-11-02", done: "2026-11-02", version: "0.21.33" },
   { id: "F0.21-32", title: "Reorder, name and hide table rows and columns; compact document Properties", status: "done", requested: "2026-11-02", started: "2026-11-02", done: "2026-11-02", version: "0.21.32" },

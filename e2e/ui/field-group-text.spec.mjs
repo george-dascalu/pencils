@@ -23,7 +23,12 @@ onDevices(['desktop', 'ipad', 'phone'], () => test('grouped assignee, status and
       const status = page.locator('.canvas-task-status').first();
       const style = await status.evaluate(el => { const s = getComputedStyle(el); return { image: s.backgroundImage, size: s.backgroundSize, position: s.backgroundPosition, appearance: s.appearance, font: s.fontSize }; });
       expect(style.image).toContain('data:image/svg+xml');
-      expect(style.image).not.toContain('linear-gradient');
+      if (page.viewportSize().width > 600) {
+        expect(style.image).toContain('linear-gradient');
+        const sizes = style.size.split(',').map(value => value.trim());
+        expect(sizes[0]).toMatch(/^1px /);
+        expect(parseFloat(sizes[1]), 'the arrow keeps its own size beside the thin divider').toBeGreaterThan(1);
+      } else expect(style.image).not.toContain('linear-gradient');
       await status.click();
       await expect(page.locator('#shared-select-menu')).toBeVisible();
       await page.locator('#shared-select-menu').getByRole('option', { name: 'Done', exact: true }).click();
