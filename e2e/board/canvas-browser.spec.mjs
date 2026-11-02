@@ -147,7 +147,7 @@ test("templates insert frames that the outline collapses and presentation steps 
   await clickControl(pro(page, "outline"));
   const frame = (await current()).nodes.find((n) => n.type === "frame" && n.text === "Now");
   await page.locator(`#canvas-outline [data-pro=collapse][data-id="${frame.id}"]`).click();
-  await expect(page.locator("#board-save")).toHaveText("Saved automatically", { timeout: 12000 });
+  await expect(page.locator("#board-save")).toHaveText("", { timeout: 12000 });
   await poll(async () => (await nodeOf(frame.id)).collapsed).toBeTruthy();
   await clickControl(pro(page, "present"));
   await page.locator("#presentation-controls").waitFor();

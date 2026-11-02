@@ -145,8 +145,8 @@ test("a new sticky note and connector persist, with undo and redo, across a relo
   await page.locator("#canvas").click({ position: { x: 450, y: 350 } });
   await page.locator("#canvas-inline-form .inline-rich").fill("New persistent sticky");
   await page.locator('[data-pro="search-toggle"]').click();
-  // The board save label reads "Saved automatically" (public/save-state.js).
-  await expect(page.locator("#board-save")).toHaveText("Saved automatically");
+  // Confirmed saves leave the status empty (public/save-state.js).
+  await expect(page.locator("#board-save")).toHaveText("");
   const added = (await snapshot()).boards[0].nodes.find((n) => n.text === "New persistent sticky");
   expect(added).toBeTruthy();
   await page.locator("#zoom-label").dblclick();

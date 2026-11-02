@@ -42,7 +42,7 @@ const visit = async (page, id) => {
 };
 const save = async (page) => {
   await page.locator("#task-form").evaluate((form) => form.requestSubmit());
-  await expect(page.locator("[data-autosave-status]").filter({ hasText: /^Saved automatically$/ })).toHaveCount(1);
+  await expect(page.locator("[data-autosave-status]").filter({ hasText: /^$/ })).toHaveCount(1);
   await page.locator("[data-action=dialog-close]").click();
   await expect(page.locator("dialog")).toHaveCount(0);
 };
@@ -113,7 +113,7 @@ test("the rich description edits bullets and Markdown, previews, fits every widt
       const r = await page.locator("dialog").boundingBox();
       expect(r.x >= 0 && r.x + r.width <= width).toBe(true);
       await expect(page.locator('#task-form [type="submit"]')).toHaveCount(0);
-      await expect(page.locator("[data-autosave-status]")).toBeVisible();
+      await expect(page.locator("[data-autosave-status]")).toBeEmpty();
       const layout = await page.locator("#task-form").evaluate((form) => {
         const rect = (selector) => form.querySelector(selector).getBoundingClientRect();
         return {

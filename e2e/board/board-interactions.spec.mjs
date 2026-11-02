@@ -40,7 +40,7 @@ async function openBoard(page) {
   await page.locator("#canvas").waitFor();
   await node(page, "note").waitFor();
 }
-const saved = (page) => expect(page.locator("#board-save")).toHaveText("Saved automatically");
+const saved = (page) => expect(page.locator("#board-save")).toHaveText("");
 async function convert(page, id, target) {
   const heading = node(page, id).locator(".task-title,.note-title").first();
   if (await heading.count()) await heading.click();

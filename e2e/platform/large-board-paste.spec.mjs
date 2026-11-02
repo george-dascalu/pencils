@@ -74,7 +74,7 @@ async function open(page, count) {
 }
 async function savedCount(page, count) {
   await expect
-    .poll(async () => (await current()).nodes.length === count && (await page.locator("#board-save").textContent()) === "Saved automatically", {
+    .poll(async () => (await current()).nodes.length === count && (await page.locator("#board-save").textContent()) === "", {
       message: `Expected ${count} saved objects`,
       timeout: 60000,
     })

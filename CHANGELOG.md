@@ -2,6 +2,11 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.21.5 — 2026-11-02
+
+### Changed
+- Feature F0.21-5: Removed “Saved automatically” throughout the app. Home's Edit layout button now sits on the left of the top toolbar, freeing the extra row for content. Pending and failed saves still show feedback, including queued Home changes.
+
 ## 0.21.4 — 2026-11-02
 
 ### Changed

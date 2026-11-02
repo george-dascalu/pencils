@@ -94,7 +94,7 @@ test("filtered notes move without their grouped task, and Restore brings back th
   const from = { x: box.x + box.width / 2, y: box.y + box.height / 2 };
   await drag(page, from, { x: from.x + 60, y: from.y + 50 });
   await expect.poll(async () => (await saved("note")).x).toBeGreaterThan(105);
-  await expect(page.locator("#board-save")).toHaveText("Saved automatically");
+  await expect(page.locator("#board-save")).toHaveText("");
   expect(await selectedIds(page)).toEqual(["linked", "note"]);
   expect((await saved("task-a")).x).toBe(450);
   await restore(page);
@@ -138,7 +138,7 @@ test("a frame filtered on its own moves without the contents that were filtered 
     const after = await saved("frame");
     return after.x !== frameBefore.x || after.y !== frameBefore.y;
   }, { message: "the filtered frame actually moved" }).toBe(true);
-  await expect(page.locator("#board-save")).toHaveText("Saved automatically");
+  await expect(page.locator("#board-save")).toHaveText("");
   expect(await saved("task-a"), "excluded frame contents stay put").toEqual(childBefore);
 });
 

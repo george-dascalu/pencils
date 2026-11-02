@@ -43,7 +43,7 @@ export function taskAutosave(
     if (JSON.stringify(read()) !== JSON.stringify(last)) return;
     if (!disposed) {
       form.dataset.revision = task()?.revision || form.dataset.revision;
-      say("Saved automatically");
+      say("");
     }
     onSaved?.({ disposed });
   }
@@ -68,7 +68,7 @@ export function taskAutosave(
     const entry = sync.entries.get(url);
     if (!changed && !entry) {
       form.dataset.revision = task()?.revision || form.dataset.revision;
-      say("Saved automatically");
+      say("");
       onSaved?.({ disposed });
       return Promise.resolve(true);
     }

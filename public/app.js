@@ -1800,7 +1800,7 @@ function taskDialog(id = null, defaults = {}, replace = false) {
       ${(t.documents || []).map(document => `<input type="hidden" name="documents" value="${esc(document)}">`).join("")}
       </div>
       <aside class="task-history-panel" aria-label="Card version history" hidden></aside></div>
-    <div class="dialog-foot task-editor-foot">${id || isDraft ? '<span class="task-autosave-status" data-autosave-status role="status" aria-live="polite">Saved automatically</span>' : `<div class="task-create-actions"><label class="create-another"><input type="checkbox" name="createAnother" ${t.createAnother ? "checked" : ""}>Create another</label><button class="button primary" type="submit">Create card</button></div>`}</div></form></dialog>`;
+    <div class="dialog-foot task-editor-foot">${id || isDraft ? '<span class="task-autosave-status" data-autosave-status role="status" aria-live="polite"></span>' : `<div class="task-create-actions"><label class="create-another"><input type="checkbox" name="createAnother" ${t.createAnother ? "checked" : ""}>Create another</label><button class="button primary" type="submit">Create card</button></div>`}</div></form></dialog>`;
   if (replace && $(".task-dialog")) {
     const template = document.createElement("template");
     template.innerHTML = html;

@@ -27,7 +27,7 @@ async function enter(page) {
 const trigger = (page) => page.getByRole("button", { name: "Board appearance", exact: true });
 const popup = (page) => page.locator("#board-settings-popover");
 const close = (page) => page.getByRole("button", { name: "Close board appearance", exact: true }).click();
-const saved = (page) => expect(page.locator("#board-save")).toHaveText("Saved automatically");
+const saved = (page) => expect(page.locator("#board-save")).toHaveText("");
 async function expectSnap(page, expected) {
   await trigger(page).click();
   if (expected) await expect(page.locator("#canvas-snap")).toBeChecked();

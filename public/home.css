@@ -1,5 +1,7 @@
 /* The personal Home: a 12-column grid of panels (home.js). */
-.home-toolbar { justify-content: flex-end; gap: 8px; }
+.home-toolbar { display: flex; align-items: center; gap: 4px; }
+.home-toolbar #home-save:empty { display: none; }
+.main:has(> .home) > #view-toolbar:empty { display: none; }
 .home { padding-top: 12px; }
 .home-grid {
   display: grid;

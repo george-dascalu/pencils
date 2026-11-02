@@ -145,7 +145,7 @@ test("a later task joins beside its prerequisite, undo restores the board and ca
   expect(dependent.x).toBe(prerequisite.x + prerequisite.w + 100);
   expect(dependent.y).toBe(prerequisite.y);
   for (const kept of board.nodes.filter((n) => n.type === "task")) expect(expanded.nodes.find((n) => n.id === kept.id)).toEqual(kept);
-  await expect(page.locator("#board-save")).toHaveText("Saved automatically");
+  await expect(page.locator("#board-save")).toHaveText("");
   await page.locator('[data-action="board-undo"]').tap();
   await expect.poll(async () => (await current()).nodes.some((n) => n.task === third.id)).toBe(false);
   expect(ids(await current())).toEqual(stableIds);

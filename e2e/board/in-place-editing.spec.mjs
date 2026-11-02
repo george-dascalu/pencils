@@ -48,7 +48,7 @@ async function enter(page) {
   await page.locator("#canvas").waitFor();
 }
 async function saved(page) {
-  await expect(page.locator("#board-save")).toHaveText("Saved automatically", { timeout: 12000 });
+  await expect(page.locator("#board-save")).toHaveText("", { timeout: 12000 });
 }
 async function find(page, id, text) {
   await openBoardSearch(page);

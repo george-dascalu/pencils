@@ -57,7 +57,7 @@ async function enter(page) {
 }
 async function saved(page) {
   // Board saves share the editors' save language (public/save-state.js).
-  await expect(page.locator("#board-save")).toHaveText(/^\s*Saved automatically\s*$/, { timeout: 12000 });
+  await expect(page.locator("#board-save")).toHaveText(/^\s*\s*$/, { timeout: 12000 });
 }
 async function find(page, id, text) {
   await openBoardSearch(page);

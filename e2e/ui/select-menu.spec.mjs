@@ -58,7 +58,7 @@ test("task editor selects use the shared menu: Escape cancels, type-ahead and En
   await expect(status, "Type-ahead and Enter choose an option").toHaveValue("done");
   await pick(page, page.locator("#task-form [name=assignee]"), "George");
   await page.locator("#task-form").evaluate((form) => form.requestSubmit());
-  await page.locator("[data-autosave-status]").filter({ hasText: /^Saved automatically$/ }).waitFor();
+  await expect(page.locator("[data-autosave-status]")).toHaveText("");
   await page.locator("[data-action=dialog-close]").click();
   await page.locator("#task-form").waitFor({ state: "detached" });
   const saved = (await app.store.snapshot(app.project.id)).tasks.find((t) => t.id === app.task.id);

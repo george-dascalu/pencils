@@ -43,7 +43,7 @@ async function edit(page, text) {
   await page.locator("#canvas-inline-form textarea").fill(text);
   await page.locator("#canvas-inline-form textarea").press("Control+Enter");
 }
-const saved = (page) => expect(saveLabel(page)).toHaveText("Saved automatically", { timeout: 60000 });
+const saved = (page) => expect(saveLabel(page)).toHaveText("", { timeout: 60000 });
 
 test("a 100,000-object native import beyond the old request-size ceiling is accepted", { tag: "@heavy" }, async () => {
   test.setTimeout(180000);

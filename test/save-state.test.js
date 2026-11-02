@@ -21,3 +21,9 @@ test('save labels explain where edits remain and what conflict action is needed'
   assert.equal(saveState([], { storageError: true }), 'Browser draft storage unavailable — keep this tab open');
   assert.equal(saveState([{ conflict: {} }]), 'Edits need review — open Recovery & backups');
 });
+
+test('idle saves stay quiet while pending work and failures remain visible', () => {
+  assert.equal(saveState([]), '');
+  assert.equal(saveState([{ running: true }]), 'Saving…');
+  assert.match(saveState([{ error: 'Disk full' }]), /Disk full/);
+});

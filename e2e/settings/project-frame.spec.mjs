@@ -40,7 +40,7 @@ async function updatePlan(page, { relayout = false } = {}) {
   if (relayout) await page.locator("#frame-relayout").check();
   await page.locator("#frame-apply").click();
 }
-const savedAutomatically = (page) => expect(page.locator("#board-save")).toHaveText("Saved automatically");
+const savedAutomatically = (page) => expect(page.locator("#board-save")).toHaveText("");
 
 test("a project frame is drawn by dragging, Escape cancels, and it lands where drawn without moving the camera", { tag: "@gate" }, async ({ page }) => {
   await openBoard(page);

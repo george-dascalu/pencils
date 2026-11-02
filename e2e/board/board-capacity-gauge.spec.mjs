@@ -118,7 +118,7 @@ test("deleting and undoing objects and frames update the counts live, the gauge 
   await page.keyboard.press("Delete");
   await expect(capacity).toHaveAttribute("data-count", "8051");
   await expect(gauge(page)).toHaveAttribute("aria-label", /8,051 \/ 80,000 objects/);
-  await expect(page.locator("#board-save")).toHaveText("Saved automatically");
+  await expect(page.locator("#board-save")).toHaveText("");
   await page.keyboard.press("Control+z");
   await expect(capacity).toHaveAttribute("data-count", "8052");
   await page.locator("[data-node=frame] .frame-title").click();

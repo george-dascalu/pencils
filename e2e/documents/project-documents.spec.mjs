@@ -109,7 +109,7 @@ function documentTests() {
     await page.unroute("**/api/projects/*/documents/*");
     await expect.poll(async () => (await getDocument(doc.id)).body).toContain("Offline draft retained");
     // Since 0.18.1 the document shows save problems only when action is needed,
-    // so a recovered save clears the message instead of saying "Saved automatically".
+    // so a recovered save clears the message instead of saying "".
     await expect(page.locator("[data-document-save]")).toHaveText("");
     await expect(page.locator("[data-document-save-problem]")).toBeHidden();
   });

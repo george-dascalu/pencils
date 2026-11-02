@@ -231,7 +231,7 @@ test("PEN-7 a card links to documents and the document lists its cards", async (
   await picker.locator("input[type=search]").fill("Spec");
   await picker.locator(`[data-document-link-add="${spec.id}"]`).click();
   await expect(section.locator(`[data-document-open="${spec.id}"]`), "linked document is listed").toHaveCount(1);
-  await expect(page.locator("[data-autosave-status]")).toHaveText(/Saved/);
+  await expect(page.locator("[data-autosave-status]")).toHaveText("");
   await expect.poll(async () => (await snapshot()).tasks.find((t) => t.id === tasks[1].id).documents, "document id saved on the task").toEqual([spec.id]);
   await section.locator(`[data-document-open="${spec.id}"]`).click();
   await expect(page.locator(".documents-workspace #document-form [name=title]")).toHaveValue("Spec document");

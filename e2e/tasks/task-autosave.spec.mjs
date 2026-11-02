@@ -72,7 +72,7 @@ test("failed saves stay queued in the browser and retry without another edit", a
   expect((await saved(card.id)).title).not.toBe("Queued edit");
   await page.unroute("**/api/projects/*/tasks/*");
   await expect.poll(async () => (await saved(card.id)).title, { timeout: 15000 }).toBe("Queued edit");
-  await expect(status(page)).toHaveText(/^Saved automatically$/);
+  await expect(status(page)).toHaveText(/^$/);
 });
 
 test("comments open beside the right-docked editor with replies and reactions, in the same place as history", async ({ page }) => {

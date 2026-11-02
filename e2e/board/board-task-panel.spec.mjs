@@ -217,7 +217,7 @@ test("edits in the side panel save automatically and keep one card on the board"
   await title(page).fill("Updated from board panel");
   await page.locator('[aria-label="Card description"]').fill("Updated rich description");
   await title(page).press("Control+Enter");
-  await page.locator("[data-autosave-status]").filter({ hasText: /^Saved automatically$/ }).waitFor();
+  await expect(page.locator("[data-autosave-status]")).toHaveText("");
   await page.locator("[data-action=dialog-close]").click();
   await expect(editor(page)).toHaveCount(0);
   await expect.poll(async () => (await savedTask(project, task.id)).title).toBe("Updated from board panel");

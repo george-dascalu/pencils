@@ -11,7 +11,7 @@ export function saveState(
     return online
       ? `Pending — changes kept in this browser: ${failed.error}`
       : "Pending offline — changes kept in this browser";
-  return entries.length ? "Saving…" : "Saved automatically";
+  return entries.length ? "Saving…" : "";
 }
 
 // Actionable details for the compact header warning. Keep editor save labels intact.

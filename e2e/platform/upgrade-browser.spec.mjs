@@ -33,7 +33,7 @@ async function openProject(page, view) {
 }
 async function saveAndClose(page) {
   await page.locator("#task-form").evaluate((form) => form.requestSubmit());
-  await page.locator("[data-autosave-status]").filter({ hasText: /^Saved automatically$/ }).waitFor();
+  await expect(page.locator("[data-autosave-status]")).toHaveText("");
   await page.locator("[data-action=dialog-close]").click();
   await page.locator("dialog").waitFor({ state: "detached" });
 }

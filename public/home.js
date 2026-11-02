@@ -34,7 +34,7 @@ const BY = [["status", "Status"], ["priority", "Priority"], ["assignee", "Assign
 
 export function installHome(ctx) {
   const { state, api, esc, icon, toast, bookmarks, commands, markdown, welcomePage, renderApp, viewLabel } = ctx;
-  let panels = null, loading = null, saving = Promise.resolve(), snapshots = new Map(), visitsCache = new Map(), lastVisit = "", onHome = false;
+  let panels = null, loading = null, saving = Promise.resolve(), snapshots = new Map(), visitsCache = new Map(), lastVisit = "", onHome = false, saveMessage = "", saveSequence = 0;
   const panelsUI = anchoredPanel(ctx);
   const me = () => state.session?.user?.name || state.session?.user?.username || "";
   const projects = () => state.projects.filter((p) => p.organisation === state.organisation?.id && !p.archived && !p.personal);
@@ -49,15 +49,21 @@ export function installHome(ctx) {
     if (!loading) loading = api("/home").then((data) => (panels = data.panels)).catch((error) => { loading = null; throw error; });
     return loading;
   }
-  // Saves in order; resolves to whether this save was accepted.
+  function saveStatus(message) {
+    saveMessage = message;
+    const status = document.querySelector("#home-save");
+    if (status) status.textContent = message;
+  }
+  // Saves in order; only the newest queued write settles the visible status.
   function save() {
     const sent = panels.map((p) => ({ ...p }));
-    const status = document.querySelector("#home-save");
-    if (status) status.textContent = "Saving…";
+    const request = ++saveSequence;
+    saveStatus("Saving…");
     const result = saving.then(() => api("/home", { method: "PATCH", body: { panels: sent } })).then(() => {
-      if (document.querySelector("#home-save")) document.querySelector("#home-save").textContent = "Saved automatically";
+      if (request === saveSequence) saveStatus("");
       return true;
     }, (error) => {
+      if (request === saveSequence) saveStatus("Could not save");
       toast(error.message, true);
       return false;
     });
@@ -77,7 +83,7 @@ export function installHome(ctx) {
       onHome = true;
     }
     const add = `<details class="board-menu" data-board-menu="home-add"><summary class="button small" title="Add a panel">${icon("plus")}Add panel</summary><div class="board-menu-panel">${TYPES.map(([type, name, glyph]) => `<button type="button" data-home-add="${type}">${icon(glyph)}${esc(name)}</button>`).join("")}</div></details>`;
-    return `<div id="view-toolbar"><div class="board-toolbar home-toolbar"><span class="board-save" id="home-save">${panels ? "Saved automatically" : "Loading…"}</span>${editing() ? add : ""}<button type="button" class="icon-button" id="home-edit" data-home="edit" aria-pressed="${editing()}" aria-label="Edit layout" title="Edit layout">${icon("pencil")}</button></div></div>
+    return `<div id="view-toolbar"><div class="home-toolbar"><button type="button" class="icon-button" id="home-edit" data-home="edit" aria-pressed="${editing()}" aria-label="Edit layout" title="Edit layout">${icon("pencil")}</button>${editing() ? add : ""}<span class="board-save" id="home-save" role="status" aria-live="polite">${panels ? saveMessage : "Loading…"}</span></div></div>
     <section id="view-content" class="home content${editing() ? " editing" : ""}" aria-label="Home" ${editing() ? 'data-editing=""' : ""}>${panels ? `<div class="home-grid">${stackOrder(panels).map(panelHTML).join("")}</div>` : '<p role="status" class="home-loading">Loading your home…</p>'}</section>`;
   }
   function panelHTML(p) {
@@ -171,7 +177,14 @@ export function installHome(ctx) {
     }
     return "";
   }
+  const phone = matchMedia("(max-width: 600px)");
+  function placeToolbar() {
+    const toolbar = document.querySelector(".home-toolbar");
+    if (toolbar) document.querySelector(phone.matches ? "#view-toolbar" : ".topbar .breadcrumb")?.append(toolbar);
+  }
+  phone.addEventListener("change", placeToolbar);
   function mount() {
+    placeToolbar();
     for (const el of document.querySelectorAll(".home .home-panel")) void fill(el);
   }
 

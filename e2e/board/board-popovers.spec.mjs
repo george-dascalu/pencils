@@ -30,7 +30,7 @@ async function openSettings(page) {
   await page.getByRole("button", { name: "Board appearance", exact: true }).click();
   return page.locator("#board-settings-form");
 }
-const saved = (page) => expect(page.locator("#board-save")).toHaveText("Saved automatically");
+const saved = (page) => expect(page.locator("#board-save")).toHaveText("");
 
 test("board appearance applies automatically, with undo and redo of the snap", async ({ page }) => {
   await openBoard(page);

@@ -26,7 +26,7 @@ const stored = async (id) => (await current()).nodes.find((n) => n.id === id).te
 const pro = (page, name) => page.locator(`[data-pro="${name}"]`).first();
 const rich = (page) => page.getByRole("textbox", { name: "Rich text editor", exact: true });
 const source = (page) => page.locator("#canvas-inline-form textarea[name=text]");
-const saved = (page) => expect(page.locator("#board-save")).toHaveText(/All (canvas )?changes saved|Saved automatically/);
+const saved = (page) => expect(page.locator("#board-save")).toHaveText(/^$/);
 const within = (box, width) => box && box.x >= 0 && box.x + box.width <= width;
 
 async function openBoard(page) {

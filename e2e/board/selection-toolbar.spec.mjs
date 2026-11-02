@@ -43,7 +43,7 @@ test.afterEach(() => expect(external, "no external requests").toEqual([]));
 
 const toolbar = (page) => page.locator("#selection-tools");
 const menu = (page, key) => toolbar(page).locator(`[data-selection-menu=${key}] > summary`);
-const savedLabel = (page) => expect(page.locator("#board-save")).toHaveText("Saved automatically");
+const savedLabel = (page) => expect(page.locator("#board-save")).toHaveText("");
 // Select an object through board search (phones dock Search).
 async function find(page, id, text) {
   await openBoardSearch(page);

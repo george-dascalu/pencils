@@ -33,7 +33,7 @@ async function open(page) {
   await page.locator("#board-settings-form").waitFor();
 }
 const close = (page) => page.getByRole("button", { name: "Close board appearance", exact: true }).click();
-const saved = (page) => expect(page.locator("#board-save")).toHaveText("Saved automatically");
+const saved = (page) => expect(page.locator("#board-save")).toHaveText("");
 const appearance = (page) => page.locator("#canvas").evaluate((el) => ({ color: getComputedStyle(el).backgroundColor, image: getComputedStyle(el).backgroundImage, size: getComputedStyle(el).backgroundSize }));
 const previewStyle = (page, property) => page.locator(".background-preview").evaluate((el, property) => getComputedStyle(el)[property], property);
 
