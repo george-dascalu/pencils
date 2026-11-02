@@ -224,3 +224,7 @@
   flex: 1;
   margin-right: auto;
 }
+
+.board-card-display .board-setting-toggle { min-height: var(--control-height); margin: 0; padding-block: 0; border-bottom: 1px solid var(--line); }
+.board-card-display .board-setting-toggle > span { font-size: var(--type-body); }
+.board-card-custom-options { margin-top: 8px; }

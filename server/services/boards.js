@@ -1,3 +1,4 @@
+import { validBoardCardFields } from "../../public/board-card-fields.js";
 import { BOARD_LIMITS } from "../../public/board-limits.js";
 import { validDependencyStyle } from "../../public/dependency-style.js";
 import { validDraftTask } from "../../public/draft-task.js";
@@ -15,6 +16,8 @@ import { now, validId, title, body, choice, color } from "../values.js";
 
 export const boardsMethods = {
   validateBoard(data) {
+    if (data.settings?.card_fields !== undefined && !validBoardCardFields(data.settings.card_fields))
+      throw new Problem(400, "Invalid card display settings.");
     if (
       data.settings?.dependency_style !== undefined &&
       !validDependencyStyle(data.settings.dependency_style)

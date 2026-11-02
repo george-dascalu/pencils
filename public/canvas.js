@@ -211,6 +211,7 @@ export function canvasFeatures(ctx) {
   const pen = penTools(ctx);
   const settings = boardSettings(ctx, {
     ...controls,
+    refreshCards: () => pro.enhance(),
     rememberDisplay: (...args) => pro.rememberDisplay(...args),
   });
   const pro = canvasPro(ctx, {

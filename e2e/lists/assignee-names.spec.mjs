@@ -15,8 +15,8 @@ onDevices(['desktop','ipad','phone'],()=>test('names use the available space and
   if(device==='desktop') await expect(name).toHaveText('George');
   if(['list','tree'].includes(view)) {
    const field=page.locator(device==='phone'?'.phone-task-fields .phone-field[data-field="status"]':'.row-fields > .row-status').first();
-   const image=await field.evaluate(el=>getComputedStyle(el).backgroundImage);
-   expect(image==='none').toBe(device==='phone');
+   const shadow=await field.evaluate(el=>getComputedStyle(el).boxShadow);
+   expect(shadow==='none').toBe(device==='phone');
   }
  }
  await page.screenshot({path:`/tmp/assignee-names-${device}.png`});

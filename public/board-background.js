@@ -1,3 +1,4 @@
+import { boardCardFieldsHTML, readBoardCardFields, DEFAULT_CARD_FIELDS_HIDDEN } from "./board-card-fields.js";
 import { positionPopover } from "./popover-position.js";
 import { dependencyStyle, defaultDependencyStyle } from "./dependency-style.js";
 import {
@@ -221,7 +222,7 @@ export function boardSettings(ctx, controls) {
     popup.setAttribute("popover", "manual");
     popup.setAttribute("role", "dialog");
     popup.setAttribute("aria-label", "Board appearance");
-    popup.innerHTML = `<form id="board-settings-form"><div class="dialog-head"><h2>Board appearance</h2><button type="button" class="button" data-board-settings-reset>Reset</button><button type="button" class="icon-button" data-board-settings-close aria-label="Close board appearance">${icon("close")}</button></div><div class="dialog-body"><section class="board-settings-section" aria-labelledby="board-snapping-heading"><h3 id="board-snapping-heading">Snapping</h3><label class="board-setting-toggle"><input id="canvas-snap" name="snap" type="checkbox" ${board().settings?.snap !== false ? "checked" : ""}><span>Snap to grid<small>Place and resize objects in 20 px steps.</small></span></label><label class="board-setting-toggle"><input id="canvas-align" name="align-objects" type="checkbox" ${board().settings?.alignObjects !== false ? "checked" : ""}><span>Align with nearby objects<small>Snap to edges, centres, equal spacing and matching sizes. Hold Alt while dragging to bypass snapping.</small></span></label></section><section class="board-settings-section" aria-labelledby="board-background-heading"><h3 id="board-background-heading">Background</h3><fieldset class="background-patterns"><legend>Pattern</legend>${[
+    popup.innerHTML = `<form id="board-settings-form"><div class="dialog-head"><h2>Board appearance</h2><button type="button" class="button" data-board-settings-reset>Reset</button><button type="button" class="icon-button" data-board-settings-close aria-label="Close board appearance">${icon("close")}</button></div><div class="dialog-body"><section class="board-settings-section" aria-labelledby="board-snapping-heading"><h3 id="board-snapping-heading">Snapping</h3><label class="board-setting-toggle"><input id="canvas-snap" name="snap" type="checkbox" ${board().settings?.snap !== false ? "checked" : ""}><span>Snap to grid</span></label><label class="board-setting-toggle"><input id="canvas-align" name="align-objects" type="checkbox" ${board().settings?.alignObjects !== false ? "checked" : ""}><span>Align with nearby objects</span></label></section><section class="board-settings-section" aria-labelledby="board-background-heading"><h3 id="board-background-heading">Background</h3><fieldset class="background-patterns"><legend>Pattern</legend>${[
       ["plain", "Plain"],
       ["dots", "Dots"],
       ["grid", "Grid"],
@@ -234,7 +235,7 @@ export function boardSettings(ctx, controls) {
       )
       .join(
         "",
-      )}</fieldset><div class="field-row"><div class="field">Background colour${colorPicker({ value: s.color === "auto" ? "#f5f6ee" : s.color, name: "background-color", label: "Background colour" })}<label class="background-auto"><input type="checkbox" name="theme-color" ${s.color === "auto" ? "checked" : ""}> Use theme colour</label></div><div class="field">Pattern colour${colorPicker({ value: s.lineColor === "auto" ? "#ced6c1" : s.lineColor, name: "line-color", label: "Pattern colour" })}<label class="background-auto"><input type="checkbox" name="auto-line" ${s.lineColor === "auto" ? "checked" : ""}> Automatic contrast</label></div></div><label class="field">Pattern spacing <output for="board-pattern-spacing">${s.spacing} px</output><input id="board-pattern-spacing" name="spacing" type="range" min="8" max="160" step="4" value="${s.spacing}" aria-valuetext="${s.spacing} px"></label><div class="background-preview" role="img" aria-label="Background preview"><span>Preview</span></div><p class="field-hint">Changes save automatically. Use Ctrl / ⌘ Z to undo. Snapping and background are saved with this board for everyone. Fine grid adds a stronger line every five squares. Pattern spacing sets the small square size; it is visual and does not change the snapping distance.</p></section>${dependencyStyleHTML(board(), ctx)}</div></form>`;
+      )}</fieldset><div class="field-row"><div class="field">Background colour${colorPicker({ value: s.color === "auto" ? "#f5f6ee" : s.color, name: "background-color", label: "Background colour" })}<label class="background-auto"><input type="checkbox" name="theme-color" ${s.color === "auto" ? "checked" : ""}> Use theme colour</label></div><div class="field">Pattern colour${colorPicker({ value: s.lineColor === "auto" ? "#ced6c1" : s.lineColor, name: "line-color", label: "Pattern colour" })}<label class="background-auto"><input type="checkbox" name="auto-line" ${s.lineColor === "auto" ? "checked" : ""}> Automatic contrast</label></div></div><label class="field">Pattern spacing <output for="board-pattern-spacing">${s.spacing} px</output><input id="board-pattern-spacing" name="spacing" type="range" min="8" max="160" step="4" value="${s.spacing}" aria-valuetext="${s.spacing} px"></label><div class="background-preview" role="img" aria-label="Background preview"><span>Preview</span></div></section>${boardCardFieldsHTML(board(), state.config, esc)}${dependencyStyleHTML(board(), ctx)}</div></form>`;
     document.body.append(popup);
     popup.addEventListener("toggle", (e) => {
       if (e.newState === "closed" && popup === e.target) close();
@@ -255,9 +256,11 @@ export function boardSettings(ctx, controls) {
       snap: form.elements.snap.checked,
       alignObjects: form.elements["align-objects"].checked,
       background: values(form),
+      card_fields: readBoardCardFields(form, board().settings?.card_fields),
       dependency_style: readDependencyStyle(form),
     };
     const shared = !equal(board().settings, settings);
+    const cardsChanged = !equal(board().settings?.card_fields, settings.card_fields);
     if (shared)
       changeBoard(
         (b) => {
@@ -265,6 +268,7 @@ export function boardSettings(ctx, controls) {
         },
         { render: false },
       );
+    if (cardsChanged) controls.refreshCards?.();
     // Choosing a pattern shows it, as one undo step with the change.
     const beforeDisplay = controls.display();
     if (pattern && !beforeDisplay.grid) {
@@ -319,6 +323,8 @@ export function boardSettings(ctx, controls) {
       });
     for (const name of ["snap", "align-objects"])
       form.elements[name].checked = true;
+    for (const input of form.querySelectorAll("[data-board-card-field]")) input.checked = !DEFAULT_CARD_FIELDS_HIDDEN.includes(input.dataset.boardCardField);
+    for (const input of form.querySelectorAll("[data-board-card-custom]")) input.checked = false;
     apply(form);
     sync();
   });
@@ -348,6 +354,8 @@ export function boardSettings(ctx, controls) {
     const arrows = dependencyStyle(b, state.project);
     for (const key of ["lineStyle", "width", "toEnd"])
       form.elements[`dependency-${key}`].value = arrows[key];
+    for (const input of form.querySelectorAll("[data-board-card-field]")) input.checked = !(b.settings?.card_fields?.hidden || DEFAULT_CARD_FIELDS_HIDDEN).includes(input.dataset.boardCardField);
+    for (const input of form.querySelectorAll("[data-board-card-custom]")) input.checked = !!b.settings?.card_fields?.custom?.includes(input.dataset.boardCardCustom);
     form.elements.snap.checked = b.settings?.snap !== false;
     form.elements["align-objects"].checked = b.settings?.alignObjects !== false;
     form.elements.pattern.value = s.pattern;

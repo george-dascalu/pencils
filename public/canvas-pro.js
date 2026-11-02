@@ -1,3 +1,4 @@
+import { boardCardVisible, boardCardCustomFields } from "./board-card-fields.js";
 import { sourceReadOnly } from "./source-model.js";
 import { boardScene, paintOverviewEdges } from "./board-scene.js";
 import { resizeTaskCard, taskCardHeight } from "./task-card-layout.js";
@@ -498,6 +499,36 @@ export function canvasPro(ctx, basic) {
     };
     return `<span class="canvas-task-dates">${icon("calendar")}${part("start", "Start")}<span class="canvas-task-date-arrow" aria-hidden="true">→</span>${part("due", "Due")}</span>`;
   }
+  function displayCardFields(el, n, task) {
+    const visible = key => boardCardVisible(board(), state.config, key);
+    const hide = (selector, off) => { for (const field of el.querySelectorAll(selector)) field.hidden = off; };
+    hide('.canvas-task-type', !visible('type'));
+    hide('.canvas-task-key', !visible('id'));
+    hide('.canvas-task-identity', !visible('type') && !visible('id'));
+    hide('.live-card-heading > .task-title', !visible('title'));
+    for (const key of ['assignee', 'status', 'priority']) hide(`.canvas-task-${key}`, !visible(key));
+    for (const key of ['start', 'due']) hide(`.canvas-task-date:has([data-canvas-task-date="${key}"])`, !visible(key));
+    hide('.canvas-task-date-arrow', !visible('start') || !visible('due'));
+    hide('.canvas-task-dates', !visible('start') && !visible('due'));
+    const columns = [
+      visible('assignee') && (visible('status') ? 'var(--board-assignee-column)' : 'minmax(var(--card-control-size), 1fr)'),
+      visible('status') && 'minmax(0, 1fr)',
+      visible('priority') && 'calc(var(--card-control-size) + 12px)',
+      (visible('start') || visible('due')) && 'auto',
+    ].filter(Boolean);
+    hide('.live-card-state', !columns.length);
+    const box = el.querySelector('.live-card-state > .field-box');
+    if (box) box.style.gridTemplateColumns = columns.join(' ');
+    // A hidden earlier field cannot leave a divider before the first visible field.
+    [...(box?.children || [])].filter(child => !child.hidden).forEach((child, i) => child.toggleAttribute('data-field-first-visible', i === 0));
+    hide('.task-card-description', !visible('description') || !!n.taskCollapsed);
+    const fields = boardCardCustomFields(board(), state.config).map(field => [field.name, task.fields?.[field.id], field.type]);
+    if (visible('estimate')) fields.unshift(['Estimate', task.estimate, 'number']);
+    if (visible('tags')) fields.push(['Tags', task.tags?.join(', '), 'text']);
+    const values = fields.filter(([, value]) => value !== undefined && value !== null && value !== '')
+      .map(([label, value, type]) => `<div><span>${esc(label)}</span><span>${esc(type === 'checkbox' ? value === true || value === 'true' ? 'Yes' : 'No' : String(value))}</span></div>`).join('');
+    if (values) el.insertAdjacentHTML('beforeend', `<div class="canvas-task-custom-fields">${values}</div>`);
+  }
   function enhance(only = null) {
     if (!board()) return;
     // Task/note changes may not rebuild board geometry. Never revive stale cards.
@@ -546,6 +577,7 @@ export function canvasPro(ctx, basic) {
         const d = draftTaskData(n),
           count = n.comments?.filter((c) => !c.deleted).length || 0;
         el.innerHTML = `<div class="live-card-heading"><span class="canvas-task-type" role="img" aria-label="${esc(ctx.label(d.type))}" title="Draft · ${esc(ctx.label(d.type))}">${icon(d.type)}</span><strong class="task-title" title="${esc(d.title)}">${esc(d.title)}</strong><div class="live-card-actions">${btn("convert", icon("task"), `data-id="${esc(n.id)}" aria-label="Finalise card" title="Finalise card" ${n.locked ? "disabled" : ""}`)}${disclosure(n)}${btn("comments", icon("comment") + (count ? `<span class="task-comment-count">${count}</span>` : ""), `data-id="${esc(n.id)}" aria-label="Comments on ${esc(d.title)}"`)}${btn("draft-edit", "↗", `data-id="${esc(n.id)}" aria-label="Edit draft card" title="Edit draft card"`)}</div></div><div class="draft-task-meta"><span class="draft-task-badge">${icon("pencil")}Draft</span>${cardAssignee(d, `data-draft-node="${esc(n.id)}" ${n.locked ? "disabled" : ""}`)}${cardPriority(d, `data-draft-node="${esc(n.id)}" ${n.locked ? "disabled" : ""}`)}</div><div class="canvas-markdown task-card-description" ${n.taskCollapsed ? "hidden" : ""}>${d.body ? markdown(d.body) : '<span class="is-placeholder">Add card notes…</span>'}</div>`;
+        displayCardFields(el, n, d);
       } else if (n.type === "task" && !byTask.has(n.task)) {
         el.classList.remove("overdue", "blocked-task", "dimmed");
         el.setAttribute(
@@ -590,6 +622,7 @@ export function canvasPro(ctx, basic) {
               "",
             )}</select>${cardPriority(t, `data-task="${esc(t.id)}"`)}${cardDates(t)}</span></div>${t.source?`<small class="source-badge">${esc(sourceLabel(t))} · Planning edits stay in Pencils</small>`:""}${flags.blocked ? '<div class="canvas-task-flags"><b>Blocked</b></div>' : ""}<div class="canvas-markdown task-card-description" ${n.taskCollapsed ? "hidden" : ""}>${section ? (section.text ? markdown(section.text) : '<span class="is-placeholder">Add card notes…</span>') : "<p>Heading or block not found.</p>"}</div>${n.subpath ? `<small class="embed-label">${esc(n.subpath)}</small>` : ""}`;
         }
+        if (!asNote) displayCardFields(el, n, t);
       } else if (n.type === "file") {
         const attachment = localAttachment(n);
         if (attachment) {

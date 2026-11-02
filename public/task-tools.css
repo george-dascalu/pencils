@@ -1577,3 +1577,15 @@ html.task-page-open,
 .task-dialog.board-task-editor .task-title-row > .task-identity-row { display: flex; flex: none; width: var(--control-height); gap: 0; }
 .task-dialog.board-task-editor .task-title-row > .task-key { flex: 0 1 auto; min-width: 0; max-width: min(96px, 20%); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: var(--type-meta); }
 .task-title-row > .bookmark-button { flex: none; }
+
+/* Board display choices retain the shared field box while closing the gaps of hidden fields. */
+.board-node.task { --board-assignee-column: clamp(var(--card-control-size), calc(30cqw - 60px), 120px); }
+@media (pointer: coarse) { .board-node.task { --board-assignee-column: var(--card-control-size); } }
+.board-node.task [hidden] { display: none !important; }
+.board-node.task .live-card-heading { justify-content: flex-end; }
+.canvas-task-custom-fields { display: grid; gap: 0; margin-top: 8px; font-size: 12px; }
+.canvas-task-custom-fields > div { display: flex; align-items: baseline; gap: 8px; padding-block: 4px; border-top: 1px solid var(--line); }
+.canvas-task-custom-fields > div > :first-child { color: var(--muted); flex: 0 1 40%; }
+.canvas-task-custom-fields > div > :last-child { min-width: 0; overflow-wrap: anywhere; }
+
+.board-node .draft-task-meta :is(.task-assignee, select) { font-size: 12px !important; }

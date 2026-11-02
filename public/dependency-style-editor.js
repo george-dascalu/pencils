@@ -21,7 +21,7 @@ export function dependencyStyleHTML(board, { esc, colorPicker, state }) {
   const style = dependencyStyle(board, state.project);
   const select = (key, title, choices, symbol = "") =>
     `<label class="field">${title}<select name="dependency-${key}" aria-label="Dependency ${title.toLowerCase()}" ${symbol ? `data-select-symbol="${symbol}"` : ""}>${choices.map(([value, label]) => `<option value="${value}" ${String(style[key]) === String(value) ? "selected" : ""}>${label}</option>`).join("")}</select></label>`;
-  return `<fieldset class="dependency-style-settings"><legend>Dependency arrow style</legend><p class="field-hint">Applies to every dependency arrow on this board. Changes save automatically and can be undone with Ctrl / ⌘ Z. A → B means A must finish before B.</p><div class="dependency-style-fields"><div class="field">Colour${colorPicker({ label: "Dependency arrow colour", name: "dependency-color", value: style.color })}</div>${select(
+  return `<fieldset class="dependency-style-settings"><legend>Dependency arrow style</legend><div class="dependency-style-fields"><div class="field">Colour${colorPicker({ label: "Dependency arrow colour", name: "dependency-color", value: style.color })}</div>${select(
     "lineStyle",
     "Stroke",
     [

@@ -2,6 +2,14 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.21.24 — 2026-11-02
+
+### Added
+- Feature F0.21-24: Board appearance lets you choose which card details to display on that board: type, ID, title, assignee, status, priority, start/due dates, description, estimate, tags and project custom fields. Choices save with the board, work with undo and Reset, and preserve every card's data. Removed the background, snapping and dependency-arrow explanations to keep the panel compact.
+
+### Fixed
+- Grouped card fields use matching assignee, status and date text sizes in lists, trees, Kanban, relationships, planning and board cards. Field dividers no longer replace the board status dropdown arrow with a filled square.
+
 ## 0.21.23 — 2026-11-02
 
 ### Fixed

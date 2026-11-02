@@ -381,6 +381,7 @@ textarea,
    a 1px border in the priority's colour (a project setting), with the shared corners. The fields
    inside drop their own borders and fills and keep their value's text colour. */
 .field-box {
+  --field-font-size: var(--type-small);
   --field-box-border: color-mix(in srgb, var(--field-box-color, var(--line)) 70%, var(--line));
   gap: 0 !important;
   border: 1px solid var(--field-box-border);
@@ -405,6 +406,11 @@ textarea,
 /* Row targets are taller than the box, so hover shades the field inside it. */
 .field-box > .row-choice:hover { background-color: transparent !important; }
 .field-box > .row-choice:has(select:enabled):hover > :is(.field-chip, .task-assignee) { background-color: var(--surface-soft) !important; }
+/* Every visible value in a group uses its group's text step. Editors retain the body
+   step (16px on touch); board values stay in document coordinates while zooming. */
+.field-box :is(.task-assignee, .field-chip-status, .canvas-task-status, .canvas-task-date, .due, .row-due, .task-picker-trigger, select) { font-size: var(--field-font-size) !important; }
+.task-fields.field-box { --field-font-size: var(--type-body); }
+#canvas .board-node.task .field-box { --field-font-size: 12px; }
 /* Board cards keep their document-scale sizes with the same shape. */
 #canvas .board-node.task :is(.canvas-task-status, .canvas-task-priority) { border-radius: var(--field-radius) !important; }
 #canvas .board-node.task .canvas-task-status { padding-inline: 10px !important; }
@@ -431,8 +437,8 @@ textarea,
 .card-bottom > .field-box { max-width: 100%; }
 .document-task-fields > .task-assignee { width: 100px; flex: 0 1 100px; }
 @media (min-width: 601px) {
-  :root:not([data-fields-off~="assignee"], [data-fields-off~="status"], [data-fields-off~="priority"]) .field-box > :not(:first-child, .sr-only) {
-    background-image: linear-gradient(var(--line), var(--line)) !important;
-    background-size: 1px 60%; background-position: left center; background-repeat: no-repeat;
+  :root:not([data-fields-off~="assignee"], [data-fields-off~="status"], [data-fields-off~="priority"]) .field-box > :not(:first-child, .sr-only, [data-field-first-visible]) {
+    /* A divider cannot share background-image with a select's arrow. */
+    box-shadow: inset 1px 0 var(--line);
   }
 }
