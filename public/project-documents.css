@@ -176,11 +176,17 @@
 .document-heading {
   display: flex;
   align-items: center;
+  justify-content: flex-end;
   gap: var(--control-bar-gap);
   padding: var(--control-bar-padding) 8px;
   border-bottom: 1px solid var(--line);
 }
 .document-heading .document-formatting { flex: 1 1 auto; }
+.document-tools-button { position: relative; }
+.document-tools-button .document-mode-indicator { display: flex; transform: translateY(-3px); }
+.document-tools-button .document-mode-indicator .icon { width: 16px; height: 16px; }
+.document-tools-button .document-tools-more { position: absolute; bottom: 2px; left: 50%; transform: translateX(-50%); display: flex; }
+.document-tools-button .document-tools-more .icon { width: 10px; height: 10px; }
 #document-form .document-rich-tools {
   position: relative;
   display: flex;
@@ -351,7 +357,8 @@
 @media (pointer: coarse) {
   .document-checkbox-target { width: var(--control-height); min-height: var(--control-height); }
 }
-.document-reading { height: 100%; overflow: auto; padding: 0 0 0 var(--document-gutter-width); }
+.document-reading { display: flex; flex-direction: column; height: 100%; overflow: auto; padding: 0 0 0 var(--document-gutter-width); }
+.document-reading .document-page { flex: 1 0 auto; }
 .document-prose {
   --document-block-gap: calc(var(--document-font-size, 15px) * var(--document-line-height, 1.75));
   font-size: var(--document-font-size, 15px); line-height: var(--document-line-height, 1.75);

@@ -2,6 +2,11 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.21.23 — 2026-11-02
+
+### Fixed
+- Feature F0.21-23: Reading keeps a full-height document page and its Edit and Document tools buttons on the right. Document tools shows the current Live preview, Source or Reading icon, and Edit returns to the last editing view.
+
 ## 0.21.22 — 2026-11-02
 
 ### Changed

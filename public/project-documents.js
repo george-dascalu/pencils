@@ -288,6 +288,13 @@ export function projectDocuments(ctx) {
     host.hidden = mode === "reading";
     reading.hidden = mode !== "reading";
     form.querySelector(".document-formatting").hidden = mode === "reading";
+    form.querySelector('[data-document-action="edit"]').hidden = mode !== "reading";
+    const [, label, glyph] = MODES.find(([key]) => key === mode);
+    const tools = form.querySelector('.document-heading [data-document-action="tools"]');
+    tools.dataset.documentCurrentMode = mode;
+    tools.title = `Document tools — ${label}`;
+    tools.setAttribute("aria-description", `Current view: ${label}`);
+    tools.querySelector(".document-mode-indicator").innerHTML = icon(glyph);
     for (const button of document.querySelectorAll("#document-form [data-document-mode], .layout-tray [data-document-mode]"))
       button.setAttribute("aria-pressed", String(button.dataset.documentMode === mode));
     if (mode === "reading") {
@@ -812,7 +819,8 @@ export function projectDocuments(ctx) {
             <div id="document-formatting" class="document-formatting task-rich-tools" role="toolbar" aria-label="Format document">${richToolbar(icon, { adapter: "document", alignment: null, modes: false, idPrefix: "document", extra: `<div class="selection-group" role="group" aria-label="Insert more"><button type="button" class="selection-action" data-document-action="insert" aria-label="Insert" title="Insert a table, code, callout or more">${icon("plus")}<span class="selection-action-label">Insert</span></button></div>` })}</div>
             <a class="document-obsidian-link" href="#" data-document-action="obsidian" hidden>Open in Obsidian</a>
             ${ctx.bookmarks.button("doc", state.project.id, doc.id)}
-            <button type="button" class="icon-button" data-document-action="tools" aria-label="Document tools" title="Document tools">${icon("more")}</button>
+            <button type="button" class="icon-button" data-document-action="edit" aria-label="Edit document" title="Edit document" hidden>${icon("pencil")}</button>
+            <button type="button" class="icon-button document-tools-button" data-document-action="tools" aria-label="Document tools" title="Document tools"><span class="document-mode-indicator" aria-hidden="true"></span><span class="document-tools-more" aria-hidden="true">${icon("more")}</span></button>
           </header>
           ${(() => { const cards = (state.tasks || []).filter((t) => (t.documents || []).includes(doc.id)); return cards.length ? `<div class="document-linked-cards"><span class="caption">Linked cards</span>${cards.map((t) => `<button type="button" class="button soft" data-action="task-open" data-id="${esc(t.id)}" title="Open ${esc(t.title)}">${icon(t.type || "task")}<span class="task-relationship-key">${esc(t.key || t.id)}</span><span class="task-relationship-title">${esc(t.title)}</span></button>`).join("")}</div>` : ""; })()}
           ${propertiesHTML(doc)}
@@ -994,6 +1002,7 @@ export function projectDocuments(ctx) {
     event.preventDefault();
     try {
       if (action === "new-folder") explorer.panel(button);
+      else if (action === "edit") { closePanel(); setMode(editMode); }
       else if (action === "width") setDocumentWidth(documentWidth === "full" ? "page" : "full");
       else if (action === "move") movePanel(button);
       else if (action === "versions") await versionsPanel(form.querySelector('[data-document-action="tools"]'));
