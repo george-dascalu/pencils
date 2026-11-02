@@ -6,6 +6,7 @@
 // From the 0.21.0 baseline, new features use F<major>.<minor>-<1..100>: F0.21-1 releases
 // as 0.21.1, F0.21-100 as 0.22.0, then F0.22-1 as 0.22.1. Historical T IDs stay intact.
 export const roadmap = [
+  { id: "F0.21-40", title: "Use Document tools for Reading-mode editing without a duplicate button", status: "done", requested: "2026-11-02", started: "2026-11-02", done: "2026-11-02", version: "0.21.40" },
   { id: "F0.21-39", title: "Top-left All day toggle with disabled boundary hours in date popups", status: "done", requested: "2026-11-02", started: "2026-11-02", done: "2026-11-02", version: "0.21.39" },
   { id: "F0.21-38", title: "Icon-only note style choices with accessible names and tooltips", status: "done", requested: "2026-11-02", started: "2026-11-02", done: "2026-11-02", version: "0.21.38" },
   { id: "F0.21-37", title: "Visible, individually removable active filters in Tasks and Planning", status: "done", requested: "2026-11-02", started: "2026-11-02", done: "2026-11-02", version: "0.21.37" },

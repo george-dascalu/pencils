@@ -29,7 +29,6 @@ export function projectDocuments(ctx) {
   let editor = null, form = null, current = null, project = null, renderer = null, paneEditor = null;
   let readingSearch = null;
   let mode = storage.get("document-mode", "live");
-  let editMode = mode === "source" ? "source" : "live"; // where Reading view returns to
   let documentWidth = storage.get("document-width", "page") === "full" ? "full" : "page";
   if (!["live", "source", "reading"].includes(mode)) mode = "live";
   const all = () => state.documents || [];
@@ -291,13 +290,11 @@ export function projectDocuments(ctx) {
     readingSearch?.close();
     if (next === "reading") editor.escape();
     mode = next; storage.set("document-mode", next);
-    if (next !== "reading") editMode = next;
     form.dataset.documentMode = mode;
     const reading = form.querySelector(".document-reading"), host = form.querySelector(".document-codemirror");
     host.hidden = mode === "reading";
     reading.hidden = mode !== "reading";
     form.querySelector(".document-formatting").hidden = mode === "reading";
-    form.querySelector('[data-document-action="edit"]').hidden = mode !== "reading";
     const [, label, glyph] = MODES.find(([key]) => key === mode);
     const tools = form.querySelector('.document-heading [data-document-action="tools"]');
     tools.dataset.documentCurrentMode = mode;
@@ -836,7 +833,6 @@ export function projectDocuments(ctx) {
             <a class="document-obsidian-link" href="#" data-document-action="obsidian" hidden>Open in Obsidian</a>
             ${ctx.bookmarks.button("doc", state.project.id, doc.id)}
             <button type="button" class="icon-button" data-document-action="properties" aria-label="Properties" title="Properties" aria-haspopup="dialog" aria-expanded="false">${icon("settings")}</button>
-            <button type="button" class="icon-button" data-document-action="edit" aria-label="Edit document" title="Edit document" hidden>${icon("pencil")}</button>
             <button type="button" class="icon-button document-tools-button" data-document-action="tools" ${doc.document_type === "table" ? 'data-sheet-action="tools" data-document-current-mode="table" aria-description="Current view: Table"' : ""} aria-label="Document tools" title="Document tools${doc.document_type === "table" ? " — Table" : ""}"><span class="document-mode-indicator" aria-hidden="true">${doc.document_type === "table" ? icon("table") : ""}</span><span class="document-tools-more" aria-hidden="true">${icon("more")}</span></button>
           </header>
           ${(() => { const cards = (state.tasks || []).filter((t) => (t.documents || []).includes(doc.id)); return cards.length ? `<div class="document-linked-cards"><span class="caption">Linked cards</span>${cards.map((t) => `<button type="button" class="button soft" data-action="task-open" data-id="${esc(t.id)}" title="Open ${esc(t.title)}">${icon(t.type || "task")}<span class="task-relationship-key">${esc(t.key || t.id)}</span><span class="task-relationship-title">${esc(t.title)}</span></button>`).join("")}</div>` : ""; })()}
@@ -1031,7 +1027,6 @@ export function projectDocuments(ctx) {
     try {
       if (action === "new-folder") explorer.panel(button);
       else if (action === "properties") propertiesPanel(button);
-      else if (action === "edit") { closePanel(); setMode(editMode); }
       else if (action === "width") setDocumentWidth(documentWidth === "full" ? "page" : "full");
       else if (action === "move") movePanel(button);
       else if (action === "versions") await versionsPanel(form.querySelector('[data-document-action="tools"]'));

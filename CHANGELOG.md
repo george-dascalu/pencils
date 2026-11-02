@@ -2,6 +2,11 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.21.40 — 2026-11-02
+
+### Changed
+- Feature F0.21-40: Reading mode no longer shows a separate Edit button. Document tools keeps all editing modes and its current-mode indicator, while the reading page stays full-height.
+
 ## 0.21.39 — 2026-11-02
 
 ### Changed
