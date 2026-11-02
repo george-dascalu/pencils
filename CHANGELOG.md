@@ -2,6 +2,11 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.21.6 — 2026-11-02
+
+### Added
+- Feature F0.21-6: Settings → You → Hotkeys lets each person assign keyboard shortcuts to commands and bookmarked cards, documents, boards and views. Search actions, record a key combination, clear one or reset all. Shortcuts follow the person's account across devices; duplicate and reserved combinations show an explanation, and shortcuts pause while typing or editing a card.
+
 ## 0.21.5 — 2026-11-02
 
 ### Changed

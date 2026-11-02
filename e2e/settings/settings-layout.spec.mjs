@@ -33,7 +33,7 @@ onDevices(["desktop", "ipad", "phone"], () => {
     await page.goto(`${app.base}/#project/${app.project.id}/settings/personal`);
     await expect(page.locator('[data-style-settings]')).toBeVisible();
     const nav = page.locator(".settings-navigation nav a");
-    expect((await nav.allTextContents()).slice(0, 3)).toEqual(["Appearance & workspace", "Organisation", "General"]);
+    expect((await nav.allTextContents()).slice(0, 4)).toEqual(["Appearance & workspace", "Hotkeys", "Organisation", "General"]);
     await page.getByRole("combobox", { name: "Theme", exact: true }).selectOption("paper");
     await expect.poll(() => page.locator("html").getAttribute("data-look")).toBe("paper");
     const option = page.locator(".style-option").first();

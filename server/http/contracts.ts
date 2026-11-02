@@ -23,6 +23,7 @@ export interface Services {
   capture: LegacyService;
   bookmarks: LegacyService;
   bar: LegacyService;
+  hotkeys: LegacyService;
   home: LegacyService;
   visits: LegacyService;
   embed: Record<string, unknown>;

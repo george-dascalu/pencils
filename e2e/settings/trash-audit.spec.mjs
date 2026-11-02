@@ -42,7 +42,7 @@ test("the personal space's Settings have You and Trash, which lists its deleted 
   await page.goto(`${app.base}/#project/${app.personal.id}/documents`);
   await page.locator("#view-content").waitFor();
   await openSettingsPage(page);
-  await expect(page.locator(".settings-navigation [data-settings-section]")).toHaveCount(2);
+  await expect(page.locator(".settings-navigation [data-settings-section]")).toHaveText(["Appearance & workspace", "Hotkeys", "Trash"]);
   await showSettingsSection(page, "trash");
   await expect(page.locator(".settings-record-list li", { hasText: "Private note" })).toBeVisible();
 });

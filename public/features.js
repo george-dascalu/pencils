@@ -12,6 +12,7 @@ import {projectSources} from "./project-sources.js";
 import { showSchedulePreview } from "./schedule-preview.js";
 import { localDate } from "./task-visibility.js";
 import { draftAutosave } from "./draft-autosave.js";
+import { installHotkeys } from "./hotkeys.js";
 import { installBottomBar } from "./bottom-bar.js";
 import { taskAutosave } from "./task-autosave.js";
 import { boardComments } from "./board-comments.js";
@@ -83,6 +84,7 @@ export function installFeatures(ctx) {
     canvasFeature = deferredController(() => import("./canvas.js").then(m => m.canvasFeatures({ ...ctx, layout, openBoard: drawings.enter })), { visible: () => [], edges: "", busy: false, click: false }),
     canvas = canvasFeature.controller,
     bottomBar = (ctx.bottomBar = installBottomBar({ ...ctx, commands })),
+    hotkeys = (ctx.hotkeys = installHotkeys({ ...ctx, commands, run: binding => click(binding.type === "command" ? "command-run" : "search-open", { dataset: binding.type === "command" ? { command: binding.id } : binding }) })),
     personal = personalSettings(ctx);
   taskReorder(ctx, sheet);
   taskRowEditor(ctx);
@@ -502,6 +504,7 @@ export function installFeatures(ctx) {
     sync.load(state.session.user?.username || "shared");
     ctx.bookmarks.load();
     bottomBar.load();
+    hotkeys.load().catch(error => toast(error.message, true));
     return true;
   }
   function start(fn) {

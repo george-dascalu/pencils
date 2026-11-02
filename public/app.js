@@ -79,6 +79,7 @@ const esc = (value) =>
       ],
   );
 const paths = {
+  keyboard: "M3 5h18v14H3zM6 9h.01M10 9h.01M14 9h.01M18 9h.01M6 12h.01M10 12h.01M14 12h.01M18 12h.01M7 15h10",
   warning: "M12 3 2 21h20L12 3zM12 9v5M12 17v.01",
   "case-sensitive": "M3 18 8 5l5 13M5 13h6M16 10c5-3 6 2 6 4v4M22 12c-8-2-8 8 0 5",
   "whole-word": "M3 7v12h18V7M7 14l2-6 2 6 2-6 2 6 2-6",

@@ -19,6 +19,8 @@ import { RecordIndex } from "../record-index.js";
 import { Diagnostics } from "../diagnostics.js";
 import { Capture } from "../capture.js";
 import { Bookmarks } from "../bookmarks.js";
+import { Hotkeys } from "../hotkeys.js";
+import { hotkeysRoutes } from "./routes/hotkeys.js";
 import { Bar } from "../bar.js";
 import { Problem } from "../problem.js";
 import { staticAssets } from "../static-assets.js";
@@ -111,6 +113,7 @@ export function createServer(
     capture: new Capture(store, auth),
     bookmarks,
     bar: new Bar(store, bookmarks),
+    hotkeys: new Hotkeys(store, bookmarks),
     home: new Home(store),
     visits: new Visits(store, bookmarks),
     embed: (options as { home?: Record<string, unknown> }).home || {},
@@ -330,6 +333,7 @@ export function createServer(
   route(["/api/home", "/api/home/embed"], homeRoutes);
   route(["/api/visits"], homeRoutes, false, 64e3);
   route(["/api/bar"], barRoutes);
+  route(["/api/hotkeys"], hotkeysRoutes);
   route(
     ["/api/projects", "/api/projects/:project", "/api/demo", "/api/projects/:project/trash", "/api/projects/:project/audit"],
     projectsRoutes,

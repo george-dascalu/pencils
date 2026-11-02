@@ -29,6 +29,8 @@ Keep the interface consistent across all project views: Overview, Documents, Lis
 
 - Deleted cards, documents and boards stay in Settings → Trash for 30 days (`projectTrash` and `purgeTrash` in `server/recovery.js`), and committed changes enter the project's audit log through `Store.auditRecord()` (`server/store.js`, `server/audit.js`, kept 365 days). Routes use `ctx.mutate()` to pass the actor; background writers use `store.mutate()` and the shared record methods. A direct file writer must call `auditRecord()` inside that transaction; never log an uncommitted change or repeat the entry in the route.
 
+- Personal shortcuts live in Settings → You → Hotkeys (`public/hotkeys.js`), reuse the command and bookmark actions, and are stored per person by `server/hotkeys.js`. Keep browser tab shortcuts available, reject conflicting bindings, and do not run custom shortcuts while typing or editing a card.
+
 ## Dialogs and contextual panels
 
 - Prefer small, contextual panels near the component or action that opened them. Reuse the shared panel styles, positioning and keyboard behaviour.

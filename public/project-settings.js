@@ -17,6 +17,7 @@ export const settingsPages = [
     "You",
     "Theme, font, density and board controls in this browser, plus search, recovery and sign-in.",
   ],
+  ["hotkeys", "Hotkeys", "keyboard", "You", "Your keyboard shortcuts for commands and bookmarks."],
   [
     "organisation",
     "Organisation",
@@ -117,9 +118,9 @@ export const settingsPages = [
   ],
 ];
 // Without an open project, Settings shows only your own and the organisation's sections.
-const workspaceSections = new Set(["personal", "organisation"]);
+const workspaceSections = new Set(["personal", "hotkeys", "organisation"]);
 // A personal space has no project or organisation settings: only yours, and its Trash.
-const pagesFor = (project) => (project?.personal ? settingsPages.filter(([id]) => ["personal", "trash"].includes(id)) : project ? settingsPages : settingsPages.filter(([id]) => workspaceSections.has(id)));
+const pagesFor = (project) => (project?.personal ? settingsPages.filter(([id]) => ["personal", "hotkeys", "trash"].includes(id)) : project ? settingsPages : settingsPages.filter(([id]) => workspaceSections.has(id)));
 export const settingsPage = (id) =>
   settingsPages.find((p) => p[0] === id) || settingsPages[0];
 
@@ -274,7 +275,7 @@ export function projectSettings(ctx, { sources, automations, personal, organisat
     state.settingsSaveState = "";
     state.settingsKeep = false;
     state.view = "settings";
-    state.settingsSection = state.project.personal && section !== "trash" ? "personal" : settingsPage(section)[0];
+    state.settingsSection = state.project.personal && !["trash", "hotkeys"].includes(section) ? "personal" : settingsPage(section)[0];
     state.settingsDetail = detail;
     renderApp();
     document
@@ -470,6 +471,11 @@ export function projectSettings(ctx, { sources, automations, personal, organisat
       if (state.settingsSaving) {
         while (state.settingsSaving) await new Promise((resolve) => setTimeout(resolve, 50));
         if (!valid()) return;
+      }
+      if (section === "hotkeys") {
+        host.innerHTML = ctx.hotkeys.html();
+        void ctx.hotkeys.mount();
+        return;
       }
       if (section === "personal") {
         host.innerHTML = personal().html();

@@ -398,3 +398,17 @@
 }
 
 
+
+/* Personal shortcuts share the settings row rhythm and touch sizing. */
+.hotkey-tools { display: flex; align-items: end; gap: 8px; }
+.hotkey-tools > .field { flex: 1; min-width: 0; margin: 0; }
+.hotkey-row { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; align-items: center; gap: 8px; padding-block: 4px; border-bottom: 1px solid var(--line); }
+.hotkey-row > span { overflow-wrap: anywhere; }
+.hotkey-binding { min-width: 120px; }
+.hotkey-binding kbd { font: inherit; }
+[data-hotkey-message]:empty { display: none; }
+@media (max-width: 600px) {
+  .hotkey-row { grid-template-columns: minmax(0, 1fr) auto; }
+  .hotkey-row > span { grid-column: 1 / -1; }
+  .hotkey-binding { justify-self: start; }
+}

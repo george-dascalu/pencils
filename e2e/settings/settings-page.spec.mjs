@@ -42,7 +42,7 @@ test("without a project open, Settings shows You and Organisation", async ({ pag
   await page.goto(`${app.base}/#home`);
   await openSettingsPage(page);
   await expect(page.locator(".settings-navigation h1")).toHaveText("Settings");
-  await expect(nav(page).locator("a")).toHaveText(["Appearance & workspace", "Organisation"]);
+  await expect(nav(page).locator("a")).toHaveText(["Appearance & workspace", "Hotkeys", "Organisation"]);
   await page.locator("[data-action=settings-close]").click();
   await expect(page.locator(".settings-navigation")).toHaveCount(0);
 });
