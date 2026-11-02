@@ -26,6 +26,27 @@ async function openBoard(page) {
   await expect(page.locator("#zoom-label")).toHaveText("85%");
 }
 
+// Owner request, 2 November 2026: the lower controls share the tool bar's centre line.
+onDevices(["desktop", "ipad"], () => test("lower board controls stay centred in both densities", { tag: "@gate" }, async ({ page, device }) => {
+  await openBoard(page);
+  const controls = page.locator(".board-tools > .board-controls");
+  for (const density of ["comfortable", "compact"]) {
+    await page.evaluate(density => { document.documentElement.dataset.density = density; }, density);
+    const bar = await box(page, ".board-tools");
+    const buttons = controls.locator(":scope > button:visible, :scope > .board-menu > summary:visible, :scope > .board-tool-group > button:visible");
+    const bounds = await buttons.evaluateAll(els => els.map(el => ({ name: el.getAttribute("aria-label") || el.id, ...el.getBoundingClientRect().toJSON() })));
+    expect(bounds.length).toBeGreaterThanOrEqual(4);
+    for (const r of bounds) {
+      expect(Math.abs(r.x + r.width / 2 - bar.x - bar.width / 2), `${device}, ${density}: ${r.name} centred`).toBeLessThan(0.5);
+      expect(r.height, `${device}, ${density}: shared control size`).toBe(device === "ipad" ? 44 : density === "compact" ? 28 : 32);
+    }
+    await expect(controls).toHaveCSS("align-items", "center");
+    await controls.locator("#zoom-label").click();
+    await expect(controls.locator('[data-action="board-fit"]')).toBeVisible();
+    await page.keyboard.press("Escape");
+  }
+}));
+
 // Owner request, 31 October 2026: the view controls (capacity, zoom level, full screen) and undo/redo
 // sit at the foot of the tool bar on the left, fixed while the rest of the tools scroll. The capacity
 // gauge shows only past 80% (0.20.81; board-capacity-gauge.spec.mjs), so this small board has none.

@@ -1675,6 +1675,7 @@ input[type="search"]:not(.search input) {
 }
 .board-controls {
   flex: none;
+  align-items: center;
   padding-top: 6px;
   border-top: 1px solid var(--line);
   font-size: 10px;

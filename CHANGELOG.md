@@ -2,6 +2,11 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.21.7 — 2026-11-02
+
+### Fixed
+- Feature F0.21-7: Centre the lower board toolbar controls, including zoom and full screen, on the same line as Undo and Redo in normal and Compact layouts.
+
 ## 0.21.6 — 2026-11-02
 
 ### Added
