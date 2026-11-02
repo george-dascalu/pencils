@@ -2,6 +2,11 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.21.34 — 2026-11-02
+
+### Changed
+- Feature F0.21-34: Successful cell and card edits save without routine “saved” popup notifications. Rejected saves, validation errors and edits waiting to sync still show their messages.
+
 ## 0.21.33 — 2026-11-02
 
 ### Fixed

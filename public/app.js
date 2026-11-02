@@ -2646,7 +2646,7 @@ document.addEventListener("submit", async (event) => {
         if (wasPanel) state.boardTaskPanel = true;
         await refresh();
       }
-      toast(id ? "Card saved." : "One good idea, written down.");
+      if (!id) toast("One good idea, written down.");
     } else if (form.id === "node-form") {
       for (const key of ["x", "y", "w", "h"]) data[key] = Number(data[key]);
       const minimum = nodeMinimum(
@@ -2769,8 +2769,8 @@ document.addEventListener("change", async (event) => {
         );
       // A save the server refused says why; one waiting to retry points to Recovery.
       const entry = sync.entries.get(route("tasks", id)), refused = !!(entry?.blocked || entry?.conflict);
-      toast(
-        refused && entry.error ? entry.error : entry ? "Edit retained. Open Recovery to review pending saves." : "Cell saved.",
+      if (entry) toast(
+        refused && entry.error ? entry.error : "Edit retained. Open Recovery to review pending saves.",
         refused,
       );
     }
