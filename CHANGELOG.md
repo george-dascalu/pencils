@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.21.20 — 2026-11-02
+
+### Changed
+- Feature F0.21-20: Drag timed calendar cards up or down and across days while preserving their duration, with snapping and exact placement previews. Resize using clearer top and bottom grips. Spacious events show the shared assignee, status and priority box beneath the title; compact events keep their title and time. Alt + Up/Down also moves a timed card.
+
 ## 0.21.19 — 2026-11-02
 
 ### Changed

@@ -1,4 +1,4 @@
-import { shiftDate } from './timeline-dates.js';
+import { shiftDate, stamp, DAY } from './timeline-dates.js';
 
 export const timeMinutes = time => Number(time.slice(0, 2)) * 60 + Number(time.slice(3));
 export const minuteTime = minutes => `${String(Math.floor(minutes / 60) % 24).padStart(2, '0')}:${String(minutes % 60).padStart(2, '0')}`;
@@ -13,6 +13,15 @@ export function calendarTimeResize(task, day, minutes, end, step) {
   const max = start ? task.due === day ? timeMinutes(task.due_time) - 15 : 1425 : 1440;
   const value = Math.max(min, Math.min(max, Math.round(minutes / step) * step));
   return { [end]: value === 1440 ? shiftDate(day, 1) : day, [`${end}_time`]: minuteTime(value) };
+}
+
+// The grab offset includes earlier segments of an overnight card.
+export function calendarTimeMove(task, day, minutes, offset, step) {
+  const start = Math.round((minutes - offset) / step) * step;
+  const duration = (stamp(task.due) - stamp(task.start)) / DAY * 1440 + timeMinutes(task.due_time) - timeMinutes(task.start_time);
+  const end = start + duration;
+  return { start: shiftDate(day, Math.floor(start / 1440)), due: shiftDate(day, Math.floor(end / 1440)),
+    start_time: minuteTime((start % 1440 + 1440) % 1440), due_time: minuteTime((end % 1440 + 1440) % 1440) };
 }
 
 export function calendarTimeSelection(day, from, to) {

@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { calendarTimeSelection, calendarTimeStep, calendarTimeResize, hourlySegments, timedCard } from '../public/calendar-time.js';
+import { calendarTimeMove, calendarTimeSelection, calendarTimeStep, calendarTimeResize, hourlySegments, timedCard } from '../public/calendar-time.js';
 import { schema, validateExtras } from '../server/model.js';
 
 test('hour selections snap to quarters, work backwards, and end at next midnight', () => {
@@ -57,4 +57,13 @@ test('task times require real dates, a pair of valid times and a positive durati
   assert.doesNotThrow(()=>check({start:good.start, due:good.due}));
   assert.doesNotThrow(()=>check({...good, due:'2026-11-03', due_time:'00:00'}));
   for(const change of [{start:null}, {due:null}, {due:'2026-02-30'}, {start_time:null}, {due_time:''}, {start_time:0}, {start_time:'24:00'}, {due_time:'09:60'}, {start_time:'9:00'}, {due_time:'09:00'}, {due_time:'08:59'}]) assert.throws(()=>check({...good,...change}), { status:400 });
+});
+
+
+test('moving timed cards snaps their start, preserves duration and the grabbed offset across dates', () => {
+  const t={start:'2026-11-02',due:'2026-11-02',start_time:'09:00',due_time:'10:30'};
+  assert.deepEqual(calendarTimeMove(t,t.start,640,20,15),{start:t.start,due:t.due,start_time:'10:15',due_time:'11:45'});
+  assert.deepEqual(calendarTimeMove(t,'2026-11-03',520,20,15),{start:'2026-11-03',due:'2026-11-03',start_time:'08:15',due_time:'09:45'});
+  assert.deepEqual(calendarTimeMove(t,'2026-12-31',1430,20,30),{start:'2026-12-31',due:'2027-01-01',start_time:'23:30',due_time:'01:00'});
+  assert.deepEqual(calendarTimeMove({...t,start:'2026-10-24',due:'2026-10-25'},'2026-10-26',80,1460,15),{start:'2026-10-25',due:'2026-10-26',start_time:'01:00',due_time:'02:30'});
 });
