@@ -7,7 +7,7 @@ onDevices(['desktop','narrow'],()=>test('desktop layouts are centred icons with 
   await expect(tab).toHaveAttribute('aria-controls','layout-tray');
   await tab.click();
   await expect(tray).toHaveCSS('opacity','1');
-  const bar=await page.locator('#board-project-tools').boundingBox(),r=await tray.boundingBox();
+  const bar=await page.locator('.topbar .tabs').boundingBox(),r=await tray.boundingBox();
   expect(Math.abs(r.x+r.width/2-bar.x-bar.width/2)).toBeLessThan(1);
   const styles=await tray.locator('button').evaluateAll(buttons=>buttons.map(el=>({label:el.getAttribute('aria-label'),text:[...el.querySelectorAll('span')].every(span=>getComputedStyle(span).display==='none'),width:el.offsetWidth,height:el.offsetHeight})));
   for(const s of styles){expect(s.label).toBeTruthy();expect(s.text).toBe(true);expect(s.width).toBe(s.height);}

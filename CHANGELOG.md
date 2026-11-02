@@ -2,6 +2,11 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.21.31 — 2026-11-02
+
+### Fixed
+- Feature F0.21-31: Desktop sub-category menus centre beneath the navigation icons, using the navigation itself as the anchor. Alignment follows window resizing and keeps the existing single row, opening/closing motion and touch bottom-bar placement.
+
 ## 0.21.30 — 2026-11-02
 
 ### Added

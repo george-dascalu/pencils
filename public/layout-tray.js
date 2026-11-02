@@ -33,7 +33,7 @@ export function positionLayoutTray() {
   if (tabBar.matches) return;
   const tray = document.querySelector('.layout-tray[data-open]'), tab = document.querySelector('.tabs [aria-controls="layout-tray"]');
   if (!tray || !tab) return;
-  const nav = tab.closest(".board-project-tools").getBoundingClientRect(), bar = tab.closest(".topbar").getBoundingClientRect();
+  const nav = tab.closest(".tabs").getBoundingClientRect(), bar = tab.closest(".topbar").getBoundingClientRect();
   tray.style.width = "max-content";
   const width = tray.offsetWidth;
   positionPopover(tray, { left: nav.left + (nav.width - width) / 2, top: bar.top, bottom: bar.bottom }, { width, maxHeight: 400, gap: 6 });
