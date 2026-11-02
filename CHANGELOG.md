@@ -2,6 +2,11 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.21.4 — 2026-11-02
+
+### Changed
+- Feature F0.21-4: Desktop layout submenus use compact, labelled icons centred beneath the navigation toolbar, with a brief opening and closing transition. Reduced-motion preferences are respected.
+
 ## 0.21.3 — 2026-11-02
 
 ### Changed

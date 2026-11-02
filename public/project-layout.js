@@ -205,9 +205,19 @@ export function projectLayout(ctx) {
   }
   // The tray belongs to the view it was opened on, so leaving that view (or going Back) closes it.
   const trayOpen = () => !!state.layoutTray && state.layoutTray === state.view;
+  let trayCloseTimer;
   function setLayoutTray(open) {
     state.layoutTray = open ? state.view : null;
-    $(".layout-tray")?.toggleAttribute("data-open", open);
+    const tray = $(".layout-tray");
+    clearTimeout(trayCloseTimer);
+    if (tray) {
+      const animate = !open && !tabBar.matches && tray.hasAttribute("data-open") && !matchMedia("(prefers-reduced-motion: reduce)").matches;
+      tray.toggleAttribute("data-closing", animate);
+      tray.toggleAttribute("data-open", open);
+      tray.inert = !open;
+      // Keep the exit paintable in engines without discrete display transitions.
+      if (animate) trayCloseTimer = setTimeout(() => tray.removeAttribute("data-closing"), parseFloat(getComputedStyle(tray).transitionDuration) * 1000 + 20);
+    }
     $('.tabs .tab[aria-controls="layout-tray"]')?.setAttribute("aria-expanded", String(open));
     if (open) positionLayoutTray();
   }

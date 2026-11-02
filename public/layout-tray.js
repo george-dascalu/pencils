@@ -21,6 +21,7 @@ export function mountLayoutTray(content, open) {
   tray.className = "layout-tray";
   tray.id = "layout-tray";
   tray.toggleAttribute("data-open", open);
+  tray.inert = !open;
   tray.append(content);
   // After the bar's scroller, not in it: iOS Safari draws a tray inside it behind the page.
   tab.closest(".tabs-scroll").after(tray);
@@ -32,8 +33,10 @@ export function positionLayoutTray() {
   if (tabBar.matches) return;
   const tray = document.querySelector('.layout-tray[data-open]'), tab = document.querySelector('.tabs [aria-controls="layout-tray"]');
   if (!tray || !tab) return;
-  const r = tab.getBoundingClientRect(), bar = tab.closest(".topbar").getBoundingClientRect();
-  positionPopover(tray, { ...r.toJSON(), bottom: bar.bottom }, { width: 420, maxHeight: 400, gap: 6 });
+  const nav = tab.closest(".board-project-tools").getBoundingClientRect(), bar = tab.closest(".topbar").getBoundingClientRect();
+  tray.style.width = "max-content";
+  const width = tray.offsetWidth;
+  positionPopover(tray, { left: nav.left + (nav.width - width) / 2, top: bar.top, bottom: bar.bottom }, { width, maxHeight: 400, gap: 6 });
 }
 export function removeLayoutTray() {
   document.querySelector(".layout-tray")?.remove();

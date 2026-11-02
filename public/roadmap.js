@@ -8,7 +8,7 @@
 export const roadmap = [
   { id: "F0.21-6", title: "Personal hotkeys for commands and bookmarks", status: "requested", requested: "2026-11-02", started: "", done: "", version: "" },
   { id: "F0.21-5", title: "Remove automatic-save success text and move Home editing into the top toolbar", status: "requested", requested: "2026-11-02", started: "", done: "", version: "" },
-  { id: "F0.21-4", title: "Centred icon-only desktop layout submenu with opening and closing motion", status: "requested", requested: "2026-11-02", started: "", done: "", version: "" },
+  { id: "F0.21-4", title: "Centred icon-only desktop layout submenu with opening and closing motion", status: "done", requested: "2026-11-02", started: "2026-11-02", done: "2026-11-02", version: "0.21.4" },
   { id: "F0.21-3", title: "Dedicated Project Views settings for individual layouts and components", status: "done", requested: "2026-11-02", started: "2026-11-02", done: "2026-11-02", version: "0.21.3" },
   { id: "F0.21-2", title: "Hourly Week calendar with drag-to-create cards and aligned editor fields", status: "done", requested: "2026-11-02", started: "2026-11-02", done: "2026-11-02", version: "0.21.2" },
   { id: "F0.21-1", title: "Compact settings, desktop navigation trays and reliable board controls", status: "done", requested: "2026-11-02", started: "2026-11-02", done: "2026-11-02", version: "0.21.1" },
