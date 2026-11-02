@@ -49,7 +49,27 @@ export function grid(ctx) {
   // The rows a cell range spans, as in a spreadsheet: Bulk edit's "Selected rows" when there are two or more.
   const rangeRows = () => (anchor && focus ? rowIds.slice(Math.min(anchor[0], focus[0]), Math.max(anchor[0], focus[0]) + 1) : []);
   const bulkIds=()=> $("#bulk-scope")?.value === "matching" ? matchingRows.map(t=>t.id) : $("#bulk-scope")?.value === "page" ? [...rowIds] : rangeRows();
-  const scopeName=()=> $("#bulk-scope")?.selectedOptions[0]?.textContent || "Selected rows";
+  const bulkDescription = (count) => {
+    const cards = `${count} ${count === 1 ? "card" : "cards"}`;
+    return $("#bulk-scope")?.value === "matching" ? `all ${count} matching ${count === 1 ? "card" : "cards"}`
+      : $("#bulk-scope")?.value === "page" ? `${cards} on this page` : `${count} selected ${count === 1 ? "card" : "cards"}`;
+  };
+  function bulkConfirmAnchor() {
+    const menu = $("#grid-bulk")?.closest("details"), phoneOptions = menu?.closest(".mobile-view-options");
+    if (menu) menu.open = false;
+    state.headerMenu = null;
+    if (phoneOptions) { phoneOptions.open = false; state.mobileViewOptions = false; }
+    return (phoneOptions || menu)?.querySelector(":scope > summary");
+  }
+  function bulkMenu() {
+    return `<details class="board-menu table-bulk-menu" data-board-menu="table-bulk" ${state.headerMenu === "table-bulk" ? "open" : ""}>
+      <summary>Bulk edit<svg class="icon menu-caret" viewBox="0 0 24 24" aria-hidden="true"><path d="m8 10 4 4 4-4"/></svg></summary>
+      <div class="board-menu-panel table-menu-panel" id="grid-bulk" role="group" aria-label="Bulk edit">
+        <label class="field"><span>Apply to</span><select id="bulk-scope"><option value="selected" disabled>Selected rows</option><option value="page" selected>This page (${rowIds.length})</option><option value="matching">All matching (${matchingRows.length})</option></select></label>
+        <label class="field"><span>Status</span><select id="bulk-status"><option value="">Choose status…</option>${options(state.config.statuses, "")}</select></label>
+        <div class="menu-footer"><button type="button" class="button small" data-feature="bulk-archive">${ctx.icon("archive")}Archive cards</button></div>
+      </div></details>`;
+  }
   const bulkAllowed=ids=>{if(ids.length>500) {toast("Narrow the filters to 500 cards or fewer before a bulk update.",true);return false;}return ids.length>0;};
   const fieldValue = (t, key) =>
     key.startsWith("fields.") ? t.fields?.[key.slice(7)] : t[key];
@@ -237,7 +257,7 @@ export function grid(ctx) {
       rowIds.push(t.id);
       body += `<tr data-table-task="${esc(t.id)}" data-task-order-row="${esc(t.id)}" data-task-order-group="${esc(JSON.stringify(path))}"><td class="task-row-controls"><div class="task-row-actions">${taskReorderHandle(t, esc)}<button class="table-open" data-action="task-open" data-id="${t.id}" aria-label="Open ${esc(t.title)}" title="Open card details">${ctx.icon("external")}</button></div></td>${columns.map((c, k) => `<td role="gridcell" tabindex="${r === 0 && k === 0 ? 0 : -1}" data-cell="${r},${k}" data-column-key="${esc(c.key)}" style="--pin-offset:${c.pinOffset}px">${preferences.outline && c.key === "title" && t.parent ? `<small class="table-parent-context" style="padding-left:${Math.min(12,result.depths.get(t.id)||0)*12}px">↳ ${esc(parents.get(t.parent)?.key || t.parent)}${!result.depths.get(t.id)?" · parent outside this group or filter":""}</small>`:""}${c.key === "title" ? `<div class="table-title-line">${cell(t, c.key)}<button type="button" class="phone-table-key" tabindex="-1" data-action="task-open" data-id="${esc(t.id)}" aria-label="Open ${esc(t.key || t.id)}: ${esc(t.title)}" title="Open card">${esc(t.key || "")}</button></div>` : cell(t, c.key)}</td>`).join("")}</tr>`;
     }
-    return { controls: `${tools.html()}<div class="grid-tools">${columnsMenu()}<span id="grid-selection-count" class="sr-only" role="status"></span><details class="board-menu table-bulk-menu" data-board-menu="table-bulk" ${state.headerMenu === "table-bulk" ? "open" : ""}><summary>Bulk edit<svg class="icon menu-caret" viewBox="0 0 24 24" aria-hidden="true"><path d="m8 10 4 4 4-4"/></svg></summary><div class="board-menu-panel table-menu-panel" id="grid-bulk"><label class="field">Apply to<select id="bulk-scope"><option value="selected" disabled>Selected rows</option><option value="page" selected>Visible rows on this page (${rowIds.length})</option><option value="matching">All matching cards (${matchingRows.length})</option></select></label><label class="field">Status<select id="bulk-status"><option value="">Choose…</option>${options(state.config.statuses, "")}</select></label><div class="menu-footer"><button type="button" class="button small" data-feature="bulk-archive">Archive cards</button></div></div></details></div>`, html: `<div class="table-scroll"><table class="task-table spreadsheet" style="width:${tableWidth()}" role="grid" aria-label="Cards spreadsheet"><colgroup><col style="width:var(--table-selection-width)">${columns.map((c) => `<col data-table-col="${esc(c.key)}" style="width:${phone.matches && c.key === "title" ? "var(--table-phone-title-width)" : `${c.width || 160}px`}">`).join("")}</colgroup><thead><tr><th><span class="sr-only">Row actions</span></th>${columns
+    return { controls: `${tools.html()}<div class="grid-tools">${columnsMenu()}<span id="grid-selection-count" class="sr-only" role="status"></span>${bulkMenu()}</div>`, html: `<div class="table-scroll"><table class="task-table spreadsheet" style="width:${tableWidth()}" role="grid" aria-label="Cards spreadsheet"><colgroup><col style="width:var(--table-selection-width)">${columns.map((c) => `<col data-table-col="${esc(c.key)}" style="width:${phone.matches && c.key === "title" ? "var(--table-phone-title-width)" : `${c.width || 160}px`}">`).join("")}</colgroup><thead><tr><th><span class="sr-only">Row actions</span></th>${columns
       .map((c) => {
         const sort = preferences.sorts.findIndex((s) => s.field === c.key),
           active = preferences.filters.some(
@@ -615,7 +635,7 @@ export function grid(ctx) {
         return;
       }
       if (
-        !(await confirmAction({ anchor: el, title: "Change status?", message: `Change status to ${ctx.statusNames[el.value] || el.value} for ${ids.length} cards (${scopeName()}).`, confirmLabel: "Change status" }))
+        !(await confirmAction({ anchor: bulkConfirmAnchor(), title: "Change status?", message: `Set ${bulkDescription(ids.length)} to ${ctx.statusNames[el.value] || el.value}.`, confirmLabel: "Change status" }))
       ) {
         el.value = "";
         return;
@@ -673,7 +693,7 @@ export function grid(ctx) {
     if (action === "bulk-archive") {
       const ids=bulkIds();
       if(!bulkAllowed(ids)) return true;
-      if(await confirmAction({ title: "Archive these cards?", message: `Archive ${ids.length} cards (${scopeName()}). They remain recoverable with Include archived.`, confirmLabel: "Archive" })) {
+      if(await confirmAction({ anchor: bulkConfirmAnchor(), title: "Archive these cards?", message: `Archive ${bulkDescription(ids.length)}. They remain available with Include archived.`, confirmLabel: "Archive" })) {
         for(const id of ids) if(task(id)) await patchTask(id,{archived:true},false);
         renderView(true);
       }

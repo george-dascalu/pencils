@@ -2,6 +2,11 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.21.36 — 2026-11-02
+
+### Changed
+- Feature F0.21-36: Table Bulk edit uses compact aligned scope/status rows, shorter scope labels and a full-width Archive action with an icon. Status and archive confirmations replace the menu, show the target count once and return focus to the visible trigger when dismissed; phone confirmations close View options underneath them.
+
 ## 0.21.35 — 2026-11-02
 
 ### Fixed
