@@ -2,6 +2,11 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.21.12 — 2026-11-02
+
+### Added
+- Feature F0.21-12: Zoom the Week calendar vertically with minus/plus controls or Shift + scroll over the hours. Zoom out to fit all 24 hours, or in for detailed scheduling. The scale is remembered in this browser; card dates and times stay unchanged.
+
 ## 0.21.11 — 2026-11-02
 
 ### Changed
