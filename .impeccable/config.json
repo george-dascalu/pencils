@@ -48,6 +48,15 @@
         ],
         "createdAt": "2026-11-01T22:15:32.655Z",
         "reason": "Agent verified: this existing, tested curve reveals the layout and personal-button trays from bottom navigation; the reduced-motion rule removes the motion. The layout refinement preserves this established interaction, as recorded in the 2026-11-01 audit."
+      },
+      {
+        "rule": "marquee",
+        "value": "*",
+        "files": [
+          "public/index.html"
+        ],
+        "createdAt": "2026-11-02T10:11:13.379Z",
+        "reason": "Agent verified: the detector follows linked styles.css and flags #loading-bar[data-active]::before. This is an indeterminate progress indicator shown only while project or organisation navigation is pending; app.js clears data-active in finally, reduced-motion CSS disables its animation, and loading-bar.spec.mjs covers pending and completed navigation. It does not scroll content."
       }
     ]
   }
