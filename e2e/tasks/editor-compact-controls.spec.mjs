@@ -2,13 +2,13 @@ import {test,expect,useApp,onDevices} from '../fixtures.mjs';
 const app=useApp(async store=>({project:await store.createProject({title:'Compact editor controls'}),task:null}));
 async function seed(){return app.store.createTask(app.project.id,{title:'Compact fields',start:'2026-11-02',due:'2026-11-03',start_time:'09:00',due_time:'10:00',body:'Short description'});}
 onDevices(['desktop','ipad','phone'],()=>{
- test('the date popover keeps dates together and toggle and times on its next line @gate',async({page})=>{
+ test('the date popover leads with All day above aligned dates and visible time fields @gate',async({page})=>{
   const task=await seed();await page.goto(`${app.base}/#project/${app.project.id}/list`);await page.locator(`[data-row-dates="${task.id}"]:visible`).first().click();
   const popup=page.locator('#task-dates-popover');await expect(popup).toBeVisible();
   const geometry=await popup.evaluate(el=>{const r=s=>el.querySelector(s).getBoundingClientRect().toJSON();return{start:r('[name=start]'),end:r('[name=due]'),toggle:r('[data-task-allday]'),from:r('[name=start_time]'),to:r('[name=due_time]'),overflow:el.scrollWidth-el.clientWidth};});
   expect(Math.abs(geometry.start.top-geometry.end.top)).toBeLessThan(1);expect(geometry.start.right).toBeLessThan(geometry.end.left);
-  expect(Math.abs(geometry.from.top-geometry.to.top)).toBeLessThan(1);expect(Math.abs(geometry.toggle.bottom-geometry.from.bottom)).toBeLessThan(1);expect(geometry.toggle.right).toBeLessThan(geometry.from.left);expect(geometry.overflow).toBeLessThanOrEqual(1);
-  await popup.getByRole('button',{name:'All day',exact:true}).click();await expect(popup.locator('.task-time-range')).toBeHidden();
+  expect(Math.abs(geometry.from.top-geometry.to.top)).toBeLessThan(1);expect(geometry.toggle.bottom).toBeLessThan(geometry.start.top);expect(geometry.toggle.left).toBeLessThanOrEqual(geometry.start.left);expect(geometry.overflow).toBeLessThanOrEqual(1);
+  await popup.getByRole('button',{name:'All day',exact:true}).click();await expect(popup.locator('.task-time-range')).toBeVisible();await expect(popup.locator('[name=start_time]')).toBeDisabled();await expect(popup.locator('[name=due_time]')).toBeDisabled();
  });
  test('frame updates keep the rearrange checkbox beside Update frame without instructional text @gate',async({page})=>{
   const board=(await app.store.snapshot(app.project.id)).boards[0];

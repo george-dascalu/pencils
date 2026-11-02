@@ -85,7 +85,7 @@ test("Set dates opens a compact nonmodal popup that autosaves, uses the shared c
   await expect(panel(page)).toHaveAttribute("aria-modal", "false");
   await expect(panel(page)).toHaveAttribute("aria-label", /Dates for.*Plan this task/);
   await expect(panel(page).locator("strong,.task-dates-title,[type=submit],footer")).toHaveCount(0);
-  expect(await panel(page).locator("header button").evaluateAll((buttons) => buttons.map((b) => b.textContent.trim() || b.getAttribute("aria-label")))).toEqual(["Clear dates", "Close date editor"]);
+  expect(await panel(page).locator("header button").evaluateAll((buttons) => buttons.map((b) => b.textContent.trim() || b.getAttribute("aria-label")))).toEqual(["All day", "Clear dates", "Close date editor"]);
   await start(page).fill("2026-10-19");
   await panel(page).getByRole("button", { name: "Choose Start date", exact: true }).click();
   await page.locator('#shared-date-picker table [data-date-value="2026-10-20"]').click();

@@ -53,20 +53,36 @@ onDevices(['desktop', 'ipad', 'phone'], () => {
     await expect(page.locator('#task-form').getByRole('button', { name: 'All day', exact: true })).toHaveAttribute('aria-pressed', 'true');
   });
 
-  test('the date popover uses the same All day icon and clearing dates resets it @gate', async ({ page, device }) => {
+  test('the date popover leads with All day and previews disabled midnight hours without saving timed values @gate', async ({ page, device }) => {
     const { project, card } = await seed();
     await page.goto(`${app.base}/#project/${project.id}/list`);
     const row = page.locator(`[data-task-order-row="${card.id}"]`);
     await row.locator('[data-row-dates]:visible').click();
     const form = page.locator('#task-dates-form'), toggle = form.getByRole('button', { name: 'All day', exact: true });
     await expect(toggle).toHaveAttribute('aria-pressed', 'false');
+    await expect(form.locator('header > button').first()).toHaveAttribute('data-task-allday', '');
+    const start = form.getByLabel('Start time', { exact: true }), end = form.getByLabel('End time', { exact: true });
+    await start.fill('13:15'); await end.fill('14:30'); await end.blur();
     await toggle.click();
-    await expect(form.getByLabel('End time', { exact: true })).toBeHidden();
+    await expect(start).toBeVisible(); await expect(end).toBeVisible();
+    await expect(start).toBeDisabled(); await expect(end).toBeDisabled();
+    await expect(start).toHaveValue('00:00'); await expect(end).toHaveValue('23:59');
+    const saved = async () => (await app.store.snapshot(project.id)).tasks.find(t => t.id === card.id);
+    await expect.poll(async () => [(await saved()).start_time, (await saved()).due_time]).toEqual([null, null]);
+    const rects = await form.evaluate(el => {
+      const allDay = el.querySelector('[data-task-allday]').getBoundingClientRect(), header = el.querySelector('header').getBoundingClientRect();
+      return {left:allDay.left, top:allDay.top, headerLeft:header.left, headerTop:header.top, overflow:el.scrollWidth > el.clientWidth};
+    });
+    expect(Math.abs(rects.left - rects.headerLeft)).toBeLessThanOrEqual(1);
+    expect(rects.overflow).toBe(false);
     await toggle.click();
-    await expect(form.getByLabel('End time', { exact: true })).toBeVisible();
+    await expect(start).toBeEnabled(); await expect(end).toBeEnabled();
+    await expect(start).toHaveValue('13:15'); await expect(end).toHaveValue('14:30');
+    await expect.poll(async () => [(await saved()).start_time, (await saved()).due_time]).toEqual(['13:15', '14:30']);
     await form.locator('[data-task-dates-clear]').click();
     await expect(toggle).toHaveAttribute('aria-pressed', 'true');
-    await expect(form.getByLabel('End time', { exact: true })).toBeHidden();
+    await expect(start).toBeVisible(); await expect(end).toBeDisabled();
+    await expect(start).toHaveValue('00:00'); await expect(end).toHaveValue('23:59');
     await expect.poll(async () => (await app.store.snapshot(project.id)).tasks.find(t => t.id === card.id).due).toBe(null);
   });
 });

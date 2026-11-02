@@ -2,6 +2,11 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.21.39 — 2026-11-02
+
+### Changed
+- Feature F0.21-39: The card date popup puts All day at its top-left. All-day schedules show disabled 00:00–23:59 time fields, while switching back restores the previous editable hours. The displayed boundaries do not create a timed schedule.
+
 ## 0.21.38 — 2026-11-02
 
 ### Changed

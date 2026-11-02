@@ -61,7 +61,7 @@ export function taskDateEditor(ctx) {
       <header class="task-dates-actions">${sourceDue ? "" : '<button type="button" class="text-link" data-task-dates-clear>Clear dates</button>'}<button type="button" class="icon-button" data-task-dates-close aria-label="Close date editor">${icon("close")}</button></header>
       <div class="task-date-inline-range"><label class="field">Start date<input type="date" name="start" aria-label="Start date" value="${esc(value.start || "")}"></label>
       <label class="field">Due date<input type="date" name="due" aria-label="Due date" value="${esc(value.due || "")}" ${sourceDue ? 'disabled aria-describedby="task-dates-source"' : ""}></label></div>
-      ${sourceDue ? "" : `<div class="task-date-clock-row">${taskTimeFields(value, esc, icon)}</div>`}
+      ${sourceDue ? "" : `<div class="task-date-clock-row">${taskTimeFields(value, esc, icon, { showAllDayTimes: true })}</div>`}
       ${sourceDue ? '<p id="task-dates-source" class="field-hint">The due date is managed by the connected source.</p>' : ""}
       ${chooseOnTimeline && !sourceDue ? '<button type="button" class="text-link" data-task-dates-pick>Choose on timeline</button>' : ""}
       <p class="form-error" role="alert" hidden></p>
@@ -79,6 +79,8 @@ export function taskDateEditor(ctx) {
     anchor()?.setAttribute("aria-controls", panel.id);
     panel.showPopover();
     const form = panel.querySelector("form");
+    const allDay = form.querySelector('[data-task-allday]');
+    if (allDay) form.querySelector('header').prepend(allDay);
     installTaskTimes(form);
     const start = form.elements.start,
       due = form.elements.due;
@@ -86,7 +88,7 @@ export function taskDateEditor(ctx) {
     const url = ctx.route?.("tasks", id);
     const values = () => ({
       start: start.value || null,
-      ...(!sourceDue ? { due: due.value || null, start_time: form.elements.start_time.value || null, due_time: form.elements.due_time.value || null } : {}),
+      ...(!sourceDue ? { due: due.value || null, start_time: allDay.getAttribute('aria-pressed') === 'true' ? null : form.elements.start_time.value || null, due_time: allDay.getAttribute('aria-pressed') === 'true' ? null : form.elements.due_time.value || null } : {}),
     });
     let lastValues = JSON.stringify(values());
     function limits() {
