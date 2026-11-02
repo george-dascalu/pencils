@@ -2,6 +2,14 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.21.27 — 2026-11-02
+
+### Changed
+- Feature F0.21-27: Date popovers show Start and Due dates on one line, with the All day toggle and Start/End times beneath. Project frame updates place Rearrange generated cards beside Update frame and omit the explanatory text. Inactive scrollbars stay hidden while long content remains scrollable.
+
+### Fixed
+- Relationship rows edit assignee, status and priority directly without opening the linked card; its type, ID and title retain navigation. Their name chips fit their available width in phone panels. Untouched empty drafts close immediately without requiring fields or creating a card; edited invalid drafts remain protected.
+
 ## 0.21.26 — 2026-11-02
 
 ### Changed

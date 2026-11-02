@@ -5,6 +5,7 @@ import { APP_VERSION, watchAppVersion } from "./app-version.js";
 import { DEFAULT_TASK_TYPES } from "./task-types.js";
 import { updateViewLayout } from "./view-layout.js";
 import { installEditableControlGuard } from "./editable-controls.js";
+import { installQuietScrollbars } from "./quiet-scrollbars.js";
 import { installOverflowTitles } from "./overflow-title.js";
 import { taskFocus } from "./task-focus.js";
 import { focusOnOpen, prepareDialogFocus } from "./open-focus.js";
@@ -71,6 +72,7 @@ installPageZoomGuard();
 installAxisLockedScroll("#view-content > .table-scroll");
 installEditableControlGuard();
 installOverflowTitles();
+installQuietScrollbars();
 const $$ = (selector, root = document) => [...root.querySelectorAll(selector)];
 const esc = (value) =>
   String(value ?? "").replace(
@@ -1429,7 +1431,7 @@ function closeDialog(force = false, { confirmDirty = true, keepDraft = false } =
   const form = $("#task-form");
   if (form?.dataset.id || form?.dataset.draftNode) {
     void features.flushTask();
-    if (!force && !keepDraft && (!form.checkValidity() || !form.elements.title.value.trim())) {
+    if (!force && !keepDraft && features.taskHasChanges() && (!form.checkValidity() || !form.elements.title.value.trim())) {
       let notice = form.querySelector(".task-close-notice");
       if (!notice) {
         notice = document.createElement("div");

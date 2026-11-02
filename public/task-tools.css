@@ -795,7 +795,7 @@ body.task-reordering, body.task-reordering * { cursor: grabbing !important; user
 .task-relationship-sort > .selection-popover { position: fixed; inset: auto; }
 /* Fixed metadata tracks keep columns aligned across every relationship row. */
 .task-relationship-metadata { display: grid; grid-template-columns: clamp(var(--list-field-height), 12cqw, 100px) var(--list-field-status-width) var(--list-field-priority-width); align-items: center; flex-shrink: 0; gap: 8px; font-size: var(--type-meta); }
-.task-relationship-assignee { display: flex; align-items: center; min-width: 0; }
+.task-relationship-assignee { display: flex; align-items: center; min-width: 0; width: 100%; }
 .task-relationship-group { margin-top: 12px; }
 .task-relationship-group h4 { margin: 0 0 4px; font-size: var(--type-small); color: var(--muted); font-weight: 600; }
 .task-relationship-row { display: flex; align-items: center; gap: 4px; border-bottom: 1px solid var(--line); }
@@ -1589,3 +1589,29 @@ html.task-page-open,
 .canvas-task-custom-fields > div > :last-child { min-width: 0; overflow-wrap: anywhere; }
 
 .board-node .draft-task-meta :is(.task-assignee, select) { font-size: 12px !important; }
+
+/* Existing relationship rows keep their identity action separate from editable fields. */
+.task-relationship-identity { display: flex; align-items: center; flex: 1; min-width: 0; gap: 8px; min-height: var(--control-height); padding: 0; border: 0; background: transparent; color: var(--ink); text-align: left; }
+.task-relationship-identity > .icon { flex: none; width: 16px; height: 16px; }
+.task-relationship-identity:not(:disabled):hover { background: var(--surface-soft); }
+.task-relationship-metadata > .relationship-field-choice { position: relative; display: flex; align-items: center; justify-content: center; min-width: 0; width: 100%; height: var(--control-height); cursor: pointer; }
+.relationship-field-choice > select { position: absolute; inset: 0; width: 100%; height: 100% !important; min-height: 0 !important; opacity: 0; cursor: pointer; }
+.relationship-field-choice:has(> select:focus-visible)::after { content: ''; position: absolute; inset: calc((var(--control-height) - var(--list-field-height)) / 2) 0; outline: var(--focus-ring); outline-offset: -1px; border-radius: var(--field-radius); pointer-events: none; }
+.relationship-field-choice:has(> select:enabled):hover > :is(.field-chip,.task-assignee) { background: var(--surface-soft) !important; }
+@container (max-width: 440px) {
+  .task-relationship-row > .task-relationship-link > .task-relationship-identity { position: relative; grid-column: 1 / -1; grid-row: 1; width: 100%; height: auto; padding-block: 4px; }
+  .task-relationship-identity > .task-relationship-title { flex: 1; }
+  .task-relationship-identity > .icon { position: absolute; top: calc(100% + (var(--control-height) - 12px) / 2); left: 0; width: 12px; height: 12px; }
+  .task-relationship-identity > .task-relationship-key { position: absolute; top: 100%; left: 18px; display: flex; align-items: center; width: max(0px, calc(100% - min(216px, 100% - 22px) - 24px)); min-width: 0; height: var(--control-height); }
+}
+
+.task-relationship-row > .task-relationship-link { padding-block: 0; min-height: var(--control-height); }
+
+@container (max-width: 440px) {
+  .task-relationship-option .task-relationship-metadata { flex: 1 1 176px; min-width: 0; grid-template-columns: 44px minmax(44px, 1fr) 44px; }
+  .task-relationship-option .task-relationship-metadata > .due { display: none; }
+}
+
+@container (max-width: 440px) {
+  .relationship-field-choice > .field-chip-status { width: auto; max-width: 100%; }
+}

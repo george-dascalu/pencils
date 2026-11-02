@@ -52,12 +52,7 @@ export function taskAutosave(
     if (flushing || disposed) return pending;
     flushing = true;
     flushEditor();
-    clearTimeout(timer);
     flushing = false;
-    if (!form.checkValidity() || !form.elements.title.value.trim()) {
-      say("Complete the required fields to save.", true);
-      return Promise.resolve(false);
-    }
     const current = read();
     const changes = Object.fromEntries(
       Object.entries(current).filter(
@@ -71,6 +66,10 @@ export function taskAutosave(
       say("");
       onSaved?.({ disposed });
       return Promise.resolve(true);
+    }
+    if (!form.checkValidity() || !form.elements.title.value.trim()) {
+      say("Complete the required fields to save.", true);
+      return Promise.resolve(false);
     }
     const previous = last,
       wasQueued = queued;
@@ -125,12 +124,12 @@ export function taskAutosave(
   window.addEventListener("pagehide", flush);
   return {
     flush,
+    hasChanges: () => JSON.stringify(read()) !== JSON.stringify(last),
     schedule,
     syncChanged,
     destroy() {
       flush();
       disposed = true;
-      clearTimeout(timer);
       form.removeEventListener("input", schedule);
       form.removeEventListener("change", schedule);
       form.removeEventListener("submit", submit);

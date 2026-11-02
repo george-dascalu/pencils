@@ -321,3 +321,10 @@
   .board-comments:has(.comment-panel-resize) #board-comment-form { padding-bottom: 48px; }
 }
 
+
+.frame-update-panel .dialog-body:has([data-frame-error]:empty) { display: none; }
+.frame-update-panel .dialog-foot { display: flex; align-items: center; gap: 12px; }
+.frame-update-panel .dialog-foot .frame-update-option { min-width: 0; flex: 1; margin: 0; }
+.frame-update-panel .dialog-foot .button { flex: none; }
+
+.frame-update-panel .frame-update-option { min-height: var(--control-height); }

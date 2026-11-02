@@ -33,7 +33,7 @@ async function boxed(box, fields, color, label) {
   }
   const expected = await mixed(box.page(), color);
   // List and Tree rows and phone summaries draw their box at chip height behind taller targets (::after); other boxes are the element itself.
-  await expect.poll(() => box.evaluate((el) => getComputedStyle(el, el.matches(".row-fields, .phone-task-fields") ? "::after" : null).borderTopColor), `${label}: border in the priority colour`).toBe(expected);
+  await expect.poll(() => box.evaluate((el) => getComputedStyle(el, el.matches(".row-fields, .phone-task-fields, .task-relationship-metadata") ? "::after" : null).borderTopColor), `${label}: border in the priority colour`).toBe(expected);
 }
 const row = (page, task) => page.locator(`.task-row[data-task-order-row="${task.id}"]`);
 
@@ -51,7 +51,7 @@ test("rows, Kanban and board cards and the card editor hold the fields in one bo
   await row(page, app.high).locator('[data-action="task-open"]').first().click();
   const editor = page.locator("#task-form");
   await boxed(editor.locator(".task-metadata-main .field-box"), [".task-assignee", 'select[name="status"]', ".task-picker-trigger"], HIGH, "card editor");
-  await boxed(editor.locator(".task-relationship-metadata.field-box"), [".task-assignee", ".task-relationship-status", ".task-relationship-priority", ".due"], LOW, "relationship row");
+  await boxed(editor.locator(".task-relationship-metadata.field-box"), [".task-assignee", ".task-relationship-status .field-chip", ".task-relationship-priority .field-chip", ".due"], LOW, "relationship row");
   await editor.locator('[data-task-picker="priority"] .task-picker-trigger').click();
   await editor.locator('[data-task-picker="priority"] [data-picker-value="urgent"]').click();
   await boxed(editor.locator(".task-metadata-main .field-box"), [".task-assignee", 'select[name="status"]', ".task-picker-trigger"], URGENT, "card editor after a priority change");

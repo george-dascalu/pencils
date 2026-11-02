@@ -1168,6 +1168,7 @@ export function installFeatures(ctx) {
     progress,
     dialogOpened,
     flushTask: () => autosave?.flush() || Promise.resolve(true),
+    taskHasChanges: () => autosave?.hasChanges() ?? state.dirty,
     commitRelationships: (id) => relationships?.commit(id) || Promise.resolve(),
     createDocument: async (title) => {
       await documentFeature.load();

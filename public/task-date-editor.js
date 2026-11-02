@@ -59,9 +59,9 @@ export function taskDateEditor(ctx) {
     const sourceDue = sourceReadOnly(value, "due");
     panel.innerHTML = `<form id="task-dates-form" novalidate>
       <header class="task-dates-actions">${sourceDue ? "" : '<button type="button" class="text-link" data-task-dates-clear>Clear dates</button>'}<button type="button" class="icon-button" data-task-dates-close aria-label="Close date editor">${icon("close")}</button></header>
-      <label class="field">Start date<input type="date" name="start" aria-label="Start date" value="${esc(value.start || "")}"></label>
-      <label class="field">Due date<input type="date" name="due" aria-label="Due date" value="${esc(value.due || "")}" ${sourceDue ? 'disabled aria-describedby="task-dates-source"' : ""}></label>
-      ${sourceDue ? "" : taskTimeFields(value, esc, icon)}
+      <div class="task-date-inline-range"><label class="field">Start date<input type="date" name="start" aria-label="Start date" value="${esc(value.start || "")}"></label>
+      <label class="field">Due date<input type="date" name="due" aria-label="Due date" value="${esc(value.due || "")}" ${sourceDue ? 'disabled aria-describedby="task-dates-source"' : ""}></label></div>
+      ${sourceDue ? "" : `<div class="task-date-clock-row">${taskTimeFields(value, esc, icon)}</div>`}
       ${sourceDue ? '<p id="task-dates-source" class="field-hint">The due date is managed by the connected source.</p>' : ""}
       ${chooseOnTimeline && !sourceDue ? '<button type="button" class="text-link" data-task-dates-pick>Choose on timeline</button>' : ""}
       <p class="form-error" role="alert" hidden></p>

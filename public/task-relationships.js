@@ -4,6 +4,10 @@ import {
   relationshipChanges,
   compareRelationshipTasks,
 } from "./task-relationship-model.js";
+import { sourceReadOnly } from "./source-model.js";
+import { assigneeOptions } from "./teams.js";
+import { priorityOptions } from "./task-priority.js";
+import { nextStatuses } from "./workflow-model.js";
 import { priorityLabel } from "./task-priority.js";
 import { taskColorAttributes, fieldBoxStyle } from "./task-colors.js";
 import { statusLabel } from "./workflow-model.js";
@@ -133,6 +137,17 @@ export function taskRelationshipsEditor(ctx, form, { flush, changed }) {
   }
   const detail = (task) =>
     `${icon(task.type || "task")}<span class="task-relationship-key">${esc(task.key || task.id)}</span><span class="task-relationship-title">${esc(task.title || "Unavailable card")}</span>${task.title ? `<span class="task-relationship-metadata field-box" ${fieldBoxStyle(state, task.priority)}><span class="task-relationship-assignee" role="img" aria-label="Assignee: ${esc(task.assignee || "Unassigned")}" title="${esc(task.assignee || "Unassigned")}">${ctx.assigneeHTML(task)}</span><span class="field-chip field-chip-status task-relationship-status" ${taskColorAttributes(state, "status", task.status)} title="${esc(statusLabel(state.config, task.status))}" aria-label="Status: ${esc(statusLabel(state.config, task.status))}">${esc(statusLabel(state.config, task.status))}</span><span class="field-chip field-chip-priority task-relationship-priority" role="img" ${taskColorAttributes(state, "priority", task.priority)} title="${esc(priorityLabel(task.priority))}" aria-label="Priority: ${esc(priorityLabel(task.priority))}">${icon(`priority-${task.priority || "none"}`)}</span>${ctx.dueHTML(task) || `<span class="due no-date">${icon("calendar")}</span>`}</span>` : ""}`;
+  const identity = task => `${icon(task.type || "task")}<span class="task-relationship-key">${esc(task.key || task.id)}</span><span class="task-relationship-title">${esc(task.title || "Unavailable card")}</span>`;
+  function editableMetadata(task) {
+    if (!task?.title) return "";
+    const select = (field, options) => `<select data-relationship-field="${field}" data-relationship-target="${esc(task.id)}" aria-label="${field[0].toUpperCase() + field.slice(1)} for ${esc(task.title)}" ${busy || task.archived || sourceReadOnly(task, field) ? "disabled" : ""}>${options}</select>`;
+    const option = (field, value, label) => `<option value="${esc(value)}" ${task[field] === value ? "selected" : ""}>${esc(label)}</option>`;
+    return `<span class="task-relationship-metadata field-box" ${fieldBoxStyle(state, task.priority)}>
+      <label class="task-relationship-assignee relationship-field-choice" title="${esc(task.assignee || "Unassigned")}">${ctx.assigneeHTML(task)}${select("assignee", assigneeOptions(state, task.assignee, esc))}</label>
+      <label class="task-relationship-status relationship-field-choice" ${taskColorAttributes(state, "status", task.status)} title="${esc(statusLabel(state.config, task.status))}"><span class="field-chip field-chip-status">${esc(statusLabel(state.config, task.status))}</span>${select("status", nextStatuses(state.config, task.status).map(value => option("status", value, statusLabel(state.config, value))).join(""))}</label>
+      <label class="task-relationship-priority relationship-field-choice" ${taskColorAttributes(state, "priority", task.priority)} title="${esc(priorityLabel(task.priority))}"><span class="field-chip field-chip-priority">${icon(`priority-${task.priority || "none"}`)}</span>${select("priority", priorityOptions.map(value => option("priority", value, priorityLabel(value))).join(""))}</label>
+      ${ctx.dueHTML(task) || `<span class="due no-date">${icon("calendar")}</span>`}</span>`;
+  }
   function refresh() {
     if (!active()) return;
     toggle.disabled = busy;
@@ -155,7 +170,7 @@ export function taskRelationshipsEditor(ctx, form, { flush, changed }) {
                 .map((row) => {
                   const task = list.find((task) => task.id === row.target);
                   const error = problem(kind, row.target, true);
-                  return `<div class="task-relationship-row"><button type="button" class="task-relationship-link" data-relationship-open="${esc(row.target)}" title="${esc(task?.title || "Unavailable card")}" ${!task || busy ? "disabled" : ""}>${detail(task || { id: row.target })}</button><button type="button" class="icon-button" data-relationship-remove="${esc(row.target)}" data-relationship-kind="${kind}" aria-label="Remove ${label.toLowerCase()} ${esc(task?.key || row.target)}" title="${esc(error || "Remove relationship")}" ${error || busy ? "disabled" : ""}>${icon("close")}</button></div>`;
+                  return `<div class="task-relationship-row"><div class="task-relationship-link"><button type="button" class="task-relationship-identity" data-relationship-open="${esc(row.target)}" aria-label="Open ${esc(task?.key || row.target)}: ${esc(task?.title || "Unavailable card")}" title="${esc(task?.title || "Unavailable card")}" ${!task || busy ? "disabled" : ""}>${identity(task || { id: row.target })}</button>${editableMetadata(task)}</div><button type="button" class="icon-button" data-relationship-remove="${esc(row.target)}" data-relationship-kind="${kind}" aria-label="Remove ${label.toLowerCase()} ${esc(task?.key || row.target)}" title="${esc(error || "Remove relationship")}" ${error || busy ? "disabled" : ""}>${icon("close")}</button></div>`;
                 })
                 .join("")}</div>`
             : "";
@@ -235,6 +250,29 @@ export function taskRelationshipsEditor(ctx, form, { flush, changed }) {
       input.dispatchEvent(new Event("change", { bubbles: true }));
     }
   }
+  host.addEventListener("change", async event => {
+    const input = event.target.closest("[data-relationship-field]");
+    if (!input) return;
+    event.stopPropagation();
+    const target = input.dataset.relationshipTarget, field = input.dataset.relationshipField;
+    if (!active() || busy || input.disabled || !["assignee", "status", "priority"].includes(field)) return;
+    const value = input.value, restore = document.activeElement === input;
+    busy = true; input.disabled = true;
+    try {
+      await patchTask(target, { [field]: value }, false);
+      const entry = sync.entries.get(url(target));
+      if (entry?.error || entry?.conflict) say(entry.error || "Edit retained. Review this pending save in Recovery.", true);
+      else say("");
+      if (active()) changed(target);
+    } catch (error) { if (active()) say(error.message, true); }
+    finally {
+      busy = false; refresh();
+      if (active() && restore) {
+        const next = host.querySelector(`[data-relationship-field="${field}"][data-relationship-target="${CSS.escape(target)}"]`);
+        focusOnOpen(next, next?.closest("label"));
+      }
+    }
+  });
   host.addEventListener("click", async (event) => {
     const button = event.target.closest("button");
     // Sorting only reorders the list, so it works while a link is being saved.

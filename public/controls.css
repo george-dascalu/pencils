@@ -392,17 +392,17 @@ textarea,
 :where(.field-box) { display: flex; flex: none; align-items: center; }
 .field-box :is(.field-chip, .task-assignee, select, .task-picker-trigger, .canvas-task-priority, .due, .row-due, .canvas-task-dates) { border-color: transparent !important; background-color: transparent !important; }
 /* List and Tree targets (and the phone summary's) are taller than the fields, so their box is drawn at list-chip height behind them. */
-.field-box:is(.row-fields, .phone-task-fields) { position: relative; isolation: isolate; border: 0; background: none; }
-.field-box:is(.row-fields, .phone-task-fields)::before,
-.field-box:is(.row-fields, .phone-task-fields)::after {
+.field-box:is(.row-fields, .phone-task-fields, .task-relationship-metadata) { position: relative; isolation: isolate; border: 0; background: none; }
+.field-box:is(.row-fields, .phone-task-fields, .task-relationship-metadata)::before,
+.field-box:is(.row-fields, .phone-task-fields, .task-relationship-metadata)::after {
   content: "";
   position: absolute;
   inset: calc(50% - var(--list-field-height) / 2) 0;
   border-radius: var(--field-radius);
   pointer-events: none;
 }
-.field-box:is(.row-fields, .phone-task-fields)::before { z-index: -1; background: var(--surface); }
-.field-box:is(.row-fields, .phone-task-fields)::after { z-index: 1; border: 1px solid var(--field-box-border); }
+.field-box:is(.row-fields, .phone-task-fields, .task-relationship-metadata)::before { z-index: -1; background: var(--surface); }
+.field-box:is(.row-fields, .phone-task-fields, .task-relationship-metadata)::after { z-index: 1; border: 1px solid var(--field-box-border); }
 /* Row targets are taller than the box, so hover shades the field inside it. */
 .field-box > .row-choice:hover { background-color: transparent !important; }
 .field-box > .row-choice:has(select:enabled):hover > :is(.field-chip, .task-assignee) { background-color: var(--surface-soft) !important; }
@@ -432,7 +432,7 @@ textarea,
 }
 
 /* Full, short and initial names share one stable slot, including zoomed board cards. */
-.main .task-assignee[data-full-name], #dialogs .task-assignee[data-full-name] { width: 100%; min-width: 0; overflow: hidden; }
+.task-assignee[data-full-name] { width: 100%; min-width: 0; overflow: hidden; }
 .kanban-assignee { flex: 0 1 128px; width: 128px; }
 .card-bottom > .field-box { max-width: 100%; }
 .document-task-fields > .task-assignee { width: 100px; flex: 0 1 100px; }
@@ -442,3 +442,9 @@ textarea,
     box-shadow: inset 1px 0 var(--line);
   }
 }
+
+/* Panel scrollbars appear only when that axis can move. */
+[data-inert-scrollbars] { scrollbar-width: thin !important; }
+[data-inert-scrollbars="x y"] { scrollbar-width: none !important; }
+[data-inert-scrollbars~="x"]::-webkit-scrollbar { height: 0 !important; }
+[data-inert-scrollbars~="y"]::-webkit-scrollbar { width: 0 !important; }

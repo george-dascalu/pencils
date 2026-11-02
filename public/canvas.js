@@ -1389,7 +1389,7 @@ export function canvasFeatures(ctx) {
         );
       };
       showDialog(
-        `<dialog class="board-comments board-object-panel frame-update-panel" aria-label="Update project frame"><div class="board-comments-head"><strong>Update project frame</strong><button type="button" class="icon-button" data-action="dialog-close" aria-label="Close frame update">${icon("close")}</button></div><div class="dialog-body"><label class="frame-update-option"><input type="checkbox" id="frame-relayout" aria-describedby="frame-relayout-hint"> Rearrange generated cards</label><p id="frame-relayout-hint">Leave unchecked to keep card positions and sizes.</p><p data-frame-error role="alert"></p></div><div class="dialog-foot"><button type="button" class="button primary" id="frame-apply">Update frame</button></div></dialog>`,
+        `<dialog class="board-comments board-object-panel frame-update-panel" aria-label="Update project frame"><div class="board-comments-head"><strong>Update project frame</strong><button type="button" class="icon-button" data-action="dialog-close" aria-label="Close frame update">${icon("close")}</button></div><div class="dialog-body"><p data-frame-error role="alert"></p></div><div class="dialog-foot"><label class="frame-update-option"><input type="checkbox" id="frame-relayout"> Rearrange generated cards</label><button type="button" class="button primary" id="frame-apply">Update frame</button></div></dialog>`,
         "frame-update",
         { nodeId: frame.id },
       );

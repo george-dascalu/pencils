@@ -82,11 +82,11 @@ test("fields colour only their border and text", async ({ page }) => {
     // Colours may ease between themes; read them once no transition is running.
     await page.waitForFunction(() => !document.getAnimations().some((a) => a instanceof CSSTransition && a.playState === "running"));
     const surface = await surfaceColor(page);
-    const boxes = await paint(".task-relationship-metadata.field-box");
+    const boxes = await paint(".task-relationship-metadata.field-box", "::before"), borders = await paint(".task-relationship-metadata.field-box", "::after");
     expect(boxes.length, `${theme}: relationship boxes`).toBeGreaterThanOrEqual(2);
     for (const box of boxes) expect(box.bg, `${theme} relationship box fill is neutral`).toBe(surface);
-    expect(new Set(boxes.map((b) => b.border)).size, `${theme} relationship box borders follow the priority ${JSON.stringify(boxes)}`).toBeGreaterThan(1);
-    for (const field of [".task-relationship-status", ".task-relationship-priority"]) {
+    expect(new Set(borders.map((b) => b.border)).size, `${theme} relationship box borders follow the priority ${JSON.stringify(boxes)}`).toBeGreaterThan(1);
+    for (const field of [".task-relationship-status .field-chip", ".task-relationship-priority .field-chip"]) {
       const items = await paint(field);
       for (const item of items) expect([item.bg, item.border], `${theme} ${field} leaves fill and border to the box`).toEqual([clear, clear]);
       expect(new Set(items.map((i) => i.ink)).size, `${theme} ${field} text colours vary ${JSON.stringify(items)}`).toBeGreaterThan(1);
@@ -140,15 +140,15 @@ onDevices(["desktop", "ipad", "phone"], () => test("relationship rows use the li
   const list = LIST[device];
   listChips(ref, list, {
     assignee: await look(page, ".task-relationship-assignee .task-assignee"),
-    status: await look(page, ".task-relationship-status"),
-    priority: await look(page, ".task-relationship-priority"),
+    status: await look(page, ".task-relationship-status .field-chip"),
+    priority: await look(page, ".task-relationship-priority .field-chip"),
   }, "relationship");
-  const widths = await page.locator(".task-relationship-row .task-relationship-status").evaluateAll((els) => els.map((el) => Math.round(el.getBoundingClientRect().width)));
+  const widths = await page.locator(".task-relationship-row .task-relationship-status .field-chip").evaluateAll((els) => els.map((el) => Math.round(el.getBoundingClientRect().width)));
   expect(widths).toHaveLength(4);
   // Phones size each status to its text, as List rows do there (owner request, 30 Oct).
   if (device === "phone") expect(widths.every((w) => w <= list.status) && new Set(widths).size > 1, `status widths follow their text ${widths}`).toBe(true);
   else expect([...new Set(widths)], `status widths ${widths}`).toEqual([list.status]);
-  const space = await room(page, ".task-relationship-row .task-relationship-status", ".task-relationship-row");
+  const space = await room(page, ".task-relationship-row .task-relationship-status .field-chip", ".task-relationship-row");
   expect(space.top >= 4 && space.bottom >= 4, `room above and below ${JSON.stringify(space)}`).toBe(true);
   const rows = await page.locator(".task-relationship-row").evaluateAll((els) => els.map((row) => {
     const parts = [...row.querySelectorAll(".task-relationship-key, .task-relationship-title, .task-relationship-assignee, .task-relationship-status, .task-relationship-priority")].map((el) => el.getBoundingClientRect());

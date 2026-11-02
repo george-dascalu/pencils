@@ -69,12 +69,12 @@ test("related rows show assignee, status and priority, and sorting never changes
   const relatedGroup = section(page).locator(".task-relationship-group").filter({ has: page.getByRole("heading", { name: "Related to", exact: true }) });
   const order = () => relatedGroup.locator("[data-relationship-open]").evaluateAll((els) => els.map((el) => el.dataset.relationshipOpen));
   const beforeSort = (await app.store.snapshot(app.project.id)).tasks;
-  const meta = section(page).locator(`[data-relationship-open="${related.id}"] .task-relationship-metadata`);
+  const meta = section(page).locator(`[data-relationship-open="${related.id}"]`).locator("..").locator(".task-relationship-metadata");
   // Assignee uses its full name when there is room, then status and priority.
-  await expect(meta.getByRole("img", { name: /^Assignee: George/ })).toHaveAttribute("title", /George/);
+  await expect(meta.getByRole("img", { name: /^George/ })).toHaveAttribute("title", /George/);
   await expect(meta).toContainText("In progress");
   await expect(meta).toContainText("George");
-  await expect(meta.getByRole("img", { name: "Priority: High" })).toHaveAttribute("title", "High");
+  await expect(meta.locator(".task-relationship-priority")).toHaveAttribute("title", "High");
   await expect(meta.locator('[data-task-color="assignee"],[data-task-color="priority"],[data-task-color="status"]')).toHaveCount(3);
   await section(page).locator(".task-relationship-sort > summary").click();
   // The options show straight away (29 Oct), without a second control to open.
