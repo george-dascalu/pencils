@@ -52,7 +52,7 @@ onDevices(["phone", "ipad", "desktop"], device => {
     await form.getByRole('button', { name: 'Choose Due date', exact: true }).click();
     const calendar = page.locator('.date-picker-popover');
     await expect(calendar).toBeVisible();
-    await calendar.locator('[data-date-value="2026-11-09"]').click();
+    await calendar.locator('table [data-date-value="2026-11-09"]').click();
     await expect.poll(async () => (await app.store.snapshot(app.project.id)).tasks.find(t => t.id === card.id)?.due).toBe('2026-11-09');
     await form.getByLabel('Assignee', { exact: true }).selectOption('');
     await expect(form.locator('.task-assignee.unassigned .icon')).toBeVisible();

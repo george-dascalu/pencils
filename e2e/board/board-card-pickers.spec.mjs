@@ -25,13 +25,13 @@ onDevices(["ipad", "desktop"], () => test("a board card shows both dates and edi
   await tap(dates.locator(".canvas-task-date").last());
   await expect(calendar, `${device}: tapping the end date opens the calendar`).toBeVisible();
   await expect(menu, `${device}: and closes the menu`).toBeHidden();
-  await tap(calendar.locator('[data-date-value="2026-11-02"]'));
+  await tap(calendar.locator('table [data-date-value="2026-11-02"]'));
   await expect.poll(async () => (await saved()).due).toBe("2026-11-02");
   await expect(dates).toHaveText(/26 Oct.*2 Nov/);
   // The start can't pass the end.
   await tap(dates.locator(".canvas-task-date").first());
-  await expect(calendar.locator('[data-date-value="2026-11-05"]')).toBeDisabled();
-  await tap(calendar.locator('[data-date-value="2026-10-28"]'));
+  await expect(calendar.locator('table [data-date-value="2026-11-05"]')).toBeDisabled();
+  await tap(calendar.locator('table [data-date-value="2026-10-28"]'));
   await expect.poll(async () => (await saved()).start).toBe("2026-10-28");
 }));
 
@@ -53,7 +53,7 @@ test("a board card's dates keep keyboard focus, say why a rejected date wasn't s
   const latest = await saved();
   await app.store.updateTask(app.project.id, app.task.id, { revision: latest.revision, due: "2026-10-27" });
   await trigger("Start").click();
-  await calendar.locator('[data-date-value="2026-10-29"]').click();
+  await calendar.locator('table [data-date-value="2026-10-29"]').click();
   await expect(page.locator(".toast.error")).toBeVisible();
   // A narrow card keeps the due date, inside its box, and leaves the status room.
   const node = (await app.store.snapshot(app.project.id)).boards.find((b) => b.id === app.board.id);

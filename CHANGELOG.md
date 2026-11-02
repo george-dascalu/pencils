@@ -2,6 +2,12 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.20.129 — 2026-11-02
+
+### Fixed
+
+- Date-picker verification selects the calendar day explicitly, so a test date that becomes Today no longer produces a false failure.
+
 ## 0.20.128 — 2026-11-02
 
 ### Fixed
