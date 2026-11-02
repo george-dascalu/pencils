@@ -1,6 +1,6 @@
 // Document properties as Obsidian keeps them: top-level frontmatter keys beside Pencils' own.
 // Text, number, date, checkbox and list values can be edited here; anything else stays as written.
-const RESERVED = new Set(["id", "kind", "project", "title", "created", "updated", "folder", "version", "comments", "tags", "body", "revision", "file"]);
+const RESERVED = new Set(["id", "kind", "project", "title", "created", "updated", "folder", "version", "comments", "tags", "body", "revision", "file", "document_type", "table_file", "table"]);
 const NAME = /^[\p{L}\p{N}][\p{L}\p{N} _-]{0,59}$/u;
 const TAG = /^[\p{L}\p{N}_/-]{1,60}$/u;
 

@@ -1170,9 +1170,9 @@ export function installFeatures(ctx) {
     flushTask: () => autosave?.flush() || Promise.resolve(true),
     taskHasChanges: () => autosave?.hasChanges() ?? state.dirty,
     commitRelationships: (id) => relationships?.commit(id) || Promise.resolve(),
-    createDocument: async (title) => {
+    createDocument: async (title, options = {}) => {
       await documentFeature.load();
-      return documents.create(title);
+      return documents.create(title, "", options);
     },
     openDocument: async (id) => {
       await documentFeature.load();

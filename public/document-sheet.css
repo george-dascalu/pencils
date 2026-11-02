@@ -1,0 +1,58 @@
+/* Tables share the document bar; the worksheet owns its own scrolling surface. */
+#document-form[data-document-type="table"] .document-writing { padding: 0; overflow: hidden; }
+#document-form[data-document-type="table"] .document-save { display: none; }
+.document-sheet { display: flex; flex-direction: column; height: 100%; min-height: 0; overflow: hidden; }
+.sheet-format-tools { display: flex; align-items: center; gap: var(--control-bar-gap); min-width: 0; }
+.sheet-formula-bar { flex: none; display: flex; align-items: center; gap: 8px; min-width: 0; padding: 4px 8px; border-bottom: 1px solid var(--line); background: var(--surface); }
+.sheet-address { min-width: 68px; max-width: 140px; font: var(--type-small)/1.4 var(--font-mono, monospace); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sheet-formula-bar .sheet-formula { flex: 1; width: 0; min-width: 0; border: 0; background: transparent; border-radius: 0; font-family: var(--font-mono, monospace); }
+.document-sheet-scroll { position: relative; flex: 1; min-height: 0; min-width: 0; overflow: auto; overscroll-behavior: contain; background: var(--surface); }
+.document-sheet-scroll:focus-visible { outline: var(--focus-ring); outline-offset: -1px; }
+.document-sheet-grid { table-layout: fixed; border-collapse: separate; border-spacing: 0; font-size: var(--type-body); line-height: 18px; color: var(--ink); }
+.document-sheet-grid :is(th,td) { box-sizing: border-box; padding: 4px 8px; min-width: 0; border: 0; border-right: 1px solid var(--line); border-bottom: 1px solid var(--line); background: var(--surface); white-space: pre; overflow: hidden; text-overflow: ellipsis; vertical-align: top; }
+.document-sheet-grid th { font-size: var(--type-small); font-weight: 400; text-align: center; color: var(--muted); background: var(--surface-soft); user-select: none; }
+.document-sheet-grid thead th { position: sticky; top: 0; z-index: 4; }
+.document-sheet-grid tbody th { position: sticky; left: 0; z-index: 2; }
+.document-sheet-grid td { position: relative; touch-action: pan-x pan-y; }
+.document-sheet-grid td[aria-selected="true"] { background: color-mix(in srgb, var(--green) 10%, var(--surface)); }
+.document-sheet-grid td.sheet-active { outline: 2px solid var(--green); outline-offset: -2px; }
+.document-sheet-grid .sheet-frozen-column { position: sticky; z-index: 2; box-shadow: 1px 0 var(--line); }
+.document-sheet-grid .sheet-frozen-row { position: sticky; z-index: 3; box-shadow: 0 1px var(--line); }
+.document-sheet-grid .sheet-frozen-row.sheet-frozen-column, .document-sheet-grid thead .sheet-frozen-column { z-index: 5; }
+.document-sheet-grid .sheet-corner { left: 0; z-index: 6; }
+.document-sheet-grid .sheet-spacer td { border: 0; padding: 0; }
+.sheet-column-resize { position: absolute; top: 0; right: -3px; bottom: 0; width: 8px; cursor: col-resize; touch-action: none; }
+.sheet-row-resize { position: absolute; bottom: -3px; left: 0; right: 0; height: 8px; cursor: row-resize; touch-action: none; }
+.document-sheet-grid [data-sheet-editor] { position: absolute; inset: 0; z-index: 7; width: 100%; height: 100%; resize: none; border: 2px solid var(--green); border-radius: 0; margin: 0; padding: 2px 6px; background: var(--surface); font: inherit; color: var(--ink); }
+.sheet-footer { display: flex; flex: none; align-items: center; gap: 4px; min-width: 0; padding: 4px; padding-bottom: calc(4px + var(--tabbar-clearance, 0px)); background: var(--surface-soft); border-top: 1px solid var(--line); }
+.sheet-tabs { display: flex; min-width: 0; flex: 1; overflow-x: auto; scrollbar-width: thin; }
+.sheet-tabs [role="tab"] { min-height: var(--control-height); padding-inline: 12px; border: 0; border-radius: var(--field-radius); background: transparent; color: var(--muted); font-size: var(--type-small); white-space: nowrap; }
+.sheet-tabs [aria-selected="true"] { background: var(--surface); color: var(--green); box-shadow: inset 0 -2px var(--green); }
+.sheet-selection-summary { flex: 0 1 auto; font-size: var(--type-small); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.sheet-error { flex: none; padding: 4px 8px; color: var(--muted); font-size: var(--type-small); border-bottom: 1px solid var(--line); }
+.sheet-error[hidden] { display: none; }
+.sheet-panel-form { display: grid; gap: 8px; }
+.sheet-setting { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: var(--control-height); margin: 0; padding-block: 4px; border-bottom: 1px solid var(--line); font-size: var(--type-body); }
+.sheet-setting > :is(input:not([type="checkbox"]),select) { width: min(160px,50%); }
+.sheet-setting.check-control { justify-content: flex-start; }
+.sheet-inline-actions { display: flex; gap: 4px; }
+.sheet-inline-actions > .document-panel-item { flex: 1; width: auto; }
+.sheet-import-preview { max-height: 200px; overflow: auto; font-size: var(--type-small); border: 1px solid var(--line); }
+.sheet-import-preview td { padding: 4px 8px; border: 1px solid var(--line); white-space: pre-wrap; }
+.sheet-import-status { font-size: var(--type-small); margin: 0; color: var(--muted); }
+.sheet-touch-tools { display: none; }
+@media (max-width: 600px) {
+  .sheet-desktop-tool { display: none !important; }
+  .sheet-touch-tools { display: grid; }
+  .sheet-formula-bar { gap: 4px; padding-inline: 4px; }
+  .sheet-address { min-width: 44px; }
+  .sheet-selection-summary { display: none; }
+  .sheet-setting { flex-wrap: wrap; }
+}
+@media (pointer: coarse) {
+  .document-sheet-grid [data-sheet-editor], .sheet-formula-bar .sheet-formula { font-size: 16px !important; }
+  .sheet-column-resize { width: 16px; right: -6px; }
+  .sheet-row-resize { height: 16px; bottom: -6px; }
+}
+
+.sheet-cell-text { display: block; overflow: hidden; text-overflow: ellipsis; }

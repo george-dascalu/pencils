@@ -4,6 +4,8 @@ import { Problem } from "../problem.js";
 import { now, validId, title, body } from "../values.js";
 import { checkProperties, checkTags, documentProperties } from "../../public/document-properties.js";
 import { validComment } from "../../public/document-comments.js";
+import { blankTable } from "../../public/document-sheet-model.js";
+import { readDocumentTable, writeDocumentTable, tableDocumentBody } from "../document-sheets.js";
 
 // Comments on the document's text (public/document-comments.js): the same limits as card comments,
 // plus each thread's anchor.
@@ -28,19 +30,23 @@ export const documentsMethods = {
     if (data.kind !== "document")
       throw new Problem(422, "Expected a document.");
     title(data.title);
+    if (data.document_type !== undefined && !['markdown', 'table'].includes(data.document_type)) throw new Problem(422, 'Unknown document type.');
   },
-  async getDocument(project, id) {
+  async getDocument(project, id, options = {}) {
     const file = this.file(project, "documents", id);
     const record = await this.read(file);
     this.validateDocument(record.data);
     if (record.data.id !== id || record.data.project !== project)
       throw new Problem(422, "Document identity does not match its file.");
-    return this.public(record, file);
+    const value = this.public(record, file);
+    return record.data.document_type === 'table' && options.table !== false ? { ...value, table: await readDocumentTable(this, record.data) } : value;
   },
   async createDocument(project, input) {
     const parent = await this.read(this.file(project, "project"));
     const id = `d-${randomUUID()}`;
-    return this.write(
+    if (input.document_type !== undefined && !['markdown', 'table'].includes(input.document_type)) throw new Problem(400, 'Unknown document type.');
+    const table = input.document_type === 'table' ? await writeDocumentTable(this, project, id, blankTable(id, title(input.title ?? 'Untitled table'))) : null;
+    const saved = await this.write(
       this.file(project, "documents", id),
       {
         id,
@@ -48,19 +54,26 @@ export const documentsMethods = {
         project,
         title: title(input.title ?? "Untitled document"),
         version: 1,
+        ...(table ? { document_type: 'table', table_file: table.relative } : {}),
         folder: documentFolder(input.folder, parent.data.document_folders),
         created: now(),
         updated: now(),
       },
-      body(input.body ?? ""),
+      body(table ? tableDocumentBody(table.table, table.relative, input.body ?? '') : input.body ?? ''),
     );
+    return table ? { ...saved, table: table.table } : saved;
   },
   async updateDocument(project, id, input) {
-    await this.getDocument(project, id);
+    const before = await this.getDocument(project, id, { table: false });
     const file = this.file(project, "documents", id);
     const current = await this.read(file);
     this.checkRevision(current, input.revision);
     const data = { ...current.data, updated: now() };
+    if ('document_type' in input && input.document_type !== data.document_type) throw new Problem(400, 'Create a new document to change its type.');
+    if ('table' in input && data.document_type !== 'table') throw new Problem(400, 'Spreadsheet data belongs to a Table document.');
+    const table = 'table' in input ? await writeDocumentTable(this, project, id, input.table) : null;
+    const tableChanged = table && table.relative !== data.table_file;
+    if (table) data.table_file = table.relative;
     if ("title" in input) data.title = title(input.title);
     if ("folder" in input) {
       const parent = await this.read(this.file(project, "project"));
@@ -91,21 +104,23 @@ export const documentsMethods = {
     // Every save of the record sends its comments back; only a changed list is checked and written.
     if ("comments" in input && JSON.stringify(input.comments) !== JSON.stringify(current.data.comments))
       data.comments = documentComments(input.comments);
-    const markdown = "body" in input ? body(input.body) : current.body;
+    let markdown = "body" in input ? body(input.body) : current.body;
+    if (table) markdown = body(tableDocumentBody(table.table, table.relative, markdown));
     const meta = (record) => JSON.stringify([documentProperties(record), record.tags ?? []]);
     const edited =
       data.title !== current.data.title ||
       markdown !== current.body ||
       (data.folder || null) !== (current.data.folder || null) ||
-      meta(data) !== meta(current.data);
+      meta(data) !== meta(current.data) || tableChanged;
     if (!edited && JSON.stringify(data.comments) === JSON.stringify(current.data.comments))
-      return this.public(current, file);
+      return data.document_type === 'table' ? { ...before, table: table?.table || await readDocumentTable(this, data) } : before;
     // A comment isn't a new version of the page.
     if (edited)
       data.version =
         (Number.isSafeInteger(current.data.version) && current.data.version > 0
           ? current.data.version
           : 1) + 1;
-    return this.write(file, data, markdown, current);
+    const saved = await this.write(file, data, markdown, current);
+    return data.document_type === 'table' ? { ...saved, table: table?.table || await readDocumentTable(this, data) } : saved;
   },
 };

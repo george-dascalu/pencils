@@ -349,6 +349,7 @@ export function createServer(
     documentBody,
   );
   route(["/api/projects/:project/notes"], documentsRoutes);
+  route(["/api/projects/:project/documents/:id/table"], documentsRoutes);
   route(
     [
       "/api/projects/:project/tasks",

@@ -1,3 +1,4 @@
+import { createDocumentSheet, sheetFormatting, sheetContent } from "./document-sheet.js";
 import { historyPages } from "./history-pages.js";
 import { syncTopbarTitle } from "./topbar-title.js";
 import { panelCategories } from "./document-insert.js";
@@ -34,7 +35,7 @@ export function projectDocuments(ctx) {
   const all = () => state.documents || [];
   // showPanel returns the panel, or nothing when its opener, pressed again, closed it.
   const panels = anchoredPanel(ctx), showPanel = panels.show, closePanel = panels.close;
-  const explorer = folderTree({ ...ctx, kind: "document", label: "Documents", placeholder: "Find a document or #tag…", glyph: "file", panels,
+  const explorer = folderTree({ ...ctx, kind: "document", label: "Documents", placeholder: "Find a document or #tag…", glyph: d => d.document_type === "table" ? "table" : "file", panels,
     items: all, selected: () => state.selectedDocument, matches: matchesDocument, moveItem: moveDocument, itemMenu: (button, id) => rowMenu(button, id) });
   const folders = explorer.folders, updateExplorer = explorer.update;
   const endpoint = (pid, id = "") => `/projects/${pid}/documents${id ? `/${id}` : ""}`;
@@ -48,7 +49,7 @@ export function projectDocuments(ctx) {
   const openTabs = () => { const saved = storage.get(tabsKey(), []); return Array.isArray(saved) ? saved.filter(id => all().some(d => d.id === id)) : []; };
   const splitState = () => {
     const saved = storage.get(splitKey(), null);
-    return saved?.id !== state.selectedDocument && all().some(d => d.id === saved?.id)
+    return saved?.id !== state.selectedDocument && all().some(d => d.id === saved?.id && d.document_type !== "table")
       ? { id: saved.id, mode: MODES.some(([key]) => key === saved.mode) ? saved.mode : "live", direction: saved.direction === "rows" ? "rows" : "columns" } : null;
   };
   const setSplit = (split) => storage.set(splitKey(), split);
@@ -149,7 +150,7 @@ export function projectDocuments(ctx) {
   // New → From template: pick a document from a "Templates" folder, answer its {{prompt:…}}
   // questions, and open the new document with the caret at {{cursor}}.
   function templatePanel(button) {
-    const templates = templateDocuments(all(), folders()).sort((a, b) => a.title.localeCompare(b.title, undefined, { numeric: true, sensitivity: "base" }));
+    const templates = templateDocuments(all().filter(doc => doc.document_type !== "table"), folders()).sort((a, b) => a.title.localeCompare(b.title, undefined, { numeric: true, sensitivity: "base" }));
     const box = showPanel(button, "New from template", templates.length
       ? `<div class="document-template-list">${templates.map(t => `<button type="button" class="document-panel-item" data-template="${esc(t.id)}">${icon("file")}<span>${esc(t.title)}</span></button>`).join("")}</div>`
       : `<p class="field-hint">Put documents in a folder named Templates to start new documents from them. Templates can use {{title}}, {{date}}, {{time}}, {{project}}, {{cursor}} and {{prompt:Question}}.</p>`);
@@ -197,7 +198,7 @@ export function projectDocuments(ctx) {
     }
     const existing = all().find(d => d.folder === daily.id && d.title === date);
     if (existing) return openDocument(existing.id);
-    const template = templateDocuments(all(), folders()).find(t => t.title.trim().toLowerCase() === "daily");
+    const template = templateDocuments(all().filter(doc => doc.document_type !== "table"), folders()).find(t => t.title.trim().toLowerCase() === "daily");
     const { body, cursor } = expandTemplate(template?.body ?? DAILY, { title: date, project: state.project.title });
     const record = await create(date, body, { folder: daily.id, caret: cursor });
     if (record && state.view !== "documents") openDocument(record.id);
@@ -205,7 +206,7 @@ export function projectDocuments(ctx) {
   async function versionsPanel(button) {
     const pid = project, id = current.id;
     await flushDocument(id);
-    const latest = await api(endpoint(pid, id));
+    const latest = await api(endpoint(pid, id) + (current.document_type === "table" ? "?table=0" : ""));
     const pages = historyPages(api, latest.file), result = await pages.more();
     if (project !== pid || current?.id !== id) return;
     // Saving a comment keeps a copy without making a version; show each version once.
@@ -339,7 +340,7 @@ export function projectDocuments(ctx) {
   const threadComments = (id) => { const list = docComments(commented()) || [], roots = threadRoots(list); return list.filter(c => roots.get(c.id) === id); };
   const threadsNow = () => documentThreads(form.elements.body.value, docComments(commented()) || []);
   function refreshComments() {
-    if (!editor || !current) return;
+    if (!editor || !current || current.document_type === "table") return;
     editor.setComments(threadsNow().filter(t => t.range).map(t => ({ ...t.range, id: t.id })));
     if (thread && !thread.anchor) {
       // A thread deleted elsewhere starts again at the same words.
@@ -666,8 +667,8 @@ export function projectDocuments(ctx) {
   function tabsHTML() {
     const list = openTabs();
     return `<nav class="document-tabs" aria-label="Open documents">${list.map(id => {
-      const title = all().find(d => d.id === id).title;
-      return `<div class="document-tab"><button type="button" class="document-tab-open" data-document-tab="${esc(id)}" title="${esc(title)}" ${id === state.selectedDocument ? 'aria-current="page"' : ""}>${icon("file")}<span>${esc(title)}</span></button>${list.length > 1 ? `<button type="button" class="icon-button" data-document-action="close-tab" data-document-id="${esc(id)}" aria-label="Close ${esc(title)}" title="Close ${esc(title)}">${icon("close")}</button>` : ""}</div>`;
+      const doc = all().find(d => d.id === id), title = doc.title;
+      return `<div class="document-tab"><button type="button" class="document-tab-open" data-document-tab="${esc(id)}" title="${esc(title)}" ${id === state.selectedDocument ? 'aria-current="page"' : ""}>${icon(doc.document_type === "table" ? "table" : "file")}<span>${esc(title)}</span></button>${list.length > 1 ? `<button type="button" class="icon-button" data-document-action="close-tab" data-document-id="${esc(id)}" aria-label="Close ${esc(title)}" title="Close ${esc(title)}">${icon("close")}</button>` : ""}</div>`;
     }).join("")}</nav>`;
   }
   function openTab(id) {
@@ -685,7 +686,7 @@ export function projectDocuments(ctx) {
   }
   // Opening the second pane's document in the main pane swaps the two, so no document shows twice.
   function swapPane(id) {
-    const split = splitState();
+    const split = selected()?.document_type === "table" ? null : splitState();
     if (split?.id === id) setSplit({ ...split, id: state.selectedDocument });
   }
   let paneScroll = null; // { id, selector, top } for the second pane, kept across rebuilds
@@ -767,6 +768,7 @@ export function projectDocuments(ctx) {
   function syncTray() {
     if (!selected()) return removeLayoutTray();
     const tray = document.createElement("template");
+    if (selected()?.document_type === "table") return removeLayoutTray();
     tray.innerHTML = `<div class="view-layout-switcher" role="group" aria-label="Document view"><button type="button" data-list-toggle aria-label="Documents" title="Documents">${icon("folder")}<span>Documents</span></button><span class="tray-divider" role="separator"></span>${MODES.map(([key, label, glyph]) => `<button type="button" data-document-mode="${key}" aria-label="${label}" aria-pressed="${mode === key}" title="${label}">${icon(glyph)}<span>${label}</span></button>`).join("")}</div>`;
     mountLayoutTray(tray.content.firstElementChild, state.layoutTray === state.view);
   }
@@ -812,21 +814,21 @@ export function projectDocuments(ctx) {
     syncTray();
     content.innerHTML = `<div class="documents-workspace" data-has-document="${!!doc}">
       <section class="document-editor" aria-label="Document content">${doc ? `
-        <form id="document-form" data-document-width="${documentWidth}">
+        <form id="document-form" data-document-width="${documentWidth}" data-document-type="${doc.document_type === "table" ? "table" : "markdown"}">
           <!-- One bar: formatting on the left, the document's own controls on the right. The name
                shows in the top bar and changes through Document tools → Rename. -->
           <header class="document-heading">
-            <div id="document-formatting" class="document-formatting task-rich-tools" role="toolbar" aria-label="Format document">${richToolbar(icon, { adapter: "document", alignment: null, modes: false, idPrefix: "document", extra: `<div class="selection-group" role="group" aria-label="Insert more"><button type="button" class="selection-action" data-document-action="insert" aria-label="Insert" title="Insert a table, code, callout or more">${icon("plus")}<span class="selection-action-label">Insert</span></button></div>` })}</div>
+            <div id="document-formatting" class="document-formatting task-rich-tools" role="toolbar" aria-label="Format document">${doc.document_type === "table" ? sheetFormatting(icon) : richToolbar(icon, { adapter: "document", alignment: null, modes: false, idPrefix: "document", extra: `<div class="selection-group" role="group" aria-label="Insert more"><button type="button" class="selection-action" data-document-action="insert" aria-label="Insert" title="Insert a table, code, callout or more">${icon("plus")}<span class="selection-action-label">Insert</span></button></div>` })}</div>
             <a class="document-obsidian-link" href="#" data-document-action="obsidian" hidden>Open in Obsidian</a>
             ${ctx.bookmarks.button("doc", state.project.id, doc.id)}
             <button type="button" class="icon-button" data-document-action="edit" aria-label="Edit document" title="Edit document" hidden>${icon("pencil")}</button>
-            <button type="button" class="icon-button document-tools-button" data-document-action="tools" aria-label="Document tools" title="Document tools"><span class="document-mode-indicator" aria-hidden="true"></span><span class="document-tools-more" aria-hidden="true">${icon("more")}</span></button>
+            <button type="button" class="icon-button document-tools-button" data-document-action="tools" ${doc.document_type === "table" ? 'data-sheet-action="tools" data-document-current-mode="table" aria-description="Current view: Table"' : ""} aria-label="Document tools" title="Document tools${doc.document_type === "table" ? " — Table" : ""}"><span class="document-mode-indicator" aria-hidden="true">${doc.document_type === "table" ? icon("table") : ""}</span><span class="document-tools-more" aria-hidden="true">${icon("more")}</span></button>
           </header>
           ${(() => { const cards = (state.tasks || []).filter((t) => (t.documents || []).includes(doc.id)); return cards.length ? `<div class="document-linked-cards"><span class="caption">Linked cards</span>${cards.map((t) => `<button type="button" class="button soft" data-action="task-open" data-id="${esc(t.id)}" title="Open ${esc(t.title)}">${icon(t.type || "task")}<span class="task-relationship-key">${esc(t.key || t.id)}</span><span class="task-relationship-title">${esc(t.title)}</span></button>`).join("")}</div>` : ""; })()}
           ${propertiesHTML(doc)}
           <input type="hidden" name="title" value="${esc(doc.title)}">
           <div class="document-save-problem" data-document-save-problem hidden><span data-document-save role="status" aria-live="polite"></span><button type="button" class="button small" data-feature="recovery" data-document-recovery hidden>Review pending save</button></div>
-          <div class="document-writing"><div class="document-codemirror"></div><article class="document-reading" tabindex="0" aria-label="Document reading view" hidden></article><textarea name="body" hidden>${esc(doc.body || "")}</textarea></div>
+          <div class="document-writing">${doc.document_type === "table" ? sheetContent(icon) : '<div class="document-codemirror"></div><article class="document-reading" tabindex="0" aria-label="Document reading view" hidden></article>'}<textarea name="body" hidden>${esc(doc.body || "")}</textarea></div>
           <input type="file" id="document-attachment" accept=".png,.jpg,.jpeg,.gif,.webp,.pdf,.txt,.md,.csv,.zip" multiple hidden>
           <footer class="document-save"><span data-document-stats></span></footer>
         </form>` : `<div class="empty document-empty">${icon("file")}<h2>${state.selectedDocument ? "Document unavailable" : "A home for your project notes"}</h2><p>${state.selectedDocument ? "Choose another document from the explorer." : "Write briefs, meeting notes and reference documents."}</p><button type="button" class="button soft" data-document-action="create">${icon("plus")}New document</button><button type="button" class="button document-empty-browse" data-list-toggle>${icon("documents")}Browse documents</button></div>`}
@@ -838,7 +840,27 @@ export function projectDocuments(ctx) {
     project = state.project.id;
     form = document.querySelector("#document-form");
     renderer = documentMarkdown({ documents: all, project: () => project, esc, icon, cards: () => state.tasks || [], cardHTML });
-    editor = markdownDocumentEditor({
+    const tableURL = endpoint(project, doc.id), tableProject = project;
+    editor = doc.document_type === "table" ? createDocumentSheet({
+      form, record: doc, icon, esc, colorPicker: ctx.colorPicker, panels, storage, toast,
+      async load() {
+        const latest = doc.table ? doc : await api(tableURL);
+        const pending = sync.entries.get(tableURL)?.local;
+        const table = pending?.table || latest.table;
+        if (current?.id === doc.id && project === tableProject) {
+          current = { ...latest, ...pending, table };
+          state.documents = all().map(record => record.id === doc.id ? current : record);
+        }
+        return table;
+      },
+      onChange(table) {
+        const base = all().find(record => record.id === doc.id) || current;
+        current = { ...base, table };
+        state.documents = all().map(record => record.id === doc.id ? current : record);
+        void sync.enqueue(tableURL, base, { table });
+        syncChanged();
+      },
+    }) : markdownDocumentEditor({
       icon, panel: showPanel, toast,
       parent: form.querySelector(".document-codemirror"), text: doc.body || "",
       mode: mode === "source" ? "source" : "live", renderer, documents: all, hidden: state.project.personal ? ["card"] : [], cards: () => (state.tasks || []).filter((t) => !t.archived), taskQueries: renderTaskQueries,
@@ -857,7 +879,7 @@ export function projectDocuments(ctx) {
     if (pendingCaret?.id === doc.id) { editor.jump(pendingCaret.at); pendingCaret = null; }
     refreshComments();
     if (state.project.personal) loadEverywhere().catch(error => toast(error.message, true));
-    readingSearch = documentReadingSearch({ form, content: form.querySelector(".document-reading"), icon });
+    if (doc.document_type !== "table") readingSearch = documentReadingSearch({ form, content: form.querySelector(".document-reading"), icon });
     // The Properties section is replaced when it refreshes, so its events are handled here.
     form.addEventListener("toggle", event => { if (event.target.matches?.(".document-properties")) storage.set("document-properties-open", event.target.open); }, true);
     form.addEventListener("change", event => {
@@ -871,6 +893,11 @@ export function projectDocuments(ctx) {
       }
       if (add) addPropertyPanel(add);
     });
+    if (doc.document_type === "table") {
+      form.addEventListener("submit", event => { event.preventDefault(); editor.flush(); });
+      form.addEventListener("input", changed);
+      updateObsidianLink(); syncChanged(); syncTopbarTitle(state); return;
+    }
     installToolbarScroll(form.querySelector(".document-formatting .rich-toolbar-shell"));
     form.addEventListener("input", changed);
     form.addEventListener("submit", e => { e.preventDefault(); editor.flush(); });
@@ -938,9 +965,9 @@ export function projectDocuments(ctx) {
     renderView();
   }
   // `caret` places the caret in the new document (a template's {{cursor}}) instead of asking for a name.
-  async function create(title = "Untitled document", body = "", { folder = explorer.active, caret } = {}) {
+  async function create(title = "Untitled document", body = "", { folder = explorer.active, caret, type = "markdown" } = {}) {
     const pid = state.project.id;
-    const record = await api(endpoint(pid), { method: "POST", body: { title, body, folder } });
+    const record = await api(endpoint(pid), { method: "POST", body: { title, body, folder, document_type: type } });
     if (state.project?.id !== pid) return;
     state.documents = [...all(), record];
     state.documentSearch = "";

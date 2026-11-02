@@ -2,6 +2,12 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.21.29 — 2026-11-02
+
+### Added
+- Feature F0.21-29: Tables documents combine editable spreadsheet cells, formulas, whole-cell formatting, sort/filter, CSV import/export and multiple worksheet tabs with the shared Documents navigation. A virtualised grid supports the approved 1,000-row workload, keyboard/range editing, clipboard references, undo/redo, frozen headers and resizable tracks on desktop and touch screens.
+- Tables stay in the Markdown vault, with a readable preview and immutable JSON snapshots beside the document. Revision checks, browser recovery, document versions, Trash and audit history preserve the workbook with its document. The calculation engine loads only when needed. Added a Tables help guide and bundled engine licences.
+
 ## 0.21.28 — 2026-11-02
 
 ### Fixed

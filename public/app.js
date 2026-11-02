@@ -702,6 +702,9 @@ function deltaChangesState(records) {
     // Compact save replies keep only operation metadata; a full record of the
     // same file revision must not rebuild the board or steal its focus.
     if (kind === "boards" && current && current.revision === value.revision) return false;
+    // Open Tables retain lazy workbook data which project deltas omit. An echo
+    // of the saved file revision must not remount the worksheet or reset selection.
+    if (kind === "documents" && current?.document_type === "table" && current.revision === value.revision) return false;
     return !current || stable(current) !== stable(value);
   });
 }
@@ -950,7 +953,7 @@ function newMenuHTML(kind = "button") {
   const summary = kind === "icon"
     ? `<summary class="icon-button" aria-label="New" title="New card, document or board">${icon("plus")}</summary>`
     : `<summary class="button primary" title="New card, document or board">${icon("plus")}New</summary>`;
-  const documents = `<button type="button" data-action="document-new">${icon("file")}Document</button><button type="button" data-action="document-template">${icon("file")}From template</button>`;
+  const documents = `<button type="button" data-action="document-new">${icon("file")}Document</button><button type="button" data-action="document-table">${icon("table")}Table</button><button type="button" data-action="document-template">${icon("file")}From template</button>`;
   const config = state.project && state.config;
   // A personal space holds documents only; a project offers what its views show (T39).
   const items = state.project?.personal ? documents : [
@@ -2239,8 +2242,9 @@ document.addEventListener("click", async (event) => {
       case "dialog-close":
         closeDialog();
         break;
-      case "document-new": {
-        const record = await features.createDocument();
+      case "document-new":
+      case "document-table": {
+        const record = await features.createDocument(action === "document-table" ? "Untitled table" : undefined, { type: action === "document-table" ? "table" : "markdown" });
         if (record) {
           await features.openDocument(record.id);
         }

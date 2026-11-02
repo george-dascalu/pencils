@@ -2,6 +2,7 @@ import { build } from "esbuild";
 import fs from "node:fs/promises";
 import path from "node:path";
 import "./build-editor.mjs";
+import "./build-sheets.mjs";
 import "./build-server.mjs";
 
 const outdir = "dist/public/assets";
@@ -9,6 +10,7 @@ await fs.mkdir(outdir, { recursive: true });
 const vendor = {
   "/vendor/editor/deps.js": "public/document-editor-deps.js",
   "/vendor/editor/diagrams.js": "public/document-diagrams.js",
+  "/vendor/sheets/deps.js": "public/document-sheet-deps.js",
   "/vendor/marked.js": "node_modules/marked/lib/marked.esm.js",
   "/vendor/purify.js": "node_modules/dompurify/dist/purify.es.mjs",
   "/vendor/turndown.js": "node_modules/turndown/lib/turndown.browser.es.js",

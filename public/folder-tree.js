@@ -34,7 +34,7 @@ export function folderTree({ kind, label, placeholder, glyph, state, api, esc, i
     const list = items().filter(d => !query || matches(d, query))
       .sort((a, b) => a.title.localeCompare(b.title, undefined, { numeric: true, sensitivity: "base" }) || a.id.localeCompare(b.id));
     // An item with a menu (documents) has ⋯ beside it, as folders do.
-    const link = d => `<button type="button" draggable="true" class="document-link ${d.id === current ? "active" : ""}" ${attr("open")}="${esc(d.id)}" ${d.id === current ? 'aria-current="page"' : ""} title="${esc([name(d.folder), d.title].filter(Boolean).join(" / "))}">${icon(glyph)}<span>${esc(d.title)}</span></button>`;
+    const link = d => `<button type="button" draggable="true" class="document-link ${d.id === current ? "active" : ""}" ${attr("open")}="${esc(d.id)}" ${d.id === current ? 'aria-current="page"' : ""} title="${esc([name(d.folder), d.title].filter(Boolean).join(" / "))}">${icon(typeof glyph === "function" ? glyph(d) : glyph)}<span>${esc(d.title)}</span></button>`;
     const item = d => `<li>${itemMenu ? `<div class="document-item-row">${link(d)}<button type="button" class="icon-button" ${attr("item-menu")}="${esc(d.id)}" aria-label="Actions for ${esc(d.title)}" title="More actions">${icon("more")}</button></div>` : link(d)}</li>`;
     if (query) return list.map(item).join("") || `<li class="document-explorer-empty">No matching ${plural}.</li>`;
     const branch = (parent, seen = new Set()) => {

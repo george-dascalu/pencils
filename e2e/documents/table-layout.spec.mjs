@@ -1,0 +1,12 @@
+import{test,expect,useApp,onDevices}from'../fixtures.mjs';
+const app=useApp(async store=>{const project=await store.createProject({title:'Table layout'}),record=await store.mutate(()=>store.createDocument(project.id,{title:'Table layout',document_type:'table'}));return{project,record};});
+onDevices(['desktop','ipad','phone'],()=>test('Tables keep compact shared controls and a full-height grid in light and dark @gate',async({page,device})=>{
+ await page.goto(`${app.base}/#project/${app.project.id}/documents/${app.record.id}`);await expect(page.locator('.document-sheet')).toHaveAttribute('data-ready','true');if(device==='phone')await page.setViewportSize({width:320,height:700});
+ for(const theme of ['light','dark']){
+  await page.evaluate(theme=>window.PencilsAppearance.write({theme,density:'compact'}),theme);
+  await expect.poll(()=>page.locator('.document-sheet-scroll').evaluate(el=>Math.round(el.clientHeight))).toBeGreaterThan(220);
+  const facts=await page.locator('#document-form').evaluate(form=>{const root=form.querySelector('.document-sheet'),grid=root.querySelector('.document-sheet-scroll'),heading=form.querySelector('.document-heading'),toolbar=form.querySelector('.sheet-format-tools'),buttons=[...heading.querySelectorAll('button')].filter(el=>el.getClientRects().length);const cell=root.querySelector('[data-sheet-cell=B2]'),probe=document.createElement('span');probe.style.background='var(--surface)';form.append(probe);const surface=getComputedStyle(probe).backgroundColor;probe.remove();return{outside:document.documentElement.scrollWidth-innerWidth,pageScroll:document.documentElement.scrollHeight-innerHeight,gridHeight:grid.clientHeight,rootHeight:root.clientHeight,toolbarHeight:toolbar.getBoundingClientRect().height,buttons:buttons.map(el=>{const r=el.getBoundingClientRect();return{w:r.width,h:r.height,x:r.x,right:r.right,overflow:el.scrollWidth-el.clientWidth};}),surface,cellColor:getComputedStyle(cell).backgroundColor};});
+  expect(facts.outside).toBeLessThanOrEqual(1);expect(facts.pageScroll).toBeLessThanOrEqual(1);expect(facts.cellColor).toBe(facts.surface);expect(facts.rootHeight).toBeGreaterThan(facts.gridHeight);expect(facts.toolbarHeight).toBeLessThanOrEqual(device==='desktop'?32:44);
+  for(const button of facts.buttons){expect(Math.abs(button.w-button.h)).toBeLessThanOrEqual(1);expect(button.h).toBeGreaterThanOrEqual(device==='desktop'?26:44);expect(button.x).toBeGreaterThanOrEqual(0);expect(button.right).toBeLessThanOrEqual(page.viewportSize().width);expect(button.overflow).toBeLessThanOrEqual(1);}
+ }
+}));

@@ -151,6 +151,10 @@ export function documentMarkdown({ documents, project, esc, icon, cards = () => 
       } else if (/^(?:\.\.\/)?attachments\/a-[\w-]+\.[\w]+$/i.test(href)) {
         link.href = `/api/projects/${project()}/${href.replace(/^\.\.\//, "")}`;
         link.target = "_blank"; link.rel = "noopener noreferrer";
+      } else if (/^tables\/d-[\w-]+\/[a-f0-9]{64}\.json$/.test(href)) {
+        const [, id, version] = href.split('/');
+        link.href = `/api/projects/${project()}/documents/${id}/table?version=${version.slice(0, -5)}`;
+        link.target = '_blank'; link.rel = 'noopener noreferrer';
       } else {
         let reference = href;
         try { reference = decodeURIComponent(href); } catch {}

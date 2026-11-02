@@ -1,16 +1,21 @@
 import { Problem } from "../../problem.js";
 import { input } from "../helpers.js";
 import type { RequestContext, Input } from "../contracts.js";
+import { readDocumentTable } from "../../document-sheets.js";
 
 export async function documentsRoutes(ctx: RequestContext): Promise<unknown> {
   const { store, req, url, method, parts, project, kind, id, json, mutate } =
     ctx;
+  if (kind === 'documents' && parts[5] === 'table' && parts.length === 6 && method === 'GET') {
+    const document = await store.getDocument(project, id, { table: false });
+    return json(200, await readDocumentTable(store, document, url.searchParams.get('version') || undefined));
+  }
   if (kind === "documents" && parts.length <= 5) {
     if (method === "GET")
       return json(
         200,
         id
-          ? await store.getDocument(project, id)
+          ? await store.getDocument(project, id, { table: url.searchParams.get("table") !== "0" })
           : await store.children(project, "documents"),
       );
     const data = await input(req);

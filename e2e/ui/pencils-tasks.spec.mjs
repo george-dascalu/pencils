@@ -185,7 +185,7 @@ test("PEN-6 the header New control offers a card or a document", async ({ page }
   await open(page, "list", ".task-row");
   const summary = page.locator(".topbar .new-menu:not(.phone-new-task) > summary");
   await expect(summary).toHaveText("New");
-  expect(await menuItems(page)).toEqual(["Card", "|", "Document", "From template", "|", "Board", "|", "Personal document"]);
+  expect(await menuItems(page)).toEqual(["Card", "|", "Document", "Table", "From template", "|", "Board", "|", "Personal document"]);
   const items = page.locator(".topbar .new-menu:not(.phone-new-task) .new-menu-panel button");
   await items.nth(1).click();
   const title = page.locator(".documents-workspace #document-form [name=title]");
@@ -209,7 +209,7 @@ test("New makes a board in the project, and a document in the personal space, wh
   await newMenu(page).getByRole("button", { name: "Personal document", exact: true }).click();
   await expect(page.locator(".documents-workspace #document-form [name=title]")).toHaveValue("Untitled document");
   await expect(page.locator('.sidebar [data-action="personal-open"][aria-current="page"]'), "in the personal space").toHaveCount(1);
-  expect(await menuItems(page)).toEqual(["Document", "From template"]);
+  expect(await menuItems(page)).toEqual(["Document", "Table", "From template"]);
 });
 
 onDevices(["phone"], () => test("PEN-6 the phone header plus opens the New menu", async ({ page }) => {

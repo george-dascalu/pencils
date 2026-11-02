@@ -5,6 +5,7 @@ import path from "node:path";
 import { createHash, randomUUID } from "node:crypto";
 import { zip, unzip } from "fflate";
 import { Problem } from "./problem.js";
+import { readDocumentTable } from "./document-sheets.js";
 import {
   BACKUP_BYTES,
   BACKUP_EXPANDED_BYTES,
@@ -207,6 +208,7 @@ export function installRecovery(Store) {
         // Keep the document's current folder so reorganising it isn't undone.
         return this.updateDocument(current.data.project, current.data.id, {
           revision, title: old.data.title, body: old.body,
+          ...(old.data.document_type === 'table' ? { table: await readDocumentTable(this, old.data) } : {}),
         });
       }
       if (current.data.kind === "task") {

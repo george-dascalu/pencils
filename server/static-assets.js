@@ -7,7 +7,7 @@ export function staticAssets({ publicDir, builtDir, vendor, mime, production }) 
   const cache = new Map();
   return async (req, res, pathname, headers) => {
     const name = pathname === "/" ? "index.html" : decodeURIComponent(pathname).slice(1);
-    const root = name.startsWith("vendor/editor/") || production && (name === "index.html" || name.startsWith("assets/")) ? builtDir : publicDir;
+    const root = (name.startsWith("vendor/editor/") || name.startsWith("vendor/sheets/")) || production && (name === "index.html" || name.startsWith("assets/")) ? builtDir : publicDir;
     const file = path.resolve(root, name);
     if (!file.startsWith(root + path.sep) || name.includes("..")) return false;
     const source = vendor[pathname] || file;
