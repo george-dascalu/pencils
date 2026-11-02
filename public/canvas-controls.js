@@ -127,13 +127,15 @@ export function canvasControls(ctx, basic) {
     renderView(true);
     $("#canvas")?.focus({ preventScroll: true });
   }
-  function position({ navigating = false } = {}) {
+  function position() {
     const navigationHeight = $(".board-controls")?.offsetHeight;
     if (navigationHeight) $("#canvas")?.style.setProperty("--board-controls-height", `${navigationHeight}px`);
     capacity.position();
-    // Grid handles need screen-sized targets; unrelated task cards do not.
+    // Keep grid titles and handles screen-sized on every camera frame. Delaying
+    // this until navigation ends makes the text grow with the world, then jump back.
+    // Scope updates to grids so unrelated task cards do not need restyling.
     const gridHitSize = `${8 / state.camera.z}px`;
-    for (const grid of navigating ? [] : $$(".board-node.grid"))
+    for (const grid of $$(".board-node.grid"))
       if (grid.style.getPropertyValue("--grid-hit-size") !== gridHitSize)
         grid.style.setProperty("--grid-hit-size", gridHitSize);
     const toolbar = $("#selection-tools"),

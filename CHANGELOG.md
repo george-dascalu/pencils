@@ -2,6 +2,11 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.21.28 — 2026-11-02
+
+### Fixed
+- Feature F0.21-28: Grid titles, row/column labels and resize handles stay at a steady screen size throughout board zooming. Their sizing updates on each camera frame, removing the text jump when zooming stops while keeping style changes scoped to grids.
+
 ## 0.21.27 — 2026-11-02
 
 ### Changed
