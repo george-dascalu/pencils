@@ -56,3 +56,12 @@
 }
 
 .sheet-cell-text { display: block; overflow: hidden; text-overflow: ellipsis; }
+
+.document-sheet-grid th:has(.sheet-axis-heading) { padding: 0; }
+.sheet-axis-heading { min-height: var(--control-height); display: flex; align-items: center; justify-content: center; gap: 4px; width: 100%; min-width: 0; padding: 0 4px; border: 0; border-radius: 0; background: transparent; color: inherit; font: inherit; cursor: grab; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; }
+.sheet-axis-heading > span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sheet-axis-heading > .icon { flex: none; width: 10px; height: 10px; }
+.sheet-axis-heading:hover, .sheet-axis-held { background: color-mix(in srgb, var(--green) 12%, var(--surface)); }
+.sheet-axis-drop-line { position: fixed; z-index: 500; background: var(--green); pointer-events: none; }
+
+.document-panel-item[data-axis-danger] { color: var(--red, #bd443c); }

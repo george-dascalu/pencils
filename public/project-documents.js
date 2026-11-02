@@ -429,8 +429,7 @@ export function projectDocuments(ctx) {
     if (from >= to) { toast("Select text, or write a line, to comment on it.", true); return; }
     openThread(null, makeAnchor(editor.view.state.doc.toString(), from, to));
   }
-  // Properties and tags (document-properties.js): frontmatter Obsidian reads, edited at the top of
-  // the document. Each change saves on its own, after any pending text, naming only what it changes.
+  // Properties and tags (document-properties.js): frontmatter Obsidian reads, edited in their toolbar dropdown. Each change saves on its own, after any pending text, naming only what it changes.
   const splitList = (text) => text.split(",").map(t => t.trim()).filter(Boolean);
   function propertyInput(name, value, type) {
     const label = `aria-label="${esc(name)}"`;
@@ -440,19 +439,26 @@ export function projectDocuments(ctx) {
     if (type === "list") return `<input type="text" ${label} value="${esc(value.join(", "))}" placeholder="Values, separated by commas">`;
     return `<input type="text" ${label} value="${esc(value)}" maxlength="1000">`;
   }
-  const propertiesSummary = (doc) => {
-    const count = documentProperties(doc).length;
-    return `${icon("chevron")}<span>Properties</span>${count ? `<span class="count">${count}</span>` : ""}<span class="document-tag-chips">${frontmatterTags(doc).map(tag => `<span class="document-tag">#${esc(tag)}</span>`).join("")}</span>`;
-  };
   function propertiesHTML(doc) {
     const tags = frontmatterTags(doc);
-    const none = !tags.length && !documentProperties(doc).length;
-    return `<details class="document-properties" data-tags="${esc(JSON.stringify(tags))}" ${storage.get("document-properties-open", false) ? "open" : ""} ${none ? "hidden" : ""}><summary>${propertiesSummary(doc)}</summary>
+    return `<div class="document-properties" data-tags="${esc(JSON.stringify(tags))}">
       <div class="document-property-list">${documentProperties(doc).map(([name, value, type]) => `<div class="document-property" data-property="${esc(name)}" data-type="${type}" data-value="${esc(JSON.stringify(value))}"><span class="document-property-name" title="${esc(name)}">${esc(name)}</span>${propertyInput(name, value, type)}<button type="button" class="icon-button" data-property-remove aria-label="Remove ${esc(name)}" title="Remove ${esc(name)}">${icon("close")}</button></div>`).join("")}
         <div class="document-property"><span class="document-property-name">Tags</span><input type="text" name="document-tags" aria-label="Tags" value="${esc(tags.join(", "))}" placeholder="Tags, separated by commas"></div></div>
-      <button type="button" class="button small" data-property-add>${icon("plus")}Add property</button></details>`;
+      <button type="button" class="button small" data-property-add>${icon("plus")}Add property</button></div>`;
   }
-  const showProperties = (doc) => { const box = form?.querySelector(".document-properties"); if (box) box.outerHTML = propertiesHTML(doc); };
+  function propertiesPanel(button = form?.querySelector('[data-document-action="properties"]')) {
+    const box = showPanel(button, "Properties", propertiesHTML(current), 440);
+    if (!box) return;
+    button.setAttribute('aria-expanded','true');
+    box.addEventListener('change',event=>{if(event.target.matches('.document-properties input'))propertyChanged(event.target).catch(error=>toast(error.message,true));});
+    box.addEventListener('click',event=>{
+      const remove=event.target.closest('[data-property-remove]'),add=event.target.closest('[data-property-add]');
+      if(remove){const row=remove.closest('[data-property]');saveProperties({remove:[row.dataset.property]}).then(()=>row.remove(),error=>toast(error.message,true));}
+      if(add)addPropertyPanel(add);
+    });
+    return box;
+  }
+  const showProperties = doc => { const box = panels.element?.querySelector('.document-properties'); if(box)box.outerHTML=propertiesHTML(doc); };
   // `check(latest)` names a problem (such as a value changed elsewhere since it was shown); the
   // saved values are then shown instead of being overwritten.
   let propertySaving = Promise.resolve();
@@ -470,7 +476,7 @@ export function projectDocuments(ctx) {
       const problem = check(latest);
       if (problem) { if (keep(latest)) showProperties(latest); throw new Error(problem); }
       const record = await api(url, { method: "PATCH", body: { revision: latest.revision, document_properties: change } });
-      if (keep(record)) form.querySelector(".document-properties summary").innerHTML = propertiesSummary(record);
+      keep(record);
       syncChanged();
       return record;
     });
@@ -479,7 +485,7 @@ export function projectDocuments(ctx) {
   }
   const changedElsewhere = "This changed in another window or in Obsidian; showing the saved version.";
   async function propertyChanged(input) {
-    const box = form.querySelector(".document-properties");
+    const box = input.closest(".document-properties");
     if (input.name === "document-tags") {
       const record = await saveProperties({ tags: checkTags(splitList(input.value)) }, latest => JSON.stringify(frontmatterTags(latest)) === box.dataset.tags ? null : changedElsewhere);
       box.dataset.tags = JSON.stringify(frontmatterTags(record));
@@ -503,10 +509,10 @@ export function projectDocuments(ctx) {
       const value = { text: "", number: 0, date: formatDate(new Date(), "YYYY-MM-DD"), checkbox: false, list: [] }[data.get("type")];
       try {
         const record = await saveProperties({ set: { [name]: value } }, latest => Object.keys(latest).some(key => key.toLowerCase() === name.toLowerCase()) ? `“${name}” already exists.` : null);
-        showProperties(record);
         closePanel();
-        // The section was redrawn: move on to the new property's value.
-        const section = form.querySelector(".document-properties");
+        if (current?.id !== record.id) return;
+        const section = propertiesPanel()?.querySelector(".document-properties");
+        if (!section) return;
         focusOnOpen([...section.querySelectorAll("[data-property]")].find(row => row.dataset.property === name)?.querySelector("input"), section.querySelector("[data-property-add]"));
       } catch (error) {
         const problem = box.querySelector(".form-error");
@@ -829,11 +835,11 @@ export function projectDocuments(ctx) {
             <div id="document-formatting" class="document-formatting task-rich-tools" role="toolbar" aria-label="Format document">${doc.document_type === "table" ? sheetFormatting(icon) : richToolbar(icon, { adapter: "document", alignment: null, modes: false, idPrefix: "document", extra: `<div class="selection-group" role="group" aria-label="Insert more"><button type="button" class="selection-action" data-document-action="insert" aria-label="Insert" title="Insert a table, code, callout or more">${icon("plus")}<span class="selection-action-label">Insert</span></button></div>` })}</div>
             <a class="document-obsidian-link" href="#" data-document-action="obsidian" hidden>Open in Obsidian</a>
             ${ctx.bookmarks.button("doc", state.project.id, doc.id)}
+            <button type="button" class="icon-button" data-document-action="properties" aria-label="Properties" title="Properties" aria-haspopup="dialog" aria-expanded="false">${icon("settings")}</button>
             <button type="button" class="icon-button" data-document-action="edit" aria-label="Edit document" title="Edit document" hidden>${icon("pencil")}</button>
             <button type="button" class="icon-button document-tools-button" data-document-action="tools" ${doc.document_type === "table" ? 'data-sheet-action="tools" data-document-current-mode="table" aria-description="Current view: Table"' : ""} aria-label="Document tools" title="Document tools${doc.document_type === "table" ? " — Table" : ""}"><span class="document-mode-indicator" aria-hidden="true">${doc.document_type === "table" ? icon("table") : ""}</span><span class="document-tools-more" aria-hidden="true">${icon("more")}</span></button>
           </header>
           ${(() => { const cards = (state.tasks || []).filter((t) => (t.documents || []).includes(doc.id)); return cards.length ? `<div class="document-linked-cards"><span class="caption">Linked cards</span>${cards.map((t) => `<button type="button" class="button soft" data-action="task-open" data-id="${esc(t.id)}" title="Open ${esc(t.title)}">${icon(t.type || "task")}<span class="task-relationship-key">${esc(t.key || t.id)}</span><span class="task-relationship-title">${esc(t.title)}</span></button>`).join("")}</div>` : ""; })()}
-          ${propertiesHTML(doc)}
           <input type="hidden" name="title" value="${esc(doc.title)}">
           <div class="document-save-problem" data-document-save-problem hidden><span data-document-save role="status" aria-live="polite"></span><button type="button" class="button small" data-feature="recovery" data-document-recovery hidden>Review pending save</button></div>
           <div class="document-writing">${doc.document_type === "table" ? sheetContent(icon) : '<div class="document-codemirror"></div><article class="document-reading" tabindex="0" aria-label="Document reading view" hidden></article>'}<textarea name="body" hidden>${esc(doc.body || "")}</textarea></div>
@@ -888,19 +894,6 @@ export function projectDocuments(ctx) {
     refreshComments();
     if (state.project.personal) loadEverywhere().catch(error => toast(error.message, true));
     if (doc.document_type !== "table") readingSearch = documentReadingSearch({ form, content: form.querySelector(".document-reading"), icon });
-    // The Properties section is replaced when it refreshes, so its events are handled here.
-    form.addEventListener("toggle", event => { if (event.target.matches?.(".document-properties")) storage.set("document-properties-open", event.target.open); }, true);
-    form.addEventListener("change", event => {
-      if (event.target.matches(".document-properties input")) propertyChanged(event.target).catch(error => toast(error.message, true));
-    });
-    form.addEventListener("click", event => {
-      const remove = event.target.closest(".document-properties [data-property-remove]"), add = event.target.closest(".document-properties [data-property-add]");
-      if (remove) {
-        const row = remove.closest("[data-property]");
-        saveProperties({ remove: [row.dataset.property] }).then(() => row.remove(), error => toast(error.message, true));
-      }
-      if (add) addPropertyPanel(add);
-    });
     if (doc.document_type === "table") {
       form.addEventListener("submit", event => { event.preventDefault(); editor.flush(); });
       form.addEventListener("input", changed);
@@ -1037,6 +1030,7 @@ export function projectDocuments(ctx) {
     event.preventDefault();
     try {
       if (action === "new-folder") explorer.panel(button);
+      else if (action === "properties") propertiesPanel(button);
       else if (action === "edit") { closePanel(); setMode(editMode); }
       else if (action === "width") setDocumentWidth(documentWidth === "full" ? "page" : "full");
       else if (action === "move") movePanel(button);
@@ -1068,7 +1062,7 @@ export function projectDocuments(ctx) {
           group("Document view", MODES.map(([key, title, glyph]) => `<button type="button" class="document-panel-item" data-document-mode="${key}" aria-pressed="${mode === key}">${icon(glyph)}${title}${mode === key ? icon("check") : ""}</button>`).join("")),
           group("Layout", `${narrow() ? "" : item("split-columns", "split-columns", "Split side by side", `aria-pressed="${splitState()?.direction === "columns"}"`) + item("split-rows", "split-rows", "Split top and bottom", `aria-pressed="${splitState()?.direction === "rows"}"`)}${item("width", "width-full", documentWidth === "full" ? "Use page width" : "Use full width", `aria-pressed="${documentWidth === "full"}"`)}${item("outline", "tree", "Document outline")}`),
           group("Edit", `<button type="button" class="document-panel-item" data-document-format="undo">${icon("undo")}Undo</button><button type="button" class="document-panel-item" data-document-format="redo">${icon("redo")}Redo</button>${item("find", "search", "Find in document")}`),
-          group("Document", item("rename", "pencil", "Rename") + item("move", "folder", "Move to folder") + item("property-add", "plus", "Add property")),
+          group("Document", item("rename", "pencil", "Rename") + item("move", "folder", "Move to folder")),
           group("History and links", item("versions", "clock", "Page versions") + item("links", "link", "Backlinks and mentions") + item("comments", "comment", "Comments")),
           group("Files", item("export", "download", "Export Markdown") + item("obsidian", "external", "Open in Obsidian") + item("obsidian-settings", "settings", "Obsidian settings")),
           group("Delete", `<button type="button" class="document-panel-item danger" data-document-action="confirm-delete">${icon("trash")}Delete document</button>`),
@@ -1082,11 +1076,6 @@ export function projectDocuments(ctx) {
       } else if (action === "comments") {
         const threads = threadsNow();
         showPanel(button, "Comments", threads.map(t => `<button type="button" class="document-panel-item" data-document-action="comment-open" data-comment-id="${esc(t.id)}">${icon("comment")}<span>${esc(t.root.anchor.quote.slice(0, 80))}<span class="field-hint document-mention-context">${t.range ? "" : "Detached · "}${t.comments.length} comment${t.comments.length === 1 ? "" : "s"}</span></span></button>`).join("") || "<p>No comments yet. Select text, then Insert → Comment on text.</p>");
-      } else if (action === "property-add") {
-        // Shows the Properties section, with its Tags field, and asks for the property from its own Add button.
-        const section = form.querySelector(".document-properties");
-        section.hidden = false; section.open = true;
-        addPropertyPanel(section.querySelector("[data-property-add]"));
       } else if (action === "close-tab") closeTab(button.dataset.documentId);
       else if (action === "split-columns" || action === "split-rows") {
         closePanel();

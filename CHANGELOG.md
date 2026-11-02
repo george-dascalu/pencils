@@ -2,6 +2,17 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.21.32 — 2026-11-02
+
+### Added
+- Feature F0.21-32: Table documents support dragging row and column headers to reorder them, custom row/column names, header menus to hide/show or delete tracks, and finite worksheet sizing. Moves carry values, formulas, names and sizes with undo/redo; touch uses hold-and-drag. New worksheets start with 100 rows, while existing larger sheets retain their size.
+
+### Changed
+- Documents and Tables open Properties from a dedicated toolbar button. Tags and custom fields save in that dropdown, leaving the document and worksheet at full height.
+
+### Fixed
+- Virtual table redraws preserve their scroll position in WebKit, including 1,000-row worksheets with interactive headers.
+
 ## 0.21.31 — 2026-11-02
 
 ### Fixed

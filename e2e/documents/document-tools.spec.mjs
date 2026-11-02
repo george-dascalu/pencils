@@ -22,7 +22,7 @@ onDevices(["phone", "ipad", "desktop"], () => test("the document bar holds its v
   const phone = device === "phone";
   // Desktop and iPad put the star before the title in the top bar. Since 0.20.94 the formatting is always
   // on screen outside Reading view, and Reading view lives in ⋯ with the other views (T27).
-  expect(await barControls(page), device).toEqual([...(device === "phone" ? ["Bookmark"] : []), "Document tools"]);
+  expect(await barControls(page), device).toEqual([...(device === "phone" ? ["Bookmark"] : []), "Properties", "Document tools"]);
   await expect(page.locator("#document-formatting"), `${device}: formatting shown`).toBeVisible();
 
   await page.locator('#document-form [data-document-action="tools"]').click();
@@ -34,7 +34,7 @@ onDevices(["phone", "ipad", "desktop"], () => test("the document bar holds its v
   expect(items["Document view"]).toEqual(["Live preview", "Source", "Reading"]);
   expect(items.Layout.slice(0, phone ? 0 : 2)).toEqual(phone ? [] : ["Split side by side", "Split top and bottom"]);
   expect(items.Layout.slice(phone ? 0 : 2)).toEqual([expect.stringMatching(width), "Document outline"]);
-  expect(items.Document).toEqual(["Rename", "Move to folder", "Add property"]);
+  expect(items.Document).toEqual(["Rename", "Move to folder"]);
   expect(items.Edit).toEqual(["Undo", "Redo", "Find in document"]);
   expect(items["History and links"]).toEqual(["Page versions", "Backlinks and mentions", "Comments"]);
   expect(items.Files).toEqual(["Export Markdown", "Open in Obsidian", "Obsidian settings"]);
@@ -69,23 +69,18 @@ onDevices(["desktop", "phone"], () => test("pressing ⋯ again closes Document t
   await expect(tools).toBeFocused();
 }));
 
-test("Properties show once a document has some, and ⋯ adds the first", async ({ page }) => {
+test("Properties has its own dropdown button and leaves the document area clear", async ({ page }) => {
   const doc = await app.store.createDocument(app.project.id, { title: "Bare", body: "Text\n" });
   await page.goto(`${app.base}/#project/${app.project.id}/documents/${doc.id}`);
   await page.locator("#document-form .cm-content").waitFor();
-  const section = page.locator("#document-form .document-properties");
-  await expect(section).toBeHidden();
-  // Add property shows the section, so its Tags field is reachable even if no property is added.
-  await documentTool(page, "Add property");
-  const panel = page.getByRole("dialog", { name: "Add property" });
-  await page.keyboard.press("Escape");
-  await expect(panel).toBeHidden();
-  await section.getByRole("textbox", { name: "Tags", exact: true }).fill("plans");
-  await section.getByRole("textbox", { name: "Tags", exact: true }).press("Tab");
-  await expect.poll(async () => (await app.store.getDocument(app.project.id, doc.id)).tags).toEqual(["plans"]);
-  await documentTool(page, "Add property");
-  await panel.getByRole("textbox", { name: "Name", exact: true }).fill("Owner");
-  await panel.getByRole("button", { name: "Add", exact: true }).click();
-  await expect.poll(async () => (await app.store.getDocument(app.project.id, doc.id)).Owner).toBe("");
-  await expect(section.locator('[data-property="Owner"] input'), "focus moves on to the new property").toBeFocused();
+  await expect(page.locator("#document-form .document-properties")).toHaveCount(0);
+  const button=page.getByRole('button',{name:'Properties',exact:true});await button.click();
+  const section=page.locator('.document-panel .document-properties');
+  await section.getByRole("textbox", {name:"Tags",exact:true}).fill('plans');await section.getByRole("textbox", {name:"Tags",exact:true}).press('Tab');
+  await expect.poll(async()=>(await app.store.getDocument(app.project.id,doc.id)).tags).toEqual(['plans']);
+  await section.getByRole('button',{name:'Add property',exact:true}).click();const panel=page.getByRole('dialog',{name:'Add property',exact:true});
+  await panel.getByRole('textbox',{name:'Name',exact:true}).fill('Owner');await panel.getByRole('button',{name:'Add',exact:true}).click();
+  await expect.poll(async()=>(await app.store.getDocument(app.project.id,doc.id)).Owner).toBe('');
+  await expect(section.locator('[data-property="Owner"] input')).toBeFocused();
+  await button.click();await expect(page.getByRole('dialog',{name:'Properties',exact:true})).toHaveCount(0);
 });

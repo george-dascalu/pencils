@@ -61,15 +61,11 @@ test("Capacity's Choose project teams opens the project's teams settings", async
   await expect(page).toHaveURL(new RegExp(`#project/${app.project.id}/settings/teams$`));
 });
 
-test("a document's Add property opens and closes its panel without an error", async ({ page }) => {
+test("a document's Properties button opens and closes its dropdown, and Add property is inside it", async ({ page }) => {
   await openNewDocument(page, app, app.project.id, { title: "Props", body: "Text" });
-  await documentTool(page, "Add property");
-  const panel = page.getByRole("dialog", { name: "Add property", exact: true }), add = page.locator(".document-properties [data-property-add]");
-  await expect(panel).toBeVisible();
-  await add.click();
-  await expect(panel).toBeHidden();
-  await add.click();
-  await expect(panel).toBeVisible();
+  const button=page.getByRole('button',{name:'Properties',exact:true}), panel=page.getByRole('dialog',{name:'Properties',exact:true});
+  await button.click();await expect(panel).toBeVisible();await button.click();await expect(panel).toHaveCount(0);await button.click();
+  await panel.getByRole('button',{name:'Add property',exact:true}).click();await expect(page.getByRole('dialog',{name:'Add property',exact:true})).toBeVisible();
 });
 
 test("Escape closes the row date editor, the timeline range, the Text style menu and the Frames panel", async ({ page }) => {

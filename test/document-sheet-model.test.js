@@ -5,7 +5,7 @@ import { blankTable, checkTable, parseCSV, tableFromRows, tableCSV, tablePreview
 
 test('Tables start sparse, support multiple worksheets and validate dimensions and cell data', () => {
   const table=blankTable('d-test','Budget');
-  assert.equal(table.workbook.sheets['sheet-1'].rowCount,1000);
+  assert.equal(table.workbook.sheets['sheet-1'].rowCount,100);
   assert.equal(Object.keys(table.workbook.sheets['sheet-1'].cellData).length,0);
   table.workbook.sheetOrder.push('sheet-2');
   table.workbook.sheets['sheet-2']={...structuredClone(table.workbook.sheets['sheet-1']),id:'sheet-2',name:'Assumptions'};

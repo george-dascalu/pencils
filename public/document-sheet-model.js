@@ -4,7 +4,7 @@ export const TABLE_LIMITS = { sheets: 20, rows: 10000, columns: 200, cells: 1000
 const object = v => !!v && typeof v === 'object' && !Array.isArray(v);
 const fail = message => { throw new Error(message); };
 export function blankTable(id, name = 'Untitled table') {
-  return { format: 1, workbook: { id, name, appVersion: '1.3.1', locale: 'enUS', styles: {}, sheetOrder: ['sheet-1'], sheets: { 'sheet-1': { id: 'sheet-1', name: 'Sheet 1', rowCount: 1000, columnCount: 26, defaultRowHeight: 28, defaultColumnWidth: 120, cellData: {}, rowData: {}, columnData: {}, freeze: { xSplit: 0, ySplit: 0, startRow: -1, startColumn: -1 } } } }, filters: {} };
+  return { format: 1, workbook: { id, name, appVersion: '1.3.1', locale: 'enUS', styles: {}, sheetOrder: ['sheet-1'], sheets: { 'sheet-1': { id: 'sheet-1', name: 'Sheet 1', rowCount: 100, columnCount: 26, defaultRowHeight: 28, defaultColumnWidth: 120, cellData: {}, rowData: {}, columnData: {}, freeze: { xSplit: 0, ySplit: 0, startRow: -1, startColumn: -1 } } } }, filters: {} };
 }
 export function checkTable(input, id) {
   let entries = 0, cells = 0;
@@ -44,6 +44,9 @@ export function checkTable(input, id) {
       if (!object(sheet[field])) fail('Invalid row or column settings.');
       for (const [index, value] of Object.entries(sheet[field])) {
         if (!/^\d+$/.test(index) || +index >= bound || !object(value)) fail('Invalid row or column settings.');
+        if (value.hd != null && ![0, 1].includes(value.hd)) fail('Invalid hidden row or column.');
+        const label = value.custom?.pencilsLabel;
+        if (label != null && (typeof label !== 'string' || label.length > 80 || /[\u0000-\u001f]/.test(label))) fail('Row and column names use up to 80 characters.');
         const size = field === 'rowData' ? value.h : value.w;
         if (size != null && (!Number.isFinite(size) || size < 16 || size > 2000)) fail('Row and column sizes must be between 16 and 2,000 pixels.');
       }
@@ -83,7 +86,7 @@ export function parseCSV(text, delimiter = ',') {
 }
 export function tableFromRows(rows, { id, name, sheetName = 'Sheet 1', formulas = false }) {
   const table = blankTable(id, name), sheet = table.workbook.sheets['sheet-1'];
-  sheet.name = sheetName; sheet.rowCount = Math.max(1000, rows.length); sheet.columnCount = Math.max(26, ...rows.map(r => r.length));
+  sheet.name = sheetName; sheet.rowCount = Math.max(100, rows.length); sheet.columnCount = Math.max(26, ...rows.map(r => r.length));
   rows.forEach((row, r) => row.forEach((raw, c) => {
     if (raw === '') return;
     const value = String(raw), numeric = /^-?(?:\d+\.?\d*|\.\d+)(?:e[+-]?\d+)?$/i.test(value) && !/^0\d/.test(value) && Number.isFinite(+value);

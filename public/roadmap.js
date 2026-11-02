@@ -6,6 +6,7 @@
 // From the 0.21.0 baseline, new features use F<major>.<minor>-<1..100>: F0.21-1 releases
 // as 0.21.1, F0.21-100 as 0.22.0, then F0.22-1 as 0.22.1. Historical T IDs stay intact.
 export const roadmap = [
+  { id: "F0.21-32", title: "Reorder, name and hide table rows and columns; compact document Properties", status: "done", requested: "2026-11-02", started: "2026-11-02", done: "2026-11-02", version: "0.21.32" },
   { id: "F0.21-31", title: "Centre desktop sub-category menus beneath the navigation icons", status: "done", requested: "2026-11-02", started: "2026-11-02", done: "2026-11-02", version: "0.21.31" },
   { id: "F0.21-30", title: "Drag and reorder files and folders in Documents and Boards", status: "done", requested: "2026-11-02", started: "2026-11-02", done: "2026-11-02", version: "0.21.30" },
   { id: "F0.21-29", title: "Tables documents with formulas, formatting, multiple worksheets and CSV import/export", status: "done", requested: "2026-11-02", started: "2026-11-02", done: "2026-11-02", version: "0.21.29" },

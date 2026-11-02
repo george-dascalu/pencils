@@ -1,7 +1,8 @@
 import { Univer, LocaleType, CellValueType, LifecycleService, LifecycleStages } from '@univerjs/core';
 import { FUniver } from '@univerjs/core/facade';
 import { UniverFormulaEnginePlugin } from '@univerjs/engine-formula';
-import { UniverSheetsPlugin } from '@univerjs/sheets';
+import { UniverSheetsPlugin, SetRowDataCommand, SetColDataCommand } from '@univerjs/sheets';
+import { TABLE_LIMITS } from './document-sheet-model.js';
 import { UniverSheetsFormulaPlugin, CalculationMode, TriggerCalculationController } from '@univerjs/sheets-formula';
 import { UniverSheetsNumfmtPlugin } from '@univerjs/sheets-numfmt';
 import { UniverSheetsSortPlugin } from '@univerjs/sheets-sort';
@@ -48,6 +49,13 @@ export function createSheetEngine(table, { onChange = () => {}, onRefresh = () =
     if (/^-?(?:\d+\.?\d*|\.\d+)(?:e[+-]?\d+)?$/i.test(text) && !/^0\d/.test(text) && Number.isFinite(+text)) return { ...clear, v: +text, t: CellValueType.NUMBER };
     return { ...clear, v: text || null, t: CellValueType.STRING };
   }
+  function axisInfo(sid, axis, start = 0, count = 1) {
+    if (!['row', 'column'].includes(axis)) throw Error('Choose rows or columns.');
+    const target = sheet(sid); if (!target) throw Error('Worksheet not found.');
+    const total = axis === 'row' ? target.getMaxRows() : target.getMaxColumns();
+    if (!Number.isInteger(start) || !Number.isInteger(count) || start < 0 || count < 1 || start + count > total) throw Error('Choose rows or columns within this worksheet.');
+    return {target, total, field: axis === 'row' ? 'rowData' : 'columnData'};
+  }
   return {
     api, book, sheet, filters, snapshot, flush,
     calculated: () => api.getFormula().onCalculationResultApplied(10000),
@@ -59,6 +67,40 @@ export function createSheetEngine(table, { onChange = () => {}, onRefresh = () =
       const width = Math.max(...rows.map(r => r.length));
       const values = rows.map(r => Array.from({ length: width }, (_, c) => r[c] ?? "").map(v => literal ? { v: String(v), t: CellValueType.STRING, f: null, p: null, si: null } : cellValue(v)));
       sheet(sid).getRange(row, column, rows.length, Math.max(...rows.map(r => r.length))).setValues(values); changed();
+    },
+    moveAxis(sid, axis, start, count, before) {
+      const {target,total} = axisInfo(sid,axis,start,count);
+      if (!Number.isInteger(before) || before < 0 || before > total) throw Error('Choose a position within this worksheet.');
+      if (before >= start && before <= start + count) return;
+      if (axis === 'column' && Object.keys(filters[sid] || {}).length) throw Error('Clear worksheet filters before moving columns.');
+      const range = axis === 'row' ? target.getRange(start,0,count,1) : target.getRange(0,start,1,count);
+      if (axis === 'row') target.moveRows(range,before); else target.moveColumns(range,before);
+      changed();
+    },
+    setAxisLabel(sid,axis,index,label) {
+      const {target,field} = axisInfo(sid,axis,index);
+      if (typeof label !== 'string' || label.length > 80 || /[\u0000-\u001f]/.test(label)) throw Error('Use up to 80 characters for the name.');
+      const custom = {...snapshot().workbook.sheets[sid][field]?.[index]?.custom,pencilsLabel:label.trim()};
+      const command = axis === 'row' ? SetRowDataCommand : SetColDataCommand;
+      api.syncExecuteCommand(command.id,{unitId:book.getId(),subUnitId:sid,[field]:{[index]:{custom}}}); changed();
+    },
+    setAxisHidden(sid,axis,start,count,hidden) {
+      const {target,total,field} = axisInfo(sid,axis,start,count);
+      const entries = snapshot().workbook.sheets[sid][field] || {};
+      if (hidden && !Array.from({length:total},(_,i)=>i).some(i=>(i<start || i>=start+count) && entries[i]?.hd !== 1)) throw Error('Keep at least one visible row or column.');
+      if (axis === 'row') { if (hidden) target.hideRows(start,count); else target.showRows(start,count); }
+      else { if (hidden) target.hideColumns(start,count); else target.showColumns(start,count); }
+      changed();
+    },
+    setAxisCount(sid,axis,count) {
+      const {target,total} = axisInfo(sid,axis);
+      const limit=axis === 'row' ? TABLE_LIMITS.rows : TABLE_LIMITS.columns;
+      if (!Number.isInteger(count) || count < 1 || count > limit) throw Error(`Use between 1 and ${limit.toLocaleString()} ${axis === 'row' ? 'rows' : 'columns'}.`);
+      if (axis === 'column' && Object.keys(filters[sid] || {}).some(c=>+c>=count)) throw Error('Clear worksheet filters before removing their columns.');
+      if (count === total) return;
+      if (axis === 'row') {if(count<total)target.deleteRows(count,total-count);else target.insertRowsAfter(total-1,count-total);}
+      else {if(count<total)target.deleteColumns(count,total-count);else target.insertColumnsAfter(total-1,count-total);}
+      changed();
     },
     mutate(action) { const result = action(); changed(); return result; },
     async undo() { book.undo(); changed(); },

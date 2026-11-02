@@ -124,7 +124,7 @@ onDevices(['phone', 'ipad'], () => test('property and task-query checkboxes shar
   let doc = await app.store.createDocument(app.project.id, { title, body: `\`\`\`tasks\ntitle includes ${title}\n\`\`\`` });
   doc = await app.store.updateDocument(app.project.id, doc.id, { revision: doc.revision, document_properties: { set: { Approved: false } } });
   await page.goto(`${app.base}/#project/${app.project.id}/documents/${doc.id}`);
-  await page.locator('.document-properties > summary').click();
+  await page.getByRole('button', {name:'Properties',exact:true}).click();
   for (const checkbox of [page.getByRole('checkbox', { name: 'Approved', exact: true }), page.getByRole('checkbox', { name: `Done: ${title}`, exact: true })]) {
     await checkbox.scrollIntoViewIfNeeded();
     const target = await checkbox.locator('..').boundingBox(), box = await checkbox.boundingBox();
@@ -133,6 +133,7 @@ onDevices(['phone', 'ipad'], () => test('property and task-query checkboxes shar
     await page.touchscreen.tap(box.x + box.width / 2 + 12, box.y + box.height / 2);
     await expect(checkbox).toBeChecked();
     expect(await page.evaluate(() => !!document.activeElement?.closest('.cm-editor'))).toBe(false);
+    if (await page.getByRole('dialog', {name:'Properties',exact:true}).isVisible()) await page.getByRole('button', {name:'Properties',exact:true}).click();
   }
   await expect.poll(async () => (await app.store.getDocument(app.project.id, doc.id)).Approved).toBe(true);
   await expect.poll(async () => (await app.store.snapshot(app.project.id)).tasks.find(t => t.id === task.id).status).toBe('done');

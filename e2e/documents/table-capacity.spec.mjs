@@ -2,7 +2,7 @@ import {test,expect,useApp,onDevices} from '../fixtures.mjs';
 import {blankTable} from '../../public/document-sheet-model.js';
 const app=useApp(async store=>({project:await store.createProject({title:'Tables capacity'})}));
 async function seed(){const store=app.store,project=app.project;const record=await store.mutate(()=>store.createDocument(project.id,{title:'1,000-row budget',document_type:'table'}));const table=blankTable(record.id,record.title),sheet=table.workbook.sheets['sheet-1'];
- sheet.cellData=Object.fromEntries(Array.from({length:1000},(_,r)=>[r,Object.fromEntries(Array.from({length:26},(_,c)=>[c,c===0?{v:`Row ${r+1}`} : c===25?{f:`=SUM(B${r+1}:Y${r+1})`}:{v:r+c}]))]));
+ sheet.rowCount=1000;sheet.cellData=Object.fromEntries(Array.from({length:1000},(_,r)=>[r,Object.fromEntries(Array.from({length:26},(_,c)=>[c,c===0?{v:`Row ${r+1}`} : c===25?{f:`=SUM(B${r+1}:Y${r+1})`}:{v:r+c}]))]));
  await store.mutate(()=>store.updateDocument(project.id,record.id,{revision:record.revision,table}));return record;
 }
 onDevices(['desktop','ipad','phone'],()=>test('a 1,000-row worksheet calculates, scrolls with bounded DOM and saves an edit @gate',async({page,device},testInfo)=>{

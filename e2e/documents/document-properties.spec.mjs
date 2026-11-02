@@ -7,13 +7,13 @@ const today = new Date().toLocaleDateString("en-CA");
 const app = useApp(async (store) => ({ project: await store.createProject({ title: "Properties", key: "PR" }) }));
 const stored = async (id) => app.store.getDocument(app.project.id, id);
 
-onDevices(["desktop", "phone"], () => test("properties and tags are edited at the top of the document and saved as frontmatter", async ({ page, device }) => {
+onDevices(["desktop", "phone"], () => test("properties and tags are edited in the toolbar dropdown and saved as frontmatter", async ({ page, device }) => {
   let doc = await app.store.createDocument(app.project.id, { title: `Plan ${device}`, body: "Text" });
   doc = await app.store.updateDocument(app.project.id, doc.id, { revision: doc.revision, document_properties: { set: { status: "Draft" }, tags: ["plans"] } });
   await page.goto(`${app.base}/#project/${app.project.id}/documents/${doc.id}`);
-  const section = page.locator("#document-form .document-properties");
-  await expect(section.locator("summary")).toContainText("#plans");
-  await section.locator("summary").click();
+  await page.getByRole("button", {name:"Properties",exact:true}).click();
+  const section = page.locator(".document-panel .document-properties");
+  await expect(section.getByLabel("Tags",{exact:true})).toHaveValue("plans");
   const status = section.getByRole("textbox", { name: "status", exact: true });
   await expect(status).toHaveValue("Draft");
   await status.fill("Final");

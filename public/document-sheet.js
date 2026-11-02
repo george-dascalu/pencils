@@ -17,8 +17,9 @@ export function createDocumentSheet({ form, record, load, onChange, icon, esc, c
   const lifecycle = new AbortController(), signal = lifecycle.signal;
   const editableControls = [...form.querySelectorAll('[data-sheet-action]:not([data-sheet-action="tools"])'), formula];
   editableControls.forEach(control => { control.disabled = true; });
-  let engine, sid, selected = { r: 0, c: 0, endR: 0, endC: 0 }, editing, formulaDirty = false, destroyed = false, frame, rowMap = [], prefix = [], dragged = false;
+  let engine, sid, selected = { r: 0, c: 0, endR: 0, endC: 0 }, editing, formulaDirty = false, destroyed = false, frame, rowMap = [], colMap = [], prefix = [], dragged = false;
   const touch = () => matchMedia('(pointer: coarse)').matches;
+  const minimumTrack = () => 1 + Math.max(touch() ? 44 : 28, parseFloat(getComputedStyle(root).getPropertyValue('--control-height')) || 32);
   const safe = fn => { try { return fn(); } catch (error) { toast(error.message, true); } };
   const data = () => engine.snapshot();
   const sheet = () => data().workbook.sheets[sid];
@@ -32,6 +33,7 @@ export function createDocumentSheet({ form, record, load, onChange, icon, esc, c
   function setSelection(r, c, extend = false, reveal = false) {
     if (!engine) return;
     r = Math.max(0, Math.min(sheet().rowCount - 1, r)); c = Math.max(0, Math.min(sheet().columnCount - 1, c));
+    r = rowMap.find(i=>i>=r) ?? rowMap.at(-1) ?? r; c = colMap.find(i=>i>=c) ?? colMap.at(-1) ?? c;
     selected = extend ? { ...selected, endR: r, endC: c } : { r, c, endR: r, endC: c };
     if (document.activeElement !== formula) formula.value = rawText(current());
     const b = bounds(); root.querySelector('.sheet-address').value = b.h === 1 && b.w === 1 ? address(r, c) : `${address(b.r, b.c)}:${address(b.r + b.h - 1, b.c + b.w - 1)}`;
@@ -62,9 +64,10 @@ export function createDocumentSheet({ form, record, load, onChange, icon, esc, c
     for (const [key, side] of [['t', 'Top'], ['b', 'Bottom'], ['l', 'Left'], ['r', 'Right']]) if (style.bd?.[key]?.s) cell.style[`border${side}`] = `1px solid ${style.bd[key].cl?.rgb || 'currentColor'}`;
   }
   function render() {
-    const table = data(), s = sheet(), minimum = touch() ? 44 : 28, header = minimum;
+    const position={top:scroll.scrollTop,left:scroll.scrollLeft};
+    const table = data(), s = sheet(), minimum = minimumTrack(), header = minimum;
     const filters = engine.filters[sid] || {}, entries = Object.entries(filters);
-    rowMap = Array.from({ length: s.rowCount }, (_, i) => i).filter(r => r === 0 || entries.every(([c, value]) => String(s.cellData?.[r]?.[c]?.v ?? '').toLocaleLowerCase().includes(value.toLocaleLowerCase())));
+    rowMap = Array.from({ length: s.rowCount }, (_, i) => i).filter(r => s.rowData?.[r]?.hd !== 1 && (r === 0 || entries.every(([c, value]) => String(s.cellData?.[r]?.[c]?.v ?? '').toLocaleLowerCase().includes(value.toLocaleLowerCase()))));
     prefix = [0];
     for (const r of rowMap) {
       let height = Math.max(minimum, s.rowData?.[r]?.h || s.defaultRowHeight || 28);
@@ -79,28 +82,37 @@ export function createDocumentSheet({ form, record, load, onChange, icon, esc, c
     const frozenRows = Math.min(5, s.freeze?.ySplit || 0), frozenCols = Math.min(5, s.freeze?.xSplit || 0);
     const visible = [...new Set([...Array.from({ length: Math.min(frozenRows, rowMap.length) }, (_, i) => i), ...Array.from({ length: end - start }, (_, i) => start + i)])].sort((a, b) => a - b);
     const grid = document.createElement('table'); grid.className = 'document-sheet-grid'; grid.setAttribute('role', 'grid'); grid.setAttribute('aria-label', s.name); grid.setAttribute('aria-rowcount', String(s.rowCount + 1)); grid.setAttribute('aria-colcount', String(s.columnCount + 1));
-    const widths = Array.from({ length: s.columnCount }, (_, col) => s.columnData?.[col]?.w || s.defaultColumnWidth || 120), offsets = [48]; for (const width of widths) offsets.push(offsets.at(-1) + width);
+    colMap = Array.from({length:s.columnCount},(_,i)=>i).filter(c=>s.columnData?.[c]?.hd !== 1);
+    const rowWidth = Object.values(s.rowData || {}).some(d=>d.custom?.pencilsLabel) ? 144 : 48;
+    const widths = colMap.map(col => s.columnData?.[col]?.w || s.defaultColumnWidth || 120), offsets = [rowWidth]; for (const width of widths) offsets.push(offsets.at(-1) + width);
     grid.style.width = `${offsets.at(-1)}px`;
-    const colgroup = document.createElement('colgroup'); colgroup.innerHTML = '<col style="width:48px">' + widths.map(width => `<col style="width:${width}px">`).join(''); grid.append(colgroup);
+    const colgroup = document.createElement('colgroup'); colgroup.innerHTML = `<col style="width:${rowWidth}px">` + widths.map(width => `<col style="width:${width}px">`).join(''); grid.append(colgroup);
     const head = grid.createTHead().insertRow(); const corner = document.createElement('th'); corner.textContent = '#'; corner.className = 'sheet-corner'; head.append(corner);
-    widths.forEach((width, c) => { const th = document.createElement('th'); th.scope = 'col'; th.textContent = columnName(c); th.dataset.column = c; th.style.height = `${header}px`; if (c < frozenCols) { th.className = 'sheet-frozen-column'; th.style.left = `${offsets[c]}px`; } const handle = document.createElement('span'); handle.className = 'sheet-column-resize'; handle.dataset.resizeColumn = c; handle.setAttribute('role', 'separator'); handle.setAttribute('aria-label', `Resize column ${columnName(c)}`); th.append(handle); head.append(th); });
+    const heading = (axis,index,trackHeight=header) => {
+      const base = axis === 'row' ? String(index+1) : columnName(index), label=s[axis === 'row' ? 'rowData' : 'columnData']?.[index]?.custom?.pencilsLabel;
+      return `<button type="button" class="sheet-axis-heading" style="height:${trackHeight-1}px" data-sheet-axis="${axis}" data-axis-index="${index}" aria-label="${axis === 'row' ? 'Row' : 'Column'} ${base} options" title="${esc(label ? base + ' · ' + label : base)}"><span>${base}${label ? ` · ${esc(label)}` : ''}</span>${icon('chevron')}</button>`;
+    };
+    widths.forEach((width,i) => { const c=colMap[i],th=document.createElement('th');th.scope='col';th.innerHTML=heading('column',c);th.dataset.column=c;th.style.height=`${header}px`;if(c<frozenCols){th.className='sheet-frozen-column';th.style.left=`${offsets[i]}px`;}const handle=document.createElement('span');handle.className='sheet-column-resize';handle.dataset.resizeColumn=c;handle.setAttribute('role','separator');handle.setAttribute('aria-label',`Resize column ${columnName(c)}`);th.append(handle);head.append(th); });
     const body = grid.createTBody(); let cursor = 0;
     const spacer = height => { if (height <= 0) return; const tr = body.insertRow(); tr.className = 'sheet-spacer'; tr.setAttribute('aria-hidden', 'true'); const td = tr.insertCell(); td.colSpan = s.columnCount + 1; td.style.height = `${height}px`; };
     for (const index of visible) {
       spacer(prefix[index] - prefix[cursor]); const r = rowMap[index], tr = body.insertRow(), height = prefix[index + 1] - prefix[index]; tr.style.height = `${height}px`; tr.setAttribute('aria-rowindex', String(r + 2));
-      const label = document.createElement('th'); label.scope = 'row'; label.textContent = r + 1; label.dataset.row = r; const handle = document.createElement('span'); handle.className = 'sheet-row-resize'; handle.dataset.resizeRow = r; handle.setAttribute('role', 'separator'); handle.setAttribute('aria-label', `Resize row ${r + 1}`); label.append(handle); tr.append(label);
+      const label = document.createElement('th'); label.scope = 'row'; label.innerHTML = heading('row',r,height); label.dataset.row = r; const handle = document.createElement('span'); handle.className = 'sheet-row-resize'; handle.dataset.resizeRow = r; handle.setAttribute('role', 'separator'); handle.setAttribute('aria-label', `Resize row ${r + 1}`); label.append(handle); tr.append(label);
       let display; try { display = worksheet().getRange(r, 0, 1, s.columnCount).getDisplayValues()[0]; } catch { display = []; }
-      for (let c = 0; c < s.columnCount; c++) {
+      for (const c of colMap) {
         const cell = s.cellData?.[r]?.[c] || {}, td = tr.insertCell(); td.setAttribute('role', 'gridcell'); td.setAttribute('aria-colindex', String(c + 2)); td.dataset.r = r; td.dataset.c = c; td.dataset.sheetCell = address(r, c); const text = document.createElement('span'); text.className = 'sheet-cell-text'; text.textContent = display[c] ?? String(cell.v ?? ''); text.style.maxHeight = `${height - 8}px`; td.append(text); td.title = cell.f ? `${cell.f}\n${td.textContent}` : td.textContent; td.setAttribute('aria-label', `${address(r, c)}${cell.f ? `, formula ${cell.f}` : ''}`);
         if (typeof cell.v === 'number') td.style.textAlign = 'right';
         applyStyle(td, typeof cell.s === 'string' ? table.workbook.styles[cell.s] : cell.s);
-        if (c < frozenCols) { td.classList.add('sheet-frozen-column'); td.style.left = `${offsets[c]}px`; }
+        if (c < frozenCols) { td.classList.add('sheet-frozen-column'); td.style.left = `${offsets[colMap.indexOf(c)]}px`; }
       }
       if (index < frozenRows) for (const cell of tr.children) { cell.classList.add('sheet-frozen-row'); cell.style.top = `${header + prefix[index]}px`; }
       cursor = index + 1;
     }
     spacer(prefix.at(-1) - prefix[cursor]);
     scroll.replaceChildren(grid);
+    // WebKit can reset its scroll anchor when virtual rows contain focusable headers.
+    scroll.scrollTop=position.top;scroll.scrollLeft=position.left;
+    if(axisDrag?.held)scroll.querySelector(`[data-sheet-axis="${axisDrag.axis}"][data-axis-index="${axisDrag.start}"]`)?.classList.add('sheet-axis-held');
     const tabs = root.querySelector('.sheet-tabs');
     tabs.innerHTML = table.workbook.sheetOrder.map(id => `<button type="button" role="tab" data-sheet-tab="${esc(id)}" aria-selected="${id === sid}">${esc(table.workbook.sheets[id].name)}</button>`).join('');
     setSelection(selected.r, selected.c, true);
@@ -134,7 +146,7 @@ export function createDocumentSheet({ form, record, load, onChange, icon, esc, c
       if (!name || /[\[\]:*?/\\]/.test(name)) throw Error('Use a worksheet name without [ ] : * ? / or \\.');
       if (Object.values(data().workbook.sheets).some(s => s.name.toLocaleLowerCase() === name.toLocaleLowerCase() && (!rename || s.id !== sid))) throw Error('A worksheet already has that name.');
       if (rename) engine.mutate(() => worksheet().setName(name));
-      else { if (data().workbook.sheetOrder.length >= TABLE_LIMITS.sheets) throw Error('A table supports up to 20 worksheets.'); engine.mutate(() => { const created = engine.book.insertSheet(name, { sheet: { rowCount: 1000, columnCount: 26, defaultRowHeight: 28, defaultColumnWidth: 120 } }); sid = created.getSheetId(); }); selected = { r: 0, c: 0, endR: 0, endC: 0 }; scroll.scrollTop = scroll.scrollLeft = 0; }
+      else { if (data().workbook.sheetOrder.length >= TABLE_LIMITS.sheets) throw Error('A table supports up to 20 worksheets.'); engine.mutate(() => { const created = engine.book.insertSheet(name, { sheet: { rowCount: 100, columnCount: 26, defaultRowHeight: 28, defaultColumnWidth: 120 } }); sid = created.getSheetId(); }); selected = { r: 0, c: 0, endR: 0, endC: 0 }; scroll.scrollTop = scroll.scrollLeft = 0; }
       storage.set(`table-sheet:${record.id}`, sid); panels.close(); refresh();
     }); }, { signal });
   }
@@ -185,12 +197,41 @@ export function createDocumentSheet({ form, record, load, onChange, icon, esc, c
       selected = { r: 0, c: 0, endR: 0, endC: 0 }; storage.set(`table-sheet:${record.id}`, sid); scroll.scrollTop = scroll.scrollLeft = 0; panels.close(); refresh();
     }), { signal });
   }
+  let axisContext = null, axisDrag = null, axisClickUntil = 0;
+  const axisLabel = axis => axis === 'row' ? 'row' : 'column';
+  function axisMenu(button,axis,index) {
+    axisContext={axis,start:index,count:1};
+    selected=axis === 'row' ? {r:index,c:0,endR:index,endC:sheet().columnCount-1} : {r:0,c:index,endR:sheet().rowCount-1,endC:index};
+    setSelection(selected.endR,selected.endC,true);
+    const noun=axisLabel(axis), rows=axis === 'row';
+    panel(button,`${rows ? 'Row ' + (index+1) : 'Column ' + columnName(index)}`, `<section class="document-tool-group">${item('rename-axis','Rename '+noun,'pencil')}${item('axis-back',rows ? 'Move up' : 'Move left','up')}${item('axis-forward',rows ? 'Move down' : 'Move right','down')}</section><section class="document-tool-group">${item(rows ? 'insert-row' : 'insert-column',rows ? 'Insert row above' : 'Insert column before','plus')}${item('hide-axis','Hide '+noun,'hide')}${item('show-axis',rows ? 'Show hidden rows' : 'Show hidden columns','preview')}${item('size-sheet','Worksheet size','table')}</section><section class="document-tool-group">${item(rows ? 'delete-row' : 'delete-column','Delete '+noun,'trash','data-axis-danger')}</section>`,260,true);
+  }
+  function renameAxis(button) {
+    const {axis,start}=axisContext, name=axis === 'row' ? 'Row name' : 'Column name', value=sheet()[axis === 'row' ? 'rowData' : 'columnData']?.[start]?.custom?.pencilsLabel || '';
+    const el=panel(button,'Rename '+axis,`<form class="sheet-panel-form"><label class="field">${name}<input name="axis-name" aria-label="${name}" maxlength="80" value="${esc(value)}" autocomplete="off"></label><button type="submit" class="button primary">Rename</button></form>`);
+    el?.querySelector('form').addEventListener('submit',event=>{event.preventDefault();safe(()=>{engine.setAxisLabel(sid,axis,start,el.querySelector('input').value);panels.close();refresh();});},{signal});
+  }
+  function sizePanel(button) {
+    const el=panel(button,'Worksheet size',`<form class="sheet-panel-form"><label class="sheet-setting">Rows<input name="rows" type="number" min="1" max="${TABLE_LIMITS.rows}" value="${sheet().rowCount}"></label><label class="sheet-setting">Columns<input name="columns" type="number" min="1" max="${TABLE_LIMITS.columns}" value="${sheet().columnCount}"></label><p class="field-hint">Reducing the size removes cells outside it. Undo restores them.</p><button type="submit" class="button primary">Apply</button></form>`);
+    el?.querySelector('form').addEventListener('submit',event=>{event.preventDefault();safe(()=>{const r=+el.querySelector('[name=rows]').value,c=+el.querySelector('[name=columns]').value;if(r!==sheet().rowCount)engine.setAxisCount(sid,'row',r);if(c!==sheet().columnCount)engine.setAxisCount(sid,'column',c);panels.close();refresh();});},{signal});
+  }
   async function handleAction(event) {
     const button = event.target.closest('[data-sheet-action]'); if (!button) return;
     event.preventDefault(); event.stopPropagation();
     try {
       const action = button.dataset.sheetAction;
       if (action !== 'tools' && !engine) return;
+      if (action === 'rename-axis') return renameAxis(button);
+      if (action === 'size-sheet') return sizePanel(button);
+      if (action === 'show-rows' || action === 'show-columns') {const rows=action === 'show-rows';engine.setAxisHidden(sid,rows?'row':'column',0,rows?sheet().rowCount:sheet().columnCount,false);panels.close();refresh();return;}
+      if (['axis-back','axis-forward','hide-axis','show-axis'].includes(action)) {
+        const {axis,start,count}=axisContext,total=axis === 'row' ? sheet().rowCount : sheet().columnCount;
+        if (action === 'hide-axis') engine.setAxisHidden(sid,axis,start,count,true);
+        if (action === 'show-axis') engine.setAxisHidden(sid,axis,0,total,false);
+        if (action === 'axis-back') engine.moveAxis(sid,axis,start,count,Math.max(0,start-1));
+        if (action === 'axis-forward') engine.moveAxis(sid,axis,start,count,Math.min(total,start+count+1));
+        panels.close();refresh();return;
+      }
       if (action === 'apply') { commit(formula.value); formula.blur(); return; }
       if (action === 'undo' || action === 'redo') { await engine[action](); return; }
       if (action === 'format') return formatPanel(button);
@@ -202,7 +243,7 @@ export function createDocumentSheet({ form, record, load, onChange, icon, esc, c
       if (action === 'export') { engine.flush(); download(tableCSV(data(), sid), 'csv', 'text/csv;charset=utf-8'); return; }
       if (action === 'tools') {
         const documentItem = (action, label, glyph) => `<button type="button" class="document-panel-item ${action === 'confirm-delete' ? 'danger' : ''}" data-document-action="${action}">${icon(glyph)}${label}</button>`;
-        panel(button, 'Document tools', `<section class="document-tool-group">${item('import', 'Import CSV', 'upload', engine ? '' : 'disabled')}${item('export', 'Export CSV', 'download', engine ? '' : 'disabled')}</section><section class="document-tool-group">${documentItem('rename', 'Rename', 'pencil')}${documentItem('move', 'Move to folder', 'folder')}${documentItem('property-add', 'Add property', 'plus')}${documentItem('versions', 'Page versions', 'clock')}${documentItem('links', 'Backlinks and mentions', 'link')}${documentItem('export', 'Export Markdown', 'download')}${documentItem('obsidian', 'Open in Obsidian', 'file')}${documentItem('obsidian-settings', 'Obsidian settings', 'settings')}</section><section class="document-tool-group">${documentItem('confirm-delete', 'Delete document', 'trash')}</section>`, 260, true); return;
+        panel(button, 'Document tools', `<section class="document-tool-group">${item('import', 'Import CSV', 'upload', engine ? '' : 'disabled')}${item('export', 'Export CSV', 'download', engine ? '' : 'disabled')}</section><section class="document-tool-group">${documentItem('rename', 'Rename', 'pencil')}${documentItem('move', 'Move to folder', 'folder')}${documentItem('versions', 'Page versions', 'clock')}${documentItem('links', 'Backlinks and mentions', 'link')}${documentItem('export', 'Export Markdown', 'download')}${documentItem('obsidian', 'Open in Obsidian', 'file')}${documentItem('obsidian-settings', 'Obsidian settings', 'settings')}</section><section class="document-tool-group">${documentItem('confirm-delete', 'Delete document', 'trash')}</section>`, 260, true); return;
       }
       if (action === 'sheet-menu') { panel(button, 'Worksheet options', `${item('rename-sheet', 'Rename worksheet', 'pencil')}${item('delete-sheet', 'Delete worksheet', 'trash', data().workbook.sheetOrder.length < 2 ? 'disabled' : '')}`, 240, true); return; }
       if (action === 'delete-sheet') {
@@ -210,7 +251,7 @@ export function createDocumentSheet({ form, record, load, onChange, icon, esc, c
         const el = panel(button, 'Delete worksheet', `<p>Delete “${esc(sheet().name)}” and its cells? You can undo this change or restore a document version.</p><button type="button" class="button danger" data-delete-worksheet>Delete worksheet</button>`);
         el?.querySelector('[data-delete-worksheet]').addEventListener('click', () => { engine.mutate(() => { engine.book.deleteSheet(sid); sid = engine.book.save().sheetOrder[0]; }); selected = { r: 0, c: 0, endR: 0, endC: 0 }; panels.close(); refresh(); }, { signal }); return;
       }
-      if (action === 'structure') { panel(button, 'Rows and columns', [['insert-row', 'Insert row above'], ['delete-row', 'Delete selected rows'], ['insert-column', 'Insert column before'], ['delete-column', 'Delete selected columns']].map(([action, label]) => item(action, label)).join(''), 270, true); return; }
+      if (action === 'structure') { panel(button, 'Rows and columns', [['insert-row', 'Insert row above'], ['delete-row', 'Delete selected rows'], ['insert-column', 'Insert column before'], ['delete-column', 'Delete selected columns']].map(([action, label]) => item(action, label)).join('') + item('show-rows','Show hidden rows','preview') + item('show-columns','Show hidden columns','preview') + item('size-sheet','Worksheet size','table'), 270, true); return; }
       engine.mutate(() => {
         if (action === 'bold') range().setFontWeight(current().s && range().getCellStyleData()?.bl ? 'normal' : 'bold');
         if (action === 'italic') range().setFontStyle(range().getCellStyleData()?.it ? 'normal' : 'italic');
@@ -230,8 +271,37 @@ export function createDocumentSheet({ form, record, load, onChange, icon, esc, c
     const tab = event.target.closest('[data-sheet-tab]');
     if (tab && engine) { if (editing || formulaDirty) commit(); engine.flush(); sid = tab.dataset.sheetTab; storage.set(`table-sheet:${record.id}`, sid); selected = { r: 0, c: 0, endR: 0, endC: 0 }; scroll.scrollTop = scroll.scrollLeft = 0; render(); }
   }, { signal });
+  function startAxisDrag(event,button) {
+    axisClickUntil=0;
+    const axis=button.dataset.sheetAxis,start=+button.dataset.axisIndex, origin={x:event.clientX,y:event.clientY};
+    const listeners=new AbortController();let held=event.pointerType==='mouse',active=false,before=start,line,raf=0,point=origin;
+    axisDrag={axis,start,active:false,held:false};
+    const timer=setTimeout(()=>{held=true;if(axisDrag)axisDrag.held=true;scroll.querySelector(`[data-sheet-axis="${axis}"][data-axis-index="${start}"]`)?.classList.add('sheet-axis-held');},450);
+    function marker() {
+      if(!active)return;
+      const hit=document.elementFromPoint(point.x,point.y)?.closest(axis === 'row' ? '[data-row],[data-r]' : '[data-column],[data-c]');
+      if(!hit || !scroll.contains(hit)){before=null;line?.remove();line=null;return;}
+      const index=+(axis === 'row' ? hit.dataset.row ?? hit.dataset.r : hit.dataset.column ?? hit.dataset.c),r=hit.getBoundingClientRect(),box=scroll.getBoundingClientRect();
+      const after=axis === 'row' ? point.y>r.top+r.height/2 : point.x>r.left+r.width/2;before=index+(after?1:0);
+      line ||= Object.assign(document.createElement('div'),{className:'sheet-axis-drop-line'});document.body.append(line);line.dataset.axis=axis;line.dataset.before=before;
+      Object.assign(line.style,{left:`${axis === 'column' ? after?r.right:r.left : box.left}px`,top:`${axis === 'row' ? after?r.bottom:r.top : box.top}px`,width:`${axis === 'row' ? box.width : 2}px`,height:`${axis === 'column' ? box.height : 2}px`});
+    }
+    function paint() {raf=0;if(!active)return;const box=scroll.getBoundingClientRect();let delta=0;if(axis === 'row')delta=point.y<box.top+45?-12:point.y>box.bottom-45?12:0;else delta=point.x<box.left+45?-12:point.x>box.right-45?12:0;if(delta){if(axis === 'row')scroll.scrollTop+=delta;else scroll.scrollLeft+=delta;marker();raf=requestAnimationFrame(paint);}}
+    function clean(){clearTimeout(timer);listeners.abort();cancelAnimationFrame(raf);line?.remove();button.classList.remove('sheet-axis-held');scroll.querySelector('.sheet-axis-held')?.classList.remove('sheet-axis-held');signal.removeEventListener('abort',clean);axisDrag=null;}
+    const cancel=()=>{if(active)axisClickUntil=Date.now()+700;clean();};
+    window.addEventListener('pointermove',e=>{point={x:e.clientX,y:e.clientY};if(!held){if(Math.hypot(point.x-origin.x,point.y-origin.y)>10)clean();return;}if(Math.hypot(point.x-origin.x,point.y-origin.y)<6 && !active)return;active=true;axisDrag.active=true;axisDrag.held=true;panels.close();marker();if(!raf)raf=requestAnimationFrame(paint);e.preventDefault();},{signal:listeners.signal});
+    window.addEventListener('pointerup',()=>{const moved=active,destination=before;clean();if(moved){axisClickUntil=Date.now()+700;if(destination!==null)safe(()=>engine.moveAxis(sid,axis,start,1,destination));refresh();}},{once:true,signal:listeners.signal});
+    window.addEventListener('pointercancel',cancel,{once:true,signal:listeners.signal});
+    window.addEventListener('keydown',e=>{if(e.key==='Escape'){e.preventDefault();e.stopImmediatePropagation();cancel();}},{capture:true,signal:listeners.signal});
+    window.addEventListener('pointerdown',e=>{if(e.pointerType !== 'mouse' && e.pointerId !== event.pointerId)cancel();},{signal:listeners.signal});
+    signal.addEventListener('abort',clean,{once:true});
+  }
+  scroll.addEventListener('touchmove',e=>{if(axisDrag?.active)e.preventDefault();},{passive:false,signal});
+  scroll.addEventListener('contextmenu',event=>{const button=event.target.closest('[data-sheet-axis]');if(button){event.preventDefault();if(!axisDrag)axisMenu(button,button.dataset.sheetAxis,+button.dataset.axisIndex);}},{signal});
   let lastTap = 0, tappedCell;
   scroll.addEventListener('click', event => {
+    const axisButton=event.target.closest('[data-sheet-axis]');
+    if (axisButton) {if(Date.now()<axisClickUntil){event.preventDefault();return;}if(editing||formulaDirty)commit();axisMenu(axisButton,axisButton.dataset.sheetAxis,+axisButton.dataset.axisIndex);return;}
     const header = event.target.closest('th[data-column], th[data-row]');
     if (header && !event.target.closest('[role=separator]')) { if (editing || formulaDirty) commit(); if (header.hasAttribute('data-column')) { selected = { r: 0, c: +header.dataset.column, endR: sheet().rowCount - 1, endC: +header.dataset.column }; } else { selected = { r: +header.dataset.row, c: 0, endR: +header.dataset.row, endC: sheet().columnCount - 1 }; } setSelection(selected.endR, selected.endC, true); scroll.focus({ preventScroll: true }); return; }
     const cell = event.target.closest('[data-r][data-c]'); if (!cell || event.target.closest('textarea') || !engine) return;
@@ -251,12 +321,14 @@ export function createDocumentSheet({ form, record, load, onChange, icon, esc, c
       event.preventDefault(); event.stopPropagation();
       const isColumn = handle.hasAttribute('data-resize-column'), key = +(isColumn ? handle.dataset.resizeColumn : handle.dataset.resizeRow), initial = isColumn ? sheet().columnData?.[key]?.w || 120 : sheet().rowData?.[key]?.h || (touch() ? 44 : 28), origin = isColumn ? event.clientX : event.clientY;
       const moving = new AbortController(); let size = initial;
-      const move = e => { size = Math.round(Math.max(isColumn ? 48 : touch() ? 44 : 28, Math.min(1000, initial + (isColumn ? e.clientX : e.clientY) - origin))); handle.title = `${size}px`; const track = isColumn ? scroll.querySelectorAll('col')[key + 1] : handle.closest('tr'); if (track) track.style[isColumn ? 'width' : 'height'] = `${size}px`; };
+      const move = e => { size = Math.round(Math.max(isColumn ? 48 : touch() ? 44 : 28, Math.min(1000, initial + (isColumn ? e.clientX : e.clientY) - origin))); handle.title = `${size}px`; const track = isColumn ? scroll.querySelectorAll('col')[colMap.indexOf(key) + 1] : handle.closest('tr'); if (track) track.style[isColumn ? 'width' : 'height'] = `${size}px`; };
       window.addEventListener('pointermove', move, { signal: moving.signal });
       const finish = () => { moving.abort(); if (!destroyed) safe(() => engine.mutate(() => isColumn ? worksheet().setColumnWidth(key, size) : worksheet().setRowHeight(key, size))); refresh(); };
       window.addEventListener('pointerup', finish, { once: true, signal: moving.signal }); window.addEventListener('pointercancel', () => { moving.abort(); refresh(); }, { once: true, signal: moving.signal });
       return;
     }
+    const axisButton=event.target.closest('[data-sheet-axis]');
+    if(axisButton && !event.button) {startAxisDrag(event,axisButton);return;}
     const cell = event.target.closest('[data-r][data-c]');
     if (!cell || event.pointerType === 'touch' || event.button || event.target.closest('textarea')) return;
     dragged = false; event.preventDefault(); if (editing || formulaDirty) commit(); setSelection(+cell.dataset.r, +cell.dataset.c, event.shiftKey); scroll.focus({ preventScroll: true });
@@ -288,7 +360,7 @@ export function createDocumentSheet({ form, record, load, onChange, icon, esc, c
     }
     const directions = { ArrowUp: [-1, 0], ArrowDown: [1, 0], ArrowLeft: [0, -1], ArrowRight: [0, 1], Tab: [0, event.shiftKey ? -1 : 1], Enter: [1, 0] };
     if (event.key === 'Tab' && ((!event.shiftKey && selected.r === sheet().rowCount - 1 && selected.c === sheet().columnCount - 1) || (event.shiftKey && selected.r === 0 && selected.c === 0))) return;
-    if (directions[event.key]) { event.preventDefault(); const [dr, dc] = directions[event.key]; setSelection((event.shiftKey && event.key !== 'Tab' ? selected.endR : selected.r) + dr, (event.shiftKey && event.key !== 'Tab' ? selected.endC : selected.c) + dc, event.shiftKey && event.key !== 'Tab', true); }
+    if (directions[event.key]) { event.preventDefault(); const [dr, dc] = directions[event.key]; const fromR=event.shiftKey && event.key !== 'Tab' ? selected.endR : selected.r,fromC=event.shiftKey && event.key !== 'Tab' ? selected.endC : selected.c;setSelection(dr?rowMap[Math.max(0,Math.min(rowMap.length-1,rowMap.indexOf(fromR)+dr))]??fromR:fromR,dc?colMap[Math.max(0,Math.min(colMap.length-1,colMap.indexOf(fromC)+dc))]??fromC:fromC,event.shiftKey && event.key !== 'Tab',true); }
     else if (event.key === 'F2') { event.preventDefault(); beginEdit(); }
     else if (event.key === 'Delete' || event.key === 'Backspace') { event.preventDefault(); engine.mutate(() => range().clearContent()); }
     else if (event.key.length === 1 && !event.altKey) { event.preventDefault(); beginEdit(event.key); }
