@@ -28,7 +28,7 @@ export function noteStyleSVG(n, esc) {
 }
 export function noteStyleControls(n, { esc }) {
   if (!isNote(n)) return "";
-  return `<div class="note-style-picker geometry-wide" role="group" aria-label="Note style">${noteStyles.map(([value, label]) => `<button type="button" data-note-style="${value}" aria-label="${label} note" title="${label}" aria-pressed="${(n.noteStyle || "classic") === value}" ${n.locked ? "disabled" : ""}><svg viewBox="-2 -2 52 52" aria-hidden="true">${noteStyleSVG({ w: 48, h: 48, color: nodeFill(n), noteStyle: value, borderWidth: 1 }, esc)}</svg><span>${label}</span></button>`).join("")}</div>`;
+  return `<div class="note-style-picker geometry-wide" role="group" aria-label="Note style">${noteStyles.map(([value, label]) => `<button type="button" data-note-style="${value}" aria-label="${label} note" title="${label}" aria-pressed="${(n.noteStyle || "classic") === value}" ${n.locked ? "disabled" : ""}><svg viewBox="-2 -2 52 52" aria-hidden="true">${noteStyleSVG({ w: 48, h: 48, color: nodeFill(n), noteStyle: value, borderWidth: 1 }, esc)}</svg></button>`).join("")}</div>`;
 }
 export function paintNoteStyle(el, n, esc) {
   el.querySelector(":scope > .note-style-art")?.remove();

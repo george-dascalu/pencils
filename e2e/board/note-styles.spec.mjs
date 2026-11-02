@@ -109,3 +109,31 @@ onDevices(["phone"], () => {
     }, { message: "the style menu stays within the screen" }).toBe(true);
   });
 });
+
+onDevices(["desktop", "ipad", "phone"], () => {
+  test.use({ viewportSize: null });
+  test("note style choices show only icons with accessible names and hover labels @gate", async ({ page, device }) => {
+    await open(page);
+    await findOnBoard(page, "note-0", "classic note");
+    const menu = page.locator('[data-selection-menu="geometry"]');
+    await menu.locator(":scope > summary").click();
+    const picker = page.getByRole("group", { name: "Note style", exact: true });
+    const choices = picker.locator("button");
+    await expect(choices).toHaveCount(5);
+    await expect(choices).toHaveText(["", "", "", "", ""]);
+    for (const theme of ["light", "dark"]) {
+      await page.evaluate(theme => window.PencilsAppearance.write({ theme }), theme);
+      for (const name of ["Classic", "Square", "Rounded", "Top fold", "Bottom fold"]) {
+        const button = picker.getByRole("button", { name: `${name} note`, exact: true });
+        await expect(button).toHaveAttribute("title", name);
+        const style = await button.evaluate(el => ({ height: el.offsetHeight, icon: getComputedStyle(el.querySelector("svg")).width, display: getComputedStyle(el).display }));
+        expect(style.display).toBe("flex");
+        expect(style.icon).toBe("32px");
+        expect(style.height).toBeLessThanOrEqual(48);
+        if (device !== "desktop") expect(style.height).toBeGreaterThanOrEqual(44);
+      }
+    }
+    await picker.getByRole("button", { name: "Rounded note", exact: true }).click();
+    await expect.poll(async () => (await nodes())[0].noteStyle).toBe("rounded");
+  });
+});

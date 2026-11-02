@@ -2,6 +2,11 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.21.38 — 2026-11-02
+
+### Changed
+- Feature F0.21-38: The board's note-style picker shows only the five shape icons. Style names remain available in tooltips and accessible button names.
+
 ## 0.21.37 — 2026-11-02
 
 ### Added
