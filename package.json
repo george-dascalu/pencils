@@ -1,6 +1,6 @@
 {
   "name": "pencils",
-  "version": "0.21.36",
+  "version": "0.21.37",
   "private": true,
   "type": "module",
   "description": "A Markdown-backed workspace for documents, cards and boards",

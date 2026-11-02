@@ -2,6 +2,11 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.21.37 — 2026-11-02
+
+### Added
+- Feature F0.21-37: Active filters appear as named, removable chips beside Filters in Tasks and Planning, including Capacity's scope and team. Long filter sets scroll in place, phones show them beneath the search controls, and removing one filter leaves the others in place.
+
 ## 0.21.36 — 2026-11-02
 
 ### Changed

@@ -1031,6 +1031,38 @@ html.table-viewport-view body {
   position: absolute; top: 2px; right: 2px; min-width: 14px; height: 14px; padding: 0 3px; box-sizing: border-box;
   border-radius: 7px; background: var(--green); color: var(--surface); font-size: 9px; font-weight: 600; line-height: 14px; text-align: center;
 }
+/* Active values stay in the existing toolbar; long sets scroll without wrapping controls. */
+.active-filters {
+  display: flex;
+  align-items: center;
+  flex: 0 0 auto;
+  flex-wrap: nowrap;
+  gap: 4px;
+  min-width: 0;
+  max-width: min(36vw, 480px);
+  width: max-content;
+  overflow-x: auto;
+  overflow-y: hidden;
+  overscroll-behavior-x: contain;
+  scrollbar-width: none;
+}
+.active-filters::-webkit-scrollbar { display: none; }
+.active-filters > .active-filter {
+  flex: none;
+  gap: 6px;
+  max-width: 260px;
+  border-color: var(--line);
+  background: var(--surface);
+  color: var(--ink);
+}
+.active-filter > span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.active-filter > .icon { flex: none; width: 12px; height: 12px; color: var(--muted); }
+@media (max-width: 600px) {
+  /* The phone's first row keeps Search, Sort and View options; active values use its full width. */
+  .main.project-main .toolbar-left:has(> .active-filters) { display: flex; flex-wrap: wrap; }
+  #view-toolbar .toolbar-left:has(> .active-filters) > .search { flex: 1 1 0; }
+  .toolbar-left > .active-filters { flex-basis: 100%; max-width: 100%; }
+}
 
 /* Anchored confirmation for destructive actions. */
 .selection-popover.confirm-popover {

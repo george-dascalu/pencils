@@ -1,7 +1,7 @@
 import { positionPopover } from "./popover-position.js";
 import { phoneBoardTools } from "./phone-board-tools.js";
 import { mountLayoutTray, removeLayoutTray, positionLayoutTray, tabBar } from "./layout-tray.js";
-import { viewOn } from "./card-fields.js";
+import { fieldOn, viewOn } from "./card-fields.js";
 // Group the existing controls without replacing their handlers or save state.
 export function projectLayout(ctx) {
   const { $, state, icon, label, taskViews, planningViews, openView, openSelectMenu } = ctx;
@@ -100,9 +100,11 @@ export function projectLayout(ctx) {
         if (select && !select.hidden) openSelectMenu?.(select, sortButton);
       });
     }
+    // Keep the values visible outside the menu, using the same controls to clear them.
+    const activeFilters = showActiveFilters(toolbar);
     // A view's options that narrow its cards (Capacity's Scope and Team) count as filters while set.
     const filtersSummary = toolbar.querySelector(':scope > details.board-menu[data-board-menu="filters"] > summary');
-    if (filtersSummary) filtersBadge(filtersSummary, Number(filtersSummary.dataset.count || 0) + document.querySelectorAll('#view-toolbar [data-filters-option="active"]').length);
+    if (filtersSummary) filtersBadge(filtersSummary, activeFilters);
     if (!narrow.matches) {
       if (sortButton) sort.after(sortButton);
       // A view's less-used options (Capacity's Measure, Scope and Team) wait in Filters, keeping the
@@ -147,6 +149,8 @@ export function projectLayout(ctx) {
       panel.querySelector("header button").insertAdjacentHTML("beforebegin", `<button type="button" class="icon-button" data-action="filters-reset" aria-label="Clear filters" title="Clear filters">${icon("eraser")}</button>`);
     if (sortButton) toolbar.append(sortButton);
     toolbar.append(compact);
+    const active = toolbar.querySelector(":scope > .active-filters");
+    if (active) toolbar.append(active);
     afterFilters(toolbar);
     compact.addEventListener("toggle", event => {
       if (event.target !== compact) return;
@@ -174,6 +178,7 @@ export function projectLayout(ctx) {
     }
     moveTo(toolbar.querySelector(":scope > .search"), (el) => tools.append(el));
     moveTo(toolbar.querySelector(':scope > details.board-menu[data-board-menu="filters"]'), (el) => tools.append(el));
+    moveTo(toolbar.querySelector(":scope > .active-filters"), (el) => tools.append(el));
     if (sortButton) tools.append(sortButton);
     const row = $("#view-toolbar");
     row?.toggleAttribute("data-empty", ![...row.querySelectorAll(".toolbar > * > *")].some((el) => el.getClientRects().length));
@@ -327,30 +332,72 @@ export function projectLayout(ctx) {
         field.append(control);
         panel.prepend(field);
       }
-      const f = state.extraFilters || {};
-      const count = [
-        state.status !== "all" && state.status,
-        state.type !== "all" && state.type,
-        f.assignee,
-        f.tag,
-        f.due,
-        f.blocked,
-        f.archived,
-        f.completion,
-      ].filter(Boolean).length;
       const summary = panel.parentElement.querySelector("summary");
       summary.className = "icon-summary";
-      summary.dataset.count = count;
-      filtersBadge(summary, count);
     }
     restoreMenus();
     compactToolbar();
   }
-  // Filters is an icon with a badge counting the active filters.
-  function filtersBadge(summary, count) {
+  // Grouping, sort and Measure change presentation, so they are not filter chips.
+  function showActiveFilters(toolbar) {
+    toolbar.querySelector(":scope > .active-filters")?.remove();
+    if (!toolbar.querySelector('[data-board-menu="filters"]')) return [];
+    const fields = [
+      ["filter-status", "Status", "all", "status"], ["filter-type", "Type", "all", "type"],
+      ["filter-assignee", "Assignee", "", "assignee"], ["filter-tag", "Tag", "", "tags"],
+      ["filter-due", "Deadline", "", "due"], ["filter-completion", "Completion", "", "status"],
+      ["filter-blocked", "Blocked", false], ["filter-archived", "Include archived", false],
+      ["capacity-scope", "Scope", "project"], ["capacity-team", "Team", ""],
+    ];
+    const active = fields.flatMap(([id, name, reset, field]) => {
+      const control = document.getElementById(id);
+      if (!control || (field && !fieldOn(state.config, field))) return [];
+      const checkbox = control.type === "checkbox", value = checkbox ? control.checked : control.value;
+      if (value === reset) return [];
+      const selected = control.selectedOptions?.[0]?.text;
+      const description = checkbox ? name : `${name}: ${selected || value}`;
+      // Known choices read clearly by themselves; free text keeps its field name.
+      return [{ id, reset, text: selected || description, description }];
+    });
+    if (!active.length) return active;
+    const group = document.createElement("div");
+    group.className = "active-filters";
+    group.setAttribute("role", "group");
+    group.setAttribute("aria-label", "Active filters");
+    for (const { id, text, description } of active) {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "button active-filter";
+      button.dataset.activeFilter = id;
+      button.setAttribute("aria-label", `Remove ${description} filter`);
+      button.title = `Remove ${description} filter`;
+      const name = document.createElement("span");
+      name.textContent = text;
+      button.append(name);
+      button.insertAdjacentHTML("beforeend", icon("close"));
+      group.append(button);
+    }
+    group.addEventListener("click", event => {
+      const button = event.target.closest("[data-active-filter]");
+      const index = active.findIndex(item => item.id === button?.dataset.activeFilter);
+      if (index < 0) return;
+      const { id, reset } = active[index], control = document.getElementById(id);
+      if (!control) return;
+      if (control.type === "checkbox") control.checked = reset;
+      else control.value = reset;
+      control.dispatchEvent(new Event("change", { bubbles: true }));
+      const remaining = [...document.querySelectorAll(".active-filters > button")];
+      (remaining[Math.min(index, remaining.length - 1)] || $(".mobile-view-options > summary") || $('[data-board-menu="filters"] > summary'))?.focus({ preventScroll: true });
+    });
+    toolbar.querySelector('[data-board-menu="filters"]').after(group);
+    return active;
+  }
+  // Filters retains its count, with the named filters in its hover details too.
+  function filtersBadge(summary, active) {
+    const count = active.length;
     const name = `Filters${count ? ` (${count} active)` : ""}`;
     summary.setAttribute("aria-label", name);
-    summary.title = name;
+    summary.title = active.length ? `${name}: ${active.map(item => item.description).join("; ")}` : name;
     summary.innerHTML = `${icon("filter")}${count ? `<span class="filter-count" aria-hidden="true">${count}</span>` : ""}`;
   }
   function render() {
