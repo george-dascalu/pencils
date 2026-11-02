@@ -103,7 +103,7 @@ select {
 input,
 textarea,
 select {
-  background: #fff;
+  background: var(--surface);
   border: 1px solid var(--control-border);
   border-radius: var(--control-radius);
   padding: 10px 12px;
@@ -494,8 +494,8 @@ button svg {
   white-space: nowrap;
   font-size: 12px;
   font-weight: 500;
-  background: white;
-  border: 1px solid #dce1d4;
+  background: var(--surface);
+  border: 1px solid var(--control-border);
 }
 .button:hover {
   background: #f0f3e9;

@@ -149,6 +149,7 @@ const paths = {
   list: "M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01",
   tree: "M4 3v14h5M4 7h5M13 5h8v4h-8zM13 15h8v4h-8z",
   calendar: "M4 5h16v16H4zM8 3v4M16 3v4M4 10h16M8 14h2M14 14h2M8 18h2",
+  "calendar-weekends": "M4 5h16v16H4zM8 3v4M16 3v4M4 10h16M14 13h3v5h-3z",
   drag: "M9 5h.01M15 5h.01M9 12h.01M15 12h.01M9 19h.01M15 19h.01",
   table: "M3 4h18v16H3zM3 9h18M3 14h18M9 4v16M15 4v16",
   kanban: "M3 4h5v10H3zM10 4h5v16h-5zM17 4h5v7h-5z",

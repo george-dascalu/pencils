@@ -6,6 +6,7 @@
 // From the 0.21.0 baseline, new features use F<major>.<minor>-<1..100>: F0.21-1 releases
 // as 0.21.1, F0.21-100 as 0.22.0, then F0.22-1 as 0.22.1. Historical T IDs stay intact.
 export const roadmap = [
+  { id: "F0.21-15", title: "Centred calendar navigation with themed controls and a weekends icon", status: "done", requested: "2026-11-02", started: "2026-11-02", done: "2026-11-02", version: "0.21.15" },
   { id: "F0.21-14", title: "Resize calendar times and preview the exact drop area", status: "done", requested: "2026-11-02", started: "2026-11-02", done: "2026-11-02", version: "0.21.14" },
   { id: "F0.21-13", title: "Aligned calendar viewport and a draggable Unscheduled toolbar list", status: "done", requested: "2026-11-02", started: "2026-11-02", done: "2026-11-02", version: "0.21.13" },
   { id: "F0.21-12", title: "Vertical calendar zoom with plus/minus controls and Shift + scroll", status: "done", requested: "2026-11-02", started: "2026-11-02", done: "2026-11-02", version: "0.21.12" },

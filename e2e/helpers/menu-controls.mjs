@@ -83,14 +83,14 @@ export async function showSettingsSection(page, section) {
   await page.locator(".settings-loading").waitFor({ state: "detached" });
 }
 
-// The Show weekends checkbox shared by Calendar and Timeline.
+// Calendar uses an icon toggle; Timeline keeps its labelled checkbox.
 export async function setWeekends(page, on) {
-  const toggle = page.locator("input[type=checkbox]:is([data-timeline-weekends], [data-calendar-weekends])").first();
+  const toggle = page.locator("[data-timeline-weekends], [data-calendar-weekends]").first();
   await toggle.waitFor({ state: "attached" });
-  if ((await toggle.isChecked()) !== on) await clickControl(toggle);
+  if ((await weekendsShown(page)) !== on) await clickControl(toggle);
 }
 export async function weekendsShown(page) {
-  return page.locator("input[type=checkbox]:is([data-timeline-weekends], [data-calendar-weekends])").first().isChecked();
+  return page.locator("[data-timeline-weekends], [data-calendar-weekends]").first().evaluate(el=>el.matches('button') ? el.getAttribute('aria-pressed') === 'true' : el.checked);
 }
 
 // Destructive actions confirm through the shared anchored popover.

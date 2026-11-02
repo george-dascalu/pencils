@@ -2,6 +2,11 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.21.15 — 2026-11-02
+
+### Changed
+- Feature F0.21-15: Calendar centres its date range and shows weekends with an icon toggle. Unscheduled and layout controls use the active theme's surfaces; shared buttons and fields now follow theme colours instead of hard-coded white fills.
+
 ## 0.21.14 — 2026-11-02
 
 ### Added

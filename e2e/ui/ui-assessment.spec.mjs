@@ -6,7 +6,7 @@ import { accessibilityReport } from "../helpers/accessibility.mjs";
 import fs from "node:fs/promises";
 import { test, expect, onDevices, useApp } from "../fixtures.mjs";
 import { newCard } from "../helpers/new-card.mjs";
-import { openList } from "../helpers/menu-controls.mjs";
+import { openList, setWeekends, weekendsShown } from "../helpers/menu-controls.mjs";
 
 const app = useApp(async (store) => {
   const project = await store.createProject({ title: "Assessment project", key: "UX" });
@@ -232,13 +232,12 @@ test.describe("Group 4: vocabulary and controls (findings 17–22)", { tag: "@au
     const hits = (await visibleText(page, "#dialogs")).split("\n").filter((l) => banned.test(l) || /Workflow & fields/.test(l)).map((l) => `palette: ${l}`);
     expect(hits, `wording: ${hits.join(" | ")}`).toEqual([]);
   });
-  test("calendar and timeline share the labelled weekends checkbox", async ({ page }) => {
+  test("calendar and timeline keep their weekends controls operable", async ({ page }) => {
     for (const [view, ready] of [['calendar', '.calendar, .calendar-agenda'], ['timeline', '.task-timeline']]) {
       await open(page, view, ready);
-      const toggle = page.getByRole('checkbox', { name: 'Show weekends' });
-      const checked = await toggle.isChecked();
-      await toggle.locator('..').click();
-      await expect(toggle).toBeChecked({ checked: !checked });
+      const checked = await weekendsShown(page);
+      await setWeekends(page, !checked);
+      expect(await weekendsShown(page)).toBe(!checked);
     }
   });
   test("planning views hide the task sort and group controls", async ({ page }) => {
