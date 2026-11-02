@@ -25,12 +25,14 @@ onDevices(["desktop", "ipad"], () => test("a setting with a one-line control is 
   await open(page);
   await openSettingsPage(page, "general");
   for (const name of ["title", "key", "default_view"]) {
+    if (name === "default_view") await openSettingsPage(page, "views");
     const g = await geometry(page, name);
     expect(g.control.x, `${name}: the control sits on the right`).toBeGreaterThan(g.body.x + g.body.width / 2);
     expect(g.row.height, `${name}: one row`).toBeLessThanOrEqual(g.control.height + 20);
     // The key's divider sits below its hint (checked next).
     if (name !== "key") expect(g.divider, `${name}: rows are divided`).toBe("1px");
   }
+  await openSettingsPage(page, "general");
   const description = await geometry(page, "body");
   expect(description.control.width, "text areas keep the full width").toBeGreaterThan(description.body.width * 0.8);
   // The key's hint belongs to its row: the divider moves below the hint.

@@ -55,10 +55,10 @@ test("turning fields off in Settings hides them and the views that need them, an
   for (const part of ['select[name="status"]', '[data-task-picker="priority"]', ".task-assignee-field", ".task-dates"])
     await expect(form.locator(part), part).toBeHidden();
   await page.keyboard.press("Escape");
-  // A saved default view that's now hidden stays chosen, so saving General keeps it.
+  // A saved default view that's now hidden stays chosen, so saving Views keeps it.
   const { project } = await app.store.snapshot(s.project.id);
   await app.store.updateProject(s.project.id, { revision: project.revision, default_view: "kanban" });
-  await page.goto(url(s, "settings/general"));
+  await page.goto(url(s, "settings/views"));
   await expect(page.locator('select[name="default_view"]')).toHaveValue("kanban");
 
   // Turned back on, the values are still there.
@@ -91,7 +91,7 @@ test("filters and Table columns leave fields that are off", async ({ page }) => 
   for (const key of ["status", "assignee", "tags"]) expect(keys, key).not.toContain(key);
   expect(keys).toContain("priority");
   // The default view offers only views that stay (no Kanban without status).
-  await page.goto(url(s, "settings/general"));
+  await page.goto(url(s, "settings/views"));
   await expect(page.locator('select[name="default_view"] option[value="list"]')).toHaveCount(1);
   await expect(page.locator('select[name="default_view"] option[value="kanban"]')).toHaveCount(0);
 });

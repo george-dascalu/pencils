@@ -29,7 +29,14 @@ export const settingsPages = [
     "General",
     "settings",
     "Project",
-    "Name, card IDs and the default view for this project.",
+    "Name, card IDs, description and colour for this project.",
+  ],
+  [
+    "views",
+    "Views",
+    "overview",
+    "Project",
+    "Choose the layouts and components available in this project. Turning one off keeps its data.",
   ],
   [
     "teams",
@@ -296,8 +303,12 @@ export function projectSettings(ctx, { sources, automations, personal, organisat
   function general() {
     const p = state.project;
     return form(
-      `${field("title", "Project name", p.title, 'required maxlength="300"')}${field("key", "Project key", p.key, 'required pattern="[A-Za-z][A-Za-z0-9]{1,11}" maxlength="12"')}<p class="field-hint">Card IDs look like <strong data-key-example>${esc(p.key)}-1</strong>. Existing IDs remain available as aliases when the key changes.</p><label class="field">Description<textarea name="body" rows="4" placeholder="What is this project for?">${esc(p.body)}</textarea></label><div class="field-row"><div class="field">Project colour${colorPicker({ label: "Project colour", value: p.color })}</div><label class="field">Default view<select name="default_view">${options(["overview", "documents", "list", "tree", "table", "kanban", "board", "calendar", "timeline", "capacity"].filter((view) => viewOn({ off: state.config?.off }, view) || view === p.default_view), p.default_view === "drawing" ? "board" : p.default_view, { board: "Boards" })}</select></label></div>${projectViews()}`,
+      `${field("title", "Project name", p.title, 'required maxlength="300"')}${field("key", "Project key", p.key, 'required pattern="[A-Za-z][A-Za-z0-9]{1,11}" maxlength="12"')}<p class="field-hint">Card IDs look like <strong data-key-example>${esc(p.key)}-1</strong>. Existing IDs remain available as aliases when the key changes.</p><label class="field">Description<textarea name="body" rows="4" placeholder="What is this project for?">${esc(p.body)}</textarea></label><div class="field-row"><div class="field">Project colour${colorPicker({ label: "Project colour", value: p.color })}</div></div>`,
     );
+  }
+  function views() {
+    const p = state.project;
+    return form(`<label class="field">Default view<select name="default_view">${options(["overview", "documents", "list", "tree", "table", "kanban", "board", "calendar", "timeline", "capacity"].filter((view) => viewOn({ off: state.config?.off }, view) || view === p.default_view), p.default_view === "drawing" ? "board" : p.default_view, { board: "Boards" })}</select></label>${projectViews()}`);
   }
   // T39: the views and components this project offers; a component's box turns all its views on or off.
   function projectViews() {
@@ -492,6 +503,8 @@ export function projectSettings(ctx, { sources, automations, personal, organisat
       host.innerHTML =
         section === "general"
           ? general()
+          : section === "views"
+            ? views()
           : section === "teams"
             ? teams()
             : ["workflow", "hierarchy", "fields"].includes(section)
@@ -502,7 +515,7 @@ export function projectSettings(ctx, { sources, automations, personal, organisat
       const f = host.querySelector("form");
       if (!f) return;
       const schema = structuredClone(state.config);
-      if (section === "general") {
+      if (section === "views") {
         // The default view offers only the views that are on, and moves to Overview when its view goes.
         const defaults = () => {
           const on = new Set([...f.querySelectorAll('[name="project-view"]:checked')].map((box) => box.value)), select = f.elements.default_view;
@@ -567,9 +580,9 @@ export function projectSettings(ctx, { sources, automations, personal, organisat
           // The project as it is now: an earlier save from this page is already in it.
           const config = structuredClone(state.config);
           let changes;
-          if (section === "general") {
-            changes = Object.fromEntries(data);
-            delete changes["project-view"];
+          if (section === "general") changes = Object.fromEntries(data);
+          if (section === "views") {
+            changes = { default_view: data.get("default_view") };
             const on = data.getAll("project-view"), off = VIEW_GROUPS.flatMap(([, , views]) => views).filter((view) => !on.includes(view));
             if (off.join() !== (config.views_off || []).join()) changes.schema = { ...config, views_off: off.length ? off : undefined };
           }

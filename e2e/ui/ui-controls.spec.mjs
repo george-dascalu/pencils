@@ -39,7 +39,7 @@ onDevices(["ipad"], () => {
   });
 
   test("tapping a label around a select opens the app menu on touch", async ({ page }) => {
-    await open(page, "settings/general", "#project-form");
+    await open(page, "settings/views", "#project-form");
     const target = (await page.locator("#settings-section-select").count()) && (await page.locator("#settings-section-select").isVisible()) ? page.locator("label:has(> #settings-section-select)") : page.locator("#project-form label:has(> select)").first();
     await target.tap({ position: { x: 6, y: 8 } });
     await menu(page).waitFor({ timeout: 3000 });

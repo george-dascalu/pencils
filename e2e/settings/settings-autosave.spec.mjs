@@ -37,7 +37,8 @@ test("a change made while a save is under way is kept and saved after it", async
     if (route.request().method() === "PATCH") await held;
     await route.continue();
   });
-  await page.getByRole("checkbox", { name: "Calendar", exact: true }).uncheck();
+  await page.locator('#project-form [name="key"]').fill("ASYNC");
+  await page.locator('#project-form [name="key"]').blur();
   await expect(status(page)).toHaveText("Saving…");
   const name = page.locator('#project-form [name="title"]');
   await name.fill("Typed during the save");
@@ -45,7 +46,7 @@ test("a change made while a save is under way is kept and saved after it", async
   release();
   await expect(status(page)).toHaveText("Saved");
   await expect(name, "the field keeps what was typed").toHaveValue("Typed during the save");
-  await expect.poll(async () => { const p = await saved(app.project.id); return [p.title, p.schema.views_off]; }).toEqual(["Typed during the save", ["calendar"]]);
+  await expect.poll(async () => { const p = await saved(app.project.id); return [p.title, p.key]; }).toEqual(["Typed during the save", "ASYNC"]);
 });
 
 test("leaving Settings saves the field being typed in", async ({ page }) => {
@@ -115,7 +116,7 @@ test("a section opened during a save shows the project once the save has finishe
 });
 
 test("a view turned off and on again is saved on", async ({ page }) => {
-  await page.goto(url("general"));
+  await page.goto(url("views"));
   const kanban = page.getByRole("checkbox", { name: "Kanban", exact: true });
   await kanban.uncheck();
   await expect(status(page)).toHaveText("Saved");
@@ -186,7 +187,8 @@ test("leaving while a save is under way, with an edit made since, waits", async 
     if (route.request().method() === "PATCH") await held;
     await route.continue();
   });
-  await page.getByRole("checkbox", { name: "Timeline", exact: true }).uncheck();
+  await page.locator('#project-form [name="body"]').fill("Changed while saving");
+  await page.locator('#project-form [name="body"]').blur();
   await expect(status(page)).toHaveText("Saving…");
   const name = page.locator('#project-form [name="title"]');
   await name.fill("Made during the save");

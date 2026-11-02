@@ -1,8 +1,8 @@
-// Owner request (T39, 31 October 2026): Settings → General chooses which views and components
+// Owner request (T39, 31 October 2026): Settings → Views chooses which views and components
 // (Tasks, Planning, Boards, Documents) a project has; Overview always stays. Views that are off
 // leave the tabs (the bottom bar on touch screens), the layout tray and the New menu, and a link
 // to one opens Overview. Nothing in the project is deleted.
-import { settingsSaved } from "../helpers/menu-controls.mjs";
+import { settingsSaved, showSettingsSection } from "../helpers/menu-controls.mjs";
 import { test, expect, onDevices, useApp } from "../fixtures.mjs";
 
 const app = useApp(async () => ({}));
@@ -22,9 +22,9 @@ async function newMenu(page) {
   return page.locator("[data-new-menu][open] .new-menu-panel");
 }
 
-test("Settings → General turns views and components off, and they leave the tabs, the tray and the New menu", async ({ page }) => {
+test("Settings → Views turns views and components off, and they leave the tabs, the tray and the New menu", async ({ page }) => {
   const project = await seed();
-  await page.goto(url(project, "settings/general"));
+  await page.goto(url(project, "settings/views"));
   const views = page.getByRole("group", { name: "Views", exact: true });
   await views.getByRole("checkbox", { name: "Boards", exact: true }).uncheck();
   await views.getByRole("checkbox", { name: "Calendar", exact: true }).uncheck();
@@ -51,7 +51,7 @@ test("Settings → General turns views and components off, and they leave the ta
   await expect(menu.locator('[data-action="task-new"]'), "Planning still shows cards").toHaveCount(1);
 
   // Turning a view back on brings it back.
-  await page.goto(url(project, "settings/general"));
+  await page.goto(url(project, "settings/views"));
   await page.getByRole("group", { name: "Views", exact: true }).getByRole("checkbox", { name: "Boards", exact: true }).check();
   await settingsSaved(page);
   await page.goto(url(project, "overview"));
@@ -71,4 +71,27 @@ onDevices(["desktop", "phone"], () => test("a project without Tasks, Planning an
   await page.goto(url(project, "board"));
   await expect(tab(page, "overview")).toHaveAttribute("aria-current", "page");
   await expect(page.getByText("This project's settings turn Boards off."), "says why").toBeVisible();
+}));
+
+
+onDevices(["desktop", "ipad", "phone"], () => test("Views has its own project category, and hiding Planning layouts or Boards keeps their data", async ({page}) => {
+  const project=await seed(), card=await app.store.createTask(project.id,{title:"Kept card",due:"2026-11-02"});
+  const before=await app.store.snapshot(project.id);
+  await page.goto(url(project,"settings/general"));
+  await expect(page.locator(".project-views")).toHaveCount(0);
+  await showSettingsSection(page,"views");
+  await expect(page.locator("#settings-page-title")).toHaveText("Views");
+  for(const name of ["Timeline","Capacity","Boards"]) await page.getByRole("checkbox",{name,exact:true}).uncheck();
+  await settingsSaved(page);
+  await page.reload();
+  for(const name of ["Timeline","Capacity","Boards"]) await expect(page.getByRole("checkbox",{name,exact:true})).not.toBeChecked();
+  await page.goto(url(project,"calendar"));
+  await expect(tab(page,"planning")).toHaveAttribute("aria-current","page");
+  await tab(page,"planning").click();
+  await expect(page.locator('.layout-tray [data-view="calendar"]')).toBeVisible();
+  await expect(page.locator('.layout-tray [data-view="timeline"], .layout-tray [data-view="capacity"]')).toHaveCount(0);
+  await expect(tab(page,"board")).toHaveCount(0);
+  const after=await app.store.snapshot(project.id);
+  expect(after.boards.map(b=>b.id)).toEqual(before.boards.map(b=>b.id));
+  expect(after.tasks.find(t=>t.id===card.id).title).toBe("Kept card");
 }));

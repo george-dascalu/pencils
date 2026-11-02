@@ -2,6 +2,11 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.21.3 — 2026-11-02
+
+### Changed
+- Feature F0.21-3: Project settings has a dedicated Views section for choosing available layouts, whole components and the default view. Turning a view off preserves its cards, documents and boards.
+
 ## 0.21.2 — 2026-11-02
 
 ### Added

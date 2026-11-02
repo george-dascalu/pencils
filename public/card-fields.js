@@ -1,7 +1,7 @@
 // Built-in card fields a project can turn off (T23, Settings → Statuses & workflow → Card fields);
 // cards always keep their ID and title. Values stay in the files: the page hides the fields
 // (card-fields.css, through the root's data-fields-off) and the views that need them. A project
-// can also turn off views and whole components (T39, Settings → General → Views); Overview stays.
+// can also turn off views and whole components (T39, Settings → Views); Overview stays.
 export const CARD_FIELDS = [
   ["type", "Type"], ["assignee", "Assignee"], ["status", "Status"], ["priority", "Priority"],
   ["start", "Start date"], ["due", "Due date"], ["estimate", "Estimate"], ["tags", "Tags"], ["parent", "Parent"],
