@@ -101,6 +101,19 @@
 .document-folder-row [aria-expanded="false"] > .icon:first-child { transform: rotate(-90deg); }
 .document-folder-row [aria-expanded="true"] > .icon:first-child { transform: none; }
 .document-drop-target { outline: 2px solid var(--green); outline-offset: -2px; }
+.document-explorer [data-tree-row] { position: relative; }
+.document-explorer [data-tree-insert]::after {
+  content: ""; position: absolute; left: 0; right: 0; height: 2px; z-index: 1;
+  background: var(--green); pointer-events: none;
+}
+.document-explorer [data-tree-insert="before"]::after { top: 0; }
+.document-explorer [data-tree-insert="after"]::after { bottom: 0; }
+.document-drag-preview {
+  position: fixed; z-index: 500; max-width: min(260px, 70vw); padding: 6px 10px;
+  border: 1px solid var(--line); border-radius: var(--field-radius); background: var(--surface);
+  color: var(--ink); box-shadow: var(--shadow-popover); font-size: var(--type-body);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; pointer-events: none;
+}
 :is(#document-list, #board-list) ul { list-style: none; padding: 0 0 0 16px; margin: 0; }
 :is(#document-list, #board-list) [hidden] { display: none; }
 .document-explorer h2 { margin: 0; font-size: 14px; font-weight: 600; }

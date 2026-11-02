@@ -20,11 +20,16 @@ export async function reveal(locator) {
 // The document or board list (0.20.96) opens from the open Documents or Boards tab, or on touch
 // screens with a document open, from the Documents button in that tab's tray.
 export async function openList(page) {
-  if (await page.locator("#list-panel").isVisible()) return;
+  if (await page.locator("#list-panel:not([hidden])").isVisible()) return;
+  // The shell mounts before the view's explorer; don't choose the Documents tab for a board
+  // whose explorer has not filled the panel yet.
+  await page.locator("#list-panel[data-kind]").waitFor({ state: "attached" });
   const kind = await page.locator("#list-panel").getAttribute("data-kind");
   const tab = page.locator(`.tabs [data-view="${kind === "boards" ? "board" : "documents"}"][aria-current="page"]`);
   if ((await tab.getAttribute("aria-expanded")) !== "true") await tab.click();
   // The document renderer can mount its tray while the tab click is waiting for actionability.
+  // Wait for either result of that click, rather than sampling the tray before it mounts.
+  await page.locator('#list-panel:not([hidden]), .layout-tray[data-open] [data-list-toggle]').first().waitFor();
   const choice = page.locator(".layout-tray[data-open] [data-list-toggle]");
   if (await choice.isVisible()) await choice.click();
   await page.locator("#list-panel:not([hidden])").waitFor();

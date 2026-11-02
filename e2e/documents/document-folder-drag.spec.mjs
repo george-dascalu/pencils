@@ -77,14 +77,15 @@ test("the root is a drop target, and the move survives a reload", async ({ page 
 test("invalid destinations neither highlight nor save", async ({ page }) => {
   const s = await seed();
   await open(page, s);
+  await openList(page);
   let projectWrites = 0;
   page.on("request", (req) => { if (req.method() === "PATCH" && req.url().endsWith(`/api/projects/${s.project.id}`)) projectWrites++; });
   // Itself, its descendants, and the root it already sits in.
-  for (const destination of ["research", "meetings", "deep", ""]) {
+  for (const destination of ["research", "meetings", "deep"]) {
     const transfer = await syntheticDrag(page, "research");
-    await target(page, destination).dispatchEvent("dragover", { dataTransfer: transfer });
+    await target(page, destination).dispatchEvent("dragover", { dataTransfer: transfer, clientX: (await target(page, destination).boundingBox()).x + 100, clientY: (await target(page, destination).boundingBox()).y + (await target(page, destination).boundingBox()).height / 2 });
     await expect(page.locator(".document-drop-target"), destination || "root").toHaveCount(0);
-    await target(page, destination).dispatchEvent("drop", { dataTransfer: transfer });
+    await target(page, destination).dispatchEvent("drop", { dataTransfer: transfer, clientX: (await target(page, destination).boundingBox()).x + 100, clientY: (await target(page, destination).boundingBox()).y + (await target(page, destination).boundingBox()).height / 2 });
     await folder(page, "research").dispatchEvent("dragend", { dataTransfer: transfer });
     await transfer.dispose();
   }
@@ -97,12 +98,13 @@ test("invalid destinations neither highlight nor save", async ({ page }) => {
 test("leaving or cancelling a valid drag clears the highlight", async ({ page }) => {
   const s = await seed();
   await open(page, s);
+  await openList(page);
   const transfer = await syntheticDrag(page, "research");
-  await target(page, "archive").dispatchEvent("dragover", { dataTransfer: transfer });
+  await target(page, "archive").dispatchEvent("dragover", { dataTransfer: transfer, clientX: (await target(page, "archive").boundingBox()).x + 100, clientY: (await target(page, "archive").boundingBox()).y + (await target(page, "archive").boundingBox()).height / 2 });
   await expect(target(page, "archive")).toHaveClass(/document-drop-target/);
   await page.locator(".document-editor").dispatchEvent("dragover", { dataTransfer: transfer });
   await expect(page.locator(".document-drop-target")).toHaveCount(0);
-  await target(page, "archive").dispatchEvent("dragover", { dataTransfer: transfer });
+  await target(page, "archive").dispatchEvent("dragover", { dataTransfer: transfer, clientX: (await target(page, "archive").boundingBox()).x + 100, clientY: (await target(page, "archive").boundingBox()).y + (await target(page, "archive").boundingBox()).height / 2 });
   await folder(page, "research").dispatchEvent("dragend", { dataTransfer: transfer });
   await expect(page.locator(".document-drop-target")).toHaveCount(0);
   await transfer.dispose();

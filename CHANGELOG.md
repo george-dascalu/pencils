@@ -2,6 +2,11 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.21.30 — 2026-11-02
+
+### Added
+- Feature F0.21-30: Drag files and folders into folders or between rows to arrange the Documents and Boards lists. Their shared manual order is saved with the project and survives reloads; folders move with their contents. Touch screens support hold-and-drag, insertion lines distinguish reordering from filing, and long lists scroll at the edge while dragging. Invalid destinations, cancelled drags and failed saves leave the saved arrangement intact.
+
 ## 0.21.29 — 2026-11-02
 
 ### Added

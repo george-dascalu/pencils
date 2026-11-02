@@ -1,11 +1,12 @@
 import { randomUUID } from "./uuid.js";
 import { focusOnOpen } from "./open-focus.js";
+import { orderedEntries, planTreeMove } from "./folder-order.js";
 
 // The folder tree Documents and Boards show in their list panels (list-panel.js): nested folders that open and close,
 // drag and drop to move items and folders, and a panel to add, rename or delete a folder. `kind`
 // ("document" or "board") names the ids, the data attributes (data-<kind>-open, -folder,
 // -folder-edit, -folder-drop, -root), the drag types and the project's list (<kind>_folders).
-export function folderTree({ kind, label, placeholder, glyph, state, api, esc, icon, toast, panels, items, selected, matches, moveItem, itemMenu }) {
+export function folderTree({ kind, label, placeholder, glyph, state, api, esc, icon, toast, panels, items, selected, matches, itemMenu, beforeMove, onMove }) {
   const plural = label.toLowerCase(), field = `${kind}_folders`, searchKey = `${kind}Search`;
   const attr = name => `data-${kind}-${name}`;
   const type = folder => `application/x-pencils-${kind}${folder ? "-folder" : ""}`;
@@ -35,13 +36,9 @@ export function folderTree({ kind, label, placeholder, glyph, state, api, esc, i
       .sort((a, b) => a.title.localeCompare(b.title, undefined, { numeric: true, sensitivity: "base" }) || a.id.localeCompare(b.id));
     // An item with a menu (documents) has ⋯ beside it, as folders do.
     const link = d => `<button type="button" draggable="true" class="document-link ${d.id === current ? "active" : ""}" ${attr("open")}="${esc(d.id)}" ${d.id === current ? 'aria-current="page"' : ""} title="${esc([name(d.folder), d.title].filter(Boolean).join(" / "))}">${icon(typeof glyph === "function" ? glyph(d) : glyph)}<span>${esc(d.title)}</span></button>`;
-    const item = d => `<li>${itemMenu ? `<div class="document-item-row">${link(d)}<button type="button" class="icon-button" ${attr("item-menu")}="${esc(d.id)}" aria-label="Actions for ${esc(d.title)}" title="More actions">${icon("more")}</button></div>` : link(d)}</li>`;
+    const item = d => `<li><div class="document-item-row" data-tree-row="item:${esc(d.id)}">${link(d)}${itemMenu ? `<button type="button" class="icon-button" ${attr("item-menu")}="${esc(d.id)}" aria-label="Actions for ${esc(d.title)}" title="More actions">${icon("more")}</button>` : ""}</div></li>`;
     if (query) return list.map(item).join("") || `<li class="document-explorer-empty">No matching ${plural}.</li>`;
-    const branch = (parent, seen = new Set()) => {
-      const children = folders().filter(f => (f.parent || null) === parent && !seen.has(f.id)).sort((a,b) => a.title.localeCompare(b.title));
-      return children.map(f => `<li><div class="document-folder-row ${active === f.id ? "active" : ""}" ${attr("folder-drop")}="${esc(f.id)}"><button type="button" draggable="true" class="document-link" ${attr("folder")}="${esc(f.id)}" aria-expanded="${!closed.has(f.id)}" title="${esc(name(f.id))} · Drag to move">${icon("chevron")}${icon("folder")}<span>${esc(f.title)}</span></button><button type="button" class="icon-button" ${attr("folder-edit")}="${esc(f.id)}" aria-label="Edit ${esc(f.title)} folder" title="Edit folder">${icon("more")}</button></div><ul ${closed.has(f.id) ? "hidden" : ""}>${branch(f.id, new Set([...seen, f.id]))}</ul></li>`).join("") +
-        list.filter(d => parent ? d.folder === parent : !folders().some(f => f.id === d.folder)).map(item).join("");
-    };
+    const branch = (parent, seen = new Set()) => orderedEntries(folders(), list, state.project?.[`${kind}_order`], parent).filter(e => !seen.has(e.key)).map(({ what, key, value: f }) => what === "item" ? item(f) : `<li><div class="document-folder-row ${active === f.id ? "active" : ""}" data-tree-row="${esc(key)}" ${attr("folder-drop")}="${esc(f.id)}"><button type="button" draggable="true" class="document-link" ${attr("folder")}="${esc(f.id)}" aria-expanded="${!closed.has(f.id)}" title="${esc(name(f.id))} · Drag to move">${icon("chevron")}${icon("folder")}<span>${esc(f.title)}</span></button><button type="button" class="icon-button" ${attr("folder-edit")}="${esc(f.id)}" aria-label="Edit ${esc(f.title)} folder" title="Edit folder">${icon("more")}</button></div><ul ${closed.has(f.id) ? "hidden" : ""}>${branch(f.id, new Set([...seen, key]))}</ul></li>`).join("");
     return branch(null) || `<li class="document-explorer-empty">No ${plural} yet.</li>`;
   }
   // The section: a header with the count and the caller's actions, search, the tree and a footer.
@@ -59,6 +56,9 @@ export function folderTree({ kind, label, placeholder, glyph, state, api, esc, i
     const focused = list.contains(document.activeElement) ? document.activeElement : null;
     const open = focused?.getAttribute(attr("open")), folder = focused?.getAttribute(attr("folder")) || focused?.getAttribute(attr("folder-edit"));
     list.innerHTML = tree();
+    // A live project refresh can redraw the tree during a drag. Keep its feedback at the
+    // pointer instead of dropping the insertion line until the next mouse/finger movement.
+    if (drag && pointer) showDrop(drag, destination(document.elementFromPoint(pointer.x, pointer.y), pointer.y));
     if (open) list.querySelector(`[${attr("open")}="${CSS.escape(open)}"]`)?.focus({ preventScroll: true });
     if (folder) list.querySelector(`[${attr("folder")}="${CSS.escape(folder)}"]`)?.focus({ preventScroll: true });
     document.getElementById(`${kind}-count`).textContent = items().length;
@@ -78,26 +78,6 @@ export function folderTree({ kind, label, placeholder, glyph, state, api, esc, i
     if (state.project?.id !== pid) return false;
     state.project = record;
     return true;
-  }
-  async function moveFolder(id, parent) {
-    if (movePending) return;
-    movePending = true;
-    try {
-      let missing = null;
-      const changed = await updateFolders(list => {
-        const folder = list.find(f => f.id === id);
-        if (!folder) missing = `This folder no longer exists. Refresh ${label} and try again.`;
-        else if (parent && !list.some(f => f.id === parent)) missing = "The destination folder no longer exists.";
-        else if (inside(parent, id, list)) missing = "Choose a folder outside this folder and its subfolders.";
-        if (missing) throw Error(missing);
-        return (folder.parent || null) === parent ? null : list.map(f => f.id === id ? { ...f, parent } : f);
-      });
-      if (!changed) return;
-      expand(parent);
-      update();
-      document.querySelector(`[${attr("folder")}="${CSS.escape(id)}"]`)?.focus({ preventScroll: true });
-      toast(`Folder moved to ${parent ? name(parent) : label}.`);
-    } finally { movePending = false; }
   }
   function panel(button, id = null) {
     const folder = folders().find(f => f.id === id);
@@ -150,78 +130,143 @@ export function folderTree({ kind, label, placeholder, glyph, state, api, esc, i
     if (event.target.closest(`[${attr("root")}]`)) { active = null; update(); }
   });
   function clearDropTargets() {
-    document.querySelectorAll(".document-drop-target").forEach(el => el.classList.remove("document-drop-target"));
+    document.querySelectorAll(".document-drop-target, [data-tree-insert]").forEach(el => {
+      el.classList.remove("document-drop-target"); el.removeAttribute("data-tree-insert");
+    });
   }
+  let scrollFrame = 0, pointer = null, preview = null;
   function reset() {
-    drag = null;
+    drag = null; pointer = null;
+    cancelAnimationFrame(scrollFrame); scrollFrame = 0;
+    preview?.remove(); preview = null;
     clearDropTargets();
   }
   function dragged(transfer) {
     const kinds = [...transfer.types];
     const what = kinds.includes(type(true)) ? "folder" : kinds.includes(type(false)) ? "item" : null;
     if (!what) return null;
-    if (drag?.what === what && drag.project === state.project?.id) return drag;
-    const id = transfer.getData(type(what === "folder"));
-    return id ? { what, id } : null;
+    if (drag?.project === state.project?.id && drag.what === what) return drag;
+    // Don't accept a drag from another project/tab: ids alone don't identify its source project.
+    return null;
   }
-  function accepts(item, parent) {
-    if (!item || (parent && !folders().some(f => f.id === parent))) return false;
-    const source = (item.what === "folder" ? folders() : items()).find(f => f.id === item.id);
-    if (!source) return false;
-    if (item.what === "folder")
-      return !movePending && (source.parent || null) !== parent && !inside(parent, item.id);
-    return (source.folder || null) !== parent;
+  function destination(target, y) {
+    const host = target?.closest?.(`#${kind}-explorer`);
+    if (!host) return null;
+    const row = target.closest("[data-tree-row]");
+    if (row && !(state[searchKey] || "").trim()) {
+      const key = row.dataset.treeRow, what = key.startsWith("folder:") ? "folder" : "item";
+      const source = (what === "folder" ? folders() : items()).find(d => key === `${what}:${d.id}`);
+      if (!source) return null;
+      const bounds = row.getBoundingClientRect(), part = (y - bounds.top) / bounds.height;
+      if (what === "folder" && part >= 0.25 && part <= 0.75) return { parent: source.id, before: null, element: row };
+      const parent = (what === "folder" ? source.parent : source.folder) || null;
+      const siblings = orderedEntries(folders(), items(), state.project?.[`${kind}_order`], parent);
+      const after = part >= 0.5;
+      return { parent, before: after ? siblings[siblings.findIndex(e => e.key === key) + 1]?.key || null : key,
+        element: row, edge: after ? "after" : "before" };
+    }
+    const folder = target.closest(`[${attr("folder-drop")}]`);
+    if (folder) return { parent: folder.getAttribute(attr("folder-drop")) || null, before: null, element: folder };
+    // Empty space below the tree is also a root drop target.
+    if (target.closest("nav")) return { parent: null, before: null, element: host.querySelector("header") };
+    return null;
+  }
+  function accepts(item, dest) {
+    if (!item || !dest || movePending) return false;
+    try { return planTreeMove(folders(), items(), state.project?.[`${kind}_order`], { ...item, parent: dest.parent, before: dest.before }).changed; }
+    catch { return false; }
+  }
+  function showDrop(item, dest) {
+    clearDropTargets();
+    if (!accepts(item, dest)) return false;
+    if (dest.edge) dest.element.dataset.treeInsert = dest.edge;
+    else dest.element.classList.add("document-drop-target");
+    return true;
+  }
+  async function relocate(item, dest) {
+    if (!accepts(item, dest)) return;
+    movePending = true;
+    const pid = state.project.id;
+    try {
+      await beforeMove?.(item);
+      if (state.project?.id !== pid) return;
+      const snapshot = await api(`/projects/${pid}?boards=summary`);
+      const source = snapshot[plural].find(d => d.id === item.id);
+      const result = await api(`/projects/${pid}`, { method: "PATCH", body: {
+        revision: snapshot.project.revision, ...(item.what === "item" ? { item_revision: source?.revision } : {}),
+        tree_move: { kind, what: item.what, id: item.id, parent: dest.parent, before: dest.before },
+      } });
+      if (state.project?.id !== pid) return;
+      state.project = result.project;
+      expand(dest.parent);
+      await onMove?.(result);
+      update();
+      toast(item.what === "folder" ? "Folder moved." : `${kind === "document" ? "Document" : "Board"} moved.`);
+    } finally { movePending = false; }
+  }
+  function track(x, y) {
+    pointer = { x, y };
+    if (preview) { preview.style.left = `${x + 12}px`; preview.style.top = `${y + 12}px`; }
+    if (scrollFrame) return;
+    const step = () => {
+      scrollFrame = 0;
+      const nav = document.querySelector(`#${kind}-explorer nav`);
+      if (!drag || !pointer || !nav) return;
+      const box = nav.getBoundingClientRect(), { x, y } = pointer;
+      if (x < box.left || x > box.right || y < box.top || y > box.bottom) return;
+      const delta = y < box.top + 40 ? -12 : y > box.bottom - 40 ? 12 : 0;
+      if (!delta) return;
+      nav.scrollTop += delta;
+      showDrop(drag, destination(document.elementFromPoint(x, y), y));
+      scrollFrame = requestAnimationFrame(step);
+    };
+    scrollFrame = requestAnimationFrame(step);
   }
   document.addEventListener("dragstart", event => {
     const item = event.target.closest(`.document-explorer [${attr("open")}], .document-explorer [${attr("folder")}]`);
     if (!item) return;
     reset();
     const what = item.hasAttribute(attr("folder")) ? "folder" : "item";
-    const id = item.getAttribute(attr(what === "folder" ? "folder" : "open"));
-    drag = { what, id, project: state.project.id };
-    event.dataTransfer.setData(type(what === "folder"), id);
+    drag = { what, id: item.getAttribute(attr(what === "folder" ? "folder" : "open")), project: state.project.id };
+    event.dataTransfer.setData(type(what === "folder"), drag.id);
     event.dataTransfer.effectAllowed = "move";
   });
   document.addEventListener("dragover", event => {
     const item = dragged(event.dataTransfer);
     if (!item) return;
-    const folder = event.target.closest(`[${attr("folder-drop")}]`);
-    clearDropTargets();
-    if (!folder || !accepts(item, folder.getAttribute(attr("folder-drop")) || null)) {
-      event.dataTransfer.dropEffect = "none";
-      return;
-    }
+    track(event.clientX, event.clientY);
+    if (!showDrop(item, destination(event.target, event.clientY))) { event.dataTransfer.dropEffect = "none"; return; }
     event.preventDefault(); event.dataTransfer.dropEffect = "move";
-    folder.classList.add("document-drop-target");
   });
   document.addEventListener("dragleave", event => {
-    const folder = event.target.closest(`[${attr("folder-drop")}]`);
-    if (folder && !folder.contains(event.relatedTarget)) folder.classList.remove("document-drop-target");
+    if (!event.target.closest?.(`#${kind}-explorer`)?.contains(event.relatedTarget)) clearDropTargets();
   });
   document.addEventListener("drop", event => {
     const item = dragged(event.dataTransfer);
     if (!item) return;
-    const folder = event.target.closest(`[${attr("folder-drop")}]`);
-    reset();
-    if (!folder) return;
-    event.preventDefault();
-    const parent = folder.getAttribute(attr("folder-drop")) || null;
-    if (!accepts(item, parent)) return;
-    void (item.what === "folder" ? moveFolder(item.id, parent) : moveItem(item.id, parent)).catch(error => toast(error.message, true));
+    const dest = destination(event.target, event.clientY);
+    reset(); event.preventDefault();
+    void relocate(item, dest).catch(error => toast(error.message, true));
   });
   document.addEventListener("dragend", reset);
+  document.addEventListener("keydown", event => {
+    if (event.key !== "Escape" || (!drag && !press)) return;
+    event.preventDefault(); event.stopImmediatePropagation();
+    swallow = Date.now();
+    endPress(); reset();
+  }, true);
   // Touch screens (owner requests T82, T83): a long press marks the item or folder as held; lifting
   // the finger then opens its menu (an item's ⋯ menu, a folder's panel), while moving it drags it
   // onto a folder, as a mouse drags. The menu opens on lifting because lifting would dismiss it.
   let press = null, swallow = 0, touched = false;
   const pressable = el => el?.closest?.(`.document-explorer [${attr("open")}], .document-explorer [${attr("folder")}]`);
-  const dropAt = (x, y) => document.elementFromPoint(x, y)?.closest(`[${attr("folder-drop")}]`);
+  const dropAt = (x, y) => destination(document.elementFromPoint(x, y), y);
   // Ends a touch press, leaving a mouse drag (which shares `drag`) alone.
   function endPress() {
     if (!press) return;
     clearTimeout(press.timer);
     press.target.classList.remove("document-held", "document-dragging");
-    if (press.dragging) { drag = null; clearDropTargets(); }
+    if (press.dragging) reset();
     press = null;
   }
   // A new touch clears a release that no click followed.
@@ -243,11 +288,12 @@ export function folderTree({ kind, label, placeholder, glyph, state, api, esc, i
       press.dragging = true;
       press.target.classList.add("document-dragging");
       drag = { what: press.what, id: press.id, project: state.project.id };
+      preview = document.createElement("div"); preview.className = "document-drag-preview";
+      preview.textContent = press.target.textContent; preview.setAttribute("aria-hidden", "true"); document.body.append(preview);
     }
     if (!press.dragging) return;
-    clearDropTargets();
-    const folder = dropAt(event.clientX, event.clientY);
-    if (folder && accepts(drag, folder.getAttribute(attr("folder-drop")) || null)) folder.classList.add("document-drop-target");
+    track(event.clientX, event.clientY);
+    showDrop(drag, dropAt(event.clientX, event.clientY));
   });
   document.addEventListener("pointerup", event => {
     if (!press || event.pointerType === "mouse") return;
@@ -257,8 +303,7 @@ export function folderTree({ kind, label, placeholder, glyph, state, api, esc, i
     if (!held || (!dragging && what === "item" && !itemMenu)) return;
     swallow = Date.now();
     if (dragging) {
-      const folder = dropAt(event.clientX, event.clientY), parent = folder?.getAttribute(attr("folder-drop")) || null;
-      if (folder && accepts(item, parent)) void (what === "folder" ? moveFolder(id, parent) : moveItem(id, parent)).catch(error => toast(error.message, true));
+      void relocate(item, dropAt(event.clientX, event.clientY)).catch(error => toast(error.message, true));
       return;
     }
     setTimeout(() => {

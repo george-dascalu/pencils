@@ -120,14 +120,11 @@ test("editing makes a page version, and restoring one keeps the folder and file"
 test("documents drag to the root and back into a folder", async ({ page }) => {
   const s = await seedNotebook({ folders: nestedFolders, folder: "meetings" });
   await openNotebook(page, s);
-  const drag = await page.evaluateHandle(() => new DataTransfer());
+  await openList(page);
   const item = page.locator(`[data-document-open="${s.doc.id}"]`);
-  await item.dispatchEvent("dragstart", { dataTransfer: drag });
-  await page.locator('[data-document-folder-drop=""]').dispatchEvent("dragover", { dataTransfer: drag });
-  await page.locator('[data-document-folder-drop=""]').dispatchEvent("drop", { dataTransfer: drag });
+  await item.dragTo(page.locator('[data-document-root]'));
   await expect.poll(async () => (await s.current()).folder).toBeNull();
-  await item.dispatchEvent("dragstart", { dataTransfer: drag });
-  await page.locator('[data-document-folder-drop="meetings"]').dispatchEvent("drop", { dataTransfer: drag });
+  await item.dragTo(page.locator('[data-document-folder="meetings"]'));
   await expect.poll(async () => (await s.current()).folder).toBe("meetings");
 });
 

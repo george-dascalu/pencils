@@ -36,7 +36,15 @@ export function projectDocuments(ctx) {
   // showPanel returns the panel, or nothing when its opener, pressed again, closed it.
   const panels = anchoredPanel(ctx), showPanel = panels.show, closePanel = panels.close;
   const explorer = folderTree({ ...ctx, kind: "document", label: "Documents", placeholder: "Find a document or #tag…", glyph: d => d.document_type === "table" ? "table" : "file", panels,
-    items: all, selected: () => state.selectedDocument, matches: matchesDocument, moveItem: moveDocument, itemMenu: (button, id) => rowMenu(button, id) });
+    items: all, selected: () => state.selectedDocument, matches: matchesDocument, itemMenu: (button, id) => rowMenu(button, id),
+    beforeMove: item => item.what === "item" ? flushDocument(item.id) : undefined,
+    onMove: ({ item }) => {
+      if (item) {
+        state.documents = all().map(d => d.id === item.id ? item : d);
+        if (current?.id === item.id) { current = item; explorer.active = item.folder; }
+      }
+      syncChanged();
+    } });
   const folders = explorer.folders, updateExplorer = explorer.update;
   const endpoint = (pid, id = "") => `/projects/${pid}/documents${id ? `/${id}` : ""}`;
   const selected = () => all().find(d => d.id === state.selectedDocument);

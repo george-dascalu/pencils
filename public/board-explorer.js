@@ -7,7 +7,11 @@ export function boardExplorer(ctx, { canvases, enter }) {
   const { state, api, route, icon, toast } = ctx;
   const panels = anchoredPanel(ctx);
   const explorer = folderTree({ ...ctx, kind: "board", label: "Boards", placeholder: "Find a board…", glyph: "board", panels,
-    items: canvases, selected: () => state.selectedBoard, matches: (b, query) => b.title.toLocaleLowerCase().includes(query), moveItem: move });
+    items: canvases, selected: () => state.selectedBoard, matches: (b, query) => b.title.toLocaleLowerCase().includes(query),
+    beforeMove: async () => {
+      if (state.boardConflict) throw Error("Review the board’s conflicting edits in Recovery & backups before moving boards.");
+      await ctx.flushBoard();
+    }, onMove: () => ctx.refresh(false) });
   async function move(id, folder) {
     // While a conflict holds, refreshes keep this browser's boards, so the list wouldn't follow.
     if (state.boardConflict) throw Error("Review the board’s conflicting edits in Recovery & backups before moving boards.");

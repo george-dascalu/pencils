@@ -1,6 +1,7 @@
 import { Problem } from "../../problem.js";
 import { sourceAccess } from "../../sources.js";
 import { input } from "../helpers.js";
+import { moveTree } from "../../folder-tree-moves.js";
 import type { RequestContext, Input } from "../contracts.js";
 
 export async function projectsRoutes(ctx: RequestContext): Promise<unknown> {
@@ -59,6 +60,7 @@ export async function projectsRoutes(ctx: RequestContext): Promise<unknown> {
     if (method === "GET") return json(200, await store.snapshot(project, { summaries: url.searchParams.get("boards") === "summary", board: url.searchParams.get("board") }));
     const data = await input(req);
     if (method === "PATCH") {
+      if ("tree_move" in data) return json(200, await mutate(() => moveTree(store, project, data)));
       if (data.organisation) auth.require(user, data.organisation, true);
       return json(200, await mutate(() => store.updateProject(project, data)));
     }

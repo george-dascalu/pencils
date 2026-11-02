@@ -24,7 +24,7 @@ const HEAVY = [/^public\/(canvas|board-(delta|scene|session|limits|preview|detai
 // public/ file name prefixes per area; a file may belong to several.
 const AREAS = {
   board: /^(alignment-guides|board-|list-panel|camera-motion|canvas|comment-model|connector-|dependency-style|drag-feedback|drawing-|edge-labels|frame-|grid-merge|ink-|miro-import|node-layout|note-style|object-|orthogonal-route|pen-|phone-board-tools|project-frame|query-|rule-diagram|scroll-gestures|select-symbols|selection-|spatial-index|text-alignment|viewport-cache)/,
-  documents: /^(history-pages|document-|project-documents|list-panel|markdown|rich-toolbar-scroll|sketch-|ink-capture)/,
+  documents: /^(history-pages|document-|project-documents|folder-|list-panel|markdown|rich-toolbar-scroll|sketch-|ink-capture)/,
   tasks: /^(history-pages|task-(?!timeline)|card-fields|draft-|attachment-preview|recurrence-|dependency-model|hierarchy-model)/,
   lists: /^(grid(?!-merge)|table-|kanban-|view-layout|drag-feedback|task-row-editor|task-order-model|task-reorder|task-colors)/,
   planning: /^(calendar|capacity|planning|timeline-|task-timeline|schedule-|teams)/,
