@@ -9,18 +9,30 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { command, deploy, projectRoot } from "./deploy.mjs";
 import { affected, changedFiles, describe, runAffected } from "./affected.mjs";
+import { roadmap } from "../public/roadmap.js";
 
 const SEMVER = /^(\d+)\.(\d+)\.(\d+)$/;
 
 export function nextVersion(current, wanted) {
   const [, major, minor, patch] = current.match(SEMVER).map(Number);
-  if (wanted === "patch") return `${major}.${minor}.${patch + 1}`;
+  if (wanted === "patch") return patch >= 99 ? `${major}.${minor + 1}.0` : `${major}.${minor}.${patch + 1}`;
   if (wanted === "minor") return `${major}.${minor + 1}.0`;
   const parts = wanted?.match(SEMVER);
   if (!parts) throw new Error(`Give patch, minor or a version like 1.2.3 (got "${wanted}").`);
+  if (Number(parts[3]) > 99) throw new Error("The patch must be between 0 and 99; feature 100 starts the next minor at patch 0.");
   const newer = parts.slice(1).map(Number).map((n, i) => n - [major, minor, patch][i]).find(d => d !== 0) > 0;
   if (!newer) throw new Error(`${wanted} must be newer than the current ${current}.`);
   return wanted;
+}
+
+export function releaseFeature(current, entries) {
+  const [major, minor, patch] = current.split(".").map(Number);
+  if (patch > 99) throw new Error("Start the new numbering baseline with an explicit minor release first.");
+  const id = `F${major}.${minor}-${patch + 1}`, version = nextVersion(current, "patch");
+  const items = entries.filter(item => item.version === version);
+  if (items.length !== 1 || items[0].id !== id || items[0].status !== "done")
+    throw new Error(`Record exactly one completed feature ${id} for ${version} in public/roadmap.js before releasing.`);
+  return items[0];
 }
 
 export const londonDate = (date = new Date()) => new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/London" }).format(date);
@@ -38,7 +50,9 @@ export const withAppVersion = (source, version) => source.replace(/APP_VERSION =
 async function main() {
   const file = name => path.join(projectRoot, name);
   const current = JSON.parse(fs.readFileSync(file("package.json"), "utf8")).version;
-  const version = nextVersion(current, process.argv[2] || "patch");
+  const wanted = process.argv[2] || "patch";
+  const version = nextVersion(current, wanted);
+  if (wanted === "patch") releaseFeature(current, roadmap);
   const changelog = datedChangelog(fs.readFileSync(file("CHANGELOG.md"), "utf8"), version, londonDate());
   const url = process.env.PENCILS_URL || "http://127.0.0.1:3000";
   const logFile = path.join(os.tmpdir(), `pencils-release-${version}.log`);

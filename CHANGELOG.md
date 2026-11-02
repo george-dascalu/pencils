@@ -2,6 +2,13 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.21.0 — 2026-11-02
+
+### Changed
+
+- Start the 0.21.0 baseline. Future features are numbered 1–100 within each minor-version cycle, with one patch increment per released feature; feature 100 rolls to the next minor's patch 0 and numbering restarts at 1.
+- Feature releases require a matching completed roadmap entry with a cycle-specific ID, such as F0.21-1. Historical feature IDs and release versions remain available.
+
 ## 0.20.130 — 2026-11-02
 
 ### Fixed

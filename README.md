@@ -310,6 +310,17 @@ Browser tests are Playwright Test specs in `e2e/<area>/` (see `e2e/README.md`). 
 
 `npm run release` refuses to start unless `CHANGELOG.md` has the changes under `## Unreleased`. It runs the checks and unit tests, sets the version in `package.json`, `package-lock.json` and `public/app-version.js`, dates the changelog entry (Europe/London), builds the image, tags the running image `pencils:rollback-before-<version>`, recreates the container with its existing settings and waits for `/api/health` to report the new version. If the new version does not become healthy, it restores the previous image. Afterwards it tags `pencils:release-<version>`.
 
+From the **0.21.0 baseline**, features are numbered **1–100 per minor-version cycle**. Record each in `public/roadmap.js` and the changelog with its cycle-specific ID, then release it with `npm run release -- patch`:
+
+| Feature ID | Released version |
+|---|---|
+| `F0.21-1` | `0.21.1` |
+| `F0.21-99` | `0.21.99` |
+| `F0.21-100` | `0.22.0` |
+| `F0.22-1` | `0.22.1` |
+
+One completed feature/change ships per patch increment; feature 100 resets the patch to 0 and increments the minor. The command checks for exactly one matching completed roadmap entry before starting. The baseline consumes no feature number; historical IDs and versions are preserved. Major-version changes and explicit new baselines are deliberate releases, not automatic rollovers.
+
 Tests use temporary vaults. They cover Markdown persistence/migration, file revisions, safe paths, UTF-8 request chunking, backup/history/trash restore, workflow validation, recurrence, three-way merge, organisation permissions, browser editing, range paste, offline save recovery, canvas manipulation/export and mobile layout. `e2e/platform/offline.spec.mjs` builds the image and verifies it in containers without any network.
 
 Board navigation uses **scroll to zoom at the pointer** and **Shift + scroll to pan vertically**. Pinch and Ctrl/Command-wheel also zoom. Right-drag, middle-drag and Space-drag pan while preserving selection. V selects, H pans, N/T/S select click-to-place sticky/text/shape tools, L connects and P draws. Ctrl/Command-click adds or removes a selection; Alt/Option-drag duplicates. F1 opens the shortcut reference. Native touch pan/pinch and pressure-sensitive pen input remain available.

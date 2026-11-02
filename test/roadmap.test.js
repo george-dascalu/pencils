@@ -18,8 +18,18 @@ test("short times and durations", () => {
 
 test("every roadmap entry has a valid id, status and dates, and done entries name their release", () => {
   const when = /^\d{4}-\d{2}-\d{2}(T\d{2}:\d{2})?$/;
+  const ids = new Set();
   for (const item of roadmap) {
-    assert.match(item.id, /^T\d+$/, item.id);
+    assert.ok(!ids.has(item.id), `duplicate feature ${item.id}`);
+    ids.add(item.id);
+    const feature = item.id.match(/^F(\d+)\.(\d+)-([1-9]\d?|100)$/);
+    if (feature) {
+      const [, major, minor, number] = feature.map(Number);
+      if (item.version) assert.equal(item.version, `${major}.${minor + Math.floor(number / 100)}.${number % 100}`, item.id);
+    } else {
+      assert.match(item.id, /^T\d+$/, item.id);
+      assert.ok(item.version && item.version.localeCompare("0.21.0", undefined, { numeric: true }) <= 0, `${item.id}: new features use F<major>.<minor>-<1..100>`);
+    }
     assert.ok(["requested", "in progress", "done"].includes(item.status), item.id);
     for (const key of ["requested", "started", "done"]) if (item[key]) assert.match(item[key], when, `${item.id} ${key}`);
     if (item.status === "done") assert.ok(item.version && item.done, `${item.id} release`);

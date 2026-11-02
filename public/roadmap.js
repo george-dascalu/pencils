@@ -3,7 +3,10 @@
 // status: "requested" | "in progress" | "done"; requested, started and done are YYYY-MM-DD or
 // YYYY-MM-DDTHH:MM (local time; blank when not on record; done is when the work finished, the
 // release follows within minutes); version is the release.
+// From the 0.21.0 baseline, new features use F<major>.<minor>-<1..100>: F0.21-1 releases
+// as 0.21.1, F0.21-100 as 0.22.0, then F0.22-1 as 0.22.1. Historical T IDs stay intact.
 export const roadmap = [
+  { id: "T113", title: "Start the 0.21.0 baseline with numbered feature releases and automatic minor rollover", status: "done", requested: "2026-11-02", started: "2026-11-02", done: "2026-11-02", version: "0.21.0" },
   { id: "T112", title: "Fix critique findings across document touch targets, Home, planning recovery, board menus and Table defaults", status: "done", requested: "2026-11-02", started: "2026-11-02", done: "2026-11-02", version: "0.20.130" },
   { id: "T111", title: "Make date-picker verification independent of the Today shortcut", status: "done", requested: "", started: "2026-11-02", done: "2026-11-02", version: "0.20.129" },
   { id: "T110", title: "Keep card fields inside their box in narrow mouse-driven desktop windows", status: "done", requested: "", started: "2026-11-01", done: "2026-11-01", version: "0.20.128" },
