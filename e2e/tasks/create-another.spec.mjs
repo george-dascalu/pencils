@@ -162,7 +162,7 @@ for (const width of [1500, 390])
           await page.evaluate(() => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve))));
           const dialog = page.locator(".task-dialog");
           const box = await dialog.boundingBox();
-          const toolbar = await page.locator("#view-toolbar").boundingBox();
+          const toolbar = await page.locator("#view-toolbar").boundingBox() || await page.locator(".topbar").boundingBox();
           const context = `${view}, ${width}px, ${theme}`;
           if (width <= 600) expect(box, `Phone card page: ${context}`).toEqual({ x: 0, y: 0, width, height: 1000 });
           else {

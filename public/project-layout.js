@@ -69,6 +69,11 @@ export function projectLayout(ctx) {
     phoneBoard.sync();
     boardAppearance();
     if (!narrow.matches) starBeforeTitle();
+    // Desktop boards use the header's spare right side; touch keeps its existing toolbar.
+    if (state.view === "board" && !tabBar.matches && $("#canvas")) {
+      moveTo($("#view-toolbar > .board-toolbar"), el => $(".topbar .top-actions").append(el));
+      $("#view-toolbar")?.setAttribute("data-empty", "");
+    }
     const toolbar = $(".toolbar-left") || $(".board-toolbar");
     if (!toolbar) return;
     // Sorting is an icon button that opens the (hidden) select's options: beside the view's

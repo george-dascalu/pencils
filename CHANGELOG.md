@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.21.16 — 2026-11-02
+
+### Changed
+- Feature F0.21-16: Desktop boards put the presence name, Board appearance and Board tools together at the top right, removing the extra toolbar row. Phone and iPad controls keep their existing positions.
+
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
 ## 0.21.15 — 2026-11-02

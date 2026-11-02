@@ -125,6 +125,10 @@
   grid-row: 2;
   min-width: 0;
 }
+.main.project-main > #view-toolbar[data-empty] { display: none; }
+.main.project-main > .topbar .board-toolbar {
+  min-height: 0; padding: 0; flex-wrap: nowrap;
+}
 .main.project-main > #view-content {
   grid-row: 3;
   min-height: 0;
@@ -1177,7 +1181,6 @@ html.table-viewport-view body {
   .main.project-main > .topbar:has(> .topbar-view-tools) > .board-project-tools { grid-column: 3; justify-self: end; }
   .main.project-main > .topbar:has(> .topbar-view-tools) > .top-actions { grid-column: 4; }
   .topbar .topbar-view-tools > .search { flex: 0 1 260px; min-width: 160px; }
-  .main.project-main > #view-toolbar[data-empty] { display: none; }
 }
 /* The phone bar's Home tab (home.js); desktop reaches Home from the brand and the sidebar. */
 @media (min-width: 601px) and (pointer: fine) { .topbar .tabs .view-tab-group:has(> .tab-home) { display: none; } }
