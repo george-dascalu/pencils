@@ -162,9 +162,10 @@ test("hiding weekends removes weekend days and their cards, and is remembered af
 test("unscheduled cards can be dropped on a day or given dates in place", async ({ page }) => {
   const seed = app.unscheduled, { toDrop, undated } = seed;
   await openMonth(page, seed);
-  await page.locator(".calendar-unscheduled summary").click();
+  await page.locator("[data-calendar-unscheduled]").click();
   await dragTo(page, page.locator(`.calendar-unscheduled [data-calendar-card="${toDrop.id}"] .calendar-move`), "2026-10-28");
   await settled(seed, toDrop.id, { due: "2026-10-28", start: undefined });
+  await page.locator("[data-calendar-unscheduled]").click();
   const unscheduled = page.locator(`.calendar-unscheduled [data-calendar-card="${undated.id}"]`);
   await unscheduled.locator("[data-calendar-dates]").click();
   const dates = page.locator("#task-dates-popover");

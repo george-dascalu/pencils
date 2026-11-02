@@ -1,6 +1,7 @@
 import { calendarHoursHTML, calendarHourSelection } from "./calendar-hours.js";
 import { calendarZoom } from "./calendar-zoom.js";
-import { timedCard } from "./calendar-time.js";
+import { timedCard, calendarTimeSelection } from "./calendar-time.js";
+import { anchoredPanel } from "./anchored-panel.js";
 import { mainWidth } from "./layout-width.js";
 import { calendarRange, calendarDateChange, calendarWeeks, agendaGroups } from "./calendar-model.js";
 import { dateKey, shiftDate, weekStart, isWeekend } from "./timeline-dates.js";
@@ -11,11 +12,12 @@ import { taskDateEditor } from "./task-date-editor.js";
 export function calendarView(ctx) {
   const { state, esc, icon, storage, renderView, task, patchTask, toast } = ctx;
   const dateEditor = taskDateEditor(ctx);
+  const unscheduled = anchoredPanel(ctx);
   calendarHourSelection(ctx);
   const zoom = calendarZoom(ctx);
   let mode = storage.get("calendar-mode", mainWidth() <= 780 ? "agenda" : "month");
   let period = storage.get("agenda-period", "week"), anchor = localDate();
-  let weekends = storage.get("calendar-weekends", true) !== false, unscheduledOpen = false;
+  let weekends = storage.get("calendar-weekends", true) !== false, undated = [];
   let drag = null, suppressUntil = 0, suppressId = "";
   const format = (day, options = {}) => new Date(`${day}T12:00:00`).toLocaleDateString(undefined, { day: "numeric", month: "short", ...options });
   const rangeLabel = t => { const r = calendarRange(t); return r ? `${r.start === r.end ? format(r.start) : `${format(r.start)} – ${format(r.end)}`}${timedCard(t) ? ` · ${t.start_time} – ${t.due_time}` : ""}` : "Set dates"; };
@@ -28,6 +30,7 @@ export function calendarView(ctx) {
     return `<div class="agenda-row ${grip ? "calendar-draggable-row" : ""}" data-calendar-card="${esc(t.id)}">${grip}<button type="button" class="agenda-task" data-action="task-open" data-id="${esc(t.id)}" title="${esc(title(t))}">${taskColorDot(state, "status", t.status)}<span>${esc(title(t))}</span></button>${dateButton(t)}</div>`;
   }
   function render(tasks) {
+    unscheduled.close();
     let from = anchor, to = anchor;
     // The Agenda's period applies to the Agenda only.
     if (mode === "week" || (mode === "agenda" && period === "week")) { from = dateKey(weekStart(anchor)); to = shiftDate(from, 6); }
@@ -39,7 +42,7 @@ export function calendarView(ctx) {
     const heading = mode === "month" || (mode === "agenda" && period === "month")
       ? new Date(`${anchor}T12:00:00`).toLocaleDateString(undefined, { month: "long", year: "numeric" })
       : from === to ? format(from, { year: "numeric" }) : `${format(from)} – ${format(to, { year: "numeric" })}`;
-    const undated = tasks.filter(t => !calendarRange(t));
+    undated = tasks.filter(t => !calendarRange(t));
     const groups = agendaGroups(tasks, from, to, weekends);
     const filtered = !!(state.search?.trim() || (state.status && state.status !== "all") || (state.type && state.type !== "all") || Object.values(state.extraFilters || {}).some(Boolean));
     const noMatches = filtered && !tasks.length;
@@ -49,13 +52,13 @@ export function calendarView(ctx) {
     const agenda = `<div class="calendar-agenda">${groups.map(([day, items]) => `<section class="agenda-day" data-calendar-date="${day}"><h3><time datetime="${day}">${esc(format(day, { weekday: "long" }))}</time></h3>${items.map(t => row(t)).join("")}</section>`).join("") || (noMatches ? "" : agendaEmpty)}</div>`;
     // Week keeps date-only cards above the hourly schedule.
     const weeks = calendarWeeks(mode === "week" ? tasks.filter(t => !timedCard(t)) : tasks, anchor, weekends, { week: mode === "week" });
-    const month = `<div class="calendar-scroll" role="region" aria-label="Calendar ${mode === "week" ? "week" : "month"}" tabindex="0"><div class="calendar ${mode === "week" ? "calendar-hourly" : ""}" data-layout="${mode}" data-weekends="${weekends}" style="--calendar-columns:${weekends ? 7 : 5}"><div class="calendar-weekdays">${["Mon", "Tue", "Wed", "Thu", "Fri", ...(weekends ? ["Sat", "Sun"] : [])].map(day => `<strong>${day}</strong>`).join("")}</div>${weeks.map(week => `<div class="calendar-week ${mode === "week" ? "calendar-all-day" : ""}" style="--calendar-lanes:${week.lanes}">${week.days.map((day, i) => `<div class="calendar-day ${isWeekend(day) ? "weekend" : ""} ${day === localDate() ? "today" : ""} ${mode === "month" && day.slice(0, 7) !== anchor.slice(0, 7) ? "muted" : ""}" data-calendar-date="${day}" style="grid-column:${i + 1};grid-row:1 / span ${week.lanes + 1}"><button type="button" data-feature="date-task" data-date="${day}" aria-label="Add card on ${day}">${Number(day.slice(-2))}</button></div>`).join("")}${week.segments.map(s => {
+    const month = `<div class="calendar-scroll" role="region" aria-label="Calendar ${mode === "week" ? "week" : "month"}" tabindex="0"><div class="calendar ${mode === "week" ? "calendar-hourly" : ""}" data-layout="${mode}" data-weekends="${weekends}" style="--calendar-columns:${weekends ? 7 : 5}"><div class="calendar-weekdays">${["Mon", "Tue", "Wed", "Thu", "Fri", ...(weekends ? ["Sat", "Sun"] : [])].map(day => `<strong>${day}</strong>`).join("")}</div>${mode === "week" ? '<div class="calendar-all-day-scroll">' : ""}${weeks.map(week => `<div class="calendar-week ${mode === "week" ? "calendar-all-day" : ""}" style="--calendar-lanes:${week.lanes}">${week.days.map((day, i) => `<div class="calendar-day ${isWeekend(day) ? "weekend" : ""} ${day === localDate() ? "today" : ""} ${mode === "month" && day.slice(0, 7) !== anchor.slice(0, 7) ? "muted" : ""}" data-calendar-date="${day}" style="grid-column:${i + 1};grid-row:1 / span ${week.lanes + 1}"><button type="button" data-feature="date-task" data-date="${day}" aria-label="Add card on ${day}">${Number(day.slice(-2))}</button></div>`).join("")}${week.segments.map(s => {
       const t = s.task;
       const handle = (end, show) => show && !t.source ? `<button type="button" class="calendar-resize" data-calendar-end="${end}" aria-label="Adjust ${end === "start" ? "start" : "end"} date for ${esc(t.title)}" title="Drag to adjust ${end === "start" ? "start" : "end"} date; arrow keys change by one day"><span aria-hidden="true"></span></button>` : "";
       return `<div class="calendar-task" data-calendar-card="${esc(t.id)}" data-id="${esc(t.id)}" data-task-color="status" style="--task-field-color:${taskFieldColor(state, "status", t.status)};grid-column:${s.from + 1} / ${s.to + 2};grid-row:${s.lane + 2}" title="${esc(title(t))} · ${s.range.start} – ${s.range.end}${t.source ? ' · Dates managed by source' : ' · Drag to move'}">${handle("start", s.resizeStart)}<button type="button" class="calendar-card-title" data-action="task-open" data-id="${esc(t.id)}" aria-label="Open ${esc(title(t))}">${esc(t.title)}</button>${handle("due", s.resizeEnd)}</div>`;
-    }).join("")}</div>`).join("")}${mode === "week" ? calendarHoursHTML(tasks, weeks[0].days, ctx) : ""}</div></div>`;
-    if (mode === "week") zoom.restore();
-    return { controls: `<div class="planning-head"><div class="planning-period"><button class="icon-button" data-feature="month-prev" aria-label="Previous period" title="Previous period">${icon("arrow")}</button><h2>${esc(heading)}</h2><button class="icon-button" data-feature="month-next" aria-label="Next period" title="Next period">${icon("arrow")}</button></div><div class="planning-options" data-phone-options>${mode === "week" ? zoom.controls() : ""}<label class="check-control"><input type="checkbox" data-calendar-weekends data-weekends-toggle ${weekends ? "checked" : ""}>Show weekends</label><label><span class="control-label">Layout</span> <select id="calendar-mode"><option value="month" ${mode === "month" ? "selected" : ""}>Month</option><option value="week" ${mode === "week" ? "selected" : ""}>Week</option><option value="agenda" ${mode === "agenda" ? "selected" : ""}>Agenda</option></select></label>${mode === "agenda" ? `<label>Period<select id="agenda-period">${["day", "week", "month"].map(p => `<option value="${p}" ${p === period ? "selected" : ""}>${ctx.label(p)}</option>`).join("")}</select></label><input type="date" id="agenda-date" aria-label="Agenda date" value="${anchor}">` : ""}</div></div>`, html: `${empty}${mode === "agenda" ? agenda : month}<details class="calendar-unscheduled" ${unscheduledOpen ? "open" : ""}><summary>Unscheduled (${undated.length})</summary><div class="calendar-unscheduled-list">${undated.map(t => row(t, true)).join("") || '<p class="field-hint">All matching cards are scheduled.</p>'}</div></details><span class="sr-only" data-calendar-announcement role="status" aria-live="polite"></span>` };
+    }).join("")}</div>`).join("")}${mode === "week" ? "</div>" : ""}${mode === "week" ? calendarHoursHTML(tasks, weeks[0].days, ctx) : ""}</div></div>`;
+    zoom.restore();
+    return { controls: `<button type="button" class="button small" data-calendar-unscheduled data-after-filters aria-label="Unscheduled cards (${undated.length})" title="Unscheduled cards (${undated.length})" aria-haspopup="dialog" aria-expanded="false">${icon("clock")}<span>${undated.length}</span></button><div class="planning-head"><div class="planning-period"><button class="icon-button" data-feature="month-prev" aria-label="Previous period" title="Previous period">${icon("arrow")}</button><h2>${esc(heading)}</h2><button class="icon-button" data-feature="month-next" aria-label="Next period" title="Next period">${icon("arrow")}</button></div><div class="planning-options" data-phone-options>${mode === "week" ? zoom.controls() : ""}<label class="check-control"><input type="checkbox" data-calendar-weekends data-weekends-toggle ${weekends ? "checked" : ""}>Show weekends</label><label><span class="control-label">Layout</span> <select id="calendar-mode"><option value="month" ${mode === "month" ? "selected" : ""}>Month</option><option value="week" ${mode === "week" ? "selected" : ""}>Week</option><option value="agenda" ${mode === "agenda" ? "selected" : ""}>Agenda</option></select></label>${mode === "agenda" ? `<label>Period<select id="agenda-period">${["day", "week", "month"].map(p => `<option value="${p}" ${p === period ? "selected" : ""}>${ctx.label(p)}</option>`).join("")}</select></label><input type="date" id="agenda-date" aria-label="Agenda date" value="${anchor}">` : ""}</div></div>`, html: `${empty}${mode === "agenda" ? agenda : month}<span class="sr-only" data-calendar-announcement role="status" aria-live="polite"></span>` };
   }
   function editDates(id, trigger) {
     const project = state.project.id;
@@ -71,6 +74,17 @@ export function calendarView(ctx) {
     }
     return el?.closest(".agenda-day, .calendar-hours-day")?.dataset.calendarDate;
   }
+  function dropChange(d, x, y) {
+    const hit = document.elementFromPoint(x, y);
+    if (hit?.closest(".calendar-drag-cancel")) return null;
+    const hours = d.panel && hit?.closest(".calendar-hours-day");
+    if (hours) {
+      const r = hours.getBoundingClientRect(), minutes = (y - r.top) / r.height * 1440;
+      return calendarTimeSelection(hours.dataset.calendarDate, minutes, minutes);
+    }
+    const day = dayAt(x, y);
+    return day ? calendarDateChange(d.task, d.grabbed, day, d.handle) : null;
+  }
   function preview() {
     const d = drag;
     if (!d?.active) return;
@@ -83,17 +97,22 @@ export function calendarView(ctx) {
         else if (d.x < rect.left + 30) scroll.scrollLeft -= 10;
       }
     }
-    const content = document.querySelector("#view-content");
-    const scroller = content.scrollHeight > content.clientHeight && /auto|scroll/.test(getComputedStyle(content).overflowY) ? content : document.scrollingElement;
-    if (d.y > innerHeight - 55) scroller.scrollTop += 12;
-    else if (d.y < 100) scroller.scrollTop -= 12;
-    const day = dayAt(d.x, d.y);
-    d.next = day ? calendarDateChange(d.task, d.grabbed, day, d.handle) : null;
+    const cancel = !!document.elementFromPoint(d.x, d.y)?.closest(".calendar-drag-cancel");
+    d.cancel?.classList.toggle("calendar-drop-target", cancel);
+    const scroller = document.querySelector(".calendar-hours-scroll") || document.querySelector(".calendar-scroll, .calendar-agenda");
+    if (scroller && !cancel) {
+      const r = scroller.getBoundingClientRect();
+      if (d.x >= r.left && d.x <= r.right && d.y >= r.top && d.y <= r.bottom) {
+        if (d.y > r.bottom - 24) scroller.scrollTop += 12;
+        else if (d.y < r.top + 24) scroller.scrollTop -= 12;
+      }
+    }
+    d.next = dropChange(d, d.x, d.y);
     const range = d.next && calendarRange({ ...d.task, ...d.next });
     for (const cell of document.querySelectorAll("[data-calendar-date]")) {
       cell.classList.toggle("calendar-drop-target", !!range && cell.dataset.calendarDate >= range.start && cell.dataset.calendarDate <= range.end);
     }
-    d.ghost.querySelector("small").textContent = range ? `${range.start} → ${range.end}` : "Move over a day to schedule";
+    d.ghost.querySelector("small").textContent = cancel ? "Keep unscheduled" : range ? `${range.start}${d.next.start_time ? ` · ${d.next.start_time} – ${d.next.due_time}` : ` → ${range.end}`}` : "Move over a day to schedule";
     d.ghost.style.left = `${Math.max(8, Math.min(innerWidth - 248, d.x + 16))}px`;
     d.ghost.style.top = `${Math.max(8, Math.min(innerHeight - 75, d.y + 18))}px`;
     d.frame = requestAnimationFrame(preview);
@@ -118,6 +137,11 @@ export function calendarView(ctx) {
     cancelAnimationFrame(d.frame);
     if (d.card.hasPointerCapture(d.pointer)) d.card.releasePointerCapture(d.pointer);
     d.ghost?.remove();
+    d.cancel?.remove();
+    if (d.panel) {
+      if (!cancel && d.next) unscheduled.close();
+      else { d.panel.style.removeProperty("visibility"); d.panel.style.removeProperty("pointer-events"); }
+    }
     document.querySelectorAll(".calendar-dragging,.calendar-drop-target").forEach(el => el.classList.remove("calendar-dragging", "calendar-drop-target"));
     if (d.active || d.handle) { suppressUntil = performance.now() + 500; suppressId = d.task.id; }
     if (!cancel && !d.active && d.handle) editDates(d.task.id, d.card.querySelector("[data-calendar-end]"));
@@ -130,7 +154,7 @@ export function calendarView(ctx) {
     if (e.pointerType === "touch" && card.matches(".agenda-row") && !e.target.closest("[data-calendar-move]")) return;
     const t = task(card.dataset.calendarCard); if (!t || t.source) return;
     const handle = e.target.closest("[data-calendar-end]")?.dataset.calendarEnd;
-    drag = { card, task: { ...t }, project: state.project.id, pointer: e.pointerId, handle, grabbed: dayAt(e.clientX, e.clientY) || calendarRange(t)?.start, x: e.clientX, y: e.clientY, originX: e.clientX, originY: e.clientY, active: false };
+    drag = { card, panel: card.closest(".calendar-unscheduled"), task: { ...t }, project: state.project.id, pointer: e.pointerId, handle, grabbed: dayAt(e.clientX, e.clientY) || calendarRange(t)?.start, x: e.clientX, y: e.clientY, originX: e.clientX, originY: e.clientY, active: false };
     if (handle) e.preventDefault();
   }, true);
   document.addEventListener("pointermove", e => {
@@ -140,6 +164,16 @@ export function calendarView(ctx) {
       d.active = state.toolDragging = true; dateEditor.close();
       d.card.setPointerCapture(e.pointerId);
       d.card.classList.add("calendar-dragging");
+      if (d.panel) {
+        d.panel.style.visibility = "hidden";
+        d.panel.style.pointerEvents = "none";
+        d.cancel = document.createElement("button");
+        d.cancel.type = "button"; d.cancel.className = "button calendar-drag-cancel";
+        d.cancel.innerHTML = `${icon("close")}<span>Cancel drag</span>`;
+        d.cancel.title = "Drop here to keep this card unscheduled";
+        d.cancel.addEventListener("click", () => finish(true));
+        document.body.append(d.cancel);
+      }
       d.ghost = document.createElement("div"); d.ghost.className = "calendar-drag-preview";
       d.ghost.innerHTML = `<strong>${esc(title(d.task))}</strong><small></small>`;
       document.body.append(d.ghost); preview();
@@ -149,8 +183,7 @@ export function calendarView(ctx) {
   document.addEventListener("pointerup", e => {
     if (drag?.pointer !== e.pointerId) return;
     if (drag.active) {
-      const day = dayAt(e.clientX, e.clientY);
-      drag.next = day ? calendarDateChange(drag.task, drag.grabbed, day, drag.handle) : null;
+      drag.next = dropChange(drag, e.clientX, e.clientY);
     }
     finish();
   }, true);
@@ -164,11 +197,19 @@ export function calendarView(ctx) {
   document.addEventListener("dragstart", e => { if (e.target.closest("[data-calendar-card]")) e.preventDefault(); });
   document.addEventListener("click", e => {
     if (performance.now() < suppressUntil && e.target.closest("[data-calendar-card]")?.dataset.calendarCard === suppressId && !e.target.closest("[data-calendar-dates]")) { e.preventDefault(); e.stopImmediatePropagation(); return; }
+    const button = e.target.closest("[data-calendar-unscheduled]");
+    if (button) {
+      const panel = unscheduled.show(button, `Unscheduled (${undated.length})`, `<div class="calendar-unscheduled-list">${undated.map(t => row(t, true)).join("") || '<p class="field-hint">All matching cards are scheduled.</p>'}</div>`);
+      if (panel) { panel.classList.add("calendar-unscheduled"); button.setAttribute("aria-expanded", "true"); }
+      return;
+    }
+    if (e.target.closest('.calendar-unscheduled [data-action="task-open"]')) unscheduled.close();
+
     const date = e.target.closest("[data-calendar-dates]"), handle = e.target.closest("[data-calendar-end], [data-calendar-move]");
     if (date || handle) { e.preventDefault(); e.stopImmediatePropagation(); editDates(date?.dataset.calendarDates || handle.closest("[data-calendar-card]").dataset.calendarCard, date || handle); }
   }, true);
   document.addEventListener("keydown", e => {
-    if (drag && e.key === "Escape") { e.preventDefault(); finish(true); return; }
+    if (drag && e.key === "Escape") { e.preventDefault(); e.stopImmediatePropagation(); finish(true); return; }
     const card = e.target.closest("[data-calendar-card]"); if (!card) return;
     const t = task(card.dataset.calendarCard), range = t && calendarRange(t), handle = e.target.closest("[data-calendar-end]")?.dataset.calendarEnd;
     if (!range || t.source || !(handle || e.altKey) || !["ArrowLeft", "ArrowRight"].includes(e.key)) return;
@@ -177,7 +218,6 @@ export function calendarView(ctx) {
     const selector = `[data-calendar-card="${CSS.escape(t.id)}"] ${handle ? `[data-calendar-end="${handle}"]` : '[data-action="task-open"]'}`;
     void save(t.id, calendarDateChange(t, from, shiftDate(from, e.key === "ArrowLeft" ? -1 : 1), handle), selector);
   }, true);
-  document.addEventListener("toggle", e => { if (e.target.matches(".calendar-unscheduled") && e.target.isConnected) unscheduledOpen = e.target.open; }, true);
   document.addEventListener("change", e => {
     if (e.target.id === "calendar-mode") { mode = e.target.value; storage.set("calendar-mode", mode); renderView(true); }
     if (e.target.id === "agenda-period") { period = e.target.value; storage.set("agenda-period", period); renderView(true); }

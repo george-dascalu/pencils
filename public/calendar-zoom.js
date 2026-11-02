@@ -4,7 +4,15 @@ export function calendarZoom({ state, storage, icon }) {
   let frame = 0;
   const scroll = () => document.querySelector(".calendar-hours-scroll");
   const height = el => el.querySelector(".calendar-hours-day").getBoundingClientRect().height / 24;
-  const fit = el => Math.max(8, Math.min(256, Math.floor(parseFloat(getComputedStyle(el).maxHeight) / 24)));
+  const fit = el => Math.max(8, Math.min(256, Math.floor(el.clientHeight / 24)));
+  const observer = new ResizeObserver(() => {
+    const el = scroll();
+    if (!el || state.view !== "calendar") return;
+    el.closest(".calendar-hourly").style.setProperty("--calendar-scrollbar", `${el.offsetWidth - el.clientWidth}px`);
+    const allDay = document.querySelector(".calendar-all-day-scroll");
+    if (allDay) el.closest(".calendar-hourly").style.setProperty("--calendar-all-day-scrollbar", `${allDay.offsetWidth - allDay.clientWidth}px`);
+    apply(el, scale);
+  });
   function controls() {
     const button = (direction, step, name) => `<button type="button" class="icon-button" data-calendar-zoom="${step}" aria-label="Zoom ${direction} hours" title="Zoom ${direction} hours (Shift + scroll)">${icon(name)}</button>`;
     return `<div class="calendar-zoom" role="group" aria-label="Calendar zoom"><span class="control-label">Zoom</span>${button("out", -1, "minus")}<span data-calendar-zoom-value></span>${button("in", 1, "plus")}</div>`;
@@ -44,11 +52,8 @@ export function calendarZoom({ state, storage, icon }) {
     const offset = Math.max(0, Math.min(el.clientHeight, e.clientY - el.getBoundingClientRect().top));
     change(el, height(el) * Math.exp(-Math.max(-600, Math.min(600, delta)) / 400), offset);
   }, { passive: false });
-  window.addEventListener("resize", () => {
-    const el = scroll();
-    if (el && state.view === "calendar") apply(el, scale);
-  });
   function restore() {
+    observer.disconnect();
     const previous = scroll(), hour = previous ? previous.scrollTop / height(previous) : 7;
     cancelAnimationFrame(frame);
     frame = requestAnimationFrame(() => {
@@ -56,6 +61,7 @@ export function calendarZoom({ state, storage, icon }) {
       if (!el || state.view !== "calendar") return;
       apply(el, scale);
       el.scrollTop = hour * height(el);
+      observer.observe(el);
     });
   }
   return { controls, restore };

@@ -32,11 +32,11 @@
 /* A short fade, drop and grow in, and back out, when the device allows motion (select-menu.js
    keeps a closing menu until its fade ends). The card editor's pickers open the same way. */
 @media (prefers-reduced-motion: no-preference) {
-  .select-menu, .task-picker > .task-picker-popover {
+  .select-menu, .task-picker > .task-picker-popover, .calendar-unscheduled {
     transition: opacity var(--menu-motion), translate var(--menu-motion), scale var(--menu-motion);
   }
   @starting-style {
-    .select-menu:popover-open, .task-picker > .task-picker-popover {
+    .select-menu:popover-open, .task-picker > .task-picker-popover, .calendar-unscheduled:popover-open {
       opacity: 0;
       translate: 0 -4px;
       scale: 0.96;

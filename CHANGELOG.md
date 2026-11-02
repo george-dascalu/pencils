@@ -2,6 +2,11 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.21.13 — 2026-11-02
+
+### Changed
+- Feature F0.21-13: Calendar fills its viewport, with aligned day headers and hour columns when scrollbars appear. Unscheduled cards open from a compact button beside Filters; drag a card onto a day or hour while the list steps aside, or drop on Cancel drag to keep it unscheduled.
+
 ## 0.21.12 — 2026-11-02
 
 ### Added

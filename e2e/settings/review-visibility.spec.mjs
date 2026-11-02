@@ -57,13 +57,17 @@ test("Tree search keeps the matching task's parent as context until the filters 
 test.describe("phone width", () => {
   test.use({ viewportSize: { width: 390, height: 844 } });
 
-  test("the Calendar agenda lists scheduled and unscheduled tasks", { tag: "@gate" }, async ({ page }) => {
+  test("the Calendar agenda keeps unscheduled tasks in its toolbar list", { tag: "@gate" }, async ({ page }) => {
     await open(page);
     await selectProjectView(page, "calendar");
     // On phones, planning options sit in the shared View options panel.
     await (await reveal(page.locator("#calendar-mode"))).selectOption("agenda");
     await expect(page.locator(".calendar-agenda")).toHaveCount(1);
-    await expect(page.locator(".calendar-unscheduled")).toHaveCount(1);
+    await page.keyboard.press("Escape");
+    await expect(page.locator("[data-calendar-unscheduled]")).toHaveAttribute("aria-label", "Unscheduled cards (1)");
+    await page.locator("[data-calendar-unscheduled]").click();
+    await expect(page.locator(".calendar-unscheduled [data-calendar-card]")).toHaveCount(1);
+    await expect(page.locator(".calendar-unscheduled")).toContainText("Parent context");
   });
 
   test("an Overview metric opens its tasks in the list, paged", { tag: "@gate" }, async ({ page }) => {

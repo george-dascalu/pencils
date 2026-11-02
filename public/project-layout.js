@@ -107,6 +107,7 @@ export function projectLayout(ctx) {
       if (filters) for (const option of document.querySelectorAll("#view-toolbar .view-controls [data-filters-option]")) moveTo(option, (el) => (footer ? footer.before(el) : filters.append(el)));
       trayLayouts();
       if (tabBar.matches && taskViews.includes(state.view)) topBarTools(toolbar, sortButton);
+      afterFilters(toolbar);
       return;
     }
     if (toolbar.classList.contains("board-toolbar")) {
@@ -141,6 +142,7 @@ export function projectLayout(ctx) {
       panel.querySelector("header button").insertAdjacentHTML("beforebegin", `<button type="button" class="icon-button" data-action="filters-reset" aria-label="Clear filters" title="Clear filters">${icon("eraser")}</button>`);
     if (sortButton) toolbar.append(sortButton);
     toolbar.append(compact);
+    afterFilters(toolbar);
     compact.addEventListener("toggle", event => {
       if (event.target !== compact) return;
       state.mobileViewOptions = compact?.open;
@@ -148,6 +150,10 @@ export function projectLayout(ctx) {
     });
     panel.querySelector('header button[aria-label="Close view options"]').onclick = closeCompact;
     positionCompact();
+  }
+  function afterFilters(toolbar) {
+    const filters = toolbar.querySelector(':scope > .mobile-view-options, :scope > [data-board-menu="filters"]');
+    if (filters) for (const control of document.querySelectorAll('.view-controls [data-after-filters]')) moveTo(control, el => filters.after(el));
   }
   // iPad (owner request, 30 Oct 2026): a task view's search, filters and sort sit in the middle of
   // the top bar, which the bottom bar's view tabs leave empty. The toolbar row keeps the view's
