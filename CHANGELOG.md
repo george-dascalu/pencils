@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.21.19 — 2026-11-02
+
+### Changed
+- Feature F0.21-19: Layout submenus keep their icons on a single horizontal row, centred below the desktop navigation, with the existing opening and closing motion.
+
 ## 0.21.18 — 2026-11-02
 
 ### Changed

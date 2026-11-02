@@ -1,6 +1,6 @@
 import { test, expect, onDevices, useApp } from "../fixtures.mjs";
 const app = useApp(async store => ({ project: await store.createProject({ title: "Desktop layouts" }) }));
-onDevices(["desktop", "narrow"], () => test("the active top tab opens layouts below the bar without a navigation scrollbar", async ({ page }) => {
+onDevices(["desktop", "narrow"], () => test("the active top tab opens layouts below the bar in one row without a navigation scrollbar @gate", async ({ page }) => {
   await page.goto(`${app.base}/#project/${app.project.id}/list`);
   const tab = page.locator('.tabs [data-view="tasks"]'), tray = page.locator(".layout-tray");
   await expect(tab).toHaveAttribute("aria-controls", "layout-tray");
@@ -8,10 +8,16 @@ onDevices(["desktop", "narrow"], () => test("the active top tab opens layouts be
   await page.emulateMedia({ reducedMotion: "no-preference" });
   await tab.click();
   await expect(tray).toBeVisible();
+  await expect.poll(() => tray.locator('.view-layout-switcher').evaluate(el => getComputedStyle(el).flexWrap)).toBe('nowrap');
+  const rows = await tray.getByRole('button').evaluateAll(els => els.map(el => Math.round(el.getBoundingClientRect().top)));
+  expect(new Set(rows).size).toBe(1);
   const [top, panel] = await Promise.all([page.locator(".topbar").boundingBox(), tray.boundingBox()]);
   expect(panel.y).toBeGreaterThanOrEqual(top.y + top.height - 2);
   expect(panel.x).toBeGreaterThanOrEqual(0);
   expect(panel.x + panel.width).toBeLessThanOrEqual(page.viewportSize().width);
+  const buttons = await tray.getByRole('button').evaluateAll(els => els.map(el => ({left:el.getBoundingClientRect().left,right:el.getBoundingClientRect().right})));
+  for(const button of buttons) { expect(button.left).toBeGreaterThanOrEqual(panel.x); expect(button.right).toBeLessThanOrEqual(panel.x+panel.width); }
+  await page.screenshot({path:`/tmp/layout-tray-${page.viewportSize().width}.png`});
   expect(await page.locator(".tabs").evaluate(el => getComputedStyle(el).overflowY)).toBe("visible");
   await tray.getByRole("button", { name: "Tree", exact: true }).click();
   await expect(page).toHaveURL(/\/tree$/);

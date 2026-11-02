@@ -70,6 +70,7 @@
 /* The bar's scroller only acts as one in the bottom bar; your own buttons (bottom-bar.js) show only there. */
 .topbar .tabs > .tabs-scroll { display: flex; min-width: 0; overflow-x: auto; overflow-y: hidden; scrollbar-width: none; }
 .topbar .tabs > .tabs-scroll::-webkit-scrollbar { display: none; }
+.layout-tray .view-layout-switcher { flex-wrap: nowrap; }
 .layout-tray:not([data-open]):not([data-closing]) { display: none; }
 @media (min-width: 601px) and (pointer: fine) {
   .layout-tray { position: fixed; z-index: 110; padding: var(--menu-panel-padding); width: max-content; max-width: calc(100vw - 16px); border: 1px solid var(--line); border-radius: var(--radius-popover); background: var(--surface); box-shadow: var(--shadow-popover); }
@@ -79,7 +80,7 @@
     .layout-tray { transition: opacity var(--menu-motion), translate var(--menu-motion), scale var(--menu-motion); }
     @starting-style { .layout-tray[data-open] { opacity: 0; translate: 0 -4px; scale: .96; } }
   }
-  .layout-tray .view-layout-switcher { display: flex; flex-wrap: wrap; gap: 0; padding: 0; border: 0; box-shadow: none; }
+  .layout-tray .view-layout-switcher { display: flex; flex-wrap: nowrap; gap: 0; padding: 0; border: 0; box-shadow: none; }
   .layout-tray .view-layout-switcher > button { flex: 0 0 var(--control-height); width: var(--control-height); height: var(--control-height); min-width: 0; padding: 0; }
   .layout-tray .view-layout-switcher > button > span { display: none; }
   .layout-tray .tray-divider { align-self: stretch; width: 1px; margin-inline: 4px; background: var(--line); }
