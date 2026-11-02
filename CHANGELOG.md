@@ -2,6 +2,11 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.21.10 — 2026-11-02
+
+### Fixed
+- Feature F0.21-10: Stabilise the release check for changing code-block languages on phones. It now waits for Python highlighting to replace JavaScript highlighting; editor behaviour is unchanged.
+
 ## 0.21.9 — 2026-11-02
 
 ### Changed

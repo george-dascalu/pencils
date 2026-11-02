@@ -40,9 +40,7 @@ onDevices(["desktop", "phone"], () => {
     await expect.poll(() => editorSource(page), "the fence names the new language").toMatch(/```python\nfunction greet/);
     expect(await editorSource(page)).not.toMatch(/```js/);
     // Python colours its own keywords: "return" still, "function" no longer.
-    await page.waitForFunction(() => [...(CSS.highlights.get("document-code-keyword") || [])].some((r) => r.toString() === "return"));
-    const p = await painted(page, ".document-codemirror");
-    expect(p.keyword, "function is not a Python keyword").not.toContain("function");
+    await expect.poll(async () => (await painted(page, ".document-codemirror")).keyword || [], "Python highlighting replaces JavaScript highlighting").toEqual(["return"]);
     // Plain text removes the colours and the fence's language.
     await picker(page).selectOption("");
     await expect.poll(() => editorSource(page)).toMatch(/```\nfunction greet/);

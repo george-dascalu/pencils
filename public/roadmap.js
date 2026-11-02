@@ -6,6 +6,7 @@
 // From the 0.21.0 baseline, new features use F<major>.<minor>-<1..100>: F0.21-1 releases
 // as 0.21.1, F0.21-100 as 0.22.0, then F0.22-1 as 0.22.1. Historical T IDs stay intact.
 export const roadmap = [
+  { id: "F0.21-10", title: "Reliable release check for code-block language changes", status: "done", requested: "2026-11-02", started: "2026-11-02", done: "2026-11-02", version: "0.21.10" },
   { id: "F0.21-9", title: "Remove the default project tagline", status: "done", requested: "2026-11-02", started: "2026-11-02", done: "2026-11-02", version: "0.21.9" },
   { id: "F0.21-8", title: "Wider three-step project creation with details, card types and workflow", status: "done", requested: "2026-11-02", started: "2026-11-02", done: "2026-11-02", version: "0.21.8" },
   { id: "F0.21-7", title: "Centre the lower board toolbar controls", status: "done", requested: "2026-11-02", started: "2026-11-02", done: "2026-11-02", version: "0.21.7" },
