@@ -41,6 +41,10 @@ async function check(page, label, { common, specific }) {
   expect(count, `${label}: at least one row`).toBeGreaterThanOrEqual(1);
   let tallest = 0;
   for (let i = 0; i < count; i++) tallest = Math.max(tallest, await oneLine(page, i, label));
+  const deletion = toolbar(page).locator('[data-feature="selection-delete"], [data-action="edge-delete"]');
+  await expect(rows(page).last().locator(':scope > :last-child').locator('[data-feature="selection-delete"], [data-action="edge-delete"]')).toHaveCount(1);
+  const color = await deletion.evaluate(el => getComputedStyle(el).color);
+  const rgb = color.match(/\d+/g).map(Number);expect(rgb[0]).toBeGreaterThan(rgb[1]);expect(rgb[0]).toBeGreaterThan(rgb[2]);
   const box = await toolbar(page).boundingBox();
   expect(box.height, `${label}: no third line`).toBeLessThanOrEqual(2 * tallest + 20);
   if (label.startsWith("desktop") && count === 2) {
@@ -70,15 +74,15 @@ onDevices(["desktop", "phone"], () => test("Up and Down move between the two row
   expect(await inRow(), "Up moves back").toBe(0);
 }));
 
-onDevices(["desktop", "phone"], () => test("each selection shows common tools above the type's own tools, two scrolling lines at most", async ({ page, device }) => {
+onDevices(["desktop", "phone"], () => test("each selection shows common tools above the type's own tools, two scrolling lines at most @gate", async ({ page, device }) => {
   await page.goto(`${app.base}/#project/${app.project.id}/board/${app.board.id}`);
   await page.locator("#canvas").waitFor();
   await findOnBoard(page, "note", "First idea");
-  await check(page, `${device} note`, { common: ["[data-feature=selection-delete]", "[data-feature=bring-front]", "[data-feature=duplicate]"], specific: ["[data-selection-menu=text-align]", ".selection-kind, [data-selection-menu=convert]"] });
+  await check(page, `${device} note`, { common: ["[data-selection-menu=convert]", "[data-selection-menu=layer-order]", "[data-feature=duplicate]"], specific: ["[data-selection-menu=text-align]"] });
   await findOnBoard(page, "task-a", "Write specification");
-  await check(page, `${device} task`, { common: ["[data-feature=selection-delete]"], specific: ["[data-selection-menu=text-align]"] });
+  await check(page, `${device} task`, { common: [], specific: ["[data-selection-menu=text-align]"] });
   await findOnBoard(page, "frame", "Slide one");
-  await check(page, `${device} frame`, { common: ["[data-feature=selection-delete]", "[data-feature=lock]"], specific: ["[data-feature=frame-fit]", "[data-selection-menu=frame-size]"] });
+  await check(page, `${device} frame`, { common: ["[data-feature=lock]"], specific: ["[data-feature=frame-fit]", "[data-selection-menu=frame-size]"] });
   if (device === "phone") {
     // The frame's row is wider than a phone: it scrolls instead of wrapping.
     const row = rows(page).nth(1);
@@ -118,9 +122,9 @@ onDevices(["desktop", "phone"], () => test("each selection shows common tools ab
   // Select all takes the connector too: the objects' tools stay, and duplicate and delete cover
   // the connector (board sweep T95, board-sweep-fixes.spec.mjs).
   await page.keyboard.press("Control+a");
-  await check(page, "desktop all", { common: ["[data-feature=selection-delete]", "[data-feature=duplicate]", "[data-feature=lock]", ".selection-filter-total"], specific: [] });
+  await check(page, "desktop all", { common: ["[data-feature=duplicate]", "[data-feature=lock]", ".selection-filter-total"], specific: [] });
   // A connector: its own endpoints and line tools below the common actions.
   await page.keyboard.press("Escape");
   await page.locator('[data-edge="e1"]').first().click({ force: true });
-  await check(page, "desktop connector", { common: ["[data-action=edge-delete]"], specific: ["[data-selection-menu=dependency]", '[role=group][aria-label="Endpoints"]'] });
+  await check(page, "desktop connector", { common: ["[data-feature=duplicate]"], specific: ["[data-selection-menu=dependency]", '[role=group][aria-label="Endpoints"]'] });
 }));

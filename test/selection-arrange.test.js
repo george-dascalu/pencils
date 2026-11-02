@@ -88,3 +88,20 @@ test("filtered frame alignment leaves excluded contents untouched", () => {
   assert.equal(board.nodes[0].x, 500);
   assert.deepEqual(board.nodes[1], child);
 });
+
+test('one-step layer changes preserve selection order, respect locked selections and stop at the ends', () => {
+  const make=()=>({nodes:['a','b','c','d','e'].map(id=>({id,x:0,y:0,w:10,h:10}))});
+  const b=make();arrangeSelection(b,[b.nodes[0],b.nodes[2]],'bring-forward');assert.deepEqual(b.nodes.map(n=>n.id),['b','a','d','c','e']);
+  arrangeSelection(b,b.nodes.filter(n=>['a','c'].includes(n.id)),'send-backward');assert.deepEqual(b.nodes.map(n=>n.id),['a','b','c','d','e']);
+  const group=make();arrangeSelection(group,[group.nodes[1],group.nodes[2]],'bring-forward');assert.deepEqual(group.nodes.map(n=>n.id),['a','d','b','c','e']);
+  arrangeSelection(group,[group.nodes.at(-1)],'bring-forward');assert.equal(group.nodes.at(-1).id,'e');
+  arrangeSelection(group,[group.nodes[0]],'send-backward');assert.equal(group.nodes[0].id,'a');
+  const locked=make();locked.nodes[1].locked=true;arrangeSelection(locked,[locked.nodes[1]],'bring-forward');assert.deepEqual(locked.nodes.map(n=>n.id),['a','b','c','d','e']);
+  const all=make();arrangeSelection(all,all.nodes,'send-backward');assert.deepEqual(all.nodes.map(n=>n.id),['a','b','c','d','e']);
+});
+
+test('malformed cyclic frame ancestry cannot stall alignment', async () => {
+  const { Worker } = await import('node:worker_threads');
+  const worker=new Worker(`const{parentPort,workerData}=require('node:worker_threads');import(workerData).then(({arrangeSelection})=>{const b={nodes:[{id:'a',type:'frame',frame:'b',x:0,y:0,w:20,h:20},{id:'b',type:'frame',frame:'a',x:0,y:0,w:20,h:20},{id:'one',x:100,y:100,w:10,h:10},{id:'two',x:200,y:100,w:10,h:10}]};arrangeSelection(b,[b.nodes[2],b.nodes[3]],'align-left');parentPort.postMessage(b.nodes.map(n=>n.x));});`,{eval:true,workerData:new URL('../public/selection-arrange.js',import.meta.url).href});
+  let timer;try{const result=await Promise.race([new Promise((resolve,reject)=>{worker.once('message',resolve);worker.once('error',reject);}),new Promise((_,reject)=>{timer=setTimeout(()=>reject(Error('Alignment stalled on cyclic frames')),1500);})]);assert.deepEqual(result,[0,0,100,100]);}finally{clearTimeout(timer);await worker.terminate();}
+});

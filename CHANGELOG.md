@@ -2,6 +2,11 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.21.26 — 2026-11-02
+
+### Changed
+- Feature F0.21-26: The selected object's Note/Card type selector sits at the far left of the toolbar, ahead of the editing controls. Delete sits at the end of object and connector toolbars and is consistently red. A Layer order menu groups Bring to front, Bring forward, Send backward and Send to back. Removed the Note/Draft card conversion, Frames reordering and card-placement explanations while retaining their actions.
+
 ## 0.21.25 — 2026-11-02
 
 ### Added

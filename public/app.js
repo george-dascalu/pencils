@@ -2108,7 +2108,7 @@ function boardTaskPanelHTML() {
       ["off", "Not on this board"],
       ["on", "On this board"],
     ],
-  )}</div><div class="board-task-results" aria-live="polite">${boardTaskResultsHTML()}</div><footer><button type="button" class="button primary" data-action="board-create-task">${icon("plus")}New project card</button><button type="button" class="button" data-action="board-create-draft">${icon("pencil")}New draft card</button><small>Drag a card onto the board, or click to place it. It stays linked to the project card.</small></footer></aside>`;
+  )}</div><div class="board-task-results" aria-live="polite">${boardTaskResultsHTML()}</div><footer><button type="button" class="button primary" data-action="board-create-task">${icon("plus")}New project card</button><button type="button" class="button" data-action="board-create-draft">${icon("pencil")}New draft card</button></footer></aside>`;
 }
 function boardTaskResultsHTML() {
   const f = state.boardTaskFilters || {},

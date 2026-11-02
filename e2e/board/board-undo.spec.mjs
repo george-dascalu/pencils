@@ -24,8 +24,13 @@ test("undo and redo apply at once without reloading the project or rebuilding th
   await expect.poll(async () => (await app.store.snapshot(app.project.id)).boards[0].nodes[0].x).not.toBe(120);
   const moved = await left();
   await page.evaluate(() => { document.querySelector(".shell").dataset.before = "yes"; });
+  // The event stream can start a background delta check for the preceding move.
+  // Hold those reads: undo/redo must apply their own replies without relying on them.
+  let resumeDelta;
+  const pausedDelta = new Promise(resolve => { resumeDelta = resolve; });
+  await page.route(url => url.pathname === `/api/projects/${app.project.id}/delta`, async route => { await pausedDelta; await route.continue().catch(() => {}); });
   const reloads = [];
-  page.on("request", (r) => { const path = new URL(r.url()).pathname; if (r.method() === "GET" && (path.endsWith("/delta") || path === `/api/projects/${app.project.id}`)) reloads.push(path); });
+  page.on("request", (r) => { const path = new URL(r.url()).pathname; if (r.method() === "GET" && path === `/api/projects/${app.project.id}`) reloads.push(path); });
   await page.keyboard.press("Control+z");
   await expect.poll(left).toBe(start);
   expect(reloads, "undo does not reload the project").toEqual([]);
@@ -33,4 +38,5 @@ test("undo and redo apply at once without reloading the project or rebuilding th
   await expect.poll(left).toBe(moved);
   expect(reloads, "redo does not reload the project").toEqual([]);
   expect(await page.evaluate(() => document.querySelector(".shell").dataset.before), "the page was not rebuilt").toBe("yes");
+  resumeDelta();
 });

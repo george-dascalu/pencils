@@ -8,6 +8,8 @@ export const arrangementActions = [
   "align-bottom",
   "distribute",
   "distribute-vertical",
+  "bring-forward",
+  "send-backward",
   "bring-front",
   "send-back",
 ];
@@ -19,6 +21,16 @@ export function arrangeSelection(
 ) {
   const movable = nodes.filter((n) => !n.locked);
   if (!movable.length) return;
+  if (["bring-forward", "send-backward"].includes(action)) {
+    const ids = new Set(movable.map(n => n.id));
+    const forward = action === "bring-forward";
+    for (let i = forward ? board.nodes.length - 2 : 1; forward ? i >= 0 : i < board.nodes.length; i += forward ? -1 : 1) {
+      const next = i + (forward ? 1 : -1);
+      if (ids.has(board.nodes[i].id) && !ids.has(board.nodes[next].id))
+        [board.nodes[i], board.nodes[next]] = [board.nodes[next], board.nodes[i]];
+    }
+    return;
+  }
   if (["bring-front", "send-back"].includes(action)) {
     const ids = new Set(movable.map((n) => n.id));
     const moved = board.nodes.filter((n) => ids.has(n.id)),

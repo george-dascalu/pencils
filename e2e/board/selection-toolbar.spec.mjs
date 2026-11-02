@@ -56,13 +56,16 @@ test("the toolbar is compact, with layer order and delete outside menus", async 
   await resetBoard();
   await openBoard(page);
   await find(page, "note", "First idea");
+  await menu(page, "layer-order").click();
+  for (const action of ["bring-front", "bring-forward", "send-backward", "send-back"]) await expect(toolbar(page).locator(`[data-selection-menu="layer-order"] [data-feature="${action}"]`)).toBeVisible();
+  await page.keyboard.press("Escape");
   // The common and note tools share one line when the board has enough room.
   const box = await toolbar(page).boundingBox();
   expect(box.width < 1200 && box.height < 60, JSON.stringify(box)).toBe(true);
   await expect(toolbar(page).locator(":scope > .selection-row")).toHaveCount(2);
   await expect(toolbar(page)).toHaveAttribute("role", "toolbar");
   await expect(toolbar(page).locator('[data-selection-menu="more"]')).toHaveCount(0);
-  for (const action of ["bring-front", "send-back", "selection-delete"]) {
+  for (const action of ["selection-delete"]) {
     const button = toolbar(page).locator(`[data-feature="${action}"]`);
     await expect(button).toBeVisible();
     expect(await button.evaluate((el) => !!el.closest("details"))).toBe(false);
@@ -135,8 +138,12 @@ test("layer order and delete apply to the selection, undo restores it, and the r
   await clickControl(toolbar(page).locator("[data-feature=bring-front]"));
   await expect.poll(async () => (await current()).nodes.at(-1).id).toBe("note");
   await savedLabel(page);
-  await toolbar(page).locator('[data-feature="send-back"]').click();
+  await clickControl(toolbar(page).locator('[data-feature="send-back"]'));
   await expect.poll(async () => (await current()).nodes[0].id).toBe("note");
+  await clickControl(toolbar(page).locator('[data-feature="bring-forward"]'));
+  await expect.poll(async () => (await current()).nodes.findIndex(n => n.id === "note")).toBe(1);
+  await clickControl(toolbar(page).locator('[data-feature="send-backward"]'));
+  await expect.poll(async () => (await current()).nodes.findIndex(n => n.id === "note")).toBe(0);
   await toolbar(page).locator('[data-feature="selection-delete"]').click();
   await expect.poll(async () => (await current()).nodes.some((n) => n.id === "note")).toBe(false);
   await page.keyboard.press("Control+z");
@@ -163,7 +170,7 @@ for (const viewportSize of [{ width: 1600, height: 1100 }, { width: 390, height:
     expect(box.x + box.width).toBeLessThanOrEqual(size.width);
     expect(box.height, JSON.stringify(box)).toBeLessThan(140);
     // Each row scrolls sideways (0.20.91), so a control at a row's end may need scrolling into view.
-    for (const action of ["bring-front", "send-back", "selection-delete"]) {
+    for (const action of ["selection-delete"]) {
       const control = toolbar(page).locator(`[data-feature="${action}"]`);
       await control.scrollIntoViewIfNeeded();
       const button = await control.boundingBox();
@@ -204,19 +211,23 @@ test("in dark mode the toolbar has a dark surface", async ({ page }) => {
 // Owner requests, 1 November 2026: Connections moved to Board tools (T89), and the task's
 // conversion hint (T90) and the text menu's Copy and Paste formatting buttons (T91) are gone; the
 // Ctrl/⌘+Alt+C and V shortcuts stay (note-styles.spec.mjs).
-test("the toolbar has no Connections, no task conversion hint and no formatting clipboard", async ({ page }) => {
+test("the type selector leads the toolbar with no conversion explanations or formatting clipboard", async ({ page }) => {
   await resetBoard();
   await openBoard(page);
   await find(page, "task-a", "Write specification");
   await expect(toolbar(page).locator('[data-pro="connections"]')).toHaveCount(0);
   // Cards are called cards (board sweep T95).
   await expect(menu(page, "convert")).toHaveAccessibleName("Convert Card");
+  await expect(toolbar(page).locator(".selection-row").first().locator(":scope > :first-child")).toHaveAttribute("data-selection-menu", "convert");
+  const position = await toolbar(page).evaluate(el => ({ type: el.querySelector('[data-selection-menu="convert"]').getBoundingClientRect().left, edit: el.querySelector('[aria-label="Edit"]').getBoundingClientRect().left }));
+  expect(position.type).toBeLessThan(position.edit);
   await menu(page, "convert").click();
   await expect(toolbar(page).locator('[data-pro="convert"]')).toHaveAccessibleName("Card");
   await expect(toolbar(page).locator('[data-pro="convert-note"]')).toBeVisible();
   await expect(toolbar(page).locator('[data-selection-menu="convert"] .conversion-hint')).toHaveCount(0);
   await page.keyboard.press("Escape");
   await find(page, "note", "First idea");
-  await expect(toolbar(page).locator('[data-selection-menu="convert"] .conversion-hint')).toHaveText("Turn this note into a draft card. Finalise it when ready.");
+  await expect(toolbar(page).locator(".selection-row").first().locator(":scope > :first-child")).toHaveAttribute("data-selection-menu", "convert");
+  await expect(toolbar(page).locator('[data-selection-menu="convert"] .conversion-hint')).toHaveCount(0);
   await expect(toolbar(page).locator('[data-object-style="copy"], [data-object-style="paste"]')).toHaveCount(0);
 });

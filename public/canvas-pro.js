@@ -1733,7 +1733,7 @@ export function canvasPro(ctx, basic) {
         );
     }
     const pagination = tree.rows.length > pageSize ? `<nav class="frame-panel-actions" aria-label="Frame pages">${btn("frames-previous", icon("arrow-left"), `aria-label="Previous frames" ${outlinePage === 0 ? "disabled" : ""}`)}<span>${start + 1}–${Math.min(start + pageSize, tree.rows.length)} / ${tree.rows.length.toLocaleString("en-GB")}</span>${btn("frames-next", icon("arrow"), `aria-label="Next frames" ${start + pageSize >= tree.rows.length ? "disabled" : ""}`)}</nav>` : "";
-    el.innerHTML = `${head}<p>Drag rows or use ↑ / ↓ to reorder slides. Nested frames move with their parent and are not separate slides.</p><div class="frame-panel-actions">${btn("frames-organize", "Order by position")}${btn("present", "Present")}</div>${pagination}${rows.join("") || "<p>Press F and drag to draw a frame.</p>"}`;
+    el.innerHTML = `${head}<div class="frame-panel-actions">${btn("frames-organize", "Order by position")}${btn("present", "Present")}</div>${pagination}${rows.join("") || "<p>Press F and drag to draw a frame.</p>"}`;
   }
   let draggedFrame = null;
   document.addEventListener("dragstart", (event) => {

@@ -183,3 +183,10 @@ onDevices(["desktop", "phone"], (device) => {
     await page.keyboard.press("Escape");
   });
 });
+
+test("a single connector duplicates from its common toolbar and leaves Delete at the end", async ({page}) => {
+  await open(page);await selectEdge(page);
+  await page.locator('#selection-tools [data-feature="duplicate"]').click();
+  await expect.poll(async () => (await current()).edges.length).toBe(2);
+  await expect(page.locator('#selection-tools .selection-row:last-child > :last-child [data-action="edge-delete"], #selection-tools .selection-row:last-child > :last-child [data-feature="selection-delete"]')).toHaveCount(1);
+});

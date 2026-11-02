@@ -509,3 +509,6 @@
 @media (pointer: coarse) { .rich-scroll { width: 44px; } }
 .selection-menu > .selection-popover[popover] { position: fixed; inset: auto; margin: 0; }
 .rich-format-menu .selection-popover .selection-action-label { white-space: nowrap; }
+
+/* Destructive actions have one home at the end of every object/connector toolbar. */
+#selection-tools :is([data-feature="selection-delete"], [data-action="edge-delete"]) { color: var(--danger, #bd4940) !important; }
