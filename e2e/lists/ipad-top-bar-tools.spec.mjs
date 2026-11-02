@@ -96,8 +96,8 @@ onDevices(["ipad", "ipad-portrait", "desktop"], () => test("every view puts the 
   await page.setViewportSize(size);
   await expect(page.locator(".topbar .breadcrumb .bookmark-button"), `${device}: back before the title`).toHaveAttribute("data-id", second.id);
   await expect(page.locator(".bookmark-button")).toHaveCount(1);
-  // Only touch screens have the documents tray.
-  await expect(page.locator(".layout-tray"), `${device}: the documents tray`).toHaveCount(device === "desktop" ? 0 : 1);
+  // Desktop and touch screens share the documents tray.
+  await expect(page.locator(".layout-tray"), `${device}: the documents tray`).toHaveCount(1);
 }));
 
 onDevices(["phone"], () => test("phones keep Planning's star out of the top bar, which shows no title", async ({ page, device }) => {

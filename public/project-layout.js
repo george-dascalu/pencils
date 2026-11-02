@@ -1,6 +1,6 @@
 import { positionPopover } from "./popover-position.js";
 import { phoneBoardTools } from "./phone-board-tools.js";
-import { mountLayoutTray, removeLayoutTray, tabBar } from "./layout-tray.js";
+import { mountLayoutTray, removeLayoutTray, positionLayoutTray, tabBar } from "./layout-tray.js";
 import { viewOn } from "./card-fields.js";
 // Group the existing controls without replacing their handlers or save state.
 export function projectLayout(ctx) {
@@ -67,6 +67,7 @@ export function projectLayout(ctx) {
     const ipad = tabBar.matches && !narrow.matches;
     if (!(ipad && taskViews.includes(state.view))) lowerTools();
     phoneBoard.sync();
+    boardAppearance();
     if (!narrow.matches) starBeforeTitle();
     const toolbar = $(".toolbar-left") || $(".board-toolbar");
     if (!toolbar) return;
@@ -104,10 +105,8 @@ export function projectLayout(ctx) {
       const filters = toolbar.querySelector(':scope > details.board-menu[data-board-menu="filters"] > .board-menu-panel');
       const footer = filters?.querySelector(":scope > .menu-footer");
       if (filters) for (const option of document.querySelectorAll("#view-toolbar .view-controls [data-filters-option]")) moveTo(option, (el) => (footer ? footer.before(el) : filters.append(el)));
-      if (tabBar.matches) {
-        trayLayouts();
-        if (taskViews.includes(state.view)) topBarTools(toolbar, sortButton);
-      } else state.layoutTray = null;
+      trayLayouts();
+      if (tabBar.matches && taskViews.includes(state.view)) topBarTools(toolbar, sortButton);
       return;
     }
     if (toolbar.classList.contains("board-toolbar")) {
@@ -180,6 +179,12 @@ export function projectLayout(ctx) {
     lowerTools();
     if (!narrow.matches) starBeforeTitle();
   }
+  function boardAppearance() {
+    const button = $("#expanded-board-settings"), tools = $('.board-toolbar > [data-board-menu="tools"]');
+    if (!button) return;
+    if (!tabBar.matches && !$("#canvas.board-expanded") && tools) tools.before(button);
+    else if (!button.closest(".phone-board-row")) $(".board-controls")?.append(button);
+  }
   // Moves a control, leaving a marker for restoreToolbar to put it back.
   function moveTo(element, place) {
     if (!element) return;
@@ -204,6 +209,7 @@ export function projectLayout(ctx) {
     state.layoutTray = open ? state.view : null;
     $(".layout-tray")?.toggleAttribute("data-open", open);
     $('.tabs .tab[aria-controls="layout-tray"]')?.setAttribute("aria-expanded", String(open));
+    if (open) positionLayoutTray();
   }
   // Tapping the open tab toggles the tray (app.js leaves the open view as it is); choosing from
   // it or tapping anywhere else closes it.
@@ -212,6 +218,12 @@ export function projectLayout(ctx) {
     else if (trayOpen() && (event.target.closest(".layout-tray button") || !event.target.closest(".layout-tray"))) setLayoutTray(false);
   }, true);
   document.addEventListener("keydown", (event) => {
+    if (event.key === "ArrowDown" && !tabBar.matches && event.target.matches('.tabs .tab[aria-controls="layout-tray"]')) {
+      event.preventDefault();
+      setLayoutTray(true);
+      $(".layout-tray button")?.focus({ preventScroll: true });
+      return;
+    }
     if (event.key !== "Escape" || state.dialog || state.menu || !$(".layout-tray[data-open]")) return;
     event.preventDefault();
     event.stopImmediatePropagation();
@@ -229,6 +241,7 @@ export function projectLayout(ctx) {
   narrow.addEventListener("change", compactToolbar);
   tabBar.addEventListener("change", compactToolbar);
   window.addEventListener("resize", positionCompact);
+  window.addEventListener("resize", positionLayoutTray);
   document.addEventListener("click", event => {
     const inside = event.composedPath().some(el => el.classList?.contains("mobile-view-options"));
     if (compact?.open && !inside && !event.target.closest(".select-menu,.date-picker-popover,.task-dates-popover,#dialogs")) {
@@ -487,5 +500,5 @@ export function projectLayout(ctx) {
     },
     true,
   );
-  return { render, projectHeader, compactToolbar, documentStar };
+  return { render, projectHeader, compactToolbar, documentStar, boardAppearance };
 }

@@ -6,9 +6,9 @@ import {
   previewDependencyStyle,
 } from "./dependency-style-editor.js";
 const hex = (value) => /^#[\da-f]{6}$/i.test(value || "");
-export function backgroundStyle(settings = {}) {
+export function backgroundStyle(settings = {}, zoom = 1) {
   const color = hex(settings.color) ? settings.color : "var(--board-paper)",
-    line = hex(settings.lineColor)
+    baseLine = hex(settings.lineColor)
       ? settings.lineColor
       : hex(settings.color)
         ? parseInt(settings.color.slice(1, 3), 16) * 0.299 +
@@ -19,9 +19,13 @@ export function backgroundStyle(settings = {}) {
           : "#ffffff30"
         : "var(--board-line)";
   const pattern = settings.pattern || "dots",
+    spacing = settings.spacing || 20,
+    // Fade dense dots before their fixed screen-size radius fills the repeating tile.
+    opacity = pattern === "dots" ? Math.max(0, Math.min(1, (spacing * zoom - 4) / 4)) : 1,
+    line = opacity < 1 ? `color-mix(in srgb, ${baseLine} ${opacity * 100}%, transparent)` : baseLine,
     minorLine = `color-mix(in srgb, ${line} 35%, transparent)`;
   const image =
-    pattern === "plain"
+    pattern === "plain" || !opacity
       ? "none"
       : pattern === "lines"
         ? `linear-gradient(to bottom, ${line} 1px, transparent 1px)`
@@ -33,7 +37,7 @@ export function backgroundStyle(settings = {}) {
   return {
     color,
     image,
-    spacing: settings.spacing || 20,
+    spacing,
     scales: pattern === "fine-grid" ? [5, 5, 1, 1] : [1],
   };
 }
@@ -43,7 +47,7 @@ export function paintBoardBackground(
   camera = { x: 0, y: 0, z: 1 },
 ) {
   if (!element) return;
-  const style = backgroundStyle(settings),
+  const style = backgroundStyle(settings, camera.z),
     size = style.spacing * camera.z;
   Object.assign(element.style, {
     backgroundColor: style.color,

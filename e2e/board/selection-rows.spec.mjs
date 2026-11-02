@@ -43,6 +43,10 @@ async function check(page, label, { common, specific }) {
   for (let i = 0; i < count; i++) tallest = Math.max(tallest, await oneLine(page, i, label));
   const box = await toolbar(page).boundingBox();
   expect(box.height, `${label}: no third line`).toBeLessThanOrEqual(2 * tallest + 20);
+  if (label.startsWith("desktop") && count === 2) {
+    const [a, b] = await Promise.all([rows(page).first().boundingBox(), rows(page).nth(1).boundingBox()]);
+    expect(Math.abs(a.y - b.y), `${label}: one line on desktop`).toBeLessThan(1);
+  }
   for (const selector of common) await expect(rows(page).first().locator(selector), `${label}: ${selector} in the common row`).toHaveCount(1);
   for (const selector of specific) await expect(rows(page).nth(1).locator(selector), `${label}: ${selector} in the type's row`).toHaveCount(1);
 }

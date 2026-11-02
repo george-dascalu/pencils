@@ -68,7 +68,16 @@
 /* Search follows the view tabs after a divider at every width (also Ctrl/⌘ K). */
 .topbar .tabs .tabs-divider { flex: none; align-self: center; width: 1px; height: 20px; margin: 0 4px; background: var(--line); }
 /* The bar's scroller only acts as one in the bottom bar; your own buttons (bottom-bar.js) show only there. */
-.topbar .tabs > .tabs-scroll { display: contents; }
+.topbar .tabs > .tabs-scroll { display: flex; min-width: 0; overflow-x: auto; overflow-y: hidden; scrollbar-width: none; }
+.topbar .tabs > .tabs-scroll::-webkit-scrollbar { display: none; }
+.layout-tray:not([data-open]) { display: none; }
+@media (min-width: 601px) and (pointer: fine) {
+  .layout-tray { position: fixed; z-index: 110; padding: var(--menu-panel-padding); width: max-content; max-width: calc(100vw - 16px); border: 1px solid var(--line); border-radius: var(--radius-popover); background: var(--surface); box-shadow: var(--shadow-popover); }
+  .layout-tray[data-open] { animation: var(--menu-motion); }
+  .layout-tray .view-layout-switcher { display: flex; flex-wrap: wrap; gap: 0; padding: 0; border: 0; box-shadow: none; }
+  .layout-tray .view-layout-switcher > button { flex: 1; }
+  .layout-tray .tray-divider { align-self: stretch; width: 1px; margin-inline: 4px; background: var(--line); }
+}
 .topbar .tabs .bar-buttons { display: none; }
 .bar-editor-list { margin: 0 0 8px; padding: 0; list-style: none; }
 .bar-editor-item { display: flex; align-items: center; gap: 8px; min-height: var(--control-height); }
@@ -949,7 +958,7 @@ html.table-viewport-view body {
 @media (prefers-reduced-motion: reduce) { .sidebar { transition: none; } }
 @media (min-width: 601px) and (max-width: 1150px) {
   .board-project-tools { max-width: 100%; }
-  .topbar .board-project-tools > .tabs { min-width: 0; flex: 1; overflow-x: auto; }
+  .topbar .board-project-tools > .tabs { min-width: 0; flex: 1; overflow: visible; }
   .board-project-tools > .button { flex-shrink: 0; }
 }
 /* Touch screens wider than phones centre a phone-sized bottom bar, whose tray rises out of it, and

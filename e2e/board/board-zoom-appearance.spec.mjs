@@ -40,7 +40,7 @@ test("one Board appearance button opens the board's look, without its name, disp
   const button = page.locator('[data-feature="board-settings"]');
   await expect(button).toHaveCount(1);
   await expect(button).toHaveAccessibleName("Board appearance");
-  await expect(page.locator('.board-controls [data-feature="board-settings"]')).toHaveCount(1);
+  await expect(page.locator('.board-toolbar [data-feature="board-settings"]')).toHaveCount(1);
   await button.click();
   const panel = page.getByRole("dialog", { name: "Board appearance", exact: true });
   await expect(panel).toBeVisible();

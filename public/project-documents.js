@@ -758,7 +758,7 @@ export function projectDocuments(ctx) {
   // Phones and touch screens: tapping the open Documents tab again shows a tray above the bottom
   // bar with the document list and the document's views.
   function syncTray() {
-    if (!selected() || !tabBar.matches) return removeLayoutTray();
+    if (!selected()) return removeLayoutTray();
     const tray = document.createElement("template");
     tray.innerHTML = `<div class="view-layout-switcher" role="group" aria-label="Document view"><button type="button" data-list-toggle aria-label="Documents" title="Documents">${icon("folder")}<span>Documents</span></button><span class="tray-divider" role="separator"></span>${MODES.map(([key, label, glyph]) => `<button type="button" data-document-mode="${key}" aria-label="${label}" aria-pressed="${mode === key}" title="${label}">${icon(glyph)}<span>${label}</span></button>`).join("")}</div>`;
     mountLayoutTray(tray.content.firstElementChild, state.layoutTray === state.view);

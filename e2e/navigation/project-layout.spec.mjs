@@ -39,13 +39,14 @@ test("one Tasks tab owns every task layout, with shared search and keyboard sele
     .toEqual([[], ["overview"], ["documents"], ["planning"], ["tasks"], ["board"]]); // the first group is the touch bars' Home tab (0.20.93)
   await selectProjectView(page, "table");
   await expect(page.locator('.tabs [aria-current="page"]')).toHaveAttribute("data-view", "tasks");
-  await expect(page.locator(".tabs [data-view=table],.tabs [data-view=list],.tabs [data-view=tree]")).toHaveCount(0);
+  await expect(page.locator(".tabs .tab[data-view=table],.tabs .tab[data-view=list],.tabs .tab[data-view=tree]")).toHaveCount(0);
   await page.locator("#search").fill("Extra task 5");
   const tree = page.locator('.task-view-switcher [data-view="tree"]');
+  await page.locator('.tabs [data-view="tasks"]').click();
   await tree.focus();
   await page.keyboard.press("Enter");
   await expect(tree).toHaveAttribute("aria-pressed", "true");
-  await expect(tree).toBeFocused();
+  await expect(page.locator('.tabs [data-view="tasks"]')).toBeFocused();
   await expect(page.locator("#search")).toHaveValue("Extra task 5");
   await selectProjectView(page, "table");
   await expect(page.locator("[data-table-task]")).toHaveCount(1);
@@ -60,9 +61,10 @@ test("one Tasks tab owns every task layout, with shared search and keyboard sele
   await page.locator('.tabs [data-view="planning"]').click();
   await expect(page.locator('.planning-view-switcher [aria-pressed="true"]')).toHaveAttribute("data-view", "capacity");
   const calendar = page.locator('.planning-view-switcher [data-view="calendar"]');
+  await page.locator('.tabs [data-view="planning"]').click();
   await calendar.focus();
   await page.keyboard.press("Enter");
-  await expect(calendar).toBeFocused();
+  await expect(page.locator('.tabs [data-view="planning"]')).toBeFocused();
 });
 
 test("each project remembers its own layout, including across reloads", { tag: "@gate" }, async ({ page }) => {
@@ -100,8 +102,10 @@ async function everyViewSharesTheHeader(page, size) {
     if (taskLayout || planningLayout) {
       await expect(page.locator('.view-layout-switcher [aria-pressed="true"]')).toHaveAttribute("data-view", view);
       if (size.width > 600) {
+        await page.locator('.tabs .tab[aria-controls="layout-tray"]').click();
         const switcher = await boxOf(page, ".view-layout-switcher");
         expect(switcher.x >= 0 && switcher.x + switcher.width <= size.width).toBe(true);
+        await page.keyboard.press("Escape");
       } else await expect(page.locator(".layout-tray .view-layout-switcher"), "phones switch layouts from the bottom bar's tray (0.19.37)").toHaveCount(1);
     }
     await page.evaluate(() => window.scrollTo(0, 0));

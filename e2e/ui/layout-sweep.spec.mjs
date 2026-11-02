@@ -73,7 +73,7 @@ function sweep() {
       }
       if (["documents", "board"].includes(screen)) {
         await open(page, screen);
-        if (screen === "documents" && (await touch(page))) {
+        if (screen === "documents") {
           await page.locator('.tabs [data-view="documents"]').click();
           await page.locator(".layout-tray").getByRole("button", { name: "Documents", exact: true }).click();
         } else await page.locator(`.tabs [data-view="${screen}"][aria-current="page"]`).click();

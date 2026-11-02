@@ -6,6 +6,9 @@
 // From the 0.21.0 baseline, new features use F<major>.<minor>-<1..100>: F0.21-1 releases
 // as 0.21.1, F0.21-100 as 0.22.0, then F0.22-1 as 0.22.1. Historical T IDs stay intact.
 export const roadmap = [
+  { id: "F0.21-3", title: "Dedicated Project Views settings for individual layouts and components", status: "requested", requested: "2026-11-02", started: "", done: "", version: "" },
+  { id: "F0.21-2", title: "Hourly Week calendar with drag-to-create cards", status: "in progress", requested: "2026-11-02", started: "2026-11-02", done: "", version: "" },
+  { id: "F0.21-1", title: "Compact settings, desktop navigation trays and reliable board controls", status: "done", requested: "2026-11-02", started: "2026-11-02", done: "2026-11-02", version: "0.21.1" },
   { id: "T113", title: "Start the 0.21.0 baseline with numbered feature releases and automatic minor rollover", status: "done", requested: "2026-11-02", started: "2026-11-02", done: "2026-11-02", version: "0.21.0" },
   { id: "T112", title: "Fix critique findings across document touch targets, Home, planning recovery, board menus and Table defaults", status: "done", requested: "2026-11-02", started: "2026-11-02", done: "2026-11-02", version: "0.20.130" },
   { id: "T111", title: "Make date-picker verification independent of the Today shortcut", status: "done", requested: "", started: "2026-11-02", done: "2026-11-02", version: "0.20.129" },

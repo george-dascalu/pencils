@@ -47,7 +47,9 @@ test("the sidebar names the running version and flags a newer one; the top bar s
   await expect(page.locator(".side-footer .app-update-available")).toBeAttached();
   await expect(page.locator("#save-state")).not.toContainText("Update available");
   await page.locator(".topbar .mobile-menu").click();
-  await expect(page.locator(".side-footer").getByText("Update available")).toBeVisible();
+  await expect(page.locator(".side-footer .app-update-available")).toBeVisible();
+  await expect(page.locator(".side-footer .app-update-label")).toHaveCount(0);
+  await expect(page.locator(".side-footer .app-version")).toHaveAttribute("title", /available/);
   const [sidebar, notice] = [await page.locator(".sidebar").boundingBox(), await page.locator(".side-footer .app-update-available").boundingBox()];
   expect(notice.x + notice.width, "the notice fits in the sidebar").toBeLessThanOrEqual(sidebar.x + sidebar.width);
 });

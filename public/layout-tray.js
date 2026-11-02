@@ -1,4 +1,4 @@
-import { bottomBarTop, tabBarQuery } from "./popover-position.js";
+import { bottomBarTop, tabBarQuery, positionPopover } from "./popover-position.js";
 // Phones and touch screens such as iPad: a tray above the bottom bar, opened by tapping the open
 // tab again, holds Tasks and Planning layouts or the Documents list and document views.
 // project-layout.js toggles it and closes it on a choice, a tap elsewhere or Escape.
@@ -26,6 +26,14 @@ export function mountLayoutTray(content, open) {
   tab.closest(".tabs-scroll").after(tray);
   tab.setAttribute("aria-controls", tray.id);
   tab.setAttribute("aria-expanded", String(open));
+  positionLayoutTray();
+}
+export function positionLayoutTray() {
+  if (tabBar.matches) return;
+  const tray = document.querySelector('.layout-tray[data-open]'), tab = document.querySelector('.tabs [aria-controls="layout-tray"]');
+  if (!tray || !tab) return;
+  const r = tab.getBoundingClientRect(), bar = tab.closest(".topbar").getBoundingClientRect();
+  positionPopover(tray, { ...r.toJSON(), bottom: bar.bottom }, { width: 420, maxHeight: 400, gap: 6 });
 }
 export function removeLayoutTray() {
   document.querySelector(".layout-tray")?.remove();

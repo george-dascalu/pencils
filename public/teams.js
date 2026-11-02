@@ -43,7 +43,7 @@ export function organisationTeams(form, organisation, esc) {
     host.innerHTML = `<input type="hidden" name="people"><input type="hidden" name="teams"><div data-directory-section="people"><h3>People</h3><p class="field-hint">People can belong to several teams. Weekly card limits are optional. Hours spread across working days; time off reduces availability. Leave blank to track workload without a limit. No login account is required.</p><div class="people-list">${!people.length ? '<p class="directory-empty">No people yet. Add someone to start building your teams.</p>' : ""}${people
       .map(
         (p) =>
-          `<div class="person-row" data-person="${esc(p.id)}"><input aria-label="Person name" data-person-field="name" value="${esc(p.name)}" placeholder="Name" maxlength="100" required><label>Short name<input aria-label="Short name for ${esc(p.name)}" data-person-field="short_name" maxlength="3" placeholder="${esc(letters(p.name))}" value="${esc(p.short_name || "")}"></label><label>Cards / week<input aria-label="Weekly card limit for ${esc(p.name)}" data-person-field="task_capacity" type="number" min="0" max="10000" step="1" value="${p.task_capacity ?? ""}"></label><label>Hours / week<input aria-label="Weekly hours for ${esc(p.name)}" data-person-field="capacity" type="number" min="0" max="168" step="any" value="${p.capacity ?? 40}"></label><details><summary>Availability</summary><div class="team-members">${[
+          `<div class="person-row" data-person="${esc(p.id)}"><label>Full name<input aria-label="Person name" data-person-field="name" value="${esc(p.name)}" placeholder="Name" maxlength="100" required></label><label>Short name<input aria-label="Short name for ${esc(p.name)}" data-person-field="short_name" maxlength="3" placeholder="${esc(letters(p.name))}" value="${esc(p.short_name || "")}"></label><label>Cards / week<input aria-label="Weekly card limit for ${esc(p.name)}" data-person-field="task_capacity" type="number" min="0" max="10000" step="1" value="${p.task_capacity ?? ""}"></label><label>Hours / week<input aria-label="Weekly hours for ${esc(p.name)}" data-person-field="capacity" type="number" min="0" max="168" step="any" value="${p.capacity ?? 40}"></label><button type="button" class="icon-button danger" data-remove-person="${esc(p.id)}" aria-label="Delete ${esc(p.name)}" title="Delete person"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18M9 6V3h6v3M6 6l1 15h10l1-15M10 10v7M14 10v7"/></svg></button><details class="person-availability"><summary>Availability</summary><div class="availability-fields"><fieldset><legend>Working days</legend><div class="team-members">${[
             [1, "Mon"],
             [2, "Tue"],
             [3, "Wed"],
@@ -58,7 +58,7 @@ export function organisationTeams(form, organisation, esc) {
             )
             .join(
               "",
-            )}</div><label>Time off dates (YYYY-MM-DD, comma separated)<input data-person-field="time_off" value="${esc((p.time_off || []).join(", "))}"></label></details><button type="button" class="icon-button danger" data-remove-person="${esc(p.id)}" aria-label="Delete ${esc(p.name)}" title="Delete person"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18M9 6V3h6v3M6 6l1 15h10l1-15M10 10v7M14 10v7"/></svg></button></div>`,
+            )}</div></fieldset><label>Time off<input data-person-field="time_off" placeholder="2026-12-24, 2026-12-25" value="${esc((p.time_off || []).join(", "))}"><small class="field-hint">Use YYYY-MM-DD, separated by commas.</small></label></div></details></div>`,
       )
       .join(
         "",
@@ -132,7 +132,7 @@ export function organisationTeams(form, organisation, esc) {
         b.hasAttribute("data-add-person")
           ? ".person-row:last-child input"
           : b.hasAttribute("data-add-team")
-            ? "fieldset:last-of-type input"
+            ? "[data-team]:last-of-type [data-team-name]"
             : "[data-add-person]",
       ),
       host.querySelector(b.hasAttribute("data-add-team") ? "[data-add-team]" : "[data-add-person]"),

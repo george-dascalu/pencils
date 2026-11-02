@@ -22,8 +22,8 @@ onDevices(["desktop", "ipad", "phone"], () => {
     await page.goto(`${app.base}/#project/${app.project.id}/${view}/${view === "documents" ? app.doc.id : app.board.id}`);
     await page.locator(view === "documents" ? ".cm-content" : "#canvas").waitFor();
     const tab = page.locator(`.tabs [data-view="${view}"]`);
-    if (view === "documents" && await touch(page)) await tab.click();
-    const trigger = view === "documents" && await touch(page)
+    if (view === "documents") await tab.click();
+    const trigger = view === "documents"
       ? page.locator('.layout-tray [data-list-toggle]') : tab;
     for (const motion of ["reduce", "no-preference"]) {
       await page.emulateMedia({ reducedMotion: motion });
@@ -81,7 +81,7 @@ onDevices(["desktop", "ipad", "phone"], () => {
 });
 // Opens the list the way the device offers it: the active tab, or the tray's Documents button.
 async function openList(page, view) {
-  if (view === "documents" && (await touch(page))) {
+  if (view === "documents") {
     await page.locator('.tabs [data-view="documents"]').click();
     await page.locator(".layout-tray").getByRole("button", { name: "Documents", exact: true }).click();
   } else await page.locator(`.tabs [data-view="${view}"][aria-current="page"]`).click();

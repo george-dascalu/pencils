@@ -2896,10 +2896,11 @@ input[type="search"]:not(.search input) {
   display: none;
 }
 
-/* Personal and Today share one row, leaving the document explorer its room. */
+/* Each destination owns its full hover and focus row. */
 .personal-links {
   display: flex;
-  gap: 5px;
+  flex-direction: column;
+  gap: 0;
 }
 .personal-links > .directory-link {
   flex: 1;

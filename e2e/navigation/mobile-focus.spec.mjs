@@ -67,10 +67,8 @@ for (const [device, width] of [["phone", 390], ["ipad-portrait", 834], ["desktop
       // Since 0.20.96 the document list has a page of its own, opened from the open Documents
       // tab, or on touch screens from its tray.
       async function list() {
-        if (touch) {
-          await click(page.locator('.tabs [data-view="documents"]'));
-          await click(page.locator(".layout-tray").getByRole("button", { name: "Documents", exact: true }));
-        } else await click(page.locator('.tabs [data-view="documents"][aria-current="page"]'));
+        await click(page.locator('.tabs [data-view="documents"]'));
+        await click(page.locator(".layout-tray").getByRole("button", { name: "Documents", exact: true }));
         await page.locator("#list-panel:not([hidden])").waitFor();
       }
       await passive(page, list, "Open the document list");

@@ -144,28 +144,26 @@ body {
   gap: 12px;
 }
 .style-option {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: flex-end;
-  gap: 4px 12px;
-  margin-bottom: 12px;
-}
-.style-option > .field {
-  flex: 0 1 360px;
-  margin-bottom: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 320px);
+  align-items: center;
+  gap: 8px 24px;
+  padding-block: 8px;
+  border-bottom: 1px solid var(--line);
 }
 .style-option .color-picker {
   width: max-content;
 }
+.style-label { display: grid; gap: 2px; }
+.style-control { display: flex; align-items: center; justify-content: flex-end; gap: 8px; min-width: 0; }
+.style-control > select, .style-range { flex: 1; min-width: 0; }
+.style-control > button { flex: none; }
+.style-range { display: flex; align-items: center; gap: 8px; }
+.style-range > output { min-width: 4ch; font-variant-numeric: tabular-nums; }
+.style-range > input { min-width: 0; width: 100%; }
 @media (max-width: 780px) {
-  .style-option > .field {
-    flex-basis: 100%;
-  }
-}
-.style-option > .field-hint {
-  min-height: 44px;
-  display: flex;
-  align-items: center;
+  .style-option { grid-template-columns: minmax(0, 1fr); }
+  .style-control { justify-content: space-between; }
 }
 .style-list-callouts > summary {
   min-height: 44px;
@@ -218,13 +216,15 @@ body {
 }
 .theme-options {
   display: flex;
-  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 4px;
 }
 .theme-options label,
 .font-option {
   border: 1px solid var(--line);
   border-radius: 10px;
-  padding: 14px;
+  padding: 8px;
   background: var(--surface);
   cursor: pointer;
 }
@@ -232,20 +232,20 @@ body {
   display: flex;
   align-items: center;
   gap: 8px;
-  flex: 1;
+  min-height: var(--control-height);
+  padding: 4px 8px;
+  white-space: nowrap;
+}
+.appearance-choice-row { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 320px); align-items: center; gap: 8px 24px; padding-block: 8px; border-bottom: 1px solid var(--line); }
+@media (max-width: 780px) {
+  .appearance-choice-row { grid-template-columns: minmax(0, 1fr); }
+  .theme-options { justify-content: flex-start; }
 }
 .theme-options label:has(:checked),
 .font-option:has(:checked) {
   border-color: var(--green);
   box-shadow: inset 0 0 0 1px var(--green);
   background: var(--surface-soft);
-}
-.look-options {
-  flex-wrap: wrap;
-  margin-top: 10px;
-}
-.look-options label {
-  flex: 1 1 140px;
 }
 .look-rainbow {
   display: flex;
@@ -638,24 +638,22 @@ body {
     flex-shrink: 0;
   }
 }
-.person-row {
-  flex-wrap: wrap;
-}
-.person-row > input {
-  flex-basis: 160px;
-}
-.person-row > details {
-  flex: 1 1 190px;
-}
-.person-row details > label {
-  display: block;
-  width: auto;
-}
-.person-row .team-members label {
-  width: auto;
-}
-.person-row .team-members input {
-  width: auto;
+.person-row { display: grid; grid-template-columns: minmax(120px, 2fr) repeat(3, minmax(75px, 1fr)) auto; align-items: end; gap: 8px; padding-block: 12px; margin: 0; border-bottom: 1px solid var(--line); }
+.person-row label { display: grid; gap: 4px; min-width: 0; width: auto; }
+.person-row > label > input { min-width: 0; }
+.person-row > details { grid-column: 1 / -1; }
+.person-row summary { width: max-content; min-height: var(--control-height); align-content: center; cursor: pointer; }
+.availability-fields { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 16px; padding-block: 8px; }
+.availability-fields > fieldset { min-width: 0; padding: 0; border: 0; margin: 0; }
+.availability-fields legend { padding: 0; font-size: var(--type-body); }
+.availability-fields .team-members { gap: 0 8px; margin: 4px 0 0; }
+.person-row .team-members label { display: flex; align-items: center; gap: 4px; min-height: var(--control-height); }
+.person-row .team-members input { width: auto; }
+@media (max-width: 1100px) {
+  .person-row { grid-template-columns: repeat(3, minmax(0, 1fr)) auto; }
+  .person-row > label:first-child { grid-column: 1 / 4; }
+  .person-row > [data-remove-person] { grid-column: 4; grid-row: 1; }
+  .availability-fields { grid-template-columns: minmax(0, 1fr); }
 }
 .capacity-table td small {
   display: block;

@@ -2,6 +2,17 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.21.1 — 2026-11-02
+
+### Changed
+- **F0.21-1:** Compact settings and desktop controls: align People fields, expand Availability below each person, place Organisation after You, and group appearance controls with their defaults and reset buttons.
+- Desktop Tasks, Planning and open Documents tabs reveal their layouts below the top bar when pressed again. Sidebar destinations each have their own row, and available updates use a small icon beside the version.
+- Board appearance sits before Board tools on desktop. Selected-object controls share one line when space permits, with at most two scrolling rows on narrower boards.
+
+### Fixed
+- Dot grids fade out before low zoom merges their dots into a noisy background.
+- Remove the stray top-navigation scrollbar and preserve availability edits made while another setting is saving. Phone settings retain their scroll position after saving.
+
 ## 0.21.0 — 2026-11-02
 
 ### Changed

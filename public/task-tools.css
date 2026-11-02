@@ -1322,7 +1322,7 @@ html.task-page-open,
 .topbar #save-state { display: flex; gap: 8px; font-size: 11px; }
 .app-version, .app-update-available { display: inline-flex; align-items: center; gap: 4px; }
 .app-version { flex-wrap: wrap; }
-.app-update-available { color: var(--ink); background: var(--surface-soft); padding: 3px 5px; border-radius: 4px; }
+.app-update-available { color: inherit; flex: none; }
 .app-update-available .icon { width: 13px; height: 13px; }
 .task-history-panel { --danger: #b34438; }
 [data-theme="dark"] .task-history-panel { --danger: #f0a199; }

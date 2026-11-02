@@ -56,9 +56,9 @@ test("the toolbar is compact, with layer order and delete outside menus", async 
   await resetBoard();
   await openBoard(page);
   await find(page, "note", "First idea");
-  // Two rows since 0.20.91: common tools, then the note's own (selection-rows.spec.mjs).
+  // The common and note tools share one line when the board has enough room.
   const box = await toolbar(page).boundingBox();
-  expect(box.width < 720 && box.height < 100, JSON.stringify(box)).toBe(true);
+  expect(box.width < 1200 && box.height < 60, JSON.stringify(box)).toBe(true);
   await expect(toolbar(page).locator(":scope > .selection-row")).toHaveCount(2);
   await expect(toolbar(page)).toHaveAttribute("role", "toolbar");
   await expect(toolbar(page).locator('[data-selection-menu="more"]')).toHaveCount(0);

@@ -37,6 +37,26 @@ const saved = (page) => expect(page.locator("#board-save")).toHaveText("Saved au
 const appearance = (page) => page.locator("#canvas").evaluate((el) => ({ color: getComputedStyle(el).backgroundColor, image: getComputedStyle(el).backgroundImage, size: getComputedStyle(el).backgroundSize }));
 const previewStyle = (page, property) => page.locator(".background-preview").evaluate((el, property) => getComputedStyle(el)[property], property);
 
+test("dots fade cleanly at small zoom and desktop appearance sits beside Board tools", { tag: "@gate" }, async ({ page }) => {
+  await seed();
+  await enter(page);
+  const appearanceButton = page.locator("#expanded-board-settings");
+  await expect(appearanceButton).toBeVisible();
+  expect(await appearanceButton.evaluate(el => el.nextElementSibling?.dataset.boardMenu)).toBe("tools");
+  await page.locator("#canvas").evaluate(async el => {
+    const { paintBoardBackground } = await import("/board-background.js");
+    paintBoardBackground(el, { pattern: "dots", spacing: 20 }, { x: 33, y: -11, z: .03 });
+  });
+  expect((await appearance(page)).image).toBe("none");
+  await page.locator("#canvas").evaluate(async el => {
+    const { paintBoardBackground } = await import("/board-background.js");
+    paintBoardBackground(el, { pattern: "dots", spacing: 20 }, { x: 33, y: -11, z: .3 });
+  });
+  expect((await appearance(page)).image).toMatch(/radial-gradient.*(?:0\.5|50%)/);
+  await page.getByRole("button", { name: "Full screen", exact: true }).click();
+  await expect(appearanceButton).toBeVisible();
+});
+
 test("a grid in a palette colour previews live and persists on the canvas and in the board file", async ({ page }) => {
   await seed();
   await enter(page);

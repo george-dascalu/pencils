@@ -10,7 +10,7 @@ export function appStatus({ state, sync, version, icon, esc }) {
   function versionHTML() {
     const outdated = state.serverAppVersion && state.serverAppVersion !== version;
     const title = outdated ? `Version ${state.serverAppVersion} is available. Refresh when your changes are saved.` : `Pencils ${version}${state.serverAppVersion ? " · Up to date" : ""}`;
-    return `<span class="version app-version" title="${esc(title)}" aria-label="${esc(title)}">v${version}${outdated ? `<span class="app-update-available">${icon("refresh")}<span class="app-update-label">Update available</span></span>` : ""}</span>`;
+    return `<span class="version app-version" title="${esc(title)}" aria-label="${esc(title)}">v${version}${outdated ? `<span class="app-update-available" aria-hidden="true">${icon("refresh")}</span>` : ""}</span>`;
   }
   function details(issue) {
     return `<header><strong id="save-warning-title">${esc(issue.title)}</strong><button type="button" class="icon-button" data-save-warning-close aria-label="Close save warning">${icon("close")}</button></header><p id="save-warning-cause">${esc(issue.cause)}</p><p><strong>How to resolve it</strong><br>${esc(issue.action)}</p><button type="button" class="button" data-feature="recovery">${icon("clock")}Recovery & backups</button>`;

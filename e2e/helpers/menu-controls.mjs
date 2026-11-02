@@ -23,11 +23,10 @@ export async function openList(page) {
   if (await page.locator("#list-panel").isVisible()) return;
   const kind = await page.locator("#list-panel").getAttribute("data-kind");
   const tab = page.locator(`.tabs [data-view="${kind === "boards" ? "board" : "documents"}"][aria-current="page"]`);
-  if (!(await tab.getAttribute("aria-controls"))) await tab.click();
-  else {
-    if ((await tab.getAttribute("aria-expanded")) !== "true") await tab.click();
-    await page.locator(".layout-tray [data-list-toggle]").click();
-  }
+  if ((await tab.getAttribute("aria-expanded")) !== "true") await tab.click();
+  // The document renderer can mount its tray while the tab click is waiting for actionability.
+  const choice = page.locator(".layout-tray[data-open] [data-list-toggle]");
+  if (await choice.isVisible()) await choice.click();
   await page.locator("#list-panel:not([hidden])").waitFor();
 }
 export async function clickControl(locator) {

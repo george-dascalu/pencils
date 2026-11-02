@@ -20,10 +20,9 @@ onDevices(["desktop", "phone"], () => test("a theme is chosen beside Light, Dark
   await page.goto(`${app.base}/#project/${app.project.id}/list`);
   await page.locator('.main[data-layout-view="list"]').waitFor();
   await openSettingsPage(page, "personal");
-  const themes = page.getByRole("radiogroup", { name: "Theme" });
-  await expect(themes.getByRole("radio")).toHaveCount(5);
-  for (const label of await themes.locator("label").all()) expect((await label.boundingBox()).height).toBeGreaterThanOrEqual(44);
-  await themes.getByText("Paper", { exact: true }).click();
+  const themes = page.getByRole("combobox", { name: "Theme", exact: true });
+  await expect(themes.locator("option")).toHaveCount(5);
+  await themes.selectOption("paper");
   await expect(page.locator("html")).toHaveAttribute("data-look", "paper");
   expect(await token(page, "--green")).toBe("#85600f");
   await page.getByText("Dark", { exact: true }).click();

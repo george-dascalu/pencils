@@ -18,6 +18,13 @@ export const settingsPages = [
     "Theme, font, density and board controls in this browser, plus search, recovery and sign-in.",
   ],
   [
+    "organisation",
+    "Organisation",
+    "folder",
+    "Organisation",
+    "Name, description, colour, people and teams of this organisation.",
+  ],
+  [
     "general",
     "General",
     "settings",
@@ -100,13 +107,6 @@ export const settingsPages = [
     "archive",
     "Maintenance",
     "Review project history, archive this project or move it to Trash.",
-  ],
-  [
-    "organisation",
-    "Organisation",
-    "folder",
-    "Organisation",
-    "Name, description, colour, people and teams of this organisation.",
   ],
 ];
 // Without an open project, Settings shows only your own and the organisation's sections.
@@ -443,9 +443,10 @@ export function projectSettings(ctx, { sources, automations, personal, organisat
     rail.scrollTop = railScroll;
     rail.querySelector('[aria-current="page"]')?.scrollIntoView({ block: "nearest" });
     const pane = content.querySelector(".settings-content");
+    const scroller = matchMedia("(max-width: 780px)").matches ? content : pane;
     if (keep) {
       document.querySelector("#settings-panel").replaceWith(panel);
-      pane.scrollTop = pageScroll;
+      scroller.scrollTop = pageScroll;
       return;
     }
     const host = (panel = document.querySelector("#settings-panel"));
@@ -649,9 +650,12 @@ export function projectSettings(ctx, { sources, automations, personal, organisat
                 if (f.checkValidity()) f.requestSubmit();
                 else settingsSaveState(state, "Not saved");
               });
+            } else if (state.settingsTyped !== typed) {
+              // Keep an in-progress field attached until its native change commits it.
+              settingsSaveState(state, "Editing…");
             } else {
               settingsSaveState(state, "Saved");
-              if (state.settingsTyped === typed) clean();
+              clean();
               if (valid()) {
                 state.settingsKeep = true;
                 renderApp();
@@ -677,7 +681,7 @@ export function projectSettings(ctx, { sources, automations, personal, organisat
       if (valid())
         host.innerHTML = `<div class="settings-page-body"><p class="form-error" role="alert">${esc(e.message)}</p><button class="button" data-settings-retry>Try again</button></div>`;
     } finally {
-      if (pane.isConnected) pane.scrollTop = pageScroll;
+      if (scroller.isConnected) scroller.scrollTop = pageScroll;
     }
   }
   document.addEventListener("click", async (event) => {
@@ -723,7 +727,7 @@ export function projectSettings(ctx, { sources, automations, personal, organisat
   });
   document.addEventListener("scroll", (event) => {
     if (event.target.classList?.contains("settings-navigation")) railScroll = event.target.scrollTop;
-    if (event.target.classList?.contains("settings-content")) pageScroll = event.target.scrollTop;
+    if (event.target.matches?.(".settings-content, .project-settings-layout")) pageScroll = event.target.scrollTop;
   }, true);
   document.addEventListener("input", (event) => {
     if (!event.target.closest(".project-settings-layout")) return;

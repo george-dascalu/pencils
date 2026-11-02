@@ -98,6 +98,7 @@ export function canvasControls(ctx, basic) {
         "beforeend",
         `<button id="expanded-board-settings" type="button" class="icon-button" data-feature="board-settings" aria-label="Board appearance" title="Board appearance">${icon("settings")}</button>`,
       );
+    ctx.layout.boardAppearance();
     const expandButton = $("#board-expand");
     expandButton.innerHTML = icon(expanded ? "shrink" : "fullscreen");
     expandButton.setAttribute("aria-label", "Full screen");

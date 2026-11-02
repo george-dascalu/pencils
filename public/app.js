@@ -2541,9 +2541,12 @@ document.addEventListener("submit", async (event) => {
             if (form.checkValidity()) form.requestSubmit();
             else settingsSaveState(state, "Not saved");
           });
+        } else if (state.settingsTyped !== typed) {
+          // Reattaching an input being typed in loses its pending native change event.
+          settingsSaveState(state, "Editing…");
         } else {
           settingsSaveState(state, "Saved");
-          if (state.settingsTyped === typed) state.settingsDirty = state.dirty = false;
+          state.settingsDirty = state.dirty = false;
           state.settingsKeep = true;
           renderApp();
           state.settingsKeep = false;

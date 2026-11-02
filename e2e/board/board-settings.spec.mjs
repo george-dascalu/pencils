@@ -46,9 +46,9 @@ test("board appearance opens in an anchored popover beside the tool bar that dis
   // Anchored popover: no modal backdrop, light dismiss, keyboard and focus return.
   await trigger(page).click();
   await expect(page.locator("dialog:modal")).toHaveCount(0);
-  const b = await trigger(page).boundingBox(), bar = await page.locator(".board-tools").boundingBox(), p = await popup(page).boundingBox();
-  expect(p.x >= bar.x + bar.width && p.x <= bar.x + bar.width + 10, "opens just beside the tool bar").toBe(true);
-  expect(p.y + p.height <= b.y + b.height, "level with the button's foot").toBe(true);
+  const b = await trigger(page).boundingBox(), p = await popup(page).boundingBox();
+  expect(p.x <= b.x && p.x + p.width >= b.x, "opens by the appearance button").toBe(true);
+  expect(p.y).toBeGreaterThanOrEqual(b.y + b.height);
   await page.locator("#canvas-align").uncheck();
   await page.locator("#canvas").click({ position: { x: 900, y: 300 } });
   await popup(page).waitFor({ state: "detached" });
