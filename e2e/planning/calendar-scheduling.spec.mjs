@@ -83,7 +83,7 @@ async function openMonth(page, { project }) {
   await setMonth(page);
 }
 
-test("filters live in the Filters menu, an empty filtered month still shows its dates, and source dates have no handles", async ({ page }) => {
+test("filters live in the Filters menu, an empty filtered month still shows its dates, and imported dates have local resize handles", async ({ page }) => {
   const seed = app.filters;
   await openMonth(page, seed);
   await expect(page.locator(".toolbar-left > #filter-status, .toolbar-left > #filter-type")).toHaveCount(0);
@@ -95,7 +95,7 @@ test("filters live in the Filters menu, an empty filtered month still shows its 
   await card(page, seed.work.id).waitFor();
   await page.locator('[data-board-menu="filters"] > summary').click();
   await expect(page.getByText(/cards have no due date/)).toHaveCount(0);
-  await expect(card(page, seed.source.id).locator("[data-calendar-end]")).toHaveCount(0);
+  await expect(card(page, seed.source.id).locator("[data-calendar-end]")).toHaveCount(2);
 });
 
 test("month cards move, resize, cancel with Escape and nudge with the keyboard", async ({ page }) => {

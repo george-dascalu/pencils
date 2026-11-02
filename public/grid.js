@@ -1,7 +1,7 @@
 import { confirmAction } from "./confirm-popover.js";
 import { fieldOn } from "./card-fields.js";
 import { priorityOptions, priorityLabels, priorityLabel } from "./task-priority.js";
-import {sourceFields,sourceLabel} from "./source-model.js";
+import {sourceReadOnly,sourceLabel} from "./source-model.js";
 import { tableResult, activeTableFilter } from "./table-model.js";
 import { tableTools } from "./table-tools.js";
 import { tableColumnDrag } from "./table-column-drag.js";
@@ -182,7 +182,7 @@ export function grid(ctx) {
               : field?.type === "select"
                 ? field.options
                 : null;
-      if(t.source && sourceFields.includes(key)) {
+      if(sourceReadOnly(t,key)) {
         if (["type", "assignee"].includes(key)) {
           const text = key === "assignee" ? value || "Unassigned" : label(value);
           return `<span class="table-cell-readonly" role="img" aria-label="${esc(fieldName(key))}: ${esc(text)}. Managed by the connected source." title="${esc(text)} · Managed by the connected source">${selectValue(key, value, text)}</span>`;

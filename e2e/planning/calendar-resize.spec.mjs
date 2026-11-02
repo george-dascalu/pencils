@@ -96,7 +96,7 @@ test('overnight cards expose only their true endpoints, can end at midnight, and
   await expect(segments.locator('[data-calendar-time-end="start"]')).toHaveCount(1);
   const end=segments.locator('[data-calendar-time-end="due"]');
   await expect(end).toHaveCount(1);
-  await expect(page.locator(`.calendar-timed-card[data-id="${imported.id}"] [data-calendar-time-end]`)).toHaveCount(0);
+  await expect(page.locator(`.calendar-timed-card[data-id="${imported.id}"] [data-calendar-time-end]`)).toHaveCount(2);
   await end.scrollIntoViewIfNeeded();
   const r=await end.boundingBox(), day=await page.locator('.calendar-hours-day[data-calendar-date="2026-11-03"]').boundingBox();
   await page.mouse.move(r.x+r.width/2,r.y+r.height/2); await page.mouse.down();

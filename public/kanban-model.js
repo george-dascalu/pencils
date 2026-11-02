@@ -1,3 +1,4 @@
+import { sourceReadOnly } from "./source-model.js";
 import { hierarchyError } from "./hierarchy-model.js";
 import { canTransition, transitionError } from "./workflow-model.js";
 
@@ -53,7 +54,7 @@ export function kanbanDropChanges(task, status, field = "none", value = "") {
 
 export function kanbanDropError(config, task, changes, tasks) {
   if (!task) return "This card is no longer available.";
-  if (task.source && Object.keys(changes).length)
+  if (Object.keys(changes).some(field => sourceReadOnly(task, field)))
     return "Change this card in its source, then sync.";
   if (changes.status && !canTransition(config, task.status, changes.status))
     return transitionError(config, task.status, changes.status);

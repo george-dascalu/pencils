@@ -90,15 +90,15 @@ test("a collapsed lane stays collapsed after reload", gate, async ({ page }) => 
   await expect(lane(page, "George").locator(".kanban-lane-row")).toBeVisible();
 });
 
-test("dragging across lanes sets the lane's assignee, priority or type, and source tasks keep their assignee", gate, async ({ page }) => {
+test("dragging across lanes sets the lane's assignee, priority or type, and imported cards save local assignments", gate, async ({ page }) => {
   await open(page, "assignee");
   await move(page, app.a.id, "Pat", "in-progress");
   expect((await task(app.a.id)).assignee).toBe("Pat");
   expect((await task(app.a.id)).priority).toBe("high");
   expect((await task(app.b.id)).status).toBe("todo");
   await card(page, app.imported.id).dragTo(column(page, "Pat", "in-progress"));
-  await expect(lane(page, "George").locator(`[data-drag-task="${app.imported.id}"]`)).toBeVisible();
-  expect((await task(app.imported.id)).assignee).toBe("George");
+  await expect(lane(page, "Pat").locator(`[data-drag-task="${app.imported.id}"]`)).toBeVisible();
+  expect((await task(app.imported.id)).assignee).toBe("Pat");
   await group(page).selectOption("priority");
   await move(page, app.a.id, "low", "in-progress");
   expect((await task(app.a.id)).priority).toBe("low");

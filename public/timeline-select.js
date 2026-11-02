@@ -1,3 +1,4 @@
+import { sourceReadOnly } from "./source-model.js";
 import { timelineAxis, timelineBarBounds, dateKey } from "./timeline-dates.js";
 
 // Row scheduling uses the same date axis as bars, including weekend compression
@@ -11,7 +12,7 @@ export function timelineSelection(ctx, closeEditors) {
   const hintFor = root => root.querySelector(".timeline-hint") || document.querySelector(`[data-timeline-options="${CSS.escape(root.dataset.timeline)}"] .timeline-hint`) || document.createElement("span");
   const rowTask = track => task(track.closest("[data-timeline-row]")?.dataset.timelineRow);
   const stop = e => { e.preventDefault(); e.stopImmediatePropagation(); };
-  const eligible = (track, target) => track && !rowTask(track)?.source &&
+  const eligible = (track, target) => track && !sourceReadOnly(rowTask(track),"due") &&
     (!target.closest("button,[data-timeline-task]") || selection?.track === track && target.closest("[data-timeline-task]"));
   function message(text) {
     if (!selection) return;
@@ -48,7 +49,7 @@ export function timelineSelection(ctx, closeEditors) {
     const bounds = range(track.closest("[data-timeline]"));
     if (bounds && (date < bounds.start || date > bounds.end)) return;
     const t = rowTask(track);
-    if (!t || t.source) return;
+    if (!t || sourceReadOnly(t,"due")) return;
     if (!selection || selection.track !== track || !selection.start) {
       clear(); closeEditors();
       const root = track.closest("[data-timeline]"), hint = hintFor(root);
@@ -70,7 +71,7 @@ export function timelineSelection(ctx, closeEditors) {
     finally { saving = false; state.timelineSelecting = false; }
   }
   function arm(track) {
-    if (!track || rowTask(track)?.source || saving) return;
+    if (!track || sourceReadOnly(rowTask(track),"due") || saving) return;
     clear(); closeEditors();
     const root = track.closest("[data-timeline]"), hint = hintFor(root);
     const el = document.createElement("span"); el.className = "timeline-range-preview"; el.hidden = true;
@@ -84,7 +85,7 @@ export function timelineSelection(ctx, closeEditors) {
     if (press && press.pointer !== e.pointerId) { clear(); return; }
     const track = e.target.closest("[data-schedule-target]");
     if (selection && (!track || !eligible(track, e.target))) clear();
-    if (track && rowTask(track)?.source && !e.target.closest("button,[data-timeline-task]")) { e.stopImmediatePropagation(); return; }
+    if (track && sourceReadOnly(rowTask(track),"due") && !e.target.closest("button,[data-timeline-task]")) { e.stopImmediatePropagation(); return; }
     if (e.button !== 0 || !eligible(track, e.target) || saving) return;
     e.stopImmediatePropagation();
     const scroller = track.closest(".timeline-scroll");
@@ -114,7 +115,7 @@ export function timelineSelection(ctx, closeEditors) {
   document.addEventListener("keydown", e => {
     if (selection && e.key === "Escape") { stop(e); clear(); return; }
     const track = e.target.matches("[data-schedule-target]") ? e.target : null;
-    if (!track || rowTask(track)?.source || saving) return;
+    if (!track || sourceReadOnly(rowTask(track),"due") || saving) return;
     const root = track.closest("[data-timeline]"), axis = axes(root);
     if (["Enter", " "].includes(e.key)) {
       stop(e);

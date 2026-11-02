@@ -1,3 +1,4 @@
+import { sourceReadOnly } from "./source-model.js";
 import { calendarHoursHTML, calendarHourSelection } from "./calendar-hours.js";
 import { calendarZoom } from "./calendar-zoom.js";
 import { timedCard, calendarTimeSelection, calendarTimeResize, calendarTimeStep, hourlySegments, minuteTime, timeMinutes } from "./calendar-time.js";
@@ -26,7 +27,7 @@ export function calendarView(ctx) {
     return `<button type="button" class="button small calendar-dates" data-calendar-dates="${esc(t.id)}" aria-label="Edit dates for ${esc(t.title)}" aria-haspopup="dialog" aria-expanded="false">${icon("calendar")}<span>${esc(rangeLabel(t))}</span></button>`;
   }
   function row(t, unscheduled = false) {
-    const grip = unscheduled && !t.source ? `<button type="button" class="icon-button calendar-move" data-calendar-move aria-label="Schedule ${esc(t.title)}" title="Drag onto a day, or tap to set dates">${icon("drag")}</button>` : "";
+    const grip = unscheduled && !sourceReadOnly(t,"due") ? `<button type="button" class="icon-button calendar-move" data-calendar-move aria-label="Schedule ${esc(t.title)}" title="Drag onto a day, or tap to set dates">${icon("drag")}</button>` : "";
     return `<div class="agenda-row ${grip ? "calendar-draggable-row" : ""}" data-calendar-card="${esc(t.id)}">${grip}<button type="button" class="agenda-task" data-action="task-open" data-id="${esc(t.id)}" title="${esc(title(t))}">${taskColorDot(state, "status", t.status)}<span>${esc(title(t))}</span></button>${dateButton(t)}</div>`;
   }
   function render(tasks) {
@@ -55,8 +56,8 @@ export function calendarView(ctx) {
     const weeks = calendarWeeks(mode === "week" ? tasks.filter(t => !timedCard(t)) : tasks, anchor, weekends, { week: mode === "week" });
     const month = `<div class="calendar-scroll" role="region" aria-label="Calendar ${mode === "week" ? "week" : "month"}" tabindex="0"><div class="calendar ${mode === "week" ? "calendar-hourly" : ""}" data-layout="${mode}" data-weekends="${weekends}" style="--calendar-columns:${weekends ? 7 : 5}"><div class="calendar-weekdays">${["Mon", "Tue", "Wed", "Thu", "Fri", ...(weekends ? ["Sat", "Sun"] : [])].map(day => `<strong>${day}</strong>`).join("")}</div>${mode === "week" ? '<div class="calendar-all-day-scroll">' : ""}${weeks.map(week => `<div class="calendar-week ${mode === "week" ? "calendar-all-day" : ""}" style="--calendar-lanes:${week.lanes}">${week.days.map((day, i) => `<div class="calendar-day ${isWeekend(day) ? "weekend" : ""} ${day === localDate() ? "today" : ""} ${mode === "month" && day.slice(0, 7) !== anchor.slice(0, 7) ? "muted" : ""}" data-calendar-date="${day}" style="grid-column:${i + 1};grid-row:1 / span ${week.lanes + 1}"><button type="button" data-feature="date-task" data-date="${day}" aria-label="Add card on ${day}">${Number(day.slice(-2))}</button></div>`).join("")}${week.segments.map(s => {
       const t = s.task;
-      const handle = (end, show) => show && !t.source ? `<button type="button" class="calendar-resize" data-calendar-end="${end}" aria-label="Adjust ${end === "start" ? "start" : "end"} date for ${esc(t.title)}" title="Drag to adjust ${end === "start" ? "start" : "end"} date; arrow keys change by one day"><span aria-hidden="true"></span></button>` : "";
-      return `<div class="calendar-task" data-calendar-card="${esc(t.id)}" data-id="${esc(t.id)}" data-task-color="status" style="--task-field-color:${taskFieldColor(state, "status", t.status)};grid-column:${s.from + 1} / ${s.to + 2};grid-row:${s.lane + 2}" title="${esc(title(t))} · ${s.range.start} – ${s.range.end}${t.source ? ' · Dates managed by source' : ' · Drag to move'}">${handle("start", s.resizeStart)}<button type="button" class="calendar-card-title" data-action="task-open" data-id="${esc(t.id)}" aria-label="Open ${esc(title(t))}">${esc(t.title)}</button>${handle("due", s.resizeEnd)}</div>`;
+      const handle = (end, show) => show && !sourceReadOnly(t,"due") ? `<button type="button" class="calendar-resize" data-calendar-end="${end}" aria-label="Adjust ${end === "start" ? "start" : "end"} date for ${esc(t.title)}" title="Drag to adjust ${end === "start" ? "start" : "end"} date; arrow keys change by one day"><span aria-hidden="true"></span></button>` : "";
+      return `<div class="calendar-task" data-calendar-card="${esc(t.id)}" data-id="${esc(t.id)}" data-task-color="status" style="--task-field-color:${taskFieldColor(state, "status", t.status)};grid-column:${s.from + 1} / ${s.to + 2};grid-row:${s.lane + 2}" title="${esc(title(t))} · ${s.range.start} – ${s.range.end}${sourceReadOnly(t,"due") ? ' · Dates managed by source' : ' · Drag to move'}">${handle("start", s.resizeStart)}<button type="button" class="calendar-card-title" data-action="task-open" data-id="${esc(t.id)}" aria-label="Open ${esc(title(t))}">${esc(t.title)}</button>${handle("due", s.resizeEnd)}</div>`;
     }).join("")}</div>`).join("")}${mode === "week" ? "</div>" : ""}${mode === "week" ? calendarHoursHTML(tasks, weeks[0].days, ctx) : ""}</div></div>`;
     zoom.restore();
     return { controls: `<button type="button" class="button small" data-calendar-unscheduled data-after-filters aria-label="Unscheduled cards (${undated.length})" title="Unscheduled cards (${undated.length})" aria-haspopup="dialog" aria-expanded="false">${icon("clock")}<span>${undated.length}</span></button><div class="planning-head"><div class="planning-period"><button class="icon-button" data-feature="month-prev" aria-label="Previous period" title="Previous period">${icon("arrow")}</button><h2>${esc(heading)}</h2><button class="icon-button" data-feature="month-next" aria-label="Next period" title="Next period">${icon("arrow")}</button></div><div class="planning-options" data-phone-options>${mode === "week" ? zoom.controls() : ""}<button type="button" id="calendar-weekends" class="icon-button" data-calendar-weekends data-weekends-toggle aria-label="Show weekends" aria-pressed="${weekends}" title="${weekends ? "Hide weekends" : "Show weekends"}">${icon("calendar-weekends")}</button><label><span class="control-label">Layout</span> <select id="calendar-mode"><option value="month" ${mode === "month" ? "selected" : ""}>Month</option><option value="week" ${mode === "week" ? "selected" : ""}>Week</option><option value="agenda" ${mode === "agenda" ? "selected" : ""}>Agenda</option></select></label>${mode === "agenda" ? `<label>Period<select id="agenda-period">${["day", "week", "month"].map(p => `<option value="${p}" ${p === period ? "selected" : ""}>${ctx.label(p)}</option>`).join("")}</select></label><input type="date" id="agenda-date" aria-label="Agenda date" value="${anchor}">` : ""}</div></div>`, html: `${empty}${mode === "agenda" ? agenda : month}<span class="sr-only" data-calendar-announcement role="status" aria-live="polite"></span>` };
@@ -209,7 +210,7 @@ export function calendarView(ctx) {
     const card = e.target.closest("[data-calendar-card]");
     if (!card || state.view !== "calendar" || e.button !== 0 || e.target.closest("[data-calendar-dates]")) return;
     if (e.pointerType === "touch" && card.matches(".agenda-row") && !e.target.closest("[data-calendar-move]")) return;
-    const t = task(card.dataset.calendarCard); if (!t || t.source) return;
+    const t = task(card.dataset.calendarCard); if (!t || sourceReadOnly(t,"due")) return;
     const timeEnd = e.target.closest('[data-calendar-time-end]')?.dataset.calendarTimeEnd;
     const handle = timeEnd || e.target.closest("[data-calendar-end]")?.dataset.calendarEnd;
     drag = { card, hours: timeEnd && card.closest('.calendar-hours-day'), originalStyle: card.getAttribute('style'), originalTime: card.querySelector('.calendar-card-title span')?.textContent, panel: card.closest(".calendar-unscheduled"), task: { ...t }, project: state.project.id, pointer: e.pointerId, handle, grabbed: dayAt(e.clientX, e.clientY) || calendarRange(t)?.start, x: e.clientX, y: e.clientY, originX: e.clientX, originY: e.clientY, active: false };
@@ -276,14 +277,14 @@ export function calendarView(ctx) {
     const t = task(card.dataset.calendarCard), range = t && calendarRange(t), handle = e.target.closest("[data-calendar-end]")?.dataset.calendarEnd;
     const timeEnd = e.target.closest('[data-calendar-time-end]')?.dataset.calendarTimeEnd;
     if (timeEnd) {
-      if (!t || t.source || !['ArrowUp', 'ArrowDown'].includes(e.key)) return;
+      if (!t || sourceReadOnly(t,"due") || !['ArrowUp', 'ArrowDown'].includes(e.key)) return;
       e.preventDefault(); e.stopImmediatePropagation();
       const day = card.closest('.calendar-hours-day'), step = calendarTimeStep(day.getBoundingClientRect().height / 24);
       const minute = t[timeEnd] > day.dataset.calendarDate ? 1440 : timeMinutes(t[`${timeEnd}_time`]);
       void save(t.id, calendarTimeResize(t, day.dataset.calendarDate, minute + (e.key === 'ArrowDown' ? step : -step), timeEnd, step), `[data-calendar-card="${CSS.escape(t.id)}"] [data-calendar-time-end="${timeEnd}"]`);
       return;
     }
-    if (!range || t.source || !(handle || e.altKey) || !["ArrowLeft", "ArrowRight"].includes(e.key)) return;
+    if (!range || sourceReadOnly(t,"due") || !(handle || e.altKey) || !["ArrowLeft", "ArrowRight"].includes(e.key)) return;
     e.preventDefault(); e.stopImmediatePropagation();
     const from = handle === "due" ? range.end : range.start;
     const selector = `[data-calendar-card="${CSS.escape(t.id)}"] ${handle ? `[data-calendar-end="${handle}"]` : '[data-action="task-open"]'}`;

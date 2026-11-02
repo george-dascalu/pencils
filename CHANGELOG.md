@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.21.17 — 2026-11-02
+
+### Added
+- Feature F0.21-17: Edit imported cards' assignee, status, priority and dates directly in List and Tree, and through the same controls in other views. Edits stay only in Pencils and survive later source syncs. Title and card type still follow the connected source; nothing is published automatically.
+
 ## 0.21.16 — 2026-11-02
 
 ### Changed

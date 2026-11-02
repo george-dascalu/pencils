@@ -1,4 +1,4 @@
-import { sourceFields, sourceLabel } from "./source-model.js";
+import { sourceFields, sourceLabel, sourceReadOnly } from "./source-model.js";
 export function projectSources(ctx) {
   const {
     state,
@@ -149,9 +149,10 @@ export function projectSources(ctx) {
       .querySelector(".dialog-body")
       .insertAdjacentHTML(
         "afterbegin",
-        `<section class="source-task"><strong>${esc(sourceLabel(t))}</strong> · ${esc(source.availability)}<p>Source fields are read-only here. Local notes, comments and dependencies stay in Pencils.</p>${url ? `<a href="${esc(url)}" target="_blank" rel="noopener noreferrer">Open in source ↗</a>` : ""} ${action("publish", "Publish to source", source.id)}${source.description ? `<details><summary>Source description</summary><pre class="source-description">${esc(source.description)}</pre></details>` : ""}<small>Last synced ${esc(source.synced)}</small></section>`,
+        `<section class="source-task"><strong>${esc(sourceLabel(t))}</strong> · ${esc(source.availability)}<p>Assignee, status, priority and dates can be edited in Pencils. Those edits stay local and survive sync. Title and type follow the source.</p>${url ? `<a href="${esc(url)}" target="_blank" rel="noopener noreferrer">Open in source ↗</a>` : ""} ${action("publish", "Publish to source", source.id)}${source.description ? `<details><summary>Source description</summary><pre class="source-description">${esc(source.description)}</pre></details>` : ""}<small>Last synced ${esc(source.synced)}</small></section>`,
       );
     for (const key of sourceFields) {
+      if (!sourceReadOnly(t, key)) continue;
       for (const input of form.querySelectorAll(`[name="${key}"]`)) {
         if (input.tagName === "SELECT") {
           const copy = document.createElement("input");

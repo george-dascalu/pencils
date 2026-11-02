@@ -3,7 +3,7 @@ import { minuteTime, timeMinutes } from './calendar-time.js';
 
 export function taskTimeFields(task, esc) {
   const timed = !!(task.start_time || task.due_time);
-  return `<div class="task-time-controls"><label class="check-control"><input type="checkbox" data-task-allday ${timed ? '' : 'checked'} ${task.source ? 'disabled' : ''}>All day</label><div class="task-time-range" ${timed ? '' : 'hidden'}><label class="field">Start time<input type="time" name="start_time" value="${esc(task.start_time || '')}" aria-label="Start time" ${task.source ? 'disabled' : ''}></label><label class="field">End time<input type="time" name="due_time" value="${esc(task.due_time || '')}" aria-label="End time" ${task.source ? 'disabled' : ''}></label></div></div>`;
+  return `<div class="task-time-controls"><label class="check-control"><input type="checkbox" data-task-allday ${timed ? '' : 'checked'} >All day</label><div class="task-time-range" ${timed ? '' : 'hidden'}><label class="field">Start time<input type="time" name="start_time" value="${esc(task.start_time || '')}" aria-label="Start time" ></label><label class="field">End time<input type="time" name="due_time" value="${esc(task.due_time || '')}" aria-label="End time" ></label></div></div>`;
 }
 
 export function installTaskTimes(form) {

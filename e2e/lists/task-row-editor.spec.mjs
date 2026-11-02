@@ -81,12 +81,12 @@ test.describe("desktop", () => {
   test.use({ viewportSize: { width: 1500, height: 1000 } });
 
   for (const view of ["list", "tree"]) {
-    test(`${view}: rows show the saved priority, workflow status choices and locked source fields`, async ({ page }) => {
+    test(`${view}: rows show the saved priority, workflow status choices and local source fields`, async ({ page }) => {
       await open(page, view);
       await expect(field(page, "priority")).toHaveValue((await saved()).priority || "medium");
       await expect(field(page, "status").locator("option")).toHaveText(["To do", "In progress"]);
       await expect(field(page, "title", app.remote.id)).toHaveAttribute("readonly", "");
-      for (const name of ["assignee", "priority", "status"]) await expect(field(page, name, app.remote.id)).toBeDisabled();
+      for (const name of ["assignee", "priority", "status"]) await expect(field(page, name, app.remote.id)).toBeEnabled();
     });
 
     test(`${view}: titles save on Enter or blur, Escape cancels and blank titles are refused`, async ({ page }) => {
@@ -144,7 +144,7 @@ test.describe("desktop", () => {
       await idle(page);
     });
 
-    test(`${view}: the date editor checks the order, saves as you type and clears; source tasks keep dates locked`, async ({ page }) => {
+    test(`${view}: the date editor checks the order, saves as you type and clears; source tasks allow local dates`, async ({ page }) => {
       await open(page, view);
       await row(page).locator(".row-due").click();
       await dates(page).locator("[name=start]").fill("2026-10-20");
@@ -167,7 +167,7 @@ test.describe("desktop", () => {
       // The repaint held back while the editor was open shows the cleared dates.
       await expect(row(page).locator(".row-due")).toHaveAttribute("title", "Start: Not set · Due: Not set");
       await row(page, app.remote.id).locator(".row-due").click();
-      await expect(dates(page).locator("[name=due]")).toBeDisabled();
+      await expect(dates(page).locator("[name=due]")).toBeEnabled();
       await dates(page).getByRole("button", { name: "Close date editor" }).click();
       await dates(page).waitFor({ state: "detached" });
     });

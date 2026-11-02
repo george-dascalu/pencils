@@ -78,7 +78,7 @@ onDevices(["desktop", "phone"], () => {
         await page.keyboard.press("Escape");
         await expect(field(name)).toBeFocused();
       }
-      for (const name of ["type", "assignee"]) {
+      for (const name of ["type"]) {
         const readonly = row(app.remote.id).locator(`td[data-column-key="${name}"]`);
         await expect(readonly.locator("select")).toHaveCount(0);
         await expect(readonly.locator('[role="img"]')).toHaveAttribute("aria-label", /Managed by the connected source/);

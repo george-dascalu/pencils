@@ -137,7 +137,7 @@ test("Escape and other controls cancel a selection, an earlier end is refused, a
   await waitDates(page, seed, other.id, "2026-10-22", "2026-10-22");
 });
 
-test("the keyboard chooses start and end, and source-owned rows cannot be scheduled", { tag: "@gate" }, async ({ page }) => {
+test("the keyboard chooses start and end, and imported rows can be scheduled locally", { tag: "@gate" }, async ({ page }) => {
   const seed = app.keyboard, { other, source } = seed;
   await openDays(page, seed);
   await track(page, other.id).focus();
@@ -146,12 +146,11 @@ test("the keyboard chooses start and end, and source-owned rows cannot be schedu
   await page.keyboard.press("ArrowRight");
   await page.keyboard.press("Enter");
   await waitDates(page, seed, other.id, "2026-10-19", "2026-10-21");
-  const imported = await current(seed, source.id);
   await tap(page, source.id, "2026-10-23");
   await tap(page, source.id, "2026-10-26");
   await expect(page.locator(".timeline-range-preview")).toHaveCount(0);
   await settle(page);
-  expect(await current(seed, source.id)).toEqual(imported);
+  await waitDates(page, seed, source.id, "2026-10-23", "2026-10-26");
 });
 
 test("a custom range clips bars, marks rows outside it, fills the component and survives a reload", { tag: "@gate" }, async ({ page }) => {

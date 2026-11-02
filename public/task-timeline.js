@@ -1,3 +1,4 @@
+import { sourceReadOnly } from "./source-model.js";
 import { taskFieldColor, taskColorDot } from "./task-colors.js";
 import { taskDateEditor } from "./task-date-editor.js";
 import { timelineRangeEditor, timelineRoot } from "./timeline-range.js";
@@ -46,7 +47,7 @@ export function timelineHTML(
   const step = scale === "day" ? 1 : showWeekends ? 7 : 5;
   const x = axis.x;
   const taskLabel = (t, unplanned = false) =>
-    `<div class="timeline-task-label"><button class="timeline-task-open" data-action="task-open" data-id="${esc(t.id)}" title="${esc(t.key || "")} ${esc(t.title)}" ${unplanned ? `draggable="${!t.source}" data-unscheduled="${esc(t.id)}"` : ""}>${taskColorDot(ctx.state, "status", t.status)}${esc(t.key || "")} ${esc(t.title)}</button><button type="button" class="icon-button timeline-date-action ${unplanned ? "timeline-schedule" : ""}" data-task-dates="${esc(t.id)}" aria-label="${unplanned ? "Set" : "Edit"} dates for ${esc(t.title)}" title="${unplanned ? "Set" : "Edit"} dates" aria-haspopup="dialog" aria-expanded="false">${ctx.icon("calendar")}</button></div>`;
+    `<div class="timeline-task-label"><button class="timeline-task-open" data-action="task-open" data-id="${esc(t.id)}" title="${esc(t.key || "")} ${esc(t.title)}" ${unplanned ? `draggable="${!sourceReadOnly(t,"due")}" data-unscheduled="${esc(t.id)}"` : ""}>${taskColorDot(ctx.state, "status", t.status)}${esc(t.key || "")} ${esc(t.title)}</button><button type="button" class="icon-button timeline-date-action ${unplanned ? "timeline-schedule" : ""}" data-task-dates="${esc(t.id)}" aria-label="${unplanned ? "Set" : "Edit"} dates for ${esc(t.title)}" title="${unplanned ? "Set" : "Edit"} dates" aria-haspopup="dialog" aria-expanded="false">${ctx.icon("calendar")}</button></div>`;
   const pager =
     page.pages > 1
       ? `<div class="timeline-page-summary" role="status">Page ${page.page + 1} of ${page.pages} · ${tasks.length} cards<button class="button small" data-timeline-page="${page.page - 1}" ${!page.page ? "disabled" : ""}>Previous cards</button><button class="button small" data-timeline-page="${page.page + 1}" ${page.page + 1 >= page.pages ? "disabled" : ""}>Next cards</button></div>`
@@ -58,8 +59,8 @@ export function timelineHTML(
     <div class="timeline-scroll" tabindex="0" role="region" aria-label="Project timeline"><div class="timeline-sheet" style="width:${tasks.length ? `${width + 240}px` : "100%"}">
       <div class="timeline-header"><span class="timeline-task-label">Card</span><div class="timeline-ruler"></div></div>
       <svg class="timeline-dependencies" height="${dated.length * 44}" style="left:240px;top:60px" role="img" aria-label="Card dependencies"></svg>
-      ${dated.map((t) => `<div class="timeline-row" data-timeline-row="${esc(t.id)}">${taskLabel(t)}<div class="timeline-track" data-schedule-target tabindex="0" role="group" aria-label="Choose start and end dates for ${esc(t.title)}" title="Choose a start, then an end" ${t.source ? 'aria-disabled="true"' : ""}><div tabindex="0" role="slider" aria-label="Schedule ${esc(t.title)}" aria-valuetext="${esc(t.start || t.due)} to ${esc(t.due || t.start)}" class="timeline-bar ${t.milestone ? "milestone" : ""} ${!showWeekends && axis.end(t.due || t.start) === x(t.start || t.due) ? "weekend-only" : ""}" data-timeline-task="${esc(t.id)}" title="${esc(t.start || t.due)} to ${esc(t.due || t.start)} · Select to edit dates · Alt+arrows moves by a ${showWeekends ? "day" : "weekday"}" data-task-color="status" style="--task-field-color:${taskFieldColor(ctx.state, "status", t.status)};left:${x(t.start || t.due)}px;width:${Math.max(12, axis.end(t.due || t.start) - x(t.start || t.due))}px"><span data-date-end="start" role="separator" aria-label="Resize start date"></span>${esc(t.title)}<span data-date-end="due" role="separator" aria-label="Resize due date"></span></div><span class="timeline-outside" hidden>Outside range</span><button class="milestone-toggle" data-milestone="${esc(t.id)}" aria-pressed="${!!t.milestone}" title="Toggle milestone">◇</button></div></div>`).join("")}
-      ${undated.length ? `<div class="timeline-section-label"><span>Unscheduled (${allUndated.length})</span></div>${undated.map((t) => `<div class="timeline-row timeline-unplanned" data-timeline-row="${esc(t.id)}">${taskLabel(t, true)}<div class="timeline-track" data-schedule-target tabindex="0" role="group" aria-label="Choose start and end dates for ${esc(t.title)}" title="Choose a start, then an end" ${t.source ? 'aria-disabled="true"' : ""}><span class="timeline-schedule-hint" aria-hidden="true">Set start, then end</span></div></div>`).join("")}` : ""}
+      ${dated.map((t) => `<div class="timeline-row" data-timeline-row="${esc(t.id)}">${taskLabel(t)}<div class="timeline-track" data-schedule-target tabindex="0" role="group" aria-label="Choose start and end dates for ${esc(t.title)}" title="Choose a start, then an end" ${sourceReadOnly(t,"due") ? 'aria-disabled="true"' : ""}><div tabindex="0" role="slider" aria-label="Schedule ${esc(t.title)}" aria-valuetext="${esc(t.start || t.due)} to ${esc(t.due || t.start)}" class="timeline-bar ${t.milestone ? "milestone" : ""} ${!showWeekends && axis.end(t.due || t.start) === x(t.start || t.due) ? "weekend-only" : ""}" data-timeline-task="${esc(t.id)}" title="${esc(t.start || t.due)} to ${esc(t.due || t.start)} · Select to edit dates · Alt+arrows moves by a ${showWeekends ? "day" : "weekday"}" data-task-color="status" style="--task-field-color:${taskFieldColor(ctx.state, "status", t.status)};left:${x(t.start || t.due)}px;width:${Math.max(12, axis.end(t.due || t.start) - x(t.start || t.due))}px"><span data-date-end="start" role="separator" aria-label="Resize start date"></span>${esc(t.title)}<span data-date-end="due" role="separator" aria-label="Resize due date"></span></div><span class="timeline-outside" hidden>Outside range</span><button class="milestone-toggle" data-milestone="${esc(t.id)}" aria-pressed="${!!t.milestone}" title="Toggle milestone">◇</button></div></div>`).join("")}
+      ${undated.length ? `<div class="timeline-section-label"><span>Unscheduled (${allUndated.length})</span></div>${undated.map((t) => `<div class="timeline-row timeline-unplanned" data-timeline-row="${esc(t.id)}">${taskLabel(t, true)}<div class="timeline-track" data-schedule-target tabindex="0" role="group" aria-label="Choose start and end dates for ${esc(t.title)}" title="Choose a start, then an end" ${sourceReadOnly(t,"due") ? 'aria-disabled="true"' : ""}><span class="timeline-schedule-hint" aria-hidden="true">Set start, then end</span></div></div>`).join("")}` : ""}
       ${!tasks.length ? `<div class="empty">${ctx.icon("leaf")}<h2>${ctx.state?.tasks?.length ? "No matching cards" : "No cards yet"}</h2><button class="button soft" data-action="${ctx.state?.tasks?.length ? "filters-reset" : "task-new"}">${ctx.state?.tasks?.length ? "Clear filters" : "Add a card"}</button></div>` : ""}
     </div></div></section>`;
   return scope === "project" ? { controls: head, html: section("") } : section(head);
@@ -219,7 +220,7 @@ export function timelineInteractions(ctx, onOption) {
       stop(e);
       const root = el.closest("[data-timeline]"),
         t = task(el.dataset.timelineTask);
-      if (!t || t.source) return;
+      if (!t || sourceReadOnly(t,"due")) return;
       dateEditor.close();
       drag = {
         pointer: e.pointerId,
@@ -319,7 +320,7 @@ export function timelineInteractions(ctx, onOption) {
       }
       if (
         el &&
-        !task(el.dataset.timelineTask)?.source &&
+        !sourceReadOnly(task(el.dataset.timelineTask),"due") &&
         e.altKey &&
         ["ArrowLeft", "ArrowRight"].includes(e.key)
       ) {
@@ -402,7 +403,7 @@ export function timelineInteractions(ctx, onOption) {
     (e) => {
       const n = e.target.closest("[data-unscheduled]");
       if (!n) return;
-      if (task(n.dataset.unscheduled)?.source) return stop(e);
+      if (sourceReadOnly(task(n.dataset.unscheduled),"due")) return stop(e);
       unscheduled = n.dataset.unscheduled;
       e.dataTransfer.setData("text/x-pencils-task", unscheduled);
       e.stopImmediatePropagation();

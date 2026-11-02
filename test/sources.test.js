@@ -242,3 +242,33 @@ test("Jira paginated read retains raw rich text and rejects writes without capab
     (e) => e.status === 403,
   );
 });
+
+test('local assignee, status, priority and dates survive every source sync without publishing', async t => {
+  const root = await fs.mkdtemp(path.join(os.tmpdir(), 'pencils-local-source-'));
+  const store = new Store(root); await store.init();
+  t.after(async () => { await store.close(); await fs.rm(root, { recursive:true, force:true }); });
+  const project = await store.createProject({title:'Local planning'});
+  const sources = new Sources(store, new Auth(store,true), {env:{}});
+  const source = await sources.configure(project.id, {username:'owner',admin:true}, {provider:'jira',scope:{cloudId:'test',jql:'project = TEST'}});
+  let remote = {title:'Remote title',type:'task',status:'todo',priority:'medium',assignee:'Remote person',due:'2026-11-02'};
+  sources.read = async () => [{id:'one',key:'TEST-1',version:'1',fields:remote}];
+  sources.request = () => { throw Error('Local edits must never call Jira'); };
+  await sources.sync(project.id,source.id);
+  const current = async () => (await store.snapshot(project.id)).tasks[0];
+  let task = await current();
+  const edits = {status:'done',priority:'high',assignee:'',due:null,start:'2026-11-04'};
+  await store.updateTask(project.id,task.id,{revision:task.revision,...edits});
+  for (let i=0;i<2;i++) {
+    remote={...remote,title:`Remote title ${i}`,status:'in-progress',priority:'low',assignee:'Another person',due:'2026-12-02'};
+    await sources.sync(project.id,source.id);
+    task=await current();
+    for (const [key,value] of Object.entries(edits)) assert.equal(task[key],value,key);
+    assert.equal(task.title,remote.title);
+    assert.deepEqual(task.source.local_fields.sort(),['assignee','due','priority','status']);
+    assert.equal((await sources.list(project.id)).sources[0].conflicts.length,0);
+  }
+  await assert.rejects(store.updateTask(project.id,task.id,{revision:task.revision,title:'Local title'}),/belongs/);
+  await assert.rejects(store.updateTask(project.id,task.id,{revision:task.revision,status:'invalid'}),/status/i);
+  await assert.rejects(store.updateTask(project.id,task.id,{revision:task.revision,due:'bad date'}),/date/i);
+  assert.equal((await current()).revision,task.revision);
+});

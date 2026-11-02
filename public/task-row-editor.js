@@ -1,4 +1,5 @@
 import { taskDateEditor } from "./task-date-editor.js";
+import { sourceReadOnly } from "./source-model.js";
 
 // List and Tree use the same controls, save queue and contextual date editor.
 export function taskRowEditor(ctx) {
@@ -110,7 +111,7 @@ export function taskRowEditor(ctx) {
     const { id, rowField: field } = input.dataset;
     const value = field === "title" ? input.value.trim() : input.value;
     const current = task(id);
-    if (!current || current.source || input.readOnly || input.disabled) return;
+    if (!current || sourceReadOnly(current, field) || input.readOnly || input.disabled) return;
     if (field === "title") {
       input.setCustomValidity(value ? "" : "Enter a card title.");
       if (!input.reportValidity()) {

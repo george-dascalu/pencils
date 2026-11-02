@@ -1,3 +1,4 @@
+import { sourceReadOnly } from "./source-model.js";
 import { taskTimeFields, installTaskTimes } from "./task-time-fields.js";
 import { positionPopover } from "./popover-position.js";
 import { focusOnOpen } from "./open-focus.js";
@@ -55,7 +56,7 @@ export function taskDateEditor(ctx) {
     panel.setAttribute("role", "dialog");
     panel.setAttribute("aria-modal", "false");
     panel.setAttribute("aria-label", `Dates for ${value.key || ""} ${value.title}`.trim());
-    const sourceDue = !!value.source;
+    const sourceDue = sourceReadOnly(value, "due");
     panel.innerHTML = `<form id="task-dates-form" novalidate>
       <header class="task-dates-actions">${sourceDue ? "" : '<button type="button" class="text-link" data-task-dates-clear>Clear dates</button>'}<button type="button" class="icon-button" data-task-dates-close aria-label="Close date editor">${icon("close")}</button></header>
       <label class="field">Start date<input type="date" name="start" aria-label="Start date" value="${esc(value.start || "")}"></label>

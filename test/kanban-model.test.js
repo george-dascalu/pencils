@@ -49,8 +49,9 @@ test("Kanban drops change only destination fields and enforce workflow, source a
     priority: "high",
   });
   assert.equal(kanbanDropError(config, { ...task, source: {} }, {}, []), "");
+  assert.equal(kanbanDropError(config, { ...task, source: {} }, { assignee: "" }, []), "");
   assert.match(
-    kanbanDropError(config, { ...task, source: {} }, { assignee: "" }, []),
+    kanbanDropError(config, { ...task, source: {} }, { type: "bug" }, []),
     /source/,
   );
   assert.match(

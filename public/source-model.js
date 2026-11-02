@@ -7,6 +7,9 @@ export const sourceFields = [
   "assignee",
   "due",
 ];
+// Planning edits belong to Pencils; only explicit publication writes to a provider.
+export const localSourceFields = ["assignee", "status", "priority", "due"];
+export const sourceReadOnly = (task, field) => !!task?.source && sourceFields.includes(field) && !localSourceFields.includes(field);
 export const sourceCapabilities = {
   obsidian: {
     read: true,
@@ -40,7 +43,9 @@ export function mergeSource(base, local, remote) {
     const b = base?.[field] ?? null,
       l = local?.[field] ?? null,
       r = remote?.[field] ?? null;
-    if (l !== b && r !== b && l !== r) {
+    if (localSourceFields.includes(field) && local?.source?.local_fields?.includes(field)) {
+      values[field] = l;
+    } else if (l !== b && r !== b && l !== r) {
       conflicts.push({ field, base: b, local: l, remote: r });
       values[field] = l;
     } else values[field] = l !== b ? l : r;

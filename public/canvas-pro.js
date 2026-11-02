@@ -1,3 +1,4 @@
+import { sourceReadOnly } from "./source-model.js";
 import { boardScene, paintOverviewEdges } from "./board-scene.js";
 import { resizeTaskCard, taskCardHeight } from "./task-card-layout.js";
 import { priorityOptions, priorityLabel, defaultPriority } from "./task-priority.js";
@@ -430,7 +431,7 @@ export function canvasPro(ctx, basic) {
                 (f) =>
                   `<td>${
                     f === "status"
-                      ? `<select data-canvas-status="${esc(t.id)}" ${t.source?"disabled":""} aria-label="Card status">${nextStatuses(
+                      ? `<select data-canvas-status="${esc(t.id)}" ${sourceReadOnly(t,"status")?"disabled":""} aria-label="Card status">${nextStatuses(
                           state.config,
                           t.status,
                         )
@@ -482,10 +483,10 @@ export function canvasPro(ctx, basic) {
     }
   }
   function cardPriority(data, attributes) {
-    return `<label class="canvas-task-priority priority ${esc(data.priority || "none")}" ${taskColorAttributes(state, "priority", data.priority)} title="Priority: ${esc(priorityLabel(data.priority || "none"))}">${icon(`priority-${data.priority || "none"}`)}<select data-canvas-task-field="priority" ${data.source?"disabled":""} ${attributes} aria-label="Priority for ${esc(data.title)}">${priorityOptions.map((value) => `<option value="${value}" ${value === (data.priority || "none") ? "selected" : ""}>${priorityLabel(value)}</option>`).join("")}</select></label>`;
+    return `<label class="canvas-task-priority priority ${esc(data.priority || "none")}" ${taskColorAttributes(state, "priority", data.priority)} title="Priority: ${esc(priorityLabel(data.priority || "none"))}">${icon(`priority-${data.priority || "none"}`)}<select data-canvas-task-field="priority" ${sourceReadOnly(data,"priority")?"disabled":""} ${attributes} aria-label="Priority for ${esc(data.title)}">${priorityOptions.map((value) => `<option value="${value}" ${value === (data.priority || "none") ? "selected" : ""}>${priorityLabel(value)}</option>`).join("")}</select></label>`;
   }
   function cardAssignee(data, attributes) {
-    return `<label class="canvas-task-assignee" title="${esc(data.assignee || "Unassigned")}">${ctx.assigneeHTML(data)}<select ${taskColorAttributes(state, "assignee", data.assignee)} data-canvas-task-field="assignee" ${data.source?"disabled":""} ${attributes} aria-label="Assignee for ${esc(data.title)}" title="${esc(assigneeHint(state) || data.assignee || "Unassigned")}">${assigneeOptions(state, data.assignee, esc)}</select></label>`;
+    return `<label class="canvas-task-assignee" title="${esc(data.assignee || "Unassigned")}">${ctx.assigneeHTML(data)}<select ${taskColorAttributes(state, "assignee", data.assignee)} data-canvas-task-field="assignee" ${sourceReadOnly(data,"assignee")?"disabled":""} ${attributes} aria-label="Assignee for ${esc(data.title)}" title="${esc(assigneeHint(state) || data.assignee || "Unassigned")}">${assigneeOptions(state, data.assignee, esc)}</select></label>`;
   }
   const cardDateFormat = new Intl.DateTimeFormat(undefined, { day: "numeric", month: "short" });
   // The start and end dates sit in the field box; each opens the shared calendar in place.
@@ -493,7 +494,7 @@ export function canvasPro(ctx, basic) {
     const part = (field, name) => {
       const value = data[field] || "";
       const limit = field === "start" ? `max="${esc(data.due || "")}"` : `min="${esc(data.start || "")}"`;
-      return `<span class="canvas-task-date${value ? "" : " unset"}" title="${esc(`${name}: ${value || "Not set"}`)}"><span>${esc(value ? cardDateFormat.format(new Date(`${value}T12:00:00`)) : name)}</span><input type="date" inert data-canvas-task-date="${field}" data-task="${esc(data.id)}" value="${esc(value)}" ${limit} aria-label="${name} date for ${esc(data.title)}" ${data.source && field === "due" ? "disabled" : ""}></span>`;
+      return `<span class="canvas-task-date${value ? "" : " unset"}" title="${esc(`${name}: ${value || "Not set"}`)}"><span>${esc(value ? cardDateFormat.format(new Date(`${value}T12:00:00`)) : name)}</span><input type="date" inert data-canvas-task-date="${field}" data-task="${esc(data.id)}" value="${esc(value)}" ${limit} aria-label="${name} date for ${esc(data.title)}" ${sourceReadOnly(data,field) ? "disabled" : ""}></span>`;
     };
     return `<span class="canvas-task-dates">${icon("calendar")}${part("start", "Start")}<span class="canvas-task-date-arrow" aria-hidden="true">→</span>${part("due", "Due")}</span>`;
   }
@@ -577,7 +578,7 @@ export function canvasPro(ctx, basic) {
         if (asNote) {
           el.innerHTML = `<div class="note-content ${section?.text ? "has-body" : ""}"><div class="note-title canvas-markdown" data-inline-title>${esc(t.title)}</div><div class="note-body node-text canvas-markdown">${section ? (section.text ? markdown(section.text) : "") : "<p>Heading or block not found.</p>"}</div></div>`;
         } else {
-          el.innerHTML = `<div class="live-card-heading"><span class="canvas-task-identity"><span class="canvas-task-type" role="img" aria-label="${esc(ctx.label(t.type))}" title="${esc(ctx.label(t.type))}">${icon(t.type)}</span><span class="canvas-task-key" title="${esc(t.key || t.id)}">${esc(t.key || t.id)}</span></span><strong class="task-title" title="${esc(t.title)}" data-inline-title>${esc(t.title)}</strong><div class="live-card-actions">${disclosure(n)}${btn("comments", icon("comment") + (commentCount ? `<span class="task-comment-count" aria-hidden="true">${commentCount}</span>` : ""), `data-id="${esc(n.id)}" aria-label="Comments on ${esc(t.title)}${commentCount ? ` (${commentCount})` : ""}" title="Comments${commentCount ? ` (${commentCount})` : ""}"`)}${btn("task-details", "↗", `data-task="${esc(t.id)}" aria-label="Open card details" title="Open card details"`)}</div></div><div class="live-card-state"><span class="field-box" ${fieldBoxStyle(state, t.priority)}>${cardAssignee(t, `data-task="${esc(t.id)}"`)}<select class="canvas-task-status" ${taskColorAttributes(state, "status", t.status)} data-canvas-status="${esc(t.id)}" ${t.source?"disabled":""} aria-label="Card status" title="${esc(statusLabel(state.config, t.status))}">${nextStatuses(
+          el.innerHTML = `<div class="live-card-heading"><span class="canvas-task-identity"><span class="canvas-task-type" role="img" aria-label="${esc(ctx.label(t.type))}" title="${esc(ctx.label(t.type))}">${icon(t.type)}</span><span class="canvas-task-key" title="${esc(t.key || t.id)}">${esc(t.key || t.id)}</span></span><strong class="task-title" title="${esc(t.title)}" data-inline-title>${esc(t.title)}</strong><div class="live-card-actions">${disclosure(n)}${btn("comments", icon("comment") + (commentCount ? `<span class="task-comment-count" aria-hidden="true">${commentCount}</span>` : ""), `data-id="${esc(n.id)}" aria-label="Comments on ${esc(t.title)}${commentCount ? ` (${commentCount})` : ""}" title="Comments${commentCount ? ` (${commentCount})` : ""}"`)}${btn("task-details", "↗", `data-task="${esc(t.id)}" aria-label="Open card details" title="Open card details"`)}</div></div><div class="live-card-state"><span class="field-box" ${fieldBoxStyle(state, t.priority)}>${cardAssignee(t, `data-task="${esc(t.id)}"`)}<select class="canvas-task-status" ${taskColorAttributes(state, "status", t.status)} data-canvas-status="${esc(t.id)}" ${sourceReadOnly(t,"status")?"disabled":""} aria-label="Card status" title="${esc(statusLabel(state.config, t.status))}">${nextStatuses(
             state.config,
             t.status,
           )
@@ -587,7 +588,7 @@ export function canvasPro(ctx, basic) {
             )
             .join(
               "",
-            )}</select>${cardPriority(t, `data-task="${esc(t.id)}"`)}${cardDates(t)}</span></div>${t.source?`<small class="source-badge">${esc(sourceLabel(t))} · Source fields are read-only</small>`:""}${flags.blocked ? '<div class="canvas-task-flags"><b>Blocked</b></div>' : ""}<div class="canvas-markdown task-card-description" ${n.taskCollapsed ? "hidden" : ""}>${section ? (section.text ? markdown(section.text) : '<span class="is-placeholder">Add card notes…</span>') : "<p>Heading or block not found.</p>"}</div>${n.subpath ? `<small class="embed-label">${esc(n.subpath)}</small>` : ""}`;
+            )}</select>${cardPriority(t, `data-task="${esc(t.id)}"`)}${cardDates(t)}</span></div>${t.source?`<small class="source-badge">${esc(sourceLabel(t))} · Planning edits stay in Pencils</small>`:""}${flags.blocked ? '<div class="canvas-task-flags"><b>Blocked</b></div>' : ""}<div class="canvas-markdown task-card-description" ${n.taskCollapsed ? "hidden" : ""}>${section ? (section.text ? markdown(section.text) : '<span class="is-placeholder">Add card notes…</span>') : "<p>Heading or block not found.</p>"}</div>${n.subpath ? `<small class="embed-label">${esc(n.subpath)}</small>` : ""}`;
         }
       } else if (n.type === "file") {
         const attachment = localAttachment(n);

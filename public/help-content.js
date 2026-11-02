@@ -58,7 +58,7 @@ export const helpArticles = [
       {
         id: "mixed",
         title: "Use several sources together",
-        html: "<p>Repeat Add source in the same project, for example “Argus notes”, “Argus Jira” and “Argus delivery workbook”. Each has its own scope, field mapping and sync controls. Same-title records from different sources stay separate; Pencils does not merge them automatically. Use related-record links when they represent the same work.</p><p>Source-owned fields are read-only in local editors. Your local description, comments, dependencies and related-record links stay in Pencils. Optional publication is a separate, reviewed action; local annotations are not sent automatically.</p>",
+        html: "<p>Repeat Add source in the same project, for example “Argus notes”, “Argus Jira” and “Argus delivery workbook”. Each has its own scope, field mapping and sync controls. Same-title records from different sources stay separate; Pencils does not merge them automatically. Use related-record links when they represent the same work.</p><p>Assignee, status, priority and dates can be edited locally. Once changed, they stay in Pencils across future syncs; title and type still follow the source. Your description, comments, dependencies and related-record links also stay local. Optional publication is a separate, reviewed action; local annotations are not sent automatically.</p>",
       },
       {
         id: "mapping",
@@ -224,7 +224,7 @@ export const helpArticles = [
       {
         id: "limits",
         title: "Read-only permissions and limits",
-        html: "<p><strong>Excel is read-only in Pencils.</strong> Edit the source workbook, save, then sync. No Excel or SharePoint write permission is requested. Formulas are not evaluated; non-ID formulas can expose only their cached saved values. Formula IDs are rejected.</p><p>Limits: 20 MB downloaded, 100 MB expanded, 5,000 ZIP entries and 10,000 table rows. Missing/duplicate IDs, a renamed table or invalid dates prevent import. Formatting, charts and macros are not reproduced in Tasks.</p>",
+        html: "<p><strong>Pencils never writes to Excel.</strong> Edit the source workbook, save, then sync. Local changes to assignee, status, priority and dates stay in Pencils. No Excel or SharePoint write permission is requested. Formulas are not evaluated; non-ID formulas can expose only their cached saved values. Formula IDs are rejected.</p><p>Limits: 20 MB downloaded, 100 MB expanded, 5,000 ZIP entries and 10,000 table rows. Missing/duplicate IDs, a renamed table or invalid dates prevent import. Formatting, charts and macros are not reproduced in Tasks.</p>",
       },
     ],
   },

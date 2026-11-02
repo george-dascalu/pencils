@@ -209,16 +209,18 @@ test("Clear dates returns the task to the unplanned rows", { tag: "@gate" }, asy
   await expect(page.locator(`[data-timeline-row="${work.id}"].timeline-unplanned`)).toHaveCount(1);
 });
 
-test("a source-owned due date is read-only while the start date stays editable", { tag: "@gate" }, async ({ page }) => {
+test("imported cards keep their date edits local", { tag: "@gate" }, async ({ page }) => {
   const seed = app.owned, { source } = seed;
   await openTimeline(page, seed);
   await trigger(page, source).click();
-  await expect(due(page)).toBeDisabled();
-  await expect(panel(page).locator("[data-task-dates-clear]")).toHaveCount(0);
+  await expect(due(page)).toBeEnabled();
+  await due(page).fill("2026-12-01");
+  await savedDates(seed, source.id, { start: null, due: "2026-12-01" });
+  await expect(panel(page).locator("[data-task-dates-clear]")).toHaveCount(1);
   await start(page).fill("2026-10-20");
   await closeEditor(page);
   expect((await current(seed, source.id)).start).toBe("2026-10-20");
-  expect((await current(seed, source.id)).due).toBe("2026-11-30");
+  expect((await current(seed, source.id)).due).toBe("2026-12-01");
 });
 
 test("an embedded Timeline schedules a due date without moving the board camera and reports a failed save", { tag: "@gate" }, async ({ page }) => {

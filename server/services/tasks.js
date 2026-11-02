@@ -1,4 +1,5 @@
 import { defaultPriority } from "../../public/task-priority.js";
+import { localSourceFields, sourceReadOnly } from "../../public/source-model.js";
 import { hierarchyError } from "../../public/hierarchy-model.js";
 import {
   canTransition,
@@ -289,7 +290,7 @@ export const tasksMethods = {
         "due",
       ])
         if (
-          key in input &&
+          key in input && sourceReadOnly(current.data, key) &&
           JSON.stringify(input[key] || null) !==
             JSON.stringify(current.data[key] || null)
         )
@@ -299,6 +300,10 @@ export const tasksMethods = {
           );
     }
     const data = { ...current.data, updated: now() };
+    if (data.source) {
+      const changed = localSourceFields.filter(key => key in input && (input[key] || null) !== (current.data[key] || null));
+      if (changed.length) data.source = { ...data.source, local_fields: [...new Set([...(data.source.local_fields || []), ...changed])] };
+    }
     for (const key of [
       "title",
       "type",

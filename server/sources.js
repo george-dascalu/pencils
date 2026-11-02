@@ -651,6 +651,7 @@ export class Sources {
           description: remote.description || "",
           synced: now(),
           availability: "available",
+          ...(old?.source?.local_fields?.length ? { local_fields: old.source.local_fields } : {}),
         };
         if (old) {
           const file = this.store.file(project, "tasks", id),
