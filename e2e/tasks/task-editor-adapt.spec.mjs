@@ -59,7 +59,7 @@ onDevices(["phone", "ipad", "desktop"], device => {
     await form.getByLabel('Assignee', { exact: true }).selectOption(app.name);
     await expect(form.locator('.task-assignee')).toHaveAttribute('title', app.name);
     if (width === 320) {
-      await page.setViewportSize({ width: 390, height: 844 });
+      await page.setViewportSize({ width: 430, height: 844 });
       await expect(form.locator('.task-date-range')).toHaveCSS('display', 'flex');
       const actions = await form.locator('.task-secondary-actions').boundingBox();
       const close = await form.locator('[data-action=dialog-close]').boundingBox();

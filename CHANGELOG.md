@@ -2,6 +2,11 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.21.22 — 2026-11-02
+
+### Changed
+- Feature F0.21-22: All day is now a sun icon toggle directly after the card editor's date fields, with a tooltip and a highlighted selected state. The compact date editor uses the same toggle. Narrow layouts keep dates readable, and toggling preserves the dates while showing or hiding time fields.
+
 ## 0.21.21 — 2026-11-02
 
 ### Changed

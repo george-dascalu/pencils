@@ -28,7 +28,7 @@ onDevices(['desktop','ipad','phone'], () => test('drag an hour range, create a t
   await expect(form.getByLabel('Start time',{exact:true})).toHaveValue('09:00');
   await expect(form.getByLabel('End time',{exact:true})).toHaveValue('10:30');
   const allDay=await form.locator('[data-task-allday]').boundingBox();
-  expect(allDay.width, 'the All day checkbox stays compact').toBeLessThan(24);
+  expect(allDay.width, 'the All day icon stays square').toBe(allDay.height);
   const title=`Time range ${device}`;
   await form.getByLabel('Card title',{exact:true}).fill(title);
   await form.getByRole('button',{name:'Create card',exact:true}).click();
@@ -88,7 +88,7 @@ test('times can be edited and cleared without losing the dates',async({page})=>{
   await form.getByLabel('End time',{exact:true}).fill('11:30');
   await form.getByLabel('End time',{exact:true}).blur();
   await expect.poll(async()=> (await app.store.snapshot(project.id)).tasks.find(t=>t.id===card.id).due_time).toBe('11:30');
-  await form.getByRole('checkbox',{name:'All day',exact:true}).check();
+  await form.getByRole('button',{name:'All day',exact:true}).click();
   await expect.poll(async()=> (await app.store.snapshot(project.id)).tasks.find(t=>t.id===card.id).due_time).toBe(null);
   await page.locator('[data-action="dialog-close"]').click();
   await expect(page.locator('.calendar-timed-card')).toHaveCount(0);
