@@ -79,6 +79,11 @@ onDevices(["desktop", "ipad", "phone"], () => test("unscheduled cards hide their
   const slot = await page.locator('.calendar-hours-day').first().locator('[data-hour="10"]').boundingBox();
   await page.mouse.move(slot.x + slot.width / 2, slot.y + 1, { steps: 6 });
   await expect(page.locator(".calendar-drag-preview")).toContainText("10:00");
+  const placement = page.locator('.calendar-placement');
+  await expect(placement).toHaveCSS('height', '64px');
+  await expect(placement).toHaveCSS('pointer-events', 'none');
+  expect((await placement.boundingBox()).y).toBeCloseTo(slot.y, 0);
+  await expect(page.locator('[data-calendar-date].calendar-drop-target')).toHaveCount(0);
   await page.mouse.up();
   await expect(panel(page)).toHaveCount(0);
   await expect(page.locator(`.calendar-timed-card[data-id="${card.id}"]`)).toBeVisible();
@@ -87,6 +92,25 @@ onDevices(["desktop", "ipad", "phone"], () => test("unscheduled cards hide their
     return [t.start, t.due, t.start_time, t.due_time];
   }).toEqual(["2026-11-02", "2026-11-02", "10:00", "11:00"]);
 }));
+
+test('month drops preview a card-sized bar across its dates, and cancellation removes it', async ({page}) => {
+  const card = await app.store.createTask(app.project.id,{title:'Month placement',start:'2026-11-02',due:'2026-11-04'});
+  await open(page);
+  await page.locator('#calendar-mode').selectOption('month');
+  const source=page.locator(`.calendar-task[data-id="${card.id}"] .calendar-card-title`);
+  const a=await source.boundingBox(), day=await page.locator('.calendar-day[data-calendar-date="2026-11-10"]').boundingBox();
+  await page.mouse.move(a.x+a.width/2,a.y+a.height/2); await page.mouse.down();
+  await page.mouse.move(day.x+day.width/2,day.y+20,{steps:8});
+  await expect(page.locator('.calendar-placement')).toBeVisible();
+  await expect(page.locator('.calendar-placement')).toHaveCSS('height','30px');
+  const r=await page.locator('.calendar-placement').boundingBox();
+  expect(r.width).toBeCloseTo(day.width*3-6,0);
+  expect(r.height).toBeLessThan(day.height/2);
+  await expect(page.locator('[data-calendar-date].calendar-drop-target')).toHaveCount(0);
+  await page.keyboard.press('Escape'); await page.mouse.up();
+  await expect(page.locator('.calendar-placement')).toHaveCount(0);
+  expect((await app.store.snapshot(app.project.id)).tasks.find(t=>t.id===card.id).due).toBe('2026-11-04');
+});
 
 test("Unscheduled opens and closes with shared motion enabled", async ({ page }) => {
   await page.emulateMedia({ reducedMotion: "no-preference" });

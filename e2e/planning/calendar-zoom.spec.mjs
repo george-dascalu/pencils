@@ -35,7 +35,7 @@ onDevices(["desktop", "ipad", "phone"], () => test("zoom buttons fit all 24 hour
   await closeOptions(page);
   expect(await scroll(page).evaluate(el => el.scrollHeight - el.clientHeight)).toBeLessThanOrEqual(1);
   await expect(page.locator(".calendar-timed-card span")).toHaveCSS("display", "none");
-  const label = await page.locator(".calendar-timed-card strong").boundingBox(), cardBox = await page.locator(".calendar-timed-card button").boundingBox();
+  const label = await page.locator(".calendar-timed-card strong").boundingBox(), cardBox = await page.locator(".calendar-timed-card .calendar-card-title").boundingBox();
   expect(label.y).toBeGreaterThanOrEqual(cardBox.y - .5);
   expect(label.y + label.height).toBeLessThanOrEqual(cardBox.y + cardBox.height + .5);
   const fit = await height(page);

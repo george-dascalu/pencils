@@ -2,6 +2,11 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.21.14 — 2026-11-02
+
+### Added
+- Feature F0.21-14: Resize timed calendar cards from their start or end grips, with a live time preview and scrolling at the edges. Resizing snaps to 15 minutes at normal zoom, or 30/60 minutes when zoomed out. Drop previews show the card's hour block or month bar instead of highlighting whole days; Escape cancels without changing dates.
+
 ## 0.21.13 — 2026-11-02
 
 ### Changed

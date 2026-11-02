@@ -83,7 +83,7 @@ test('times can be edited and cleared without losing the dates',async({page})=>{
   const project=await app.store.createProject({title:'Edit hours'});
   const card=await app.store.createTask(project.id,{title:'Review',start:'2026-11-02',due:'2026-11-02',start_time:'09:00',due_time:'10:00'});
   await open(page,project);
-  await page.locator('.calendar-timed-card').getByRole('button').click();
+  await page.locator('.calendar-timed-card .calendar-card-title').click();
   const form=page.locator('#task-form');
   await form.getByLabel('End time',{exact:true}).fill('11:30');
   await form.getByLabel('End time',{exact:true}).blur();
