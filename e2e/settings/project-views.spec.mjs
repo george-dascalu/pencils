@@ -88,10 +88,40 @@ onDevices(["desktop", "ipad", "phone"], () => test("Views has its own project ca
   await page.goto(url(project,"calendar"));
   await expect(tab(page,"planning")).toHaveAttribute("aria-current","page");
   await tab(page,"planning").click();
-  await expect(page.locator('.layout-tray [data-view="calendar"]')).toBeVisible();
-  await expect(page.locator('.layout-tray [data-view="timeline"], .layout-tray [data-view="capacity"]')).toHaveCount(0);
+  await expect(page.locator('.layout-tray')).toHaveCount(0);
+  await expect(tab(page,"planning")).not.toHaveAttribute("aria-controls", "layout-tray");
   await expect(tab(page,"board")).toHaveCount(0);
   const after=await app.store.snapshot(project.id);
   expect(after.boards.map(b=>b.id)).toEqual(before.boards.map(b=>b.id));
   expect(after.tasks.find(t=>t.id===card.id).title).toBe("Kept card");
+}));
+
+onDevices(["desktop", "ipad", "phone"], () => test("a single remaining layout opens directly without a submenu, and a second layout restores it", async ({ page, device }) => {
+  const project = await seed(["tree", "table", "kanban", "timeline", "capacity"]);
+  await page.goto(url(project, "overview"));
+  for (const [area, view] of [["tasks", "list"], ["planning", "calendar"]]) {
+    await tab(page, area).click();
+    await expect(page).toHaveURL(url(project, view));
+    await tab(page, area).click();
+    await expect(page.locator(".layout-tray, .view-layout-switcher")).toHaveCount(0);
+    await expect(tab(page, area)).not.toHaveAttribute("aria-controls", "layout-tray");
+    await expect(tab(page, area)).not.toHaveAttribute("aria-expanded");
+    if (device === "desktop") {
+      await tab(page, area).press("ArrowDown");
+      await expect(tab(page, area)).toBeFocused();
+      await expect(page.locator(".layout-tray")).toHaveCount(0);
+    }
+  }
+  await page.goto(url(project, "settings/views"));
+  for (const name of ["Table", "Timeline"]) await page.getByRole("checkbox", { name, exact: true }).check();
+  await settingsSaved(page);
+  for (const [area, view, choice] of [["tasks", "list", "Table"], ["planning", "calendar", "Timeline"]]) {
+    await page.goto(url(project, view));
+    await tab(page, area).click();
+    const tray = page.locator(".layout-tray");
+    await expect(tray).toBeVisible();
+    await expect(tray.locator("button")).toHaveCount(2);
+    await tray.getByRole("button", { name: choice, exact: true }).click();
+    await expect(page).toHaveURL(url(project, choice.toLowerCase()));
+  }
 }));

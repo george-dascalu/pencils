@@ -2,6 +2,11 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.21.11 — 2026-11-02
+
+### Changed
+- Feature F0.21-11: Hide the Tasks and Planning sub-menu when only one layout is enabled. The category button opens that view directly; enabling another layout brings the sub-menu back on desktop, iPad and phone.
+
 ## 0.21.10 — 2026-11-02
 
 ### Fixed

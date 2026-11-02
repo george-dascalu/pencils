@@ -299,7 +299,7 @@ export function projectLayout(ctx) {
     $(".toolbar-left > .view-layout-switcher")?.remove();
     const taskLayout = taskViews.includes(state.view);
     const layouts = (taskLayout ? taskViews : planningViews.includes(state.view) ? planningViews : []).filter((view) => viewOn(state.config, view));
-    if (queryHost && layouts.length)
+    if (queryHost && layouts.length > 1)
       queryHost.insertAdjacentHTML("afterbegin", `<div class="view-layout-switcher ${taskLayout ? "task" : "planning"}-view-switcher" role="group" aria-label="${taskLayout ? "Tasks" : "Planning"} layout">${layouts.map((view) => `<button type="button" data-action="view" data-view="${view}" aria-label="${label(view)}" aria-pressed="${state.view === view}" title="${label(view)} layout">${icon(view)}<span>${label(view)}</span></button>`).join("")}</div>`);
     const toolbar = $(".toolbar-left");
     const advanced = $(".advanced-filters");
