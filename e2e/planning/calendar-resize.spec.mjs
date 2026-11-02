@@ -101,7 +101,7 @@ test('overnight cards expose only their true endpoints, can end at midnight, and
   const r=await end.boundingBox(), day=await page.locator('.calendar-hours-day[data-calendar-date="2026-11-03"]').boundingBox();
   await page.mouse.move(r.x+r.width/2,r.y+r.height/2); await page.mouse.down();
   await page.mouse.move(r.x+r.width/2,day.y+1,{steps:8});
-  await expect(page.locator('.calendar-drag-preview')).toContainText('23:00 – 00:00');
+  await expect(page.locator('.calendar-drag-preview')).toContainText('2026-11-02 23:00 → 2026-11-03 00:00');
   await page.mouse.up();
   await expect.poll(async()=> (await app.store.snapshot(app.project.id)).tasks.find(t=>t.id===night.id).due_time).toBe('00:00');
   await expect(segments).toHaveCount(1);

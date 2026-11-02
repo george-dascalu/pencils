@@ -80,9 +80,11 @@ export function calendarView(ctx) {
     if (d.hours) {
       const bounds = d.hours.closest('.calendar-hours-scroll').getBoundingClientRect();
       if (x < bounds.left || x > bounds.right || y < bounds.top || y > bounds.bottom) return null;
-      const r = d.hours.getBoundingClientRect();
+      const target = document.elementFromPoint(x, y)?.closest('.calendar-hours-day');
+      if (!target) return null;
+      const r = target.getBoundingClientRect();
       d.step = calendarTimeStep(r.height / 24);
-      return calendarTimeResize(d.task, d.hours.dataset.calendarDate, (y - r.top) / r.height * 1440, d.handle, d.step);
+      return calendarTimeResize(d.task, target.dataset.calendarDate, (y - r.top) / r.height * 1440, d.handle, d.step);
     }
     const hit = document.elementFromPoint(x, y);
     if (hit?.closest(".calendar-drag-cancel")) return null;
@@ -106,7 +108,7 @@ export function calendarView(ctx) {
     if (d.placementKey === key) return;
     d.placementKey = key;
     clearPlacement(d);
-    if (!d.next || d.hours) return;
+    if (!d.next) return;
     const items = shownTasks.map(t => t.id === next.id ? next : t);
     const add = (parent, className) => {
       const el = document.createElement('div'); el.className = `${className} calendar-placement`;
@@ -115,7 +117,7 @@ export function calendarView(ctx) {
     };
     if (mode === 'week' && timedCard(next)) {
       const days = [...document.querySelectorAll('.calendar-hours-day')];
-      for (const s of hourlySegments(items, days.map(el => el.dataset.calendarDate)).filter(s => s.task.id === next.id)) {
+      for (const s of hourlySegments(items, days.map(el => el.dataset.calendarDate)).filter(s => s.task.id === next.id && (!d.hours || s.day !== d.hours.dataset.calendarDate))) {
         const el = add(days.find(el => el.dataset.calendarDate === s.day), 'calendar-time-selection');
         Object.assign(el.style, { top: `${s.start / 1440 * 100}%`, height: `${(s.end - s.start) / 1440 * 100}%`, left: `${s.lane / s.columns * 100}%`, width: `${100 / s.columns}%`, right: 'auto' });
       }
@@ -158,6 +160,7 @@ export function calendarView(ctx) {
     const next = { ...d.task, ...d.next }, range = d.next && calendarRange(next);
     if (d.hours && d.next) {
       const segment = hourlySegments([next], [d.hours.dataset.calendarDate])[0] || { start: 0, end: 0 };
+      d.card.style.visibility = segment.end > segment.start ? '' : 'hidden';
       d.card.style.top = `${segment.start / 1440 * 100}%`;
       d.card.style.height = `${(segment.end - segment.start) / 1440 * 100}%`;
       d.card.querySelector('.calendar-event-time').textContent = `${minuteTime(segment.start)} – ${segment.end === 1440 ? '24:00' : minuteTime(segment.end)}`;
@@ -166,7 +169,7 @@ export function calendarView(ctx) {
       d.card.querySelector('.calendar-event-time').textContent = d.originalTime;
     }
     placement(d, next);
-    d.ghost.querySelector("small").textContent = d.hours ? range ? `${next.start_time} – ${next.due_time} · ${d.step} min steps` : 'Release to cancel' : cancel ? "Keep unscheduled" : range ? `${range.start}${d.next.start_time ? ` · ${d.next.start_time} – ${d.next.due_time}` : ` → ${range.end}`}` : "Move over a day to schedule";
+    d.ghost.querySelector("small").textContent = d.hours ? range ? `${range.start !== range.end ? `${range.start} ${next.start_time} → ${range.end} ${next.due_time}` : `${next.start_time} – ${next.due_time}`} · ${d.step} min steps` : 'Release to cancel' : cancel ? "Keep unscheduled" : range ? `${range.start}${d.next.start_time ? ` · ${d.next.start_time} – ${d.next.due_time}` : ` → ${range.end}`}` : "Move over a day to schedule";
     d.ghost.style.left = `${Math.max(8, Math.min(innerWidth - 248, d.x + 16))}px`;
     d.ghost.style.top = `${Math.max(8, Math.min(innerHeight - 75, d.y + 18))}px`;
     d.frame = requestAnimationFrame(preview);
@@ -198,6 +201,7 @@ export function calendarView(ctx) {
       d.card.querySelector('.calendar-event-time').textContent = d.originalTime;
     }
     d.card.classList.remove('calendar-time-resizing');
+    d.siblings?.forEach(el => el.classList.remove('calendar-resize-sibling'));
     if (d.panel) {
       if (!cancel && d.next) unscheduled.close();
       else { d.panel.style.removeProperty("visibility"); d.panel.style.removeProperty("pointer-events"); }
@@ -228,6 +232,10 @@ export function calendarView(ctx) {
       d.active = state.toolDragging = true; dateEditor.close();
       d.card.setPointerCapture(e.pointerId);
       d.card.classList.add("calendar-dragging");
+      if (d.hours) {
+        d.siblings = [...document.querySelectorAll(`[data-calendar-card="${CSS.escape(d.task.id)}"]`)].filter(el => el !== d.card && el.matches('.calendar-timed-card'));
+        d.siblings.forEach(el => el.classList.add('calendar-resize-sibling'));
+      }
       if (d.hours) d.card.classList.add('calendar-time-resizing');
       if (d.panel) {
         d.panel.style.visibility = "hidden";
@@ -282,11 +290,13 @@ export function calendarView(ctx) {
     const t = task(card.dataset.calendarCard), range = t && calendarRange(t), handle = e.target.closest("[data-calendar-end]")?.dataset.calendarEnd;
     const timeEnd = e.target.closest('[data-calendar-time-end]')?.dataset.calendarTimeEnd;
     if (timeEnd) {
-      if (!t || sourceReadOnly(t,"due") || !['ArrowUp', 'ArrowDown'].includes(e.key)) return;
+      if (!t || sourceReadOnly(t,"due") || !['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) return;
       e.preventDefault(); e.stopImmediatePropagation();
       const day = card.closest('.calendar-hours-day'), step = calendarTimeStep(day.getBoundingClientRect().height / 24);
-      const minute = t[timeEnd] > day.dataset.calendarDate ? 1440 : timeMinutes(t[`${timeEnd}_time`]);
-      void save(t.id, calendarTimeResize(t, day.dataset.calendarDate, minute + (e.key === 'ArrowDown' ? step : -step), timeEnd, step), `[data-calendar-card="${CSS.escape(t.id)}"] [data-calendar-time-end="${timeEnd}"]`);
+      const across = ['ArrowLeft', 'ArrowRight'].includes(e.key);
+      const minute = timeMinutes(t[`${timeEnd}_time`]) + (across ? 0 : e.key === 'ArrowDown' ? step : -step);
+      const target = shiftDate(t[timeEnd], across ? e.key === 'ArrowRight' ? 1 : -1 : Math.floor(minute / 1440));
+      void save(t.id, calendarTimeResize(t, target, (minute % 1440 + 1440) % 1440, timeEnd, step), `[data-calendar-card="${CSS.escape(t.id)}"] [data-calendar-time-end="${timeEnd}"]`);
       return;
     }
     if (t && !sourceReadOnly(t,"due") && timedCard(t) && e.altKey && ['ArrowUp','ArrowDown'].includes(e.key) && card.matches('.calendar-timed-card')) {

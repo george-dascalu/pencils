@@ -67,3 +67,15 @@ test('moving timed cards snaps their start, preserves duration and the grabbed o
   assert.deepEqual(calendarTimeMove(t,'2026-12-31',1430,20,30),{start:'2026-12-31',due:'2027-01-01',start_time:'23:30',due_time:'01:00'});
   assert.deepEqual(calendarTimeMove({...t,start:'2026-10-24',due:'2026-10-25'},'2026-10-26',80,1460,15),{start:'2026-10-25',due:'2026-10-26',start_time:'01:00',due_time:'02:30'});
 });
+
+test('time handles extend and shorten across days without crossing the fixed endpoint', () => {
+  const t = { start: '2026-11-04', due: '2026-11-04', start_time: '09:00', due_time: '10:00' };
+  assert.deepEqual(calendarTimeResize(t, '2026-11-05', 675, 'due', 15), { due: '2026-11-05', due_time: '11:15' });
+  assert.deepEqual(calendarTimeResize(t, '2026-11-03', 510, 'start', 15), { start: '2026-11-03', start_time: '08:30' });
+  assert.deepEqual(calendarTimeResize(t, '2026-11-03', 510, 'due', 15), { due: t.start, due_time: '09:15' });
+  assert.deepEqual(calendarTimeResize(t, '2026-11-05', 675, 'start', 15), { start: t.due, start_time: '09:45' });
+  const multiple = { ...t, start: '2026-11-03', due: '2026-11-05' };
+  assert.deepEqual(calendarTimeResize(multiple, '2026-11-04', 660, 'start', 15), { start: '2026-11-04', start_time: '11:00' });
+  assert.deepEqual(calendarTimeResize(multiple, '2026-11-04', 720, 'due', 15), { due: '2026-11-04', due_time: '12:00' });
+  assert.deepEqual(calendarTimeResize(t, '2026-12-31', 1440, 'due', 15), { due: '2027-01-01', due_time: '00:00' });
+});

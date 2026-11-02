@@ -2,6 +2,11 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.21.25 — 2026-11-02
+
+### Added
+- Feature F0.21-25: Resize timed calendar cards across days using either handle, with precise previews of each day's occupied time. Both handles can shorten or extend an event while keeping a minimum 15-minute gap. Left/Right changes the endpoint's day, Up/Down adjusts its time, and Escape cancels the drag.
+
 ## 0.21.24 — 2026-11-02
 
 ### Added

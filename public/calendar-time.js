@@ -8,11 +8,14 @@ export const timedCard = task => !!(task.start && task.due && task.start_time &&
 export const calendarTimeStep = hourHeight => [15, 30, 60].find(step => step / 60 * hourHeight >= 8) || 60;
 
 export function calendarTimeResize(task, day, minutes, end, step) {
-  const start = end === 'start';
-  const min = !start && task.start === day ? timeMinutes(task.start_time) + 15 : 0;
-  const max = start ? task.due === day ? timeMinutes(task.due_time) - 15 : 1425 : 1440;
-  const value = Math.max(min, Math.min(max, Math.round(minutes / step) * step));
-  return { [end]: value === 1440 ? shiftDate(day, 1) : day, [`${end}_time`]: minuteTime(value) };
+  const origin = stamp(day) / DAY * 1440;
+  const start = stamp(task.start) / DAY * 1440 + timeMinutes(task.start_time);
+  const finish = stamp(task.due) / DAY * 1440 + timeMinutes(task.due_time);
+  const snapped = origin + Math.max(0, Math.min(1440, Math.round(minutes / step) * step));
+  // Clamp against the other endpoint's full date and time, even on another day.
+  const value = end === 'start' ? Math.min(snapped, finish - 15) : Math.max(snapped, start + 15);
+  const offset = value - origin;
+  return { [end]: shiftDate(day, Math.floor(offset / 1440)), [`${end}_time`]: minuteTime((value % 1440 + 1440) % 1440) };
 }
 
 // The grab offset includes earlier segments of an overnight card.

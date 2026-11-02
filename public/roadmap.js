@@ -6,6 +6,7 @@
 // From the 0.21.0 baseline, new features use F<major>.<minor>-<1..100>: F0.21-1 releases
 // as 0.21.1, F0.21-100 as 0.22.0, then F0.22-1 as 0.22.1. Historical T IDs stay intact.
 export const roadmap = [
+  { id: "F0.21-25", title: "Resize calendar cards across days without crossing endpoints", status: "done", requested: "2026-11-02", started: "2026-11-02", done: "2026-11-02", version: "0.21.25" },
   { id: "F0.21-24", title: "Choose board card details and align grouped field typography", status: "done", requested: "2026-11-02", started: "2026-11-02", done: "2026-11-02", version: "0.21.24" },
   { id: "F0.21-23", title: "Full-height Reading pages, right-aligned editing and visible document mode", status: "done", requested: "2026-11-02", started: "2026-11-02", done: "2026-11-02", version: "0.21.23" },
   { id: "F0.21-22", title: "All day icon toggle beside card dates", status: "done", requested: "2026-11-02", started: "2026-11-02", done: "2026-11-02", version: "0.21.22" },

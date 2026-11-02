@@ -223,3 +223,5 @@
 @container (min-width: 160px) and (min-height: 92px) {
   .calendar-timed-card .calendar-event-fields { display: inline-flex; }
 }
+
+.calendar-timed-card.calendar-resize-sibling { visibility: hidden; }
