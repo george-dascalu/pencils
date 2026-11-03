@@ -16,6 +16,7 @@ import { highlightCodeBlocks } from "./document-code.js";
 import { listCallouts, listCalloutAfterMarker, setListCallout, listCalloutLabel } from "./document-list-callouts.js";
 import { colorSelection, textColorSpans, inlineWrapChange } from './document-text-color.js';
 import { documentSelectionTools } from './document-selection-tools.js';
+import { installDocumentWebLinks, webURL } from './document-web-links.js';
 
 export function markdownDocumentEditor({ parent, text, mode = "live", renderer, documents, cards = () => [], hidden = [], taskQueries, onChange, onError, onLink, onInsert, onComment, onSketch, icon, panel, toast, colorPicker, tableLayouts }) {
   const presentation = new Compartment();
@@ -503,6 +504,15 @@ export function markdownDocumentEditor({ parent, text, mode = "live", renderer, 
     }
     if (focus) view.focus();
   }
+  const removeWebLinks = installDocumentWebLinks(view, position => {
+    for (let node = syntaxTree(view.state).resolveInner(position, 1); node; node = node.parent) {
+      if (!['Link', 'Autolink'].includes(node.name)) continue;
+      const content = document.createElement('div');
+      content.innerHTML = renderer.render(view.state.doc.sliceString(node.from, node.to), true);
+      return webURL(content.querySelector('a')?.getAttribute('href'));
+    }
+    return null;
+  });
   return {
     view, format, hydrate,
     value: () => view.state.doc.toString(),
@@ -535,7 +545,7 @@ export function markdownDocumentEditor({ parent, text, mode = "live", renderer, 
       } else view.dispatch(view.state.replaceSelection(value));
       if (focus) view.focus();
     },
-    destroy() { alive = false; clearTimeout(hoverTimer); selectionTools?.destroy(); selectionLife.abort(); view.destroy(); },
+    destroy() { alive = false; clearTimeout(hoverTimer); removeWebLinks(); selectionTools?.destroy(); selectionLife.abort(); view.destroy(); },
     flush() { if (focusedComponent?.element.isConnected) focusedComponent.commit(); },
   };
 }

@@ -2,6 +2,11 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.21.53 — 2026-11-03
+
+### Fixed
+- Feature F0.21-53: Ctrl-click (Cmd-click on Mac) opens web URLs in a new browser tab from document text, Markdown links, Source, Reading, callouts, table cells and code blocks, without changing the document. Ordinary clicks on editable URL text still position the cursor for writing.
+
 ## 0.21.52 — 2026-11-03
 
 ### Added
