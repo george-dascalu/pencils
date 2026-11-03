@@ -7,7 +7,7 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { command, deploy, projectRoot } from "./deploy.mjs";
+import { command, deploy, projectRoot, pruneReleaseImages } from "./deploy.mjs";
 import { affected, changedFiles, describe, runAffected } from "./affected.mjs";
 import { roadmap } from "../public/roadmap.js";
 
@@ -86,6 +86,18 @@ async function main() {
     bumped = false; // live now: keep the new version files
     await step("Tag the release image", () => run("docker", ["tag", "pencils:local", `pencils:release-${version}`]));
     const health = await fetch(`${url}/api/health`).then(r => r.json());
+    try {
+      await step("Keep the last three Pencils images", async () => {
+        const result = await pruneReleaseImages(run, { version, health });
+        log.write(`Image retention: ${JSON.stringify(result)}\n`);
+        if (result.skipped.length || result.errors.length)
+          console.warn(`\nImage cleanup incomplete: ${result.skipped.length} images in use; ${result.errors.length} removal errors. See ${logFile}.`);
+      });
+    } catch (error) {
+      // Cleanup cannot roll back a healthy deployment or delete around a failed safeguard.
+      console.warn(`\nImage cleanup skipped: ${error.message} See ${logFile}.`);
+      log.write(`Image cleanup skipped: ${error.message}\n`);
+    }
     console.log(`Live: ${JSON.stringify(health)} in ${((Date.now() - started) / 1000).toFixed(0)}s. Rollback image: ${rollback}.`);
   } catch (error) {
     console.log("failed");

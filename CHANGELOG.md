@@ -2,6 +2,11 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.21.59 — 2026-11-03
+
+### Changed
+- Feature F0.21-59: Each healthy release automatically keeps only three Pencils Docker images, including the live version and its immediate rollback. Older Pencils images and legacy tags are removed; images in use are skipped and reported, and unrelated applications and vault data stay untouched. The retention rule is recorded in the project instructions.
+
 ## 0.21.58 — 2026-11-03
 
 ### Changed

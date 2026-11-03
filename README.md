@@ -310,6 +310,8 @@ Browser tests are Playwright Test specs in `e2e/<area>/` (see `e2e/README.md`). 
 
 `npm run release` refuses to start unless `CHANGELOG.md` has the changes under `## Unreleased`. It runs the checks and unit tests, sets the version in `package.json`, `package-lock.json` and `public/app-version.js`, dates the changelog entry (Europe/London), builds the image, tags the running image `pencils:rollback-before-<version>`, recreates the container with its existing settings and waits for `/api/health` to report the new version. If the new version does not become healthy, it restores the previous image. Afterwards it tags `pencils:release-<version>`.
 
+After a healthy release, cleanup keeps three distinct Pencils images: the live version and two previous images, including the exact immediate rollback. Older `pencils:*` images and their aliases are removed, including legacy version, preview and rollback tags. Images used by another container are skipped and reported, and removal failures are recorded in the release log. Cleanup never forces removal, touches other repositories or volumes, runs a global prune, or rolls back a healthy deployment.
+
 From the **0.21.0 baseline**, features are numbered **1–100 per minor-version cycle**. Record each in `public/roadmap.js` and the changelog with its cycle-specific ID, then release it with `npm run release -- patch`:
 
 | Feature ID | Released version |

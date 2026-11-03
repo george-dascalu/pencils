@@ -50,6 +50,55 @@ export function vaultSource(recorded, oldRoot, root) {
   throw new Error(`The vault at ${recorded} is missing or empty. Mount its drive there, or deploy from the folder beside it. Deployment stopped.`);
 }
 
+// Retain three distinct Pencils images, counting aliases once. The exact live and
+// rollback images take precedence when deploying after a rollback. Legacy release
+// tags rank alongside current tags; old previews and rollback aliases retire too.
+export function imageRetentionPlan(images, { live, rollback, inUse = [] }) {
+  const own = images.filter(image => image.Repository === 'pencils');
+  if (own.some(image => !/^sha256:[a-f0-9]{64}$/.test(image.ID) || !/^[a-zA-Z0-9_][a-zA-Z0-9_.-]{0,127}$/.test(image.Tag)))
+    throw new Error('Invalid Pencils image inventory; cleanup stopped.');
+  if (![live, rollback].every(id => own.some(image => image.ID === id)))
+    throw new Error('The live or rollback image is missing from the inventory; cleanup stopped.');
+  const versions = own.flatMap(image => {
+    const match = image.Tag.match(/^(?:release-)?(\d+)\.(\d+)\.(\d+)$/);
+    return match ? [{ id: image.ID, version: match.slice(1).map(Number) }] : [];
+  }).sort((a, b) => {
+    for (let i = 0; i < 3; i++) if (a.version[i] !== b.version[i]) return b.version[i] - a.version[i];
+    return 0;
+  });
+  const keep = new Set([live, rollback]);
+  for (const image of versions) { if (keep.size >= 3) break; keep.add(image.id); }
+  const used = new Set(inUse), skipped = new Set(), remove = new Set();
+  for (const image of own) if (!keep.has(image.ID)) {
+    if (used.has(image.ID)) skipped.add(image.ID);
+    else remove.add(`pencils:${image.Tag}`);
+  }
+  return { keep: [...keep], remove: [...remove], skipped: [...skipped] };
+}
+
+// Called only after deploy has verified the new version. No daemon-wide prune,
+// forced removals, containers or volumes: delete explicit Pencils references only.
+export async function pruneReleaseImages(run, { version, health }) {
+  if (!health?.ok || health.version !== version) throw new Error('Image cleanup requires the healthy new release.');
+  const container = (await run('docker', ['compose', 'ps', '-q', 'pencils'])).trim();
+  if (!container) throw new Error('No live Pencils container; cleanup stopped.');
+  const live = (await run('docker', ['container', 'inspect', '--format', '{{.Image}}', container])).trim();
+  const rollback = (await run('docker', ['image', 'inspect', '--format', '{{.Id}}', `pencils:rollback-before-${version}`])).trim();
+  const rows = (await run('docker', ['image', 'ls', '--filter', 'reference=pencils:*', '--no-trunc', '--format', '{{json .}}'])).trim().split('\n').filter(Boolean).map(row => JSON.parse(row));
+  if (!rows.some(image => image.Repository === 'pencils' && image.Tag === `release-${version}` && image.ID === live))
+    throw new Error('The live image no longer matches this release; cleanup stopped.');
+  const containers = (await run('docker', ['container', 'ls', '--all', '--quiet'])).trim().split(/\s+/).filter(Boolean);
+  const inUse = containers.length ? (await run('docker', ['container', 'inspect', '--format', '{{.Image}}', ...containers])).trim().split('\n') : [];
+  const plan = imageRetentionPlan(rows, { live, rollback, inUse });
+  const result = { keep: plan.keep, skipped: plan.skipped, removed: 0, errors: [] };
+  for (let i = 0; i < plan.remove.length; i += 50) {
+    const batch = plan.remove.slice(i, i + 50);
+    try { await run('docker', ['image', 'rm', '--no-prune', ...batch]); result.removed += batch.length; }
+    catch (error) { result.errors.push(error.message); }
+  }
+  return result;
+}
+
 export async function deploy(root, version, { log, signal, url, rollback = `pencils:rollback-request-${Date.now()}` } = {}) {
   let env = childEnvironment();
   const run = (cmd, args, opts = {}) => command(cmd, args, { cwd: root, log, signal, env, ...opts });
