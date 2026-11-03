@@ -2,6 +2,11 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.21.66 — 2026-11-03
+
+### Changed
+- Feature F0.21-66: Card editors, search, document/board panels, date editors, attachment previews and confirmations open and close with a brief fade and small movement. Reduced motion keeps them immediate; edits save before closing and switching cards during an animation safely finishes the previous popup.
+
 ## 0.21.65 — 2026-11-03
 
 ### Changed

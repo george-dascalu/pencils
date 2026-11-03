@@ -1,4 +1,5 @@
 import { positionPopover } from "./popover-position.js";
+import { closePopup, finishPopupExits } from "./popup-motion.js";
 
 // One anchored confirmation for destructive or irreversible actions, replacing
 // window.confirm. It opens beside the control that triggered it (or centred
@@ -9,6 +10,7 @@ let active = null;
 
 export function confirmAction({ anchor = null, title = "", message = "", confirmLabel = "Confirm", cancelLabel = "Cancel", danger = false } = {}) {
   active?.(false);
+  finishPopupExits();
   return new Promise((resolve) => {
     const opener = anchor instanceof Element ? anchor : document.activeElement instanceof Element ? document.activeElement : null;
     const panel = document.createElement("div");
@@ -27,9 +29,11 @@ export function confirmAction({ anchor = null, title = "", message = "", confirm
         panel.style.top = `${Math.max(8, (innerHeight - panel.offsetHeight) / 3)}px`;
       }
     };
+    let settled = false;
     const finish = (ok) => {
-      if (!panel.isConnected) return;
-      panel.remove();
+      if (settled) return;
+      settled = true;
+      closePopup(panel, () => panel.remove());
       document.removeEventListener("pointerdown", outside, true);
       document.removeEventListener("keydown", keys, true);
       removeEventListener("resize", place);
@@ -52,7 +56,7 @@ export function confirmAction({ anchor = null, title = "", message = "", confirm
       else if (event.target.closest("[data-confirm-cancel]")) finish(false);
     });
     place();
-    setTimeout(() => document.addEventListener("pointerdown", outside, true), 0);
+    setTimeout(() => { if (!settled) document.addEventListener("pointerdown", outside, true); }, 0);
     document.addEventListener("keydown", keys, true);
     addEventListener("resize", place);
     active = finish;

@@ -71,6 +71,35 @@
   background: transparent;
   pointer-events: none;
 }
+/* Dialogs and contextual panels share the menu's small, interruptible motion. Individual
+   translate/scale leave positioning transforms alone. Owners defer disposal with closePopup. */
+@media (prefers-reduced-motion: no-preference) {
+  #dialogs > dialog, .document-panel, .confirm-popover, .task-dates-popover, .attachment-preview {
+    transition: opacity var(--menu-motion), translate var(--menu-motion), scale var(--menu-motion);
+  }
+  /* Native light-dismiss preserves the panel in the top layer while fading out. */
+  .document-panel {
+    transition: opacity var(--menu-motion), translate var(--menu-motion), scale var(--menu-motion), display var(--menu-motion) allow-discrete, overlay var(--menu-motion) allow-discrete;
+  }
+  @starting-style {
+    #dialogs > dialog[open] { opacity: 0; translate: 0 6px; scale: .985; }
+    .document-panel:popover-open, .confirm-popover, .task-dates-popover:popover-open, .attachment-preview:popover-open {
+      opacity: 0; translate: 0 -4px; scale: .96;
+    }
+  }
+  #dialogs > dialog[data-popup-closing] { opacity: 0; translate: 0 6px; scale: .985; pointer-events: none; }
+  :is(.document-panel, .confirm-popover, .task-dates-popover, .attachment-preview)[data-popup-closing], .document-panel:not(:popover-open) {
+    opacity: 0; translate: 0 -4px; scale: .96; pointer-events: none;
+  }
+  #dialogs > dialog::backdrop { transition: opacity var(--menu-motion); }
+  @starting-style { #dialogs > dialog[open]::backdrop { opacity: 0; } }
+  #dialogs > dialog[data-popup-closing]::backdrop { opacity: 0; }
+  @media (max-width: 600px) {
+    #dialogs > dialog.search-dialog[open] {
+      transition: opacity var(--menu-motion), translate var(--menu-motion), scale var(--menu-motion), bottom 200ms cubic-bezier(.2,.8,.2,1), max-height 200ms cubic-bezier(.2,.8,.2,1);
+    }
+  }
+}
 .select-menu [role="option"],
 .task-picker-popover [role="option"] {
   box-sizing: border-box;

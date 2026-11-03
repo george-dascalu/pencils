@@ -1,4 +1,5 @@
 import { installAssigneeNames } from "./assignee-name.js";
+import { closePopup, finishPopupExits } from "./popup-motion.js";
 import { projectCreateHTML } from "./project-create.js";
 import { taskTimeFields } from "./task-time-fields.js";
 import { APP_VERSION, watchAppVersion } from "./app-version.js";
@@ -1371,9 +1372,11 @@ let taskPanelController = null, restoreDialogFocus = null;
 // Small operations open at a width sized to their content instead of the full dialog.
 const COMPACT_DIALOGS = ["board", "canvas-note", "canvas-name", "bulk-stickies", "quick-capture", "view", "keyboard-connector", "frame-link", "board-link"];
 function showDialog(html, kind, { boardPanel = false, nodeId = null } = {}) {
+  finishPopupExits();
   const opener = document.activeElement;
   if (taskPanelController && !closeDialog(false, { confirmDirty: false }))
     return;
+  finishPopupExits();
   state.boardTaskEditor = boardPanel
     ? { project: state.project.id, board: state.selectedBoard }
     : null;
@@ -1427,19 +1430,8 @@ function showDialog(html, kind, { boardPanel = false, nodeId = null } = {}) {
   $("[autofocus]", dialog)?.focus();
 }
 function closeDialog(force = false, { confirmDirty = true, keepDraft = false } = {}) {
-  // The phone search sheet closes at once, so whatever was chosen opens; an inert copy slides away
-  // unless motion is reduced.
-  const sheet = $("#dialogs > dialog.search-dialog[open]");
-  if (sheet && matchMedia("(max-width: 600px) and (prefers-reduced-motion: no-preference)").matches) {
-    const box = sheet.getBoundingClientRect(), copy = sheet.cloneNode(true);
-    for (const el of [copy, ...copy.querySelectorAll("[id]")]) el.removeAttribute("id");
-    Object.assign(copy.style, { position: "fixed", inset: "auto", left: `${box.left}px`, top: `${box.top}px`, width: `${box.width}px`, height: `${box.height}px`, margin: "0" });
-    copy.inert = true;
-    document.body.append(copy);
-    copy.show();
-    copy.animate([{ transform: "none", opacity: 1 }, { transform: "translateY(24px)", opacity: 0 }], { duration: 160, easing: "ease-in", fill: "forwards" })
-      .finished.catch(() => {}).then(() => copy.remove());
-  }
+  const dialog = $("#dialogs > dialog");
+  if (dialog?.hasAttribute("data-popup-closing")) return true;
   const form = $("#task-form");
   if (!force && form && features.taskBusy()) return false;
   if (form?.dataset.id || form?.dataset.draftNode) {
@@ -1477,18 +1469,21 @@ function closeDialog(force = false, { confirmDirty = true, keepDraft = false } =
   )
     return;
   if (force) features.clearDraft();
-  taskPanelController?.destroy();
-  taskPanelController = null;
-  state.boardTaskEditor = null;
-  features.dialogClosed();
-  $("dialog")?.close();
-  $("#dialogs").innerHTML = "";
+  // Navigation guards see an accepted close immediately; only disposal waits for the fade.
   state.dialog = null;
+  state.boardTaskEditor = null;
   state.dirty = false;
-  const restore = restoreDialogFocus;
-  restoreDialogFocus = null;
-  requestAnimationFrame(() => {
-    if (!$("#dialogs").children.length) restore?.();
+  closePopup(dialog, () => {
+    taskPanelController?.destroy();
+    taskPanelController = null;
+    features.dialogClosed();
+    dialog?.close();
+    $("#dialogs").innerHTML = "";
+    const restore = restoreDialogFocus;
+    restoreDialogFocus = null;
+    requestAnimationFrame(() => {
+      if (!$("#dialogs").children.length) restore?.();
+    });
   });
   return true;
 }
@@ -1749,6 +1744,7 @@ function draftTaskDialog(nodeId = "new") {
 }
 
 function taskDialog(id = null, defaults = {}, replace = false) {
+  finishPopupExits();
   if (id && state.project) features.homeVisit("card", state.project.id, id);
   if (!id && state.boardTaskEditor && !$("#task-form")?.dataset.id) {
     focusOnOpen($("#task-form [name=title]"), $('.task-dialog [data-action="dialog-close"]'));

@@ -2,6 +2,7 @@ import { sourceReadOnly } from "./source-model.js";
 import { taskTimeFields, installTaskTimes } from "./task-time-fields.js";
 import { positionPopover } from "./popover-position.js";
 import { focusOnOpen } from "./open-focus.js";
+import { closePopup, finishPopupExits } from "./popup-motion.js";
 
 // Compact task scheduling uses the same date fields/calendar as every task form.
 export function taskDateEditor(ctx) {
@@ -18,7 +19,7 @@ export function taskDateEditor(ctx) {
     const trigger = current.anchor();
     trigger?.setAttribute("aria-expanded", "false");
     trigger?.removeAttribute("aria-controls");
-    current.panel.remove();
+    closePopup(current.panel, () => current.panel.remove());
     if (focus) trigger?.focus({ preventScroll: true });
   }
   function position() {
@@ -47,6 +48,7 @@ export function taskDateEditor(ctx) {
     // The dates button closes its own editor when pressed again (owner request T26).
     if (active && active.id === id && active.anchor() && active.anchor() === anchor()) return close(true);
     close();
+    finishPopupExits();
     const value = task(id);
     if (!value) return;
     const panel = document.createElement("div");

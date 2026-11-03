@@ -1,4 +1,5 @@
 import { installTaskTimes } from "./task-time-fields.js";
+import { finishPopupExits } from "./popup-motion.js";
 import { confirmAction } from "./confirm-popover.js";
 import { deferredController } from "./deferred-controller.js";
 import { DEFAULT_TASK_TYPES } from "./task-types.js";
@@ -298,6 +299,7 @@ export function installFeatures(ctx) {
     return `draft:${state.session?.user?.username || "shared"}:${scope || "workspace"}:${form.id}:${form.dataset.draftNode ? `board:${form.dataset.board}:draft:${form.dataset.draftNode}` : form.dataset.id || form.dataset.edit || "new"}`;
   }
   function dialogOpened(kind, pageForm) {
+    finishPopupExits();
     relationships?.destroy();
     relationships = null;
     documentsEditor?.destroy();

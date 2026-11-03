@@ -1,5 +1,6 @@
 import { positionPopover } from "./popover-position.js";
 import { focusOnOpen } from "./open-focus.js";
+import { closePopup, finishPopupExits } from "./popup-motion.js";
 
 // A small panel beside the button that opened it, one at a time: light dismiss, Escape and a close
 // button, with focus back on the button. The document and board lists share it.
@@ -21,8 +22,9 @@ export function anchoredPanel({ state, esc, icon }) {
     if (!panel) return;
     if (opener?.hasAttribute("aria-expanded")) opener.setAttribute("aria-expanded", "false");
     panel.cleanup?.();
-    if (panel.matches(":popover-open")) panel.hidePopover();
-    panel.remove(); panel = null;
+    const closing = panel;
+    panel = null;
+    closePopup(closing, () => closing.remove());
     if (state.dialog === "document-panel") state.dialog = null;
     if (focus && opener?.isConnected) opener.focus({ preventScroll: true });
   }
@@ -35,6 +37,7 @@ export function anchoredPanel({ state, esc, icon }) {
     dismissed = null;
     if (panel?.contains(button)) button = opener;
     close();
+    finishPopupExits();
     opener = button;
     panel = document.createElement("section");
     panel.className = `document-panel board-settings-popover${menu ? " document-menu" : ""}`;
@@ -57,6 +60,7 @@ export function anchoredPanel({ state, esc, icon }) {
     panel.addEventListener("toggle", event => {
       if (event.newState !== "closed") return;
       openedPanel.cleanup();
+      closePopup(openedPanel, () => openedPanel.remove());
       if (panel === openedPanel) {
         if (button.hasAttribute("aria-expanded")) button.setAttribute("aria-expanded", "false");
         if (state.dialog === "document-panel") state.dialog = null;

@@ -1,4 +1,5 @@
 import { positionPopover } from "./popover-position.js";
+import { closePopup, finishPopupExits } from "./popup-motion.js";
 
 export function attachmentPreview({ esc, icon }, owner, id = 'attachment-preview') {
   const lifecycle = new AbortController();
@@ -10,8 +11,10 @@ export function attachmentPreview({ esc, icon }, owner, id = 'attachment-preview
     active = null;
     cancelAnimationFrame(frame);
     current.request.abort();
-    current.panel.remove();
-    if (current.url) URL.revokeObjectURL(current.url);
+    closePopup(current.panel, () => {
+      current.panel.remove();
+      if (current.url) URL.revokeObjectURL(current.url);
+    });
     current.anchor.setAttribute("aria-expanded", "false");
     current.anchor.removeAttribute("aria-controls");
     if (focus && current.anchor.isConnected)
@@ -30,6 +33,7 @@ export function attachmentPreview({ esc, icon }, owner, id = 'attachment-preview
   async function open(file, anchor) {
     if (active?.anchor === anchor) return close(true);
     close();
+    finishPopupExits();
     const panel = document.createElement("section");
     panel.id = id;
     panel.className = "selection-popover attachment-preview";
