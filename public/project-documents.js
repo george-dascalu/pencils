@@ -27,7 +27,7 @@ import { mountLayoutTray, removeLayoutTray, tabBar } from "./layout-tray.js";
 export function projectDocuments(ctx) {
   const { state, api, sync, storage, esc, icon, renderView, toast } = ctx;
   let editor = null, form = null, current = null, project = null, renderer = null, paneEditor = null;
-  let readingSearch = null;
+  let readingSearch = null, formatScroll = null, paneFormatScroll = null;
   let mode = storage.get("document-mode", "live");
   let documentWidth = storage.get("document-width", "page") === "full" ? "full" : "page";
   if (!["live", "source", "reading"].includes(mode)) mode = "live";
@@ -56,8 +56,8 @@ export function projectDocuments(ctx) {
   const openTabs = () => { const saved = storage.get(tabsKey(), []); return Array.isArray(saved) ? saved.filter(id => all().some(d => d.id === id)) : []; };
   const splitState = () => {
     const saved = storage.get(splitKey(), null);
-    return saved?.id !== state.selectedDocument && all().some(d => d.id === saved?.id && d.document_type !== "table")
-      ? { id: saved.id, mode: MODES.some(([key]) => key === saved.mode) ? saved.mode : "live", direction: saved.direction === "rows" ? "rows" : "columns" } : null;
+    return saved?.id !== state.selectedDocument && all().some(d => d.id === saved?.id)
+      ? { id: saved.id, mode: MODES.some(([key]) => key === saved.mode) ? saved.mode : "live", direction: saved.direction === "rows" ? "rows" : "columns", size: Number.isFinite(saved.size) ? Math.max(25, Math.min(75, saved.size)) : 50 } : null;
   };
   const setSplit = (split) => storage.set(splitKey(), split);
   const download = (record) => {
@@ -78,12 +78,15 @@ export function projectDocuments(ctx) {
       : entry?.conflict ? "This document changed elsewhere. Review your pending save."
       : entry?.error ? "Changes kept in this browser. Open Recovery & backups to review the save." : "";
     form.querySelector("[data-document-recovery]").hidden = !problem;
-    renderTaskQueries(form);
+    const secondary=document.querySelector('.document-pane'),paneProblem=secondary?.querySelector('[data-pane-save-problem]'),paneEntry=splitState()&&sync.entries.get(endpoint(project,splitState().id));
+    if(paneProblem){const problem=paneEntry?.error||paneEntry?.conflict||sync.storageError;paneProblem.hidden=!problem;paneProblem.querySelector('span').textContent=sync.storageError?'Browser draft storage is unavailable. Keep this page open.':paneEntry?.conflict?'This document changed elsewhere. Review its pending save.':paneEntry?.error?'Changes kept in this browser. Review the pending save.':'';}
+    renderTaskQueries(form);if(secondary)renderTaskQueries(secondary);
     refreshComments();
     updateExplorer();
   }
   async function flushDocument(id = current?.id) {
     if (id === current?.id) editor?.flush();
+    if (id === splitState()?.id) paneEditor?.flush();
     const url = endpoint(state.project.id, id);
     const entry = sync.entries.get(url);
     if (entry) await sync.run(entry);
@@ -326,7 +329,7 @@ export function projectDocuments(ctx) {
       button.title = next === "full" ? "Use page width" : "Use full width";
       button.innerHTML = icon(next === "full" ? "width-page" : "width-full") + (button.classList.contains("document-panel-item") ? (next === "full" ? "Use page width" : "Use full width") : "");
     }
-    editor?.view.requestMeasure();
+    editor?.view?.requestMeasure();
   }
   // A card mention's chip: type, key, title (or the link's label) and status, in the shared field order.
   function cardHTML(task, label) {
@@ -666,8 +669,11 @@ export function projectDocuments(ctx) {
     explorer.reset();
     closePanel();
     readingSearch?.destroy(); readingSearch = null;
+    formatScroll?.destroy();formatScroll=null;
     commentPanel?.destroy(); commentPanel = null; thread = null;
     pad.close();
+    paneResize?.(); paneResize=null;
+    paneFormatScroll?.destroy();paneFormatScroll=null;
     paneEditor?.flush(); paneEditor?.destroy(); paneEditor = null;
     editor?.flush();
     editor?.destroy();
@@ -692,35 +698,54 @@ export function projectDocuments(ctx) {
     storage.set(tabsKey(), rest);
     // The next tab may be in the second pane; it moves to the main pane and the split ends.
     if (id === state.selectedDocument) { if (splitState()?.id === next) setSplit(null); openTab(next); return; }
+    if(splitState()?.id===id){setSplit(null);showPane();}
     updateTabs();
     document.querySelector(`[data-document-tab="${CSS.escape(next)}"]`)?.focus();
   }
   // Opening the second pane's document in the main pane swaps the two, so no document shows twice.
   function swapPane(id) {
-    const split = selected()?.document_type === "table" ? null : splitState();
+    const split = splitState();
     if (split?.id === id) setSplit({ ...split, id: state.selectedDocument });
   }
+  let paneResize = null;
   let paneScroll = null; // { id, selector, top } for the second pane, kept across rebuilds
   // Rebuilds the second pane from the saved split: its own editor and view, saving to its own document.
   function showPane() {
+    closePanel();
+    paneResize?.(); paneResize=null;
+    paneFormatScroll?.destroy();paneFormatScroll=null;
     paneEditor?.flush(); paneEditor?.destroy(); paneEditor = null;
     const workspace = document.querySelector(".documents-workspace"), split = form && !narrow() && splitState();
     workspace?.querySelector(".document-pane")?.remove();
+    workspace?.querySelector(".document-split-divider")?.remove();
     if (!workspace) return;
-    editor?.view.requestMeasure();
+    editor?.view?.requestMeasure();
     if (!split) { delete workspace.dataset.split; return; }
     workspace.dataset.split = split.direction;
-    workspace.insertAdjacentHTML("beforeend", `<section class="document-pane" aria-label="Second document">
+    workspace.style.setProperty("--document-split-size", `${split.size}%`);
+    const doc=all().find(d=>d.id===split.id), isTable=doc.document_type==='table';
+    workspace.insertAdjacentHTML("beforeend", `<div class="document-split-divider" role="separator" tabindex="0" aria-label="Resize document panes" aria-orientation="${split.direction==='columns'?'vertical':'horizontal'}" aria-valuemin="25" aria-valuemax="75" aria-valuenow="${split.size}"></div><form class="document-pane" id="document-pane-form" role="region" data-document-type="${isTable?'table':'markdown'}" aria-label="Second document">
       <header class="document-heading">
         <select data-document-pane-select aria-label="Document in the second pane">${all().filter(d => d.id !== current.id).map(d => `<option value="${esc(d.id)}" ${d.id === split.id ? "selected" : ""}>${esc(d.title)}</option>`).join("")}</select>
-        <div class="document-modes" role="group" aria-label="Second document view">${MODES.map(([key, label, glyph]) => `<button type="button" class="icon-button" data-document-pane-mode="${key}" aria-label="${label}" title="${label}">${icon(glyph)}</button>`).join("")}</div>
+        ${isTable?'':`<button type="button" class="icon-button document-tools-button" data-pane-tools aria-label="Second document tools" title="Second document tools">${icon(MODES.find(([key])=>key===split.mode)?.[2]||'more')}</button>`}
+        <button type="button" class="icon-button" data-document-action="split-close-first" aria-label="Close first pane" title="Close first pane">${icon("close")}</button>
         <button type="button" class="icon-button" data-document-action="split-swap" aria-label="Swap documents" title="Swap documents">${icon("swap")}</button>
         <button type="button" class="icon-button" data-document-action="split-close" aria-label="Close split" title="Close split">${icon("close")}</button>
       </header>
-      <div class="document-writing"><div class="document-codemirror"></div><article class="document-reading" tabindex="0" aria-label="Second document reading view" hidden></article></div>
-    </section>`);
+      <div class="document-formatting task-rich-tools document-pane-formatting" role="toolbar" aria-label="Format second document">${isTable?sheetFormatting(icon):richToolbar(icon,{adapter:"document",alignment:null,modes:false,idPrefix:"document-pane"})}</div>
+      <div class="document-save-problem" data-pane-save-problem hidden><span role="status"></span><button type="button" class="button small" data-feature="recovery">Review pending save</button></div>
+      <input name="title" type="hidden" value="${esc(doc.title)}"><textarea name="body" hidden>${esc(doc.body||'')}</textarea>
+      <div class="document-writing">${isTable?sheetContent(icon):'<div class="document-codemirror"></div><article class="document-reading" tabindex="0" aria-label="Second document reading view" hidden></article>'}</div>
+    </form>`);
     const section = workspace.querySelector(".document-pane"), pid = project;
-    paneEditor = markdownDocumentEditor({
+    section.querySelector('.document-heading').prepend(section.querySelector('.document-pane-formatting'));
+    section.querySelector('[data-pane-tools]')?.addEventListener('click',event=>{const button=event.currentTarget;showPanel(button,'Second document tools',MODES.map(([key,label,glyph])=>`<button type="button" class="document-panel-item" data-document-pane-mode="${key}" aria-pressed="${splitState()?.mode===key}">${icon(glyph)}${label}</button>`).join(''),220,{menu:true});});
+    const url=endpoint(pid,doc.id);
+    paneEditor = isTable ? createDocumentSheet({
+      form:section,record:doc,icon,esc,colorPicker:ctx.colorPicker,panels,storage,toast,
+      async load(){const latest=doc.table?doc:await api(url),pending=sync.entries.get(url)?.local;return pending?.table||latest.table;},
+      onChange(table){const base=all().find(d=>d.id===doc.id);if(!base||state.project?.id!==pid)return;state.documents=all().map(d=>d.id===doc.id?{...base,table}:d);void sync.enqueue(url,base,{table});}
+    }) : markdownDocumentEditor({
       icon, panel: showPanel, toast, parent: section.querySelector(".document-codemirror"), text: all().find(d => d.id === split.id).body || "",
       mode: split.mode === "source" ? "source" : "live", renderer, documents: all, hidden: ["attach", "card", "comment", "sketch"],
       cards: () => (state.tasks || []).filter(t => !t.archived), taskQueries: renderTaskQueries,
@@ -732,6 +757,9 @@ export function projectDocuments(ctx) {
       },
       onError: message => toast(message, true), onLink: followLink,
     });
+    section.addEventListener('submit',event=>{event.preventDefault();paneEditor?.flush();});
+    if(!isTable)paneFormatScroll=installToolbarScroll(section.querySelector('.rich-toolbar-shell'));
+    installPaneResize(workspace,split);
     section.querySelector("[data-document-pane-select]").addEventListener("change", event => {
       setSplit({ ...splitState(), id: event.target.value });
       showPane();
@@ -741,7 +769,7 @@ export function projectDocuments(ctx) {
       if (!(event.ctrlKey || event.metaKey) || event.altKey) return;
       const key = event.key.toLowerCase();
       if (key === "s") { event.preventDefault(); paneEditor.flush(); }
-      if (key === "e") { event.preventDefault(); setPaneMode(splitState()?.mode === "source" ? "live" : "source"); }
+      if (key === "e" && !isTable) { event.preventDefault(); setPaneMode(splitState()?.mode === "source" ? "live" : "source"); }
     });
     // Files attach to the main document; a drop here must not open the file in place of the app.
     section.addEventListener("dragover", event => { if ([...(event.dataTransfer?.types || [])].includes("Files")) event.preventDefault(); });
@@ -760,12 +788,23 @@ export function projectDocuments(ctx) {
       restore();
       requestAnimationFrame(restore);
     }
+    syncChanged();
   }
+  function installPaneResize(workspace,split){
+    const divider=workspace.querySelector('.document-split-divider'),life=new AbortController();paneResize=()=>life.abort();
+    const change=value=>{const size=Math.max(25,Math.min(75,value));workspace.style.setProperty('--document-split-size',`${size}%`);divider.setAttribute('aria-valuenow',String(Math.round(size)));setSplit({...splitState(),size});};
+    divider.addEventListener('keydown',event=>{const previous=+divider.getAttribute('aria-valuenow'),delta=['ArrowLeft','ArrowUp'].includes(event.key)?-5:['ArrowRight','ArrowDown'].includes(event.key)?5:0;if(delta){event.preventDefault();change(previous+delta);}if(event.key==='Home'){event.preventDefault();change(50);}},{signal:life.signal});
+    divider.addEventListener('pointerdown',event=>{if(event.button)return;event.preventDefault();divider.setPointerCapture(event.pointerId);const box=workspace.getBoundingClientRect(),columns=split.direction==='columns';const move=e=>change((columns?(e.clientX-box.left)/box.width:(e.clientY-box.top)/box.height)*100),drag=new AbortController();life.signal.addEventListener('abort',()=>drag.abort(),{once:true});divider.addEventListener('pointermove',move,{signal:drag.signal});for(const type of ['pointerup','pointercancel','lostpointercapture'])divider.addEventListener(type,()=>drag.abort(),{once:true,signal:drag.signal});},{signal:life.signal});
+  }
+  function splitToolsHTML(){return narrow()?'':`<section class="document-tool-group"><button type="button" class="document-panel-item" data-document-action="split-columns">${icon('split-columns')}Split side by side</button><button type="button" class="document-panel-item" data-document-action="split-rows">${icon('split-rows')}Split top and bottom</button></section>`;}
   function setPaneMode(next) {
     const split = splitState(), section = document.querySelector(".document-pane");
     if (!split || !section || !paneEditor) return;
     setSplit({ ...split, mode: next });
+    const tools=section.querySelector("[data-pane-tools]");if(tools){tools.innerHTML=icon(MODES.find(([key])=>key===next)?.[2]||"more");tools.title=`Second document tools — ${MODES.find(([key])=>key===next)?.[1]||next}`;}
     for (const button of section.querySelectorAll("[data-document-pane-mode]")) button.setAttribute("aria-pressed", String(button.dataset.documentPaneMode === next));
+    if(section.dataset.documentType==='table')return;
+    section.querySelector(".document-pane-formatting").hidden=next==='reading';
     const reading = section.querySelector(".document-reading");
     section.querySelector(".document-codemirror").hidden = next === "reading";
     reading.hidden = next !== "reading";
@@ -792,7 +831,7 @@ export function projectDocuments(ctx) {
     document.querySelector(".topbar .document-tabs")?.remove();
     if (current && state.view === "documents" && !narrow()) document.querySelector(".topbar .breadcrumb strong")?.insertAdjacentHTML("afterend", tabsHTML());
   }
-  matchMedia("(max-width: 600px), (max-height: 500px)").addEventListener("change", placeTabs);
+  matchMedia("(max-width: 600px), (max-height: 500px)").addEventListener("change", ()=>{placeTabs();if(form?.isConnected)showPane();});
   const resyncTray = () => { if (state.view === "documents") syncTray(); };
   tabBar.addEventListener("change", resyncTray);
   matchMedia("(max-width: 600px)").addEventListener("change", resyncTray);
@@ -852,7 +891,7 @@ export function projectDocuments(ctx) {
     renderer = documentMarkdown({ documents: all, project: () => project, esc, icon, cards: () => state.tasks || [], cardHTML });
     const tableURL = endpoint(project, doc.id), tableProject = project;
     editor = doc.document_type === "table" ? createDocumentSheet({
-      form, record: doc, icon, esc, colorPicker: ctx.colorPicker, panels, storage, toast,
+      form, record: doc, icon, esc, colorPicker: ctx.colorPicker, panels, storage, toast, toolsExtras:splitToolsHTML,
       async load() {
         const latest = doc.table ? doc : await api(tableURL);
         const pending = sync.entries.get(tableURL)?.local;
@@ -893,9 +932,9 @@ export function projectDocuments(ctx) {
     if (doc.document_type === "table") {
       form.addEventListener("submit", event => { event.preventDefault(); editor.flush(); });
       form.addEventListener("input", changed);
-      updateObsidianLink(); syncChanged(); syncTopbarTitle(state); return;
+      updateObsidianLink(); syncChanged(); syncTopbarTitle(state); showPane(); return;
     }
-    installToolbarScroll(form.querySelector(".document-formatting .rich-toolbar-shell"));
+    formatScroll=installToolbarScroll(form.querySelector(".document-formatting .rich-toolbar-shell"));
     form.addEventListener("input", changed);
     form.addEventListener("submit", e => { e.preventDefault(); editor.flush(); });
     // Escape closes an open formatting menu first, back on its button.
@@ -992,7 +1031,7 @@ export function projectDocuments(ctx) {
     const tab = event.target.closest("[data-document-tab]");
     if (tab) { openTab(tab.dataset.documentTab); return; }
     const paneMode = event.target.closest("[data-document-pane-mode]");
-    if (paneMode) { setPaneMode(paneMode.dataset.documentPaneMode); return; }
+    if (paneMode) { closePanel();setPaneMode(paneMode.dataset.documentPaneMode); return; }
     const viewButton = event.target.closest("button[data-document-mode]");
     if (viewButton && form) { closePanel(); setMode(viewButton.dataset.documentMode); return; }
     for (const menu of document.querySelectorAll(".document-formatting details[open]"))
@@ -1000,8 +1039,9 @@ export function projectDocuments(ctx) {
     const formatButton = event.target.closest("[data-document-format]");
     if (formatButton && editor) {
       closePanel();
-      if (mode === "reading") setMode("live", false);
-      editor.format(formatButton.dataset.documentFormat);
+      const second=formatButton.closest('.document-pane');
+      if(second){if(splitState()?.mode==='reading')setPaneMode('live');paneEditor?.format(formatButton.dataset.documentFormat);}
+      else{if (mode === "reading") setMode("live", false);editor.format(formatButton.dataset.documentFormat);}
       const menu = formatButton.closest("details.selection-menu");
       if (menu) { menu.open = false; floatMenuPanel(menu); }
       return;
@@ -1084,6 +1124,8 @@ export function projectDocuments(ctx) {
       } else if (action === "split-swap") {
         const id = splitState()?.id;
         if (id) { open(id); document.querySelector('[data-document-action="split-swap"]')?.focus(); }
+      } else if (action === "split-close-first") {
+        const id=splitState()?.id;setSplit(null);if(id)open(id);
       } else if (action === "split-close") {
         setSplit(null); showPane();
         form.querySelector('[data-document-action="tools"]').focus();
@@ -1156,7 +1198,7 @@ export function projectDocuments(ctx) {
   }, true);
   document.addEventListener("change", async event => {
     if (event.target.matches("[data-document-format-select]")) {
-      if (event.target.value) editor.format(event.target.value);
+      if (event.target.value) (event.target.closest(".document-pane")?paneEditor:editor)?.format(event.target.value);
       event.target.value = ""; return;
     }
     if (event.target.id === "document-attachment") {
@@ -1197,7 +1239,7 @@ export function projectDocuments(ctx) {
     } catch (error) { toast(error.message, true); }
   }
   window.addEventListener("beforeunload", event => {
-    editor?.flush();
+    editor?.flush();paneEditor?.flush();
     if (form && sync.storageError && sync.entries.size) {
       event.preventDefault(); event.returnValue = "";
     }

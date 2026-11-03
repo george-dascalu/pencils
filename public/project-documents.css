@@ -247,7 +247,7 @@
 .document-formatting > .rich-toolbar-shell { flex: 1 1 auto; min-width: 0; }
 /* The document toolbar shares the task toolbar's controls but sits flat in the document header. */
 /* Part of the document bar, not a floating card (the shared card rule has ID-level specificity). */
-#document-formatting { padding: 0; margin: 0; border: 0; border-radius: 0; background: transparent; box-shadow: none; max-width: 100%; }
+:is(#document-formatting, #document-pane-form .document-formatting) { padding: 0; margin: 0; border: 0; border-radius: 0; background: transparent; box-shadow: none; max-width: 100%; }
 /* The formatting is always on screen, except in Reading view (0.20.94). */
 #document-form[data-document-mode="reading"] .document-formatting { display: none; }
 /* The split pane's own view switch. */
@@ -639,3 +639,25 @@ img[data-document-sketch] {
   /* Touch screens keep editable text at 16px or more (controls.css); the document's own size may be larger. */
   :is(#document-form, .document-pane) .document-codemirror .cm-content { font-size: max(var(--touch-text-font-size, 16px), var(--document-font-size)) !important; }
 }
+
+/* A shared divider resizes either Markdown or Table editors, with a generous touch target. */
+.document-split-divider { display: none; }
+@media (min-width: 601px) and (min-height: 501px) {
+  .documents-workspace[data-split="columns"] { grid-template-columns: minmax(0, var(--document-split-size, 50%)) 8px minmax(0, 1fr); }
+  .documents-workspace[data-split="rows"] { grid-template-columns: minmax(0,1fr); grid-template-rows: minmax(0, var(--document-split-size, 50%)) 8px minmax(0,1fr); }
+  .documents-workspace[data-split] > .document-split-divider { display: block; position: relative; z-index: 2; touch-action: none; cursor: col-resize; background: var(--surface-soft); }
+  .documents-workspace[data-split="columns"] > .document-split-divider { width: 44px; margin-inline: -18px; grid-column: 2; grid-row: 1; background: linear-gradient(90deg, transparent 18px, var(--surface-soft) 18px 26px, transparent 26px); }
+  .documents-workspace[data-split="columns"] > .document-pane { grid-column: 3; grid-row: 1; }
+  .documents-workspace[data-split="rows"] > .document-split-divider { height: 44px; margin-block: -18px; grid-row: 2; cursor: row-resize; background: linear-gradient(transparent 18px, var(--surface-soft) 18px 26px, transparent 26px); }
+  .documents-workspace[data-split="rows"] > .document-pane { grid-row: 3; grid-column: 1; }
+  .document-split-divider:focus-visible { outline: var(--focus-ring); outline-offset: -18px; }
+}
+.document-pane-formatting { flex: none; width: 100%; min-width: 0; padding: 4px; border-bottom: 1px solid var(--line); }
+.document-pane-formatting[hidden] { display: none; }
+.document-pane[data-document-type="table"] .document-writing { padding: 0; overflow: hidden; }
+.document-pane [data-document-pane-select] { flex: 1 1 100px; width: 0; }
+.document-pane .document-modes { display: flex; flex: none; }
+
+.document-pane .document-pane-formatting { flex: 1 1 0; width: 0; min-width: 0; padding: 0; border: 0; }
+.document-pane .document-heading > :is(button, .document-tools-button) { flex: none; }
+.document-pane .document-heading [data-document-pane-select] { flex: 0 1 140px; min-width: 0; }

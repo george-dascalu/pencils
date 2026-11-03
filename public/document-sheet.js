@@ -14,7 +14,7 @@ export function sheetContent(icon) {
   return `<section class="document-sheet" aria-label="Table worksheet" data-ready="false"><div class="sheet-formula-bar"><output class="sheet-address" aria-label="Selected cell">A1</output><span aria-hidden="true">ƒx</span><input class="sheet-formula" aria-label="Cell value or formula" autocomplete="off" spellcheck="false"><button type="button" class="icon-button" data-sheet-action="apply" aria-label="Apply cell value" title="Apply cell value">${icon('check')}</button></div><div class="sheet-error" role="status" hidden></div><div class="document-sheet-scroll" tabindex="0" role="region" aria-label="Worksheet grid"><p class="sheet-loading" role="status">Opening table…</p></div><footer class="sheet-footer"><button type="button" class="icon-button" data-sheet-action="add-sheet" aria-label="Add worksheet" title="Add worksheet">${icon('plus')}</button><div class="sheet-tabs" role="tablist" aria-label="Worksheets"></div><button type="button" class="icon-button" data-sheet-action="sheet-menu" aria-label="Worksheet options" title="Worksheet options">${icon('more')}</button><output class="sheet-selection-summary" aria-live="polite"></output></footer></section>`;
 }
 
-export function createDocumentSheet({ form, record, load, onChange, icon, esc, colorPicker, panels, storage, toast }) {
+export function createDocumentSheet({ form, record, load, onChange, icon, esc, colorPicker, panels, storage, toast, toolsExtras = () => '' }) {
   const root = form.querySelector('.document-sheet'), scroll = root.querySelector('.document-sheet-scroll'), formula = root.querySelector('.sheet-formula');
   const lifecycle = new AbortController(), signal = lifecycle.signal;
   const editableControls = [...form.querySelectorAll('[data-sheet-action]:not([data-sheet-action="tools"]),[data-sheet-font],[data-sheet-size]'), formula];
@@ -64,7 +64,7 @@ export function createDocumentSheet({ form, record, load, onChange, icon, esc, c
     if (!style) return;
     if (style.bl) cell.style.fontWeight = '700'; if (style.it) cell.style.fontStyle = 'italic';
     if (style.cl?.rgb) cell.style.color = style.cl.rgb; if (style.bg?.rgb) cell.style.backgroundColor = style.bg.rgb;
-    if (style.fs) cell.style.fontSize = `${Math.max(touch() ? 16 : 10, Math.min(40, style.fs))}px`;
+    if (style.fs) cell.style.fontSize = `${Math.max(8, Math.min(72, style.fs))}px`;
     if (style.ff) cell.style.fontFamily = style.ff;
     if(style.ul?.s || style.st?.s)cell.style.textDecoration=[style.ul?.s?'underline':'',style.st?.s?'line-through':''].filter(Boolean).join(' ');
     cell.style.textAlign = ({ 1: 'left', 2: 'center', 3: 'right' })[style.ht] || '';
@@ -160,13 +160,13 @@ export function createDocumentSheet({ form, record, load, onChange, icon, esc, c
     if(initial===undefined && current().p)renderRichText(input,current().p);else input.textContent=initial??rawText(current());
     const cellRect=cell.getBoundingClientRect(),viewport=scroll.getBoundingClientRect(),inset=Math.max(0,viewport.top+minimumTrack()-cellRect.top);if(inset>0){input.style.top=`${inset}px`;input.style.bottom='auto';input.style.height=`${Math.min(cellRect.height-inset,scroll.clientHeight-minimumTrack())}px`;}
     cell.append(input);editing={input,original:structuredClone(current()),selection:{start:0,end:input.textContent.length}};input.focus({preventScroll:true});restoreRichSelection(input,editing.selection);
-    input.addEventListener('input',()=>{if(editing){editing.selection=richSelection(input);saveEditing();}});
+    input.addEventListener('input',event=>{if(!editing)return;const selection=richSelection(input);if(editing.typingStyle&&event.data&&!event.isComposing&&event.inputType?.startsWith('insert')&&selection){const p=readRichText(input),result=formatRichText(p,Math.max(0,selection.start-event.data.length),selection.start,editing.typingStyle);renderRichText(input,result);restoreRichSelection(input,selection);}editing.selection=selection;saveEditing();updateFormatControls();});
     input.addEventListener('beforeinput',event=>{if(event.inputType==='insertParagraph'||event.inputType==='insertLineBreak'){event.preventDefault();document.execCommand('insertText',false,'\n');}});
     input.addEventListener('paste',event=>{event.preventDefault();document.execCommand('insertText',false,event.clipboardData.getData('text/plain'));});
   }
-  document.addEventListener('selectionchange',()=>{if(editing){const found=richSelection(editing.input);if(found){editing.selection=found;updateFormatControls();}}},{signal});
+  document.addEventListener('selectionchange',()=>{if(editing){const found=richSelection(editing.input);if(found){if(editing.selection&&(editing.selection.start!==found.start||editing.selection.end!==found.end))editing.typingStyle=null;editing.selection=found;updateFormatControls();}}},{signal});
   function updateFormatControls(){
-    if(!engine)return;const cell=current(),base=typeof cell.s==='string'?data().workbook.styles[cell.s]||{}:cell.s||{},p=editing?readRichText(editing.input):cell.p,selection=editing&&(richSelection(editing.input)||editing.selection),run=p?.body?.textRuns?.find(r=>r.st<=(selection?.start||0)&&r.ed>(selection?.start||0)),style={...base,...run?.ts};
+    if(!engine)return;const cell=current(),base=typeof cell.s==='string'?data().workbook.styles[cell.s]||{}:cell.s||{},p=editing?readRichText(editing.input):cell.p,selection=editing&&(richSelection(editing.input)||editing.selection),run=p?.body?.textRuns?.find(r=>r.st<=(selection?.start||0)&&r.ed>(selection?.start||0)),style={...base,...run?.ts,...editing?.typingStyle};
     for(const [action,key]of Object.entries({bold:'bl',italic:'it',underline:'ul',strike:'st'}))for(const button of form.querySelectorAll(`[data-sheet-action="${action}"]`))button.setAttribute('aria-pressed',String(!!(typeof style[key]==='object'?style[key].s:style[key])));
     const family=form.querySelector('[data-sheet-font]'),size=form.querySelector('[data-sheet-size]');if(family)family.value=[...family.options].some(o=>o.value===style.ff)?style.ff:'';
     if(size){const value=String(style.fs||parseFloat(getComputedStyle(scroll.querySelector('.document-sheet-grid')||scroll).fontSize)||15);if(![...size.options].some(o=>o.value===value))size.add(new Option(value,value));size.value=value;}
@@ -175,7 +175,8 @@ export function createDocumentSheet({ form, record, load, onChange, icon, esc, c
   function saveEditing(){if(!editing)return;const p=readRichText(editing.input),text=richPlainText(p);if(p.body.textRuns.length&&!text.startsWith('='))engine.setRichText(sid,selected.r,selected.c,p);else engine.setValue(sid,selected.r,selected.c,text);}
   function textStyle(patch,whole){
     if(editing){const p=readRichText(editing.input),selection=richSelection(editing.input)||editing.selection||{start:0,end:richPlainText(p).length};
-      const result=formatRichText(p,selection.start,selection.end,patch);renderRichText(editing.input,result);restoreRichSelection(editing.input,selection);editing.selection=selection;saveEditing();updateFormatControls();
+      if(selection.start===selection.end){editing.typingStyle={...editing.typingStyle,...patch};editing.selection=selection;updateFormatControls();return;}
+      editing.typingStyle=null;const result=formatRichText(p,selection.start,selection.end,patch);renderRichText(editing.input,result);restoreRichSelection(editing.input,selection);editing.selection=selection;saveEditing();updateFormatControls();
     }else engine.mutate(whole);
   }
   form.addEventListener('pointerdown',event=>{if(editing && event.target.closest('[data-sheet-action]'))event.preventDefault();},{signal});
@@ -280,7 +281,7 @@ export function createDocumentSheet({ form, record, load, onChange, icon, esc, c
   function toggleText(action){
         const key={bold:'bl',italic:'it',underline:'ul',strike:'st'}[action],style=range().getCellStyleData()||{};
         const p=editing&&readRichText(editing.input),sel=p&&(richSelection(editing.input)||editing.selection),run=p?.body.textRuns.find(r=>r.st<=(sel?.start||0)&&r.ed>(sel?.start||0));
-        const on=(run?.ts[key]??style[key]),enabled=typeof on==='object'?on.s:on,value=enabled?0:1;
+        const on=(editing?.typingStyle?.[key]??run?.ts[key]??style[key]),enabled=typeof on==='object'?on.s:on,value=enabled?0:1;
         textStyle({[key]:['ul','st'].includes(key)?{s:value}:value},()=>{if(key==='bl')range().setFontWeight(value?'bold':'normal');if(key==='it')range().setFontStyle(value?'italic':'normal');if(['ul','st'].includes(key))range().setFontLine(value?(key==='ul'?'underline':'line-through'):'none');});
   }
   async function handleAction(event) {
@@ -322,7 +323,7 @@ export function createDocumentSheet({ form, record, load, onChange, icon, esc, c
       if (action === 'export') { engine.flush(); download(tableCSV(data(), sid), 'csv', 'text/csv;charset=utf-8'); return; }
       if (action === 'tools') {
         const documentItem = (action, label, glyph) => `<button type="button" class="document-panel-item ${action === 'confirm-delete' ? 'danger' : ''}" data-document-action="${action}">${icon(glyph)}${label}</button>`;
-        panel(button, 'Document tools', `<section class="document-tool-group">${item('import', 'Import CSV', 'upload', engine ? '' : 'disabled')}${item('export', 'Export CSV', 'download', engine ? '' : 'disabled')}</section><section class="document-tool-group">${documentItem('rename', 'Rename', 'pencil')}${documentItem('move', 'Move to folder', 'folder')}${documentItem('versions', 'Page versions', 'clock')}${documentItem('links', 'Backlinks and mentions', 'link')}${documentItem('export', 'Export Markdown', 'download')}${documentItem('obsidian', 'Open in Obsidian', 'file')}${documentItem('obsidian-settings', 'Obsidian settings', 'settings')}</section><section class="document-tool-group">${documentItem('confirm-delete', 'Delete document', 'trash')}</section>`, 260, true); return;
+        panel(button, 'Document tools', `<section class="document-tool-group">${item('import', 'Import CSV', 'upload', engine ? '' : 'disabled')}${item('export', 'Export CSV', 'download', engine ? '' : 'disabled')}</section>${toolsExtras()}<section class="document-tool-group">${documentItem('rename', 'Rename', 'pencil')}${documentItem('move', 'Move to folder', 'folder')}${documentItem('versions', 'Page versions', 'clock')}${documentItem('links', 'Backlinks and mentions', 'link')}${documentItem('export', 'Export Markdown', 'download')}${documentItem('obsidian', 'Open in Obsidian', 'file')}${documentItem('obsidian-settings', 'Obsidian settings', 'settings')}</section><section class="document-tool-group">${documentItem('confirm-delete', 'Delete document', 'trash')}</section>`, 260, true); return;
       }
       if (action === 'sheet-menu') { panel(button, 'Worksheet options', `${item('rename-sheet', 'Rename worksheet', 'pencil')}${item('delete-sheet', 'Delete worksheet', 'trash', data().workbook.sheetOrder.length < 2 ? 'disabled' : '')}`, 240, true); return; }
       if (action === 'delete-sheet') {

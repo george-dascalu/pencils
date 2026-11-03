@@ -2,6 +2,14 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.21.44 — 2026-11-03
+
+### Added
+- Feature F0.21-44: Split Documents with any pair of Markdown or Table documents, side by side or above and below. Each pane edits and saves independently; resize the remembered divider, swap documents or close either pane. Phones keep one editor visible, and a failed save in the second pane remains recoverable.
+
+### Fixed
+- Table cells display the chosen font size consistently on desktop and touch screens; touch text editors retain their readable input size. Cell formatting also applies to text typed after the caret.
+
 ## 0.21.43 — 2026-11-03
 
 ### Added

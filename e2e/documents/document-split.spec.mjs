@@ -56,7 +56,8 @@ onDevices(["desktop", "ipad"], () => test("a split shows a second document besid
   await expect.poll(() => stored(a.id)).toContain("Added in the pane");
   expect(await stored(b.id)).toBe("Right text\n");
   // Each pane keeps its own view.
-  await second.getByRole("button", { name: "Reading", exact: true }).click();
+  await second.getByRole("button", { name: "Second document tools", exact: true }).click();
+  await page.getByRole("dialog", { name: "Second document tools", exact: true }).getByRole("button", { name: "Reading", exact: true }).click();
   await expect(second.locator(".document-reading")).toContainText("Added in the pane");
   await expect(second.locator(".document-codemirror")).toBeHidden();
   await expect(page.locator("#document-form .document-codemirror")).toBeVisible();

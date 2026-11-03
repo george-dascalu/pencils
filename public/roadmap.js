@@ -6,6 +6,7 @@
 // From the 0.21.0 baseline, new features use F<major>.<minor>-<1..100>: F0.21-1 releases
 // as 0.21.1, F0.21-100 as 0.22.0, then F0.22-1 as 0.22.1. Historical T IDs stay intact.
 export const roadmap = [
+  { id: "F0.21-44", title: "Markdown and Table documents side by side with resizable independent panes", status: "done", requested: "2026-11-02", started: "2026-11-03", done: "2026-11-03", version: "0.21.44" },
   { id: "F0.21-43", title: "Rich Table cells, multi-row and column editing, and merged cells", status: "done", requested: "2026-11-02", started: "2026-11-03", done: "2026-11-03", version: "0.21.43" },
   { id: "F0.21-42", title: "Edit Kanban assignee, status, priority and dates inline", status: "done", requested: "2026-11-02", started: "2026-11-02", done: "2026-11-03", version: "0.21.42" },
   { id: "F0.21-41", title: "Assignee and tag dropdowns with priority and typed custom-field filters", status: "done", requested: "2026-11-02", started: "2026-11-02", done: "2026-11-02", version: "0.21.41" },
