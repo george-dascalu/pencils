@@ -1,3 +1,4 @@
+import {chooseCardPane} from '../helpers/card-panes.mjs';
 // Regression checks for the Pencils project cards PEN-1, PEN-4 to PEN-10
 // (owner-reported mobile and workflow issues, 27 October 2026), plus the owner's
 // follow-up feedback on the phone card page, history and comments. Each test
@@ -27,16 +28,13 @@ const snapshot = () => app.store.snapshot(app.project.id);
 onDevices(["phone"], () => test("PEN-5 phone task page pane buttons keep their labels inside and do not overlap", async ({ page }) => {
   await open(page, "list", ".task-row");
   await openTask(page, app.tasks[0].id);
-  const buttons = page.locator(".task-pane-switcher > .icon-button");
-  await expect(buttons).toHaveCount(3);
-  const boxes = await buttons.evaluateAll((els) => els.map((el) => ({ box: el.getBoundingClientRect().toJSON(), text: el.textContent.trim() })));
-  for (const { box, text } of boxes) {
-    expect(text, "pane buttons are icon-only (owner feedback after 0.19.3)").toBe("");
-    expect(box.width, `button is icon-sized: ${JSON.stringify(box)}`).toBeLessThanOrEqual(48);
-  }
-  for (let i = 1; i < boxes.length; i++) expect(boxes[i].box.left, "buttons do not overlap").toBeGreaterThanOrEqual(boxes[i - 1].box.right - 1);
-  const closeBox = await rect(page.locator('.task-editor-head [data-action="dialog-close"]'));
-  expect(closeBox.left, "close button sits clear of the pane switcher").toBeGreaterThanOrEqual(boxes[2].box.right - 1);
+  const picker=page.getByRole('combobox',{name:'Card section',exact:true});
+  await expect(picker).toBeVisible();
+  await expect(picker).toHaveValue('details');
+  const box=await picker.boundingBox(),closeBox=await rect(page.locator('.task-editor-head [data-action="dialog-close"]'));
+  expect(box.height).toBeGreaterThanOrEqual(44);
+  expect(closeBox.left).toBeGreaterThanOrEqual(box.x+box.width);
+  for(const pane of ['history','comments','details'])await chooseCardPane(page,pane);
 }));
 
 // ----- PEN-8: no focus zoom on touch -----
@@ -242,17 +240,17 @@ test("PEN-7 a card links to documents and the document lists its cards", async (
 
 // ----- Owner feedback on the phone card page (27 Oct, after 0.19.3) -----
 // 29 Oct: the More menu became a group of icons before a red Close, and the type button a square.
-onDevices(["phone"], () => test("phone card page: icon-only pane switcher aligned with the type icon, a distinct Details icon, no status caret, actions grouped before a red Close", async ({ page }) => {
+onDevices(["phone"], () => test("phone card page: compact section picker aligned with the type icon, no status caret, actions grouped before a red Close", async ({ page }) => {
   await open(page, "list", ".task-row");
   await openTask(page, app.tasks[0].id);
   await expect(page.locator(".task-pane-switcher .pane-label:visible"), "pane buttons carry no text").toHaveCount(0);
   const geometry = await page.evaluate(() => {
     const centre = (el) => { const r = el.getBoundingClientRect(); return r.left + r.width / 2; };
-    const details = document.querySelector('.task-pane-switcher [data-editor-pane="details"]');
+    const details = document.querySelector('.task-pane-switcher select');
     const type = document.querySelector('[data-task-picker="type"] .task-picker-trigger');
     return {
-      detailsCentre: centre(details.querySelector(".icon")), typeCentre: centre(type.querySelector(".icon")),
-      detailsIcon: details.querySelector(".icon path")?.getAttribute("d"), typeIcon: type.querySelector("[data-picker-symbol] path")?.getAttribute("d"),
+
+
       widths: [...document.querySelectorAll(".task-pane-switcher > .icon-button")].map((el) => Math.round(el.getBoundingClientRect().width)),
       statusCarets: document.querySelectorAll('[data-task-picker="status"] .task-picker-trigger > .icon, .task-picker-trigger > .icon').length,
       statusBackground: [...document.querySelectorAll(".task-dialog select[data-task-color]")].map((el) => getComputedStyle(el).backgroundImage).filter((v) => v !== "none").length,
@@ -268,8 +266,8 @@ onDevices(["phone"], () => test("phone card page: icon-only pane switcher aligne
       closeRight: document.querySelector('#task-form [data-action="dialog-close"]').getBoundingClientRect().right,
     };
   });
-  expect(Math.abs(geometry.detailsCentre - geometry.typeCentre), `Details icon lines up with the type icon: ${JSON.stringify(geometry)}`).toBeLessThanOrEqual(2);
-  expect(geometry.detailsIcon, "Details uses its own icon").not.toBe(geometry.typeIcon);
+  await expect(page.getByRole("combobox",{name:"Card section",exact:true})).toBeVisible();
+  await expect(page.getByRole("button",{name:"Card details",exact:true})).toHaveCount(0);
   expect(geometry.widths.every((w) => w <= 48), `pane buttons are icon-sized: ${geometry.widths}`).toBe(true);
   expect(geometry.statusCarets, "status control shows no dropdown arrow").toBe(0);
   expect(geometry.statusBackground, "tinted selects draw no arrow").toBe(0);
@@ -282,7 +280,7 @@ onDevices(["phone"], () => test("phone card page: icon-only pane switcher aligne
   // 29 Oct (item 15): assignee, status and priority share one box, which ends where Close does.
   expect(Math.abs(geometry.closeRight - geometry.fieldsRight), `the field box ends where Close ends: ${geometry.closeRight} vs ${geometry.fieldsRight}`).toBeLessThanOrEqual(1);
   expect(geometry.closeColor, "Close is red, like Delete").toBe(geometry.deleteColor);
-  expect(Math.abs(geometry.typeBox.width - geometry.typeBox.detailsWidth), `the type button is as wide as the pane buttons: ${JSON.stringify(geometry.typeBox)}`).toBeLessThanOrEqual(2);
+  expect(geometry.typeBox.detailsWidth).toBeGreaterThanOrEqual(128);
   expect(Math.abs(geometry.typeBox.left - geometry.typeBox.detailsLeft), "and lines up with them").toBeLessThanOrEqual(2);
 }));
 
@@ -309,7 +307,7 @@ onDevices(["phone"], () => test("phone history pane is left-aligned and grouped 
   t = await app.store.updateTask(app.project.id, t.id, { revision: t.revision, title: `${t.title} renamed` });
   await open(page, "list", ".task-row");
   await openTask(page, t.id);
-  await page.locator('.task-pane-switcher [data-editor-pane="history"]').tap();
+  await chooseCardPane(page, 'history');
   await page.locator(".task-history-version").first().waitFor();
   await expect.poll(() => page.locator(".task-history-version").count(), "three versions listed").toBeGreaterThanOrEqual(3);
   await page.locator(".task-history-month").first().waitFor();
@@ -334,7 +332,7 @@ onDevices(["phone"], () => test("phone history pane is left-aligned and grouped 
 onDevices(["phone"], () => test("phone comment composer keeps its formatting controls on one line with a More menu", async ({ page }) => {
   await open(page, "list", ".task-row");
   await openTask(page, app.tasks[3].id);
-  await page.locator('.task-pane-switcher [data-editor-pane="comments"]').tap();
+  await chooseCardPane(page, 'comments');
   await page.locator(".comment-rich-tools").waitFor();
   const measure = () => page.evaluate(() => {
     const tools = document.querySelector(".comment-rich-tools");

@@ -78,7 +78,11 @@ export function boardComments(ctx, author, uid, adapter = null) {
     }
     return id;
   };
-  const focusComposer = () => focusOnOpen(panel?.querySelector('[data-editor-mode="source"] textarea, [data-editor-mode="rich"] .inline-rich'), panel?.querySelector('[data-comments-close]'));
+  const focusComposer = () => {
+    const fallback = panel?.querySelector(embedded ? '.board-comments-head strong' : '[data-comments-close]');
+    if (embedded && fallback) fallback.tabIndex = -1;
+    focusOnOpen(panel?.querySelector('[data-editor-mode="source"] textarea, [data-editor-mode="rich"] .inline-rich'), fallback);
+  };
   const authorName = (name) => `<strong class="comment-author" ${taskColorAttributes(state, 'assignee', name)}>${esc(name || 'Workspace')}</strong>`;
   function replyPreview(comment) {
     if (comment.deleted) return 'Comment deleted';

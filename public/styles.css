@@ -2359,9 +2359,6 @@ input[type="search"]:not(.search input) {
   position: relative;
   min-height: 0;
 }
-:is(.with-task-history, .with-task-comments) .task-editor-content {
-  grid-template-columns: minmax(0, 1fr) 300px;
-}
 .task-editor-content > .dialog-body {
   min-width: 0;
 }
@@ -2555,17 +2552,6 @@ input[type="search"]:not(.search input) {
   }
   .task-editor-head .title-input {
     grid-column: 1 / -1;
-  }
-  :is(.with-task-history, .with-task-comments) .task-editor-content {
-    grid-template-columns: minmax(0, 1fr);
-  }
-  :is(.task-history-panel, .task-comments-panel) {
-    position: absolute;
-    inset: 0 0 0 auto;
-    width: min(360px, 100%);
-    max-height: none;
-    z-index: 60;
-    box-shadow: var(--shadow-drawer-end);
   }
   .task-editor-foot {
     gap: 10px;

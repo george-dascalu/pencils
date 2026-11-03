@@ -1,3 +1,4 @@
+import {chooseCardPane} from '../helpers/card-panes.mjs';
 // Card edits save automatically: the title keeps focus while saving, workflow transitions
 // and untouched planning values hold, blank titles stay as browser drafts, failed saves
 // queue and retry by themselves, closing flushes the last edit, comments (replies and
@@ -78,15 +79,16 @@ test("failed saves stay queued in the browser and retry without another edit", a
 test("comments open beside the right-docked editor with replies and reactions, in the same place as history", async ({ page }) => {
   const card = await createCard();
   await visit(page, card.id);
-  const editorBeforeComments = await page.locator(".task-dialog").boundingBox();
-  await page.locator("[data-feature=task-comments]").click();
+  const editorBeforeComments = await page.locator(".task-editor-content > .dialog-body").boundingBox();
+  await chooseCardPane(page, 'comments');
   await comments(page).waitFor();
   await expect(comments(page)).not.toHaveAttribute("popover");
   const commentsBox = await comments(page).boundingBox();
   const dialogBox = await page.locator(".task-dialog").boundingBox();
-  expect(commentsBox.x + commentsBox.width, "Comments open to the left of a right-docked editor").toBeLessThanOrEqual(dialogBox.x);
+  expect(commentsBox.x + commentsBox.width, "Comments open to the left of the details").toBeLessThanOrEqual((await page.locator(".task-editor-content > .dialog-body").boundingBox()).x);
+  expect(commentsBox.x).toBeGreaterThanOrEqual(dialogBox.x);
   expect(commentsBox.x).toBeGreaterThanOrEqual(0);
-  expect(dialogBox, "Opening comments keeps the editor in place").toEqual(editorBeforeComments);
+  expect(await page.locator(".task-editor-content > .dialog-body").boundingBox(), "Opening comments keeps the details in place").toEqual(editorBeforeComments);
   expect(await comments(page).locator("textarea").evaluate((el) => el.form)).toBe(null);
   await comments(page).locator('[contenteditable="true"]').fill("A task comment");
   await comments(page).getByRole("button", { name: "Add comment", exact: true }).click();
@@ -98,7 +100,7 @@ test("comments open beside the right-docked editor with replies and reactions, i
   await comments(page).getByLabel("Add reaction", { exact: true }).first().click();
   await comments(page).locator("[data-comment-react]:visible").first().click();
   await expect.poll(async () => (await saved(card.id)).comments?.[0].reactions?.length).toBe(1);
-  await page.locator("[data-feature=task-history]").click();
+  await chooseCardPane(page, 'history');
   await expect(comments(page)).toHaveCount(0);
   await page.locator(".task-history-panel .recovery-item").first().waitFor();
   const historyBox = await page.locator(".task-history-panel").boundingBox();
@@ -113,16 +115,15 @@ test("comments and history share one pane clear of the sidebar at desktop, lapto
   // The open editor is resized through each width.
   for (const width of [1400, 1100, 390]) {
     await page.setViewportSize({ width, height: 1000 });
-    await page.locator("[data-feature=task-comments]").click();
+    await chooseCardPane(page, 'comments');
     await comments(page).waitFor();
     const box = await comments(page).boundingBox();
     expect(box.x >= 0 && box.x + box.width <= width, `comments fit at ${width}px`).toBe(true);
     if (width >= 1100) {
       const editor = await page.locator(".task-dialog").boundingBox();
-      // Since 0.19.0 the pane stays clear of the sidebar: it floats beside the
-      // editor on wide screens (>= 1320px) and docks inside it below that.
-      if (width >= 1320) expect(box.x + box.width).toBeLessThanOrEqual(editor.x);
-      else expect(box.x >= editor.x && box.x + box.width <= editor.x + editor.width + 1, "Comments dock inside the editor when there is no room beside it").toBe(true);
+      const body = await page.locator(".task-editor-content > .dialog-body").boundingBox();
+      expect(box.x).toBeGreaterThanOrEqual(editor.x);
+      expect(box.x + box.width).toBeLessThanOrEqual(body.x);
       const sidebar = await page.locator(".sidebar").boundingBox();
       if (sidebar && sidebar.x + sidebar.width > 1) expect(box.x, "Comments stay clear of the sidebar").toBeGreaterThanOrEqual(sidebar.x + sidebar.width - 1);
       expect(
@@ -133,7 +134,7 @@ test("comments and history share one pane clear of the sidebar at desktop, lapto
         "The comments panel remains above the navigation sidebar",
       ).toBe(true);
     }
-    await page.locator("[data-feature=task-history]").click();
+    await chooseCardPane(page, 'history');
     await page.locator(".task-history-panel .recovery-item").first().waitFor();
     const history = await page.locator(".task-history-panel").boundingBox();
     // Phone panes use the page scroller and grow with their own content.
@@ -143,7 +144,7 @@ test("comments and history share one pane clear of the sidebar at desktop, lapto
   await expect(page.locator("#task-form")).toHaveCount(1);
   // Since 0.19.0 History is a pane without its own close button; since 0.20.14 a second tap on it
   // returns to the details, as wide screens have no Info button.
-  await page.locator("[data-feature=task-history]").click();
+  await chooseCardPane(page, 'details');
   await expect(page.locator(".task-history-panel")).toBeHidden();
 });
 
@@ -172,7 +173,7 @@ test("the board's task panel updates its card live, keeps its header actions in 
   await expect(node.locator(".task-title")).toHaveText("Live on the board");
   await expect(title(page)).toHaveValue("Live on the board");
   const actions = await panel.locator('.task-editor-actions button, .board-task-editor-heading [data-action="dialog-close"]').evaluateAll((els) => els.map((el) => el.getAttribute("aria-label")));
-  expect(actions).toEqual(["Card details", "Version history", "Card comments", "Duplicate card", "Archive card", "Delete card", "Close card"]);
+  expect(actions).toEqual(["Version history", "Card comments", "Duplicate card", "Archive card", "Delete card", "Close card"]);
   for (const width of [1400, 390])
     for (const theme of ["light", "dark"]) {
       await page.setViewportSize({ width, height: 1000 });
@@ -182,17 +183,18 @@ test("the board's task panel updates its card live, keeps its header actions in 
         document.querySelector(".sidebar-overlay")?.classList.remove("visible");
       }, theme);
       if (width < 780) await page.waitForFunction(() => document.querySelector(".sidebar").getBoundingClientRect().right <= 1);
-      await page.locator("[data-feature=task-comments]").click();
+      await chooseCardPane(page, 'comments');
       await comments(page).waitFor();
       const box = await comments(page).boundingBox();
       expect(box.x >= 0 && box.x + box.width <= width, `comments fit at ${width}px ${theme}`).toBe(true);
       if (width === 1400) {
         const p = await panel.boundingBox();
-        expect(box.x).toBeGreaterThanOrEqual(p.x + p.width);
+        expect(box.x).toBeGreaterThanOrEqual(p.x);
+        expect(box.x + box.width).toBeLessThanOrEqual((await page.locator(".task-editor-content > .dialog-body").boundingBox()).x);
       }
       expect(await comments(page).evaluate((el) => el.scrollWidth <= el.clientWidth + 1)).toBe(true);
-      // Since 0.19.0 Comments is a pane without its own close button; a second tap returns to the details (0.20.14).
-      await page.locator("[data-feature=task-comments]").click();
+      // Return to details before changing the viewport/theme.
+      await chooseCardPane(page, 'details');
       await expect(comments(page)).toHaveCount(0);
     }
   await page.setViewportSize({ width: 1400, height: 1000 });

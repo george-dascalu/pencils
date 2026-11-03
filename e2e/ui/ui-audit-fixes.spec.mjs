@@ -1,3 +1,4 @@
+import {chooseCardPane} from '../helpers/card-panes.mjs';
 // Fixes from the UI audit: focus returns to the opener when the card editor closes,
 // checklists are labelled, uploads work by keyboard, an invalid close offers to keep a
 // draft, kanban cards move by keyboard, board cards and the task editor share one comment
@@ -229,17 +230,17 @@ onDevices(Object.keys(widths), (device) => {
           await openView(page, "list");
           // Phone rows open the card from their summary button (0.18.23).
           await page.locator(".task-row .phone-task-open").first().click();
-          await page.locator('[data-editor-pane="comments"]').click();
+          await chooseCardPane(page, 'comments');
           await page.locator(".task-comments-panel").waitFor();
           await expect(page.locator(".task-editor-content > .dialog-body")).toBeHidden();
           const box = await page.locator(".task-comments-panel").boundingBox();
           expect(box.width, JSON.stringify(box)).toBeGreaterThanOrEqual(width - 30);
           if (process.env.AUDIT_OUTPUT) await page.screenshot({ path: path.join(process.env.AUDIT_OUTPUT, `${width}-comments.png`) });
-          await page.locator('[data-editor-pane="details"]').click();
+          await chooseCardPane(page, 'details');
           await expect(page.locator(".task-editor-content > .dialog-body")).toBeVisible();
-          await page.locator('[data-editor-pane="history"]').click();
+          await chooseCardPane(page, 'history');
           await page.locator(".task-history-panel").waitFor();
-          await page.locator('[data-editor-pane="details"]').click();
+          await chooseCardPane(page, 'details');
           await page.locator('[data-action="dialog-close"]').click();
         });
     });

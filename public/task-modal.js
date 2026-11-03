@@ -3,7 +3,7 @@ import { historyPages } from "./history-pages.js";
 import { formatDateTime, formatMonth } from "./format-date.js";
 import { nextStatuses } from "./workflow-model.js";
 import { positionPopover } from "./popover-position.js";
-import { focusOnOpen } from "./open-focus.js";
+import { focusOnOpen, allowsTextAutofocus } from "./open-focus.js";
 import { taskColorAttributes, refreshTaskControlColors, taskFieldColor } from "./task-colors.js";
 export function taskPickerHTML(
   { name, title, value, choices, iconOnly },
@@ -217,7 +217,8 @@ export function taskModalControls(ctx, form, restoreVersion) {
     dialog.classList.remove("with-task-history");
     const button = form.querySelector("[data-feature=task-history]");
     button?.setAttribute("aria-expanded", "false");
-    button?.focus();
+    if (button?.getClientRects().length) button.focus({ preventScroll: true });
+    else if (allowsTextAutofocus()) form.querySelector('.task-section-picker')?.focus({ preventScroll: true });
   }
   async function history() {
     const target = task(form.dataset.id);

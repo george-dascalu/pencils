@@ -3,7 +3,7 @@ import { containPanelScroll } from "./scroll-gestures.js";
 let panelWidth = 720;
 export function boardTaskEditor(
   dialog,
-  { $, state, closeDialog, icon },
+  { $, state, closeDialog, selectPane },
 ) {
   dialog.classList.add("board-task-editor");
   const onBoard = ["board", "drawing"].includes(state.view);
@@ -31,7 +31,17 @@ export function boardTaskEditor(
   panes.setAttribute("role", "group");
   panes.setAttribute("aria-label", "Card panel");
   if (existing) {
-    panes.innerHTML = `<button type="button" class="icon-button" data-feature="task-details" data-editor-pane="details" aria-label="Card details" title="Card details">${icon("info")}</button>`;
+    const choice = document.createElement('select');
+    choice.className = 'task-section-picker';
+    choice.setAttribute('aria-label', 'Card section');
+    choice.innerHTML = '<option value="details" data-icon="info">Details</option><option value="history" data-icon="clock">Versions</option><option value="comments" data-icon="comment">Comments</option>';
+    choice.addEventListener('input', event => event.stopPropagation());
+    choice.addEventListener('change', event => {
+      event.stopPropagation(); // Navigation is not a card edit and must not trigger autosave.
+      if (choice.value === activePane()) return;
+      void selectPane(choice.value, choice).finally(position);
+    });
+    panes.append(choice);
     for (const pane of ["history", "comments"]) {
       const button = actions.querySelector(`[data-feature="task-${pane}"]`);
       button.dataset.editorPane = pane;
@@ -49,9 +59,12 @@ export function boardTaskEditor(
     actions.append(more);
   }
   const phone = () => innerWidth <= 600;
-  const releaseScroll = containPanelScroll(dialog, () => {
+  const activePane = () => dialog.classList.contains('with-task-comments') ? 'comments' : dialog.classList.contains('with-task-history') ? 'history' : 'details';
+  const releaseScroll = containPanelScroll(dialog, target => {
     if (phone()) return dialog.querySelector("#task-form");
-    const pane = dialog.classList.contains("with-task-comments") ? ".task-comments-panel" : dialog.classList.contains("with-task-history") ? ".task-history-panel" : ".task-editor-content > .dialog-body";
+    const own = target?.closest('.task-comments-panel, .task-history-panel');
+    if (own) return own;
+    const pane = dialog.dataset.paneLayout === 'compact' && activePane() !== 'details' ? activePane() === 'comments' ? '.task-comments-panel' : '.task-history-panel' : '.task-editor-content > .dialog-body';
     return dialog.querySelector(pane);
   });
   let releasePage = null;
@@ -81,17 +94,29 @@ export function boardTaskEditor(
       window.scrollTo(x, y);
     };
   }
-  function updatePanes() {
-    const pane = dialog.classList.contains("with-task-comments") ? "comments" : dialog.classList.contains("with-task-history") ? "history" : "details";
-    const auxiliary = innerWidth < 1100 && pane !== "details";
+  function updatePanes(split) {
+    const pane = activePane();
+    const auxiliary = !split && pane !== 'details';
     dialog.querySelector(".task-editor-content > .dialog-body").hidden = auxiliary;
     dialog.querySelector(".task-editor-foot").hidden = auxiliary;
     for (const button of panes.querySelectorAll("button")) button.setAttribute("aria-pressed", String(button.dataset.editorPane === pane));
+    const choice = panes.querySelector('select');
+    if (choice) choice.value = pane;
   }
   function position() {
     if (!dialog.isConnected) return;
     updatePageMode();
-    updatePanes();
+    const surface = onBoard ? $("#canvas") : $("#view-content") || $(".help-page");
+    const r = surface?.getBoundingClientRect();
+    const besideTools = onBoard && r?.width > 600;
+    const available = docked
+      ? Math.min(innerWidth - 24, innerWidth - Math.max(0, $(".main")?.getBoundingClientRect().left || 0) - 24)
+      : Math.min(innerWidth - 24, (r?.width || innerWidth) - (besideTools ? 90 : 24));
+    const split = existing && !phone() && available >= 904;
+    if (dialog.dataset.paneLayout !== (split ? 'split' : 'compact')) dialog.dataset.paneLayout = split ? 'split' : 'compact';
+    updatePanes(split);
+    const auxiliary = split && activePane() !== 'details' ? 280 : 0;
+    dialog.querySelector('.task-panel-resizer')?.setAttribute('aria-valuemin', auxiliary ? '620' : '360');
     if (phone()) {
       // iOS keeps the layout viewport tall when the software keyboard opens.
       // Fit both existing and new task panels to the part that is visible.
@@ -108,15 +133,9 @@ export function boardTaskEditor(
       const viewport = window.visualViewport;
       const visibleTop = viewport?.offsetTop || 0;
       const visibleHeight = viewport?.height || innerHeight;
-      const auxiliary =
-        innerWidth >= 1100 &&
-        dialog.matches(".with-task-history,.with-task-comments")
-          ? 312
-          : 0;
       const width = Math.min(
-        panelWidth,
-        innerWidth - auxiliary - (innerWidth <= 600 ? 0 : 24),
-        innerWidth <= 600 ? innerWidth : innerWidth - Math.max(0, $(".main")?.getBoundingClientRect().left || 0) - 24,
+        Math.max(panelWidth, auxiliary ? 620 : 0) + auxiliary,
+        available,
       );
       Object.assign(dialog.style, {
         left: `${innerWidth - width - (innerWidth <= 600 ? 0 : 12)}px`,
@@ -127,15 +146,10 @@ export function boardTaskEditor(
       return;
     }
     // Creation shares the compact board panel in every project view.
-    const surface = onBoard ? $("#canvas") : $("#view-content") || $(".help-page");
     if (!surface) return;
-    const r = surface.getBoundingClientRect();
-    const besideTools = onBoard && r.width > 600;
-    const auxiliary = innerWidth >= 1100 && dialog.matches('.with-task-history,.with-task-comments') ? 312 : 0;
     const width = Math.min(
-      680,
-      innerWidth - 24 - auxiliary,
-      r.width - (besideTools ? 90 : 24) - auxiliary,
+      680 + auxiliary,
+      available,
     );
     const left = Math.max(
       12,
@@ -164,7 +178,8 @@ export function boardTaskEditor(
     grip.setAttribute("aria-label", "Resize card panel");
     grip.setAttribute("aria-orientation", "vertical");
     const resize = (width) => {
-      panelWidth = Math.max(360, Math.min(900, width));
+      const minimum = dialog.dataset.paneLayout === 'split' && activePane() !== 'details' ? 620 : 360;
+      panelWidth = Math.max(minimum, Math.min(900, width));
       grip.setAttribute("aria-valuenow", String(panelWidth));
       position();
     };
@@ -177,7 +192,7 @@ export function boardTaskEditor(
     });
     grip.addEventListener("pointermove", (event) => {
       if (grip.hasPointerCapture(event.pointerId))
-        resize(innerWidth - event.clientX - 12);
+        resize(innerWidth - event.clientX - 12 - (dialog.dataset.paneLayout === 'split' && activePane() !== 'details' ? 280 : 0));
     });
     grip.addEventListener("keydown", (event) => {
       if (!["ArrowLeft", "ArrowRight"].includes(event.key)) return;

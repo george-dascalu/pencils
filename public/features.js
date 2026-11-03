@@ -34,6 +34,7 @@ import { taskRowEditor } from "./task-row-editor.js";
 import { recoveryUI } from "./recovery-ui.js";
 import { clearDebugLog } from "./debug-log.js";
 import { fieldOn, viewOn, cardsOn } from "./card-fields.js";
+import { allowsTextAutofocus } from "./open-focus.js";
 
 export function installFeatures(ctx) {
   const {
@@ -418,9 +419,10 @@ export function installFeatures(ctx) {
             mutate();
             void sync.enqueue(url, base, { comments: task(id).comments });
           },
-          onClose: () => {
+          onClose: (focus) => {
             trigger.setAttribute("aria-expanded", "false");
             form.closest("dialog")?.classList.remove("with-task-comments");
+            if (focus && !trigger.getClientRects().length && allowsTextAutofocus()) form.querySelector('.task-section-picker')?.focus({ preventScroll: true });
           },
           trigger: '[data-feature="task-comments"]',
         },
@@ -897,8 +899,7 @@ export function installFeatures(ctx) {
     if (action === "task-details" && currentTask) {
       taskComments?.close();
       taskModal?.hideHistory();
-      const info = $("[data-feature=task-details]");
-      (info?.getClientRects().length ? info : el)?.focus({ preventScroll: true });
+      if (!el?.matches('select')) el?.focus({ preventScroll: true });
     }
     if (action === "task-comments" && currentTask) {
       taskModal?.hideHistory();
@@ -1169,6 +1170,9 @@ export function installFeatures(ctx) {
     progress,
     dialogOpened,
     flushTask: () => autosave?.flush() || Promise.resolve(true),
+    selectTaskPane: (pane, trigger) => ['details', 'history', 'comments'].includes(pane)
+      ? click(`task-${pane}`, trigger).catch(error => toast(error.message, true))
+      : Promise.resolve(),
     taskHasChanges: () => autosave?.hasChanges() ?? state.dirty,
     commitRelationships: (id) => relationships?.commit(id) || Promise.resolve(),
     createDocument: async (title, options = {}) => {

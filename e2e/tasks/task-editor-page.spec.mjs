@@ -1,3 +1,4 @@
+import {chooseCardPane} from '../helpers/card-panes.mjs';
 // The card editor scrolls on its own: on phones it is a full-screen page that locks the
 // list behind it (inert, aria-modal), on iPad and desktop a docked panel. Swipes and wheel
 // scrolling that start on the title, the content or a pane stay in the editor, even at its
@@ -118,8 +119,7 @@ onDevices(["phone"], () => {
       await expectStill(page, frozen, "No background scrolling at task page boundaries");
     }
     for (const pane of ["comments", "history", "details"]) {
-      await form(page).locator(`[data-editor-pane="${pane}"]`).tap();
-      await expect(form(page).locator(`[data-editor-pane="${pane}"]`)).toHaveAttribute("aria-pressed", "true");
+      await chooseCardPane(page, pane);
       expect(await inert(page), `${pane}: the list stays inert`).toBe(true);
     }
   });
@@ -195,10 +195,7 @@ onDevices(["ipad-portrait", "desktop"], () => {
       await expectStill(page, frozen, "Header swipes at boundaries stay in the panel");
     }
     for (const pane of ["comments", "history", "details"]) {
-      // Wide screens have no Info button; a second tap on the open pane returns to the details (0.20.14).
-      const button = form(page).locator(`[data-editor-pane="${pane}"]`);
-      await tapOrClick(device, (await button.isVisible()) ? button : form(page).locator('[data-editor-pane="history"]'));
-      await expect(form(page).locator(`[data-editor-pane="${pane}"]`)).toHaveAttribute("aria-pressed", "true");
+      await chooseCardPane(page, pane);
       await page.mouse.move(x, y);
       await page.mouse.wheel(0, 400);
       await expectStill(page, frozen, `${pane}: scrolling cannot escape a short pane`, 100);

@@ -180,7 +180,7 @@ export function containPanelScroll(panel, contentScroller) {
     }
     event.preventDefault();
     if (vertical && !withinScroller) {
-      const content = contentScroller();
+      const content = contentScroller(event.target);
       if (content) content.scrollTop += dy;
     }
   }

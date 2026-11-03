@@ -1,3 +1,4 @@
+import {chooseCardPane} from '../helpers/card-panes.mjs';
 // The card editor on phones and touch screens (merged from task-editor-phone and
 // task-editor-touch). Phones show Details, Comments and History as panes with a compact
 // header, a one-row toolbar that scrolls sideways and 44px controls; relationships sort,
@@ -43,20 +44,15 @@ const reviewTests = (device, phone) => {
     await openCard(page, device, app.review);
     await relationships(page).waitFor();
     await expect(page.locator(".task-mobile-panes")).toHaveCount(0);
-    await expect(form(page).locator("[data-editor-pane]")).toHaveCount(3);
+    await expect(form(page).locator("[data-editor-pane]")).toHaveCount(2);
     const dialog = page.locator(".task-dialog");
-    await tapOrClick(device, form(page).locator('[data-editor-pane="comments"]'));
+    await chooseCardPane(page, 'comments');
     await expect(dialog).toHaveClass(/\bwith-task-comments\b/);
-    await tapOrClick(device, form(page).locator('[data-editor-pane="history"]'));
+    await chooseCardPane(page, 'history');
     await expect(dialog).toHaveClass(/\bwith-task-history\b/);
     await expect(dialog).not.toHaveClass(/\bwith-task-comments\b/);
-    // From 1100px the details stay beside the other panes, so Info is hidden there (29 Oct, item 17).
-    if (page.viewportSize().width >= 1100) {
-      await expect(form(page).locator('[data-editor-pane="details"]')).toBeHidden();
-      await expect(form(page).locator(".task-metadata")).toBeVisible();
-      return;
-    }
-    await tapOrClick(device, form(page).locator('[data-editor-pane="details"]'));
+    await expect(page.getByRole('button', {name:'Card details',exact:true})).toHaveCount(0);
+    await chooseCardPane(page, 'details');
     await form(page).locator(".task-metadata").waitFor();
   });
 

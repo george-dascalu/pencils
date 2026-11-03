@@ -1,3 +1,4 @@
+import {chooseCardPane} from '../helpers/card-panes.mjs';
 // Task cards and their conversation: a collapsed board card shows assignee, status, priority
 // and due in order with a one-line title; comments format rich text and Markdown safely,
 // take emoji reactions and share one conversation with the card editor; history shows
@@ -153,10 +154,10 @@ test("the editor's comments pane shares the card conversation and fits a phone i
   expect((await saved()).body).toBe(app.task.body);
   // The open editor is resized to a phone.
   await page.setViewportSize({ width: 390, height: 844 });
-  await page.locator("[data-editor-pane=details]").click();
-  await expect(page.locator("[data-editor-pane=details]")).toHaveAttribute("aria-pressed", "true");
+  await chooseCardPane(page, 'details');
+  await expect(page.getByRole("combobox", {name:"Card section",exact:true})).toHaveValue("details");
   expect(await page.locator("#task-form").evaluate((el) => el.scrollWidth <= el.clientWidth)).toBe(true);
-  await page.locator("[data-editor-pane=comments]").click();
+  await chooseCardPane(page, 'comments');
   await embedded.getByRole("textbox", { name: "Comment", exact: true }).fill("Mobile draft");
   for (const theme of ["light", "dark"]) {
     await page.evaluate((theme) => window.PencilsAppearance.write({ theme }), theme);

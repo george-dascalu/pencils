@@ -148,7 +148,7 @@ onDevices(["ipad"], () => test("iPad keeps the card's secondary actions in the h
   await expect(form.locator(".task-secondary-actions button"), "duplicate, archive and delete show in one group").toHaveCount(3);
   const close = await form.locator('[data-action="dialog-close"]').boundingBox();
   const centre = (b) => b.y + b.height / 2;
-  for (const selector of ['[data-feature="task-duplicate"]', '[data-feature="task-archive"]', '[data-action="task-delete"]', '[data-editor-pane="details"]']) {
+  for (const selector of ['[data-feature="task-duplicate"]', '[data-feature="task-archive"]', '[data-action="task-delete"]', '[data-editor-pane="history"]']) {
     const button = form.locator(selector);
     await expect(button, `${selector} visible`).toBeVisible();
     const box = await button.boundingBox();

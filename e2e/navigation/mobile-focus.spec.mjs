@@ -1,3 +1,4 @@
+import {chooseCardPane} from '../helpers/card-panes.mjs';
 // AGENTS.md: on touch screens, only a tap on a text field may open the keyboard. Opening a
 // task, its comments, Markdown modes, New, the document list and document modes never focus
 // a text field, even briefly, on phones and tablets; direct taps still edit, and desktop keeps
@@ -51,7 +52,7 @@ for (const [device, width] of [["phone", 390], ["ipad-portrait", 834], ["desktop
       expect(await page.evaluate(() => window.textFocusEvents), "the focus recorder sees text fields").not.toEqual([]);
       if (await page.locator(".task-rich-tools .rich-more-menu").isVisible()) await click(page.locator(".task-rich-tools .rich-more-menu > summary"));
       await passive(page, () => click(page.locator(".task-rich-tools [data-rich-mode]")), "Task Markdown mode");
-      await passive(page, async () => { await click(page.locator('[data-feature="task-comments"]')); await page.locator(".task-comments-panel").waitFor(); }, "Open comments");
+      await passive(page, async () => { await chooseCardPane(page, 'comments'); await page.locator(".task-comments-panel").waitFor(); }, "Open comments");
       const comment = page.locator(".task-comments-panel .inline-rich");
       await click(comment);
       await focused(comment);

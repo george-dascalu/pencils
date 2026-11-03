@@ -563,26 +563,27 @@ body.task-reordering, body.task-reordering * { cursor: grabbing !important; user
 .board-task-editor .task-editor-foot > .button.primary {
   margin-left: auto;
 }
-.board-task-editor:is(.with-task-history, .with-task-comments)
-  .task-editor-content {
+.task-dialog.board-task-editor .task-editor-content {
   grid-template-columns: minmax(0, 1fr);
 }
-.board-task-editor :is(.task-history-panel, .task-comments-panel) {
-  position: absolute;
-  inset: 0 0 0 auto;
-  width: 100%;
-  max-height: 100%;
-  z-index: 60;
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  box-shadow: var(--shadow-popover);
+.task-dialog.board-task-editor .task-editor-content > :is(.task-history-panel, .task-comments-panel) {
+  position: static;
+  inset: auto;
+  width: auto;
+  min-width: 0;
+  max-height: none;
+  grid-area: 1 / 1;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
 }
-@media (min-width: 1100px) {
-  .board-task-editor :is(.task-history-panel, .task-comments-panel) {
-    left: calc(100% + 12px);
-    right: auto;
-    width: 300px;
-  }
+.task-dialog.board-task-editor .task-editor-content > .dialog-body { grid-area: 1 / 1; }
+.task-dialog.board-task-editor[data-pane-layout="split"]:is(.with-task-history, .with-task-comments) .task-editor-content {
+  grid-template-columns: 280px minmax(0, 1fr);
+}
+.task-dialog.board-task-editor[data-pane-layout="split"]:is(.with-task-history, .with-task-comments) .task-editor-content > .dialog-body { grid-column: 2; }
+.task-dialog.board-task-editor[data-pane-layout="split"] .task-editor-content > :is(.task-history-panel, .task-comments-panel) {
+  border-inline-end: 1px solid var(--line);
 }
 
 .board-node.task .live-card-actions {
@@ -1116,35 +1117,19 @@ button.dependency-row:hover {
 }
 
 /* Shared task panel: all views use the board's field order and compact controls. */
-/* The pane switcher and the duplicate/archive/delete actions are two groups of icon buttons. */
+/* Wide editors keep two activity buttons; compact editors choose one section. */
 .task-pane-switcher, .task-secondary-actions { display: flex; flex: none; align-items: center; border: 1px solid var(--line); border-radius: 6px; }
 .task-pane-switcher [aria-pressed="true"] { color: var(--green); background: var(--surface-soft); box-shadow: inset 0 0 0 1px var(--green); }
-/* Where History and Comments sit beside the details, Info has nothing to switch to: from 1100px in
-   the board's panel (board-task-editor.js), from 1320px in the project editor, which docks them over
-   its right edge until then. */
-@media (min-width: 1100px) {
-  .board-task-editor:not(.project-task-editor) .task-pane-switcher [data-editor-pane="details"] { display: none; }
-}
-@media (min-width: 1320px) {
-  .task-pane-switcher [data-editor-pane="details"] { display: none; }
-}
-@media (max-width: 1099px) {
-  .board-task-editor:is(.with-task-comments, .with-task-history) .task-editor-content { display: flex; min-height: 0; }
-  .board-task-editor .task-editor-content > :is(.task-comments-panel, .task-history-panel) {
-    position: static; flex: 1; width: 100%; min-width: 0; border: 0; border-radius: 0; box-shadow: none;
-  }
-}
+.task-section-picker { width: 128px; min-width: 128px; max-width: 128px; flex: none; }
+[data-pane-layout="split"] .task-section-picker { display: none; }
+[data-pane-layout="compact"] .task-pane-switcher { border: 0; }
+[data-pane-layout="compact"] .task-pane-switcher > button { display: none; }
 .project-task-editor .task-panel-resizer {
   position: absolute;
   inset: 12px auto 12px -5px;
   width: 10px;
   cursor: ew-resize;
   touch-action: none;
-}
-.project-task-editor :is(.task-history-panel, .task-comments-panel) {
-  left: auto;
-  right: 0;
-  width: min(100%, 340px);
 }
 /* A task is its own page on phones, with one native page scroller. */
 html.task-page-open,
@@ -1176,7 +1161,7 @@ html.task-page-open,
   background: var(--surface);
   padding-top: max(8px, env(safe-area-inset-top));
 }
-.task-dialog.task-editor-page .task-editor-content,
+.task-dialog.board-task-editor.task-editor-page .task-editor-content,
 .task-dialog.task-editor-page .task-editor-content > :is(.dialog-body, .task-comments-panel, .task-history-panel) {
   display: block;
   overflow: visible;
@@ -1189,23 +1174,6 @@ html.task-page-open,
   }
   .task-panel-resizer {
     display: none;
-  }
-}
-/* Wide screens float the pane beside the editor, aligned with its top. */
-@media (min-width: 1320px) {
-  .project-task-editor:is(.with-task-history, .with-task-comments) {
-    z-index: 31;
-  }
-  .project-task-editor:is(.with-task-history, .with-task-comments) :is(#task-form, .task-editor-content) {
-    position: static;
-  }
-  .project-task-editor :is(.task-history-panel, .task-comments-panel) {
-    left: auto;
-    right: calc(100% + 12px);
-    top: 0;
-    bottom: 0;
-    max-height: none;
-    width: 300px;
   }
 }
 
@@ -1525,7 +1493,8 @@ html.task-page-open,
 /* Comments and history are panes of the task panel; the panel's own close button is the only one. */
 .task-dialog .task-comments-panel [data-comments-close],
 .task-dialog .task-history-panel [data-task-modal="history-close"] { display: none; }
-.task-history-head h3:focus { outline: none; }
+.task-history-head h3:focus,
+.task-dialog .board-comments-head strong:focus { outline: none; }
 /* New and existing task headers keep the close button in the top-right corner. */
 .task-editor-header-row > [data-action="dialog-close"] { margin-inline-start: auto; }
 .task-editor-header-row > .task-editor-actions + [data-action="dialog-close"] { margin-inline-start: 0; }

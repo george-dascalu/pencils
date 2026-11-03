@@ -2,6 +2,11 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.21.61 — 2026-11-03
+
+### Changed
+- Feature F0.21-61: Card Versions and Comments open on the left when clicked, alongside the details without covering them. Narrower editors use one Details / Versions / Comments picker. The standalone Card details button is removed; resizing preserves edits and comment drafts, and each pane scrolls independently.
+
 ## 0.21.60 — 2026-11-03
 
 ### Changed

@@ -1,3 +1,4 @@
+import {chooseCardPane} from '../helpers/card-panes.mjs';
 // Board: cards are created and edited in a compact, non-modal panel beside the board
 // (AGENTS.md "Dialogs and contextual panels"). The board stays usable, drafts are recovered,
 // the fields keep the shared order (assignee, status, priority, then dates; 0.19.9) on desktop
@@ -171,14 +172,15 @@ test("Details opens the card in the side panel without moving the board, and His
   await expect(page.locator("#task-form")).toHaveAttribute("data-id", task.id);
   await expect(editor(page).locator(".board-task-editor-heading .task-key")).toHaveText(task.key);
   await expect(page.locator("#canvas-world"), "opening the card does not move the board").toHaveAttribute("style", camera);
-  await expect(editor(page).locator(".task-editor-actions button")).toHaveCount(6);
+  await expect(editor(page).locator(".task-editor-actions button")).toHaveCount(5);
   await expect(editor(page).locator(".task-subtasks")).toHaveCount(0);
   await checkMetadataLayout(page);
-  await editor(page).locator("[data-feature=task-history]").click();
+  await chooseCardPane(page, 'history');
   await editor(page).locator(".task-history-panel .recovery-item").first().waitFor();
   const history = await editor(page).locator(".task-history-panel").boundingBox();
   const panel = await editor(page).boundingBox();
-  expect(history.x, "History opens beside the panel").toBeGreaterThanOrEqual(panel.x + panel.width);
+  expect(history.x, "History opens inside the left side of the panel").toBeGreaterThanOrEqual(panel.x);
+  expect(history.x + history.width).toBeLessThanOrEqual((await editor(page).locator(".task-editor-content > .dialog-body").boundingBox()).x);
   expect(history.x + history.width).toBeLessThanOrEqual(page.viewportSize().width);
   await editor(page).locator(".task-history-panel .recovery-item:has([data-task-modal=history-restore]) summary").first().click();
   await editor(page).locator("[data-task-modal=history-restore]").first().click();
@@ -194,7 +196,7 @@ onDevices(["phone"], () => test("History and Details fit a phone screen in both 
   await presetCamera(page, board.id, { x: 10, y: 10, z: 1 });
   await openBoard(page, project);
   await card(page).locator("[data-pro=task-details]").click();
-  await editor(page).locator("[data-feature=task-history]").click();
+  await chooseCardPane(page, 'history');
   const history = editor(page).locator(".task-history-panel");
   await history.locator(".recovery-item").first().waitFor();
   const width = page.viewportSize().width;
@@ -205,7 +207,7 @@ onDevices(["phone"], () => test("History and Details fit a phone screen in both 
       return box.x >= 0 && box.x + box.width <= width;
     }, `${theme}: History stays on screen`).toBe(true);
   }
-  await editor(page).locator('[data-feature="task-details"]').click();
+  await chooseCardPane(page, 'details');
   await checkMetadataLayout(page);
   await noHorizontalOverflow(editor(page));
 }));

@@ -1401,6 +1401,7 @@ function showDialog(html, kind, { boardPanel = false, nodeId = null } = {}) {
       closeDialog,
       renderView,
       icon,
+      selectPane: (pane, trigger) => features.selectTaskPane(pane, trigger),
     });
   else if (["draft-review", "frame-update"].includes(kind))
     taskPanelController = boardObjectDialog(dialog, {
@@ -1824,6 +1825,7 @@ function taskDialog(id = null, defaults = {}, replace = false) {
         closeDialog,
         renderView,
         icon,
+        selectPane: (pane, trigger) => features.selectTaskPane(pane, trigger),
       });
     }
     state.dirty = false;

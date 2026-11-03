@@ -1,3 +1,4 @@
+import {chooseCardPane} from '../helpers/card-panes.mjs';
 // One type scale for the card popup (details, comments, history) and the Table
 // view, from the font-size assessment of 28 October 2026. Desktop and touch
 // each use five steps: meta, small, body, section and title. Touch body text
@@ -32,7 +33,7 @@ async function openCard(page, pane) {
   await page.locator(`[data-action="task-open"][data-id="${app.tasks[0].id}"]:visible`).first().click();
   await page.locator("#task-form .task-description .inline-rich").waitFor();
   if (pane) {
-    await page.locator(`[data-editor-pane="${pane}"]`).click();
+    await chooseCardPane(page, pane);
     await page.locator(pane === "comments" ? ".task-comments-panel .comment-body" : ".task-history-panel .task-history-change").first().waitFor();
   }
 }
@@ -71,11 +72,11 @@ onDevices(["desktop", "ipad", "phone"], (device) => {
       expect(await px(page, selector), `${selector} size`).toBe(s.section);
       expect(await weight(page, selector), `${selector} weight`).toBe("600");
     }
-    await page.locator('[data-editor-pane="comments"]').click();
+    await chooseCardPane(page, 'comments');
     await page.locator(".board-comments-head").first().waitFor();
     expect(await px(page, ".task-comments-panel .board-comments-head > strong"), "Comments heading size").toBe(s.section);
     expect(await weight(page, ".task-comments-panel .board-comments-head > strong")).toBe("600");
-    await page.locator('[data-editor-pane="history"]').click();
+    await chooseCardPane(page, 'history');
     await page.locator(".task-history-head h3").waitFor();
     expect(await px(page, ".task-history-head h3"), "Version history heading size").toBe(s.section);
     expect(await weight(page, ".task-history-head h3")).toBe("600");
@@ -84,7 +85,7 @@ onDevices(["desktop", "ipad", "phone"], (device) => {
   test("card subsection headings share one style", async ({ page }) => {
     await openCard(page);
     const children = { size: await px(page, ".task-relationship-group > h4"), weight: await weight(page, ".task-relationship-group > h4") };
-    await page.locator('[data-editor-pane="history"]').click();
+    await chooseCardPane(page, 'history');
     await page.locator(".task-history-month").waitFor();
     const month = { size: await px(page, ".task-history-month"), weight: await weight(page, ".task-history-month") };
     expect(children, "Children heading").toEqual({ size: s.small, weight: "600" });
@@ -104,7 +105,7 @@ onDevices(["desktop", "ipad", "phone"], (device) => {
     expect(sizes.title, `title ${JSON.stringify(sizes)}`).toBe(s.title);
     // Relationship rows use the one title size every list shares (owner request, 1 Nov).
     for (const key of ["description", "status", "start", "due", "relationship"]) expect(sizes[key], `${key} ${JSON.stringify(sizes)}`).toBe(s.body);
-    await page.locator('[data-editor-pane="comments"]').click();
+    await chooseCardPane(page, 'comments');
     await page.locator(".task-comments-panel .comment-body").first().waitFor();
     expect(await px(page, ".task-comments-panel .comment-body"), "posted comment matches the description").toBe(s.body);
     expect(await px(page, ".task-comments-panel .comment-author"), "comment author").toBe(s.small);
@@ -115,7 +116,7 @@ onDevices(["desktop", "ipad", "phone"], (device) => {
     await openCard(page);
     expect(await px(page, "#task-form .task-key"), "header key").toBe(s.meta);
     expect(await px(page, ".task-relationship-key"), "relationship key").toBe(s.meta);
-    await page.locator('[data-editor-pane="history"]').click();
+    await chooseCardPane(page, 'history');
     await page.locator(".task-history-panel .task-history-change").first().waitFor();
     expect(await px(page, ".task-history-date time"), "history time").toBe(s.meta);
     expect(await px(page, ".task-history-summary"), "history summary").toBe(s.meta);

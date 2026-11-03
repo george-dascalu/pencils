@@ -305,7 +305,7 @@ test.describe("Group 5: dialog contract (findings 23–26)", { tag: "@audit" }, 
     await page.getByRole("button", { name: /history/i }).first().click();
     await page.locator(".task-history-panel:not([hidden])").waitFor();
     await settled(page);
-    const panel = await rect(page, ".task-dialog");
+    const panel = await rect(page, ".task-editor-content > .dialog-body");
     const pane = await rect(page, ".task-history-panel");
     const sidebar = await rect(page, ".sidebar");
     expect(Math.abs(pane.top - panel.top), `pane top ${pane.top} vs panel ${panel.top}`).toBeLessThanOrEqual(2);
@@ -382,12 +382,12 @@ test.describe("Group 6: keyboard, copy, identity (findings 27–31)", { tag: "@a
     expect(overlap, `chip ${JSON.stringify(chip)} overlaps last line ${JSON.stringify(last)}`).toBe(false);
   });
   // 0.19.4: the owner asked for icon-only pane buttons; names live in aria-label and title.
-  onDevices(["phone"], () => test("phone task editor tabs are icon-only with accessible names", async ({ page }) => {
+  onDevices(["phone"], () => test("phone task editor uses one labelled section picker", async ({ page }) => {
     await openFirstTask(page);
-    const buttons = await page.locator(".task-pane-switcher > .icon-button").evaluateAll((els) => els.map((el) => ({ text: el.textContent.trim(), name: el.getAttribute("aria-label"), title: el.title, icon: el.querySelectorAll(".icon").length })));
-    expect(buttons.map((b) => b.text), "no visible text on the pane buttons").toEqual(["", "", ""]);
-    expect(buttons.map((b) => b.name)).toEqual(["Card details", "Version history", "Card comments"]);
-    expect(buttons.every((b) => b.title && b.icon === 1)).toBe(true);
+    const picker=page.getByRole('combobox',{name:'Card section',exact:true});
+    await expect(picker).toBeVisible();
+    await expect(picker.locator('option')).toHaveText(['Details','Versions','Comments']);
+    await expect(page.getByRole('button',{name:'Card details',exact:true})).toHaveCount(0);
   }));
   test("escape inside the comments pane returns to details before closing the task", async ({ page }) => {
     await openFirstTask(page);

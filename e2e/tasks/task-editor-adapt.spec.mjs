@@ -1,3 +1,4 @@
+import {chooseCardPane} from '../helpers/card-panes.mjs';
 import { test, expect, onDevices, useApp } from "../fixtures.mjs";
 
 const app = useApp(async store => {
@@ -45,9 +46,9 @@ onDevices(["phone", "ipad", "desktop"], device => {
       for (const date of geometry.dates) expect(date.room, 'room for a full date beside the calendar target').toBeGreaterThanOrEqual(100);
     }
     // Both pane navigation and metadata editing remain available at the adapted sizes.
-    await form.locator('[data-editor-pane=comments]').click();
+    await chooseCardPane(page, 'comments');
     await expect(page.locator('.task-dialog')).toHaveClass(/with-task-comments/);
-    if (width < 1320) await form.locator('[data-editor-pane=details]').click();
+    await chooseCardPane(page, 'details');
     await form.getByLabel('Status', { exact: true }).selectOption('review');
     await form.getByRole('button', { name: 'Choose Due date', exact: true }).click();
     const calendar = page.locator('.date-picker-popover');
