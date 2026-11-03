@@ -65,13 +65,13 @@ onDevices(["desktop", "ipad", "phone", "small"], () => {
 });
 
 onDevices(["desktop", "phone"], () => test("active chips fit long filters in both themes and Compact mode", { tag: "@gate" }, async ({ page, device }) => {
-  await page.goto(`${app.base}/#project/${app.project.id}/table`);
+  const longName = "A very long assignee name that should stay inside the active filter", longTag = "A long tag for checking the horizontal scrolling of the active filter list";
+  const project = await app.store.createProject({title:'Long filter labels'});
+  await app.store.createTask(project.id,{title:'Long labels',assignee:longName,tags:[longTag]});
+  await page.goto(`${app.base}/#project/${project.id}/table`);
   await openFilters(page, device);
-  await page.locator("#filter-assignee").fill("A very long assignee name that should stay inside the active filter");
-  await page.locator("#filter-assignee").blur();
-  await openFilters(page, device);
-  await page.locator("#filter-tag").fill("A long tag for checking the horizontal scrolling of the active filter list");
-  await page.locator("#filter-tag").blur();
+  await page.locator("#filter-assignee").selectOption(`@person:${longName}`);
+  await page.locator("#filter-tag").selectOption(longTag,{force:true});
   await closeFilters(page, device);
   const active = page.getByRole("group", { name: "Active filters", exact: true });
   for (const theme of ["light", "dark"]) {
@@ -113,22 +113,21 @@ onDevices(["desktop", "phone"], () => test("Capacity Scope and Team chips clear 
 }));
 
 test("filters use their displayed names, escape input, and leave grouping out", async ({ page }) => {
-  await page.goto(`${app.base}/#project/${app.project.id}/list`);
+  const name = 'George <b> & "', project = await app.store.createProject({title:'Escaped filter labels'});
+  await app.store.createTask(project.id,{title:'Escaping',assignee:name,tags:['planning']});
+  await page.goto(`${app.base}/#project/${project.id}/list`);
   await openFilters(page, "desktop");
   await page.locator("#filter-status").selectOption("todo");
   await page.locator("#filter-type").selectOption("task");
-  await page.locator("#filter-assignee").fill('George <b> & "');
-  await page.locator("#filter-assignee").blur();
-  await openFilters(page, "desktop");
-  await page.locator("#filter-tag").fill("planning");
-  await page.locator("#filter-tag").blur();
+  await page.locator("#filter-assignee").selectOption(`@person:${name}`);
+  await page.locator("#filter-tag").selectOption("planning",{force:true});
   await openFilters(page, "desktop");
   await page.locator("#filter-blocked").check();
   await page.locator("#filter-archived").check();
   await page.locator("#group-by").selectOption("type");
   await closeFilters(page, "desktop");
   const active = page.getByRole("group", { name: "Active filters", exact: true });
-  await expect(active.locator("button")).toHaveText(["To do", "Task", 'Assignee: George <b> & "', "Tag: planning", "Blocked", "Include archived"]);
+  await expect(active.locator("button")).toHaveText(["To do", "Task", name, "Tags: planning", "Blocked", "Include archived"]);
   await expect(active.locator("b")).toHaveCount(0);
   await openFilters(page, "desktop");
   await page.locator('[data-board-menu="filters"] [data-action="filters-reset"]').click();

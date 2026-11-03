@@ -142,15 +142,13 @@ async function everyViewSharesTheHeader(page, size) {
       const rows = "#view-content .task-row,#view-content .kanban-card,#view-content [data-table-task],#view-content [data-timeline-row],#view-content [data-calendar-card],#view-content .capacity-task";
       const unscheduled = page.locator("[data-calendar-unscheduled]");
       const unscheduledLabel = view === "calendar" ? await unscheduled.getAttribute("aria-label") : null;
-      await (await reveal(page.locator("#filter-assignee"))).fill("No matching owner");
-      await page.locator("#filter-assignee").press("Tab");
+      await (await reveal(page.locator("#filter-priority"))).selectOption("urgent");
       await page.waitForFunction((rows) => !document.querySelector(rows), rows);
       if (view === "calendar") await expect(unscheduled).toHaveAttribute("aria-label", "Unscheduled cards (0)");
       await expect(page.locator(".view-footnote,.table-result-summary")).toHaveCount(0);
       await expect(page.locator("[data-board-menu=filters] > summary")).toHaveAttribute("aria-label", "Filters (1 active)");
       await page.keyboard.press("Escape");
-      await (await reveal(page.locator("#filter-assignee"))).fill("");
-      await page.locator("#filter-assignee").press("Tab");
+      await (await reveal(page.locator("#filter-priority"))).selectOption("");
       if (view === "calendar") await expect(unscheduled).toHaveAttribute("aria-label", unscheduledLabel);
       else await page.waitForFunction((rows) => !!document.querySelector(rows), rows);
       await expect(page.locator(".view-footnote,.table-result-summary")).toHaveCount(0);

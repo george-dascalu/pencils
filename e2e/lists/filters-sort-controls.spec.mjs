@@ -41,8 +41,8 @@ onDevices(["ipad", "desktop"], () => {
     await open(page, "list");
     await filters(page).locator("> summary").click();
     const panel = filters(page).locator(".board-menu-panel");
-    await expect(panel.locator(":scope > .field")).toHaveText(["Status", "Type", "Assignee", "Tag", "Deadline", "Completion", "Group by"].map((name) => new RegExp(`^${name}`)));
-    const edges = await panel.locator(":scope > .field > :is(input, select)").evaluateAll((els) => els.map((el) => { const r = el.getBoundingClientRect(); return [Math.round(r.left), Math.round(r.right)]; }));
+    await expect(panel.locator(":scope > .field")).toHaveText(["Status", "Type", "Assignee", "Tags", "Priority", "Deadline", "Completion", "Group by"].map((name) => new RegExp(`^${name}`)));
+    const edges = await panel.locator(":scope > .field > :is(input:not([hidden]), select:not([hidden]), [data-multi-select])").evaluateAll((els) => els.map((el) => { const r = el.getBoundingClientRect(); return [Math.round(r.left), Math.round(r.right)]; }));
     expect(new Set(edges.map(String)).size, `one width: ${JSON.stringify(edges)}`).toBe(1);
     const clear = panel.locator(".menu-footer > [data-action=filters-reset]");
     await expect(clear).toBeVisible();

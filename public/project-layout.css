@@ -1057,6 +1057,9 @@ html.table-viewport-view body {
 }
 .active-filter > span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .active-filter > .icon { flex: none; width: 12px; height: 12px; color: var(--muted); }
+.filter-multiselect { display: flex; align-items: center; justify-content: space-between; gap: 8px; width: 100%; min-width: 0; font-weight: 400; }
+.filter-multiselect > span { min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.filter-multiselect > .icon { flex: none; width: 12px; height: 12px; }
 @media (max-width: 600px) {
   /* The phone's first row keeps Search, Sort and View options; active values use its full width. */
   .main.project-main .toolbar-left:has(> .active-filters) { display: flex; flex-wrap: wrap; }

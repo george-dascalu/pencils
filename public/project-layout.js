@@ -344,20 +344,22 @@ export function projectLayout(ctx) {
     if (!toolbar.querySelector('[data-board-menu="filters"]')) return [];
     const fields = [
       ["filter-status", "Status", "all", "status"], ["filter-type", "Type", "all", "type"],
-      ["filter-assignee", "Assignee", "", "assignee"], ["filter-tag", "Tag", "", "tags"],
+      ["filter-assignee", "Assignee", "", "assignee"], ["filter-priority", "Priority", "", "priority"], ["filter-tag", "Tags", "", "tags"],
       ["filter-due", "Deadline", "", "due"], ["filter-completion", "Completion", "", "status"],
       ["filter-blocked", "Blocked", false], ["filter-archived", "Include archived", false],
       ["capacity-scope", "Scope", "project"], ["capacity-team", "Team", ""],
+      ...(state.config.fields || []).map(field=>[`filter-custom-${field.id}`,field.name,'',null,true]),
     ];
-    const active = fields.flatMap(([id, name, reset, field]) => {
+    const active = fields.flatMap(([id, name, reset, field, showName]) => {
       const control = document.getElementById(id);
       if (!control || (field && !fieldOn(state.config, field))) return [];
-      const checkbox = control.type === "checkbox", value = checkbox ? control.checked : control.value;
+      const checkbox = control.type === "checkbox", selectedOptions = control.multiple ? [...control.selectedOptions] : null;
+      const value = selectedOptions ? selectedOptions.map(option=>option.value).join(', ') : checkbox ? control.checked : control.value;
       if (value === reset) return [];
-      const selected = control.selectedOptions?.[0]?.text;
+      const selected = selectedOptions ? selectedOptions.map(option=>option.text).join(', ') : control.selectedOptions?.[0]?.text;
       const description = checkbox ? name : `${name}: ${selected || value}`;
       // Known choices read clearly by themselves; free text keeps its field name.
-      return [{ id, reset, text: selected || description, description }];
+      return [{ id, reset, text: showName || selectedOptions ? description : selected || description, description }];
     });
     if (!active.length) return active;
     const group = document.createElement("div");
@@ -383,7 +385,8 @@ export function projectLayout(ctx) {
       if (index < 0) return;
       const { id, reset } = active[index], control = document.getElementById(id);
       if (!control) return;
-      if (control.type === "checkbox") control.checked = reset;
+      if (control.multiple) for (const option of control.options) option.selected = false;
+      else if (control.type === "checkbox") control.checked = reset;
       else control.value = reset;
       control.dispatchEvent(new Event("change", { bubbles: true }));
       const remaining = [...document.querySelectorAll(".active-filters > button")];

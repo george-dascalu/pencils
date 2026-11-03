@@ -14,6 +14,8 @@ export function installSelectMenus({ esc, icon, taskColor = () => "" }) {
   // A label around (or for) a select activates it; route that through the app menu too.
   const controlOf = (target) => {
     if (!(target instanceof Element)) return null;
+    const trigger = target.closest('[data-multi-select]');
+    if (trigger) return document.getElementById(trigger.dataset.multiSelect);
     if (target instanceof HTMLSelectElement) return target;
     const label = target.closest("label");
     const control = label?.control;
@@ -21,13 +23,13 @@ export function installSelectMenus({ esc, icon, taskColor = () => "" }) {
   };
   const eligible = (el) =>
     el instanceof HTMLSelectElement &&
-    !el.multiple &&
-    el.size <= 1 &&
-    !el.hidden &&
-    !el.closest("[hidden], [data-task-picker]") &&
+    (el.multiple ? el.hasAttribute('data-checkbox-menu') : el.size <= 1) &&
+    (!el.hidden || el.hasAttribute('data-checkbox-menu')) &&
+    !el.parentElement.closest("[hidden], [data-task-picker]") &&
     !el.matches(":disabled");
+  const anchorOf = select => select.multiple ? document.querySelector(`[data-multi-select="${CSS.escape(select.id)}"]`) || select : select;
   const options = () => [
-    ...menu.querySelectorAll('[role="option"]:not(:disabled)'),
+    ...menu.querySelectorAll('[role="option"]:not(:disabled), input[data-select-index]:not(:disabled)'),
   ];
   const label = (select) =>
     select.getAttribute("aria-label") ||
@@ -84,6 +86,13 @@ export function installSelectMenus({ esc, icon, taskColor = () => "" }) {
   }
   function paint() {
     const focused = menu.querySelector(":focus")?.dataset.selectIndex;
+    if (source.multiple) {
+      menu.innerHTML = `<header class="select-checkbox-header"><strong>${esc(label(source))}</strong><button type="button" class="icon-button" data-select-close aria-label="Close ${esc(label(source))}">${icon('close')}</button></header>` + [...source.options].map((option,index)=>option.hidden ? '' : `<label class="select-checkbox-row"><input type="checkbox" data-select-index="${index}" ${option.selected ? 'checked' : ''} ${option.disabled ? 'disabled' : ''}><span>${esc(option.label)}</span></label>`).join('');
+      if (!source.options.length) menu.insertAdjacentHTML('beforeend','<p class="select-checkbox-empty">No options available.</p>');
+      position();
+      if (focused != null) menu.querySelector(`input[data-select-index="${focused}"]`)?.focus({preventScroll:true});
+      return;
+    }
     let group;
     menu.innerHTML = [...source.options]
       .map((option, index) => {
@@ -114,7 +123,7 @@ export function installSelectMenus({ esc, icon, taskColor = () => "" }) {
         .querySelector(`[data-select-index="${focused}"]:not(:disabled)`)
         ?.focus({ preventScroll: true });
   }
-  function open(select, anchor = select) {
+  function open(select, anchor = anchorOf(select)) {
     if (source === select) return close(true);
     close();
     source = select;
@@ -127,7 +136,8 @@ export function installSelectMenus({ esc, icon, taskColor = () => "" }) {
     menu.className = `select-menu${select.closest(".sidebar") ? " sidebar-select-menu" : ""}`;
     menu.id = "shared-select-menu";
     menu.setAttribute("popover", "manual");
-    menu.setAttribute("role", "listbox");
+    menu.setAttribute("role", select.multiple ? "dialog" : "listbox");
+    if (select.multiple) menu.setAttribute('aria-modal','false');
     menu.setAttribute("aria-label", label(select));
     // Stay inside the owning dialog/date picker; top-layer positioning escapes clipping and board zoom.
     (select.closest("dialog, [popover]") || document.body).append(menu);
@@ -143,7 +153,7 @@ export function installSelectMenus({ esc, icon, taskColor = () => "" }) {
     paint();
     const current =
       menu.querySelector('[aria-selected="true"]:not(:disabled)') ||
-      options()[0];
+      options()[0] || menu.querySelector('[data-select-close]');
     current?.focus({ preventScroll: true });
     current?.scrollIntoView({ block: "nearest" });
     track();
@@ -152,6 +162,19 @@ export function installSelectMenus({ esc, icon, taskColor = () => "" }) {
     if (button.disabled) return;
     const target = source,
       index = Number(button.dataset.selectIndex);
+    if (target.multiple) {
+      target.options[index].selected = !target.options[index].selected;
+      target.dispatchEvent(new Event('input',{bubbles:true}));
+      target.dispatchEvent(new Event('change',{bubbles:true}));
+      // Filtering rebuilds the toolbar: keep this checkbox menu on the replacement control.
+      source = document.getElementById(target.id) || target;
+      anchorEl = anchorOf(source);
+      if (!source.isConnected || !anchorEl.isConnected) return close();
+      source.setAttribute('aria-controls',menu.id); source.setAttribute('aria-expanded','true');
+      anchorEl.setAttribute('aria-controls',menu.id); anchorEl.setAttribute('aria-expanded','true');
+      paint(); menu.querySelector(`input[data-select-index="${index}"]`)?.focus({preventScroll:true});
+      return;
+    }
     const changed = target.selectedIndex !== index;
     target.selectedIndex = index;
     close(true);
@@ -186,7 +209,7 @@ export function installSelectMenus({ esc, icon, taskColor = () => "" }) {
           event.preventDefault();
           event.stopImmediatePropagation();
           // Touch keeps focus on the menu itself: focusing a select on iOS opens the platform picker.
-          if (event.pointerType !== "touch") control.focus({ preventScroll: true });
+          if (event.pointerType !== "touch") anchorOf(control).focus({ preventScroll: true });
         } else if (menu?.contains(event.target)) {
           event.stopImmediatePropagation();
         } else if (type === "pointerdown" && !anchorEl?.contains(event.target)) close();
@@ -264,7 +287,8 @@ export function installSelectMenus({ esc, icon, taskColor = () => "" }) {
       } else if (menu?.contains(event.target)) {
         event.preventDefault();
         event.stopImmediatePropagation();
-        const button = event.target.closest("[data-select-index]");
+        if (event.target.closest('[data-select-close]')) return close(true);
+        const button = event.target.closest("[data-select-index]") || event.target.closest('.select-checkbox-row')?.querySelector('[data-select-index]');
         if (button) choose(button);
       }
     },
@@ -275,16 +299,17 @@ export function installSelectMenus({ esc, icon, taskColor = () => "" }) {
     (event) => {
       lastPointerType = "keyboard";
       const inside = menu?.contains(event.target);
+      const control = controlOf(event.target) || event.target;
       if (
         !inside &&
-        eligible(event.target) &&
+        eligible(control) &&
         ["ArrowDown", "ArrowUp", "Enter", " ", "Home", "End"].includes(
           event.key,
         )
       ) {
         event.preventDefault();
         event.stopImmediatePropagation();
-        open(event.target);
+        open(control);
         return;
       }
       if (!inside) return;
@@ -297,6 +322,9 @@ export function installSelectMenus({ esc, icon, taskColor = () => "" }) {
         event.preventDefault();
         close(true);
         return;
+      }
+      if (event.target.closest('[data-select-close]') && ['Enter',' '].includes(event.key)) {
+        event.preventDefault(); close(true); return;
       }
       const buttons = options(),
         active = buttons.indexOf(document.activeElement);
@@ -346,7 +374,7 @@ export function installSelectMenus({ esc, icon, taskColor = () => "" }) {
   document.addEventListener(
     "focusin",
     (event) => {
-      if (menu && event.target !== source && !menu.contains(event.target))
+      if (menu && event.target !== source && !anchorEl?.contains(event.target) && !menu.contains(event.target))
         close();
     },
     true,

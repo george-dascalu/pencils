@@ -632,7 +632,7 @@ function settleFields() {
   if (!config) return;
   if (!on("status")) state.status = "all";
   if (!on("type")) state.type = "all";
-  for (const [filter, field] of [["assignee", "assignee"], ["tag", "tags"], ["due", "due"], ["completion", "status"]])
+  for (const [filter, field] of [["assignee", "assignee"], ["tag", "tags"], ["tags", "tags"], ["priority", "priority"], ["due", "due"], ["completion", "status"]])
     if (!on(field)) delete state.extraFilters?.[filter];
   if (!on(state.sort)) state.sort = "order";
   if (!on(state.groupBy)) state.groupBy = "none";

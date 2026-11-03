@@ -19,6 +19,13 @@
   font: 13px/1.4 var(--app-font, "Work Sans", sans-serif);
   text-align: left;
 }
+.select-checkbox-header { display: flex; align-items: center; gap: 4px; padding-inline-start: var(--control-padding); }
+.select-checkbox-header > strong { flex: 1; font-size: var(--control-font-size); font-weight: 600; }
+.select-menu .select-checkbox-row { display: flex; align-items: center; gap: 8px; min-height: var(--control-height); margin: 0; padding-inline: var(--control-padding); border-radius: var(--field-radius); font-size: var(--control-font-size); cursor: pointer; }
+.select-menu .select-checkbox-row:is(:hover,:focus-within) { background: var(--surface-soft); }
+.select-checkbox-row > input { flex: none; }
+.select-checkbox-row > span { overflow-wrap: anywhere; }
+.select-checkbox-empty { margin: 4px; color: var(--muted); font-size: var(--control-font-size); }
 /* Opened from the sidebar, the menu wears the sidebar's surface and text (styles.css .sidebar). */
 .select-menu.sidebar-select-menu {
   --surface: var(--side);

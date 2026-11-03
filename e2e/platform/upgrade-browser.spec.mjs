@@ -69,12 +69,11 @@ test("range paste fills title and type, and current view filters persist across 
   await page.locator('#paste-preview [data-paste-map="1"]').selectOption("type");
   await page.locator("#paste-apply").click();
   await expect.poll(async () => { const t = (await snap()).tasks.find((t) => t.id === first.id); return [t.title, t.type]; }).toEqual(["Pasted title", "bug"]);
-  await (await reveal(page.locator("#filter-assignee"))).fill("Alex");
-  await page.locator("#filter-assignee").press("Tab");
+  await (await reveal(page.locator("#filter-assignee"))).selectOption("@person:Alex");
   await expect(page.locator('#saved-view,[data-feature="view-save"]')).toHaveCount(0);
   await page.reload();
   await page.locator("#filter-assignee").waitFor({ state: "attached" });
-  await expect(page.locator("#filter-assignee")).toHaveValue("Alex");
+  await expect(page.locator("#filter-assignee")).toHaveValue("@person:Alex");
 });
 
 test("a custom type and a typed field reach new cards, the table, calendar and timeline", async ({ page }) => {
@@ -101,8 +100,7 @@ test("a custom type and a typed field reach new cards, the table, calendar and t
   const created = await planned();
   plannedId = created.id;
   await selectProjectView(page, "list");
-  await (await reveal(page.locator("#filter-assignee"))).fill("");
-  await page.locator("#filter-assignee").press("Tab");
+  await (await reveal(page.locator("#filter-assignee"))).selectOption("");
   await selectProjectView(page, "list");
   await page.locator(`[data-action="task-open"][data-id="${created.id}"]`).first().click();
   await page.locator("#task-form [name=start]").fill("2026-10-14");
@@ -117,8 +115,7 @@ test("a custom type and a typed field reach new cards, the table, calendar and t
   await costCell.press("Tab");
   await expect.poll(async () => (await planned()).fields?.[cost.id]).toBe(42);
   expect(Object.values((await planned()).fields)[0]).toBe(42);
-  await (await reveal(page.locator("#filter-assignee"))).fill("");
-  await page.locator("#filter-assignee").press("Tab");
+  await (await reveal(page.locator("#filter-assignee"))).selectOption("");
   await selectProjectView(page, "calendar");
   await expect(page.locator(".calendar").first()).toBeAttached();
   await selectProjectView(page, "timeline");

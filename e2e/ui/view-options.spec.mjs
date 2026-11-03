@@ -17,7 +17,7 @@ onDevices(["phone"], () => {
     // Table's own grouping and column filters sit in menus inside the panel.
     if (view === "table") for (const menu of ["table-groups", "table-filters"]) await page.locator(`.mobile-view-options-panel [data-board-menu="${menu}"] > summary`).click();
     const rows = await page.locator(".mobile-view-options-panel .field").evaluateAll((els) => els.filter((el) => el.getClientRects().length).map((el) => {
-      const control = el.querySelector("select, input"), r = el.getBoundingClientRect(), c = control.getBoundingClientRect();
+      const control = el.querySelector("select:not([hidden]), input:not([hidden]), [data-multi-select]"), r = el.getBoundingClientRect(), c = control.getBoundingClientRect();
       const name = document.createRange();
       name.selectNodeContents(el.firstChild);
       const n = name.getBoundingClientRect();

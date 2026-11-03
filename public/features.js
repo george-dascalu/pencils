@@ -3,7 +3,8 @@ import { confirmAction } from "./confirm-popover.js";
 import { deferredController } from "./deferred-controller.js";
 import { DEFAULT_TASK_TYPES } from "./task-types.js";
 import { kanbanGroup, kanbanGroups } from "./kanban-model.js";
-import { priorityLabel } from "./task-priority.js";
+import { priorityLabel, priorityOptions } from "./task-priority.js";
+import { matchesProjectFilters, assigneeFilterValue } from "./project-filters.js";
 import { randomUUID } from "./uuid.js";
 import {projectAutomations} from "./project-automations.js";
 import { projectSettings } from "./project-settings.js";
@@ -18,7 +19,7 @@ import { taskAutosave } from "./task-autosave.js";
 import { boardComments } from "./board-comments.js";
 import { workflowEditor } from "./workflow-editor.js";
 import { projectCreateSteps } from "./project-create.js";
-import { organisationTeams, projectTeamControls } from "./teams.js";
+import { organisationTeams, projectTeamControls, projectPeople } from "./teams.js";
 import { taskModalControls } from "./task-modal.js";
 import { taskAttachments } from "./task-attachments.js";
 import { taskRelationshipsEditor } from "./task-relationships.js";
@@ -139,30 +140,25 @@ export function installFeatures(ctx) {
     };
   }
   function filter(t) {
-    const f = state.extraFilters || {},
-      done = config().done.includes(t.status),
-      now = localDate(),
-      soon = localDate(new Date(Date.now() + 7 * 86400000));
-    return (
-      (!t.archived || f.archived) &&
-      (!f.completion || (f.completion === "done" ? done : !done)) &&
-      (!f.assignee ||
-        String(t.assignee || "")
-          .toLowerCase()
-          .includes(f.assignee.toLowerCase())) &&
-      (!f.tag ||
-        (t.tags || []).some((tag) =>
-          tag.toLowerCase().includes(f.tag.toLowerCase()),
-        )) &&
-      (!f.due ||
-        (f.due === "overdue" && t.due && t.due < now && !done) ||
-        (f.due === "week" && t.due && t.due >= now && t.due <= soon && !done) ||
-        (f.due === "none" && !t.due)) &&
-      (!f.blocked ||
-        (t.dependencies || []).some(
-          (id) => !config().done.includes(task(id)?.status),
-        ))
-    );
+    return matchesProjectFilters(t, state.extraFilters || {}, { config: config(), taskById: task });
+  }
+  function fieldFilters(f) {
+    const names = [...new Set([...projectPeople(state).map(person => person.name), ...state.tasks.map(task => task.assignee)].filter(Boolean))].sort((a,b)=>a.localeCompare(b));
+    const assignee = f.assignee || '', legacy = assignee && assignee !== '@unassigned' && !assignee.startsWith('@person:');
+    if (assignee.startsWith('@person:') && !names.includes(assignee.slice(8))) names.push(assignee.slice(8));
+    const people = `<label class="field">Assignee<select id="filter-assignee" aria-label="Filter by assignee"><option value="">Anyone</option><option value="@unassigned" ${assignee === '@unassigned' ? 'selected' : ''}>Unassigned</option>${legacy ? `<option value="${esc(assignee)}" selected>${esc(assignee)} (text match)</option>` : ''}${names.map(name=>`<option value="${esc(assigneeFilterValue(name))}" ${assignee === assigneeFilterValue(name) ? 'selected' : ''}>${esc(name)}</option>`).join('')}</select></label>`;
+    const selectedTags = Array.isArray(f.tags) && f.tags.length ? [...f.tags] : f.tag ? [...new Set(state.tasks.flatMap(task=>task.tags || []))].filter(tag=>tag.toLocaleLowerCase().includes(f.tag.toLocaleLowerCase())) : [];
+    if (f.tag && !selectedTags.length) selectedTags.push(f.tag);
+    const tags = [...new Set([...state.tasks.flatMap(task=>task.tags || []), ...selectedTags])].sort((a,b)=>a.localeCompare(b));
+    const tagPicker = `<label class="field">Tags<select id="filter-tag" aria-label="Tags" multiple hidden data-checkbox-menu>${tags.map(tag=>`<option value="${esc(tag)}" ${selectedTags.includes(tag) ? 'selected' : ''}>${esc(tag)}</option>`).join('')}</select><button type="button" class="button filter-multiselect" data-multi-select="filter-tag" aria-label="Filter by tags" aria-haspopup="dialog" aria-expanded="false" title="${esc(selectedTags.length ? selectedTags.join(', ') : 'Any tag')}"><span>${esc(selectedTags.length ? selectedTags.length === 1 ? selectedTags[0] : `${selectedTags.length} selected` : 'Any tag')}</span>${icon('chevron')}</button></label>`;
+    const priority = `<label class="field">Priority<select id="filter-priority" aria-label="Filter by priority"><option value="">Any priority</option>${priorityOptions.map(value=>`<option value="${value}" data-icon="priority-${value}" ${f.priority === value ? 'selected' : ''}>${priorityLabel(value)}</option>`).join('')}</select></label>`;
+    const custom = config().fields.map(field=>{
+      const value = f.fields?.[field.id] ?? '', attrs = `id="filter-custom-${esc(field.id)}" data-filter-custom="${esc(field.id)}" aria-label="Filter by ${esc(field.name)}"`;
+      const choices = field.type === 'checkbox' ? [['','Any value'],['true','Yes'],['false','No']] : [['','Any value'],...(field.options || []).map(option=>[option,option])];
+      const control = ['select','checkbox'].includes(field.type) ? `<select ${attrs}>${choices.map(([key,name])=>`<option value="${esc(key)}" ${String(value) === key ? 'selected' : ''}>${esc(name)}</option>`).join('')}</select>` : `<input ${attrs} type="${field.type === 'number' || field.type === 'date' ? field.type : 'text'}" ${field.type === 'number' ? 'step="any"' : ''} value="${esc(value)}" placeholder="${field.type === 'text' ? 'Contains…' : 'Any value'}">`;
+      return `<label class="field">${esc(field.name)}${control}</label>`;
+    }).join('');
+    return people + tagPicker + priority + custom;
   }
   async function saveProject(changes) {
     const fresh = await api(route());
@@ -180,7 +176,7 @@ export function installFeatures(ctx) {
     const f = state.extraFilters || {};
     host.insertAdjacentHTML(
       "afterbegin",
-      `${["board", "drawing", "overview"].includes(state.view) ? "" : `<div class="advanced-filters"><label class="field">Assignee<input id="filter-assignee" placeholder="Anyone" value="${esc(f.assignee || "")}"></label><label class="field">Tag<input id="filter-tag" placeholder="Any tag" value="${esc(f.tag || "")}"></label><label class="field">Deadline<select id="filter-due">${options(["", "overdue", "week", "none"], f.due || "", { "": "Any deadline", overdue: "Overdue", week: "Next 7 days", none: "No deadline" })}</select></label><label class="field">Completion<select id="filter-completion">${options(["", "open", "done"], f.completion || "", { "": "Any completion", open: "Open", done: "Completed" })}</select></label>${state.view === "list" ? `<label class="field">Group by<select id="group-by">${options(["status", "type", "assignee", "priority", "none"].filter((field) => fieldOn(state.config, field)), state.groupBy || "status", { status: "Status", type: "Type", assignee: "Assignee", priority: "Priority", none: "No grouping" })}</select></label>` : ""}<div class="filter-checks"><label><input type="checkbox" id="filter-blocked" ${f.blocked ? "checked" : ""}> Blocked</label><label><input type="checkbox" id="filter-archived" ${f.archived ? "checked" : ""}> Include archived</label></div><div class="menu-footer"><button type="button" class="button" data-action="filters-reset">Clear filters</button></div></div>`}`,
+      `${["board", "drawing", "overview"].includes(state.view) ? "" : `<div class="advanced-filters">${fieldFilters(f)}<label class="field">Deadline<select id="filter-due">${options(["", "overdue", "week", "none"], f.due || "", { "": "Any deadline", overdue: "Overdue", week: "Next 7 days", none: "No deadline" })}</select></label><label class="field">Completion<select id="filter-completion">${options(["", "open", "done"], f.completion || "", { "": "Any completion", open: "Open", done: "Completed" })}</select></label>${state.view === "list" ? `<label class="field">Group by<select id="group-by">${options(["status", "type", "assignee", "priority", "none"].filter((field) => fieldOn(state.config, field)), state.groupBy || "status", { status: "Status", type: "Type", assignee: "Assignee", priority: "Priority", none: "No grouping" })}</select></label>` : ""}<div class="filter-checks"><label><input type="checkbox" id="filter-blocked" ${f.blocked ? "checked" : ""}> Blocked</label><label><input type="checkbox" id="filter-archived" ${f.archived ? "checked" : ""}> Include archived</label></div><div class="menu-footer"><button type="button" class="button" data-action="filters-reset">Clear filters</button></div></div>`}`,
     );
     if (state.view === "table") {
       $(".toolbar-right")?.setAttribute("hidden", "");
@@ -1039,14 +1035,19 @@ export function installFeatures(ctx) {
       [
         "filter-assignee",
         "filter-tag",
+        "filter-priority",
         "filter-due",
         "filter-blocked",
         "filter-archived",
-      ].includes(el.id)
+      ].includes(el.id) || el.hasAttribute('data-filter-custom')
     ) {
       state.extraFilters ||= {};
-      state.extraFilters[el.id.slice(7)] =
-        el.type === "checkbox" ? el.checked : el.value;
+      if (el.id === 'filter-tag') {
+        state.extraFilters.tags = [...el.selectedOptions].map(option=>option.value);
+        delete state.extraFilters.tag;
+      } else if (el.hasAttribute('data-filter-custom')) {
+        (state.extraFilters.fields ||= {})[el.dataset.filterCustom] = el.value;
+      } else state.extraFilters[el.id.slice(7)] = el.type === "checkbox" ? el.checked : el.value;
       state.page = 0;
       renderView(true);
     }

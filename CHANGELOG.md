@@ -2,6 +2,11 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.21.41 — 2026-11-03
+
+### Added
+- Feature F0.21-41: Filters now include an assignee dropdown, tag checkboxes that match any selected tag, priority and the project's custom fields. Number, date, choice and Yes/No fields use their appropriate controls, and active-filter chips identify each selection. Older saved text filters retain their matches.
+
 ## 0.21.40 — 2026-11-02
 
 ### Changed

@@ -24,8 +24,7 @@ onDevices(["phone"], () => test("View options keeps one font size, with Clear fi
   expect(sizes.length).toBeGreaterThan(5);
   expect(new Set(sizes), sizes.join(" ")).toEqual(new Set(["16px"]));
   // The icon clears the filters.
-  await panel.locator("#filter-tag").fill("nothing");
-  await panel.locator("#filter-tag").press("Enter");
+  await panel.locator("#filter-priority").selectOption("high");
   await header.first().click();
-  await expect(panel.locator("#filter-tag")).toHaveValue("");
+  await expect(panel.locator("#filter-priority")).toHaveValue("");
 }));
