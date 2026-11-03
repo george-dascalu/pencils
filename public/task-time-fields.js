@@ -3,7 +3,7 @@ import { minuteTime, timeMinutes } from './calendar-time.js';
 
 export function taskTimeFields(task, esc, icon, { showAllDayTimes = false } = {}) {
   const timed = !!(task.start_time || task.due_time);
-  return `<button type="button" class="icon-button task-allday-toggle" data-task-allday aria-label="All day" title="All day" aria-pressed="${!timed}">${icon('sun')}</button><div class="task-time-range" ${showAllDayTimes ? 'data-all-day-hours' : ''} ${timed || showAllDayTimes ? '' : 'hidden'}><label class="field">Start time<input type="time" name="start_time" value="${esc(task.start_time || '')}" aria-label="Start time" ></label><label class="field">End time<input type="time" name="due_time" value="${esc(task.due_time || '')}" aria-label="End time" ></label></div>`;
+  return `<button type="button" class="icon-button task-allday-toggle" data-task-allday aria-label="All day" title="${timed ? 'Timed — switch to all day' : 'All day — switch to timed'}" aria-pressed="${!timed}"><span data-task-time-icon="all-day" aria-hidden="true">${icon('sun')}</span><span data-task-time-icon="timed" aria-hidden="true">${icon('clock')}</span></button><div class="task-time-range" ${showAllDayTimes ? 'data-all-day-hours' : ''} ${timed || showAllDayTimes ? '' : 'hidden'}><label class="field">Start time<input type="time" name="start_time" value="${esc(task.start_time || '')}" aria-label="Start time" ></label><label class="field">End time<input type="time" name="due_time" value="${esc(task.due_time || '')}" aria-label="End time" ></label></div>`;
 }
 
 export function installTaskTimes(form) {
@@ -14,6 +14,9 @@ export function installTaskTimes(form) {
   let remembered = allDay.getAttribute('aria-pressed') !== 'true' ? { from: from.value, to: to.value } : {};
   const sync = () => {
     const timed = allDay.getAttribute('aria-pressed') !== 'true';
+    allDay.title = timed ? 'Timed — switch to all day' : 'All day — switch to timed';
+    const mode = form.querySelector('[data-task-time-mode]');
+    if (mode) mode.textContent = timed ? 'Timed' : 'All day';
     timeRange.hidden = !timed && !preview;
     if (preview) {
       from.disabled = to.disabled = !timed;

@@ -2,6 +2,11 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.21.65 — 2026-11-03
+
+### Changed
+- Feature F0.21-65: Date controls make All day explicit with a filled sun toggle when selected and a clock for timed cards. The date popup names the current mode as All day or Timed, and the hover text explains the switch; all-day boundary hours stay visible and disabled.
+
 ## 0.21.64 — 2026-11-03
 
 ### Added

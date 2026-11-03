@@ -6,6 +6,7 @@
 // From the 0.21.0 baseline, new features use F<major>.<minor>-<1..100>: F0.21-1 releases
 // as 0.21.1, F0.21-100 as 0.22.0, then F0.22-1 as 0.22.1. Historical T IDs stay intact.
 export const roadmap = [
+  { id: "F0.21-65", title: "Make All day and Timed scheduling states visually explicit", status: "done", requested: "2026-11-03", started: "2026-11-03", done: "2026-11-03", version: "0.21.65" },
   { id: "F0.21-64", title: "Card Notes with rich text, one-at-a-time navigation, attachments and history", status: "done", requested: "2026-11-03", started: "2026-11-03", done: "2026-11-03", version: "0.21.64" },
   { id: "F0.21-63", title: "Link, open and unlink boards from cards using the shared Documents picker pattern", status: "done", requested: "2026-11-03", started: "2026-11-03", done: "2026-11-03", version: "0.21.63" },
   { id: "F0.21-62", title: "Keep native file and folder drags working through background saves", status: "done", requested: "2026-11-03", started: "2026-11-03", done: "2026-11-03", version: "0.21.62" },

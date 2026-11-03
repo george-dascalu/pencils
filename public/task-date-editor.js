@@ -82,7 +82,7 @@ export function taskDateEditor(ctx) {
     const allDay = form.querySelector('[data-task-allday]');
     if (allDay) {
       allDay.id='task-dates-all-day';
-      const label=document.createElement('label');label.htmlFor=allDay.id;label.className='task-dates-all-day-label';label.textContent='All day';
+      const label=document.createElement('label');label.htmlFor=allDay.id;label.className='task-dates-all-day-label';label.dataset.taskTimeMode='';label.setAttribute('aria-live','polite');
       form.querySelector('header').prepend(allDay,label);
     }
     installTaskTimes(form);

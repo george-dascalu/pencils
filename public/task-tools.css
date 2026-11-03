@@ -1349,7 +1349,12 @@ html.task-page-open,
 .task-time-range > .field { margin: 0; }
 .task-time-range input { min-width: 0; width: 100%; }
 .task-dialog .task-metadata-main > .task-dates { container: task-dates / inline-size; display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 5px; grid-column: 1 / -1; margin: 0; }
-.icon-button.task-allday-toggle[aria-pressed="true"] { background: var(--surface-soft); border-color: var(--green); color: var(--green); }
+.icon-button.task-allday-toggle[aria-pressed="true"] { background: var(--green) !important; border-color: var(--green); color: var(--paper) !important; }
+.task-allday-toggle [data-task-time-icon] { display: inline-flex; align-items: center; justify-content: center; }
+.task-allday-toggle[aria-pressed="true"] [data-task-time-icon="timed"],
+.task-allday-toggle[aria-pressed="false"] [data-task-time-icon="all-day"] { display: none; }
+.task-dates-actions > .task-dates-all-day-label { font-weight: 600; color: var(--ink); }
+.task-dates-actions > .task-allday-toggle[aria-pressed="true"] + .task-dates-all-day-label { color: var(--green); }
 .task-assignee-choice { position: relative; display: grid; place-items: center; min-width: var(--control-height); height: var(--control-height); }
 .task-assignee-choice .task-assignee { min-width: var(--control-height); width: auto; height: var(--control-height); padding-inline: 8px; font-size: var(--type-body); }
 .task-assignee-choice { width: clamp(var(--control-height), 32cqw, 128px); }
