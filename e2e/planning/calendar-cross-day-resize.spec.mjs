@@ -11,7 +11,11 @@ async function open(page) {
   await cards.first().hover();
   const saved = async () => (await app.store.snapshot(app.project.id)).tasks.find(t => t.id === task.id);
   const drag = async (end, date, minutes, cancel = false) => {
-    const handle = cards.locator(`[data-calendar-time-end="${end}"]`);await handle.hover();
+    const handle = cards.locator(`[data-calendar-time-end="${end}"]`);
+    // Keep the handle and nearby destination clear of the edge auto-scroll zone.
+    // Hover alone only reveals the nearest edge and can scroll the target time mid-drag.
+    await handle.evaluate(el => el.scrollIntoView({ block: 'center', inline: 'nearest', behavior: 'instant' }));
+    await handle.hover();
     const a = await handle.boundingBox(), day = await page.locator(`.calendar-hours-day[data-calendar-date="${date}"]`).boundingBox();
     await page.mouse.move(a.x + a.width / 2, a.y + a.height / 2);await page.mouse.down();
     await page.mouse.move(day.x + day.width / 2, day.y + day.height * minutes / 1440, { steps: 8 });
