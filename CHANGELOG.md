@@ -2,6 +2,14 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.21.48 — 2026-11-03
+
+### Added
+- Feature F0.21-48: Selecting document text highlights the rendered letters without shifting Markdown markers into view. A compact toolbar beside the selection offers bold, italic, strikethrough, highlight, inline code, links and text colours, including a custom colour picker. Works in Focus mode, split documents, callouts and table cells; colours stay in the Markdown vault and survive Reading mode, reopening and undo.
+
+### Fixed
+- Applying italic to selected bold text preserves both styles. Colouring a selection across blocks keeps code and table structure intact, and highlighting a coloured callout or table cell preserves its formatting.
+
 ## 0.21.47 — 2026-11-03
 
 ### Added

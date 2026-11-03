@@ -295,7 +295,21 @@
 .document-codemirror .cm-activeLine { background: var(--surface-soft); }
 /* Live preview marks the line you're on only when a theme asks (themes.css: Typewriter). */
 .document-codemirror:not([data-mode="source"]) .cm-activeLine { background: var(--active-line-live, transparent); }
-.document-codemirror .cm-selectionBackground, .document-codemirror .cm-focused .cm-selectionBackground { background: color-mix(in srgb, var(--green) 24%, transparent) !important; }
+.document-codemirror .cm-content::selection, .document-codemirror .cm-content ::selection {
+  background: color-mix(in srgb, var(--green) 28%, var(--surface)); color: var(--ink);
+}
+.document-codemirror ::highlight(document-selected-text) { background: color-mix(in srgb, var(--green) 28%, var(--surface)); color: var(--ink); }
+.document-highlight-text { background: color-mix(in srgb, #dab63c 30%, var(--surface)); color: var(--ink); }
+.document-selection-toolbar {
+  position: fixed; inset: auto; margin: 0; padding: var(--menu-panel-padding, 4px);
+  border: 1px solid var(--line); border-radius: var(--radius-popover, 10px);
+  background: var(--surface); color: var(--ink); box-shadow: var(--shadow-popover); overflow: visible;
+}
+.document-selection-toolbar:not(:popover-open) { display: none; }
+.document-selection-toolbar:popover-open { display: flex; }
+.document-selection-toolbar .inline-error { display: none; }
+.document-selection-toolbar .color-picker { flex: none; }
+.document-selection-toolbar .color-picker > summary { min-width: var(--control-height); min-height: var(--control-height); }
 .document-codemirror .cm-cursor { border-left-color: var(--ink); }
 .document-codemirror .cm-placeholder { color: var(--muted); }
 .document-codemirror .cm-lineNumbers .cm-gutterElement { padding-inline: 10px; }
@@ -411,6 +425,7 @@
 .document-prose blockquote { margin: 12px 0; padding: 8px 16px; border: 1px solid var(--line); border-radius: calc(6px * var(--style-roundness, 1)); color: var(--muted); }
 .document-prose img { max-width: 100%; height: auto; }
 .document-prose mark, .document-inline-preview mark { background: color-mix(in srgb, #dab63c 30%, var(--surface)); color: var(--ink); padding: 1px 2px; }
+.document-text-color .document-highlight-text, .document-text-color mark { color: inherit; }
 .document-callout { border: 1px solid var(--style-callout-color, var(--line)); border-radius: calc(6px * var(--style-roundness, 1)); padding: 12px 16px; background: color-mix(in srgb, var(--style-callout-color, var(--surface-soft)) 12%, var(--surface-soft)); margin: 12px 0; }
 /* Titles show as typed, as in Obsidian. */
 .document-callout > strong, .document-callout > summary { font-weight: 600; }

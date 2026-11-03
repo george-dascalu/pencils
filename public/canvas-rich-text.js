@@ -521,6 +521,7 @@ export function richToolbar(
     adapter = "rich",
     modes = true,
     extra = "",
+    inlineOnly = false,
   } = {},
 ) {
   // One control set for every surface. The rich editor runs execCommand names
@@ -566,10 +567,10 @@ export function richToolbar(
     <button type="button" class="rich-scroll" data-rich-scroll="start" aria-label="Scroll formatting tools back" title="More tools" hidden>${icon("chevron-left")}</button>
     <div class="rich-toolbar" role="group" aria-label="Format text">
       <div class="rich-format-groups">
-        ${group("Text style", menu("rich-format-menu", "Text style", icon("text"), `${control("paragraph", "Paragraph", "paragraph", false)}${control("h1", "Heading 1", "heading", false)}${control("h2", "Heading 2", "heading", false)}${control("h3", "Heading 3", "heading", false)}${control("quote", "Quote", "quote", false)}`))}
+        ${inlineOnly ? '' : group("Text style", menu("rich-format-menu", "Text style", icon("text"), `${control("paragraph", "Paragraph", "paragraph", false)}${control("h1", "Heading 1", "heading", false)}${control("h2", "Heading 2", "heading", false)}${control("h3", "Heading 3", "heading", false)}${control("quote", "Quote", "quote", false)}`))}
         ${group("Text emphasis", `${control("bold", "Bold", "bold")}${control("italic", "Italic", "italic")}${control("strike", "Strikethrough", "strike")}${control("highlight", "Highlight", "highlighter")}${control("code", "Inline code", "code")}`)}
-        ${group("Lists", `${control("bullet", "Bullet list", "list")}${control("number", "Numbered list", "numbered")}${control("check", "Checklist", "checklist")}`)}
-        ${group("Insert", `${link}${control("codeblock", "Code block", "codeblock")}${control("divider", "Divider", "divider", false)}`)}
+        ${inlineOnly ? '' : group("Lists", `${control("bullet", "Bullet list", "list")}${control("number", "Numbered list", "numbered")}${control("check", "Checklist", "checklist")}`)}
+        ${group("Insert", `${link}${inlineOnly ? '' : control("codeblock", "Code block", "codeblock") + control("divider", "Divider", "divider", false)}`)}
       </div>
       ${rich && alignment !== null ? group("Text alignment", menu("rich-align-menu", "Text alignment", icon(`text-${alignment || "left"}`), alignmentButtons(icon, alignment))) : ""}
       ${rich && modes ? `${group("Text editing mode", action("Markdown", "markdown", 'data-rich-mode="source" aria-pressed="false"'), "rich-modes")}${group("Text preview", action("Preview", "preview", `${previewAction} aria-pressed="false"`))}` : ""}

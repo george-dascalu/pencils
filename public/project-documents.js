@@ -849,7 +849,7 @@ export function projectDocuments(ctx) {
       async load(){const latest=doc.table?doc:await api(url),pending=sync.entries.get(url)?.local;return pending?.table||latest.table;},
       onChange(table){const base=all().find(d=>d.id===doc.id);if(!base||state.project?.id!==pid)return;state.documents=all().map(d=>d.id===doc.id?{...base,table}:d);void sync.enqueue(url,base,{table});}
     }) : markdownDocumentEditor({
-      icon, panel: showPanel, toast, parent: section.querySelector(".document-codemirror"), text: all().find(d => d.id === split.id).body || "",
+      icon, panel: showPanel, toast, colorPicker: ctx.colorPicker, parent: section.querySelector(".document-codemirror"), text: all().find(d => d.id === split.id).body || "",
       mode: split.mode === "source" ? "source" : "live", renderer, documents: all, hidden: ["attach", "card", "comment", "sketch"],
       cards: () => (state.tasks || []).filter(t => !t.archived), taskQueries: renderTaskQueries,
       onChange(body) {
@@ -1015,7 +1015,7 @@ export function projectDocuments(ctx) {
         syncChanged();
       },
     }) : markdownDocumentEditor({
-      icon, panel: showPanel, toast,
+      icon, panel: showPanel, toast, colorPicker: ctx.colorPicker,
       parent: form.querySelector(".document-codemirror"), text: doc.body || "",
       mode: mode === "source" ? "source" : "live", renderer, documents: all, hidden: state.project.personal ? ["card"] : [], cards: () => (state.tasks || []).filter((t) => !t.archived), taskQueries: renderTaskQueries,
       onChange(value) {

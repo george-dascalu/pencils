@@ -1,8 +1,8 @@
 import { documentSearchPanel } from "./document-search.js";
 import {
   EditorState, EditorSelection, StateEffect, StateField, Compartment, EditorView, Decoration, WidgetType,
-  keymap, placeholder, drawSelection, highlightActiveLine, lineNumbers,
-  defaultKeymap, history, historyKeymap, indentWithTab, undo, redo,
+  keymap, placeholder, highlightActiveLine, lineNumbers,
+  defaultKeymap, history, historyKeymap, indentWithTab, undo, redo, isolateHistory,
   syntaxTree, syntaxHighlighting, HighlightStyle, tags, foldGutter, foldKeymap, bracketMatching,
   markdown, markdownKeymap, markdownLanguage, languages, search, searchKeymap, openSearchPanel, closeSearchPanel,
   autocompletion, completionKeymap,
@@ -14,10 +14,12 @@ import { spreadsheetRows, markdownTable } from "./document-tables.js";
 import { insertCategories } from "./document-insert.js";
 import { highlightCodeBlocks } from "./document-code.js";
 import { listCallouts, listCalloutAfterMarker, setListCallout, listCalloutLabel } from "./document-list-callouts.js";
+import { colorSelection, textColorSpans, inlineWrapChange } from './document-text-color.js';
+import { documentSelectionTools } from './document-selection-tools.js';
 
-export function markdownDocumentEditor({ parent, text, mode = "live", renderer, documents, cards = () => [], hidden = [], taskQueries, onChange, onError, onLink, onInsert, onComment, onSketch, icon, panel, toast }) {
+export function markdownDocumentEditor({ parent, text, mode = "live", renderer, documents, cards = () => [], hidden = [], taskQueries, onChange, onError, onLink, onInsert, onComment, onSketch, icon, panel, toast, colorPicker }) {
   const presentation = new Compartment();
-  let view, alive = true, focusedComponent = null;
+  let view, alive = true, focusedComponent = null, selectionTools = null, selecting = false;
   const hoverEffect = StateEffect.define();
   const focusEffect = StateEffect.define();
   // Commented text (document-comments.js), highlighted in every mode and moved along with edits.
@@ -47,6 +49,7 @@ export function markdownDocumentEditor({ parent, text, mode = "live", renderer, 
   });
   let hoverTimer;
   const active = (state, from, to) => {
+    if (selecting || !state.selection.main.empty) return false;
     const { hover, focused } = state.field(revealField);
     return (focused && state.selection.ranges.some(r => r.from <= to && r.to >= from)) ||
       (hover && hover.from < to && hover.to > from);
@@ -72,6 +75,7 @@ export function markdownDocumentEditor({ parent, text, mode = "live", renderer, 
         editableDocumentComponent({
           element, raw: this.raw, from: this.from, kind: this.kind, editor, renderer, onError, hydrate, icon, panel, toast, onLink,
           onSearch: () => openSearchPanel(editor),
+          onEscape: () => selectionTools?.escape() || false,
           onFocus: component => { focusedComponent = component; },
           history: backwards => backwards ? redo(editor) : undo(editor),
         });
@@ -177,6 +181,15 @@ export function markdownDocumentEditor({ parent, text, mode = "live", renderer, 
       }
     }
     const hidden = (from, to) => blocked.some(([a, b]) => from < b && to > a);
+    for (const span of textColorSpans(source)) {
+      if (hidden(span.from, span.to)) continue;
+      let code = false;
+      for (let node = syntaxTree(state).resolveInner(span.from, 1); node; node = node.parent) if (/Code/.test(node.name)) code = true;
+      if (code) continue;
+      ranges.push(Decoration.replace({}).range(span.from, span.contentFrom));
+      ranges.push(Decoration.replace({}).range(span.contentTo, span.to));
+      if (span.contentFrom < span.contentTo) ranges.push(Decoration.mark({ class: 'document-text-color', attributes: { style: `color: ${span.color}` } }).range(span.contentFrom, span.contentTo));
+    }
     syntaxTree(state).iterate({
       enter(node) {
         if (blocked.some(([from, to]) => node.from >= from && node.to <= to)) return false;
@@ -227,6 +240,12 @@ export function markdownDocumentEditor({ parent, text, mode = "live", renderer, 
       let code = false;
       for (let n = node; n; n = n.parent) if (/Code|HTML/.test(n.name)) code = true;
       if (code || hidden(from, to) || active(state, from, to)) continue;
+      if (match[0].startsWith('==')) {
+        ranges.push(Decoration.replace({}).range(from, from + 2));
+        ranges.push(Decoration.mark({ class: 'document-highlight-text' }).range(from + 2, to - 2));
+        ranges.push(Decoration.replace({}).range(to - 2, to));
+        continue;
+      }
       // Do not add overlapping replacements for standard Markdown links.
       if (ranges.some(r => r.from < to && r.to > from && r.value.widget)) continue;
       ranges.push(Decoration.replace({ widget: new Preview(match[0], from) }).range(from, to));
@@ -288,7 +307,7 @@ export function markdownDocumentEditor({ parent, text, mode = "live", renderer, 
     state: EditorState.create({
       doc: text,
       extensions: [
-        revealField, history(), drawSelection(), bracketMatching(), EditorView.lineWrapping,
+        revealField, history(), bracketMatching(), EditorView.lineWrapping,
         markdown({ base: markdownLanguage, codeLanguages: languages }), syntaxHighlighting(HighlightStyle.define([
           // Headings take their line's colour (project-documents.css), which Style settings and themes may set.
           { tag: tags.heading, fontWeight: "650", color: "inherit" },
@@ -313,7 +332,7 @@ export function markdownDocumentEditor({ parent, text, mode = "live", renderer, 
         search({ top: true, createPanel: editor => documentSearchPanel(editor, icon) }),
         keymap.of([
           shortcut("Mod-b", "bold"), shortcut("Mod-i", "italic"), shortcut("Mod-k", "link"),
-          ...completionKeymap, ...markdownKeymap, ...defaultKeymap, ...historyKeymap,
+          ...completionKeymap, { key: 'Escape', run: () => selectionTools?.escape() || false }, ...markdownKeymap, ...defaultKeymap, ...historyKeymap,
           ...searchKeymap, ...foldKeymap, indentWithTab,
         ]),
         placeholder("Start writing…"),
@@ -323,7 +342,7 @@ export function markdownDocumentEditor({ parent, text, mode = "live", renderer, 
           onError("Documents can contain up to 200,000 characters.");
           return [];
         }),
-        EditorView.updateListener.of(update => { if (update.docChanged) onChange(update.state.doc.toString()); }),
+        EditorView.updateListener.of(update => { if (update.docChanged) onChange(update.state.doc.toString()); selectionTools?.update({ selectionChanged: update.selectionSet }); }),
         EditorView.domEventHandlers({
           focusin(event) {
             view.dispatch({ effects: focusEffect.of(true) });
@@ -331,7 +350,7 @@ export function markdownDocumentEditor({ parent, text, mode = "live", renderer, 
           },
           focusout() { view.dispatch({ effects: focusEffect.of(false) }); },
           mousemove(event) {
-            if (mode !== "live" || !event.target.closest(".cm-line")) return;
+            if (mode !== "live" || selecting || !view.state.selection.main.empty || !event.target.closest(".cm-line")) return;
             const pos = view.posAtCoords({ x: event.clientX, y: event.clientY });
             if (pos == null) return;
             const word = view.state.wordAt(pos), previous = view.state.field(revealField).hover;
@@ -369,12 +388,51 @@ export function markdownDocumentEditor({ parent, text, mode = "live", renderer, 
       ],
     }),
   });
-  function format(command) {
+  const selectionLife = new AbortController();
+  view.dom.addEventListener('mousedown', () => {
+    selecting = true; clearTimeout(hoverTimer); view.dispatch({ effects: hoverEffect.of(null) });
+  }, { signal: selectionLife.signal });
+  document.addEventListener('mouseup', () => { if (selecting) { selecting = false; view.dispatch({ effects: hoverEffect.of(null) }); } }, { signal: selectionLife.signal });
+  function selectionInfo() {
+    const component = focusedComponent?.element.isConnected && focusedComponent.selectionInfo();
+    if (component) return component;
+    const range = view.state.selection.main;
+    if (range.empty) return null;
+    const start = view.domAtPos(range.from), end = view.domAtPos(range.to), native = document.createRange();
+    native.setStart(start.node, start.offset); native.setEnd(end.node, end.offset);
+    const formats = {}; let plain = false;
+    for (let node = syntaxTree(view.state).resolveInner(range.from, 1); node; node = node.parent) {
+      if (node.to < range.to) continue;
+      if (node.name === 'StrongEmphasis') formats.bold = true;
+      if (node.name === 'Emphasis') formats.italic = true;
+      if (node.name === 'Strikethrough') formats.strike = true;
+      if (node.name === 'InlineCode') formats.code = true;
+      if (/^(FencedCode|IndentedCode|CodeBlock)$/.test(node.name)) plain = true;
+    }
+    const source = view.state.doc.toString();
+    formats.highlight = [...source.matchAll(/==[^\n]+?==/g)].some(m => m.index + 2 <= range.from && m.index + m[0].length - 2 >= range.to);
+    const color = textColorSpans(source).filter(s => s.contentFrom <= range.from && s.contentTo >= range.to).at(-1)?.color;
+    return { range: native, rect: view.coordsAtPos(range.head) || native.getBoundingClientRect(), formats, color, plain };
+  }
+  if (colorPicker) selectionTools = documentSelectionTools({ view, icon, colorPicker, selected: selectionInfo, format });
+  function format(command, value, { focus = true } = {}) {
     if (command === "undo") return undo(view);
     if (command === "redo") return redo(view);
-    if (focusedComponent?.element.isConnected && focusedComponent.format(command)) return;
+    if (focusedComponent?.element.isConnected && focusedComponent.format(command, value, { focus })) return;
     const range = view.state.selection.main;
     const selected = view.state.sliceDoc(range.from, range.to);
+    if (command === 'color') {
+      const source = view.state.doc.toString(), protectedRanges = []; let offset = 0;
+      for (const token of renderer.tokens(source)) {
+        const end = offset + token.raw.length;
+        if (["code", "table", "documentTableLayout", "blockquote", "documentMathBlock", "html", "hr"].includes(token.type)) protectedRanges.push([offset, end]);
+        offset = end;
+      }
+      const change = colorSelection(source, range.from, range.to, value, protectedRanges);
+      if (change) view.dispatch({ changes: { from: change.from, to: change.to, insert: change.insert }, selection: { anchor: change.anchor, head: change.head }, userEvent: 'input.format', annotations: isolateHistory.of('full') });
+      if (focus) view.focus();
+      return;
+    }
     const listCallout = listCallouts.find((callout) => command === `list-${callout.name}`);
     if (listCallout) {
       const start = view.state.doc.lineAt(range.from).number, end = view.state.doc.lineAt(range.to).number;
@@ -386,13 +444,15 @@ export function markdownDocumentEditor({ parent, text, mode = "live", renderer, 
         if (range.empty) caret = line.from + change.insert.length + Math.max(0, range.from - line.from - change.to);
       }
       view.dispatch(caret === null ? { changes } : { changes, selection: { anchor: caret } });
-      view.focus();
+      if (focus) view.focus();
       return;
     }
     const wraps = { bold: ["**", "**"], italic: ["*", "*"], strike: ["~~", "~~"], highlight: ["==", "=="], code: ["`", "`"], link: ["[", "](https://)"], wiki: ["[[", "]]"], math: ["$", "$"] };
     if (wraps[command]) {
-      const [before, after] = wraps[command], inside = selected || (command === "wiki" ? "" : "text");
-      view.dispatch({ changes: { from: range.from, to: range.to, insert: before + inside + after }, selection: { anchor: range.from + before.length, head: range.from + before.length + inside.length } });
+      const [before, after] = wraps[command];
+      const change = ['bold','italic','strike','highlight','code'].includes(command) ? inlineWrapChange(view.state.doc.toString(), range.from, range.to, before, after) : null;
+      const inside = selected || (command === 'wiki' ? '' : 'text');
+      view.dispatch(change ? { changes: { from: change.from, to: change.to, insert: change.insert }, selection: { anchor: change.anchor, head: change.head }, userEvent: 'input.format', annotations: isolateHistory.of('full') } : { changes: { from: range.from, to: range.to, insert: before + inside + after }, selection: { anchor: range.from + before.length, head: range.from + before.length + inside.length } });
     } else {
       const inserts = {
         table: "|  |  |\n| --- | --- |\n|  |  |",
@@ -427,7 +487,7 @@ export function markdownDocumentEditor({ parent, text, mode = "live", renderer, 
         view.dispatch(caret === null ? { changes } : { changes, selection: { anchor: caret } });
       }
     }
-    view.focus();
+    if (focus) view.focus();
   }
   return {
     view, format, hydrate,
@@ -452,7 +512,7 @@ export function markdownDocumentEditor({ parent, text, mode = "live", renderer, 
       if (focusedComponent?.element.isConnected && focusedComponent.insert(value)) return;
       view.dispatch(view.state.replaceSelection(value)); view.focus();
     },
-    destroy() { alive = false; clearTimeout(hoverTimer); view.destroy(); },
+    destroy() { alive = false; clearTimeout(hoverTimer); selectionTools?.destroy(); selectionLife.abort(); view.destroy(); },
     flush() { if (focusedComponent?.element.isConnected) focusedComponent.commit(); },
   };
 }

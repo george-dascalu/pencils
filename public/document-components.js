@@ -4,9 +4,12 @@ import { codeLanguages, codeLanguageName, codeLanguageEntry, highlightCode } fro
 import { TABLE_SCROLL_MARKER } from "./document-markdown.js";
 import { focusOnOpen } from "./open-focus.js";
 import { parseTabSeparated, csv } from "./document-tables.js";
+import { installTextColorRule, textColor } from './document-text-color.js';
+import { isolateHistory } from '/vendor/editor/deps.js';
 
 const converter = new TurndownService({ headingStyle: "atx", codeBlockStyle: "fenced", bulletListMarker: "-" });
 converter.use(gfm);
+installTextColorRule(converter);
 converter.addRule("documentSource", {
   filter: node => node.hasAttribute?.("data-document-source"),
   replacement: (_content, node) => node.dataset.documentSource,
@@ -51,7 +54,7 @@ const callout = raw => /^>\s*\[!([\w-]+)\]([+-])?(?:[ \t]+([^\n]*))?(?:\n|$)/.ex
 
 // A rendered block owns editable DOM, while every edit remains a CodeMirror
 // transaction. Only this block changes; the rest of the Markdown is untouched.
-export function editableDocumentComponent({ element, raw, from, kind, editor, renderer, onError, onFocus, onLink, onSearch, history, hydrate, icon, panel, toast }) {
+export function editableDocumentComponent({ element, raw, from, kind, editor, renderer, onError, onFocus, onLink, onSearch, onEscape, history, hydrate, icon, panel, toast }) {
   let source = trim(raw), position = from, writing = false, composing = false;
   let savedRange = null, focusedField = null;
   const token = renderer.tokens(source)[0];
@@ -126,6 +129,7 @@ export function editableDocumentComponent({ element, raw, from, kind, editor, re
         event.preventDefault(); api.format({ b: "bold", i: "italic", k: "link" }[event.key.toLowerCase()]);
       } else if (event.key === "Escape") {
         event.preventDefault();
+        if (onEscape?.()) return;
         editor.dispatch({ selection: { anchor: Math.min(position + source.length + 1, editor.state.doc.length) } });
         editor.focus();
       } else if (event.key === "Enter" && (!multiline || plain || node.matches("td,th"))) {
@@ -140,7 +144,7 @@ export function editableDocumentComponent({ element, raw, from, kind, editor, re
     });
     return node;
   }
-  function commit(changedField) {
+  function commit(changedField, isolate = false) {
     if (!serialize || composing) return;
     try {
       for (const field of fields)
@@ -150,7 +154,7 @@ export function editableDocumentComponent({ element, raw, from, kind, editor, re
       if (editor.state.doc.sliceString(position, position + source.length) !== source)
         throw new Error("This component changed. Reopen the document before editing it.");
       writing = true;
-      editor.dispatch({ changes: { from: position, to: position + source.length, insert: next }, userEvent: "input" });
+      editor.dispatch({ changes: { from: position, to: position + source.length, insert: next }, userEvent: "input", ...(isolate ? { annotations: isolateHistory.of('full') } : {}) });
       if (editor.state.doc.sliceString(position, position + next.length) === next) source = next;
       editor.requestMeasure();
     } catch (error) { onError(error.message); }
@@ -165,18 +169,58 @@ export function editableDocumentComponent({ element, raw, from, kind, editor, re
       element.dataset.componentFrom = String(position);
       return true;
     },
-    format(command) {
+    selectionInfo() {
+      const selection = window.getSelection();
+      const node = focusedField;
+      if (!node || !node.isConnected) return null;
+      if (selection?.rangeCount && node.contains(selection.anchorNode) && node.contains(selection.focusNode)) savedRange = selection.getRangeAt(0).cloneRange();
+      if (!savedRange || savedRange.collapsed || !node.contains(savedRange.commonAncestorContainer)) return null;
+      const formats = {};
+      let color = null;
+      for (let el = savedRange.startContainer.nodeType === Node.ELEMENT_NODE ? savedRange.startContainer : savedRange.startContainer.parentElement; el && node.contains(el); el = el.parentElement) {
+        if (!el.contains(savedRange.endContainer)) continue;
+        if (el.matches('b,strong')) formats.bold = true;
+        if (el.matches('i,em')) formats.italic = true;
+        if (el.matches('s,del,strike')) formats.strike = true;
+        if (el.matches('mark')) formats.highlight = true;
+        if (el.matches('code')) formats.code = true;
+        color ||= textColor(el.style.color || el.getAttribute('color'));
+      }
+      return { range: savedRange.cloneRange(), rect: savedRange.getBoundingClientRect(), formats, color, plain: node.contentEditable === 'plaintext-only' };
+    },
+    format(command, value, { focus = true } = {}) {
       const node = fields.find(node => node.contains(document.activeElement) || node === document.activeElement)
         || focusedField;
       if (!node) return false;
-      node.focus();
+      if (focus) node.focus();
       if (savedRange && node.contains(savedRange.commonAncestorContainer)) {
         const selection = window.getSelection(); selection.removeAllRanges(); selection.addRange(savedRange);
       }
       if (node.contentEditable === "plaintext-only") return true;
       const commands = { bold: "bold", italic: "italic", strike: "strikeThrough",
         bullet: "insertUnorderedList", number: "insertOrderedList" };
-      if (commands[command]) document.execCommand(commands[command]);
+      if (command === 'color' && textColor(value)) {
+        document.execCommand('foreColor', false, textColor(value));
+        for (const font of node.querySelectorAll('font[color]')) {
+          const color = textColor(font.getAttribute('color'));
+          if (color) { font.style.color = color; font.removeAttribute('color'); }
+        }
+      }
+      else if (commands[command]) document.execCommand(commands[command]);
+      else if (command === 'highlight' && savedRange && !savedRange.collapsed) {
+        // Preserve existing bold/colour DOM and the selection when adding or removing a highlight.
+        const range = savedRange.cloneRange(), selection = window.getSelection();
+        const ancestor = range.commonAncestorContainer;
+        const mark = (ancestor.nodeType === Node.ELEMENT_NODE ? ancestor : ancestor.parentElement)?.closest('mark');
+        if (mark && node.contains(mark) && mark.textContent === range.toString()) {
+          const first = mark.firstChild, last = mark.lastChild;
+          mark.replaceWith(...mark.childNodes); range.setStartBefore(first); range.setEndAfter(last);
+        } else {
+          const highlight = document.createElement('mark'); highlight.append(range.extractContents());
+          range.insertNode(highlight); range.selectNodeContents(highlight);
+        }
+        selection.removeAllRanges(); selection.addRange(range);
+      }
       else if (/^h[1-6]$/.test(command) || command === "paragraph" || command === "quote")
         document.execCommand("formatBlock", false, command === "quote" ? "blockquote" : command === "paragraph" ? "p" : command);
       else {
@@ -196,7 +240,9 @@ export function editableDocumentComponent({ element, raw, from, kind, editor, re
           return false;
         }
       }
-      commit(node); return true;
+      const selection = window.getSelection();
+      if (selection?.rangeCount && node.contains(selection.anchorNode) && node.contains(selection.focusNode)) savedRange = selection.getRangeAt(0).cloneRange();
+      commit(node, true); return true;
     },
     insert(value) {
       if (!focusedField) return false;

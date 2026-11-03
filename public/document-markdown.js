@@ -3,6 +3,7 @@ import DOMPurify from "/vendor/purify.js";
 import { katex, markedFootnote } from "/vendor/editor/deps.js";
 import { resolveDocument, resolveCard, documentSection } from "./document-model.js";
 import { listCallouts, listCalloutLabel } from "./document-list-callouts.js";
+import { textColor, textColorExtension } from './document-text-color.js';
 
 // A table may keep its columns and scroll sideways instead of fitting the page.
 // The choice is an HTML comment on the line before it, invisible elsewhere.
@@ -21,6 +22,7 @@ const tableLayout = {
 export function documentMarkdown({ documents, project, esc, icon, cards = () => [], cardHTML }) {
   let depth = 0, sequence = 0;
   const inlineParser = new Marked({ gfm: true, breaks: false });
+  inlineParser.use({ extensions: [textColorExtension] });
   // Preview range discovery must not mutate the footnote renderer's state.
   const blockParser = new Marked({ gfm: true, breaks: false });
   blockParser.use({ extensions: [tableLayout, {
@@ -59,6 +61,7 @@ export function documentMarkdown({ documents, project, esc, icon, cards = () => 
       },
     },
     extensions: [
+      textColorExtension,
       tableLayout,
       {
         name: "documentMathBlock", level: "block",
@@ -130,10 +133,15 @@ export function documentMarkdown({ documents, project, esc, icon, cards = () => 
     const fragment = DOMPurify.sanitize(makeParser().parse(text), {
       RETURN_DOM_FRAGMENT: true,
       ALLOW_DATA_ATTR: false,
-      ADD_ATTR: ["data-document-sketch", "data-document-ref", "data-document-diagram", "data-document-source", "data-document-callout", "data-document-card", "data-document-task-query"],
+      ADD_ATTR: ["data-document-sketch", "data-document-ref", "data-document-diagram", "data-document-source", "data-document-callout", "data-document-card", "data-document-task-query", "data-document-color"],
       FORBID_TAGS: ["style", "form", "button", "textarea", "select", "option", "iframe", "object", "embed"],
       FORBID_ATTR: ["style"],
     });
+    for (const span of fragment.querySelectorAll('[data-document-color]')) {
+      const color = textColor(span.dataset.documentColor);
+      if (color && span.nodeName === 'SPAN') { span.style.color = color; span.classList.add('document-text-color'); }
+      else span.removeAttribute('data-document-color');
+    }
     for (const link of fragment.querySelectorAll("a[data-document-card]")) {
       const card = cards().find((t) => t.id === link.dataset.documentCard);
       if (!card || !cardHTML) continue;

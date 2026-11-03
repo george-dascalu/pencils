@@ -117,7 +117,7 @@ test("quote edits and toolbar formatting save, and search keeps Live preview", a
     const range = document.createRange(); range.setStart(text, 0); range.setEnd(text, 6);
     const selection = getSelection(); selection.removeAllRanges(); selection.addRange(range);
   });
-  await page.getByRole("button", { name: "Bold", exact: true }).click();
+  await page.locator('#document-formatting').getByRole("button", { name: "Bold", exact: true }).click();
   await expect.poll(saved).toContain("> **Edited** in the quote.");
   await textbox(page, "Quote content").click();
   await page.keyboard.press("Control+f");
