@@ -113,3 +113,37 @@ onDevices(["phone"], () => test("with the keyboard away the sheet keeps above th
   const box = await sheet(page).boundingBox();
   expect(box.y + box.height, "the sheet clears the safe area as the bar does").toBeLessThanOrEqual(bar.y + bar.height + 0.5);
 }));
+
+// Owner report, 3 November 2026: dragging the sheet with the keyboard open scrolled the page
+// behind it. A drag on the sheet stays in it: its results scroll, and nothing else does.
+onDevices(["phone"], () => test("a drag on the search sheet never scrolls the page behind", async ({ page, browserName }) => {
+  test.skip(browserName !== "chromium", "touch drags go through Chromium's DevTools protocol");
+  await page.goto(`${app.base}/#project/${app.project.id}/list`);
+  await page.locator(".task-row").first().waitFor();
+  await openSearch(page);
+  await page.evaluate(() => {
+    window.__passed = [];
+    addEventListener("touchmove", (event) => window.__passed.push(!event.defaultPrevented), { passive: true });
+  });
+  const cdp = await page.context().newCDPSession(page);
+  const drag = async (x, from, to) => {
+    await cdp.send("Input.dispatchTouchEvent", { type: "touchStart", touchPoints: [{ x, y: from }] });
+    for (let i = 1; i <= 6; i++) await cdp.send("Input.dispatchTouchEvent", { type: "touchMove", touchPoints: [{ x, y: from + ((to - from) * i) / 6 }] });
+    await cdp.send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] });
+  };
+  const field = await page.locator("#global-search-input").boundingBox(), box = await sheet(page).boundingBox();
+  // On the field, and on the sheet's top edge, dragging down or up.
+  await drag(field.x + field.width / 2, field.y + field.height / 2, field.y - 120);
+  await drag(box.x + 20, box.y + 6, box.y + 160);
+  expect(await page.evaluate(() => window.__passed.length)).toBeGreaterThan(0);
+  expect(await page.evaluate(() => window.__passed.filter(Boolean).length), "no drag on the sheet is left for the page to scroll").toBe(0);
+  // The results still scroll under the finger, here in the height a keyboard leaves.
+  await page.setViewportSize({ width: 390, height: 480 });
+  await page.locator("#global-search-input").fill("roadmap");
+  const results = sheet(page).locator(".search-dialog-results");
+  await expect(sheet(page).locator(".search-result")).toHaveCount(13);
+  expect(await results.evaluate((el) => el.scrollHeight > el.clientHeight), "enough results to scroll").toBe(true);
+  const list = await results.boundingBox();
+  await drag(list.x + list.width / 2, list.y + list.height - 20, list.y + 20);
+  await expect.poll(() => results.evaluate((el) => el.scrollTop)).toBeGreaterThan(0);
+}));

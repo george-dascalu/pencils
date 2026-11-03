@@ -23,6 +23,7 @@ import { projectCreateSteps } from "./project-create.js";
 import { organisationTeams, projectPeopleControls, projectPeople } from "./teams.js";
 import { taskModalControls } from "./task-modal.js";
 import { projectTags } from "./project-tags.js";
+import { containPanelScroll } from "./scroll-gestures.js";
 import { parseTags } from "./task-tags.js";
 import { taskAttachments } from "./task-attachments.js";
 import { taskRelationshipsEditor } from "./task-relationships.js";
@@ -623,6 +624,8 @@ export function installFeatures(ctx) {
     const dialog = $("dialog.search-dialog");
     if (!dialog) return; // the open card kept its dialog (for example, a cleared title)
     const input = $("#global-search-input"), clear = dialog.querySelector(".search-dialog-clear");
+    // A drag on the sheet scrolls its results or nothing, never the page behind (iOS pans it with the keyboard open).
+    containPanelScroll(dialog, () => dialog.querySelector(".search-dialog-results"));
     // Without preventScroll iOS pans the page to the field while the sheet moves above the keyboard.
     input.focus({ preventScroll: true });
     // The ✕ clears the text, or closes the sheet when there is none.

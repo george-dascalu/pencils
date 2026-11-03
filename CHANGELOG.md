@@ -2,6 +2,11 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.21.75 — 2026-11-03
+
+### Fixed
+- Feature F0.21-75: On phones, dragging the search sheet (with the keyboard open, say) no longer scrolls the page behind it. The results still scroll under the finger.
+
 ## 0.21.74 — 2026-11-03
 
 ### Fixed
