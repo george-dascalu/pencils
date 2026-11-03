@@ -9,13 +9,13 @@ import { openNewDocument } from "../helpers/documents.mjs";
 
 const app = useApp(async (store) => ({ project: await store.createProject({ title: "Controls", key: "EC" }) }));
 const body = "# Controls\n\n| A | B |\n| --- | --- |\n| 1 | 2 |\n\n> [!note]- Folded callout\n> Hidden body.\n\n```js\nconst a = 1;\n```\n";
-const open = (page) => openNewDocument(page, app, app.project.id, { body, waitFor: ".document-codemirror .document-table-layout" });
+const open = (page) => openNewDocument(page, app, app.project.id, { body, waitFor: ".document-codemirror .document-table-actions" });
 const textFocused = () => {
   const el = document.activeElement;
   return !!el && (el.isContentEditable || el.matches("input:not([type=button],[type=submit],[type=checkbox],[type=radio]), textarea"));
 };
-const layoutButton = (page, name) => page.locator(".document-codemirror .document-table-layout button", { hasText: name });
-const action = (page, name) => page.locator(".document-codemirror .document-component-actions button", { hasText: name });
+const layoutButton = page => page.getByRole('button',{name:'Horizontal scroll',exact:true});
+const action = (page,name) => page.locator('.document-codemirror').getByRole('button',{name,exact:true});
 
 onDevices(["phone", "desktop"], () => test("controls inside a document block keep focus where it is", async ({ page }) => {
   await open(page);
@@ -38,7 +38,7 @@ onDevices(["phone"], () => {
     await expect(layoutButton(page, "Scroll")).toHaveAttribute("aria-pressed", "true");
     expect(await page.evaluate(textFocused)).toBe(false);
     await layoutButton(page, "Fit width").tap();
-    await expect(layoutButton(page, "Fit width")).toHaveAttribute("aria-pressed", "true");
+    await expect(layoutButton(page, "Fit width")).toHaveAttribute("aria-pressed", "false");
     expect(await page.evaluate(textFocused)).toBe(false);
   });
 

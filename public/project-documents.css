@@ -597,11 +597,39 @@ span.document-list-callout { display: block; }
 .document-table-scroll { overflow-x: auto; max-width: 100%; overscroll-behavior-x: contain; }
 .document-prose .document-table-scroll > table { width: auto; min-width: 100%; }
 .document-prose .document-table-scroll :is(th, td) { min-width: 6em; overflow-wrap: normal; word-break: normal; white-space: nowrap; }
-.document-table-layout { display: inline-flex; gap: 0; margin-inline-start: auto; }
-.document-table-layout > .button { border-radius: 0; }
-.document-table-layout > .button:first-child { border-radius: var(--control-radius, 6px) 0 0 var(--control-radius, 6px); }
-.document-table-layout > .button:last-child { border-radius: 0 var(--control-radius, 6px) var(--control-radius, 6px) 0; margin-inline-start: -1px; }
-.document-table-layout > .button[aria-pressed="true"] { background: var(--green); border-color: var(--green); color: var(--paper); }
+.document-table-viewport { max-width: 100%; overflow-x: auto; overscroll-behavior-x: contain; }
+.document-table-surface { position: relative; box-sizing: border-box; width: 100%; padding: var(--control-height); }
+.document-table-surface[data-table-layout="scroll"] { width: max-content; min-width: 100%; }
+.document-prose .document-table-surface > table { margin: 0; width: 100%; min-width: calc(var(--table-columns) * var(--control-height)); table-layout: fixed; }
+.document-prose .document-table-surface[data-table-layout="scroll"] > table { table-layout: auto; }
+.document-prose .document-table-surface tr { height: var(--control-height); }
+.document-prose .document-table-surface :is(th,td) { height: var(--control-height); min-width: var(--control-height); overflow-wrap: anywhere; box-sizing: border-box; }
+.document-prose .document-table-surface :is(th,td)[data-table-selected="true"] { background: color-mix(in srgb, var(--green) 14%, var(--surface)); box-shadow: inset 0 0 0 1px var(--green); }
+.document-table-column-handles, .document-table-row-handles { display: contents; }
+.document-table-surface .document-table-column-handles > button,
+.document-table-surface .document-table-row-handles > button,
+.document-table-surface > .document-table-add-row,
+.document-table-surface > .document-table-add-column { position: absolute; margin: 0; padding: 0; border-radius: 0; border: 0; background: transparent; color: var(--muted); }
+.document-prose .document-table-surface .document-table-column-handles > button { top: 0; width: var(--axis-width) !important; min-width: 0 !important; }
+.document-prose .document-table-surface .document-table-row-handles > button { left: 0; height: var(--axis-height) !important; }
+.document-prose .document-table-surface > button.document-table-add-row { width: var(--axis-width) !important; }
+.document-prose .document-table-surface > button.document-table-add-column { height: var(--axis-height) !important; }
+.document-table-surface [data-table-axis] { cursor: grab; touch-action: none; user-select: none; -webkit-touch-callout: none; }
+.document-table-surface [data-table-axis]:active { cursor: grabbing; }
+.document-table-surface button:is(:hover,[aria-pressed="true"]) { color: var(--green); background: color-mix(in srgb,var(--green) 12%,transparent); }
+.document-table-surface [data-table-axis="column"][data-table-drop="before"] { box-shadow: inset 3px 0 var(--green); }
+.document-table-surface [data-table-axis="column"][data-table-drop="after"] { box-shadow: inset -3px 0 var(--green); }
+.document-table-surface [data-table-axis="row"][data-table-drop="before"] { box-shadow: inset 0 3px var(--green); }
+.document-table-surface [data-table-axis="row"][data-table-drop="after"] { box-shadow: inset 0 -3px var(--green); }
+.document-table-actions { gap: 4px; margin-top: 0; }
+.document-table-actions [aria-label="Horizontal scroll"] { margin-inline-start: auto; }
+.document-table-actions [aria-pressed="true"] { background: var(--green); color: var(--paper); }
+.document-table-template-form, .document-table-selection-form { display: grid; gap: var(--popover-padding,8px); }
+.document-table-template-form label:not(.check-control), .document-table-selection-form label { display: grid; gap: 4px; }
+.document-table-dimensions, .document-table-selection-form { grid-template-columns: repeat(2,minmax(0,1fr)); }
+.document-table-dimensions { display: grid; gap: 8px; }
+.document-table-dimensions[hidden] { display: none; }
+.document-table-selection-form > button { grid-column: 1 / -1; }
 
 
 /* Properties live in the shared contextual panel, leaving the document at full height. */

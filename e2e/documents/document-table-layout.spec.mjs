@@ -14,15 +14,15 @@ const open = (page, body = fitBody) => openNewDocument(page, app, app.project.id
 const layout = (page, scope = ".document-codemirror") => page.evaluate((scope) => {
   const tableEl = document.querySelector(`${scope} table`);
   const box = tableEl.closest(".document-table-scroll") || tableEl.parentElement;
-  const header = [...tableEl.rows[0].cells].map((cell) => ({ text: cell.textContent.trim(), lines: Math.round(cell.getBoundingClientRect().height / parseFloat(getComputedStyle(cell).lineHeight || "20")) }));
+  const header = [...tableEl.rows[0].cells].map((cell) => ({ text: cell.textContent.trim(), lines: Math.round((cell.getBoundingClientRect().height - parseFloat(getComputedStyle(cell).paddingTop) - parseFloat(getComputedStyle(cell).paddingBottom) - 1) / parseFloat(getComputedStyle(cell).lineHeight || "20")) }));
   return { scrolls: getComputedStyle(box).overflowX === "auto" && box.scrollWidth > box.clientWidth + 1, scrollClass: box.classList.contains("document-table-scroll"), tableWidth: tableEl.getBoundingClientRect().width, boxWidth: box.clientWidth, header };
 }, scope);
-const pressed = (page) => page.locator(".document-codemirror .document-table-layout button").evaluateAll((els) => els.map((el) => [el.textContent.trim(), el.getAttribute("aria-pressed")]));
-const layoutButton = (page, name) => page.locator(".document-codemirror .document-table-layout button", { hasText: name });
+const pressed = page => page.getByRole('button',{name:'Horizontal scroll',exact:true}).getAttribute('aria-pressed');
+const layoutButton = page => page.getByRole('button',{name:'Horizontal scroll',exact:true});
 
-onDevices(["desktop", "phone"], () => test("a table fits the page width by default, with a Fit/Scroll switch", async ({ page }) => {
+onDevices(["desktop", "phone"], () => test("a table fits the page width by default, with a width icon toggle", async ({ page }) => {
   await open(page);
-  expect(await pressed(page)).toEqual([["Fit width", "true"], ["Scroll", "false"]]);
+  expect(await pressed(page)).toBe("false");
   const l = await layout(page);
   expect(!l.scrolls && l.tableWidth <= l.boxWidth + 1, `fits ${JSON.stringify(l)}`).toBe(true);
 }));
@@ -32,7 +32,7 @@ onDevices(["phone"], () => {
     await open(page);
     await layoutButton(page, "Scroll").tap();
     await expect(layoutButton(page, "Scroll")).toHaveAttribute("aria-pressed", "true");
-    expect(await pressed(page)).toEqual([["Fit width", "false"], ["Scroll", "true"]]);
+    expect(await pressed(page)).toBe("true");
     await expect.poll(async () => (await layout(page)).scrolls, "scrolls sideways").toBe(true);
     const l = await layout(page);
     expect(l.scrollClass, JSON.stringify(l)).toBe(true);
@@ -44,7 +44,7 @@ onDevices(["phone"], () => {
 
   test("a saved Scroll table opens scrolling, and Fit width removes the marker", async ({ page }) => {
     await open(page, scrollBody);
-    expect(await pressed(page)).toEqual([["Fit width", "false"], ["Scroll", "true"]]);
+    expect(await pressed(page)).toBe("true");
     await expect.poll(async () => (await layout(page)).scrolls).toBe(true);
     await layoutButton(page, "Fit width").tap();
     await expect.poll(() => editorSource(page)).not.toMatch(/table: scroll/);

@@ -8,7 +8,8 @@ import { textColor, textColorExtension } from './document-text-color.js';
 
 // A table may keep its columns and scroll sideways instead of fitting the page.
 // The choice is an HTML comment on the line before it, invisible elsewhere.
-export const TABLE_SCROLL_MARKER = "<!-- table: scroll -->";
+import { TABLE_SCROLL_MARKER, richTableExtension } from "./document-table-format.js";
+export { TABLE_SCROLL_MARKER };
 const tableLayout = {
   name: "documentTableLayout", level: "block", start: src => src.indexOf("<!--"),
   tokenizer(src) {
@@ -27,7 +28,7 @@ export function documentMarkdown({ documents, project, esc, icon, cards = () => 
   inlineParser.use({ extensions: [textColorExtension] });
   // Preview range discovery must not mutate the footnote renderer's state.
   const blockParser = new Marked({ gfm: true, breaks: false });
-  blockParser.use({ extensions: [tableLayout, {
+  blockParser.use({ extensions: [tableLayout, richTableExtension, {
     name: "documentMathBlock", level: "block", start: src => src.indexOf("$$"),
     tokenizer(src) {
       const match = /^\$\$[ \t]*\n?([\s\S]+?)\n?\$\$(?:[ \t]*\n|$)/.exec(src);
@@ -65,6 +66,7 @@ export function documentMarkdown({ documents, project, esc, icon, cards = () => 
     extensions: [
       textColorExtension,
       tableLayout,
+      richTableExtension,
       {
         name: "documentMathBlock", level: "block",
         start: src => src.indexOf("$$"),

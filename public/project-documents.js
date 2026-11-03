@@ -23,6 +23,9 @@ import { richToolbar } from "./canvas-rich-text.js";
 import { installToolbarScroll, floatMenuPanel } from "./rich-toolbar-scroll.js";
 import { randomUUID } from "./uuid.js";
 import { allowsTextAutofocus, focusOnOpen } from "./open-focus.js";
+import { TABLE_TEMPLATE_MARKER, tableLayoutTemplates } from './document-table-format.js';
+import { makeDocumentTable } from './document-table-model.js';
+import { serializeDocumentTable } from './document-table-format.js';
 import { mountLayoutTray, removeLayoutTray, tabBar } from "./layout-tray.js";
 
 export function projectDocuments(ctx) {
@@ -44,6 +47,37 @@ export function projectDocuments(ctx) {
   function embedPanel(button, target = editor) {
     documentEmbedPicker({ button, panels, documents: all, currentId: current.id, esc, loadTable: loadEmbedTable,
       insert: value => target?.insert(value, { block: true, focus: allowsTextAutofocus() }) });
+  }
+  async function saveTableLayout(title, body) {
+    if (!title) throw Error('Give this layout a name.');
+    const pid = project;
+    if (tableLayoutTemplates(all(), folders()).some(doc => doc.title.toLowerCase() === title.toLowerCase())) throw Error('A table layout already has that name. Choose another name.');
+    let folder = folders().find(f => f.title === 'Tables' && inTemplatesFolder(f.parent, folders()));
+    if (!folder) {
+      const updated = await explorer.updateFolders(list => {
+        let templates = list.find(f => !f.parent && f.title.toLowerCase() === 'templates');
+        if (!templates) { templates = { id: `folder-${randomUUID()}`, title: 'Templates', parent: null }; list.push(templates); }
+        folder = list.find(f => f.parent === templates.id && f.title === 'Tables');
+        if (!folder) { folder = { id: `folder-${randomUUID()}`, title: 'Tables', parent: templates.id }; list.push(folder); }
+        return list;
+      });
+      if (!updated || state.project?.id !== pid) throw Error('Reopen this project before saving its table layout.');
+    }
+    const record = await api(endpoint(pid), { method: 'POST', body: { title, body: `${TABLE_TEMPLATE_MARKER}\n\n${body}`, folder: folder.id } });
+    if (state.project?.id === pid) { state.documents = [...all(), record]; updateExplorer(); }
+  }
+  function insertTablePanel(button, target = editor) {
+    const layouts = tableLayoutTemplates(all(), folders()).sort((a,b) => a.title.localeCompare(b.title));
+    const box = showPanel(button, 'Insert table', `<form class="document-table-template-form"><label>Table layout<select name="layout"><option value="">Blank table</option>${layouts.map(doc => `<option value="${esc(doc.id)}">${esc(doc.title)}</option>`).join('')}</select></label><div class="document-table-dimensions"><label>Rows<input name="rows" type="number" min="2" max="100" value="2" required></label><label>Columns<input name="columns" type="number" min="1" max="100" value="2" required></label></div><button class="button primary">Insert table</button></form>`,320);
+    if (!box) return;
+    const fields = box.querySelector('form').elements;
+    fields.layout.addEventListener('change', () => { box.querySelector('.document-table-dimensions').hidden = !!fields.layout.value; });
+    box.querySelector('form').addEventListener('submit', event => {
+      event.preventDefault();
+      const chosen = layouts.find(doc => doc.id === fields.layout.value);
+      const body = chosen ? chosen.body.trimStart().slice(TABLE_TEMPLATE_MARKER.length).trim() : serializeDocumentTable(makeDocumentTable(Array.from({length:Number(fields.rows.value)},()=>Array(Number(fields.columns.value)).fill(''))));
+      closePanel(); target?.insert(body, { block: true, focus: allowsTextAutofocus() });
+    });
   }
 
   // showPanel returns the panel, or nothing when its opener, pressed again, closed it.
@@ -175,7 +209,7 @@ export function projectDocuments(ctx) {
   // New → From template: pick a document from a "Templates" folder, answer its {{prompt:…}}
   // questions, and open the new document with the caret at {{cursor}}.
   function templatePanel(button) {
-    const templates = templateDocuments(all().filter(doc => doc.document_type !== "table"), folders()).sort((a, b) => a.title.localeCompare(b.title, undefined, { numeric: true, sensitivity: "base" }));
+    const templates = templateDocuments(all().filter(doc => doc.document_type !== "table" && !doc.body?.trimStart().startsWith(TABLE_TEMPLATE_MARKER)), folders()).sort((a, b) => a.title.localeCompare(b.title, undefined, { numeric: true, sensitivity: "base" }));
     const box = showPanel(button, "New from template", templates.length
       ? `<div class="document-template-list">${templates.map(t => `<button type="button" class="document-panel-item" data-template="${esc(t.id)}">${icon("file")}<span>${esc(t.title)}</span></button>`).join("")}</div>`
       : `<p class="field-hint">Put documents in a folder named Templates to start new documents from them. Templates can use {{title}}, {{date}}, {{time}}, {{project}}, {{cursor}} and {{prompt:Question}}.</p>`);
@@ -867,7 +901,7 @@ export function projectDocuments(ctx) {
       async load(){const latest=doc.table?doc:await api(url),pending=sync.entries.get(url)?.local;return pending?.table||latest.table;},
       onChange(table){const base=all().find(d=>d.id===doc.id);if(!base||state.project?.id!==pid)return;state.documents=all().map(d=>d.id===doc.id?{...base,table}:d);void sync.enqueue(url,base,{table});}
     }) : markdownDocumentEditor({
-      icon, panel: showPanel, toast, colorPicker: ctx.colorPicker, parent: section.querySelector(".document-codemirror"), text: all().find(d => d.id === split.id).body || "",
+      tableLayouts: { save: saveTableLayout }, icon, panel: showPanel, toast, colorPicker: ctx.colorPicker, parent: section.querySelector(".document-codemirror"), text: all().find(d => d.id === split.id).body || "",
       mode: split.mode === "source" ? "source" : "live", renderer: paneRenderer, documents: all, hidden: ["attach", "card", "comment", "sketch"],
       cards: () => (state.tasks || []).filter(t => !t.archived), taskQueries: renderTaskQueries,
       onChange(body) {
@@ -877,7 +911,7 @@ export function projectDocuments(ctx) {
         void sync.enqueue(endpoint(pid, base.id), base, { body });
       },
       onError: message => toast(message, true), onLink: followLink,
-      onInsert: command => { if (command === "embed") embedPanel(section.querySelector("[data-pane-tools]"), paneEditor); },
+      onInsert: command => { if (command === "embed") embedPanel(section.querySelector("[data-pane-tools]"), paneEditor); if (command === "table") insertTablePanel(section.querySelector("[data-pane-tools]"), paneEditor); },
     });
     section.addEventListener('submit',event=>{event.preventDefault();paneEditor?.flush();});
     if(!isTable)paneFormatScroll=installToolbarScroll(section.querySelector('.rich-toolbar-shell'));
@@ -1034,7 +1068,7 @@ export function projectDocuments(ctx) {
         syncChanged();
       },
     }) : markdownDocumentEditor({
-      icon, panel: showPanel, toast, colorPicker: ctx.colorPicker,
+      tableLayouts: { save: saveTableLayout }, icon, panel: showPanel, toast, colorPicker: ctx.colorPicker,
       parent: form.querySelector(".document-codemirror"), text: doc.body || "",
       mode: mode === "source" ? "source" : "live", renderer, documents: all, hidden: state.project.personal ? ["card"] : [], cards: () => (state.tasks || []).filter((t) => !t.archived), taskQueries: renderTaskQueries,
       onChange(value) {
@@ -1043,6 +1077,7 @@ export function projectDocuments(ctx) {
       },
       onError: message => toast(message, true), onLink: followLink, onComment: id => openThread(id), onSketch: file => sketch(file),
       onInsert(command) {
+        if (command === "table") insertTablePanel(form.querySelector('[data-document-action="insert"]'));
         if (command === "embed") embedPanel(form.querySelector('[data-document-action="insert"]'));
         if (command === "attach") form.querySelector("#document-attachment").click();
         if (command === "card") makeCard().catch((error) => toast(error.message, true));

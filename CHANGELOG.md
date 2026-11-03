@@ -2,6 +2,14 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.21.52 — 2026-11-03
+
+### Added
+- Feature F0.21-52: Tables inside Markdown documents have selectable, draggable row and column handles, range formatting and deletion, merged cells, and inline checklists, quotes and code blocks. Merging keeps every selected cell's text; Undo restores edits. Save reusable layouts in Templates/Tables and choose them from Insert → Table, with optional body content.
+
+### Changed
+- Inline table width uses one toggleable icon. Add column sits at the right edge and Add row at the bottom. Ordinary tables stay as Markdown pipe tables; merged cells and block content use HTML table markup inside the same Markdown file.
+
 ## 0.21.51 — 2026-11-03
 
 ### Fixed

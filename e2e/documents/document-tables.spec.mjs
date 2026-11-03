@@ -38,11 +38,12 @@ onDevices(["desktop", "phone"], () => test("Table options inserts, moves, aligns
   await expect(cell(page, "Row 3, column 1"), "a new row follows its column's alignment").toHaveCSS("text-align", "center");
   await choose(page, "Row 1, column 3", "Delete column");
   await expect.poll(saved, device).toBe(lines("| A | B |", "| :---: | --- |", "| 1 | 2 |", "| 3 | 4 |", "|  |  |"));
-  // The header stays first, and the first column can't move further left.
+  // The first row may be replaced, but the first row/column cannot move further back.
   await cell(page, "Header, column 1").click();
   await page.getByRole("button", { name: "Table options", exact: true }).click();
-  for (const name of ["Insert row above", "Move row up", "Delete row", "Move column left"])
+  for (const name of ["Move row up", "Move column left"])
     await expect(tableMenu(page).getByRole("button", { name, exact: true }), name).toBeDisabled();
+  await expect(tableMenu(page).getByRole("button", { name: "Delete row", exact: true })).toBeEnabled();
   await expect(tableMenu(page).getByRole("button", { name: "Align centre", exact: true })).toHaveAttribute("aria-pressed", "true");
   await page.keyboard.press("Escape");
   await expect(tableMenu(page)).toBeHidden();
@@ -121,6 +122,8 @@ test("Insert → Table adds an empty table with the caret in its first cell", as
   await page.keyboard.press("Control+End");
   await page.getByRole("button", { name: "Insert", exact: true }).click();
   await page.getByRole("dialog", { name: "Insert", exact: true }).getByRole("button", { name: "Table", exact: true }).click();
+  await page.getByRole("button", { name: "Insert table", exact: true }).click();
+  await cell(page, "Header, column 1").click();
   await expect(cell(page, "Header, column 1")).toBeFocused();
   await page.keyboard.type("Name");
   await expect.poll(async () => (await app.store.getDocument(app.project.id, record.id)).body).toContain("Intro\n\n| Name |  |\n| --- | --- |\n|  |  |");

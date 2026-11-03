@@ -17,7 +17,7 @@ import { listCallouts, listCalloutAfterMarker, setListCallout, listCalloutLabel 
 import { colorSelection, textColorSpans, inlineWrapChange } from './document-text-color.js';
 import { documentSelectionTools } from './document-selection-tools.js';
 
-export function markdownDocumentEditor({ parent, text, mode = "live", renderer, documents, cards = () => [], hidden = [], taskQueries, onChange, onError, onLink, onInsert, onComment, onSketch, icon, panel, toast, colorPicker }) {
+export function markdownDocumentEditor({ parent, text, mode = "live", renderer, documents, cards = () => [], hidden = [], taskQueries, onChange, onError, onLink, onInsert, onComment, onSketch, icon, panel, toast, colorPicker, tableLayouts }) {
   const presentation = new Compartment();
   let view, alive = true, focusedComponent = null, selectionTools = null, selecting = false;
   const hoverEffect = StateEffect.define();
@@ -74,7 +74,7 @@ export function markdownDocumentEditor({ parent, text, mode = "live", renderer, 
       element.innerHTML = renderer.render(this.raw, !this.block);
       if (["table", "blockquote", "code", "documentMathBlock", "html"].includes(this.kind)) {
         editableDocumentComponent({
-          element, raw: this.raw, from: this.from, kind: this.kind, editor, renderer, onError, hydrate, icon, panel, toast, onLink,
+          element, tableLayouts, raw: this.raw, from: this.from, kind: this.kind, editor, renderer, onError, hydrate, icon, panel, toast, onLink,
           onSearch: () => openSearchPanel(editor),
           onEscape: () => selectionTools?.escape() || false,
           onFocus: component => { focusedComponent = component; },
@@ -105,6 +105,7 @@ export function markdownDocumentEditor({ parent, text, mode = "live", renderer, 
       hydrate(element);
       return element;
     }
+    destroy(element) { element.documentComponent?.destroy?.(); }
     ignoreEvent(event) { return this.block || !!event.target?.closest?.("a, img[data-document-sketch], .document-transclusion"); }
   }
   class Checkbox extends WidgetType {
@@ -168,14 +169,14 @@ export function markdownDocumentEditor({ parent, text, mode = "live", renderer, 
     for (const token of renderer.tokens(source)) {
       const from = offset, to = offset + token.raw.length;
       offset = to;
-      if (["code", "table", "documentTableLayout", "blockquote", "documentMathBlock", "html", "hr"].includes(token.type) ||
+      if (["code", "table", "documentTableLayout", "documentRichTable", "blockquote", "documentMathBlock", "html", "hr"].includes(token.type) ||
           token.type === "paragraph" && /^!\[\[[^\]\n]+\]\]\s*$/.test(token.raw)) {
         {
           let end = to;
           while (end > from && source[end - 1] === "\n") end--;
           if (end > from) {
             // A table with its layout comment is edited as a table.
-            const kind = token.type === "documentTableLayout" ? "table" : token.type;
+            const kind = ["documentTableLayout", "documentRichTable"].includes(token.type) ? "table" : token.type;
             ranges.push(Decoration.replace({ widget: new Preview(token.raw, from, true, kind), block: true }).range(from, end));
             blocked.push([from, to]);
           }
@@ -287,7 +288,7 @@ export function markdownDocumentEditor({ parent, text, mode = "live", renderer, 
     boost: 50 - index,
     apply(editor, _completion, from, to) {
       editor.dispatch({ changes: { from: from - 1, to }, selection: { anchor: from - 1 } });
-      if (["attach", "card", "comment", "sketch", "embed"].includes(command)) onInsert?.(command);
+      if (["attach", "card", "comment", "sketch", "embed", "table"].includes(command)) onInsert?.(command);
       else format(command);
     },
   })));
@@ -419,6 +420,7 @@ export function markdownDocumentEditor({ parent, text, mode = "live", renderer, 
   }
   if (colorPicker) selectionTools = documentSelectionTools({ view, icon, colorPicker, selected: selectionInfo, format });
   function format(command, value, { focus = true } = {}) {
+    if (command === "table" && onInsert) { onInsert("table"); return; }
     if (command === "undo") return undo(view);
     if (command === "redo") return redo(view);
     if (focusedComponent?.element.isConnected && focusedComponent.format(command, value, { focus })) return;
@@ -428,7 +430,7 @@ export function markdownDocumentEditor({ parent, text, mode = "live", renderer, 
       const source = view.state.doc.toString(), protectedRanges = []; let offset = 0;
       for (const token of renderer.tokens(source)) {
         const end = offset + token.raw.length;
-        if (["code", "table", "documentTableLayout", "blockquote", "documentMathBlock", "html", "hr"].includes(token.type)) protectedRanges.push([offset, end]);
+        if (["code", "table", "documentTableLayout", "documentRichTable", "blockquote", "documentMathBlock", "html", "hr"].includes(token.type)) protectedRanges.push([offset, end]);
         offset = end;
       }
       // Keep inline syntax outside colour spans, even when selection starts or ends inside a style.
