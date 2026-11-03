@@ -160,6 +160,27 @@ test("moving a folder while editing keeps the editor and Markdown intact", async
   expect((await app.store.getDocument(s.project.id, s.doc.id)).folder).toBe("deep");
 });
 
+test("a tree refresh during a native folder drag keeps the source connected and the drop working @gate", async ({ page }) => {
+  const s = await seed();
+  await open(page, s); await openList(page);
+  const source = folder(page, 'research'), element = await source.elementHandle();
+  await page.evaluate(() => {
+    window.folderDragStarted = false;
+    document.addEventListener('dragstart', () => { window.folderDragStarted = true; }, {once:true});
+  });
+  const dest = await folder(page, 'archive').boundingBox();
+  await source.hover(); await page.mouse.down();
+  await page.mouse.move(dest.x + dest.width / 2, dest.y + dest.height / 2, {steps:8});
+  await page.mouse.move(dest.x + dest.width / 2 + 1, dest.y + dest.height / 2);
+  await expect.poll(() => page.evaluate(() => window.folderDragStarted)).toBe(true);
+  // A live document save uses this same tree refresh path; the search value stays unchanged.
+  await page.locator('#document-search').dispatchEvent('input');
+  expect(await element.evaluate(el => el.isConnected), 'refresh must not cancel the browser drag by removing its source').toBe(true);
+  await page.mouse.up();
+  await expect.poll(() => s.parent('research')).toBe('archive');
+  await expect(folder(page, 'archive')).toHaveAttribute('aria-expanded', 'true');
+});
+
 test("Edit folder offers the same destinations, without descendants, on desktop and phone widths", async ({ page }) => {
   const s = await seed({ researchParent: "archive" });
   await open(page, s);

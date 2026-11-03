@@ -10,7 +10,7 @@ export function folderTree({ kind, label, placeholder, glyph, state, api, esc, i
   const plural = label.toLowerCase(), field = `${kind}_folders`, searchKey = `${kind}Search`;
   const attr = name => `data-${kind}-${name}`;
   const type = folder => `application/x-pencils-${kind}${folder ? "-folder" : ""}`;
-  let active = null, drag = null, movePending = false;
+  let active = null, drag = null, movePending = false, updatePending = false;
   const closed = new Set();
   const folders = () => state.project?.[field] || [];
   const inside = (id, ancestor, list = folders()) => {
@@ -51,6 +51,9 @@ export function folderTree({ kind, label, placeholder, glyph, state, api, esc, i
       </aside>`;
   }
   function update() {
+    // Removing an HTML drag source cancels the browser's drag. Keep it mounted
+    // through background saves, then draw the latest tree after drop or cancel.
+    if (drag?.native) { updatePending = true; return; }
     const list = document.getElementById(`${kind}-list`);
     if (!list) return;
     const focused = list.contains(document.activeElement) ? document.activeElement : null;
@@ -140,6 +143,7 @@ export function folderTree({ kind, label, placeholder, glyph, state, api, esc, i
     cancelAnimationFrame(scrollFrame); scrollFrame = 0;
     preview?.remove(); preview = null;
     clearDropTargets();
+    if (updatePending) { updatePending = false; update(); }
   }
   function dragged(transfer) {
     const kinds = [...transfer.types];
@@ -227,7 +231,7 @@ export function folderTree({ kind, label, placeholder, glyph, state, api, esc, i
     if (!item) return;
     reset();
     const what = item.hasAttribute(attr("folder")) ? "folder" : "item";
-    drag = { what, id: item.getAttribute(attr(what === "folder" ? "folder" : "open")), project: state.project.id };
+    drag = { what, id: item.getAttribute(attr(what === "folder" ? "folder" : "open")), project: state.project.id, native: true };
     event.dataTransfer.setData(type(what === "folder"), drag.id);
     event.dataTransfer.effectAllowed = "move";
   });

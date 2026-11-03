@@ -2,6 +2,11 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.21.62 — 2026-11-03
+
+### Fixed
+- Feature F0.21-62: Background saves no longer cancel a file or folder drag in Documents and Boards. The folder tree keeps the dragged item in place until the drop or cancellation, then refreshes with the latest changes.
+
 ## 0.21.61 — 2026-11-03
 
 ### Changed
