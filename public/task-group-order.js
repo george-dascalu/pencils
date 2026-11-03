@@ -1,3 +1,13 @@
+import { priorityOptions } from "./task-priority.js";
+
+// Assignees run A to Z with Unassigned last; statuses, types and priorities keep the project's order.
+export function naturalGroups(key, tasks, config, people = []) {
+  const value = (t) => t[key] || "";
+  if (key === "status") return [...new Set([...config.statuses, ...tasks.map(value)])];
+  if (key === "assignee") return [...new Set([...people, ...tasks.map(value)].filter(Boolean))].sort((a, b) => a.localeCompare(b)).concat("");
+  return [...new Set([...(key === "type" ? config.types : key === "priority" ? priorityOptions : []), ...tasks.map(value)])];
+}
+
 // List groups follow their natural order (workflow, types, priority, people A to Z), or the order a
 // person dragged them into, reversed by Group by's toggle; kept per project and grouping field.
 

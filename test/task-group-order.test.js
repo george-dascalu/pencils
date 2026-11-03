@@ -29,3 +29,14 @@ test('a saved preference is read per grouping field and tolerates bad storage', 
   for (const bad of [null, 'x', { status: null }, { status: { order: 'x', dir: 2 } }])
     assert.deepEqual(groupPreference(storage(bad), 'p', 'status'), { order: [], dir: 1 });
 });
+
+test('natural group order: workflow, project types, priorities, then people A to Z with Unassigned last', async () => {
+  const { naturalGroups } = await import('../public/task-group-order.js');
+  const config = { statuses: ['todo', 'doing', 'done'], types: ['task', 'bug'] };
+  const tasks = [{ assignee: 'Zoe', type: 'spike', priority: 'high', status: 'todo' }, { assignee: '', type: 'task', status: 'retired' }, { assignee: 'alice', status: 'done' }];
+  // A status no longer in the workflow keeps a group after the workflow's own.
+  assert.deepEqual(naturalGroups('status', tasks, config), ['todo', 'doing', 'done', 'retired']);
+  assert.deepEqual(naturalGroups('type', tasks, config), ['task', 'bug', 'spike', '']);
+  assert.deepEqual(naturalGroups('priority', tasks, config), ['urgent', 'high', 'medium', 'low', 'none', '']);
+  assert.deepEqual(naturalGroups('assignee', tasks, config, ['Mia', 'Zoe']), ['alice', 'Mia', 'Zoe', '']);
+});

@@ -266,3 +266,32 @@
   /* In View options the range reads like the other rows: its name, then its value. */
   .agenda-range-menu > summary > .control-label { margin-right: auto; }
 }
+/* Week board: days as columns, a row per value of the chosen field, cards as on Kanban. */
+/* Columns share the width down to a card's width, then the board scrolls sideways. */
+.week-board { --week-board-column: 176px; display: grid; grid-template-columns: minmax(80px, 128px) repeat(var(--week-board-days), minmax(var(--week-board-column), 1fr)); align-content: start; min-width: calc(80px + var(--week-board-days) * var(--week-board-column)); }
+.week-board-row, .week-board-head-row { display: contents; }
+.week-board-corner, .week-board-day-head { position: sticky; top: 0; z-index: 2; background: var(--surface); border-bottom: 1px solid var(--line); }
+.week-board-corner { left: 0; z-index: 3; }
+.week-board-empty { margin: 0; padding: 4px 10px 8px; }
+.week-board-day-head { padding: 8px 10px; font-size: var(--type-body); font-weight: 600; color: var(--muted); text-align: start; }
+.week-board-day-head.today { color: var(--green); }
+.week-board-row-head { position: sticky; left: 0; z-index: 1; display: flex; align-items: flex-start; gap: 6px; padding: 10px 8px; background: var(--surface); border-bottom: 1px solid var(--line); font-size: var(--type-body); font-weight: 600; }
+.week-board[data-rows="none"] { grid-template-columns: 0 repeat(var(--week-board-days), minmax(var(--week-board-column), 1fr)); min-width: calc(var(--week-board-days) * var(--week-board-column)); }
+.week-board[data-rows="none"] .week-board-row-head { padding: 0; }
+.week-board-row-head > .count { padding: 0 6px; border-radius: 4px; background: var(--surface-soft); color: var(--muted); font-size: var(--type-meta); font-weight: 500; }
+.week-board-cell { display: flex; flex-direction: column; gap: 6px; min-width: 0; min-height: 64px; padding: 6px; border-bottom: 1px solid var(--line); border-left: 1px solid var(--line); }
+.week-board-card { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: 4px 2px; padding: 4px 6px 6px 2px; border: 1px solid var(--line); border-left: 3px solid var(--task-field-color, var(--line)); border-radius: var(--field-radius, 6px); background: var(--surface); box-shadow: var(--shadow-card, none); }
+.week-board-card > .calendar-move { width: 24px; min-width: 24px; color: var(--muted); }
+.week-board-title { min-width: 0; padding: 2px 0; border: 0; background: none; color: var(--ink); font: inherit; font-size: var(--type-body); text-align: start; overflow-wrap: anywhere; cursor: pointer; }
+/* The field box spans the card, the status giving way; the date shows its whole range. */
+.week-board-card > .week-board-fields { grid-column: 1 / -1; width: 100%; min-width: 0; }
+.week-board-fields > .row-status { flex: 1 1 0; min-width: 0; }
+.week-board-fields .row-date-short { display: none; }
+.week-board-fields .field-chip-status { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* The row already names its value, so a card's box leaves that field out. */
+.week-board[data-rows="assignee"] .week-board-fields > .row-assignee,
+.week-board[data-rows="status"] .week-board-fields > .row-status,
+.week-board[data-rows="priority"] .week-board-fields > .row-priority { display: none; }
+.week-board-fields > .row-due { flex: none; min-width: var(--control-height); padding-inline: 6px; white-space: nowrap; }
+.week-board-cell > .calendar-placement { min-height: 40px; border: 1px dashed var(--green); border-radius: var(--field-radius, 6px); background: color-mix(in srgb, var(--green) 8%, var(--surface)); color: var(--muted); font-size: var(--type-small); padding: 6px; }
+@media (pointer: coarse) { .week-board { --week-board-column: 232px; grid-template-columns: minmax(72px, 96px) repeat(var(--week-board-days), minmax(var(--week-board-column), 1fr)); } .week-board-card > .calendar-move { width: 44px; min-width: 44px; } }

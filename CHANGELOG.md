@@ -2,6 +2,11 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.21.71 — 2026-11-03
+
+### Added
+- Feature F0.21-71: Calendar has a Week board layout: the week's days as columns without hours, and a row for each assignee, status, priority or card type (or no rows), chosen with its Rows menu and remembered. A card shows once, on its first day in the week, with its dates; drag it by its handle to another day to move its dates (keeping their length) or to another row to change that field, within the workflow's rules. The row's own field is left out of each card's field box.
+
 ## 0.21.70 — 2026-11-03
 
 ### Changed

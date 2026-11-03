@@ -32,7 +32,7 @@ import { personalSettings } from "./personal-settings.js";
 import { planning } from "./planning.js";
 import { grid } from "./grid.js";
 import { taskReorder } from "./task-reorder.js";
-import { groupPreference, saveGroupPreference, orderGroups, groupReorderHandle, groupHeadingLabel, taskGroupDrag } from "./task-group-order.js";
+import { groupPreference, saveGroupPreference, orderGroups, naturalGroups, groupReorderHandle, groupHeadingLabel, taskGroupDrag } from "./task-group-order.js";
 import { taskRowEditor } from "./task-row-editor.js";
 import { recoveryUI } from "./recovery-ui.js";
 import { clearDebugLog } from "./debug-log.js";
@@ -1283,10 +1283,7 @@ export function installFeatures(ctx) {
       const { order, dir } = groupPreference(storage, state.project.id, key);
       if (key === "status") return fallback(tasks, orderGroups(state.config.statuses, order, dir));
       const value = (t) => key === "none" ? "All cards" : t[key] || "";
-      // Assignees run A to Z with Unassigned last; types and priorities keep the project's order.
-      const natural = key === "assignee"
-        ? [...new Set([...projectPeople(state).map(person => person.name), ...tasks.map(value)].filter(Boolean))].sort((a, b) => a.localeCompare(b)).concat("")
-        : [...new Set([...(key === "type" ? state.config.types : key === "priority" ? priorityOptions : []), ...tasks.map(value)])];
+      const natural = key === "none" ? [...new Set(tasks.map(value))] : naturalGroups(key, tasks, state.config, projectPeople(state).map(person => person.name));
       const groups = new Map(orderGroups(natural, order, dir).map(name => [name, []]));
       for (const t of tasks) groups.get(value(t)).push(t);
       return [...groups]
