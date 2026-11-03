@@ -2,6 +2,11 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.21.45 — 2026-11-03
+
+### Added
+- Feature F0.21-45: Double-click a document or Table file's tab title to rename it inline. Enter or clicking elsewhere saves, Escape cancels, and an empty name keeps the original. F2 also renames a focused tab; document content stays open while its name saves.
+
 ## 0.21.44 — 2026-11-03
 
 ### Added

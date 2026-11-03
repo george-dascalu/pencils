@@ -112,7 +112,7 @@ export function projectDocuments(ctx) {
     const record = await api(url, { method: "PATCH", body: { revision: latest.revision, title } });
     if (state.project?.id !== pid) return;
     state.documents = all().map(d => d.id === id ? record : d);
-    updateExplorer(); updateTabs();
+    updateExplorer(); updateTabs(true);
   }
   // A document's ⋯ menu in the list (owner request T84), for any document, open or not.
   function rowMenu(button, id) {
@@ -273,7 +273,7 @@ export function projectDocuments(ctx) {
     current = { ...base, ...changes };
     if (state.project?.id === project)
       state.documents = all().map(d => d.id === current.id ? current : d);
-    if (base.title !== changes.title) updateTabs();
+    if (base.title !== changes.title) updateTabs(true);
     // SaveQueue retains every edit in browser storage before sending it, merges
     // independent edits and preserves conflicts for the shared Recovery screen.
     void sync.enqueue(endpoint(project, current.id), base, changes);
@@ -689,10 +689,74 @@ export function projectDocuments(ctx) {
     }).join("")}</nav>`;
   }
   function openTab(id) {
-    open(id);
+    // Keep the active tab and editor mounted on a click, including the first half of a double-click.
+    if (id !== current?.id) open(id);
     document.querySelector(`[data-document-tab="${CSS.escape(id)}"]`)?.focus({ preventScroll: true });
   }
-  function updateTabs() { const strip = document.querySelector(".document-tabs"); if (strip) strip.outerHTML = tabsHTML(); }
+  function updateTabs(namesOnly = false) {
+    const strip = document.querySelector(".document-tabs");
+    // A blur can commit a name while another tab is being pressed. Preserve that target so the
+    // same click can still switch files, rather than replacing the whole strip underneath it.
+    if (strip && namesOnly) for (const button of strip.querySelectorAll('[data-document-tab]')) {
+      const doc = all().find(d => d.id === button.dataset.documentTab);
+      if (!doc) continue;
+      button.title = doc.title; button.querySelector('span').textContent = doc.title;
+      const close = button.parentElement.querySelector('[data-document-action="close-tab"]');
+      if (close) { close.title = `Close ${doc.title}`; close.setAttribute('aria-label', close.title); }
+    }
+    else if (strip) strip.outerHTML = tabsHTML();
+    for (const option of document.querySelectorAll('[data-document-pane-select] option')) {
+      const doc = all().find(d => d.id === option.value);
+      if (doc) option.textContent = doc.title;
+    }
+  }
+  function renameTab(button) {
+    const id = button.dataset.documentTab, doc = all().find(d => d.id === id);
+    if (!doc || !button.isConnected) return;
+    closePanel();
+    const input = document.createElement('input');
+    input.className = 'document-tab-name'; input.name = 'title'; input.value = doc.title;
+    input.maxLength = 300; input.autocomplete = 'off';
+    input.setAttribute('aria-label', 'File name');
+    input.setAttribute('aria-description', 'Enter to save. Escape to cancel.');
+    const strip = button.closest('.document-tabs'), editing = new AbortController();
+    button.replaceWith(input);
+    // A double-click is an explicit request to edit this text, including on touch screens.
+    input.focus({ preventScroll: true }); input.select();
+    let finished = false;
+    const finish = (save, restoreFocus = false) => {
+      if (finished) return;
+      finished = true;
+      editing.abort();
+      const title = input.value.trim();
+      input.replaceWith(button);
+      if (save && title && title !== doc.title) {
+        if (current?.id === id && form?.isConnected) {
+          form.elements.title.value = title;
+          form.elements.title.dispatchEvent(new Event('input', { bubbles: true }));
+        } else void renameDocument(id, title).catch(error => toast(error.message, true));
+      }
+      if (restoreFocus) document.querySelector(`[data-document-tab="${CSS.escape(id)}"]`)?.focus({ preventScroll: true });
+    };
+    // Do not shrink the edited tab between pointer-down and click on its neighbour (especially
+    // on iPad). Commit on that click instead of its focus change, keeping the hit target still.
+    strip.addEventListener('pointerdown', event => {
+      if (event.target.closest('button')) event.preventDefault();
+    }, { capture: true, signal: editing.signal });
+    strip.addEventListener('click', event => {
+      if (event.target.closest('button')) finish(true);
+    }, { capture: true, signal: editing.signal });
+    input.addEventListener('blur', () => finish(true));
+    input.addEventListener('keydown', event => {
+      if (event.isComposing || !['Enter', 'Escape'].includes(event.key)) return;
+      event.preventDefault(); event.stopPropagation();
+      finish(event.key === 'Enter', true);
+    });
+  }
+  document.addEventListener('keydown', event => {
+    const button = event.target.closest('[data-document-tab]');
+    if (button && event.key === 'F2') { event.preventDefault(); event.stopPropagation(); renameTab(button); }
+  });
   function closeTab(id) {
     const list = openTabs(), rest = list.filter(t => t !== id), next = rest[Math.min(list.indexOf(id), rest.length - 1)];
     storage.set(tabsKey(), rest);
@@ -866,7 +930,7 @@ export function projectDocuments(ctx) {
       <section class="document-editor" aria-label="Document content">${doc ? `
         <form id="document-form" data-document-width="${documentWidth}" data-document-type="${doc.document_type === "table" ? "table" : "markdown"}">
           <!-- One bar: formatting on the left, the document's own controls on the right. The name
-               shows in the top bar and changes through Document tools → Rename. -->
+               shows in the top bar; double-click its tab or use Document tools → Rename. -->
           <header class="document-heading">
             <div id="document-formatting" class="document-formatting task-rich-tools" role="toolbar" aria-label="Format document">${doc.document_type === "table" ? sheetFormatting(icon) : richToolbar(icon, { adapter: "document", alignment: null, modes: false, idPrefix: "document", extra: `<div class="selection-group" role="group" aria-label="Insert more"><button type="button" class="selection-action" data-document-action="insert" aria-label="Insert" title="Insert a table, code, callout or more">${icon("plus")}<span class="selection-action-label">Insert</span></button></div>` })}</div>
             <a class="document-obsidian-link" href="#" data-document-action="obsidian" hidden>Open in Obsidian</a>
@@ -1029,7 +1093,9 @@ export function projectDocuments(ctx) {
     // Works from any view (the phone drawer lists documents everywhere).
     if (item) { openDocument(item.dataset.documentOpen); return; }
     const tab = event.target.closest("[data-document-tab]");
-    if (tab) { openTab(tab.dataset.documentTab); return; }
+    // The first click may have opened an inactive file and replaced its tab. The native click
+    // count still reaches two, even when that replacement prevents a dblclick on the old button.
+    if (tab) { if (event.detail === 2) renameTab(tab); else openTab(tab.dataset.documentTab); return; }
     const paneMode = event.target.closest("[data-document-pane-mode]");
     if (paneMode) { closePanel();setPaneMode(paneMode.dataset.documentPaneMode); return; }
     const viewButton = event.target.closest("button[data-document-mode]");
