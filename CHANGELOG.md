@@ -2,6 +2,11 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.21.51 — 2026-11-03
+
+### Fixed
+- Feature F0.21-51: Table embeds stay populated when a source rename or notes change refreshes them in place. Unchanged spreadsheet data reuses its calculated preview instead of leaving an Opening message. Stable references continue to point to the renamed source.
+
 ## 0.21.50 — 2026-11-03
 
 ### Added

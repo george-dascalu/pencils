@@ -32,6 +32,7 @@ export function documentEmbedViews({ documents, loadTable, render }) {
     for (const embed of embeds.filter(el => !el.parentElement?.closest('.document-transclusion') || !root.contains(el.parentElement.closest('.document-transclusion')))) {
       const next = signature(embed), before = signatures.get(embed);
       if (before && (before.length !== next.length || before.some((v, i) => v !== next[i]))) {
+        tables.delete(embed);
         clearViews(embed);
         const holder = document.createElement('div'), alias = /\|([^\]]+)\]\]$/.exec(embed.dataset.documentSource || '')?.[1];
         holder.innerHTML = render(`![[${embed.dataset.documentEmbedRef}${alias ? '|' + alias : ''}]]`);

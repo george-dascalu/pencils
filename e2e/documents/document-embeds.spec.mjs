@@ -118,3 +118,36 @@ test('changing a source Table recalculates its open embed without rewriting the 
   await expect(cell).toHaveText('200');
   expect((await app.store.getDocument(app.project.id, host.id)).body).toBe(source);
 });
+test('renaming a Table and editing its notes keep the embed populated and linked by its stable path', { tag: '@gate' }, async ({ page }) => {
+  let source = await app.store.createDocument(app.project.id, { title: 'Metadata table', document_type: 'table' });
+  const table = blankTable(source.id, source.title); table.workbook.sheets['sheet-1'].cellData = { 0: { 0: { v: 5 }, 1: { f: '=A1*2' } } };
+  source = await app.store.updateDocument(app.project.id, source.id, { revision: source.revision, table });
+  const body = `![[${source.file.replace(/\.md$/, '')}]]\n`, host = await open(page, body);
+  const embed = page.locator('#document-form .document-transclusion:visible'), cell = embed.locator('[data-embed-cell="B1"]');
+  await expect(cell).toHaveText('10');
+  source = await app.store.mutate(() => app.store.updateDocument(app.project.id, source.id, { revision: source.revision, title: 'Renamed table' }));
+  await expect(embed.locator('.document-embed-heading')).toHaveText('Renamed table'); await expect(cell).toHaveText('10');
+  const previousCell = await cell.elementHandle();
+  source = await app.store.mutate(() => app.store.updateDocument(app.project.id, source.id, { revision: source.revision, body: source.body + '\nTable notes.\n' }));
+  await expect.poll(async () => (await app.store.getDocument(app.project.id, source.id)).body).toContain('Table notes.');
+  await expect.poll(() => previousCell.evaluate(el => el.isConnected)).toBe(false);
+  await expect(cell).toHaveText('10'); expect((await app.store.getDocument(app.project.id, host.id)).body).toBe(body);
+});
+test('an in-place Table embed refresh keeps cached cells when only source metadata changes', { tag: '@gate' }, async ({ page }) => {
+  await open(page);
+  await page.evaluate(async () => {
+    const { documentMarkdown } = await import('/document-markdown.js'), { blankTable } = await import('/document-sheet-model.js');
+    const table = blankTable('d-preview'); table.workbook.sheets['sheet-1'].cellData = { 0: { 0: { v: 5 }, 1: { f: '=A1*2' } } };
+    let records = [{ id: 'd-preview', file: 'd-preview.md', title: 'Preview source', document_type: 'table', table, body: '' }];
+    const esc = value => { const el = document.createElement('span'); el.textContent = String(value); return el.innerHTML.replaceAll('"', '&quot;'); };
+    const renderer = documentMarkdown({ documents: () => records, project: () => 'p-preview', esc, icon: () => '' });
+    const root = document.createElement('div'); root.className = 'document-prose embed-refresh-harness'; document.body.append(root);
+    root.innerHTML = renderer.render('![[d-preview]]'); renderer.hydrate(root);
+    window.embedRefreshHarness = { change() { records = records.map(d => ({ ...d, title: 'Renamed preview', body: 'Notes changed.' })); renderer.hydrate(root); }, destroy() { renderer.destroy(); root.remove(); } };
+  });
+  const root = page.locator('.embed-refresh-harness'); await expect(root.locator('[data-embed-cell="B1"]')).toHaveText('10');
+  await page.evaluate(() => window.embedRefreshHarness.change());
+  await expect(root.locator('.document-embed-heading')).toHaveText('Renamed preview');
+  await expect(root.locator('[data-embed-cell="B1"]')).toHaveText('10');
+  await page.evaluate(() => window.embedRefreshHarness.destroy());
+});

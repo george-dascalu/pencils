@@ -6,6 +6,7 @@
 // From the 0.21.0 baseline, new features use F<major>.<minor>-<1..100>: F0.21-1 releases
 // as 0.21.1, F0.21-100 as 0.22.0, then F0.22-1 as 0.22.1. Historical T IDs stay intact.
 export const roadmap = [
+  { id: "F0.21-51", title: "Keep Table embeds populated after source metadata changes and in-place refreshes", status: "done", requested: "2026-11-03", started: "2026-11-03", done: "2026-11-03", version: "0.21.51" },
   { id: "F0.21-50", title: "Live document, section and Table worksheet/range embeds with an insertion picker", status: "done", requested: "2026-11-03", started: "2026-11-03", done: "2026-11-03", version: "0.21.50" },
   { id: "F0.21-49", title: "Preserve mixed inline formatting when colouring document selections", status: "done", requested: "2026-11-03", started: "2026-11-03", done: "2026-11-03", version: "0.21.49" },
   { id: "F0.21-48", title: "Rendered text selection, contextual formatting and document text colours", status: "done", requested: "2026-11-03", started: "2026-11-03", done: "2026-11-03", version: "0.21.48" },
