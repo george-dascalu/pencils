@@ -2,6 +2,14 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.21.43 — 2026-11-03
+
+### Added
+- Feature F0.21-43: Table documents support selecting multiple rows or columns, formatting them together, rich text within cells and merging/unmerging cell ranges. A compact toolbar adds fonts, sizes, underline and strikethrough; merge confirmations and undo protect populated cells. Rich text, formulas and merged cells persist in the vault and work with CSV exports.
+
+### Fixed
+- Keep the enabled Kanban status and start-date controls visible when assignee, priority and due date are disabled.
+
 ## 0.21.42 — 2026-11-03
 
 ### Added

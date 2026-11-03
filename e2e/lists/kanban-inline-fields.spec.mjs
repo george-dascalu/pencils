@@ -29,3 +29,9 @@ onDevices(['desktop','ipad','phone'],()=>test('Kanban field pickers save inline 
  for(const size of sizes){expect(size.h).toBeGreaterThanOrEqual(device==='desktop'?32:44);expect(size.w).toBeGreaterThanOrEqual(device==='desktop'?28:44);}
  await card.locator('[data-action="task-open"]').click();await expect(page.locator('#task-form')).toBeVisible();
 }));
+
+test('Kanban keeps its editable status and enabled start date when the other fields are disabled @gate',async({page})=>{
+ const project=await app.store.createProject({title:'Status-only Kanban'});const card=await app.store.createTask(project.id,{title:'Keep enabled fields',status:'todo',start:'2026-11-02',due:'2026-11-03'});
+ await app.store.updateProject(project.id,{revision:project.revision,schema:{...project.schema,off:['assignee','priority','due']}});
+ await page.goto(`${app.base}/#project/${project.id}/kanban`);const box=page.locator(`[data-drag-task="${card.id}"] .kanban-fields`);await expect(box.locator('[data-row-field=status]')).toBeVisible();await expect(box.locator('[data-row-dates]')).toHaveAccessibleName(/Start 2 Nov/);await expect(box.locator('.row-assignee')).toBeHidden();await expect(box.locator('.row-priority')).toBeHidden();
+});

@@ -1,3 +1,4 @@
+import { checkRichText, richPlainText } from './document-sheet-richtext.js';
 import { csv, markdownTable } from './document-tables.js';
 
 export const TABLE_LIMITS = { sheets: 20, rows: 10000, columns: 200, cells: 100000, bytes: 1500000 };
@@ -37,7 +38,15 @@ export function checkTable(input, id) {
         if (cell.v != null && !['string', 'number', 'boolean'].includes(typeof cell.v)) fail('Invalid cell value.');
         if (typeof cell.v === 'string' && cell.v.length > 32000) fail('A cell supports up to 32,000 characters.');
         if (cell.f != null && (typeof cell.f !== 'string' || !cell.f.startsWith('=') || cell.f.length > 8192)) fail('A formula must start with = and fit within 8,192 characters.');
-        if (cell.p != null) fail('Use whole-cell formatting in Tables.');
+        if (cell.p != null) checkRichText(cell.p);
+      }
+    }
+    if (sheet.mergeData != null) {
+      if (!Array.isArray(sheet.mergeData)) fail('Invalid merged cells.');
+      const occupied = new Uint8Array(sheet.mergeData.length ? sheet.rowCount * sheet.columnCount : 0);
+      for (const m of sheet.mergeData) {
+        if (!object(m) || !['startRow','endRow','startColumn','endColumn'].every(k=>Number.isInteger(m[k])) || m.startRow < 0 || m.startColumn < 0 || m.endRow >= sheet.rowCount || m.endColumn >= sheet.columnCount || m.endRow < m.startRow || m.endColumn < m.startColumn || m.startRow === m.endRow && m.startColumn === m.endColumn) fail('Merged cells must be inside the worksheet and cover at least two cells.');
+        for(let r=m.startRow;r<=m.endRow;r++)for(let c=m.startColumn;c<=m.endColumn;c++){const key=r*sheet.columnCount+c;if(occupied[key])fail('Merged cells must not overlap.');occupied[key]=1;}
       }
     }
     for (const [field, bound] of [['rowData', sheet.rowCount], ['columnData', sheet.columnCount]]) if (sheet[field] != null) {
@@ -97,19 +106,19 @@ export function tableFromRows(rows, { id, name, sheetName = 'Sheet 1', formulas 
 }
 export function usedTableRange(sheet) {
   let row = -1, column = -1;
-  for (const [r, cells] of Object.entries(sheet.cellData)) for (const [c, cell] of Object.entries(cells)) if (cell && (cell.v != null && cell.v !== '' || cell.f)) { row = Math.max(row, +r); column = Math.max(column, +c); }
+  for (const [r, cells] of Object.entries(sheet.cellData)) for (const [c, cell] of Object.entries(cells)) if (cell && (cell.v != null && cell.v !== '' || cell.f || cell.p && richPlainText(cell.p))) { row = Math.max(row, +r); column = Math.max(column, +c); }
   return { rows: row + 1, columns: column + 1 };
 }
 export function tableCSV(table, sid, { formulas = false } = {}) {
   const sheet = table.workbook.sheets[sid]; if (!sheet) fail('Worksheet not found.');
   const size = usedTableRange(sheet);
-  return csv(Array.from({ length: size.rows }, (_, r) => Array.from({ length: size.columns }, (_, c) => { const cell = sheet.cellData[r]?.[c]; return String(formulas && cell?.f ? cell.f : cell?.t === 3 ? cell.v ? 'TRUE' : 'FALSE' : cell?.v ?? ''); })));
+  return csv(Array.from({ length: size.rows }, (_, r) => Array.from({ length: size.columns }, (_, c) => { const cell = sheet.cellData[r]?.[c]; return String(formulas && cell?.f ? cell.f : cell?.t === 3 ? cell.v ? 'TRUE' : 'FALSE' : cell?.p ? richPlainText(cell.p) : cell?.v ?? ''); })));
 }
 export function tablePreview(table) {
   const literal = value => String(value ?? '').slice(0, 80).replace(/[&<>\\|`*_\[\]~]/g, c => `&#${c.charCodeAt(0)};`);
   return table.workbook.sheetOrder.map(sid => {
     const sheet = table.workbook.sheets[sid], size = usedTableRange(sheet);
-    const rows = Array.from({ length: Math.min(size.rows, 10) }, (_, r) => Array.from({ length: Math.min(size.columns, 8) }, (_, c) => literal(sheet.cellData[r]?.[c]?.v ?? sheet.cellData[r]?.[c]?.f ?? '')));
+    const rows = Array.from({ length: Math.min(size.rows, 10) }, (_, r) => Array.from({ length: Math.min(size.columns, 8) }, (_, c) => literal(sheet.cellData[r]?.[c]?.p ? richPlainText(sheet.cellData[r][c].p) : sheet.cellData[r]?.[c]?.v ?? sheet.cellData[r]?.[c]?.f ?? '')));
     return `### ${literal(sheet.name)}\n\n${rows.length ? markdownTable(rows) : '*Empty worksheet*'}${size.rows > 10 || size.columns > 8 ? '\n\nPreview: first 10 rows and 8 columns.' : ''}`;
   }).join('\n\n');
 }

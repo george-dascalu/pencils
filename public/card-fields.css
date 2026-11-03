@@ -17,7 +17,6 @@
 :root[data-fields-off~="priority"] .document-task-fields .field-chip-priority,
 /* A field box with nothing left in it goes too. */
 :root[data-fields-off~="assignee"][data-fields-off~="status"][data-fields-off~="priority"][data-fields-off~="start"][data-fields-off~="due"] :is(.row-fields, .phone-task-fields, .live-card-state, .document-task-fields),
-:root[data-fields-off~="assignee"][data-fields-off~="status"][data-fields-off~="priority"] :is(#task-form .task-fields, .task-relationship-metadata, .calendar-event-fields),
-:root[data-fields-off~="assignee"][data-fields-off~="priority"][data-fields-off~="due"] .kanban-card .card-bottom {
+:root[data-fields-off~="assignee"][data-fields-off~="status"][data-fields-off~="priority"] :is(#task-form .task-fields, .task-relationship-metadata, .calendar-event-fields) {
   display: none !important;
 }

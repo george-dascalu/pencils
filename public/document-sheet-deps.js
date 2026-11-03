@@ -2,6 +2,7 @@ import { Univer, LocaleType, CellValueType, LifecycleService, LifecycleStages } 
 import { FUniver } from '@univerjs/core/facade';
 import { UniverFormulaEnginePlugin } from '@univerjs/engine-formula';
 import { UniverSheetsPlugin, SetRowDataCommand, SetColDataCommand } from '@univerjs/sheets';
+import { checkRichText } from './document-sheet-richtext.js';
 import { TABLE_LIMITS } from './document-sheet-model.js';
 import { UniverSheetsFormulaPlugin, CalculationMode, TriggerCalculationController } from '@univerjs/sheets-formula';
 import { UniverSheetsNumfmtPlugin } from '@univerjs/sheets-numfmt';
@@ -63,6 +64,7 @@ export function createSheetEngine(table, { onChange = () => {}, onRefresh = () =
       const range = sheet(sid).getRange(row, column, 1, 1);
       range.setValue(cellValue(value)); changed();
     },
+    setRichText(sid,row,column,p) { checkRichText(p); sheet(sid).getRange(row,column,1,1).setRichTextValueForCell(p); changed(); },
     setValues(sid, row, column, rows, { literal = false } = {}) {
       const width = Math.max(...rows.map(r => r.length));
       const values = rows.map(r => Array.from({ length: width }, (_, c) => r[c] ?? "").map(v => literal ? { v: String(v), t: CellValueType.STRING, f: null, p: null, si: null } : cellValue(v)));

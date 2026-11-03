@@ -65,3 +65,20 @@
 .sheet-axis-drop-line { position: fixed; z-index: 500; background: var(--green); pointer-events: none; }
 
 .document-panel-item[data-axis-danger] { color: var(--red, #bd443c); }
+
+/* Formatting remains one compact, horizontally scrollable row in narrow panes. */
+.sheet-format-tools { overflow-x: auto; max-width: 100%; scrollbar-width: none; }
+.sheet-format-tools > * { flex-shrink: 0; }
+.sheet-format-tools .sheet-font { width: 128px; }
+.sheet-format-tools .sheet-size { width: 64px; }
+.sheet-format-tools::-webkit-scrollbar { display: none; }
+.document-sheet-grid [data-sheet-editor], .sheet-merged [data-sheet-editor] { white-space: pre-wrap; overflow: auto; }
+.sheet-merged { position: absolute; box-sizing: border-box; padding: 4px 8px; border-right: 1px solid var(--line); border-bottom: 1px solid var(--line); background: var(--surface); color: var(--ink); font-size: var(--type-body); line-height: 18px; white-space: pre; overflow: hidden; }
+.sheet-merged[aria-selected="true"] { background: color-mix(in srgb, var(--green) 10%, var(--surface)); }
+.sheet-merged.sheet-active { outline: 2px solid var(--green); outline-offset: -2px; }
+.sheet-merged [data-sheet-editor] { position: absolute; inset: 0; z-index: 7; padding: 4px 8px; background: var(--surface); outline: var(--focus-ring); }
+.sheet-merge-covered { pointer-events: none; }
+.sheet-axis-heading[aria-pressed="true"] { color: var(--green); background: color-mix(in srgb, var(--green) 12%, var(--surface)); }
+
+.sheet-merge-row { position: absolute; }
+.sheet-merge-row > .sheet-merged { position: relative; width: 100%; height: 100%; }

@@ -83,6 +83,8 @@ const esc = (value) =>
       ],
   );
 const paths = {
+  underline: "M6 3v7a6 6 0 0 0 12 0V3M4 21h16",
+  merge: "M3 3h18v18H3zM3 8h4M3 16h4M17 8h4M17 16h4M7 12h10m-3-3 3 3-3 3",
   keyboard: "M3 5h18v14H3zM6 9h.01M10 9h.01M14 9h.01M18 9h.01M6 12h.01M10 12h.01M14 12h.01M18 12h.01M7 15h10",
   warning: "M12 3 2 21h20L12 3zM12 9v5M12 17v.01",
   "case-sensitive": "M3 18 8 5l5 13M5 13h6M16 10c5-3 6 2 6 4v4M22 12c-8-2-8 8 0 5",

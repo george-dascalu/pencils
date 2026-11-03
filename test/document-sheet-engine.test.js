@@ -72,3 +72,20 @@ test('undo and redo publish workbook changes, while explicit imported cell types
  engine.setValue('sheet-1',0,1,'2026-11-02');engine.flush();const data=last.workbook.sheets['sheet-1'].cellData[0][1],style=typeof data.s==='string'?last.workbook.styles[data.s]:data.s;assert.equal(style.bl,1);assert.equal(style.bg.rgb,'#ffeecc');
  engine.setValue('sheet-1',1,0,'42');engine.flush();await engine.undo();engine.flush();assert.equal(last.workbook.sheets['sheet-1'].cellData[1]?.[0]?.v??null,null);await engine.redo();engine.flush();assert.equal(last.workbook.sheets['sheet-1'].cellData[1][0].v,42);
 });
+
+test('rich runs, multi-axis formatting and merged anchors survive undo and snapshots',async t=>{
+ const {richDocument,richPlainText}=await import('../public/document-sheet-richtext.js');const {checkTable,tableCSV}=await import('../public/document-sheet-model.js');
+ const engine=createSheetEngine(blankTable('d-rich','Rich'));t.after(()=>engine.destroy());
+ engine.setRichText('sheet-1',0,0,richDocument('Hello world',[{st:6,ed:11,ts:{bl:1}}]));
+ engine.mutate(()=>engine.sheet('sheet-1').getRange('A1:B100').setFontStyle('italic'));
+ assert.equal(engine.sheet('sheet-1').getRange('B100').getCellStyleData().it,1);
+ engine.setValue('sheet-1',0,1,'Second');engine.mutate(()=>engine.sheet('sheet-1').getRange('A1:B2').merge({isForceMerge:true}));
+ const snap=checkTable(engine.snapshot(),'d-rich');assert.equal(snap.workbook.sheets['sheet-1'].mergeData.length,1);assert.equal(richPlainText(snap.workbook.sheets['sheet-1'].cellData[0][0].p),'Hello world');assert.match(tableCSV(snap,'sheet-1'),/Hello world/);
+ await engine.undo();assert.equal(engine.sheet('sheet-1').getRange('B1').getValue(),'Second');
+});
+
+test('formulas read rich-text cells as text while formatting keeps their runs',async t=>{
+ const {richDocument}=await import('../public/document-sheet-richtext.js');const engine=createSheetEngine(blankTable('rich-formula','Rich formula'));t.after(()=>engine.destroy());
+ engine.setRichText('sheet-1',0,0,richDocument('Hello',[{st:0,ed:5,ts:{bl:1}}]));engine.setValue('sheet-1',0,1,'=LEN(A1)');await engine.calculated();assert.equal(engine.sheet('sheet-1').getRange('B1').getRawValue(),5);
+ engine.mutate(()=>engine.sheet('sheet-1').getRange('A1').setFontSize(18));assert.equal(engine.snapshot().workbook.sheets['sheet-1'].cellData[0][0].p.body.textRuns[0].ts.bl,1);
+});
