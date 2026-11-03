@@ -4,7 +4,7 @@ import { calendarZoom } from "./calendar-zoom.js";
 import { timedCard, calendarTimeMove, calendarTimeSelection, calendarTimeResize, calendarTimeStep, hourlySegments, minuteTime, timeMinutes } from "./calendar-time.js";
 import { anchoredPanel } from "./anchored-panel.js";
 import { mainWidth } from "./layout-width.js";
-import { calendarRange, calendarDateChange, calendarWeeks, agendaGroups } from "./calendar-model.js";
+import { calendarRange, calendarDateChange, calendarWeeks, agendaGroups, AGENDA_RANGES, agendaRange, shiftAgendaRange } from "./calendar-model.js";
 import { dateKey, shiftDate, stamp, DAY, weekStart, isWeekend } from "./timeline-dates.js";
 import { localDate } from "./task-visibility.js";
 import { taskColorDot, taskFieldColor } from "./task-colors.js";
@@ -17,7 +17,7 @@ export function calendarView(ctx) {
   calendarHourSelection(ctx);
   const zoom = calendarZoom(ctx);
   let mode = storage.get("calendar-mode", mainWidth() <= 780 ? "agenda" : "month");
-  let period = storage.get("agenda-period", "week"), anchor = localDate();
+  let quick = storage.get("agenda-range", { day: "today", week: "this-week", month: "this-month" }[storage.get("agenda-period", "week")] || "this-week"), picked = null, anchor = localDate();
   let weekends = storage.get("calendar-weekends", true) !== false, undated = [], shownTasks = [];
   let drag = null, suppressUntil = 0, suppressId = "";
   const format = (day, options = {}) => new Date(`${day}T12:00:00`).toLocaleDateString(undefined, { day: "numeric", month: "short", ...options });
@@ -30,19 +30,45 @@ export function calendarView(ctx) {
     const grip = unscheduled && !sourceReadOnly(t,"due") ? `<button type="button" class="icon-button calendar-move" data-calendar-move aria-label="Schedule ${esc(t.title)}" title="Drag onto a day, or tap to set dates">${icon("drag")}</button>` : "";
     return `<div class="agenda-row ${grip ? "calendar-draggable-row" : ""}" data-calendar-card="${esc(t.id)}">${grip}<button type="button" class="agenda-task" data-action="task-open" data-id="${esc(t.id)}" title="${esc(title(t))}">${taskColorDot(state, "status", t.status)}<span>${esc(title(t))}</span></button>${unscheduled ? dateButton(t) : ctx.inlineTaskFields(t, "agenda-fields", rangeLabel(t))}</div>`;
   }
+  // A quick range on one side and dates on the other, like a dashboard's time picker.
+  function rangePicker(agenda, heading) {
+    const name = AGENDA_RANGES.find(([key]) => key === agenda.quick)?.[1] || heading;
+    return `<details class="board-menu agenda-range-menu" data-board-menu="agenda-range"><summary class="button small" aria-label="Agenda range: ${esc(name)}" title="Agenda range"><span class="control-label">Range</span>${icon("calendar")}<span>${esc(name)}</span><svg class="icon menu-caret" viewBox="0 0 24 24" aria-hidden="true"><path d="m8 10 4 4 4-4"/></svg></summary><div class="board-menu-panel agenda-range-panel"><form class="agenda-range-dates" data-agenda-range novalidate><strong>Dates</strong><label class="field">From<input type="date" name="from" value="${agenda.from}" required></label><label class="field">To<input type="date" name="to" value="${agenda.to}" required></label><p class="field-hint" data-agenda-range-error hidden></p><button type="submit" class="button primary small">Show dates</button></form><div class="agenda-quick-ranges" role="group" aria-label="Quick ranges">${AGENDA_RANGES.map(([key, label]) => `<button type="button" data-agenda-quick="${key}" aria-pressed="${key === agenda.quick}">${label}</button>`).join("")}</div></div></details>`;
+  }
+  document.addEventListener("click", e => {
+    const choice = e.target.closest("[data-agenda-quick]");
+    if (!choice || state.view !== "calendar") return;
+    quick = choice.dataset.agendaQuick; picked = null;
+    storage.set("agenda-range", quick);
+    renderView(true);
+    document.querySelector(".agenda-range-menu > summary")?.focus({ preventScroll: true });
+  });
+  document.addEventListener("submit", e => {
+    const form = e.target.closest("[data-agenda-range]");
+    if (!form) return;
+    e.preventDefault();
+    const range = agendaRange({ from: form.elements.from.value, to: form.elements.to.value }, localDate()), error = form.querySelector("[data-agenda-range-error]");
+    if (range.quick) {
+      error.textContent = "Choose a From date on or before the To date, at most a year apart.";
+      error.hidden = false;
+      form.elements.from.focus();
+      return;
+    }
+    picked = { from: range.from, to: range.to };
+    state.headerMenu = null;
+    renderView(true);
+    document.querySelector(".agenda-range-menu > summary")?.focus({ preventScroll: true });
+  }, true);
   function render(tasks) {
     unscheduled.close();
     shownTasks = tasks;
-    let from = anchor, to = anchor;
-    // The Agenda's period applies to the Agenda only.
-    if (mode === "week" || (mode === "agenda" && period === "week")) { from = dateKey(weekStart(anchor)); to = shiftDate(from, 6); }
-    if (mode === "agenda" && period === "month") {
-      from = `${anchor.slice(0, 7)}-01`;
-      const next = new Date(`${from}T12:00:00Z`); next.setUTCMonth(next.getUTCMonth() + 1);
-      to = shiftDate(dateKey(next.getTime()), -1);
-    }
-    const heading = mode === "month" || (mode === "agenda" && period === "month")
-      ? new Date(`${anchor}T12:00:00`).toLocaleDateString(undefined, { month: "long", year: "numeric" })
+    // The Agenda shows its own range; Week and Month follow the anchor date.
+    const range = agendaRange({ quick, ...picked }, localDate());
+    let { from, to } = mode === "agenda" ? range : { from: anchor, to: anchor };
+    if (mode === "week") { from = dateKey(weekStart(anchor)); to = shiftDate(from, 6); }
+    const wholeMonth = from.slice(8) === "01" && shiftDate(to, 1).slice(8) === "01" && from.slice(0, 7) === to.slice(0, 7);
+    const heading = mode === "month" || (mode === "agenda" && wholeMonth)
+      ? new Date(`${mode === "month" ? anchor : from}T12:00:00`).toLocaleDateString(undefined, { month: "long", year: "numeric" })
       : from === to ? format(from, { year: "numeric" }) : `${format(from)} – ${format(to, { year: "numeric" })}`;
     undated = tasks.filter(t => !calendarRange(t));
     const groups = agendaGroups(tasks, from, to, weekends);
@@ -60,7 +86,7 @@ export function calendarView(ctx) {
       return `<div class="calendar-task" data-calendar-card="${esc(t.id)}" data-id="${esc(t.id)}" data-task-color="status" style="--task-field-color:${taskFieldColor(state, "status", t.status)};grid-column:${s.from + 1} / ${s.to + 2};grid-row:${s.lane + 2}" title="${esc(title(t))} · ${s.range.start} – ${s.range.end}${sourceReadOnly(t,"due") ? ' · Dates managed by source' : ' · Drag to move'}">${handle("start", s.resizeStart)}<button type="button" class="calendar-card-title" data-action="task-open" data-id="${esc(t.id)}" aria-label="Open ${esc(title(t))}">${esc(t.title)}</button>${handle("due", s.resizeEnd)}</div>`;
     }).join("")}</div>`).join("")}${mode === "week" ? "</div>" : ""}${mode === "week" ? calendarHoursHTML(tasks, weeks[0].days, ctx) : ""}</div></div>`;
     zoom.restore();
-    return { controls: `<button type="button" class="button small" data-calendar-unscheduled data-after-filters aria-label="Unscheduled cards (${undated.length})" title="Unscheduled cards (${undated.length})" aria-haspopup="dialog" aria-expanded="false">${icon("clock")}<span>${undated.length}</span></button><div class="planning-head"><div class="planning-period"><button class="icon-button" data-feature="month-prev" aria-label="Previous period" title="Previous period">${icon("arrow")}</button><h2>${esc(heading)}</h2><button class="icon-button" data-feature="month-next" aria-label="Next period" title="Next period">${icon("arrow")}</button></div><div class="planning-options" data-phone-options>${mode === "week" ? zoom.controls() : ""}<button type="button" id="calendar-weekends" class="icon-button" data-calendar-weekends data-weekends-toggle aria-label="Show weekends" aria-pressed="${weekends}" title="${weekends ? "Hide weekends" : "Show weekends"}">${icon("calendar-weekends")}</button><label><span class="control-label">Layout</span> <select id="calendar-mode"><option value="month" ${mode === "month" ? "selected" : ""}>Month</option><option value="week" ${mode === "week" ? "selected" : ""}>Week</option><option value="agenda" ${mode === "agenda" ? "selected" : ""}>Agenda</option></select></label>${mode === "agenda" ? `<label>Period<select id="agenda-period">${["day", "week", "month"].map(p => `<option value="${p}" ${p === period ? "selected" : ""}>${ctx.label(p)}</option>`).join("")}</select></label><input type="date" id="agenda-date" aria-label="Agenda date" value="${anchor}">` : ""}</div></div>`, html: `${empty}${mode === "agenda" ? agenda : month}<span class="sr-only" data-calendar-announcement role="status" aria-live="polite"></span>` };
+    return { controls: `<button type="button" class="button small" data-calendar-unscheduled data-after-filters aria-label="Unscheduled cards (${undated.length})" title="Unscheduled cards (${undated.length})" aria-haspopup="dialog" aria-expanded="false">${icon("clock")}<span>${undated.length}</span></button><div class="planning-head"><div class="planning-period"><button class="icon-button" data-feature="month-prev" aria-label="Previous period" title="Previous period">${icon("arrow")}</button><h2>${esc(heading)}</h2><button class="icon-button" data-feature="month-next" aria-label="Next period" title="Next period">${icon("arrow")}</button></div><div class="planning-options" data-phone-options>${mode === "week" ? zoom.controls() : mode === "agenda" ? rangePicker(range, heading) : ""}${mode === "month" ? "" : '<span class="planning-separator" aria-hidden="true"></span>'}<button type="button" id="calendar-weekends" class="icon-button" data-calendar-weekends data-weekends-toggle aria-label="Show weekends" aria-pressed="${weekends}" title="${weekends ? "Hide weekends" : "Show weekends"}">${icon("calendar-weekends")}</button><label><span class="control-label">Layout</span> <select id="calendar-mode"><option value="month" ${mode === "month" ? "selected" : ""}>Month</option><option value="week" ${mode === "week" ? "selected" : ""}>Week</option><option value="agenda" ${mode === "agenda" ? "selected" : ""}>Agenda</option></select></label></div></div>`, html: `${empty}${mode === "agenda" ? agenda : month}<span class="sr-only" data-calendar-announcement role="status" aria-live="polite"></span>` };
   }
   function editDates(id, trigger) {
     const project = state.project.id;
@@ -313,13 +339,12 @@ export function calendarView(ctx) {
   }, true);
   document.addEventListener("change", e => {
     if (e.target.id === "calendar-mode") { mode = e.target.value; storage.set("calendar-mode", mode); renderView(true); }
-    if (e.target.id === "agenda-period") { period = e.target.value; storage.set("agenda-period", period); renderView(true); }
-    if (e.target.id === "agenda-date" && e.target.value) { anchor = e.target.value; renderView(true); }
   });
   function click(action, el) {
     if (action === "month-prev" || action === "month-next") {
       const direction = action === "month-prev" ? -1 : 1;
-      if (mode === "week" || (mode === "agenda" && period !== "month")) anchor = shiftDate(anchor, direction * (mode === "week" || period === "week" ? 7 : 1));
+      if (mode === "agenda") picked = shiftAgendaRange(agendaRange({ quick, ...picked }, localDate()), direction);
+      else if (mode === "week") anchor = shiftDate(anchor, direction * 7);
       else { const date = new Date(`${anchor.slice(0, 7)}-01T12:00:00Z`); date.setUTCMonth(date.getUTCMonth() + direction); anchor = dateKey(date.getTime()); }
       renderView(true); return true;
     }

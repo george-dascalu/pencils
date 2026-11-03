@@ -1,5 +1,6 @@
 // Confirmed usability issues from the independent 2 November critique.
 import { test, expect, onDevices, useApp } from '../fixtures.mjs';
+import { agendaDates } from '../helpers/agenda-range.mjs';
 import { reveal } from '../helpers/menu-controls.mjs';
 const title = 'Share the research notes and choose the next step';
 const status = 'Ready for the next review';
@@ -83,8 +84,8 @@ onDevices(['desktop', 'ipad', 'phone'], () => {
       await expect(content).not.toContainText('No matching cards');
     }
     await (await reveal(page.locator('#calendar-mode'))).selectOption('agenda');
-    await (await reveal(page.locator('#agenda-period'))).selectOption('day');
-    await (await reveal(page.locator('#agenda-date'))).fill('2026-12-01');
+    await agendaDates(page, '2026-12-01');
+    if (await page.locator('.mobile-view-options[open]').count()) await page.getByRole('button', { name: 'Close view options', exact: true }).click();
     await expect(page.locator('.calendar-agenda')).toContainText('No cards scheduled in this period.');
     await page.locator('#search').fill('Share');
     await expect(page.locator('.calendar-agenda')).toContainText('No matching cards scheduled in this period.');

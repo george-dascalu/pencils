@@ -2,6 +2,16 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.21.70 — 2026-11-03
+
+### Changed
+- Feature F0.21-70: Agenda picks its range from one menu: dates (From and To) on one side and quick ranges on the other (Today, Tomorrow, This week, Next week, This month, Next month, Next 7, 14 or 30 days). It replaces the Period menu and the date field. Quick ranges are remembered; previous and next keep the range's length, and whole months move by month. Agenda now keeps its own range instead of sharing a date with Month and Week.
+- In Month, Week and Agenda the controls they share (weekends and Layout) stay last on the right, after the layout's own controls and a divider.
+- Field boxes in List, Tree and Agenda rows and phone summaries are as wide as the fields the project shows, so a project with fields turned off no longer leaves an empty box beside them.
+
+### Fixed
+- Choosing a day in a date picker opened from a menu no longer closes that menu.
+
 ## 0.21.69 — 2026-11-03
 
 ### Added

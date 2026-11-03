@@ -4,6 +4,7 @@
 // agenda shares the month's date anchor, Timeline dependency arrows follow scale, weekends and
 // custom ranges, and tablet and phone layouts fit with tappable agenda cards.
 import { test as base, expect, useApp } from "../fixtures.mjs";
+import { agendaDates, calendarMonth } from "../helpers/agenda-range.mjs";
 import { selectProjectView, reveal, setWeekends } from "../helpers/menu-controls.mjs";
 
 // The suite uses a touch-capable desktop window (fine pointer plus touch events), as on a
@@ -72,10 +73,9 @@ async function closeOptions(page) {
 }
 // Month view anchored on October 2026.
 async function setMonth(page) {
-  await (await reveal(page.locator("#calendar-mode"))).selectOption("agenda");
-  await (await reveal(page.locator("#agenda-date"))).fill("2026-10-01");
   await (await reveal(page.locator("#calendar-mode"))).selectOption("month");
   await closeOptions(page);
+  await calendarMonth(page, "2026-10-01");
   await page.locator('.calendar-day[data-calendar-date="2026-10-01"]').waitFor();
 }
 async function openMonth(page, { project }) {
@@ -175,19 +175,18 @@ test("unscheduled cards can be dropped on a day or given dates in place", async 
   await expect(card(page, undated.id)).toHaveCount(1);
 });
 
-test("the agenda lists ongoing and start-only work with readable titles and shares the month's anchor", async ({ page }) => {
+test("the agenda lists ongoing and start-only work with readable titles and moves by whole months", async ({ page }) => {
   const seed = app.agenda;
   await openMonth(page, seed);
   await (await reveal(page.locator("#calendar-mode"))).selectOption("agenda");
-  await (await reveal(page.locator("#agenda-period"))).selectOption("month");
+  await agendaDates(page, "2026-10-01", "2026-10-31");
+  await closeOptions(page);
   await expect(page.locator(`.calendar-agenda .agenda-task[data-id="${seed.ongoing.id}"]`)).toHaveCount(1);
   await expect(page.locator(`.calendar-agenda .agenda-task[data-id="${seed.startOnly.id}"]`)).toHaveCount(1);
   const titleWidth = await page.locator(".agenda-task").first().evaluate((e) => e.clientWidth);
   expect(titleWidth, "Agenda titles retain usable width").toBeGreaterThan(350);
   await page.getByRole("button", { name: "Next period", exact: true }).click();
-  await expect(page.locator(".planning-period")).toHaveText(/November/);
-  await (await reveal(page.locator("#agenda-period"))).selectOption("week");
-  await expect(page.locator(".planning-period"), "Month and agenda share one date anchor").toHaveText(/Nov/);
+  await expect(page.locator(".planning-period")).toHaveText(/November 2026/);
 });
 
 test("Timeline dependency arrows follow the scale, hidden weekends and a custom range", async ({ page }) => {
@@ -224,7 +223,7 @@ for (const [width, height] of [[1180, 820], [390, 844]]) {
       await selectProjectView(page, "calendar");
       await setMonth(page);
       await (await reveal(page.locator("#calendar-mode"))).selectOption("agenda");
-      await (await reveal(page.locator("#agenda-period"))).selectOption("month");
+      await agendaDates(page, "2026-10-01", "2026-10-31");
       await closeOptions(page);
       await page.locator(".agenda-task").first().waitFor();
       expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), "No page overflow").toBe(true);

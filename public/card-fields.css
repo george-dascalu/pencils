@@ -21,3 +21,12 @@
 :root[data-fields-off~="assignee"][data-fields-off~="status"][data-fields-off~="priority"] :is(#task-form .task-fields, .task-relationship-metadata, .calendar-event-fields) {
   display: none !important;
 }
+/* Field boxes count only the fields they show: 1 while a field is on, 0 once it is off. On phones a
+   box is 44px per field and 40px more for the status, 216px with all four. */
+:root { --box-assignee: 1; --box-status: 1; --box-priority: 1; --box-date: 1;
+  --phone-box-min: calc(44px * (var(--box-assignee) + var(--box-status) + var(--box-priority) + var(--box-date)));
+  --phone-box-width: calc(var(--phone-box-min) + 40px * var(--box-status)); }
+:root[data-fields-off~="assignee"] { --box-assignee: 0; }
+:root[data-fields-off~="status"] { --box-status: 0; }
+:root[data-fields-off~="priority"] { --box-priority: 0; }
+:root[data-fields-off~="start"][data-fields-off~="due"] { --box-date: 0; }

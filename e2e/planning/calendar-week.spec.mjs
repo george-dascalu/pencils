@@ -1,6 +1,7 @@
 // Owner request, 30 October 2026: a Week layout, beside Month and Agenda, shows one week of the
 // month grid with room for each day's cards; the arrows move a week at a time.
 import { test, expect, onDevices, useApp } from "../fixtures.mjs";
+import { agendaQuick } from "../helpers/agenda-range.mjs";
 import { reveal } from "../helpers/menu-controls.mjs";
 
 const app = useApp(async (store) => {
@@ -32,11 +33,11 @@ onDevices(["desktop", "phone"], () => test("the Week layout shows one week and m
   await expect(heading, "the layout is remembered").toHaveText("26 Oct – 1 Nov 2026");
 }));
 
-test("the Week heading ignores the Agenda's period, and a card moved out of the week says where it went", async ({ page }) => {
+test("the Week heading ignores the Agenda's range, and a card moved out of the week says where it went", async ({ page }) => {
   await page.clock.setFixedTime(new Date("2026-10-28T12:00:00"));
   await page.goto(`${app.base}/#project/${app.project.id}/calendar`);
   await page.locator("#calendar-mode").selectOption("agenda");
-  await page.locator("#agenda-period").selectOption("month");
+  await agendaQuick(page, "this-month");
   await page.locator("#calendar-mode").selectOption("week");
   await expect(page.locator(".planning-period h2")).toHaveText("26 Oct – 1 Nov 2026");
   // Alt+Right moves a card a day; past Sunday it leaves this week.

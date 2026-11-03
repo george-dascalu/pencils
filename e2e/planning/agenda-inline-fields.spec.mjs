@@ -1,5 +1,6 @@
 // Owner request: Agenda rows show the same editable field box as List and Tree, on the right.
 import { test, expect, useApp, onDevices } from '../fixtures.mjs';
+import { agendaDates } from '../helpers/agenda-range.mjs';
 import { reveal } from '../helpers/menu-controls.mjs';
 
 const app = useApp(async store => {
@@ -14,7 +15,7 @@ const row = (page, id = app.card.id) => page.locator(`.calendar-agenda .agenda-r
 async function openAgenda(page, project = app.project) {
   await page.goto(`${app.base}/#project/${project.id}/calendar`);
   await (await reveal(page.locator('#calendar-mode'))).selectOption('agenda');
-  await (await reveal(page.locator('#agenda-date'))).fill('2026-11-03');
+  await agendaDates(page, '2026-11-02', '2026-11-08');
   if (await page.locator('.mobile-view-options[open]').count()) await page.getByRole('button', { name: 'Close view options', exact: true }).click();
 }
 test.beforeEach(async () => {

@@ -500,6 +500,9 @@ export function projectLayout(ctx) {
         requestAnimationFrame(positionMenus);
       }
       if (!el) {
+        // A date picker opened from a field inside an open menu belongs to that menu.
+        const picker = event.target.closest(".date-picker-popover");
+        if (picker && document.querySelector(`[aria-controls="${CSS.escape(picker.id)}"][aria-expanded="true"]`)?.closest(".board-menu[open]")) return;
         state.headerMenu = null;
         document
           .querySelectorAll(".board-menu[open]:not([data-expanded])")

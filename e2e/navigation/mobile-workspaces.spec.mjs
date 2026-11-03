@@ -4,6 +4,7 @@
 // (Navigate, Add, Pen, Search) whose tool rows scroll sideways, stay on screen and above the
 // selection toolbar, and returns to the vertical toolbar at desktop width.
 import AxeBuilder from "@axe-core/playwright";
+import { agendaDates } from "../helpers/agenda-range.mjs";
 import { test, expect, onDevices, useApp } from "../fixtures.mjs";
 import { reveal, setWeekends } from "../helpers/menu-controls.mjs";
 
@@ -65,8 +66,7 @@ onDevices(["phone"], () => {
   test("Calendar options, period navigation and agenda cards work on a phone", async ({ page }) => {
     await goto(page, "calendar");
     await options(page);
-    await page.locator("#agenda-date").fill("2026-10-21");
-    await page.locator("#agenda-period").selectOption("week");
+    await agendaDates(page, "2026-10-19", "2026-10-25");
     await closeOptions(page);
     await fits(page, page.locator(".planning-period"));
     await page.getByRole("button", { name: "Next period", exact: true }).tap();

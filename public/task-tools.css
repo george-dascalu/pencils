@@ -127,7 +127,7 @@ body:is(.task-reordering, .task-group-reordering), body:is(.task-reordering, .ta
 
 /* The field box is exactly its fields wide (assignee, status, priority and the date), so every row's
    box has one width and holds them: Firefox and Safari otherwise size it from the fields' text. */
-.task-row > .row-fields { flex: none; width: calc(var(--row-assignee-width) + var(--list-field-status-width) + max(var(--control-height), var(--list-field-priority-width)) + 68px); }
+.task-row > .row-fields { flex: none; width: calc(var(--row-assignee-width) * var(--box-assignee) + var(--list-field-status-width) * var(--box-status) + max(var(--control-height), var(--list-field-priority-width)) * var(--box-priority) + 68px * var(--box-date)); }
 .row-fields > .row-priority { display: flex; align-items: center; justify-content: center; }
 .row-due { flex: 0 0 68px; }
 .task-row .due { font-size: 11px; }
@@ -213,7 +213,7 @@ body:is(.task-reordering, .task-group-reordering), body:is(.task-reordering, .ta
     height: 44px;
     min-height: 44px;
   }
-  .task-row > .row-fields { width: calc(var(--row-assignee-width) + 44px + var(--list-field-status-width) + 68px); }
+  .task-row > .row-fields { width: calc(var(--row-assignee-width) * var(--box-assignee) + 44px * var(--box-priority) + var(--list-field-status-width) * var(--box-status) + 68px * var(--box-date)); }
   .task-row :is(input.task-title, .row-choice, .row-due, .row-task-link) { height: 44px; min-height: 44px; }
 }
 
@@ -1484,7 +1484,7 @@ html.task-page-open,
   /* The type and key on the left and the field box, with the date, at one width at the row's end
      (so the boxes line up down the list). Short of room, the key shortens and the box narrows to
      its four 44px targets. */
-  .phone-task-meta { display: grid; grid-template-columns: minmax(16px, 1fr) minmax(176px, 216px); gap: 4px; }
+  .phone-task-meta { display: grid; grid-template-columns: minmax(16px, 1fr) minmax(var(--phone-box-min), var(--phone-box-width)); gap: 4px; }
   .phone-task-meta > .icon { grid-area: 1 / 1; }
   .phone-task-meta > span:not([class]) { grid-area: 1 / 1; min-width: 0; margin-inline-start: 16px; overflow: hidden; text-overflow: ellipsis; }
   .phone-task-meta > .phone-task-fields { grid-column: 2; display: flex; }

@@ -1,4 +1,4 @@
-import { DAY, dateKey, shiftDate, weekStart, isWeekend } from "./timeline-dates.js";
+import { DAY, dateKey, shiftDate, stamp, weekStart, isWeekend } from "./timeline-dates.js";
 
 export function calendarRange(task) {
   if (!task.start && !task.due) return null;
@@ -66,4 +66,45 @@ export function agendaGroups(tasks, from, to, weekends = true) {
     groups.get(day).push(task);
   }
   return [...groups].sort(([a], [b]) => a.localeCompare(b));
+}
+
+// Agenda ranges: a quick range, worked out from today, or dates a person picked.
+export const AGENDA_RANGES = [
+  ["today", "Today"], ["tomorrow", "Tomorrow"], ["this-week", "This week"], ["next-week", "Next week"],
+  ["this-month", "This month"], ["next-month", "Next month"], ["next-7", "Next 7 days"], ["next-14", "Next 14 days"], ["next-30", "Next 30 days"],
+];
+const month = (day, offset) => {
+  const d = new Date(`${day.slice(0, 7)}-01T12:00:00Z`);
+  d.setUTCMonth(d.getUTCMonth() + offset);
+  const from = dateKey(d.getTime());
+  d.setUTCMonth(d.getUTCMonth() + 1);
+  return { from, to: shiftDate(dateKey(d.getTime()), -1) };
+};
+const validDay = value => typeof value === "string" && /^\d{4}-\d{2}-\d{2}$/.test(value) && Number.isFinite(stamp(value)) && dateKey(value) === value;
+export function agendaQuickRange(quick, today) {
+  const week = dateKey(weekStart(today)), ahead = Number(/^next-(\d+)$/.exec(quick)?.[1]);
+  if (quick === "today") return { from: today, to: today };
+  if (quick === "tomorrow") return { from: shiftDate(today, 1), to: shiftDate(today, 1) };
+  if (quick === "next-week") return { from: shiftDate(week, 7), to: shiftDate(week, 13) };
+  if (quick === "this-month") return month(today, 0);
+  if (quick === "next-month") return month(today, 1);
+  if (ahead) return { from: today, to: shiftDate(today, ahead - 1) };
+  return { from: week, to: shiftDate(week, 6) };
+}
+// The range shown: chosen dates when valid (at most a year), else the quick range.
+export function agendaRange({ quick, from, to } = {}, today) {
+  if (validDay(from) && validDay(to) && from <= to && stamp(to) - stamp(from) <= 366 * DAY) return { from, to, quick: "" };
+  const key = AGENDA_RANGES.some(([k]) => k === quick) ? quick : "this-week";
+  return { ...agendaQuickRange(key, today), quick: key };
+}
+// Previous and next keep the range's length; whole months move by month.
+export function shiftAgendaRange({ from, to }, direction) {
+  const months = from.slice(8) === "01" && shiftDate(to, 1).slice(8) === "01"
+    ? (Number(to.slice(0, 4)) - Number(from.slice(0, 4))) * 12 + Number(to.slice(5, 7)) - Number(from.slice(5, 7)) + 1 : 0;
+  if (months) {
+    const start = month(from, direction * months).from;
+    return { from: start, to: month(start, months - 1).to };
+  }
+  const days = Math.round((stamp(to) - stamp(from)) / DAY) + 1;
+  return { from: shiftDate(from, direction * days), to: shiftDate(to, direction * days) };
 }
