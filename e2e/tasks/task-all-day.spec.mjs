@@ -61,9 +61,11 @@ onDevices(['desktop', 'ipad', 'phone'], () => {
     const form = page.locator('#task-dates-form'), toggle = form.getByRole('button', { name: 'All day', exact: true });
     await expect(toggle).toHaveAttribute('aria-pressed', 'false');
     await expect(form.locator('header > button').first()).toHaveAttribute('data-task-allday', '');
+    const label=form.locator('.task-dates-all-day-label');await expect(label).toHaveText('All day');
+    const geometry=await label.evaluate(el=>{const a=el.getBoundingClientRect(),b=document.getElementById(el.htmlFor).getBoundingClientRect();return{gap:a.left-b.right,centres:Math.abs(a.top+a.height/2-b.top-b.height/2),fits:el.scrollWidth<=el.clientWidth};});expect(geometry.gap).toBeGreaterThanOrEqual(4);expect(geometry.centres).toBeLessThan(1);expect(geometry.fits).toBe(true);
     const start = form.getByLabel('Start time', { exact: true }), end = form.getByLabel('End time', { exact: true });
     await start.fill('13:15'); await end.fill('14:30'); await end.blur();
-    await toggle.click();
+    await (device==='desktop'?label.click():label.tap());
     await expect(start).toBeVisible(); await expect(end).toBeVisible();
     await expect(start).toBeDisabled(); await expect(end).toBeDisabled();
     await expect(start).toHaveValue('00:00'); await expect(end).toHaveValue('23:59');

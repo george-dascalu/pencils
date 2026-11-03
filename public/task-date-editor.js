@@ -80,7 +80,11 @@ export function taskDateEditor(ctx) {
     panel.showPopover();
     const form = panel.querySelector("form");
     const allDay = form.querySelector('[data-task-allday]');
-    if (allDay) form.querySelector('header').prepend(allDay);
+    if (allDay) {
+      allDay.id='task-dates-all-day';
+      const label=document.createElement('label');label.htmlFor=allDay.id;label.className='task-dates-all-day-label';label.textContent='All day';
+      form.querySelector('header').prepend(allDay,label);
+    }
     installTaskTimes(form);
     const start = form.elements.start,
       due = form.elements.due;

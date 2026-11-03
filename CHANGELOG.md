@@ -2,6 +2,11 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.21.57 — 2026-11-03
+
+### Changed
+- Feature F0.21-57: Board cards omit the Blocked text badge. The shared date picker labels its All day icon; clicking or tapping the label toggles it, with aligned controls on desktop and touch layouts.
+
 ## 0.21.56 — 2026-11-03
 
 ### Added

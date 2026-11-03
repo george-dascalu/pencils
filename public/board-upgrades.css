@@ -269,7 +269,8 @@
 .task-dates-popover footer > [type="submit"] { margin-left: auto; }
 .task-dates-popover .form-error { margin: 8px 0; }
 .task-dates-popover .task-dates-actions { justify-content: flex-end; align-items: center; gap: 8px; margin-bottom: 10px; }
-.task-dates-popover .task-dates-actions > .task-allday-toggle { margin-inline-end: auto; }
+.task-dates-popover .task-dates-actions > .task-allday-toggle { margin-inline-end: 0; }
+.task-dates-popover .task-dates-all-day-label { display: inline-flex; align-items: center; min-height: var(--control-height); margin-inline-end: auto; font-size: var(--control-font-size); cursor: pointer; white-space: nowrap; }
 #task-dates-form > .field:last-of-type { margin-bottom: 0; }
 #task-dates-form > [data-task-dates-pick] { margin-top: 12px; }
 @media (pointer: coarse) {

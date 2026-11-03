@@ -620,7 +620,7 @@ export function canvasPro(ctx, basic) {
             )
             .join(
               "",
-            )}</select>${cardPriority(t, `data-task="${esc(t.id)}"`)}${cardDates(t)}</span></div>${t.source?`<small class="source-badge">${esc(sourceLabel(t))} · Planning edits stay in Pencils</small>`:""}${flags.blocked ? '<div class="canvas-task-flags"><b>Blocked</b></div>' : ""}<div class="canvas-markdown task-card-description" ${n.taskCollapsed ? "hidden" : ""}>${section ? (section.text ? markdown(section.text) : '<span class="is-placeholder">Add card notes…</span>') : "<p>Heading or block not found.</p>"}</div>${n.subpath ? `<small class="embed-label">${esc(n.subpath)}</small>` : ""}`;
+            )}</select>${cardPriority(t, `data-task="${esc(t.id)}"`)}${cardDates(t)}</span></div>${t.source?`<small class="source-badge">${esc(sourceLabel(t))} · Planning edits stay in Pencils</small>`:""}<div class="canvas-markdown task-card-description" ${n.taskCollapsed ? "hidden" : ""}>${section ? (section.text ? markdown(section.text) : '<span class="is-placeholder">Add card notes…</span>') : "<p>Heading or block not found.</p>"}</div>${n.subpath ? `<small class="embed-label">${esc(n.subpath)}</small>` : ""}`;
         }
         if (!asNote) displayCardFields(el, n, t);
       } else if (n.type === "file") {
