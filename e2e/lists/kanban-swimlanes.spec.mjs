@@ -41,7 +41,7 @@ async function move(page, id, value, status) {
   const response = page.waitForResponse((r) => r.request().method() === "PATCH" && r.url().endsWith(`/tasks/${id}`));
   // Drop near the column's top: the drop placeholder grows the lane downward while dragging,
   // so a centre point computed beforehand can land on the next lane (cards are taller since 0.19.10).
-  await card(page, id).dragTo(column(page, value, status), { targetPosition: { x: 40, y: 24 } });
+  await card(page, id).dragTo(column(page, value, status), { sourcePosition: { x: 24, y: 16 }, targetPosition: { x: 40, y: 24 } });
   expect((await response).status()).toBe(200);
   await column(page, value, status).locator(`[data-drag-task="${id}"]`).waitFor();
 }
@@ -159,7 +159,7 @@ onDevices(["phone"], () => {
     await (await reveal(group(page))).selectOption("priority");
     await page.locator(".mobile-view-options").evaluateAll((els) => els.forEach((el) => (el.open = false)));
     await page.waitForFunction(() => document.querySelector(".kanban")?.dataset.group === "priority");
-    await page.locator(".kanban-card .card-bottom").first().tap();
+    await page.locator(".kanban-card .task-title").first().tap();
     await page.locator("#task-form").waitFor();
     await page.locator('[data-action="dialog-close"]').click();
   });

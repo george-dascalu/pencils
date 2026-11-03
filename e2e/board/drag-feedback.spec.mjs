@@ -127,13 +127,12 @@ test.describe("Kanban cards", () => {
     await page.mouse.move(from.x + from.width / 2, from.y + 40, { steps: 5 });
   }
 
-  test("a click anywhere on a card, or Enter on its title, opens the shared task editor", async ({ page }) => {
+  test("card padding and headings, or Enter on the title, open the shared task editor", async ({ page }) => {
     const { tasks, card } = await seedKanban(page);
     await card("a").click({ position: { x: 5, y: 5 } });
     await checkTaskEditor(page, tasks.a);
-    // Kanban cards hide IDs by default (0.18.24) and show only assignee and
-    // priority below the title, so click the metadata the card renders.
-    for (const target of [".task-type", ".card-bottom .kanban-assignee", ".card-bottom .priority", ".task-title"]) {
+    // Fields below the heading now open their own inline pickers.
+    for (const target of [".task-type", ".task-title"]) {
       await card("a").locator(target).click();
       await checkTaskEditor(page, tasks.a);
     }
@@ -172,13 +171,13 @@ test.describe("Kanban cards", () => {
   test("a card dropped between two others keeps both neighbours in order", async ({ page }) => {
     // B already sits above A, as after the reorder above.
     const { card, order } = await seedKanban(page, { b: 1000, a: 2000, c: 3000 });
-    await card("c").dragTo(card("a"), { targetPosition: { x: 80, y: 8 } });
+    await card("c").dragTo(card("a"), { sourcePosition: { x: 24, y: 16 }, targetPosition: { x: 80, y: 8 } });
     await expect.poll(async () => (await order("b")) < (await order("c")) && (await order("c")) < (await order("a")), { message: "middle insertion preserves both neighbours" }).toBe(true);
   });
 
   test("a card dropped on another column takes its status, which persists", async ({ page }) => {
     const { card, task } = await seedKanban(page);
-    await card("b").dragTo(page.locator("[data-drop-status=done]"));
+    await card("b").dragTo(page.locator("[data-drop-status=done]"), { sourcePosition: { x: 24, y: 16 } });
     await expect.poll(async () => (await task("b")).status).toBe("done");
     await page.reload();
     await card("b").waitFor();

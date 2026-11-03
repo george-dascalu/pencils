@@ -208,6 +208,7 @@ export function kanbanDrag(ctx) {
   }
   document.addEventListener("dragstart", (e) => {
     const card = e.target.closest("[data-drag-task]");
+    if (card && e.target.closest('.kanban-fields')) { e.preventDefault(); return; }
     if (!card || e.defaultPrevented || state.view !== "kanban") return;
     begin(card, e.clientX, e.clientY);
     const { ghost, dx, dy } = drag;
@@ -281,6 +282,7 @@ export function kanbanDrag(ctx) {
       release();
     }
     const card = e.target.closest?.("[data-drag-task]");
+    if (e.target.closest?.('.kanban-fields')) return;
     if (!card || e.touches.length > 1 || state.view !== "kanban") return;
     const touch = e.changedTouches[0];
     card.draggable = false;

@@ -1,10 +1,10 @@
 import { taskDateEditor } from "./task-date-editor.js";
 import { sourceReadOnly } from "./source-model.js";
 
-// List and Tree use the same controls, save queue and contextual date editor.
+// List, Tree and Kanban use the same controls, save queue and contextual date editor.
 export function taskRowEditor(ctx) {
   const { state, task, patchTask, renderView, sync, route, toast } = ctx;
-  const selector = ".task-row [data-row-field]";
+  const selector = ":is(.task-row, .kanban-card) [data-row-field]";
   let paintTimer,
     pointerActive = false;
   document.addEventListener(
@@ -42,23 +42,23 @@ export function taskRowEditor(ctx) {
       paintTimer = setTimeout(() => repaint(project, view), 100);
       return;
     }
-    const row = active?.closest("[data-task-order-row]");
-    const id = row?.dataset.taskOrderRow;
+    const row = active?.closest("[data-task-order-row], .kanban-card");
+    const id = row?.dataset.taskOrderRow || row?.dataset.dragTask;
     const field = active?.dataset.rowField;
     const scroll =
-      document.querySelector("#view-content > .tree-wrapper") ||
+      document.querySelector("#view-content > .tree-wrapper, #view-content > .kanban") ||
       document.querySelector("#view-content");
     const position = { left: scroll.scrollLeft, top: scroll.scrollTop };
     const selection =
       field === "title" ? [active.selectionStart, active.selectionEnd] : null;
     renderView(true);
     const currentScroll =
-      document.querySelector("#view-content > .tree-wrapper") ||
+      document.querySelector("#view-content > .tree-wrapper, #view-content > .kanban") ||
       document.querySelector("#view-content");
     currentScroll.scrollTo(position);
     if (!id) return;
     const current = document.querySelector(
-      `[data-task-order-row="${CSS.escape(id)}"]`,
+      `[data-task-order-row="${CSS.escape(id)}"], .kanban-card[data-drag-task="${CSS.escape(id)}"]`,
     );
     const next = [...(current?.querySelectorAll(
       field

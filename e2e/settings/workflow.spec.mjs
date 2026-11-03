@@ -82,11 +82,11 @@ test("Kanban names the renamed status, refuses a disallowed drop and saves an al
   await selectProjectView(page, "kanban");
   await expect(page.locator("[data-drop-status=todo] .column-header")).toContainText("Ready queue");
   const card = page.locator(`[data-drag-task="${app.task.id}"]`);
-  await card.dragTo(page.locator("[data-drop-status=done]"));
+  await card.dragTo(page.locator("[data-drop-status=done]"), {sourcePosition:{x:24,y:16}});
   await expect(page.locator(`[data-drop-status=todo] [data-drag-task="${app.task.id}"]`)).toHaveCount(1);
   expect((await app.store.snapshot(app.project.id)).tasks[0].status).toBe("todo");
   const saved = patched(page);
-  await card.dragTo(page.locator("[data-drop-status=doing]"));
+  await card.dragTo(page.locator("[data-drop-status=doing]"), {sourcePosition:{x:24,y:16}});
   expect((await saved).status()).toBe(200);
 });
 

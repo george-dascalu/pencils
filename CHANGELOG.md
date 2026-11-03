@@ -2,6 +2,11 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.21.42 — 2026-11-03
+
+### Added
+- Feature F0.21-42: Edit assignee, status, priority and end dates directly on Kanban cards. The shared field pickers save in place; the card title still opens its editor, and field interactions do not start a card drag.
+
 ## 0.21.41 — 2026-11-03
 
 ### Added

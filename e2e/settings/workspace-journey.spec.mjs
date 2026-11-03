@@ -103,7 +103,7 @@ test("dragging a Kanban card to Done saves its status", async ({ page }) => {
   // Kanban fits a whole number of columns and snaps its horizontal scroll, so at this width
   // Done starts off-screen: bring it into view before dragging.
   await page.locator('[data-drop-status="done"]').scrollIntoViewIfNeeded();
-  await saved(page, () => page.locator(`[data-drag-task="${created.id}"]`).dragTo(page.locator('[data-drop-status="done"]')), created.id);
+  await saved(page, () => page.locator(`[data-drag-task="${created.id}"]`).dragTo(page.locator('[data-drop-status="done"]'),{sourcePosition:{x:24,y:16}}), created.id);
   expect((await snapshot()).tasks.find((t) => t.id === created.id).status).toBe("done");
 });
 

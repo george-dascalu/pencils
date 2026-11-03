@@ -27,7 +27,7 @@ const centre = (box) => ({ x: box.x + box.width / 2, y: box.y + box.height / 2 }
 
 onDevices(["ipad"], () => test("a long press lifts a card, which lands in another column, even an empty one", async ({ page }) => {
   const touch = await open(page);
-  const from = centre(await card(page, app.first).boundingBox());
+  const from = centre(await card(page, app.first).locator(".card-top").boundingBox());
   const width = (await card(page, app.first).boundingBox()).width;
   await touch.send("Input.dispatchTouchEvent", { type: "touchStart", touchPoints: [from] });
   const ghost = page.locator(".kanban-drag-image");
@@ -51,7 +51,7 @@ onDevices(["ipad"], () => test("a long press lifts a card, which lands in anothe
 
 onDevices(["phone"], () => test("on phones a long press reorders a column, and moving first scrolls instead", async ({ page }) => {
   const touch = await open(page);
-  let from = centre(await card(page, app.third).boundingBox());
+  let from = centre(await card(page, app.third).locator(".card-top").boundingBox());
   // A finger that moves before the long press scrolls the board; no card lifts. Nothing in the
   // page marks a long press not happening, so wait past its 350ms.
   await touch.send("Input.dispatchTouchEvent", { type: "touchStart", touchPoints: [from] });
@@ -60,7 +60,7 @@ onDevices(["phone"], () => test("on phones a long press reorders a column, and m
   await expect(page.locator(".kanban-drag-image"), "moving first scrolls").toHaveCount(0);
   await touch.send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] });
   // The column may have scrolled under that finger.
-  from = centre(await card(page, app.third).boundingBox());
+  from = centre(await card(page, app.third).locator(".card-top").boundingBox());
   const below = await card(page, app.fourth).boundingBox();
   await touch.send("Input.dispatchTouchEvent", { type: "touchStart", touchPoints: [from] });
   await expect(page.locator(".kanban-drag-image")).toBeVisible();
@@ -71,7 +71,7 @@ onDevices(["phone"], () => test("on phones a long press reorders a column, and m
   // Lifted and let go in place, nothing changes: not even the sort, which a drop sets to Manual order.
   await page.locator("[data-sort-menu]").click();
   await page.locator("#shared-select-menu").getByRole("option", { name: "Date created", exact: true }).click();
-  from = centre(await card(page, app.fourth).boundingBox());
+  from = centre(await card(page, app.fourth).locator(".card-top").boundingBox());
   await touch.send("Input.dispatchTouchEvent", { type: "touchStart", touchPoints: [from] });
   await expect(page.locator(".kanban-drag-image")).toBeVisible();
   await touch.send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] });
@@ -92,7 +92,7 @@ onDevices(["phone"], () => test("a touch drag selects no text: the board is unse
   });
   expect(await page.evaluate(() => getSelection().toString())).toBe("Stray text");
   // The backlog column shows first on phones (the iPad test moves the first card out of it).
-  const from = centre(await card(page, app.fourth).boundingBox());
+  const from = centre(await card(page, app.fourth).locator(".card-top").boundingBox());
   await touch.send("Input.dispatchTouchEvent", { type: "touchStart", touchPoints: [from] });
   await expect(page.locator(".kanban-drag-image")).toBeVisible();
   expect(await page.evaluate(() => getSelection().toString()), "lifting the card clears it").toBe("");

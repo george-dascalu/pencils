@@ -96,7 +96,7 @@ test("clicking a card opens it, and dragging it to Done saves the status", gate,
   await expect(page.locator("#task-form [name=title]")).toHaveValue("First card");
   await page.locator('[data-action="dialog-close"]').click();
   await page.locator("#task-form").waitFor({ state: "detached" });
-  await saved(page, () => page.locator(`[data-drag-task="${app.first.id}"]`).dragTo(column(page, "done")), app.first.id);
+  await saved(page, () => page.locator(`[data-drag-task="${app.first.id}"]`).dragTo(column(page, "done"), { sourcePosition: { x: 24, y: 16 } }), app.first.id);
   await page.waitForFunction((id) => document.querySelector(`[data-drop-status="done"] [data-drag-task="${id}"]`), app.first.id);
   expect(await status(app.project, app.first.id)).toBe("done");
 });
@@ -141,9 +141,9 @@ test("a drag held near a long column's bottom scrolls that column, not the page"
 
 onDevices(["ipad"], () => {
   test.use({ viewportSize: null });
-  test("tapping the lower half of a card opens it", async ({ page }) => {
+  test("tapping the card heading opens it without using a field picker", async ({ page }) => {
     await open(page);
-    await page.locator(`[data-drag-task="${app.first.id}"] .card-bottom`).tap();
+    await page.locator(`[data-drag-task="${app.first.id}"] .card-top`).tap();
     await page.locator("#task-form").waitFor();
     await expect(page.locator("#task-form [name=title]")).toHaveValue("First card");
     await page.locator('[data-action="dialog-close"]').click();
