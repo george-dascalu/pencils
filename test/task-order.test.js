@@ -29,3 +29,28 @@ test("tree manual order includes filtered ancestor context and carries whole bra
   assert.equal(tree.items[0].contextOnly, true);
   assert.equal(tasks.find(t => t.id === "ac").parent, "a");
 });
+
+test('no-op and missing drag endpoints never change ranks',()=>{
+  const tasks=['a','b','c'].map((id,i)=>({id,order:i*1024}));
+  assert.deepEqual(reorderTasks(tasks,['a','b','c'],'a','a'),[]);
+  assert.deepEqual(reorderTasks(tasks,['a','b','c'],'missing','b'),[]);
+  assert.deepEqual(reorderTasks(tasks,['a','b','c'],'a','missing'),[]);
+});
+
+test('normal moves leave hidden ranks untouched; tiny or imprecise intervals rebalance safely',()=>{
+  const tasks=['a','b','c','d'].map((id,i)=>({id,order:i*1024}));
+  const changes=reorderTasks(tasks,['a','b'],'b','a');
+  assert.deepEqual(changes.map(t=>t.id).sort(),['a','b']);
+  for (const orders of [[-Number.MAX_VALUE,-1,0,Number.MAX_VALUE],[0,1e-6,2e-6,3e-6]]) {
+    const values=['a','b','c','z'].map((id,i)=>({id,order:orders[i]}));
+    const changes=reorderTasks(values,['b','c'],'c','b');
+    assert.equal(changes.length,4);
+    const moved=apply(values,changes);
+    assert.deepEqual(moved.map(t=>t.id),['a','c','b','z']);
+    assert.ok(moved.every((t,i)=>Number.isFinite(t.order)&&(!i||t.order>moved[i-1].order)));
+  }
+  const edge=2**53;
+  const values=['a','b','c','d','z'].map((id,i)=>({id,order:[edge-1,edge-1,edge,edge+2,edge+2][i]}));
+  const moved=apply(values,reorderTasks(values,['b','c','d'],'d','b'));
+  assert.ok(moved.every((t,i)=>!i||t.order>moved[i-1].order));
+});

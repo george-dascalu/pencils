@@ -1235,14 +1235,16 @@ export function installFeatures(ctx) {
       if (key === "status") return fallback(tasks);
       const groups = new Map();
       for (const t of tasks) {
-        const name = key === "none" ? "All cards" : t[key] || "Unassigned";
+        const name = key === "none" ? "All cards" : t[key] || "";
         if (!groups.has(name)) groups.set(name, []);
         groups.get(name).push(t);
       }
+      const available = key === 'type' ? state.config.types : key === 'priority' ? priorityOptions : key === 'assignee' ? ['', ...projectPeople(state).map(person => person.name)] : [];
+      for (const name of available) if (!groups.has(name)) groups.set(name, []);
       return [...groups]
         .map(
           ([name, items]) =>
-            `<section class="list-group"><h2 class="section-title">${esc(key === "priority" ? priorityLabel(name) : label(name))}<span class="count">${items.length}</span></h2>${items.map((t) => row(t)).join("")}</section>`,
+            `<section class="${items.length ? 'list-group' : 'list-group-empty'}" ${items.length ? '' : 'hidden'} ${key === 'none' ? '' : `data-task-drop-field="${esc(key)}" data-task-drop-value="${esc(name)}"`}><h2 class="section-title">${esc(key === "priority" ? priorityLabel(name) : label(name || 'Unassigned'))}<span class="count">${items.length}</span></h2>${items.map((t) => row(t)).join("")}</section>`,
         )
         .join("");
     },

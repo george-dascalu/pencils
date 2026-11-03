@@ -1276,10 +1276,9 @@ function taskRow(t, depth = null, hasChildren = false, flat = false) {
 }
 function listView(tasks) {
   return statuses
-    .filter((s) => tasks.some((t) => t.status === s))
     .map(
       (status) =>
-        `<section class="list-group"><h2 class="section-title"><span class="status-dot ${status}" ${taskColorAttributes(state, "status", status)}></span>${esc(statusNames[status])}<span class="count">${state.statusTotals?.[status] ?? tasks.filter((t) => t.status === status).length}</span><span class="line"></span></h2><div>${tasks
+        `<section class="${tasks.some(t => t.status === status) ? 'list-group' : 'list-group-empty'}" ${tasks.some(t => t.status === status) ? '' : 'hidden'} data-task-drop-field="status" data-task-drop-value="${esc(status)}"><h2 class="section-title"><span class="status-dot ${status}" ${taskColorAttributes(state, "status", status)}></span>${esc(statusNames[status])}<span class="count">${state.statusTotals?.[status] ?? tasks.filter((t) => t.status === status).length}</span><span class="line"></span></h2><div>${tasks
           .filter((t) => t.status === status)
           .map((t) => taskRow(t))
           .join(

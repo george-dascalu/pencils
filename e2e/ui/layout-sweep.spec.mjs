@@ -55,7 +55,7 @@ const problems = (page) => page.evaluate(({ width: vw, height: vh }) => {
 async function open(page, screen) {
   await page.goto("about:blank");
   await page.goto(`${app.base}/${SCREENS[screen]()}`);
-  await page.locator(screen === "home" ? ".home" : screen === "board" ? "#canvas" : "#view-content > *").first().waitFor();
+  await page.locator(screen === "home" ? ".home" : screen === "board" ? "#canvas" : "#view-content > *:visible").first().waitFor();
   await expect(page.locator("#view-content")).not.toContainText("Opening view");
 }
 const touch = (page) => page.evaluate(() => matchMedia("(max-width: 600px), (pointer: coarse)").matches);

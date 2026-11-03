@@ -2,6 +2,11 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.21.60 — 2026-11-03
+
+### Changed
+- Feature F0.21-60: Dragging a card into another List group updates its Status, Assignee, Priority or Type and keeps grouping enabled. Empty groups appear as drop targets during a drag. Drops preserve other fields, save locally for connected cards, and respect workflow, hierarchy and source-owned field rules; Escape cancels without changing the card.
+
 ## 0.21.59 — 2026-11-03
 
 ### Changed

@@ -2,7 +2,7 @@
 // Tree: the manual order is saved (also for source tasks, without editing their remote
 // fields) and clears explicit sorting; cancelling, selecting and editing leave it alone;
 // filtered moves keep hidden tasks in place; Tree moves whole families and never
-// reparents; List and Table moves across groups keep the status; off-page rows stay put,
+// reparents; List moves update the group's field while Table moves keep it; off-page rows stay put,
 // edges auto-scroll, and phones drag with a 44px touch handle.
 // Desktop tests belong to the cross-browser release gate.
 import { test, expect, onDevices, useApp } from "../fixtures.mjs";
@@ -137,10 +137,10 @@ test.describe("desktop", () => {
     await expect.poll(async () => follows(await ids(page), child.id, a.id)).toBe(true);
   });
 
-  test("List moves a task across status groups without changing its status, and keeps the layout on reload", gate, async ({ page }) => {
+  test("List moves a task across status groups by changing its status, and keeps grouping on reload", gate, async ({ page }) => {
     const { c, d } = app;
     await open(page, "list");
-    const status = (await tasks()).find((t) => t.id === c.id).status;
+    const status = (await tasks()).find((t) => t.id === d.id).status;
     await drag(page, c.id, d.id, true);
     await expect(page.locator(".list-group")).toHaveCount(1);
     expect((await tasks()).find((t) => t.id === c.id).status).toBe(status);
@@ -154,6 +154,8 @@ test.describe("desktop", () => {
 
   test("a cross-group drop in a grouped table clears the grouping", gate, async ({ page }) => {
     const { b, c } = app;
+    const current = (await tasks()).find(t => t.id === c.id);
+    await app.store.updateTask(app.project.id,c.id,{revision:current.revision,status:"backlog"});
     await open(page, "table");
     await page.locator('[data-board-menu="table-groups"] > summary').click();
     await page.locator('[data-table-group="0"]').selectOption("status");
@@ -206,6 +208,10 @@ onDevices(["phone"], () => {
       await touch("touchEnd");
       await settled(page);
       await cdp.detach();
+      if (view === 'list') {
+        const saved = await tasks();
+        expect(saved.find(t => t.id === first).status).toBe(saved.find(t => t.id === second).status);
+      }
       await page.waitForFunction(({ first, second }) => {
         const order = [...document.querySelectorAll("[data-task-order-row]")].map((r) => r.dataset.taskOrderRow);
         return order.indexOf(first) > order.indexOf(second);

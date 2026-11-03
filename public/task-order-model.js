@@ -1,3 +1,30 @@
+import { canTransition, transitionError } from './workflow-model.js';
+import { hierarchyError } from './hierarchy-model.js';
+import { sourceReadOnly } from './source-model.js';
+import { fieldOn } from './card-fields.js';
+import { priorityOptions } from './task-priority.js';
+
+// A List group represents a field value; changing groups never edits other fields.
+export function groupedTaskPatch(config, tasks, id, field, value) {
+  const card = tasks.find(task => task.id === id);
+  if (!card) throw new Error('Card no longer exists.');
+  if (!['status', 'assignee', 'priority', 'type'].includes(field) || typeof value !== 'string')
+    throw new Error('Invalid group value.');
+  if (!fieldOn(config, field)) throw new Error('This grouping field is turned off.');
+  if (sourceReadOnly(card, field)) throw new Error('Card type is managed by the connected source.');
+  if (field === 'status' && !canTransition(config, card.status, value)) throw new Error(transitionError(config, card.status, value));
+  if (field === 'priority' && !priorityOptions.includes(value)) throw new Error('Invalid priority group.');
+  if (field === 'type') {
+    if (!config.types.includes(value)) throw new Error('Invalid card type group.');
+    const updated = { ...card, type: value };
+    const errors = [hierarchyError(config, updated, tasks.find(task => task.id === card.parent)),
+      ...tasks.filter(task => task.parent === id).map(child => hierarchyError(config, child, updated))];
+    const error = errors.find(Boolean);
+    if (error) throw new Error(error);
+  }
+  return (card[field] || '') === value ? {} : { [field]: value };
+}
+
 // Manual order is a local task property, including on imported tasks.
 export const compareTaskOrder = (a, b) =>
   (a.order || 0) - (b.order || 0) || a.id.localeCompare(b.id);

@@ -6,6 +6,7 @@
 // From the 0.21.0 baseline, new features use F<major>.<minor>-<1..100>: F0.21-1 releases
 // as 0.21.1, F0.21-100 as 0.22.0, then F0.22-1 as 0.22.1. Historical T IDs stay intact.
 export const roadmap = [
+  { id: "F0.21-60", title: "Drag cards between List groups to update the grouping field", status: "done", requested: "2026-11-03", started: "2026-11-03", done: "2026-11-03", version: "0.21.60" },
   { id: "F0.21-59", title: "Retain only the last three Pencils Docker images after a healthy release", status: "done", requested: "2026-11-03", started: "2026-11-03", done: "2026-11-03", version: "0.21.59" },
   { id: "F0.21-58", title: "Single-line board object and connector toolbars on desktop, iPad and phones", status: "done", requested: "2026-11-03", started: "2026-11-03", done: "2026-11-03", version: "0.21.58" },
   { id: "F0.21-57", title: "Clearer card labels: remove Blocked and name All day in the date picker", status: "done", requested: "2026-11-03", started: "2026-11-03", done: "2026-11-03", version: "0.21.57" },

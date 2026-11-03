@@ -21,7 +21,7 @@ async function visitAll(page, { project, config }) {
   const shown = VIEWS.filter((view) => viewOn(config, view));
   for (const view of shown) {
     await page.goto(`${app.base}/#project/${project.id}/${view}`);
-    await expect(page.locator("#view-content > *").first(), view).toBeVisible();
+    await expect(page.locator("#view-content > *:visible").first(), view).toBeVisible();
     await expect(page.locator("#view-content"), `${view} opens`).not.toContainText("Opening view");
     await expect(page.locator("#view-content"), `${view} loads`).not.toContainText("This view could not load");
   }

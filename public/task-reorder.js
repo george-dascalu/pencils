@@ -1,5 +1,7 @@
-import { reorderTasks } from "./task-order-model.js";
+import { reorderTasks, groupedTaskPatch } from "./task-order-model.js";
 import { tableResult } from "./table-model.js";
+import { statusLabel } from './workflow-model.js';
+import { priorityLabel } from './task-priority.js';
 
 export function taskReorderHandle(t, esc) {
   return `<button type="button" class="task-reorder-handle" data-task-reorder="${esc(t.id)}" aria-label="Reorder ${esc(t.title)}" aria-keyshortcuts="Alt+ArrowUp Alt+ArrowDown" title="Drag to reorder. Alt + Up/Down moves this card." ><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 5h.01M15 5h.01M9 12h.01M15 12h.01M9 19h.01M15 19h.01"/></svg></button>`;
@@ -10,6 +12,9 @@ export function taskReorder(ctx, tableTools) {
   let drag = null, suppressClick = false, saving = false;
   const rowSelector = "#view-content [data-task-order-row]";
   const rows = () => [...document.querySelectorAll(rowSelector)];
+  const groupedList = () => state.view === 'list' && state.groupBy !== 'none';
+  const groupLabel = (field, value) => field === 'status' ? statusLabel(state.config, value) : field === 'priority' ? priorityLabel(value) : value ? ctx.label(value) : 'Unassigned';
+  const clearDropTargets = () => document.querySelectorAll('.task-group-drop-target').forEach(el => el.classList.remove('task-group-drop-target'));
   const hierarchy = () => state.view === "tree" || (state.view === "table" && tableTools.preferences().outline);
   const siblings = (a, b) => !hierarchy() || (task(a)?.parent || null) === (task(b)?.parent || null);
   const group = row => row?.dataset.taskOrderGroup || "";
@@ -66,13 +71,28 @@ export function taskReorder(ctx, tableTools) {
     return tasks.map(t => t.id);
   }
   // from: where the moved row's copy was dropped, so it settles from there.
-  async function move(id, target, after, from) {
-    if (saving || !siblings(id, target)) return;
+  async function move(id, target, after, from, droppedGroup) {
+    if (saving || (target && !siblings(id, target))) return;
     const all = rows(), source = all.find(r => r.dataset.taskOrderRow === id), destination = all.find(r => r.dataset.taskOrderRow === target);
-    if (!source || !destination) return;
-    const crossGroup = group(source) !== group(destination);
-    const changes = reorderTasks(state.tasks, orderedScope(id, crossGroup, group(source)), id, target, after);
-    if (!changes.length) return;
+    if (!source || (!destination && !droppedGroup)) return;
+    const region = destination?.closest('[data-task-drop-field]');
+    const destinationGroup = droppedGroup || (region ? {field:region.dataset.taskDropField,value:region.dataset.taskDropValue} : null);
+    const changesGroup = groupedList() && destinationGroup;
+    const crossGroup = group(source) !== (changesGroup ? destinationGroup.value : group(destination));
+    let fieldChanges = {};
+    try {
+      if (changesGroup && crossGroup) {
+        if (destinationGroup.field !== (state.groupBy || 'status')) throw new Error('Grouping changed. Please drag again.');
+        fieldChanges = groupedTaskPatch(state.config, state.tasks, id, destinationGroup.field, destinationGroup.value);
+      }
+    } catch (error) { toast(error.message, true); return; }
+    const scope = changesGroup
+      ? ctx.filteredTasks().filter(t => t.id === id || (t[destinationGroup.field] || '') === destinationGroup.value).map(t => t.id)
+      : orderedScope(id, crossGroup, group(source));
+    const changes = target ? reorderTasks(state.tasks, scope, id, target, after) : [];
+    if (!changes.length && !Object.keys(fieldChanges).length) return;
+    const updates = new Map(changes.map(({id,order}) => [id,{order}]));
+    if (Object.keys(fieldChanges).length) updates.set(id,{...updates.get(id),...fieldChanges});
     const project = state.project.id;
     const scroll = scroller(), position = { top: scroll.scrollTop, left: scroll.scrollLeft };
     const before = new Map(all.map(r => [r.dataset.taskOrderRow, r.getBoundingClientRect().top]));
@@ -84,27 +104,24 @@ export function taskReorder(ctx, tableTools) {
       tableTools.preferences().sorts = [];
       if (crossGroup) tableTools.preferences().groups = [];
       tableTools.persist();
-    } else if (state.view === "list" && crossGroup) {
-      state.groupBy = "none";
-      storage.set(`group-by:${project}`, "none");
     }
     saving = state.taskReordering = true;
     try {
       // The existing save queue makes these updates optimistic and durable offline.
-      const pending = changes.map(({ id, order }) => patchTask(id, { order }, false));
+      const pending = [...updates].map(([id, patch]) => patchTask(id, patch, false));
       renderView();
       scroller()?.scrollTo(position);
       handle(id)?.focus({ preventScroll: true });
       handle(id)?.scrollIntoView({ block: "nearest", inline: "nearest" });
       settle(id, before);
-      const message = crossGroup ? "Card moved. Grouping cleared to keep your manual order." : "Card moved. Manual order selected.";
+      const message = changesGroup && crossGroup ? `Card moved to ${groupLabel(destinationGroup.field,destinationGroup.value)}.` : crossGroup ? "Card moved. Grouping cleared to keep your manual order." : "Card moved. Manual order selected.";
       announce(message);
-      if (crossGroup) toast(message);
+      if (crossGroup && !changesGroup) toast(message);
       await Promise.all(pending);
-      if (state.project?.id === project && changes.some(({ id }) => {
+      if (state.project?.id === project && [...updates.keys()].some(id => {
         const entry = sync.entries.get(route("tasks", id));
         return entry?.blocked || entry?.conflict;
-      })) toast("The card order could not be synced. Review the pending changes in save status.", true);
+      })) toast("The card change could not be synced. Review the pending changes in save status.", true);
     } catch (error) {
       toast(error.message, true);
     } finally {
@@ -119,14 +136,32 @@ export function taskReorder(ctx, tableTools) {
     const top = Math.max(0, header?.bottom ?? bounds.top), bottom = Math.min(innerHeight, bounds.bottom);
     const left = Math.max(0, bounds.left), right = Math.min(innerWidth, bounds.right);
     d.valid = d.x >= left && d.x <= right && d.y >= top && d.y <= bottom;
-    const candidates = rows().filter(r => r.dataset.taskOrderRow !== d.id && siblings(d.id, r.dataset.taskOrderRow));
+    d.destinationGroup = null;
+    d.reason = '';
+    clearDropTargets();
+    let region;
+    if (groupedList() && d.valid) {
+      const groups = [...document.querySelectorAll('#view-content [data-task-drop-field]')].filter(el => el.getClientRects().length);
+      region = document.elementFromPoint(d.x,d.y)?.closest('[data-task-drop-field]') || groups.sort((a,b) => {
+        const distance = el => { const r=el.getBoundingClientRect(); return Math.max(r.top-d.y,d.y-r.bottom,0); };
+        return distance(a)-distance(b);
+      })[0];
+      if (region) {
+        d.destinationGroup = {field:region.dataset.taskDropField,value:region.dataset.taskDropValue};
+        try {
+          if (group(d.row) !== d.destinationGroup.value) groupedTaskPatch(state.config,state.tasks,d.id,d.destinationGroup.field,d.destinationGroup.value);
+          region.classList.add('task-group-drop-target');
+        } catch (error) { d.valid=false; d.reason=error.message; }
+      }
+    }
+    const candidates = rows().filter(r => r.dataset.taskOrderRow !== d.id && siblings(d.id, r.dataset.taskOrderRow) && (!region || r.closest('[data-task-drop-field]') === region));
     const hovered = document.elementFromPoint(d.x, d.y)?.closest("[data-task-order-row]");
     if (hovered && !siblings(d.id, hovered.dataset.taskOrderRow)) d.valid = false;
     const before = candidates.find(r => { const b = r.getBoundingClientRect(); return d.y < b.top + b.height / 2; });
     const target = before || candidates.at(-1);
     d.target = target?.dataset.taskOrderRow;
     d.after = !before;
-    let markerY = target?.getBoundingClientRect()[before ? "top" : "bottom"];
+    let markerY = target?.getBoundingClientRect()[before ? "top" : "bottom"] ?? region?.querySelector('.section-title')?.getBoundingClientRect().bottom;
     // A parent's whole branch travels with it in the tree/outline.
     if (d.after && hierarchy() && target) {
       const following = rows().slice(rows().indexOf(target) + 1);
@@ -146,7 +181,7 @@ export function taskReorder(ctx, tableTools) {
       left: `${Math.max(8, Math.min(innerWidth - d.ghost.offsetWidth - 8, d.x + 16))}px`,
       top: `${Math.max(8, Math.min(innerHeight - d.ghost.offsetHeight - 8, d.y + 16))}px`,
     });
-    d.ghost.classList.toggle("invalid", !d.valid || !d.target);
+    d.ghost.classList.toggle("invalid", !d.valid || (!d.target && !d.destinationGroup));
   }
   function tick(time) {
     const d = drag;
@@ -167,7 +202,10 @@ export function taskReorder(ctx, tableTools) {
     const d = drag;
     d.active = suppressClick = true;
     state.taskReordering = true;
+    const sourceBox = d.row.getBoundingClientRect();
+    d.initialScrollTop = d.scroll.scrollTop;
     document.body.classList.add("task-reordering");
+    if (groupedList()) d.scroll.scrollTop += d.row.getBoundingClientRect().top-sourceBox.top;
     // List and Tree rows lift as a copy of themselves; a table row can't stand alone, so Table
     // shows the title.
     if (state.view === "table") {
@@ -175,7 +213,7 @@ export function taskReorder(ctx, tableTools) {
       d.ghost.className = "task-reorder-ghost";
       d.ghost.textContent = task(d.id)?.title || "Card";
     } else {
-      const r = d.row.getBoundingClientRect();
+      const r = sourceBox;
       d.ghost = d.row.cloneNode(true);
       d.ghost.removeAttribute("data-task-order-row");
       // Nothing in the copy answers to the row's actions or lookups.
@@ -204,15 +242,18 @@ export function taskReorder(ctx, tableTools) {
     cancelAnimationFrame(d.frame);
     d.row.classList.remove("task-reorder-source");
     d.marker?.remove();
+    clearDropTargets();
     document.body.classList.remove("task-reordering");
     if (d.button.hasPointerCapture(d.pointer)) d.button.releasePointerCapture(d.pointer);
     state.taskReordering = false;
     const dropped = d.ghost?.getBoundingClientRect().top;
     const ghost = d.ghost;
-    if (commit && d.active && d.valid && d.target) {
+    if (commit && d.active && d.valid && (d.target || d.destinationGroup)) {
       ghost?.remove();
-      void move(d.id, d.target, d.after, d.grab != null ? dropped : undefined);
+      void move(d.id, d.target, d.after, d.grab != null ? dropped : undefined, d.destinationGroup);
     } else {
+      if (d.initialScrollTop != null) d.scroll.scrollTop = d.initialScrollTop;
+      if (commit && d.active && d.reason) toast(d.reason,true);
       // A cancelled copy glides back to its row before it goes.
       if (ghost && d.grab != null && d.row.isConnected && !still()) {
         const back = ghost.animate([{ transform: "none" }, { transform: `translateY(${d.row.getBoundingClientRect().top - dropped}px)` }], { duration: 160, easing: "ease-out" });
