@@ -107,6 +107,7 @@ export class SaveQueue {
     this.changed = changed;
     this.saved = saved;
     this.entries = new Map();
+    this.deferred = new Map();
     this.namespace = "shared";
     this.client =
       sessionStorage.getItem("pencils:client") ||
@@ -190,7 +191,7 @@ export class SaveQueue {
     }
     this.changed();
   }
-  enqueue(url, base, changes, { snapshot = false } = {}) {
+  enqueue(url, base, changes, { snapshot = false, delay = 0 } = {}) {
     const pending = this.entries.get(url);
     if (pending?.packedBoard) {
       // Hydrate against the displayed snapshot even if the server is offline.
@@ -215,10 +216,21 @@ export class SaveQueue {
     entry.error = null;
     entry.blocked = false;
     this.persist();
+    if (delay > 0 && !this.storageError) return this.defer(entry, delay);
+    const delayed=this.deferred.get(url);
+    if(delayed){clearTimeout(delayed.timer);this.deferred.delete(url);const sent=this.run(entry);Promise.resolve(sent).then(delayed.resolve,delayed.resolve);return sent;}
     return this.run(entry);
+  }
+  defer(entry, delay) {
+    let pending=this.deferred.get(entry.url);
+    if(pending)clearTimeout(pending.timer);
+    else{pending={started:Date.now()};pending.promise=new Promise(resolve=>{pending.resolve=resolve;});this.deferred.set(entry.url,pending);}
+    pending.timer=setTimeout(()=>{this.deferred.delete(entry.url);Promise.resolve(this.run(entry)).then(pending.resolve,pending.resolve);},Math.max(0,Math.min(delay,1000-(Date.now()-pending.started))));
+    return pending.promise;
   }
   run(entry) {
     if (entry.running) return entry.promise;
+    if (this.deferred.has(entry.url)) return this.deferred.get(entry.url).promise;
     if (entry.conflict || !this.entries.has(entry.url)) return;
     entry.running = true;
     entry.promise = this.perform(entry);
@@ -359,6 +371,7 @@ export class SaveQueue {
     return this.run(entry);
   }
   discard(url) {
+    const pending=this.deferred.get(url);if(pending){clearTimeout(pending.timer);this.deferred.delete(url);pending.resolve();}
     this.entries.delete(url);
     this.persist();
   }

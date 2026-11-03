@@ -1,7 +1,7 @@
 import { documentFolder } from "../document-folders.js";
 import { randomUUID } from "node:crypto";
 import { Problem } from "../problem.js";
-import { now, validId, title, body } from "../values.js";
+import { now, validId, title, documentBody as body } from "../values.js";
 import { checkProperties, checkTags, documentProperties } from "../../public/document-properties.js";
 import { validComment } from "../../public/document-comments.js";
 import { blankTable } from "../../public/document-sheet-model.js";

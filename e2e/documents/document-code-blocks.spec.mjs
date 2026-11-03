@@ -13,7 +13,7 @@ const painted = (page, scope) => page.evaluate((scope) => {
   const out = {};
   for (const [name, highlight] of CSS.highlights) {
     if (!name.startsWith("document-code-")) continue;
-    out[name.slice("document-code-".length)] = [...highlight].filter((range) => range.startContainer.isConnected && range.startContainer.parentElement?.closest(scope)).map((range) => range.toString());
+    out[name.slice("document-code-".length)] = [...highlight].filter((range) => range.startContainer.isConnected && range.startContainer.parentElement?.closest(scope)).map((range) => { const copy=document.createRange();copy.setStart(range.startContainer,range.startOffset);copy.setEnd(range.endContainer,range.endOffset);return copy.toString(); });
   }
   return out;
 }, scope);
@@ -65,7 +65,7 @@ test("editing the code keeps colouring it", async ({ page }) => {
   await code.evaluate((el) => { const range = document.createRange(); range.selectNodeContents(el); range.collapse(false); const selection = getSelection(); selection.removeAllRanges(); selection.addRange(range); });
   await page.keyboard.press("Enter");
   await page.keyboard.type("const later = true;");
-  await page.waitForFunction(() => [...(CSS.highlights.get("document-code-keyword") || [])].some((r) => r.toString() === "const"));
+  await page.waitForFunction(() => [...(CSS.highlights.get("document-code-keyword") || [])].some((r) => r.startContainer.textContent.slice(r.startOffset,r.endOffset) === "const"));
   await expect.poll(() => editorSource(page)).toMatch(/const later = true;\n```/);
 });
 
@@ -73,5 +73,5 @@ test("reading mode shows the same colours", async ({ page }) => {
   await open(page);
   await chooseDocumentView(page, "Reading");
   await page.locator(".document-reading").waitFor();
-  await page.waitForFunction(() => [...(CSS.highlights.get("document-code-keyword") || [])].some((r) => r.startContainer.parentElement?.closest(".document-reading") && r.toString() === "function"));
+  await page.waitForFunction(() => [...(CSS.highlights.get("document-code-keyword") || [])].some((r) => r.startContainer.parentElement?.closest(".document-reading") && r.startContainer.textContent.slice(r.startOffset,r.endOffset) === "function"));
 });

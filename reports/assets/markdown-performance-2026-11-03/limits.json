@@ -1,0 +1,95 @@
+[
+  {
+    "action": "HTTP create",
+    "length": 200000,
+    "status": 201,
+    "message": "accepted"
+  },
+  {
+    "action": "HTTP create",
+    "length": 200001,
+    "status": 400,
+    "message": "{\"error\":\"Invalid request: body/body must NOT have more than 200000 characters\"}"
+  },
+  {
+    "action": "HTTP create",
+    "length": 200010,
+    "status": 400,
+    "message": "{\"error\":\"Invalid request: body/body must NOT have more than 200000 characters\"}"
+  },
+  {
+    "action": "Editor transaction boundary",
+    "length": 200000,
+    "before": 200000,
+    "selected": 10,
+    "afterInsert": 200000,
+    "afterDelete": 199999,
+    "errors": [
+      "",
+      "Documents can contain up to 200,000 characters.",
+      ""
+    ]
+  },
+  {
+    "action": "Editor transaction boundary",
+    "length": 200001,
+    "before": 200001,
+    "selected": 0,
+    "afterInsert": 200001,
+    "afterDelete": 200000,
+    "errors": [
+      "",
+      "Documents can contain up to 200,000 characters.",
+      "Documents can contain up to 200,000 characters.",
+      "Documents can contain up to 200,000 characters.",
+      "Documents can contain up to 200,000 characters.",
+      "Documents can contain up to 200,000 characters.",
+      "Documents can contain up to 200,000 characters.",
+      "Documents can contain up to 200,000 characters.",
+      ""
+    ]
+  },
+  {
+    "action": "Editor transaction boundary",
+    "length": 200010,
+    "before": 200010,
+    "selected": 0,
+    "afterInsert": 200010,
+    "afterDelete": 200010,
+    "errors": [
+      "",
+      "Documents can contain up to 200,000 characters.",
+      "Documents can contain up to 200,000 characters.",
+      "Documents can contain up to 200,000 characters.",
+      "Documents can contain up to 200,000 characters.",
+      "Documents can contain up to 200,000 characters.",
+      "Documents can contain up to 200,000 characters.",
+      "Documents can contain up to 200,000 characters.",
+      "Documents can contain up to 200,000 characters.",
+      "Documents can contain up to 200,000 characters.",
+      "Documents can contain up to 200,000 characters.",
+      "Documents can contain up to 200,000 characters.",
+      "Documents can contain up to 200,000 characters.",
+      "Documents can contain up to 200,000 characters.",
+      "Documents can contain up to 200,000 characters.",
+      ""
+    ]
+  },
+  {
+    "action": "Loopback API, warm cached document, 200000 characters",
+    "getMs": [
+      3,
+      4,
+      3,
+      3,
+      2
+    ],
+    "patchMs": [
+      9,
+      15,
+      9,
+      9,
+      8
+    ]
+  }
+]

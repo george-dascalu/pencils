@@ -2,6 +2,15 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.21.55 — 2026-11-03
+
+### Changed
+- Feature F0.21-55: Markdown documents support up to 1,000,000 characters and inline tables up to 100,000 cells. Large tables show bounded pages in Live preview and Reading, with all rows available for search, editing, selection and formatting; Undo/Redo keeps the current page.
+
+### Fixed
+- Code syntax colours use a bounded window of immutable highlights, avoiding the large-code typing and Reading-search stalls in WebKit. Reading releases hidden Live components. Unchanged images, tables and code blocks stay mounted while typing nearby; images load lazily and decode asynchronously.
+- Live preview caches block parsing and indexes formatting ranges, so caret movement, hovering and component edits avoid reparsing unchanged content. Word and character counts update incrementally, and document network saves are coalesced while every edit is retained immediately for browser recovery. Oversized files changed outside Pencils remain selectable and can be reduced to the supported limit.
+
 ## 0.21.54 — 2026-11-03
 
 ### Added

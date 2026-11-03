@@ -1,3 +1,19 @@
+import { highlightCodeBlocks } from './document-code.js';
+
+// Text and offsets for a virtual table cell, using the same rendered content
+// after its page is mounted. Block boundaries and line breaks stay searchable.
+export function documentSearchParts(root) {
+  const walker=document.createTreeWalker(root,NodeFilter.SHOW_ELEMENT|NodeFilter.SHOW_TEXT),nodes=[];let text='',node;
+  while((node=walker.nextNode())){
+    const parent=node.nodeType===Node.TEXT_NODE?node.parentElement:node;
+    if(parent.closest('script,style,svg,[hidden],[aria-hidden=true]'))continue;
+    if(node.nodeType===Node.ELEMENT_NODE){if(node.tagName==='BR'||/^(P|DIV|LI|PRE|BLOCKQUOTE|H[1-6])$/.test(node.tagName))text+='\n';continue;}
+    const start=text.length;text+=node.data;nodes.push({node,start,end:text.length});
+  }
+  return {text,nodes};
+}
+function partsBetween(nodes,from,to){const parts=[];for(const entry of nodes){if(entry.start>=to)break;if(entry.end>from)parts.push({node:entry.node,from:Math.max(0,from-entry.start),to:Math.min(entry.node.length,to-entry.start)});}return parts;}
+function paintParts(parts){const marks=[];for(const part of [...parts].reverse()){part.node.splitText(part.to);const text=part.node.splitText(part.from),mark=document.createElement('mark');mark.className='document-find-match';text.replaceWith(mark);mark.append(text);marks.unshift(mark);}return marks;}
 // Search rendered text without moving the Markdown editor or changing its source.
 export function documentReadingSearch({ form, content, icon }) {
   const bar = document.createElement("div");
@@ -15,7 +31,7 @@ export function documentReadingSearch({ form, content, icon }) {
   form.querySelector(".document-writing").before(bar);
   const input = bar.querySelector("input"), count = bar.querySelector(".document-find-count");
   const previous = bar.querySelector(".document-find-previous"), next = bar.querySelector(".document-find-next");
-  let matches = [], selected = -1, limited = false;
+  let matches = [], virtualMatches = [], selected = -1, limited = false;
 
   function clearMarks() {
     const parents = new Set();
@@ -24,7 +40,7 @@ export function documentReadingSearch({ form, content, icon }) {
       mark.replaceWith(...mark.childNodes);
     }
     for (const parent of parents) parent.normalize();
-    matches = []; selected = -1; limited = false;
+    matches = []; virtualMatches = []; selected = -1; limited = false;
   }
   function announce() {
     count.textContent = !input.value ? "" : matches.length ? `${selected + 1} of ${matches.length.toLocaleString()}${limited ? "+" : ""}` : "No matches";
@@ -33,6 +49,11 @@ export function documentReadingSearch({ form, content, icon }) {
   function select(index, scroll = true) {
     for (const mark of matches[selected] || []) mark.classList.remove("document-find-current");
     selected = matches.length ? (index + matches.length) % matches.length : -1;
+    if(virtualMatches[selected]){
+      virtualMatches[selected].reveal();
+      for(let i=virtualMatches.length-1;i>=0;i--){const match=virtualMatches[i];if(!match)continue;const node=match.locate();if(!node){matches[i]=[];continue;}if(matches[i].some(mark=>mark.isConnected))continue;matches[i]=paintParts(partsBetween(documentSearchParts(node).nodes,match.from,match.to));}
+      highlightCodeBlocks(content);
+    }
     for (const mark of matches[selected] || []) mark.classList.add("document-find-current");
     const mark = matches[selected]?.[0];
     if (mark && scroll) {
@@ -44,13 +65,15 @@ export function documentReadingSearch({ form, content, icon }) {
   }
   function update() {
     clearMarks();
-    if (!input.value) { announce(); return; }
+    if (!input.value) { highlightCodeBlocks(content); announce(); return; }
     // Keep inline formatting in one searchable run, but never join separate
     // paragraphs/cells. Map matches back to text nodes so links remain intact.
     const blocks = [], walker = document.createTreeWalker(content, NodeFilter.SHOW_ELEMENT | NodeFilter.SHOW_TEXT);
     let block = null, node;
     while ((node = walker.nextNode())) {
       const parent = node.nodeType === Node.TEXT_NODE ? node.parentElement : node;
+      const table=parent.closest('.document-reading-table');
+      if(table){if(node===table&&table.documentTableSearch)blocks.push({table});continue;}
       if (parent.closest("script,style,svg,math,.katex,[data-document-diagram],[hidden],[aria-hidden=true]")) continue;
       if (node.nodeType !== Node.TEXT_NODE) {
         if (node.tagName === "BR" && block) block.text += "\n";
@@ -68,35 +91,33 @@ export function documentReadingSearch({ form, content, icon }) {
     }
     const pattern = new RegExp(input.value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "giu");
     const ranges = [];
-    outer: for (const block of blocks) {
+    outer: for (const item of blocks) { for (const block of item.table?item.table.documentTableSearch():[item]) {
       let cursor = 0;
       for (const match of block.text.matchAll(pattern)) {
         if (ranges.length >= 5000) { limited = true; break outer; }
         const from = match.index, to = from + match[0].length, parts = [];
+        if(block.reveal){ranges.push({parts,virtual:{locate:block.locate,reveal:block.reveal,from,to}});continue;}
         while (cursor < block.nodes.length && block.nodes[cursor].end <= from) cursor++;
         for (let i = cursor; i < block.nodes.length && block.nodes[i].start < to; i++) {
           const entry = block.nodes[i];
           if (entry.end > from)
             parts.push({ node: entry.node, from: Math.max(0, from - entry.start), to: Math.min(entry.node.length, to - entry.start) });
         }
-        if (parts.length) ranges.push(parts);
+        if (parts.length) ranges.push({parts});
       }
-    }
+    } }
     matches = ranges.map(() => []);
+    virtualMatches = ranges.map(range=>range.virtual);
     // Work backwards so splitting a text node cannot invalidate earlier offsets.
     for (let i = ranges.length - 1; i >= 0; i--) {
-      for (const part of [...ranges[i]].reverse()) {
-        part.node.splitText(part.to);
-        const text = part.node.splitText(part.from), mark = document.createElement("mark");
-        mark.className = "document-find-match";
-        text.replaceWith(mark); mark.append(text); matches[i].unshift(mark);
-      }
+      matches[i]=paintParts(ranges[i].parts);
     }
+    highlightCodeBlocks(content);
     select(0);
   }
   function close(focus = false) {
     if (bar.hidden) return false;
-    clearMarks(); bar.hidden = true;
+    clearMarks(); highlightCodeBlocks(content); bar.hidden = true;
     if (focus) form.querySelector("[data-document-action=tools]").focus({ preventScroll: true });
     return true;
   }

@@ -34,7 +34,7 @@ test('merge and unmerge retain all rich Markdown content and templates can keep 
   assert.equal(tableTemplateLayout(merged,true).cells.find(c=>c.row===1).value,merged.cells.find(c=>c.row===1).value);
 });
 test('invalid dimensions, coordinates, axes and overlapping cells are rejected',()=>{
-  for(const rows of [[],[['a'],...Array.from({length:20000},()=>[''])]])assert.throws(()=>makeDocumentTable(rows));
+  for(const rows of [[],Array.from({length:100001},()=>[''])])assert.throws(()=>makeDocumentTable(rows));
   assert.equal(makeDocumentTable([['']]).cells.length,1);
   assert.equal(makeDocumentTable([Array(20000).fill('')]).cells.length,20000);
   for(const patch of [{row:-1},{column:-1},{rows:0},{columns:0},{rows:2},{columns:2},{row:0.5},{value:1}])assert.throws(()=>makeDocumentTable([['']],[],[{id:'a',row:0,column:0,rows:1,columns:1,value:'',...patch}]));
@@ -46,8 +46,13 @@ test('invalid dimensions, coordinates, axes and overlapping cells are rejected',
     assert.equal(deleteTableAxis(base(),axis,0,2)[axis==='row'?'rows':'columns'],1);
     assert.deepEqual(moveTableAxis(base(),axis,1,1,1),base());assert.deepEqual(moveTableAxis(base(),axis,1,1,2),base());
   }
-  assert.throws(()=>insertTableAxis(base(),'other',0));assert.throws(()=>insertTableAxis(base(),'row',0,20000));
+  assert.throws(()=>insertTableAxis(base(),'other',0));assert.throws(()=>insertTableAxis(base(),'row',0,100000));
   assert.throws(()=>mergeTableCells(base(),{r:0,c:0,rows:1,columns:1}),/at least two/);
+});
+
+test('inline tables allow one hundred thousand cells without an argument-stack overflow',()=>{
+  assert.equal(makeDocumentTable(Array.from({length:100000},()=>[''])).cells.length,100000);
+  assert.equal(makeDocumentTable([Array(100000).fill('')]).cells.length,100000);
 });
 test('axis deletion and moves retain alignment, merge anchors, order, and the final remaining cell',()=>{
   assert.deepEqual(deleteTableAxis(base(),'column',0).aligns,[null,'right']);

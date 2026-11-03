@@ -1,0 +1,25 @@
+{
+  "status": "Passed",
+  "detail": "Syntax/type checks, all 540 unit tests, 3,628 browser tests and 4 Docker tests passed; 72 browser tests skipped, none failed or flaky. Existing container healthy on 0.21.54.",
+  "checkedAt": "2026-11-03T07:17:06.548Z",
+  "fullSuiteCommand": "GATE_BROWSERS=firefox,webkit npm run test:release",
+  "fullSuiteExitCode": 0,
+  "finalCheckAndUnitExitCode": 0,
+  "browser": {
+    "passed": 3628,
+    "skipped": 72,
+    "failed": 0,
+    "flaky": 0
+  },
+  "docker": {
+    "passed": 4
+  },
+  "unit": {
+    "passed": 540
+  },
+  "liveHealth": {
+    "ok": true,
+    "version": "0.21.54"
+  },
+  "applicationFilesChanged": false
+}

@@ -3,7 +3,7 @@ import { SearchQuery, getSearchQuery, setSearchQuery, findNext, findPrevious, se
 
 // Compact, keyboard-accessible search for Live preview and Source. Reading uses
 // the same control sizes but searches rendered text without moving the editor.
-export function documentSearchPanel(view, icon) {
+export function documentSearchPanel(view, icon, onMatch = () => {}) {
   const dom = document.createElement('div');
   dom.className = 'cm-search document-editor-search';
   dom.setAttribute('role', 'search'); dom.setAttribute('aria-label', 'Search document');
@@ -44,6 +44,7 @@ export function documentSearchPanel(view, icon) {
     }
     const selection = view.state.selection.main;
     const selected = ranges.findIndex(r => r.from === selection.from && r.to === selection.to);
+    queueMicrotask(()=>dom.isConnected&&onMatch(selected>=0?selection.from:null,selected>=0?selection.to:null));
     count.textContent = !query.search ? '' : !query.valid ? 'Invalid pattern' : !total ? 'No matches' : `${selected < 0 ? 0 : selected + 1}/${total}${limited ? '+' : ''}`;
     find.setAttribute('aria-invalid', String(!!query.search && !query.valid));
     for (const name of ['prev','next','select','replace','replaceAll']) dom.querySelector(`button[name=${name}]`).disabled = !total;
@@ -77,7 +78,7 @@ export function documentSearchPanel(view, icon) {
     }
   });
   showQuery(); matches();
-  return { dom, top: true, update(update) {
+  return { dom, top: true, destroy(){onMatch(null,null);}, update(update) {
     const next = getSearchQuery(update.state), changed = !query.eq(next);
     query = next; showQuery(); matches(changed || update.docChanged || update.transactions.some(tr => tr.effects.some(e => e.is(setSearchQuery))));
   } };

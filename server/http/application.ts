@@ -1,4 +1,5 @@
 import { APP_VERSION } from "../../public/app-version.js";
+import { DOCUMENT_CHARACTERS } from '../../public/document-performance.js';
 import { BOARD_LIMITS } from "../../public/board-limits.js";
 import Fastify, {
   type FastifyInstance,
@@ -62,7 +63,7 @@ const documentBody = {
   ...objectBody,
   properties: {
     title: { type: "string", minLength: 1, maxLength: 300 },
-    body: { type: "string", maxLength: 200_000 },
+    body: { type: "string", maxLength: DOCUMENT_CHARACTERS },
     revision: { type: "string" },
     folder: { type: ["string", "null"] },
   },
@@ -71,6 +72,7 @@ const taskBody = {
   ...documentBody,
   properties: {
     ...documentBody.properties,
+    body: { type: 'string', maxLength: 200_000 },
     priority: { enum: ["none", "low", "medium", "high", "urgent", null] },
   },
 };
@@ -345,7 +347,7 @@ export function createServer(
     ],
     documentsRoutes,
     false,
-    2_000_000,
+    8_000_000,
     documentBody,
   );
   route(["/api/projects/:project/notes"], documentsRoutes);

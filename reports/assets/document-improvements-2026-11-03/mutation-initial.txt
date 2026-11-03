@@ -1,0 +1,101 @@
+
+> pencils@0.21.54 test:mutants
+> npm run build:server && node scripts/mutants.mjs server/values.js public/document-performance.js public/document-table-model.js public/document-table-window.js public/sync.js
+
+
+> pencils@0.21.54 build:server
+> node scripts/build-server.mjs
+
+Built 17 TypeScript server modules.
+50/477 mutants
+100/477 mutants
+150/477 mutants
+200/477 mutants
+250/477 mutants
+300/477 mutants
+350/477 mutants
+400/477 mutants
+450/477 mutants
+
+server/values.js: 44 mutants, 42 killed, 0 timed out, 2 survived (95% caught) by 56 test files
+    45  "||" → "&&"   typeof value !== "string" ||
+    46  "||" → "&&"   !/^\d{4}-\d{2}-\d{2}$/.test(value) ||
+
+public/document-performance.js: 128 mutants, 88 killed, 3 timed out, 37 survived (71% caught) by 63 test files
+    10  "<=" → "<"   while(from+chunk<=limit&&before.slice(from,from+chunk)===after.slice(from,from+chunk))from+=chunk;
+    11  "<" → "<="   while(from<limit&&before.charCodeAt(from)===after.charCodeAt(from))from++;
+    12  ">=" → ">"   const high=n=>n>=0xd800&&n<=0xdbff,low=n=>n>=0xdc00&&n<=0xdfff;
+    12  "&&" → "||"   const high=n=>n>=0xd800&&n<=0xdbff,low=n=>n>=0xdc00&&n<=0xdfff;
+    12  "<=" → "<"   const high=n=>n>=0xd800&&n<=0xdbff,low=n=>n>=0xdc00&&n<=0xdfff;
+    12  ">=" → ">"   const high=n=>n>=0xd800&&n<=0xdbff,low=n=>n>=0xdc00&&n<=0xdfff;
+    12  "&&" → "||"   const high=n=>n>=0xd800&&n<=0xdbff,low=n=>n>=0xdc00&&n<=0xdfff;
+    12  "<=" → "<"   const high=n=>n>=0xd800&&n<=0xdbff,low=n=>n>=0xdc00&&n<=0xdfff;
+    13  "&&" → "||"   if(from&&high(before.charCodeAt(from-1))&&(low(before.charCodeAt(from))||low(after.charCodeAt(from))
+    13  "||" → "&&"   if(from&&high(before.charCodeAt(from-1))&&(low(before.charCodeAt(from))||low(after.charCodeAt(from))
+    14  "<=" → "<"   while(suffix+chunk<=limit-from&&before.slice(before.length-suffix-chunk,before.length-suffix)===afte
+    14  "===" → "!=="   while(suffix+chunk<=limit-from&&before.slice(before.length-suffix-chunk,before.length-suffix)===afte
+    15  "<" → "<="   while(suffix<limit-from&&before.charCodeAt(before.length-suffix-1)===after.charCodeAt(after.length-s
+    16  "&&" → "||"   if(suffix&&low(before.charCodeAt(before.length-suffix))&&(high(before.charCodeAt(before.length-suffi
+    16  "||" → "&&"   if(suffix&&low(before.charCodeAt(before.length-suffix))&&(high(before.charCodeAt(before.length-suffi
+    29  "&&" → "||"   const valid=previous!==null&&changes.length&&previous.length+changes.reduce((n,c)=>n+c.toB-c.fromB-(
+    35  "<=" → "<"   if(last&&chunk.a<=last.b){last.b=Math.max(last.b,chunk.b);last.d=Math.max(last.d,chunk.d);}else chun
+    72  "&&" → "||"   if(previous!==null&&changes.length&&entries.length&&entries.at(-1).to===previous.length){
+    72  "&&" → "||"   if(previous!==null&&changes.length&&entries.length&&entries.at(-1).to===previous.length){
+    74  "<=" → "<"   const find=at=>{let lo=0,hi=entries.length;while(lo<hi){const mid=(lo+hi)>>>1;if(entries[mid].to<=at
+    77  "&&" → "||"   if(changes.length===1&&last<entry.to){
+    77  "<" → "<="   if(changes.length===1&&last<entry.to){
+    84  "<=" → "<"   if(!next&&changes.length===1&&trusted&&['table','code','blockquote'].includes(trusted.kind)&&compone
+    85  "===" → "!=="   const raw=source.slice(entry.from,entry.to+delta),type=trusted.kind==='table'?(/^(?:<!--[\s\S]*?-->\
+    88  "<" → "<="   if(!next&&changes.length===1&&last<entry.to&&['paragraph','heading'].includes(entry.token.type)&&/^[
+    90  "&&" → "||"   if(local.length===1&&local[0].token.type===entry.token.type&&local[0].to===entry.to+delta)next=[...e
+    90  "&&" → "||"   if(local.length===1&&local[0].token.type===entry.token.type&&local[0].to===entry.to+delta)next=[...e
+    95  "===" → "!=="   const to=end===entries.length?source.length:entries[end-1].to+delta;
+    97  "||" → "&&"   const stable=end===entries.length||guards.length===2&&guards.every((entry,i)=>{const token=local[loc
+    97  "===" → "!=="   const stable=end===entries.length||guards.length===2&&guards.every((entry,i)=>{const token=local[loc
+    97  "===" → "!=="   const stable=end===entries.length||guards.length===2&&guards.every((entry,i)=>{const token=local[loc
+    97  "&&" → "||"   const stable=end===entries.length||guards.length===2&&guards.every((entry,i)=>{const token=local[loc
+    97  "===" → "!=="   const stable=end===entries.length||guards.length===2&&guards.every((entry,i)=>{const token=local[loc
+    98  "!" → ""   if(stable&&(!local.length?from===to:local.at(-1).to===to)){
+    98  "===" → "!=="   if(stable&&(!local.length?from===to:local.at(-1).to===to)){
+    98  "===" → "!=="   if(stable&&(!local.length?from===to:local.at(-1).to===to)){
+   101  "===" → "!=="   if(end===entries.length)break;
+
+public/document-table-model.js: 128 mutants, 113 killed, 5 timed out, 10 survived (92% caught) by 2 test files
+     6  "||" → "&&"   if (!Number.isInteger(rows) || !Number.isInteger(columns) || rows < 1 || columns < 1 || rows * colum
+     9  "dimensions(model.rows,model.columns);" → removed   dimensions(model.rows,model.columns);
+    20  "dimensions(count,columns);" → removed   dimensions(count,columns);
+    42  "dimensions(next.rows,next.columns);" → removed   const [at,span,size]=axisRange(model,axis,before,count,true), next=clone(model); next[size]+=count; 
+    48  "fail('Keep at least one row and column.');" → removed   if(next[size]-count<1)fail('Keep at least one row and column.');
+    52  ">=" → ">"   cell[at]=start>=end?start-count:start>=from?from:start;return cell[span]>0;
+    52  ">=" → ">"   cell[at]=start>=end?start-count:start>=from?from:start;return cell[span]>0;
+    59  ">=" → ">"   if(before>=from&&before<=from+count)return clone(model);
+    59  "<=" → "<"   if(before>=from&&before<=from+count)return clone(model);
+    60  ">" → ">="   const order=Array.from({length:total},(_,i)=>i),moving=order.splice(from,count);order.splice(before>
+
+public/document-table-window.js: 22 mutants, 16 killed, 0 timed out, 6 survived (73% caught) by 1 test files
+     8  ">" → ">="   if(match.index>offset)break;
+    16  "<" → "<="   const prefix=source.slice(0,offset),start=prefix.lastIndexOf('\n')+1,line=source.slice(start,source.
+    18  ">=" → ">"   let column=0;for(const match of line.matchAll(/(?<=(?<!\\)(?:\\\\)*)\|/g)){if(match.index>=offset-st
+    22  ">" → ">="   const paged=rows*columns>2000,columnSize=paged?Math.min(20,columns):columns;
+    34  ">=" → ">"   if(left>=right)continue;
+    36  ">=" → ">"   if(!header&&top>=bottom)continue;
+
+public/sync.js: 155 mutants, 125 killed, 12 timed out, 18 survived (88% caught) by 48 test files
+    22  "&&" → "||"   base.map((v) => v.id).filter((id) => maps[1].has(id) && maps[2].has(id)),
+   194  "false" → "true"   enqueue(url, base, changes, { snapshot = false, delay = 0 } = {}) {
+   198  "this.hydrate(pending, base);" → removed   this.hydrate(pending, base);
+   221  "clearTimeout(delayed.timer);" → removed   if(delayed){clearTimeout(delayed.timer);this.deferred.delete(url);const sent=this.run(entry);Promise
+   234  "||" → "&&"   if (entry.conflict || !this.entries.has(entry.url)) return;
+   246  "false" → "true"   entry.base = applyBoardDelta(source, entry.changes, { guard: false, reverse: true });
+   248  "false" → "true"   entry.local = applyBoardDelta(entry.base, entry.changes, { guard: false });
+   251  "false" → "true"   entry.delivery.sent = applyBoardDelta(entry.base, entry.delivery.changes, { guard: false });
+   261  "false" → "true"   } catch (error) { entry.error = error.message; entry.running = false; this.persist(); return; }
+   261  "this.persist();" → removed   } catch (error) { entry.error = error.message; entry.running = false; this.persist(); return; }
+   273  "entry.delivery.changes = boardDifference(entry.delivery.base, entry.delivery.sent);" → removed   entry.delivery.changes = boardDifference(entry.delivery.base, entry.delivery.sent);
+   274  "this.persist();" → removed   this.persist();
+   276  "!" → ""   if (isBoard && !entry.delivery.changes) entry.delivery.changes = boardDifference(entry.delivery.base
+   276  "entry.delivery.changes = boardDifference(entry.delivery.base, entry.delivery.sent);" → removed   if (isBoard && !entry.delivery.changes) entry.delivery.changes = boardDifference(entry.delivery.base
+   309  "this.saved(entry.url, entry.local);" → removed   this.saved(entry.url, entry.local);
+   357  "this.hydrate(entry, compact(await this.api(url), url));" → removed   if (entry.packedBoard) this.hydrate(entry, compact(await this.api(url), url));
+   374  "clearTimeout(pending.timer);" → removed   const pending=this.deferred.get(url);if(pending){clearTimeout(pending.timer);this.deferred.delete(ur
+   376  "this.persist();" → removed   this.persist();

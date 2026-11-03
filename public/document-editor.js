@@ -8,20 +8,30 @@ import {
   autocompletion, completionKeymap,
 } from "/vendor/editor/deps.js";
 import { documentReference } from "./document-model.js";
-import { editableDocumentComponent } from "./document-components.js";
+import { editableDocumentComponent, documentComponentChange } from "./document-components.js";
 import { focusOnOpen } from "./open-focus.js";
 import { spreadsheetRows, markdownTable } from "./document-tables.js";
 import { insertCategories } from "./document-insert.js";
-import { highlightCodeBlocks } from "./document-code.js";
+import { highlightCodeBlocks, releaseCodeHighlights } from "./document-code.js";
 import { listCallouts, listCalloutAfterMarker, setListCallout, listCalloutLabel } from "./document-list-callouts.js";
 import { colorSelection, textColorSpans, inlineWrapChange } from './document-text-color.js';
 import { documentSelectionTools } from './document-selection-tools.js';
 import { installDocumentWebLinks, webURL } from './document-web-links.js';
+import { DOCUMENT_CHARACTERS, documentEditAllowed, documentBlockCache, documentRangeIndex } from './document-performance.js';
+import { editableDocumentTable } from './document-inline-table.js';
+import { incrementalDocumentParagraphs } from './document-language.js';
 
 export function markdownDocumentEditor({ parent, text, mode = "live", renderer, documents, cards = () => [], hidden = [], taskQueries, onChange, onError, onLink, onInsert, onComment, onSketch, icon, panel, toast, colorPicker, tableLayouts }) {
   const presentation = new Compartment();
+  const language = new Compartment();
+  const paragraphLanguage = incrementalDocumentParagraphs();
   let view, alive = true, focusedComponent = null, selectionTools = null, selecting = false;
+  const readingTables = new Set();
   const hoverEffect = StateEffect.define();
+  const blocks = documentBlockCache(source => renderer.tokens(source));
+  let baseDecorations = Decoration.none, cachedDocument = null, cachedSource = '';
+  const linkURLs = new Map();
+  function sourceText(state) { if(cachedDocument!==state.doc){cachedDocument=state.doc;cachedSource=state.doc.toString();}return cachedSource; }
   const focusEffect = StateEffect.define();
   // Commented text (document-comments.js), highlighted in every mode and moved along with edits.
   const commentsEffect = StateEffect.define();
@@ -56,6 +66,13 @@ export function markdownDocumentEditor({ parent, text, mode = "live", renderer, 
       (hover && hover.from < to && hover.to > from);
   };
   function hydrate(element) {
+    if(element.classList.contains('document-reading')){
+      for(const table of element.querySelectorAll('table[data-document-table-id]')){
+        const token=renderer.tableToken(table);if(!token)continue;
+        const wrapper=document.createElement('div');wrapper.className='document-reading-table';table.before(wrapper);wrapper.append(table);
+        readingTables.add(editableDocumentTable({element:wrapper,token,renderer,readOnly:true,field(){},fields:[],markdown:node=>node.innerHTML,pipe:/(?<=(?<!\\)(?:\\\\)*)\|/,icon,commit(){},activate(){},requestMeasure(){},onError, onPage:root=>{renderer.hydrate?.(root);highlightCodeBlocks(root);} }));
+      }
+    }
     renderer.hydrate?.(element);
     highlightCodeBlocks(element);
     if (element.querySelector("[data-document-task-query]")) taskQueries?.(element);
@@ -66,16 +83,21 @@ export function markdownDocumentEditor({ parent, text, mode = "live", renderer, 
     constructor(raw, from, block = false, kind = null) { super(); this.raw = raw; this.from = from; this.block = block; this.kind = kind; }
     eq(other) { return this.raw === other.raw && this.from === other.from && this.block === other.block && this.kind === other.kind; }
     updateDOM(element) {
-      return element.dataset.componentType === this.kind &&
-        !!element.documentComponent?.update(this.from, this.raw);
+      if (element.documentComponent) { const same=element.dataset.componentType===this.kind&&!!element.documentComponent.update(this.from,this.raw);if(!same)this.tablePage=element.documentComponent.tablePage?.();return same; }
+      if (element.documentPreviewRaw !== this.raw) return false;
+      element.documentPreviewFrom = this.from;
+      return true;
     }
     toDOM(editor) {
       const element = document.createElement(this.block ? "div" : "span");
       element.className = this.block ? "document-block-preview document-prose" : "document-inline-preview";
-      element.innerHTML = renderer.render(this.raw, !this.block);
+      element.documentPreviewRaw = this.raw;
+      element.documentPreviewFrom = this.from;
+      element.innerHTML = renderer.render(this.raw, !this.block, true);
       if (["table", "blockquote", "code", "documentMathBlock", "html"].includes(this.kind)) {
         editableDocumentComponent({
           element, tableLayouts, raw: this.raw, from: this.from, kind: this.kind, editor, renderer, onError, hydrate, icon, panel, toast, onLink,
+          tablePage:this.tablePage,
           onSearch: () => openSearchPanel(editor),
           onEscape: () => selectionTools?.escape() || false,
           onFocus: component => { focusedComponent = component; },
@@ -99,14 +121,14 @@ export function markdownDocumentEditor({ parent, text, mode = "live", renderer, 
         if (sketch) { e.preventDefault(); onSketch?.(sketch.dataset.documentSketch); return; }
         if (e.target.closest("a,button,input,summary")) return;
         e.preventDefault();
-        editor.dispatch({ selection: { anchor: this.from }, scrollIntoView: true });
+        editor.dispatch({ selection: { anchor: element.documentPreviewFrom }, scrollIntoView: true });
         editor.focus();
       });
       }
       hydrate(element);
       return element;
     }
-    destroy(element) { element.documentComponent?.destroy?.(); }
+    destroy(element) { releaseCodeHighlights(element); element.documentComponent?.destroy?.(); }
     ignoreEvent(event) { return this.block || !!event.target?.closest?.("a, img[data-document-sketch], .document-transclusion"); }
   }
   class Checkbox extends WidgetType {
@@ -158,18 +180,31 @@ export function markdownDocumentEditor({ parent, text, mode = "live", renderer, 
     }
   }
   const previewField = StateField.define({
-    create: state => decorate(state),
-    update: (value, tr) => tr.docChanged || tr.selection || tr.reconfigured || tr.effects.some(e => e.is(hoverEffect) || e.is(focusEffect)) || syntaxTree(tr.state) !== syntaxTree(tr.startState) ? decorate(tr.state) : value,
+    create: state => { baseDecorations = decorate(state); return reveal(state); },
+    update(value, tr) {
+      const syntaxChanged = syntaxTree(tr.state) !== syntaxTree(tr.startState);
+      if (tr.docChanged || tr.reconfigured || syntaxChanged) baseDecorations = decorate(tr.state, tr);
+      return tr.docChanged || tr.selection || tr.reconfigured || syntaxChanged || tr.effects.some(e => e.is(hoverEffect) || e.is(focusEffect)) ? reveal(tr.state) : value;
+    },
     provide: field => EditorView.decorations.from(field),
   });
-  function decorate(state) {
-    const ranges = [], blocked = [];
-    const source = state.doc.toString();
+  function reveal(state) {
+    const { hover, focused } = state.field(revealField);
+    if (selecting || !state.selection.main.empty || !hover && !focused) return baseDecorations;
+    const areas = [...(hover ? [hover] : []), ...(focused ? state.selection.ranges : [])];
+    if (!areas.length) return baseDecorations;
+    let from = Math.min(...areas.map(r => state.doc.lineAt(r.from).from)), to = Math.max(...areas.map(r => state.doc.lineAt(r.to).to));
+    for (const area of areas) for (let node = syntaxTree(state).resolveInner(area.from, 1); node; node = node.parent)
+      if (/Emphasis|Code|Link|Heading|Strikethrough/.test(node.name)) { from = Math.min(from, node.from); to = Math.max(to, node.to); }
+    return baseDecorations.update({ filterFrom: from, filterTo: to, filter: (_a,_b,decoration) => !decoration.spec.reveal || !active(state, ...decoration.spec.reveal) });
+  }
+  function decorate(state, tr) {
+    const ranges = [], blocked = [], nativeLinks = [];
+    const source = sourceText(state), changes = [];
+    tr?.changes.iterChangedRanges((fromA,toA,fromB,toB) => changes.push({fromA,toA,fromB,toB}));
     // Block widgets are state decorations, so CodeMirror can measure their height.
-    let offset = 0;
-    for (const token of renderer.tokens(source)) {
-      const from = offset, to = offset + token.raw.length;
-      offset = to;
+    const component = tr?.effects.find(effect=>effect.is(documentComponentChange))?.value;
+    for (const { token, from, to } of blocks(source, changes, component)) {
       if (["code", "table", "documentTableLayout", "documentRichTable", "blockquote", "documentMathBlock", "html", "hr"].includes(token.type) ||
           token.type === "paragraph" && /^!\[\[[^\]\n]+\]\]\s*$/.test(token.raw)) {
         {
@@ -184,7 +219,8 @@ export function markdownDocumentEditor({ parent, text, mode = "live", renderer, 
         }
       }
     }
-    const hidden = (from, to) => blocked.some(([a, b]) => from < b && to > a);
+    const blockIndex = documentRangeIndex(blocked);
+    const hidden = (from, to) => blockIndex.overlaps(from,to);
     for (const span of textColorSpans(source)) {
       if (hidden(span.from, span.to)) continue;
       let code = false;
@@ -196,7 +232,7 @@ export function markdownDocumentEditor({ parent, text, mode = "live", renderer, 
     }
     syntaxTree(state).iterate({
       enter(node) {
-        if (blocked.some(([from, to]) => node.from >= from && node.to <= to)) return false;
+        if (blockIndex.encloses(node.from,node.to)) return false;
         const name = node.name;
         if (/^(ATXHeading|SetextHeading)/.test(name)) {
           const level = Number(name.slice(-1)) || 1;
@@ -213,29 +249,39 @@ export function markdownDocumentEditor({ parent, text, mode = "live", renderer, 
         // Reveal delimiters for this inline span only. A caret elsewhere in the
         // same paragraph leaves checkboxes, links and other formatting rendered.
         const span = ["EmphasisMark", "StrikethroughMark", "CodeMark"].includes(name) ? node.node.parent : node;
-        if (active(state, span.from, span.to)) return;
+        const reveal = [span.from, span.to];
         if (name === "Escape" && source[node.from] === "\\")
-          ranges.push(Decoration.replace({}).range(node.from, node.from + 1));
+          ranges.push(Decoration.replace({reveal}).range(node.from, node.from + 1));
         if (["HeaderMark", "EmphasisMark", "StrikethroughMark", "CodeMark"].includes(name)) {
           // A heading's opening "#" hides with the space after it, so heading
           // text starts at the same edge as paragraphs.
           const opening = name === "HeaderMark" && /^\s*$/.test(source.slice(state.doc.lineAt(node.from).from, node.from));
           const end = opening && /[ \t]/.test(source[node.to] || "") ? node.to + 1 : node.to;
-          ranges.push(Decoration.replace({}).range(node.from, end));
+          ranges.push(Decoration.replace({reveal}).range(node.from, end));
         }
         if (name === "TaskMarker") {
-          ranges.push(Decoration.replace({ widget: new Checkbox(source[node.from + 1].toLowerCase() === "x", node.from) }).range(node.from, node.to));
+          ranges.push(Decoration.replace({ reveal, widget: new Checkbox(source[node.from + 1].toLowerCase() === "x", node.from) }).range(node.from, node.to));
           return false;
         }
         if (["Link", "Image", "Autolink"].includes(name)) {
           // The parser reads the inside of a "[[…]]" wiki link as a link; the wiki link is handled below.
           if (/^\[\[[^\]\n]+\]\]$/.test(source.slice(node.from - 1, node.to + 1)) || /^!\[\[[^\]\n]+\]\]/.test(source.slice(node.from, node.to + 1))) return false;
-          ranges.push(Decoration.replace({ widget: new Preview(source.slice(node.from, node.to), node.from) }).range(node.from, node.to));
-          blocked.push([node.from, node.to]);
+          const raw=source.slice(node.from,node.to),simple=name==='Link'&&/^\[([^\]\n<>$%=]+)\]\((https?:\/\/[^()\s]+)\)$/.exec(raw);
+          if(simple){
+            if(!linkURLs.has(simple[2])){linkURLs.set(simple[2],webURL(simple[2]));if(linkURLs.size>8192)linkURLs.delete(linkURLs.keys().next().value);}
+            const href=linkURLs.get(simple[2]);
+            if(href){const from=node.from+1,to=from+simple[1].length;
+              nativeLinks.push([node.from,node.to]);
+              ranges.push(Decoration.replace({reveal}).range(node.from,from),Decoration.mark({reveal,tagName:'a',class:'document-inline-link',attributes:{href,target:'_blank',rel:'noopener noreferrer'}}).range(from,to),Decoration.replace({reveal}).range(to,node.to));
+              return;
+            }
+          }
+          ranges.push(Decoration.replace({ reveal, widget: new Preview(source.slice(node.from, node.to), node.from) }).range(node.from, node.to));
           return false;
         }
       },
     });
+    const widgets = documentRangeIndex([...nativeLinks,...ranges.filter(r => r.value.widget).map(r => [r.from,r.to])]);
     // Obsidian extensions which are outside the CommonMark syntax tree.
     const extensions = /!?\[\[[^\]\n]+\]\]|==[^\n]+?==|%%[\s\S]*?%%|\$(?!\s|\$)(?:\\.|[^$\n])+?\$|\[\^[^\]\n]+\]/g;
     for (const match of source.matchAll(extensions)) {
@@ -243,16 +289,17 @@ export function markdownDocumentEditor({ parent, text, mode = "live", renderer, 
       const node = syntaxTree(state).resolveInner(from, 1);
       let code = false;
       for (let n = node; n; n = n.parent) if (/Code|HTML/.test(n.name)) code = true;
-      if (code || hidden(from, to) || active(state, from, to)) continue;
+      if (code || hidden(from, to)) continue;
+      const reveal = [from,to];
       if (match[0].startsWith('==')) {
-        ranges.push(Decoration.replace({}).range(from, from + 2));
-        ranges.push(Decoration.mark({ class: 'document-highlight-text' }).range(from + 2, to - 2));
-        ranges.push(Decoration.replace({}).range(to - 2, to));
+        ranges.push(Decoration.replace({reveal}).range(from, from + 2));
+        ranges.push(Decoration.mark({ reveal, class: 'document-highlight-text' }).range(from + 2, to - 2));
+        ranges.push(Decoration.replace({reveal}).range(to - 2, to));
         continue;
       }
       // Do not add overlapping replacements for standard Markdown links.
-      if (ranges.some(r => r.from < to && r.to > from && r.value.widget)) continue;
-      ranges.push(Decoration.replace({ widget: new Preview(match[0], from) }).range(from, to));
+      if (widgets.overlaps(from,to)) continue;
+      ranges.push(Decoration.replace({ reveal, widget: new Preview(match[0], from) }).range(from, to));
     }
     return Decoration.set(ranges, true);
   }
@@ -302,9 +349,10 @@ export function markdownDocumentEditor({ parent, text, mode = "live", renderer, 
       if (/Code|HTML|Link|URL/.test(node.name)) return null;
     return { from, options: slashOptions, validFor: /^[A-Za-z0-9 ]*$/ };
   };
-  const liveExtensions = () => mode === "source"
-    ? [lineNumbers(), highlightActiveLine()]
-    : [previewField, highlightActiveLine()];
+  const liveExtensions = () => mode === 'live' ? [previewField, highlightActiveLine()] : mode === 'source' ? [lineNumbers(), highlightActiveLine()] : [];
+  // Editable widgets own their table/code internals. Parsing them again in the
+  // hidden Markdown layer makes a single cell edit walk the complete table.
+  const languageExtensions = () => mode === 'reading' ? [] : markdown({ base: markdownLanguage, codeLanguages: mode === 'source' ? languages : [], extensions: mode === 'live' ? [{remove:['Table']},paragraphLanguage] : [] });
   const shortcut = (key, command) => ({ key, run: () => { format(command); return true; } });
   view = new EditorView({
     parent,
@@ -312,7 +360,7 @@ export function markdownDocumentEditor({ parent, text, mode = "live", renderer, 
       doc: text,
       extensions: [
         revealField, history(), bracketMatching(), EditorView.lineWrapping,
-        markdown({ base: markdownLanguage, codeLanguages: languages }), syntaxHighlighting(HighlightStyle.define([
+        language.of(languageExtensions()), syntaxHighlighting(HighlightStyle.define([
           // Headings take their line's colour (project-documents.css), which Style settings and themes may set.
           { tag: tags.heading, fontWeight: "650", color: "inherit" },
           { tag: tags.strong, fontWeight: "700" },
@@ -333,7 +381,7 @@ export function markdownDocumentEditor({ parent, text, mode = "live", renderer, 
             return glyph;
           } }],
         }),
-        search({ top: true, createPanel: editor => documentSearchPanel(editor, icon) }),
+        search({ top: true, createPanel: editor => documentSearchPanel(editor, icon,(from,to)=>{for(const cell of editor.dom.querySelectorAll('.document-table-find-current'))cell.classList.remove('document-table-find-current');if(from!==null)for(const component of editor.dom.querySelectorAll('.document-editable-component'))component.documentComponent?.revealMatch(from,to);}) }),
         keymap.of([
           shortcut("Mod-b", "bold"), shortcut("Mod-i", "italic"), shortcut("Mod-k", "link"),
           ...completionKeymap, { key: 'Escape', run: () => selectionTools?.escape() || false }, ...markdownKeymap, ...defaultKeymap, ...historyKeymap,
@@ -342,12 +390,13 @@ export function markdownDocumentEditor({ parent, text, mode = "live", renderer, 
         placeholder("Start writing…"),
         EditorView.contentAttributes.of({ "aria-label": "Document content", spellcheck: "true", tabindex: "0" }),
         EditorState.transactionFilter.of(tr => {
-          if (tr.newDoc.length <= 200000) return tr;
-          onError("Documents can contain up to 200,000 characters.");
+          if (documentEditAllowed(tr.startState.doc.length, tr.newDoc.length)) return tr;
+          onError(`Documents can contain up to ${DOCUMENT_CHARACTERS.toLocaleString('en-GB')} characters.`);
           return [];
         }),
-        EditorView.updateListener.of(update => { if (update.docChanged) onChange(update.state.doc.toString()); selectionTools?.update({ selectionChanged: update.selectionSet }); }),
+        EditorView.updateListener.of(update => { if (update.docChanged) { const changes=[];update.changes.iterChangedRanges((fromA,toA,fromB,toB)=>changes.push({fromA,toA,fromB,toB}));onChange(sourceText(update.state),changes); } selectionTools?.update({ selectionChanged: update.selectionSet }); }),
         EditorView.domEventHandlers({
+          mousedown(event) { if(event.target.closest('.document-inline-link')){event.preventDefault();return true;} },
           focusin(event) {
             view.dispatch({ effects: focusEffect.of(true) });
             if (!event.target.closest(".document-editable-component")) focusedComponent = null;
@@ -355,6 +404,7 @@ export function markdownDocumentEditor({ parent, text, mode = "live", renderer, 
           focusout() { view.dispatch({ effects: focusEffect.of(false) }); },
           mousemove(event) {
             if (mode !== "live" || selecting || !view.state.selection.main.empty || !event.target.closest(".cm-line")) return;
+            if(event.target.closest('.document-inline-link')){clearTimeout(hoverTimer);return;}
             const pos = view.posAtCoords({ x: event.clientX, y: event.clientY });
             if (pos == null) return;
             const word = view.state.wordAt(pos), previous = view.state.field(revealField).hover;
@@ -381,6 +431,8 @@ export function markdownDocumentEditor({ parent, text, mode = "live", renderer, 
             if (view.state.field(revealField).hover) view.dispatch({ effects: hoverEffect.of(null) });
           },
           click(event) {
+            const external=event.target.closest('a.document-inline-link');
+            if(external&&!event.ctrlKey&&!event.metaKey&&event.button===0){event.preventDefault();window.open(external.href,'_blank','noopener,noreferrer');return true;}
             const link = event.target.closest("[data-document-ref]");
             if (link) { event.preventDefault(); onLink(link.dataset.documentRef); return true; }
             const comment = event.target.closest("[data-comment-thread]");
@@ -414,7 +466,7 @@ export function markdownDocumentEditor({ parent, text, mode = "live", renderer, 
       if (node.name === 'InlineCode') formats.code = true;
       if (/^(FencedCode|IndentedCode|CodeBlock)$/.test(node.name)) plain = true;
     }
-    const source = view.state.doc.toString();
+    const source = sourceText(view.state);
     formats.highlight = [...source.matchAll(/==[^\n]+?==/g)].some(m => m.index + 2 <= range.from && m.index + m[0].length - 2 >= range.to);
     const color = textColorSpans(source).filter(s => s.contentFrom <= range.from && s.contentTo >= range.to).at(-1)?.color;
     return { range: native, rect: view.coordsAtPos(range.head) || native.getBoundingClientRect(), formats, color, plain };
@@ -428,7 +480,7 @@ export function markdownDocumentEditor({ parent, text, mode = "live", renderer, 
     const range = view.state.selection.main;
     const selected = view.state.sliceDoc(range.from, range.to);
     if (command === 'color') {
-      const source = view.state.doc.toString(), protectedRanges = []; let offset = 0;
+      const source = sourceText(view.state), protectedRanges = []; let offset = 0;
       for (const token of renderer.tokens(source)) {
         const end = offset + token.raw.length;
         if (["code", "table", "documentTableLayout", "documentRichTable", "blockquote", "documentMathBlock", "html", "hr"].includes(token.type)) protectedRanges.push([offset, end]);
@@ -465,7 +517,7 @@ export function markdownDocumentEditor({ parent, text, mode = "live", renderer, 
     const wraps = { bold: ["**", "**"], italic: ["*", "*"], strike: ["~~", "~~"], highlight: ["==", "=="], code: ["`", "`"], link: ["[", "](https://)"], wiki: ["[[", "]]"], math: ["$", "$"] };
     if (wraps[command]) {
       const [before, after] = wraps[command];
-      const change = ['bold','italic','strike','highlight','code'].includes(command) ? inlineWrapChange(view.state.doc.toString(), range.from, range.to, before, after) : null;
+      const change = ['bold','italic','strike','highlight','code'].includes(command) ? inlineWrapChange(sourceText(view.state), range.from, range.to, before, after) : null;
       const inside = selected || (command === 'wiki' ? '' : 'text');
       view.dispatch(change ? { changes: { from: change.from, to: change.to, insert: change.insert }, selection: { anchor: change.anchor, head: change.head }, userEvent: 'input.format', annotations: isolateHistory.of('full') } : { changes: { from: range.from, to: range.to, insert: before + inside + after }, selection: { anchor: range.from + before.length, head: range.from + before.length + inside.length } });
     } else {
@@ -515,14 +567,16 @@ export function markdownDocumentEditor({ parent, text, mode = "live", renderer, 
   });
   return {
     view, format, hydrate,
-    value: () => view.state.doc.toString(),
+    value: () => sourceText(view.state),
     focus: () => view.focus(),
     setComments: (ranges) => view.dispatch({ effects: commentsEffect.of(ranges) }),
     find: () => { openSearchPanel(view); },
     escape: () => closeSearchPanel(view),
     setMode(next) {
+      for(const table of readingTables)table.destroy();readingTables.clear();
+      const changed=mode!==next;
       mode = next;
-      view.dispatch({ effects: presentation.reconfigure(liveExtensions()) });
+      if(changed)view.dispatch({ effects: [language.reconfigure(languageExtensions()),presentation.reconfigure(liveExtensions())] });
       view.contentDOM.setAttribute("aria-label", mode === "source" ? "Document Markdown" : "Document content");
       parent.dataset.mode = next;
       view.requestMeasure();
@@ -537,7 +591,7 @@ export function markdownDocumentEditor({ parent, text, mode = "live", renderer, 
       if (block) {
         let { from, to } = view.state.selection.main;
         if (focusedComponent?.element.isConnected) { focusedComponent.commit(); from = to = focusedComponent.end(); }
-        const source = view.state.doc.toString(), before = source.slice(0, from), after = source.slice(to);
+        const source = sourceText(view.state), before = source.slice(0, from), after = source.slice(to);
         const prefix = before.endsWith('\n\n') || !before ? '' : before.endsWith('\n') ? '\n' : '\n\n';
         const suffix = after.startsWith('\n\n') ? '' : after.startsWith('\n') ? '\n' : '\n\n';
         const insert = prefix + value + suffix;
@@ -545,7 +599,7 @@ export function markdownDocumentEditor({ parent, text, mode = "live", renderer, 
       } else view.dispatch(view.state.replaceSelection(value));
       if (focus) view.focus();
     },
-    destroy() { alive = false; clearTimeout(hoverTimer); removeWebLinks(); selectionTools?.destroy(); selectionLife.abort(); view.destroy(); },
+    destroy() { alive = false;for(const table of readingTables)table.destroy();readingTables.clear(); clearTimeout(hoverTimer); removeWebLinks(); selectionTools?.destroy(); selectionLife.abort(); view.destroy(); },
     flush() { if (focusedComponent?.element.isConnected) focusedComponent.commit(); },
   };
 }

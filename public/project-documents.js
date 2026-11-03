@@ -1,4 +1,6 @@
 import { documentPaneChoices } from "./document-pane-picker.js";
+import { DOCUMENT_CHARACTERS, documentStatsCache } from './document-performance.js';
+import { releaseCodeHighlights } from './document-code.js';
 import { createDocumentSheet, sheetFormatting, sheetContent } from "./document-sheet.js";
 import { documentEmbedPicker } from "./document-embed-picker.js";
 import { historyPages } from "./history-pages.js";
@@ -7,7 +9,7 @@ import { panelCategories } from "./document-insert.js";
 import { markdownDocumentEditor } from "./document-editor.js";
 import { documentReadingSearch } from "./document-reading-search.js";
 import { documentMarkdown } from "./document-markdown.js";
-import { documentHeadings, documentOutline, documentStats, documentReference, documentSection, resolveDocument, resolveCard, obsidianDocumentURI } from "./document-model.js";
+import { documentHeadings, documentOutline, documentReference, documentSection, resolveDocument, resolveCard, obsidianDocumentURI } from "./document-model.js";
 import { statusLabel, canTransition, initialStatus, transitionError } from "./workflow-model.js";
 import { priorityLabel } from "./task-priority.js";
 import { parseTaskQuery, runTaskQuery } from "./document-task-query.js";
@@ -323,17 +325,18 @@ export function projectDocuments(ctx) {
     current = { ...base, ...changes };
     if (state.project?.id === project)
       state.documents = all().map(d => d.id === current.id ? current : d);
-    if (base.title !== changes.title) updateTabs(true);
+    if (base.title !== changes.title) { updateTabs(true); syncTopbarTitle(state); }
     // SaveQueue retains every edit in browser storage before sending it, merges
     // independent edits and preserves conflicts for the shared Recovery screen.
-    void sync.enqueue(endpoint(project, current.id), base, changes);
+    void sync.enqueue(endpoint(project, current.id), base, changes, {delay:250});
     syncChanged();
     updateStats();
-    syncTopbarTitle(state);
   }
-  function updateStats() {
+  let statsId, countStats=documentStatsCache();
+  function updateStats(changes) {
     if (!form) return;
-    const stats = documentStats(form.elements.body.value);
+    if(statsId!==current?.id){statsId=current?.id;countStats=documentStatsCache();}
+    const stats = countStats(form.elements.body.value,changes);
     const text = `${stats.words.toLocaleString()} words · ${stats.characters.toLocaleString()} characters`;
     form.querySelector("[data-document-stats]").textContent = text;
     const tools = document.querySelector(".document-tool-stats");
@@ -356,13 +359,14 @@ export function projectDocuments(ctx) {
     tools.querySelector(".document-mode-indicator").innerHTML = icon(glyph);
     for (const button of document.querySelectorAll("#document-form [data-document-mode], .layout-tray [data-document-mode]"))
       button.setAttribute("aria-pressed", String(button.dataset.documentMode === mode));
+    editor.setMode(mode);
     if (mode === "reading") {
-      reading.innerHTML = `<div class="document-page document-prose">${renderer.render(form.elements.body.value)}</div>`;
+      reading.innerHTML = `<div class="document-page document-prose">${renderer.render(form.elements.body.value,false,true)}</div>`;
       for (const heading of reading.querySelectorAll("h1,h2,h3,h4,h5,h6")) if (!heading.id) heading.id = `document-heading-${heading.textContent.trim().replace(/\s+/g, "-").toLocaleLowerCase()}`;
       editor.hydrate(reading);
       if (focus) reading.focus();
     } else {
-      editor.setMode(mode);
+      releaseCodeHighlights(reading); reading.replaceChildren();
       if (focus) {
         if (allowsTextAutofocus()) editor.focus();
         // Otherwise the Documents tab takes focus (the view was chosen from its tray or ⋯).
@@ -956,13 +960,13 @@ export function projectDocuments(ctx) {
       onChange(table){const base=all().find(d=>d.id===doc.id);if(!base||state.project?.id!==pid)return;state.documents=all().map(d=>d.id===doc.id?{...base,table}:d);void sync.enqueue(url,base,{table});}
     }) : markdownDocumentEditor({
       tableLayouts: { save: saveTableLayout }, icon, panel: showPanel, toast, colorPicker: ctx.colorPicker, parent: section.querySelector(".document-codemirror"), text: all().find(d => d.id === split.id).body || "",
-      mode: split.mode === "source" ? "source" : "live", renderer: paneRenderer, documents: all, hidden: ["attach", "card", "comment", "sketch"],
+      mode: split.mode || "live", renderer: paneRenderer, documents: all, hidden: ["attach", "card", "comment", "sketch"],
       cards: () => (state.tasks || []).filter(t => !t.archived), taskQueries: renderTaskQueries,
       onChange(body) {
         const base = all().find(d => d.id === split.id);
         if (!base || base.body === body || state.project?.id !== pid) return;
         state.documents = all().map(d => d.id === base.id ? { ...base, body } : d);
-        void sync.enqueue(endpoint(pid, base.id), base, { body });
+        void sync.enqueue(endpoint(pid, base.id), base, { body }, {delay:250});
       },
       onError: message => toast(message, true), onLink: followLink,
       onInsert: command => { if (command === "embed") embedPanel(section.querySelector("[data-pane-tools]"), paneEditor); if (command === "table") insertTablePanel(section.querySelector("[data-pane-tools]"), paneEditor); },
@@ -1120,9 +1124,10 @@ export function projectDocuments(ctx) {
     }) : markdownDocumentEditor({
       tableLayouts: { save: saveTableLayout }, icon, panel: showPanel, toast, colorPicker: ctx.colorPicker,
       parent: form.querySelector(".document-codemirror"), text: doc.body || "",
-      mode: mode === "source" ? "source" : "live", renderer, documents: all, hidden: state.project.personal ? ["card"] : [], cards: () => (state.tasks || []).filter((t) => !t.archived), taskQueries: renderTaskQueries,
-      onChange(value) {
+      mode, renderer, documents: all, hidden: state.project.personal ? ["card"] : [], cards: () => (state.tasks || []).filter((t) => !t.archived), taskQueries: renderTaskQueries,
+      onChange(value, changes) {
         form.elements.body.value = value;
+        updateStats(changes);
         form.elements.body.dispatchEvent(new Event("input", { bubbles: true }));
       },
       onError: message => toast(message, true), onLink: followLink, onComment: id => openThread(id), onSketch: file => sketch(file),
@@ -1424,10 +1429,10 @@ export function projectDocuments(ctx) {
     try {
       for (const file of files) {
         if (state.project?.id !== pid) break;
-        if (!/\.(md|markdown)$/i.test(file.name) || file.size > 800000)
-          throw new Error("Choose Markdown files up to 200,000 characters.");
+        if (!/\.(md|markdown)$/i.test(file.name) || file.size > DOCUMENT_CHARACTERS * 4)
+          throw new Error(`Choose Markdown files up to ${DOCUMENT_CHARACTERS.toLocaleString('en-GB')} characters.`);
         const text = await file.text();
-        if (text.length > 200000) throw new Error(`${file.name} is longer than 200,000 characters.`);
+        if (text.length > DOCUMENT_CHARACTERS) throw new Error(`${file.name} is longer than ${DOCUMENT_CHARACTERS.toLocaleString('en-GB')} characters.`);
         await create(file.name.replace(/\.(md|markdown)$/i, "").slice(0, 300) || "Imported document", text);
       }
     } catch (error) { toast(error.message, true); }

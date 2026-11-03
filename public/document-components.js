@@ -4,7 +4,9 @@ import { codeLanguages, codeLanguageName, codeLanguageEntry, highlightCode } fro
 import { editableDocumentTable } from "./document-inline-table.js";
 import { focusOnOpen } from "./open-focus.js";
 import { installTextColorRule, textColor } from './document-text-color.js';
-import { isolateHistory } from '/vendor/editor/deps.js';
+import { isolateHistory, StateEffect } from '/vendor/editor/deps.js';
+import { documentTextChange, documentCodeFence } from './document-performance.js';
+export const documentComponentChange = StateEffect.define();
 
 const converter = new TurndownService({ headingStyle: "atx", codeBlockStyle: "fenced", bulletListMarker: "-" });
 converter.use(gfm);
@@ -56,7 +58,7 @@ const callout = raw => /^>\s*\[!([\w-]+)\]([+-])?(?:[ \t]+([^\n]*))?(?:\n|$)/.ex
 
 // A rendered block owns editable DOM, while every edit remains a CodeMirror
 // transaction. Only this block changes; the rest of the Markdown is untouched.
-export function editableDocumentComponent({ element, raw, from, kind, editor, renderer, onError, onFocus, onLink, onSearch, onEscape, history, hydrate, icon, panel, toast, tableLayouts }) {
+export function editableDocumentComponent({ element, raw, from, kind, editor, renderer, onError, onFocus, onLink, onSearch, onEscape, history, hydrate, icon, panel, toast, tableLayouts, tablePage }) {
   let source = trim(raw), position = from, writing = false, composing = false;
   let savedRange = null, focusedField = null;
   const token = renderer.tokens(source)[0];
@@ -155,8 +157,9 @@ export function editableDocumentComponent({ element, raw, from, kind, editor, re
       if (next === source) return;
       if (editor.state.doc.sliceString(position, position + source.length) !== source)
         throw new Error("This component changed. Reopen the document before editing it.");
+      const change=documentTextChange(source,next);
       writing = true;
-      editor.dispatch({ changes: { from: position, to: position + source.length, insert: next }, userEvent: "input", ...(isolate ? { annotations: isolateHistory.of('full') } : {}) });
+      editor.dispatch({ changes: { from: position+change.from, to: position+change.to, insert: change.insert }, effects:documentComponentChange.of({from:position,to:position+source.length,kind}), userEvent: "input", ...(isolate ? { annotations: isolateHistory.of('full') } : {}) });
       if (editor.state.doc.sliceString(position, position + next.length) === next) source = next;
       editor.requestMeasure();
     } catch (error) { onError(error.message); }
@@ -165,6 +168,8 @@ export function editableDocumentComponent({ element, raw, from, kind, editor, re
   const api = {
     element,
     destroy: () => tableController?.destroy(),
+    tablePage: () => tableController?.page?.(),
+    revealMatch(start,end){if(tableController&&start>=position&&end<=position+source.length)tableController.revealSource(start-position,source);},
     end: () => position + source.length,
     update(nextFrom, nextRaw) {
       const next = trim(nextRaw);
@@ -269,6 +274,8 @@ export function editableDocumentComponent({ element, raw, from, kind, editor, re
     try {
       tableController = editableDocumentTable({ element, token, field, fields, markdown: cellMarkdown, pipe: CELL_PIPE,
         renderer, icon, panel, commit, history, onError, toast, saveTemplate: tableLayouts?.save,
+        initialPage:tablePage,
+        onPage: hydrate,
         requestMeasure: () => editor.requestMeasure(),
         activate: node => { focusedField = node; savedRange = null; onFocus(api, node); },
       });
@@ -330,9 +337,9 @@ export function editableDocumentComponent({ element, raw, from, kind, editor, re
     // The fence's info string; its first word is the language.
     let info = token.lang || "";
     serialize = () => {
-      const text = code.innerText.replace(/\n$/, "");
+      const text = (code.childNodes.length===1&&code.firstChild.nodeType===Node.TEXT_NODE?code.textContent:code.innerText).replace(/\n$/, "");
       if (token.codeBlockStyle === "indented" && !info) return text.split("\n").map(line => "    " + line).join("\n");
-      const fence = "`".repeat(Math.max(3, ...[...text.matchAll(/`+/g)].map(match => match[0].length + 1)));
+      const fence = documentCodeFence(text);
       return `${fence}${info}\n${text}\n${fence}`;
     };
     if (!diagram) {

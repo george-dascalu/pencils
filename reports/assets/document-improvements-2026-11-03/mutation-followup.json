@@ -1,0 +1,1307 @@
+[
+  {
+    "module": "public/document-performance.js",
+    "line": 11,
+    "from": 747,
+    "to": 750,
+    "old": "===",
+    "replacement": "!==",
+    "status": "killed"
+  },
+  {
+    "module": "public/document-performance.js",
+    "line": 11,
+    "from": 722,
+    "to": 724,
+    "old": "&&",
+    "replacement": "||",
+    "status": "killed"
+  },
+  {
+    "module": "public/document-performance.js",
+    "line": 10,
+    "from": 628,
+    "to": 630,
+    "old": "&&",
+    "replacement": "||",
+    "status": "killed"
+  },
+  {
+    "module": "public/document-performance.js",
+    "line": 10,
+    "from": 659,
+    "to": 662,
+    "old": "===",
+    "replacement": "!==",
+    "status": "killed"
+  },
+  {
+    "module": "public/document-performance.js",
+    "line": 12,
+    "from": 798,
+    "to": 800,
+    "old": ">=",
+    "replacement": ">",
+    "status": "killed"
+  },
+  {
+    "module": "public/document-performance.js",
+    "line": 12,
+    "from": 826,
+    "to": 828,
+    "old": ">=",
+    "replacement": ">",
+    "status": "killed"
+  },
+  {
+    "module": "public/document-performance.js",
+    "line": 12,
+    "from": 809,
+    "to": 811,
+    "old": "<=",
+    "replacement": "<",
+    "status": "killed"
+  },
+  {
+    "module": "public/document-performance.js",
+    "line": 13,
+    "from": 856,
+    "to": 858,
+    "old": "&&",
+    "replacement": "||",
+    "status": "killed"
+  },
+  {
+    "module": "public/document-performance.js",
+    "line": 12,
+    "from": 837,
+    "to": 839,
+    "old": "<=",
+    "replacement": "<",
+    "status": "killed"
+  },
+  {
+    "module": "public/document-performance.js",
+    "line": 11,
+    "from": 716,
+    "to": 717,
+    "old": "<",
+    "replacement": "<=",
+    "status": "survived"
+  },
+  {
+    "module": "public/document-performance.js",
+    "line": 10,
+    "from": 621,
+    "to": 623,
+    "old": "<=",
+    "replacement": "<",
+    "status": "survived"
+  },
+  {
+    "module": "public/document-performance.js",
+    "line": 14,
+    "from": 991,
+    "to": 993,
+    "old": "&&",
+    "replacement": "||",
+    "status": "killed"
+  },
+  {
+    "module": "public/document-performance.js",
+    "line": 12,
+    "from": 806,
+    "to": 808,
+    "old": "&&",
+    "replacement": "||",
+    "status": "survived"
+  },
+  {
+    "module": "public/document-performance.js",
+    "line": 12,
+    "from": 834,
+    "to": 836,
+    "old": "&&",
+    "replacement": "||",
+    "status": "survived"
+  },
+  {
+    "module": "public/document-performance.js",
+    "line": 14,
+    "from": 1054,
+    "to": 1057,
+    "old": "===",
+    "replacement": "!==",
+    "status": "killed"
+  },
+  {
+    "module": "public/document-performance.js",
+    "line": 15,
+    "from": 1156,
+    "to": 1158,
+    "old": "&&",
+    "replacement": "||",
+    "status": "killed"
+  },
+  {
+    "module": "public/document-performance.js",
+    "line": 15,
+    "from": 1199,
+    "to": 1202,
+    "old": "===",
+    "replacement": "!==",
+    "status": "killed"
+  },
+  {
+    "module": "public/document-performance.js",
+    "line": 13,
+    "from": 920,
+    "to": 922,
+    "old": "||",
+    "replacement": "&&",
+    "status": "survived"
+  },
+  {
+    "module": "public/document-performance.js",
+    "line": 13,
+    "from": 889,
+    "to": 891,
+    "old": "&&",
+    "replacement": "||",
+    "status": "survived"
+  },
+  {
+    "module": "public/document-performance.js",
+    "line": 14,
+    "from": 979,
+    "to": 981,
+    "old": "<=",
+    "replacement": "<",
+    "status": "survived"
+  },
+  {
+    "module": "public/document-performance.js",
+    "line": 29,
+    "from": 1927,
+    "to": 1929,
+    "old": "&&",
+    "replacement": "||",
+    "status": "killed"
+  },
+  {
+    "module": "public/document-performance.js",
+    "line": 15,
+    "from": 1145,
+    "to": 1146,
+    "old": "<",
+    "replacement": "<=",
+    "status": "survived"
+  },
+  {
+    "module": "public/document-performance.js",
+    "line": 16,
+    "from": 1263,
+    "to": 1265,
+    "old": "&&",
+    "replacement": "||",
+    "status": "killed"
+  },
+  {
+    "module": "public/document-performance.js",
+    "line": 29,
+    "from": 1920,
+    "to": 1923,
+    "old": "!==",
+    "replacement": "===",
+    "status": "killed"
+  },
+  {
+    "module": "public/document-performance.js",
+    "line": 29,
+    "from": 1943,
+    "to": 1945,
+    "old": "&&",
+    "replacement": "||",
+    "status": "killed"
+  },
+  {
+    "module": "public/document-performance.js",
+    "line": 35,
+    "from": 2334,
+    "to": 2336,
+    "old": "&&",
+    "replacement": "||",
+    "status": "killed"
+  },
+  {
+    "module": "public/document-performance.js",
+    "line": 35,
+    "from": 2353,
+    "to": 2385,
+    "old": "last.b=Math.max(last.b,chunk.b);",
+    "replacement": ";",
+    "status": "killed"
+  },
+  {
+    "module": "public/document-performance.js",
+    "line": 16,
+    "from": 1359,
+    "to": 1361,
+    "old": "||",
+    "replacement": "&&",
+    "status": "survived"
+  },
+  {
+    "module": "public/document-performance.js",
+    "line": 16,
+    "from": 1309,
+    "to": 1311,
+    "old": "&&",
+    "replacement": "||",
+    "status": "survived"
+  },
+  {
+    "module": "public/document-performance.js",
+    "line": 35,
+    "from": 2385,
+    "to": 2417,
+    "old": "last.d=Math.max(last.d,chunk.d);",
+    "replacement": ";",
+    "status": "killed"
+  },
+  {
+    "module": "public/document-performance.js",
+    "line": 72,
+    "from": 3800,
+    "to": 3802,
+    "old": "&&",
+    "replacement": "||",
+    "status": "killed"
+  },
+  {
+    "module": "public/document-performance.js",
+    "line": 72,
+    "from": 3832,
+    "to": 3834,
+    "old": "&&",
+    "replacement": "||",
+    "status": "killed"
+  },
+  {
+    "module": "public/document-performance.js",
+    "line": 72,
+    "from": 3816,
+    "to": 3818,
+    "old": "&&",
+    "replacement": "||",
+    "status": "killed"
+  },
+  {
+    "module": "public/document-performance.js",
+    "line": 35,
+    "from": 2423,
+    "to": 2442,
+    "old": "chunks.push(chunk);",
+    "replacement": ";",
+    "status": "killed"
+  },
+  {
+    "module": "public/document-performance.js",
+    "line": 72,
+    "from": 3793,
+    "to": 3796,
+    "old": "!==",
+    "replacement": "===",
+    "status": "killed"
+  },
+  {
+    "module": "public/document-performance.js",
+    "line": 29,
+    "from": 2017,
+    "to": 2020,
+    "old": "===",
+    "replacement": "!==",
+    "status": "killed"
+  },
+  {
+    "module": "public/document-performance.js",
+    "line": 72,
+    "from": 3851,
+    "to": 3854,
+    "old": "===",
+    "replacement": "!==",
+    "status": "killed"
+  },
+  {
+    "module": "public/document-performance.js",
+    "line": 77,
+    "from": 4515,
+    "to": 4518,
+    "old": "===",
+    "replacement": "!==",
+    "status": "killed"
+  },
+  {
+    "module": "public/document-performance.js",
+    "line": 35,
+    "from": 2343,
+    "to": 2345,
+    "old": "<=",
+    "replacement": "<",
+    "status": "survived"
+  },
+  {
+    "module": "public/document-performance.js",
+    "line": 84,
+    "from": 5216,
+    "to": 5218,
+    "old": "&&",
+    "replacement": "||",
+    "status": "killed"
+  },
+  {
+    "module": "public/document-performance.js",
+    "line": 74,
+    "from": 4106,
+    "to": 4108,
+    "old": "<=",
+    "replacement": "<",
+    "status": "survived"
+  },
+  {
+    "module": "public/document-performance.js",
+    "line": 84,
+    "from": 5236,
+    "to": 5238,
+    "old": "&&",
+    "replacement": "||",
+    "status": "killed"
+  },
+  {
+    "module": "public/document-performance.js",
+    "line": 84,
+    "from": 5245,
+    "to": 5247,
+    "old": "&&",
+    "replacement": "||",
+    "status": "killed"
+  },
+  {
+    "module": "public/document-performance.js",
+    "line": 84,
+    "from": 5299,
+    "to": 5301,
+    "old": "&&",
+    "replacement": "||",
+    "status": "killed"
+  },
+  {
+    "module": "public/document-performance.js",
+    "line": 84,
+    "from": 5211,
+    "to": 5212,
+    "old": "!",
+    "replacement": "",
+    "status": "killed"
+  },
+  {
+    "module": "public/document-performance.js",
+    "line": 84,
+    "from": 5329,
+    "to": 5331,
+    "old": "&&",
+    "replacement": "||",
+    "status": "killed"
+  },
+  {
+    "module": "public/document-performance.js",
+    "line": 77,
+    "from": 4519,
+    "to": 4521,
+    "old": "&&",
+    "replacement": "||",
+    "status": "survived"
+  },
+  {
+    "module": "public/document-performance.js",
+    "line": 77,
+    "from": 4525,
+    "to": 4526,
+    "old": "<",
+    "replacement": "<=",
+    "status": "survived"
+  },
+  {
+    "module": "public/document-performance.js",
+    "line": 84,
+    "from": 5356,
+    "to": 5358,
+    "old": "&&",
+    "replacement": "||",
+    "status": "killed"
+  },
+  {
+    "module": "public/document-performance.js",
+    "line": 84,
+    "from": 5384,
+    "to": 5386,
+    "old": "&&",
+    "replacement": "||",
+    "status": "killed"
+  },
+  {
+    "module": "public/document-performance.js",
+    "line": 84,
+    "from": 5232,
+    "to": 5235,
+    "old": "===",
+    "replacement": "!==",
+    "status": "killed"
+  },
+  {
+    "module": "public/document-performance.js",
+    "line": 84,
+    "from": 5408,
+    "to": 5410,
+    "old": "&&",
+    "replacement": "||",
+    "status": "killed"
+  },
+  {
+    "module": "public/document-performance.js",
+    "line": 84,
+    "from": 5314,
+    "to": 5317,
+    "old": "===",
+    "replacement": "!==",
+    "status": "killed"
+  },
+  {
+    "module": "public/document-performance.js",
+    "line": 84,
+    "from": 5343,
+    "to": 5346,
+    "old": "===",
+    "replacement": "!==",
+    "status": "killed"
+  },
+  {
+    "module": "public/document-performance.js",
+    "line": 84,
+    "from": 5370,
+    "to": 5372,
+    "old": ">=",
+    "replacement": ">",
+    "status": "killed"
+  },
+  {
+    "module": "public/document-performance.js",
+    "line": 88,
+    "from": 5670,
+    "to": 5672,
+    "old": "&&",
+    "replacement": "||",
+    "status": "killed"
+  },
+  {
+    "module": "public/document-performance.js",
+    "line": 84,
+    "from": 5396,
+    "to": 5398,
+    "old": "<=",
+    "replacement": "<",
+    "status": "killed"
+  },
+  {
+    "module": "public/document-performance.js",
+    "line": 88,
+    "from": 5665,
+    "to": 5666,
+    "old": "!",
+    "replacement": "",
+    "status": "killed"
+  },
+  {
+    "module": "public/document-performance.js",
+    "line": 88,
+    "from": 5690,
+    "to": 5692,
+    "old": "&&",
+    "replacement": "||",
+    "status": "killed"
+  },
+  {
+    "module": "public/document-performance.js",
+    "line": 84,
+    "from": 5420,
+    "to": 5422,
+    "old": "<=",
+    "replacement": "<",
+    "status": "killed"
+  },
+  {
+    "module": "public/document-performance.js",
+    "line": 88,
+    "from": 5705,
+    "to": 5707,
+    "old": "&&",
+    "replacement": "||",
+    "status": "killed"
+  },
+  {
+    "module": "public/document-performance.js",
+    "line": 88,
+    "from": 5757,
+    "to": 5759,
+    "old": "&&",
+    "replacement": "||",
+    "status": "killed"
+  },
+  {
+    "module": "public/document-performance.js",
+    "line": 74,
+    "from": 4061,
+    "to": 4062,
+    "old": "<",
+    "replacement": "<=",
+    "status": "killed"
+  },
+  {
+    "module": "public/document-performance.js",
+    "line": 85,
+    "from": 5508,
+    "to": 5511,
+    "old": "===",
+    "replacement": "!==",
+    "status": "killed"
+  },
+  {
+    "module": "public/document-performance.js",
+    "line": 88,
+    "from": 5686,
+    "to": 5689,
+    "old": "===",
+    "replacement": "!==",
+    "status": "killed"
+  },
+  {
+    "module": "public/document-performance.js",
+    "line": 90,
+    "from": 5962,
+    "to": 5965,
+    "old": "===",
+    "replacement": "!==",
+    "status": "killed"
+  },
+  {
+    "module": "public/document-performance.js",
+    "line": 95,
+    "from": 6364,
+    "to": 6367,
+    "old": "===",
+    "replacement": "!==",
+    "status": "killed"
+  },
+  {
+    "module": "public/document-performance.js",
+    "line": 88,
+    "from": 5696,
+    "to": 5697,
+    "old": "<",
+    "replacement": "<=",
+    "status": "survived"
+  },
+  {
+    "module": "public/document-performance.js",
+    "line": 97,
+    "from": 6553,
+    "to": 6556,
+    "old": "===",
+    "replacement": "!==",
+    "status": "killed"
+  },
+  {
+    "module": "public/document-performance.js",
+    "line": 90,
+    "from": 5987,
+    "to": 5990,
+    "old": "===",
+    "replacement": "!==",
+    "status": "killed"
+  },
+  {
+    "module": "public/document-performance.js",
+    "line": 97,
+    "from": 6589,
+    "to": 6591,
+    "old": "&&",
+    "replacement": "||",
+    "status": "killed"
+  },
+  {
+    "module": "public/document-performance.js",
+    "line": 90,
+    "from": 5966,
+    "to": 5968,
+    "old": "&&",
+    "replacement": "||",
+    "status": "survived"
+  },
+  {
+    "module": "public/document-performance.js",
+    "line": 90,
+    "from": 6019,
+    "to": 6022,
+    "old": "===",
+    "replacement": "!==",
+    "status": "killed"
+  },
+  {
+    "module": "public/document-performance.js",
+    "line": 90,
+    "from": 6006,
+    "to": 6008,
+    "old": "&&",
+    "replacement": "||",
+    "status": "survived"
+  },
+  {
+    "module": "public/document-performance.js",
+    "line": 98,
+    "from": 6759,
+    "to": 6761,
+    "old": "&&",
+    "replacement": "||",
+    "status": "killed"
+  },
+  {
+    "module": "public/document-performance.js",
+    "line": 97,
+    "from": 6570,
+    "to": 6572,
+    "old": "||",
+    "replacement": "&&",
+    "status": "killed"
+  },
+  {
+    "module": "public/document-performance.js",
+    "line": 97,
+    "from": 6585,
+    "to": 6588,
+    "old": "===",
+    "replacement": "!==",
+    "status": "killed"
+  },
+  {
+    "module": "public/document-performance.js",
+    "line": 97,
+    "from": 6689,
+    "to": 6692,
+    "old": "===",
+    "replacement": "!==",
+    "status": "killed"
+  },
+  {
+    "module": "public/document-performance.js",
+    "line": 97,
+    "from": 6719,
+    "to": 6722,
+    "old": "===",
+    "replacement": "!==",
+    "status": "killed"
+  },
+  {
+    "module": "public/document-performance.js",
+    "line": 97,
+    "from": 6708,
+    "to": 6710,
+    "old": "&&",
+    "replacement": "||",
+    "status": "survived"
+  },
+  {
+    "module": "public/document-performance.js",
+    "line": 98,
+    "from": 6762,
+    "to": 6763,
+    "old": "!",
+    "replacement": "",
+    "status": "killed"
+  },
+  {
+    "module": "public/document-performance.js",
+    "line": 98,
+    "from": 6801,
+    "to": 6804,
+    "old": "===",
+    "replacement": "!==",
+    "status": "killed"
+  },
+  {
+    "module": "public/document-performance.js",
+    "line": 98,
+    "from": 6780,
+    "to": 6783,
+    "old": "===",
+    "replacement": "!==",
+    "status": "survived"
+  },
+  {
+    "module": "public/document-table-model.js",
+    "line": 6,
+    "from": 300,
+    "to": 301,
+    "old": "!",
+    "replacement": "",
+    "status": "killed"
+  },
+  {
+    "module": "public/document-performance.js",
+    "line": 101,
+    "from": 6980,
+    "to": 6983,
+    "old": "===",
+    "replacement": "!==",
+    "status": "survived"
+  },
+  {
+    "module": "public/document-table-model.js",
+    "line": 6,
+    "from": 327,
+    "to": 328,
+    "old": "!",
+    "replacement": "",
+    "status": "killed"
+  },
+  {
+    "module": "public/document-table-model.js",
+    "line": 6,
+    "from": 324,
+    "to": 326,
+    "old": "||",
+    "replacement": "&&",
+    "status": "survived"
+  },
+  {
+    "module": "public/document-table-model.js",
+    "line": 6,
+    "from": 354,
+    "to": 356,
+    "old": "||",
+    "replacement": "&&",
+    "status": "killed"
+  },
+  {
+    "module": "public/document-table-model.js",
+    "line": 6,
+    "from": 362,
+    "to": 363,
+    "old": "<",
+    "replacement": "<=",
+    "status": "killed"
+  },
+  {
+    "module": "public/document-table-model.js",
+    "line": 6,
+    "from": 377,
+    "to": 378,
+    "old": "<",
+    "replacement": "<=",
+    "status": "killed"
+  },
+  {
+    "module": "public/document-table-model.js",
+    "line": 6,
+    "from": 366,
+    "to": 368,
+    "old": "||",
+    "replacement": "&&",
+    "status": "killed"
+  },
+  {
+    "module": "public/document-table-model.js",
+    "line": 6,
+    "from": 381,
+    "to": 383,
+    "old": "||",
+    "replacement": "&&",
+    "status": "killed"
+  },
+  {
+    "module": "public/document-table-model.js",
+    "line": 6,
+    "from": 399,
+    "to": 400,
+    "old": ">",
+    "replacement": ">=",
+    "status": "killed"
+  },
+  {
+    "module": "public/document-table-model.js",
+    "line": 6,
+    "from": 421,
+    "to": 547,
+    "old": "fail(`Keep at least one row and column, and at most ${INLINE_TABLE_CELLS.toLocaleString('en-GB')} cells in an inline table.`);",
+    "replacement": ";",
+    "status": "killed"
+  },
+  {
+    "module": "public/document-table-model.js",
+    "line": 9,
+    "from": 575,
+    "to": 612,
+    "old": "dimensions(model.rows,model.columns);",
+    "replacement": ";",
+    "status": "survived"
+  },
+  {
+    "module": "public/document-table-model.js",
+    "line": 42,
+    "from": 3410,
+    "to": 3414,
+    "old": "true",
+    "replacement": "false",
+    "status": "killed"
+  },
+  {
+    "module": "public/document-table-model.js",
+    "line": 20,
+    "from": 1597,
+    "to": 1623,
+    "old": "dimensions(count,columns);",
+    "replacement": ";",
+    "status": "survived"
+  },
+  {
+    "module": "public/document-table-model.js",
+    "line": 48,
+    "from": 3867,
+    "to": 3868,
+    "old": "<",
+    "replacement": "<=",
+    "status": "killed"
+  },
+  {
+    "module": "public/document-table-model.js",
+    "line": 42,
+    "from": 3455,
+    "to": 3490,
+    "old": "dimensions(next.rows,next.columns);",
+    "replacement": ";",
+    "status": "survived"
+  },
+  {
+    "module": "public/document-table-model.js",
+    "line": 48,
+    "from": 3870,
+    "to": 3912,
+    "old": "fail('Keep at least one row and column.');",
+    "replacement": ";",
+    "status": "survived"
+  },
+  {
+    "module": "public/document-table-model.js",
+    "line": 52,
+    "from": 4140,
+    "to": 4142,
+    "old": ">=",
+    "replacement": ">",
+    "status": "survived"
+  },
+  {
+    "module": "public/document-table-model.js",
+    "line": 52,
+    "from": 4163,
+    "to": 4165,
+    "old": ">=",
+    "replacement": ">",
+    "status": "survived"
+  },
+  {
+    "module": "public/document-table-model.js",
+    "line": 52,
+    "from": 4198,
+    "to": 4199,
+    "old": ">",
+    "replacement": ">=",
+    "status": "killed"
+  },
+  {
+    "module": "public/document-table-model.js",
+    "line": 59,
+    "from": 4536,
+    "to": 4538,
+    "old": "&&",
+    "replacement": "||",
+    "status": "killed"
+  },
+  {
+    "module": "public/document-table-model.js",
+    "line": 59,
+    "from": 4530,
+    "to": 4532,
+    "old": ">=",
+    "replacement": ">",
+    "status": "survived"
+  },
+  {
+    "module": "public/document-table-model.js",
+    "line": 59,
+    "from": 4544,
+    "to": 4546,
+    "old": "<=",
+    "replacement": "<",
+    "status": "survived"
+  },
+  {
+    "module": "public/document-table-model.js",
+    "line": 60,
+    "from": 4660,
+    "to": 4718,
+    "old": "order.splice(before>from?before-count:before,0,...moving);",
+    "replacement": ";",
+    "status": "killed"
+  },
+  {
+    "module": "public/document-table-window.js",
+    "line": 8,
+    "from": 443,
+    "to": 444,
+    "old": ">",
+    "replacement": ">=",
+    "status": "survived"
+  },
+  {
+    "module": "public/document-table-model.js",
+    "line": 60,
+    "from": 4679,
+    "to": 4680,
+    "old": ">",
+    "replacement": ">=",
+    "status": "survived"
+  },
+  {
+    "module": "public/document-table-window.js",
+    "line": 16,
+    "from": 880,
+    "to": 881,
+    "old": "<",
+    "replacement": "<=",
+    "status": "survived"
+  },
+  {
+    "module": "public/document-table-window.js",
+    "line": 18,
+    "from": 1074,
+    "to": 1076,
+    "old": ">=",
+    "replacement": ">",
+    "status": "survived"
+  },
+  {
+    "module": "public/document-table-window.js",
+    "line": 18,
+    "from": 1098,
+    "to": 1099,
+    "old": "!",
+    "replacement": "",
+    "status": "killed"
+  },
+  {
+    "module": "public/document-table-window.js",
+    "line": 22,
+    "from": 1299,
+    "to": 1300,
+    "old": ">",
+    "replacement": ">=",
+    "status": "killed"
+  },
+  {
+    "module": "public/document-table-window.js",
+    "line": 36,
+    "from": 2452,
+    "to": 2453,
+    "old": "!",
+    "replacement": "",
+    "status": "killed"
+  },
+  {
+    "module": "public/document-table-window.js",
+    "line": 34,
+    "from": 2309,
+    "to": 2311,
+    "old": ">=",
+    "replacement": ">",
+    "status": "killed"
+  },
+  {
+    "module": "public/document-table-window.js",
+    "line": 36,
+    "from": 2459,
+    "to": 2461,
+    "old": "&&",
+    "replacement": "||",
+    "status": "killed"
+  },
+  {
+    "module": "public/document-table-window.js",
+    "line": 36,
+    "from": 2464,
+    "to": 2466,
+    "old": ">=",
+    "replacement": ">",
+    "status": "killed"
+  },
+  {
+    "module": "public/sync.js",
+    "line": 194,
+    "from": 6913,
+    "to": 6918,
+    "old": "false",
+    "replacement": "true",
+    "status": "killed"
+  },
+  {
+    "module": "public/sync.js",
+    "line": 22,
+    "from": 969,
+    "to": 971,
+    "old": "&&",
+    "replacement": "||",
+    "status": "killed"
+  },
+  {
+    "module": "public/sync.js",
+    "line": 221,
+    "from": 7888,
+    "to": 7916,
+    "old": "clearTimeout(delayed.timer);",
+    "replacement": ";",
+    "status": "survived"
+  },
+  {
+    "module": "public/sync.js",
+    "line": 198,
+    "from": 7100,
+    "to": 7128,
+    "old": "this.hydrate(pending, base);",
+    "replacement": ";",
+    "status": "killed"
+  },
+  {
+    "module": "public/sync.js",
+    "line": 221,
+    "from": 7916,
+    "to": 7942,
+    "old": "this.deferred.delete(url);",
+    "replacement": ";",
+    "status": "killed"
+  },
+  {
+    "module": "public/sync.js",
+    "line": 234,
+    "from": 8735,
+    "to": 8736,
+    "old": "!",
+    "replacement": "",
+    "status": "killed"
+  },
+  {
+    "module": "public/sync.js",
+    "line": 234,
+    "from": 8732,
+    "to": 8734,
+    "old": "||",
+    "replacement": "&&",
+    "status": "killed"
+  },
+  {
+    "module": "public/sync.js",
+    "line": 246,
+    "from": 9255,
+    "to": 9260,
+    "old": "false",
+    "replacement": "true",
+    "status": "killed"
+  },
+  {
+    "module": "public/sync.js",
+    "line": 246,
+    "from": 9194,
+    "to": 9279,
+    "old": "entry.base = applyBoardDelta(source, entry.changes, { guard: false, reverse: true });",
+    "replacement": ";",
+    "status": "killed"
+  },
+  {
+    "module": "public/sync.js",
+    "line": 246,
+    "from": 9271,
+    "to": 9275,
+    "old": "true",
+    "replacement": "false",
+    "status": "killed"
+  },
+  {
+    "module": "public/sync.js",
+    "line": 248,
+    "from": 9326,
+    "to": 9401,
+    "old": "entry.local = applyBoardDelta(entry.base, entry.changes, { guard: false });",
+    "replacement": ";",
+    "status": "killed"
+  },
+  {
+    "module": "public/sync.js",
+    "line": 248,
+    "from": 9392,
+    "to": 9397,
+    "old": "false",
+    "replacement": "true",
+    "status": "survived"
+  },
+  {
+    "module": "public/sync.js",
+    "line": 251,
+    "from": 9557,
+    "to": 9562,
+    "old": "false",
+    "replacement": "true",
+    "status": "survived"
+  },
+  {
+    "module": "public/sync.js",
+    "line": 251,
+    "from": 9474,
+    "to": 9566,
+    "old": "entry.delivery.sent = applyBoardDelta(entry.base, entry.delivery.changes, { guard: false });",
+    "replacement": ";",
+    "status": "killed"
+  },
+  {
+    "module": "public/sync.js",
+    "line": 261,
+    "from": 9974,
+    "to": 9979,
+    "old": "false",
+    "replacement": "true",
+    "status": "killed"
+  },
+  {
+    "module": "public/sync.js",
+    "line": 261,
+    "from": 9981,
+    "to": 9996,
+    "old": "this.persist();",
+    "replacement": ";",
+    "status": "killed"
+  },
+  {
+    "module": "public/sync.js",
+    "line": 273,
+    "from": 10485,
+    "to": 10568,
+    "old": "entry.delivery.changes = boardDifference(entry.delivery.base, entry.delivery.sent);",
+    "replacement": ";",
+    "status": "survived"
+  },
+  {
+    "module": "public/sync.js",
+    "line": 221,
+    "from": 7969,
+    "to": 8029,
+    "old": "Promise.resolve(sent).then(delayed.resolve,delayed.resolve);",
+    "replacement": ";",
+    "status": "killed"
+  },
+  {
+    "module": "public/sync.js",
+    "line": 274,
+    "from": 10575,
+    "to": 10590,
+    "old": "this.persist();",
+    "replacement": ";",
+    "status": "killed"
+  },
+  {
+    "module": "public/sync.js",
+    "line": 276,
+    "from": 10613,
+    "to": 10615,
+    "old": "&&",
+    "replacement": "||",
+    "status": "killed"
+  },
+  {
+    "module": "public/sync.js",
+    "line": 276,
+    "from": 10616,
+    "to": 10617,
+    "old": "!",
+    "replacement": "",
+    "status": "killed"
+  },
+  {
+    "module": "public/sync.js",
+    "line": 309,
+    "from": 12206,
+    "to": 12241,
+    "old": "this.saved(entry.url, entry.local);",
+    "replacement": ";",
+    "status": "killed"
+  },
+  {
+    "module": "public/sync.js",
+    "line": 276,
+    "from": 10641,
+    "to": 10724,
+    "old": "entry.delivery.changes = boardDifference(entry.delivery.base, entry.delivery.sent);",
+    "replacement": ";",
+    "status": "killed"
+  },
+  {
+    "module": "public/sync.js",
+    "line": 357,
+    "from": 13771,
+    "to": 13826,
+    "old": "this.hydrate(entry, compact(await this.api(url), url));",
+    "replacement": ";",
+    "status": "survived"
+  },
+  {
+    "module": "public/sync.js",
+    "line": 374,
+    "from": 14357,
+    "to": 14383,
+    "old": "this.deferred.delete(url);",
+    "replacement": ";",
+    "status": "killed"
+  },
+  {
+    "module": "public/sync.js",
+    "line": 374,
+    "from": 14329,
+    "to": 14357,
+    "old": "clearTimeout(pending.timer);",
+    "replacement": ";",
+    "status": "survived"
+  },
+  {
+    "module": "public/sync.js",
+    "line": 376,
+    "from": 14437,
+    "to": 14452,
+    "old": "this.persist();",
+    "replacement": ";",
+    "status": "survived"
+  },
+  {
+    "module": "public/sync.js",
+    "line": 374,
+    "from": 14383,
+    "to": 14401,
+    "old": "pending.resolve();",
+    "replacement": ";",
+    "status": "killed"
+  }
+]

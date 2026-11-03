@@ -7,6 +7,21 @@ import { Store } from "../server/store.js";
 import { Auth } from "../server/auth.js";
 import { createServer } from "../server/index.js";
 
+test('large documents and Markdown imports accept one million characters, including multibyte text, without enlarging card descriptions', async t => {
+  const root=await fs.mkdtemp(path.join(os.tmpdir(),'pencils-large-documents-')),store=new Store(root);await store.init();
+  const project=await store.createProject({title:'Large documents'}),server=createServer(store,{auth:new Auth(store,false)});
+  await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));
+  t.after(async()=>{server.closeAllConnections();await new Promise(resolve=>server.close(resolve));await store.close();await fs.rm(root,{recursive:true,force:true});});
+  const base=`http://127.0.0.1:${server.address().port}/api/projects/${project.id}`;
+  const request=(url,data,method='POST')=>fetch(base+url,{method,headers:{'Content-Type':'application/json'},body:JSON.stringify(data)});
+  const body='漢'.repeat(1000000),created=await request('/documents',{title:'Million',body});assert.equal(created.status,201);
+  const document=await created.json();assert.equal((await store.getDocument(project.id,document.id)).body,body);
+  const changed=await request('/documents/'+document.id,{revision:document.revision,body:body.slice(1)+'x'},'PATCH');assert.equal(changed.status,200);
+  assert.equal((await request('/documents',{title:'Too much',body:body+'x'})).status,400);
+  const imported=await request('/documents',{title:'Imported',body:'x'.repeat(300000)});assert.equal(imported.status,201);
+  await assert.rejects(()=>store.createTask(project.id,{title:'Card',body:'x'.repeat(200001)}),error=>error.status===400);
+});
+
 test("documents persist as Markdown, report changes and use revision/history/trash protection", async t => {
   const root = await fs.mkdtemp(path.join(os.tmpdir(), "pencils-documents-"));
   const store = new Store(root);
@@ -34,7 +49,7 @@ test("documents persist as Markdown, report changes and use revision/history/tra
   assert.equal((await store.history(doc.file))[0].body, doc.body);
   await assert.rejects(() => store.updateDocument(project.id, doc.id, { body: "Stale", revision: doc.revision }), e => e.status === 409);
   await assert.rejects(() => store.createDocument(project.id, { title: "", body: "" }), e => e.status === 400);
-  await assert.rejects(() => store.createDocument(project.id, { title: "Too long", body: "a".repeat(200001) }), e => e.status === 400);
+  await assert.rejects(() => store.createDocument(project.id, { title: "Too long", body: "a".repeat(1000001) }), e => e.status === 400);
   const restarted = new Store(root);
   t.after(() => restarted.close());
   assert.equal((await restarted.snapshot(project.id)).documents[0].body, updated.body);

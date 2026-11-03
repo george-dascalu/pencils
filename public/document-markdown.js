@@ -5,6 +5,7 @@ import { resolveDocument, resolveCard, documentSection, documentReference } from
 import { documentEmbedViews } from './document-embed-view.js';
 import { listCallouts, listCalloutLabel } from "./document-list-callouts.js";
 import { textColor, textColorExtension } from './document-text-color.js';
+import { randomUUID } from './uuid.js';
 
 // A table may keep its columns and scroll sideways instead of fitting the page.
 // The choice is an HTML comment on the line before it, invisible elsewhere.
@@ -23,6 +24,7 @@ const tableLayout = {
 
 export function documentMarkdown({ documents, project, esc, icon, cards = () => [], cardHTML, current = () => null, loadTable }) {
   let sequence = 0, stack = [], context = [], embeds = 0, embeddedCharacters = 0;
+  const tableTokens = new Map();
   const embedViews = documentEmbedViews({ documents, loadTable, render: source => render(source) });
   const inlineParser = new Marked({ gfm: true, breaks: false });
   inlineParser.use({ extensions: [textColorExtension] });
@@ -39,11 +41,18 @@ export function documentMarkdown({ documents, project, esc, icon, cards = () => 
     try { return katex.renderToString(text, { output: "mathml", displayMode, throwOnError: false, trust: false, strict: "ignore", maxExpand: 1000 }); }
     catch { return `<code>${esc(text)}</code>`; }
   };
-  function makeParser() {
+  function makeParser(windowTables = false) {
     const parser = new Marked({ gfm: true, breaks: false });
     parser.use(markedFootnote({ prefixId: `document-footnote-${++sequence}-` }));
     parser.use({
     renderer: {
+      table(token) {
+        if (!windowTables || (token.rows.length + 1) * token.header.length <= 2000) return false;
+        const id = randomUUID(); tableTokens.set(id, token);
+        const count = Math.min(20, token.header.length), rows = token.rows.slice(0, Math.min(100, Math.floor(800 / count)));
+        const row = (cells, tag) => '<tr>' + cells.slice(0,count).map((cell,c) => `<${tag}${token.align[c] ? ` align="${token.align[c]}"` : ''}>${this.parser.parseInline(cell.tokens)}</${tag}>`).join('') + '</tr>';
+        return `<table data-document-table-id="${id}"><thead>${row(token.header,'th')}</thead><tbody>${rows.map(cells=>row(cells,'td')).join('')}</tbody></table>`;
+      },
       code(token) {
         // A task query lists cards; the documents view fills it in (see renderTaskQueries).
         if (token.lang?.split(/\s/)[0] === "tasks")
@@ -140,13 +149,13 @@ export function documentMarkdown({ documents, project, esc, icon, cards = () => 
     });
     return parser;
   }
-  function render(text, inline = false) {
+  function render(text, inline = false, windowTables = false) {
     const origin = current(); stack = origin ? [origin.id] : []; context = origin ? [origin] : []; embeds = embeddedCharacters = 0;
     // Footnotes need a complete lexer pass, even for a small live-preview widget.
-    const fragment = DOMPurify.sanitize(makeParser().parse(text), {
+    const fragment = DOMPurify.sanitize(makeParser(windowTables).parse(text), {
       RETURN_DOM_FRAGMENT: true,
       ALLOW_DATA_ATTR: false,
-      ADD_ATTR: ["data-document-sketch", "data-document-ref", "data-document-diagram", "data-document-source", "data-document-callout", "data-document-card", "data-document-task-query", "data-document-color", "data-document-embed-id", "data-document-embed-ref", "data-document-embed-table"],
+      ADD_ATTR: ["data-document-sketch", "data-document-ref", "data-document-diagram", "data-document-source", "data-document-callout", "data-document-card", "data-document-task-query", "data-document-color", "data-document-embed-id", "data-document-embed-ref", "data-document-embed-table", "data-document-table-id"],
       FORBID_TAGS: ["style", "form", "button", "textarea", "select", "option", "iframe", "object", "embed"],
       FORBID_ATTR: ["style"],
     });
@@ -184,6 +193,7 @@ export function documentMarkdown({ documents, project, esc, icon, cards = () => 
       }
     }
     for (const img of fragment.querySelectorAll("img")) {
+      img.loading = 'lazy'; img.decoding = 'async';
       const src = img.getAttribute("src") || "";
       img.dataset.documentSrc = src;
       if (/^(?:\.\.\/)?attachments\/(?:a-[\w-]+\.(?:png|jpe?g|webp|gif)|s-[\w-]+\.svg)$/i.test(src))
@@ -229,5 +239,5 @@ export function documentMarkdown({ documents, project, esc, icon, cards = () => 
       return element.firstElementChild.innerHTML;
     return element.innerHTML;
   }
-  return { render, tokens: text => blockParser.lexer(text), hydrate: embedViews.hydrate, destroy: embedViews.destroy };
+  return { render, tokens: text => new blockParser.Lexer(blockParser.defaults).blockTokens(text), tableToken(table) { const id=table.dataset.documentTableId,token=tableTokens.get(id);tableTokens.delete(id);delete table.dataset.documentTableId;return token; }, hydrate: embedViews.hydrate, destroy() { tableTokens.clear(); embedViews.destroy(); } };
 }

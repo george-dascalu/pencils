@@ -1,8 +1,9 @@
 // Inline document tables: coordinates and Markdown values, independent of their editable DOM.
+import { INLINE_TABLE_CELLS } from './document-performance.js';
 const fail = message => { throw Error(message); };
 const clone = value => structuredClone(value);
 function dimensions(rows, columns) {
-  if (!Number.isInteger(rows) || !Number.isInteger(columns) || rows < 1 || columns < 1 || rows * columns > 20000) fail('Keep at least one row and column, and at most 20,000 cells in an inline table.');
+  if (!Number.isInteger(rows) || !Number.isInteger(columns) || rows < 1 || columns < 1 || rows * columns > INLINE_TABLE_CELLS) fail(`Keep at least one row and column, and at most ${INLINE_TABLE_CELLS.toLocaleString('en-GB')} cells in an inline table.`);
 }
 function fill(model) {
   dimensions(model.rows,model.columns);
@@ -15,7 +16,7 @@ function fill(model) {
   model.cells.sort((a,b)=>a.row-b.row||a.column-b.column); return model;
 }
 export function makeDocumentTable(rows, aligns = [], cells = null) {
-  const count=rows.length, columns=Math.max(1,...rows.map(row=>row.length));
+  const count=rows.length, columns=rows.reduce((max,row)=>Math.max(max,row.length),1);
   dimensions(count,columns);
   const records=cells ? clone(cells) : rows.flatMap((row,r)=>Array.from({length:columns},(_,c)=>({id:`cell-${r*columns+c}`,row:r,column:c,rows:1,columns:1,value:row[c]||''})));
   return fill({rows:count,columns,aligns:Array.from({length:columns},(_,c)=>aligns[c]||null),layout:'fit',cells:records,nextId:count*columns});

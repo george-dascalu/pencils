@@ -1,3 +1,4 @@
+import { documentCounts } from './document-performance.js';
 export function documentReference(record) {
   return (record.file || record.id).replace(/\.md$/i, "");
 }
@@ -98,5 +99,5 @@ export function obsidianDocumentURI(record, { vault, folder = "" }) {
 }
 
 export function documentStats(text) {
-  return { words: text.trim() ? text.trim().split(/\s+/u).length : 0, characters: [...text].length };
+  return documentCounts(text);
 }

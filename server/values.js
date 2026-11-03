@@ -1,5 +1,6 @@
 import { createHash } from "node:crypto";
 import { Problem } from "./problem.js";
+import { DOCUMENT_CHARACTERS } from '../public/document-performance.js';
 export const STATUSES = ["backlog", "todo", "in-progress", "review", "done"];
 export { DEFAULT_TASK_TYPES as TYPES } from "../public/task-types.js";
 export const PRIORITIES = ["none", "low", "medium", "high", "urgent"];
@@ -27,6 +28,11 @@ export function body(value) {
       400,
       "Description must be text, up to 200,000 characters.",
     );
+  return value;
+}
+export function documentBody(value) {
+  if (typeof value !== 'string' || value.length > DOCUMENT_CHARACTERS)
+    throw new Problem(400, `Document content must be text, up to ${DOCUMENT_CHARACTERS.toLocaleString('en-GB')} characters.`);
   return value;
 }
 export function choice(value, choices, label) {

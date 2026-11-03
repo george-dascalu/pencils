@@ -18,7 +18,8 @@ export function serializeDocumentTable(model,renderCell) {
   const prefix=model.layout==='scroll'?TABLE_SCROLL_MARKER+'\n':'';
   if(model.rich||model.cells.some(cell=>cell.rows>1||cell.columns>1)){
     if(!renderCell)throw Error('Rich tables need a cell renderer.');
-    const rows=Array.from({length:model.rows},(_,r)=>'<tr>'+model.cells.filter(cell=>cell.row===r).map(cell=>{
+    const cellsByRow=new Map();for(const cell of model.cells){if(!cellsByRow.has(cell.row))cellsByRow.set(cell.row,[]);cellsByRow.get(cell.row).push(cell);}
+    const rows=Array.from({length:model.rows},(_,r)=>'<tr>'+(cellsByRow.get(r)||[]).map(cell=>{
       const tag=r?'td':'th',span=`${cell.rows>1?` rowspan="${cell.rows}"`:''}${cell.columns>1?` colspan="${cell.columns}"`:''}`,align=['left','center','right'].includes(model.aligns[cell.column])?` align="${model.aligns[cell.column]}"`:'';
       return `<${tag}${span}${align}>${renderCell(cell.value)}</${tag}>`;
     }).join('')+'</tr>');
