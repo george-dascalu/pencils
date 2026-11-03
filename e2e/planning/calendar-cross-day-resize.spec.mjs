@@ -8,10 +8,10 @@ async function open(page) {
   await (await reveal(page.locator('#calendar-mode'))).selectOption('week');
   if (await page.locator('.mobile-view-options[open]').count()) await page.getByRole('button', { name: 'Close view options', exact: true }).click();
   const cards = page.locator(`.calendar-timed-card[data-id="${task.id}"]`);
-  await cards.first().scrollIntoViewIfNeeded();
+  await cards.first().hover();
   const saved = async () => (await app.store.snapshot(app.project.id)).tasks.find(t => t.id === task.id);
   const drag = async (end, date, minutes, cancel = false) => {
-    const handle = cards.locator(`[data-calendar-time-end="${end}"]`);await handle.scrollIntoViewIfNeeded();
+    const handle = cards.locator(`[data-calendar-time-end="${end}"]`);await handle.hover();
     const a = await handle.boundingBox(), day = await page.locator(`.calendar-hours-day[data-calendar-date="${date}"]`).boundingBox();
     await page.mouse.move(a.x + a.width / 2, a.y + a.height / 2);await page.mouse.down();
     await page.mouse.move(day.x + day.width / 2, day.y + day.height * minutes / 1440, { steps: 8 });
@@ -49,10 +49,13 @@ test('resize handles never cross, including pointer moves into the wrong day and
   const { cards, saved, drag } = await open(page);
   await drag('start', '2026-11-04', 660);await page.mouse.up();
   await expect.poll(async () => [(await saved()).start, (await saved()).start_time]).toEqual(['2026-11-03', '09:45']);
+  // The server write can finish before the calendar replaces its old drag handles.
+  await expect(cards).toContainText('09:45 – 10:00');
   await drag('due', '2026-11-02', 480);await page.mouse.up();
-  expect((await saved()).due).toBe('2026-11-03');expect((await saved()).due_time).toBe('10:00');
+  await expect.poll(async () => [(await saved()).due, (await saved()).due_time]).toEqual(['2026-11-03', '10:00']);
   const end = cards.locator('[data-calendar-time-end="due"]');await end.focus();await page.keyboard.press('ArrowRight');
   await expect.poll(async () => (await saved()).due).toBe('2026-11-04');
+  await expect(cards).toHaveCount(2);
   await expect(cards.locator('[data-calendar-time-end="due"]')).toBeFocused();
   await page.keyboard.press('ArrowLeft');await expect.poll(async () => (await saved()).due).toBe('2026-11-03');
 });
