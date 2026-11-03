@@ -10,3 +10,10 @@ onDevices(['desktop','ipad','phone'],()=>test('Tables keep compact shared contro
   for(const button of facts.buttons){expect(Math.abs(button.w-button.h)).toBeLessThanOrEqual(1);expect(button.h).toBeGreaterThanOrEqual(device==='desktop'?26:44);expect(button.x).toBeGreaterThanOrEqual(0);expect(button.right).toBeLessThanOrEqual(page.viewportSize().width);expect(button.overflow).toBeLessThanOrEqual(1);}
  }
 }));
+// iOS rubber-bands a scroller with overscroll-behavior: contain, pulling the sheet away from its
+// edges on a drag; none keeps it in its bounds, as the Table view does (F0.21-78).
+onDevices(['phone','ipad'],()=>test('a drag never pulls the sheet past its edges @gate',async({page})=>{
+ await page.goto(`${app.base}/#project/${app.project.id}/documents/${app.record.id}`);await expect(page.locator('.document-sheet')).toHaveAttribute('data-ready','true');
+ const scroll=page.locator('.document-sheet-scroll');
+ await expect(scroll).toHaveCSS('overscroll-behavior-x','none');await expect(scroll).toHaveCSS('overscroll-behavior-y','none');
+}));

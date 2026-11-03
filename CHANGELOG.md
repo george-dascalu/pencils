@@ -2,6 +2,11 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.21.78 — 2026-11-03
+
+### Fixed
+- Feature F0.21-78: On iPhone and iPad, dragging a spreadsheet document to its edge no longer pulls the table away from its frame; it stops at its edges, like the Table view.
+
 ## 0.21.77 — 2026-11-03
 
 ### Fixed

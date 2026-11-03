@@ -6,7 +6,8 @@
 .sheet-formula-bar { flex: none; display: flex; align-items: center; gap: 8px; min-width: 0; padding: 4px 8px; border-bottom: 1px solid var(--line); background: var(--surface); }
 .sheet-address { min-width: 68px; max-width: 140px; font: var(--type-small)/1.4 var(--font-mono, monospace); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .sheet-formula-bar .sheet-formula { flex: 1; width: 0; min-width: 0; border: 0; background: transparent; border-radius: 0; font-family: var(--font-mono, monospace); }
-.document-sheet-scroll { position: relative; flex: 1; min-height: 0; min-width: 0; overflow: auto; overscroll-behavior: contain; background: var(--surface); }
+.document-sheet-scroll { position: relative; flex: 1; min-height: 0; min-width: 0; overflow: auto; overscroll-behavior: none; background: var(--surface); }
+/* none, not contain: iOS still bounces a contained scroller, pulling the sheet past its edges. */
 .document-sheet-scroll:focus-visible { outline: var(--focus-ring); outline-offset: -1px; }
 .document-sheet-grid { table-layout: fixed; border-collapse: separate; border-spacing: 0; font-size: var(--type-body); line-height: 18px; color: var(--ink); }
 .document-sheet-grid :is(th,td) { box-sizing: border-box; padding: 4px 8px; min-width: 0; border: 0; border-right: 1px solid var(--line); border-bottom: 1px solid var(--line); background: var(--surface); white-space: pre; overflow: hidden; text-overflow: ellipsis; vertical-align: top; }
