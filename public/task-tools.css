@@ -1620,3 +1620,41 @@ html.task-page-open,
 @container (max-width: 440px) {
   .relationship-field-choice > .field-chip-status { width: auto; max-width: 100%; }
 }
+
+/* A card's tags (F0.21-73): chips in their tag's colour, then the Add tag menu. */
+.task-dialog .task-tags {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+  margin-top: 8px;
+}
+.tag-chip {
+  display: inline-flex;
+  align-items: center;
+  min-width: 0;
+  max-width: 100%;
+  padding-left: 8px;
+  border: 1px solid var(--line);
+  border-radius: var(--field-radius);
+  background: var(--surface);
+  color: var(--ink);
+  font-size: var(--type-body);
+}
+/* The palette's colours are light, so a coloured chip keeps dark text in both themes. */
+.tag-chip[style] {
+  border-color: transparent;
+  background: var(--tag-color);
+  color: #303b35;
+}
+.tag-chip-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.tag-chip .icon-button {
+  color: inherit;
+}
+.task-dialog .task-tag-add {
+  width: auto;
+}

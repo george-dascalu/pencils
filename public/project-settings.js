@@ -3,6 +3,7 @@ import { focusOnOpen } from "./open-focus.js";
 import { workflowEditor } from "./workflow-editor.js";
 import { CARD_FIELDS, VIEW_GROUPS, fieldOn, viewOn } from "./card-fields.js";
 import { projectPeopleControls } from "./teams.js";
+import { tagsSettingsHTML, tagsSettings, tagRows } from "./project-tags-settings.js";
 import { priorityOptions, priorityLabel } from "./task-priority.js";
 import { taskFieldColor, priorityColors } from "./task-colors.js";
 import { projectRecords } from "./project-records.js";
@@ -66,6 +67,13 @@ export const settingsPages = [
     "table",
     "Card structure",
     "Add project-specific information to cards.",
+  ],
+  [
+    "tags",
+    "Tags",
+    "tag",
+    "Card structure",
+    "The tags this project's cards can use, and their colours.",
   ],
   [
     "sources",
@@ -516,6 +524,8 @@ export function projectSettings(ctx, { sources, automations, personal, organisat
             ? views()
           : section === "teams"
             ? teams()
+            : section === "tags"
+              ? form(tagsSettingsHTML(ctx))
             : ["workflow", "hierarchy", "fields"].includes(section)
               ? structure(section)
               : section === "import"
@@ -550,6 +560,7 @@ export function projectSettings(ctx, { sources, automations, personal, organisat
           select.value = state.project.organisation;
         }, true);
       }
+      if (section === "tags") tagsSettings(f, ctx, settingsSaveState);
       if (["workflow", "hierarchy"].includes(section))
         workflowEditor(f, schema, state.tasks, ctx, { section });
       // Assignee, status and priority share one box whose border takes the priority's colour.
@@ -588,6 +599,7 @@ export function projectSettings(ctx, { sources, automations, personal, organisat
             };
           if (["workflow", "hierarchy"].includes(section))
             changes = { schema: JSON.parse(data.get("workflowSchema")) };
+          if (section === "tags") changes = { schema: { ...config, tags: tagRows(f) } };
           if (section === "workflow") {
             // Only colours that differ from the defaults are kept, so the defaults can change later.
             const colors = Object.fromEntries(priorityOptions.map((priority) => [priority, data.get(`priority-color-${priority}`)]).filter(([priority, color]) => color && color !== priorityColors[priority]));

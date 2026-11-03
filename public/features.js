@@ -22,6 +22,8 @@ import { workflowEditor } from "./workflow-editor.js";
 import { projectCreateSteps } from "./project-create.js";
 import { organisationTeams, projectPeopleControls, projectPeople } from "./teams.js";
 import { taskModalControls } from "./task-modal.js";
+import { projectTags } from "./project-tags.js";
+import { parseTags } from "./task-tags.js";
 import { taskAttachments } from "./task-attachments.js";
 import { taskRelationshipsEditor } from "./task-relationships.js";
 import { taskDocumentsEditor } from "./task-documents.js";
@@ -155,7 +157,7 @@ export function installFeatures(ctx) {
     const people = `<label class="field">Assignee<select id="filter-assignee" aria-label="Filter by assignee"><option value="">Anyone</option><option value="@unassigned" ${assignee === '@unassigned' ? 'selected' : ''}>Unassigned</option>${legacy ? `<option value="${esc(assignee)}" selected>${esc(assignee)} (text match)</option>` : ''}${names.map(name=>`<option value="${esc(assigneeFilterValue(name))}" ${assignee === assigneeFilterValue(name) ? 'selected' : ''}>${esc(name)}</option>`).join('')}</select></label>`;
     const selectedTags = Array.isArray(f.tags) && f.tags.length ? [...f.tags] : f.tag ? [...new Set(state.tasks.flatMap(task=>task.tags || []))].filter(tag=>tag.toLocaleLowerCase().includes(f.tag.toLocaleLowerCase())) : [];
     if (f.tag && !selectedTags.length) selectedTags.push(f.tag);
-    const tags = [...new Set([...state.tasks.flatMap(task=>task.tags || []), ...selectedTags])].sort((a,b)=>a.localeCompare(b));
+    const tags = [...new Set([...projectTags(state.config, state.tasks).map(tag=>tag.name), ...selectedTags])].sort((a,b)=>a.localeCompare(b));
     const tagPicker = `<label class="field">Tags<select id="filter-tag" aria-label="Tags" multiple hidden data-checkbox-menu>${tags.map(tag=>`<option value="${esc(tag)}" ${selectedTags.includes(tag) ? 'selected' : ''}>${esc(tag)}</option>`).join('')}</select><button type="button" class="button filter-multiselect" data-multi-select="filter-tag" aria-label="Filter by tags" aria-haspopup="dialog" aria-expanded="false" title="${esc(selectedTags.length ? selectedTags.join(', ') : 'Any tag')}"><span>${esc(selectedTags.length ? selectedTags.length === 1 ? selectedTags[0] : `${selectedTags.length} selected` : 'Any tag')}</span>${icon('chevron')}</button></label>`;
     const priority = `<label class="field">Priority<select id="filter-priority" aria-label="Filter by priority"><option value="">Any priority</option>${priorityOptions.map(value=>`<option value="${value}" data-icon="priority-${value}" ${f.priority === value ? 'selected' : ''}>${priorityLabel(value)}</option>`).join('')}</select></label>`;
     const custom = config().fields.map(field=>{
@@ -283,6 +285,7 @@ export function installFeatures(ctx) {
       documents: data.getAll("documents"),
       boards: data.getAll("boards"),
       notes: JSON.parse(data.get('notes') || '[]'),
+      tags: data.has("tags") ? parseTags(data.get("tags")) : t.tags || [],
       recurrence: t.recurrence ?? null,
       fields,
       comments: [

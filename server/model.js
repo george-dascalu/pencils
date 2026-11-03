@@ -99,6 +99,17 @@ export function schema(value = DEFAULT_SCHEMA) {
         );
     }
   }
+  // The project's tags (F0.21-73), in order, each with an optional colour.
+  if (result.tags != null) {
+    const names = Array.isArray(result.tags) ? result.tags.map((t) => t?.name) : null;
+    if (
+      !names || result.tags.length > 500 || new Set(names).size !== names.length ||
+      result.tags.some((t) => typeof t !== "object" || Object.keys(t).some((key) => !["name", "color"].includes(key)) ||
+        typeof t.name !== "string" || !t.name || t.name !== t.name.trim() || t.name.length > 80 || t.name.includes(",") ||
+        (t.color != null && (typeof t.color !== "string" || !/^#[0-9a-f]{6}$/i.test(t.color))))
+    )
+      fail("Tags need unique names of 1–80 characters without commas, and #rrggbb colours.");
+  }
   if (result.priority_colors != null) {
     const colors = result.priority_colors;
     if (

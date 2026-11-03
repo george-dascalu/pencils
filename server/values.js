@@ -59,6 +59,12 @@ export function tags(value) {
     throw new Problem(400, "Tags must be a list of short strings.");
   return [...new Set(value.map((t) => t.trim()).filter(Boolean))];
 }
+// A project tag's name (F0.21-73): cards keep tags as a comma-separated list in the editor.
+export function tagName(value) {
+  if (typeof value !== "string" || !value.trim() || value.trim().length > 80 || value.includes(","))
+    throw new Problem(400, "Tag names have 1–80 characters and no commas.");
+  return value.trim();
+}
 export function color(value) {
   if (typeof value !== "string" || !/^#[0-9a-f]{6}$/i.test(value))
     throw new Problem(400, "Use a six-digit hex color.");

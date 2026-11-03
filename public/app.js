@@ -39,6 +39,7 @@ import {
   transitionError,
 } from "./workflow-model.js";
 import { assigneeOptions, assigneeHint, shortName } from "./teams.js";
+import { taskTagsHTML, installTaskTags } from "./task-tags.js";
 import { taskPickerHTML } from "./task-modal.js";
 import { updateFrameMembership } from "./frame-model.js";
 import { taskDescriptionHTML } from "./task-description.js";
@@ -212,6 +213,7 @@ const paths = {
   "split-columns": "M3 4h18v16H3zM12 4v16",
   "split-rows": "M3 4h18v16H3zM3 12h18",
   swap: "M7 4 3 8l4 4M3 8h14M17 12l4 4-4 4M21 16H7",
+  tag: "M3 3h8l10 10-8 8L3 11zM7.5 7.5h.01",
   trash: "M3 6h18M9 6V3h6v3M6 6l1 15h10l1-15M10 10v7M14 10v7",
   undo: "M3 10h10a7 7 0 0 1 0 14M3 10l5-5M3 10l5 5",
   redo: "M21 10H11a7 7 0 0 0 0 14m10-14-5-5m5 5-5 5",
@@ -247,6 +249,7 @@ const bookmarks = installBookmarks({ api, esc, icon, toast });
 installAssigneeNames();
 const selectMenus = installSelectMenus({ esc, icon, taskColor: (field, value) => taskFieldColor(state, field, value) });
 installTaskControlColors(() => state);
+installTaskTags(() => state, esc, icon, (...args) => toast(...args));
 installDatePickers({ esc, icon });
 document.addEventListener(
   "keydown",
@@ -1796,12 +1799,12 @@ function taskDialog(id = null, defaults = {}, replace = false) {
       )}
     </div>${t.key || id ? `<span class="task-id task-key" title="${esc(t.key || id)}">${esc(t.key || id)}</span>` : isDraft ? '<span class="task-id task-key">Draft</span>' : ""}${id ? bookmarks.button("card", state.project.id, id) : ""}<input class="title-input" name="title" aria-label="Card title" value="${esc(t.title)}" placeholder="Card title" required maxlength="300" autofocus></div></div>
     <div class="task-editor-content"><div class="dialog-body"><div class="form-error hidden" role="alert"></div>
-      <div class="task-metadata"><div class="task-metadata-main"><div class="task-fields field-box" ${fieldBoxStyle(state, t.priority)}>${metadata.assignee}${metadata.status}${metadata.priority}</div><div class="field task-dates"><span class="sr-only">Dates</span><div class="task-date-range" role="group" aria-label="Start and due dates"><input type="date" name="start" aria-label="Start date" title="Start date" value="${esc(t.start || "")}"><span aria-hidden="true">→</span><input type="date" name="due" aria-label="Due date" title="Due date" value="${esc(t.due || "")}"></div>${taskTimeFields(t, esc, icon)}</div></div></div>
+      <div class="task-metadata"><div class="task-metadata-main"><div class="task-fields field-box" ${fieldBoxStyle(state, t.priority)}>${metadata.assignee}${metadata.status}${metadata.priority}</div><div class="field task-dates"><span class="sr-only">Dates</span><div class="task-date-range" role="group" aria-label="Start and due dates"><input type="date" name="start" aria-label="Start date" title="Start date" value="${esc(t.start || "")}"><span aria-hidden="true">→</span><input type="date" name="due" aria-label="Due date" title="Due date" value="${esc(t.due || "")}"></div>${taskTimeFields(t, esc, icon)}</div></div>${taskTagsHTML(state, t.tags || [], esc, icon)}</div>
       ${assigneeHint(state) ? `<p id="task-assignee-help" class="sr-only">${esc(assigneeHint(state))}</p>` : ""}
       ${taskDescriptionHTML(t.body, { esc, icon })}
       <input type="hidden" name="parent" value="${esc(t.parent || "")}">
       <select name="dependencies" multiple hidden>${[...new Set([...(t.dependencies || []), ...state.tasks.filter(task => task.id !== id).map(task => task.id)])].map(dependency => `<option value="${esc(dependency)}" ${(t.dependencies || []).includes(dependency) ? "selected" : ""}>${esc(dependency)}</option>`).join("")}</select>
-      <input type="hidden" name="tags" value="${esc((t.tags || []).join(", "))}">
+      <input type="hidden" name="tags" value="${esc(JSON.stringify(t.tags || []))}">
       <input type="hidden" name="pendingSubtasks" value="${esc(JSON.stringify(t.subtasks || []))}"><input type="hidden" name="creation_request" value="${id ? "" : randomUUID()}">
       ${(t.related_records || []).map(record => `<input type="hidden" name="related_records" value="${esc(record)}">`).join("")}
       ${(t.documents || []).map(document => `<input type="hidden" name="documents" value="${esc(document)}">`).join("")}
@@ -2598,10 +2601,6 @@ document.addEventListener("submit", async (event) => {
       const originalTask = task(form.dataset.id);
       if (originalTask?.assignee_id && data.assignee === originalTask.assignee)
         data.assignee_id = originalTask.assignee_id;
-      data.tags = data.tags
-        .split(",")
-        .map((t) => t.trim())
-        .filter(Boolean);
       data.parent ||= null;
       data.due ||= null;
       if (form.dataset.draftNode) {

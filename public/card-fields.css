@@ -9,7 +9,7 @@
 :root[data-fields-off~="due"] :is(.task-date-range > [name="due"], .task-date-range > .date-field:has([name="due"]), label.field:has(> input[name="due_time"]), label.field:has(> input[name="due"]), .canvas-task-date:has(> [data-canvas-task-date="due"]), .kanban-card .field-box > :is(.due, .sr-only), .task-relationship-metadata > .due, label.field:has(> #filter-due)),
 :root:is([data-fields-off~="start"], [data-fields-off~="due"]) :is(.task-date-range > span[aria-hidden], .canvas-task-date-arrow),
 :root[data-fields-off~="start"][data-fields-off~="due"] :is([data-row-dates], #task-form .task-dates, .canvas-task-dates),
-:root[data-fields-off~="tags"] label.field:has(> #filter-tag),
+:root[data-fields-off~="tags"] :is(label.field:has(> #filter-tag), .task-tags),
 :root[data-fields-off~="estimate"] label:has(> #capacity-unit),
 :root[data-fields-off~="notes"] .task-notes,
 /* Document task rows and card chips, and the board's Live task view filters. */

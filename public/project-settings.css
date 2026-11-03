@@ -412,3 +412,10 @@
   .hotkey-row > span { grid-column: 1 / -1; }
   .hotkey-binding { justify-self: start; }
 }
+/* Settings → Tags (F0.21-73): one row per tag, its colour, name, cards and delete, divided like other settings. */
+.project-tag-list { margin: 0; padding: 0; list-style: none; }
+.project-tag { display: flex; align-items: center; gap: 8px; padding: 4px 0; border-bottom: 1px solid var(--line); }
+.project-tag-name { flex: 1; min-width: 0; }
+.project-tag-count { color: var(--muted); font-size: var(--type-small); white-space: nowrap; }
+.project-tag-new { display: flex; align-items: center; gap: 8px; margin-top: 8px; }
+.project-tag-new > input { flex: 1; min-width: 0; }

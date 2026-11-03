@@ -2,6 +2,11 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.21.73 — 2026-11-03
+
+### Added
+- Feature F0.21-73: Each project has its own tags. Settings → Tags lists them (starting with the tags its cards already use, with how many cards have each): add a tag, choose its colour with the colour picker, rename it or delete it; renaming or deleting asks first, says how many cards change, and changes every one of them. The card editor shows a card's tags as chips in their colour, with Add tag to pick one of the project's other tags or create a new one into the list, and a remove button on each. Filters offer the project's tags. Tags from other projects are never offered.
+
 ## 0.21.72 — 2026-11-03
 
 ### Changed

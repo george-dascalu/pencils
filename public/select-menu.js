@@ -134,6 +134,10 @@ export function installSelectMenus({ esc, icon, taskColor = () => "" }) {
       menu.querySelector('[data-select-clear]').hidden = !searchQuery;
       for (const button of menu.querySelectorAll('[data-select-filter]')) button.setAttribute('aria-pressed', String(button.dataset.selectFilter === category));
       menu.querySelector('output').textContent = count ? `${count} ${source.dataset.selectItemLabel || 'option'}${count === 1 ? '' : 's'}` : source.dataset.selectEmpty || 'No matching options.';
+      // A menu that can create (data-select-create, such as card tags) offers what was typed.
+      const typed = searchQuery.trim();
+      if (source.dataset.selectCreate && typed && ![...source.options].some((option) => option.value.toLocaleLowerCase() === typed.toLocaleLowerCase()))
+        menu.querySelector('.select-search-options').insertAdjacentHTML('beforeend', `<button type="button" role="option" tabindex="-1" data-select-create aria-selected="false">${icon('plus')}<span class="select-option-label">${esc(source.dataset.selectCreate)} “${esc(typed)}”</span></button>`);
     } else menu.innerHTML = rows;
     position();
     if (focused != null)
@@ -183,6 +187,10 @@ export function installSelectMenus({ esc, icon, taskColor = () => "" }) {
   }
   function choose(button) {
     if (button.disabled) return;
+    if (button.hasAttribute('data-select-create')) {
+      source.add(new Option(searchQuery.trim(), searchQuery.trim()));
+      button.dataset.selectIndex = String(source.options.length - 1);
+    }
     const target = source,
       index = Number(button.dataset.selectIndex);
     if (target.multiple) {
@@ -317,7 +325,7 @@ export function installSelectMenus({ esc, icon, taskColor = () => "" }) {
         }
         const filter = event.target.closest('[data-select-filter]');
         if (filter) { category = filter.dataset.selectFilter; paint(); return; }
-        const button = event.target.closest("[data-select-index]") || event.target.closest('.select-checkbox-row')?.querySelector('[data-select-index]');
+        const button = event.target.closest("[data-select-index], [data-select-create]") || event.target.closest('.select-checkbox-row')?.querySelector('[data-select-index]');
         if (button) choose(button);
       }
     },
