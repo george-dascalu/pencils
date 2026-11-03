@@ -2,6 +2,11 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.21.49 — 2026-11-03
+
+### Fixed
+- Feature F0.21-49: Colouring a document selection that crosses bold, italic, strikethrough, highlight or link boundaries preserves both the text colour and the existing formatting in Reading mode. Link destinations, inline code and escaped characters remain intact.
+
 ## 0.21.48 — 2026-11-03
 
 ### Added

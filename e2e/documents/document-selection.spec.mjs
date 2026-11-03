@@ -117,6 +117,23 @@ test('unsafe CSS stays forbidden when rendering text colours', { tag: '@gate' },
   await expect(content.locator('.document-text-color')).toHaveCSS('color', 'rgb(18, 52, 86)');
 });
 
+test('colours crossing bold, highlight and link boundaries preserve the rendered formatting', { tag: '@gate' }, async ({ page }) => {
+  for (const [body, selected, selector, content] of [
+    ['Before **bold words** after.', 'words** after', 'strong', 'bold words'],
+    ['Before *italic words* after.', 'words* after', 'em', 'italic words'],
+    ['Before ~~deleted words~~ after.', 'words~~ after', 'del', 'deleted words'],
+    ['Before ==highlight words== after.', 'words== after', 'mark', 'highlight words'],
+    ['Before [linked words](https://example.com) after.', 'words](https://example.com) after', 'a', 'linked words'],
+  ]) {
+    await open(page, body); await select(page, selected); await colour(page, '#175cd3');
+    await chooseDocumentView(page, 'Reading');
+    await expect(page.locator(`.document-reading ${selector}`)).toHaveText(content);
+    await expect(page.locator('.document-reading .document-text-color')).toHaveText(['words', ' after']);
+    for (const span of await page.locator('.document-reading .document-text-color').all()) await expect(span).toHaveCSS('color', 'rgb(23, 92, 211)');
+    await chooseDocumentView(page, 'Live preview');
+  }
+});
+
 test('selection tools edit the second document and Source without leaking into Reading', { tag: '@gate' }, async ({ page }) => {
   const reference = await open(page, 'Reference words.\n');
   const main = await open(page, 'Main document stays unchanged.\n');

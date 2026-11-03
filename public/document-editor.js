@@ -428,6 +428,15 @@ export function markdownDocumentEditor({ parent, text, mode = "live", renderer, 
         if (["code", "table", "documentTableLayout", "blockquote", "documentMathBlock", "html", "hr"].includes(token.type)) protectedRanges.push([offset, end]);
         offset = end;
       }
+      // Keep inline syntax outside colour spans, even when selection starts or ends inside a style.
+      // This also leaves link destinations, escapes and code literal when colouring across them.
+      syntaxTree(view.state).iterate({ enter(node) {
+        if (protectedRanges.some(([a, b]) => a <= node.from && b >= node.to)) return false;
+        if (/^(EmphasisMark|StrikethroughMark|LinkMark|LinkTitle|URL|InlineCode|Image|Autolink|Escape|HTMLTag)$/.test(node.name)) {
+          protectedRanges.push([node.from, node.to]); return false;
+        }
+      } });
+      for (const match of source.matchAll(/==[^\n]+?==/g)) protectedRanges.push([match.index, match.index + 2], [match.index + match[0].length - 2, match.index + match[0].length]);
       const change = colorSelection(source, range.from, range.to, value, protectedRanges);
       if (change) view.dispatch({ changes: { from: change.from, to: change.to, insert: change.insert }, selection: { anchor: change.anchor, head: change.head }, userEvent: 'input.format', annotations: isolateHistory.of('full') });
       if (focus) view.focus();
