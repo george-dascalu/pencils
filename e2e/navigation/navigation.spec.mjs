@@ -27,7 +27,8 @@ async function at(page, hash) {
     if (location.hash !== hash || history.state?.url !== hash || document.querySelector(".main")?.getAttribute("aria-busy") === "true") return false;
     const route = history.state.route;
     if (!route.project)
-      return !document.querySelector(".tabs") && (route.page === "home" ? !document.querySelector(".project-settings-page") : !!document.querySelector("#settings-page-title"));
+      // Home keeps the bar for its project (F0.21-79), with no project view current.
+      return !document.querySelector(".tabs [data-view][aria-current]") && (route.page === "home" ? !document.querySelector(".project-settings-page") : !!document.querySelector("#settings-page-title"));
     if (document.querySelector("#project-select")?.value !== route.project) return false;
     if (route.view === "overview") return !!document.querySelector(".project-overview");
     if (route.view === "settings") return !!document.querySelector("#project-form");

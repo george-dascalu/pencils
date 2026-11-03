@@ -9,7 +9,9 @@ onDevices(['desktop', 'ipad', 'phone'], () => test('Home editing shares the top 
   await expect(page.locator('#home-save')).toBeEmpty();
   const menu = await page.locator('.mobile-menu').boundingBox(), box = await edit.boundingBox();
   expect(Math.abs(menu.y + menu.height / 2 - box.y - box.height / 2)).toBeLessThan(4);
-  expect(box.x).toBeLessThan(260);
+  // Phones put Edit at the end of Home's row, after its title (F0.21-79); wider screens beside the title.
+  if (device === 'phone') expect(box.x + box.width).toBeGreaterThan(page.viewportSize().width - 64);
+  else expect(box.x).toBeLessThan(260);
   if (device !== 'phone') {
     await expect(page.locator('.topbar .breadcrumb #home-edit')).toBeVisible();
     expect(await page.locator('#view-toolbar').evaluate(el => el.getBoundingClientRect().height)).toBe(0);

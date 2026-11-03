@@ -1,6 +1,10 @@
 /* The personal Home: a 12-column grid of panels (home.js). */
 .home-toolbar { display: flex; align-items: center; gap: 4px; }
 .home-toolbar #home-save:empty { display: none; }
+/* Home's bar makes it a project page (project-main); its save label keeps its own size, not the board's. */
+.home-toolbar #home-save { margin-left: 0; max-width: none; font-size: var(--type-meta); }
+.home-title, .home-title-short { display: none; }
+@container (max-width: 90px) { .home-title-long { display: none; } .home-title-short { display: inline; } }
 .main:has(> .home) > #view-toolbar:empty { display: none; }
 .home { padding-top: 12px; }
 .home-grid {
@@ -84,6 +88,12 @@
   .main:has(> .home) > :is(.topbar, #view-toolbar) { grid-row: 1; grid-column: 1; align-self: start; }
   .main:has(> .home) > #view-toolbar { display: flex; align-items: center; min-height: 56px; margin-inline-start: calc(var(--control-height) + 16px); }
   .main:has(> .home) > #view-toolbar > .home-toolbar { flex: 1; padding-block: 0; }
+  /* Phones show no title in the top bar, except Home's in the middle of its row, Homepage or, short
+     of room, Home, with Edit at the row's end (F0.21-79). */
+  #view-toolbar .home-title { display: block; order: 2; flex: 1 1 0; min-width: 0; container-type: inline-size; text-align: center; font-size: var(--type-body); font-weight: 600; color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  #view-toolbar .home-toolbar > #home-edit { order: 3; }
+  /* Home has no New button, so Edit takes its place at the right edge, with or without the bar. */
+  :root .main:is(.project-main, :not(.project-main)):has(> .home) > #view-toolbar { margin-inline-end: 8px; }
   .home-task { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 2px 8px; }
   .home-task-title { grid-column: 1 / -1; grid-row: 1; }
   .home-task-key, .home-task-status, .home-task-due { grid-row: 2; }

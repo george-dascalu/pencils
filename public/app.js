@@ -613,7 +613,7 @@ function preferredAreaView(area, layouts, fallback) {
 // Tasks and Planning stay while one of their views is on (T23 card fields, T39 project views).
 // A view the project turned off says so instead of opening.
 const viewOff = (view) => state.config?.views_off?.includes(view) && toast(`This project's settings turn ${viewLabel(view)} off.`);
-const areaOn = (view) => view === "tasks" ? taskViews.some((v) => viewOn(state.config, v)) : view === "planning" ? planningViews.some((v) => viewOn(state.config, v)) : viewOn(state.config, view);
+const areaOn = (view, config = state.config) => view === "tasks" ? taskViews.some((v) => viewOn(config, v)) : view === "planning" ? planningViews.some((v) => viewOn(config, v)) : viewOn(config, view);
 function openView(view) {
   if (!state.project || !canNavigate()) return false;
   const next = view === "tasks" ? preferredAreaView("task", taskViews, "list") : view === "planning" ? preferredAreaView("planning", planningViews, "calendar") : view === "drawing" ? "board" : view;
@@ -851,12 +851,19 @@ async function openOrganisation(id) {
   }
 }
 // The sidebar's projects, a dropdown like the organisation's; it names no project outside one.
+// Home's bar and the sidebar's dropdown use the last project chosen in the organisation, or the
+// first, so a project is always chosen (F0.21-79).
+function homeProject() {
+  const listed = organisationProjects();
+  return listed.find((project) => project.id === storage.get(`project:${state.organisation?.id}`, null)) || listed[0] || null;
+}
+const chosenProjectId = () => (state.project && !state.project.personal ? state.project.id : homeProject()?.id) || "";
 function projectSelectHTML(p) {
   // An archived project stays listed while it is open.
   const listed = organisationProjects(), projects = p && !p.personal && !listed.some((project) => project.id === p.id) ? [...listed, p] : listed;
-  const current = projects.some((project) => project.id === p?.id);
-  const placeholder = current ? "" : `<option value="" selected disabled>${projects.length ? "Choose a project" : "No projects yet"}</option>`;
-  return `<select id="project-select" aria-label="Open project" ${projects.length ? "" : "disabled"}>${placeholder}${projects.map((project) => `<option value="${esc(project.id)}" ${project.id === p?.id ? "selected" : ""}>${esc(project.title)}</option>`).join("")}</select>`;
+  const chosen = projects.some((project) => project.id === p?.id) ? p.id : homeProject()?.id;
+  const placeholder = projects.length ? "" : '<option value="" selected disabled>No projects yet</option>';
+  return `<select id="project-select" aria-label="Open project" ${projects.length ? "" : "disabled"}>${placeholder}${projects.map((project) => `<option value="${esc(project.id)}" ${project.id === chosen ? "selected" : ""}>${esc(project.title)}</option>`).join("")}</select>`;
 }
 function renderApp() {
   keepFocus(renderAppNow);
@@ -888,7 +895,7 @@ function renderAppNow() {
       <div class="side-footer"><span class="dot"></span>Local workspace${headerStatus.versionHTML()}</div></div>
     </aside>
     <main class="main">
-      <header class="topbar"><div class="breadcrumb"><button class="icon-button mobile-menu" data-action="menu" aria-label="Toggle sidebar" aria-controls="workspace-sidebar" aria-expanded="${state.menu}">${icon("menu")}</button><strong ${p ? 'role="heading" aria-level="1"' : ""}>${esc(p?.title || (state.helpArticle ? "Help" : state.directoryPage ? label(state.directoryPage) : "Home"))}</strong></div>${p ? projectNavigationHTML() : ""}<div class="top-actions">${p ? newMenuHTML("icon") : ""}<div class="save-state" id="save-state">${appStatusHTML()}</div></div></header>
+      <header class="topbar"><div class="breadcrumb"><button class="icon-button mobile-menu" data-action="menu" aria-label="Toggle sidebar" aria-controls="workspace-sidebar" aria-expanded="${state.menu}">${icon("menu")}</button><strong ${p ? 'role="heading" aria-level="1"' : ""}>${esc(p?.title || (state.helpArticle ? "Help" : state.directoryPage ? label(state.directoryPage) : "Home"))}</strong></div>${p || (!state.helpArticle && !state.directoryPage && homeProject()) ? projectNavigationHTML() : ""}<div class="top-actions">${p ? newMenuHTML("icon") : ""}<div class="save-state" id="save-state">${appStatusHTML()}</div></div></header>
       ${!state.online ? '<div class="connection-banner">Local server unavailable. Reconnect to its network to save changes.</div>' : ""}
       ${state.helpArticle ? helpPageHTML(state.helpArticle, { esc, icon }) : state.directoryPage === "settings" ? '<div id="view-toolbar"></div><section id="view-content" class="content"></section>' : p ? projectPage() : features.homeHTML()}
     </main></div>`;
@@ -1000,6 +1007,7 @@ document.addEventListener("keydown", event => {
   }
 }, true);
 function projectNavigationHTML() {
+  const p = state.project, home = !p, config = p ? state.config : homeProject()?.schema;
   const total = state.tasks.filter((task) => !task.archived).length;
   const area = state.helpArticle ? "help" : taskViews.includes(state.view) ? "tasks" : planningViews.includes(state.view) ? "planning" : state.view;
   // A personal space holds documents only.
@@ -1009,19 +1017,19 @@ function projectNavigationHTML() {
     ["Planning views", ["planning"]],
     ["Task views", ["tasks"]],
     ["Visual views", ["board"]],
-  ].filter(([name, [view]]) => (!state.project.personal || name === "Documents") && areaOn(view));
+  ].filter(([name, [view]]) => (!p?.personal || name === "Documents") && areaOn(view, config));
   return `<div id="board-project-tools" class="board-project-tools">
-    <nav class="tabs" aria-label="Project views"><div class="tabs-scroll" style="--bar-items: ${groups.length + 1 + features.bottomBar.count()}"><div class="view-tab-group" role="group" aria-label="Home"><button class="tab tab-home" data-action="home" aria-label="Home" title="Home">${icon("home")}</button></div>${groups
+    <nav class="tabs" aria-label="Project views"><div class="tabs-scroll" style="--bar-items: ${groups.length + 1 + features.bottomBar.count()}"><div class="view-tab-group" role="group" aria-label="Home"><button class="tab tab-home${home ? " active" : ""}" data-action="home" aria-label="Home" title="Home" ${home ? 'aria-current="page"' : ""}>${icon("home")}</button></div>${groups
       .map(
         ([name, group]) =>
           `<div class="view-tab-group" role="group" aria-label="${name}">${group.map((view) => {
-            const active = view === "tasks" ? taskViews.includes(state.view) : view === "planning" ? planningViews.includes(state.view) : state.view === view;
-            return `<button class="tab ${active ? "active" : ""}" data-action="view" data-view="${view}" aria-label="${viewLabel(view)}" title="${viewLabel(view)}${view === "tasks" ? ` · ${total} cards` : ""}" ${active ? 'aria-current="page"' : ""}>${icon(view === "tasks" ? "list" : view === "planning" ? "calendar" : view)}</button>`;
+            const active = !home && (view === "tasks" ? taskViews.includes(state.view) : view === "planning" ? planningViews.includes(state.view) : state.view === view);
+            return `<button class="tab ${active ? "active" : ""}" data-action="view" data-view="${view}" aria-label="${viewLabel(view)}" title="${viewLabel(view)}${view === "tasks" && !home ? ` · ${total} cards` : ""}" ${active ? 'aria-current="page"' : ""}>${icon(view === "tasks" ? "list" : view === "planning" ? "calendar" : view)}</button>`;
           }).join("")}</div>`,
       )
       .join("")}${features.bottomBar.html()}</div><span class="tabs-divider" aria-hidden="true"></span><button type="button" class="tab tab-search" data-feature="global-search" aria-label="Search" title="Search cards, documents and boards">${icon("search")}</button></nav>
-    <label class="mobile-view-switcher">View <select id="project-view-switcher" aria-label="Project view">${["settings", "help"].includes(area) ? `<option value="${area}" selected disabled>${label(area)}</option>` : ""}${(state.project.personal ? ["documents"] : ["overview", "documents", "planning", "tasks", "board"]).filter(areaOn).map((view) => `<option value="${view}" ${view === area ? "selected" : ""}>${viewLabel(view)}</option>`).join("")}</select></label>
-    ${newMenuHTML()}
+    ${home ? "" : `<label class="mobile-view-switcher">View <select id="project-view-switcher" aria-label="Project view">${["settings", "help"].includes(area) ? `<option value="${area}" selected disabled>${label(area)}</option>` : ""}${(state.project.personal ? ["documents"] : ["overview", "documents", "planning", "tasks", "board"]).filter(areaOn).map((view) => `<option value="${view}" ${view === area ? "selected" : ""}>${viewLabel(view)}</option>`).join("")}</select></label>`}
+    ${home ? "" : newMenuHTML()}
   </div>`;
 }
 const lists = listPanel(state);
@@ -2323,6 +2331,15 @@ document.addEventListener("click", async (event) => {
         }
         break;
       case "view": {
+        // Home's bar opens its project at the chosen view (F0.21-79).
+        if (!state.project) {
+          const home = homeProject(), view = el.dataset.view;
+          if (!home) break;
+          // It opens straight at that view, in one step of the history.
+          storage.set(`view:${home.id}`, view === "tasks" ? storage.get(`task-view:${home.id}`, "list") : view === "planning" ? storage.get(`planning-view:${home.id}`, "calendar") : view);
+          if (await openProject(home.id)) openView(view);
+          break;
+        }
         const fromLayout = el.closest(".view-layout-switcher"), fromTray = el.closest(".layout-tray");
         // Pressing the open Documents or Boards tab shows its list (list-panel.js); with the bottom
         // bar, the open Documents tab shows its tray instead (project-layout.js) while a document is open.
@@ -2731,7 +2748,7 @@ document.addEventListener("change", async (event) => {
       // Choosing a project closes the sidebar, as other choices in it do, with focus on its menu
       // button as after Escape; a refused switch leaves the dropdown on the open project.
       if (state.menu) setSidebarOpen(false);
-      if (!(await openProject(el.value))) el.value = state.project?.personal ? "" : state.project?.id || "";
+      if (!(await openProject(el.value))) el.value = chosenProjectId();
     }
     if (el.id === "filter-status") {
       state.status = el.value;
@@ -2788,7 +2805,7 @@ document.addEventListener("change", async (event) => {
     toast(error.message, true);
     if (el.id === "organisation-select")
       el.value = state.organisation?.id || "";
-    if (el.id === "project-select") el.value = state.project?.personal ? "" : state.project?.id || "";
+    if (el.id === "project-select") el.value = chosenProjectId();
     if (el.dataset.taskField) {
       el.disabled = false;
       el.dataset.unsaved = "true";
@@ -2799,6 +2816,8 @@ document.addEventListener("change", async (event) => {
 });
 // Choosing the active sort again reverses it (select-menu.js); Manual order has no direction.
 document.addEventListener("reselect", (event) => {
+  // The dropdown shows Home's project while none is open; choosing it opens it (F0.21-79).
+  if (event.target.id === "project-select" && event.target.value !== state.project?.id) event.target.dispatchEvent(new Event("change", { bubbles: true }));
   if (event.target.id !== "sort" || event.target.value !== state.sort || state.sort === "order") return;
   state.sortDir *= -1;
   renderView(true);

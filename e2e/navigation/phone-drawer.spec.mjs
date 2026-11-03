@@ -114,7 +114,8 @@ onDevices(["phone"], () => test("without a project the drawer offers the project
   await page.waitForFunction(() => !document.querySelector(".sidebar.open"));
   await expect(page.locator(".topbar strong")).toHaveText("Home");
   await openDrawer(page);
-  expect(await page.locator("#project-select option").evaluateAll((els) => els.map((o) => [o.textContent.trim(), o.selected, o.disabled]))).toEqual([["Choose a project", true, true], ["A little more possibility", false, false], ["Second project", false, false]]);
+  // A project is always chosen: the last one, or the first when none was (F0.21-79).
+  expect(await page.locator("#project-select option").evaluateAll((els) => els.map((o) => [o.textContent.trim(), o.selected, o.disabled]))).toEqual([["A little more possibility", true, false], ["Second project", false, false]]);
   assert.equal(await visible(page, "[data-view]"), 0, "no project views");
 }));
 

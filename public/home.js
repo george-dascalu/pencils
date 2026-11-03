@@ -83,7 +83,7 @@ export function installHome(ctx) {
       onHome = true;
     }
     const add = `<details class="board-menu" data-board-menu="home-add"><summary class="button small" title="Add a panel">${icon("plus")}Add panel</summary><div class="board-menu-panel">${TYPES.map(([type, name, glyph]) => `<button type="button" data-home-add="${type}">${icon(glyph)}${esc(name)}</button>`).join("")}</div></details>`;
-    return `<div id="view-toolbar"><div class="home-toolbar"><button type="button" class="icon-button" id="home-edit" data-home="edit" aria-pressed="${editing()}" aria-label="Edit layout" title="Edit layout">${icon("pencil")}</button>${editing() ? add : ""}<span class="board-save" id="home-save" role="status" aria-live="polite">${panels ? saveMessage : "Loading…"}</span></div></div>
+    return `<div id="view-toolbar"><div class="home-toolbar"><button type="button" class="icon-button" id="home-edit" data-home="edit" aria-pressed="${editing()}" aria-label="Edit layout" title="Edit layout">${icon("pencil")}</button>${editing() ? add : ""}<span class="board-save" id="home-save" role="status" aria-live="polite">${panels ? saveMessage : "Loading…"}</span><span class="home-title" aria-hidden="true"><span class="home-title-long">Homepage</span><span class="home-title-short">Home</span></span></div></div>
     <section id="view-content" class="home content${editing() ? " editing" : ""}" aria-label="Home" ${editing() ? 'data-editing=""' : ""}>${panels ? `<div class="home-grid">${stackOrder(panels).map(panelHTML).join("")}</div>` : '<p role="status" class="home-loading">Loading your home…</p>'}</section>`;
   }
   function panelHTML(p) {

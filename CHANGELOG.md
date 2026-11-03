@@ -2,6 +2,11 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.21.79 — 2026-11-03
+
+### Changed
+- Feature F0.21-79: Home keeps the view tabs (the bottom bar on phones and iPad) of the last project you chose, or the first project when you haven't chosen one, and each tab opens that project at its view. The sidebar's Projects dropdown always shows a project, never "Choose a project". On phones, Home's row shows Homepage (Home when there's little room) in the middle with Edit at the right edge, and the floating menu button's shadow is no longer cut off on Home and Settings.
+
 ## 0.21.78 — 2026-11-03
 
 ### Fixed
