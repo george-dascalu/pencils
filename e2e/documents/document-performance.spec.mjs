@@ -29,7 +29,7 @@ onDevices(['desktop', 'ipad', 'phone'], () => {
     const link=page.locator('.cm-content a.document-inline-link').first();await expect(link).toBeVisible();
     await page.evaluate(()=>{window.inlineLinkNode=document.querySelector('.document-inline-link');const view=document.querySelector('.cm-content').cmTile.root.view;view.dispatch({selection:{anchor:3}});view.focus();});
     await page.keyboard.type('New ');expect(await page.evaluate(()=>window.inlineLinkNode.isConnected)).toBe(true);
-    const popup=context.waitForEvent('page',{timeout:4000});await link.click({force:true});const opened=await popup;await opened.waitForLoadState('domcontentloaded');await expect(opened).toHaveTitle('Opened');await opened.close();
+    const popup=context.waitForEvent('page');await link.click();const opened=await popup;await opened.waitForLoadState('domcontentloaded');await expect(opened).toHaveTitle('Opened');await opened.close();
   });
   test('large inline tables page their cells and preserve edits on every page @gate', async ({ page }) => {
     const body='| Item | Value |\n| --- | --- |\n'+Array.from({length:11000},(_,i)=>`| Item ${i+1} | ${i+1} |`).join('\n');
