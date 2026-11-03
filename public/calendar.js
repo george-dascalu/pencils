@@ -28,7 +28,7 @@ export function calendarView(ctx) {
   }
   function row(t, unscheduled = false) {
     const grip = unscheduled && !sourceReadOnly(t,"due") ? `<button type="button" class="icon-button calendar-move" data-calendar-move aria-label="Schedule ${esc(t.title)}" title="Drag onto a day, or tap to set dates">${icon("drag")}</button>` : "";
-    return `<div class="agenda-row ${grip ? "calendar-draggable-row" : ""}" data-calendar-card="${esc(t.id)}">${grip}<button type="button" class="agenda-task" data-action="task-open" data-id="${esc(t.id)}" title="${esc(title(t))}">${taskColorDot(state, "status", t.status)}<span>${esc(title(t))}</span></button>${dateButton(t)}</div>`;
+    return `<div class="agenda-row ${grip ? "calendar-draggable-row" : ""}" data-calendar-card="${esc(t.id)}">${grip}<button type="button" class="agenda-task" data-action="task-open" data-id="${esc(t.id)}" title="${esc(title(t))}">${taskColorDot(state, "status", t.status)}<span>${esc(title(t))}</span></button>${unscheduled ? dateButton(t) : ctx.inlineTaskFields(t, "agenda-fields", rangeLabel(t))}</div>`;
   }
   function render(tasks) {
     unscheduled.close();
@@ -214,7 +214,7 @@ export function calendarView(ctx) {
   document.addEventListener("pointerdown", e => {
     if (drag && e.pointerId !== drag.pointer) { finish(true); return; }
     const card = e.target.closest("[data-calendar-card]");
-    if (!card || state.view !== "calendar" || e.button !== 0 || e.target.closest("[data-calendar-dates]")) return;
+    if (!card || state.view !== "calendar" || e.button !== 0 || e.target.closest("[data-calendar-dates], .agenda-fields")) return;
     if (e.pointerType === "touch" && card.matches(".agenda-row") && !e.target.closest("[data-calendar-move]")) return;
     const t = task(card.dataset.calendarCard); if (!t || sourceReadOnly(t,"due")) return;
     const timeEnd = e.target.closest('[data-calendar-time-end]')?.dataset.calendarTimeEnd;
@@ -286,7 +286,7 @@ export function calendarView(ctx) {
   }, true);
   document.addEventListener("keydown", e => {
     if (drag && e.key === "Escape") { e.preventDefault(); e.stopImmediatePropagation(); finish(true); return; }
-    const card = e.target.closest("[data-calendar-card]"); if (!card) return;
+    const card = e.target.closest("[data-calendar-card]"); if (!card || e.target.closest('.agenda-fields')) return;
     const t = task(card.dataset.calendarCard), range = t && calendarRange(t), handle = e.target.closest("[data-calendar-end]")?.dataset.calendarEnd;
     const timeEnd = e.target.closest('[data-calendar-time-end]')?.dataset.calendarTimeEnd;
     if (timeEnd) {

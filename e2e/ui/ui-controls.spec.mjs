@@ -190,7 +190,8 @@ onDevices(["desktop", "phone"], (device) => test("a tap or click on a date field
   if (device === "phone") expect(focus, "a tap leaves the field unfocused").toBe(0);
   // Pick a valid start before the existing due date, even as the seed month changes.
   const prior = new Date(`${await date.inputValue()}T12:00:00`); prior.setDate(prior.getDate() === 1 ? 2 : prior.getDate() - 1);
-  const value = `${prior.getFullYear()}-${String(prior.getMonth() + 1).padStart(2, "0")}-${String(prior.getDate()).padStart(2, "0")}`;
+  // Match the picker's ISO key for every valid year, including years below 1000.
+  const value = `${String(prior.getFullYear()).padStart(4, "0")}-${String(prior.getMonth() + 1).padStart(2, "0")}-${String(prior.getDate()).padStart(2, "0")}`;
   const day = page.locator(`#shared-date-picker table [data-date-value="${value}"]`);
   await day.click();
   await expect(page.locator("#shared-date-picker")).toHaveCount(0);

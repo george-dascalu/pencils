@@ -133,6 +133,16 @@
 .calendar-move { touch-action: none; cursor: grab; }
 .agenda-task > span:last-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .agenda-row > .calendar-dates { flex: none; overflow-wrap: normal; white-space: nowrap; }
+.agenda-row > .agenda-fields {
+  --agenda-assignee-width: clamp(var(--control-height), calc(25vw - 180px), 128px);
+  --agenda-date-width: clamp(96px, 20vw, 240px);
+  justify-self: end; align-self: center;
+  width: calc(var(--agenda-assignee-width) + var(--list-field-status-width) + max(var(--control-height), var(--list-field-priority-width)) + var(--agenda-date-width));
+}
+.agenda-fields > .row-assignee { flex: 0 0 var(--agenda-assignee-width); width: var(--agenda-assignee-width); }
+.agenda-fields > .row-due { display: flex; align-items: center; justify-content: center; flex: 0 0 var(--agenda-date-width); min-width: var(--control-height); white-space: nowrap; }
+.agenda-fields .row-date-summary { overflow: hidden; text-overflow: ellipsis; }
+.agenda-fields .row-date-short { display: none; }
 .calendar-unscheduled:popover-open { display: flex; flex-direction: column; overflow: hidden; }
 .calendar-unscheduled > header { flex: none; }
 .calendar-unscheduled-list { min-height: 0; overflow: auto; overscroll-behavior: contain; }
@@ -145,6 +155,11 @@
 .planning-options { display: flex; align-items: center; flex-wrap: wrap; gap: var(--control-bar-gap); }
 .planning-options > .date-field { flex: 0 1 160px; width: 160px; }
 @media (max-width: 600px) {
+  .calendar-agenda .agenda-row { grid-template-columns: minmax(0, 1fr); gap: 0; }
+  .agenda-row > .agenda-fields { --agenda-assignee-width: 44px; --agenda-date-width: 60px; width: 216px; max-width: 100%; }
+  .agenda-fields > .row-status { flex: 1 1 0; min-width: var(--control-height); }
+  .agenda-fields .row-date-summary { display: none; }
+  .agenda-fields .row-date-short { display: contents; }
   .agenda-row > .calendar-dates { width: var(--control-height); padding-inline: 0 !important; justify-content: center; }
   .agenda-row > .calendar-dates > span { display: none; }
 }

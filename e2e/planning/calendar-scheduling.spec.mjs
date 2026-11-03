@@ -180,8 +180,8 @@ test("the agenda lists ongoing and start-only work with readable titles and shar
   await openMonth(page, seed);
   await (await reveal(page.locator("#calendar-mode"))).selectOption("agenda");
   await (await reveal(page.locator("#agenda-period"))).selectOption("month");
-  await expect(page.locator(`.calendar-agenda [data-id="${seed.ongoing.id}"]`)).toHaveCount(1);
-  await expect(page.locator(`.calendar-agenda [data-id="${seed.startOnly.id}"]`)).toHaveCount(1);
+  await expect(page.locator(`.calendar-agenda .agenda-task[data-id="${seed.ongoing.id}"]`)).toHaveCount(1);
+  await expect(page.locator(`.calendar-agenda .agenda-task[data-id="${seed.startOnly.id}"]`)).toHaveCount(1);
   const titleWidth = await page.locator(".agenda-task").first().evaluate((e) => e.clientWidth);
   expect(titleWidth, "Agenda titles retain usable width").toBeGreaterThan(350);
   await page.getByRole("button", { name: "Next period", exact: true }).click();

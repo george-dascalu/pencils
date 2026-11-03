@@ -1,10 +1,10 @@
 import { taskDateEditor } from "./task-date-editor.js";
 import { sourceReadOnly } from "./source-model.js";
 
-// List, Tree and Kanban use the same controls, save queue and contextual date editor.
+// List, Tree, Kanban and Agenda use the same controls, save queue and contextual date editor.
 export function taskRowEditor(ctx) {
   const { state, task, patchTask, renderView, sync, route, toast } = ctx;
-  const selector = ":is(.task-row, .kanban-card) [data-row-field]";
+  const selector = ":is(.task-row, .kanban-card, .agenda-row) [data-row-field]";
   let paintTimer,
     pointerActive = false;
   document.addEventListener(
@@ -42,23 +42,23 @@ export function taskRowEditor(ctx) {
       paintTimer = setTimeout(() => repaint(project, view), 100);
       return;
     }
-    const row = active?.closest("[data-task-order-row], .kanban-card");
-    const id = row?.dataset.taskOrderRow || row?.dataset.dragTask;
+    const row = active?.closest("[data-task-order-row], .kanban-card, .agenda-row");
+    const id = row?.dataset.taskOrderRow || row?.dataset.dragTask || row?.dataset.calendarCard;
     const field = active?.dataset.rowField;
     const scroll =
-      document.querySelector("#view-content > .tree-wrapper, #view-content > .kanban") ||
+      document.querySelector("#view-content > .tree-wrapper, #view-content > .kanban, #view-content > .calendar-agenda") ||
       document.querySelector("#view-content");
     const position = { left: scroll.scrollLeft, top: scroll.scrollTop };
     const selection =
       field === "title" ? [active.selectionStart, active.selectionEnd] : null;
     renderView(true);
     const currentScroll =
-      document.querySelector("#view-content > .tree-wrapper, #view-content > .kanban") ||
+      document.querySelector("#view-content > .tree-wrapper, #view-content > .kanban, #view-content > .calendar-agenda") ||
       document.querySelector("#view-content");
     currentScroll.scrollTo(position);
     if (!id) return;
     const current = document.querySelector(
-      `[data-task-order-row="${CSS.escape(id)}"], .kanban-card[data-drag-task="${CSS.escape(id)}"]`,
+      `[data-task-order-row="${CSS.escape(id)}"], .kanban-card[data-drag-task="${CSS.escape(id)}"], .calendar-agenda .agenda-row[data-calendar-card="${CSS.escape(id)}"]`,
     );
     const next = [...(current?.querySelectorAll(
       field
@@ -69,13 +69,13 @@ export function taskRowEditor(ctx) {
             ? "[data-task-reorder]"
             : active.dataset.action
               ? `[data-action="${CSS.escape(active.dataset.action)}"]${active.dataset.field ? `[data-field="${CSS.escape(active.dataset.field)}"]` : ""}`
-              : ".phone-task-open, .task-id",
+              : ".phone-task-open, .task-id, .agenda-task",
     ) || [])].find(el => el.getClientRects().length && !el.closest("[inert]"));
     if (next) {
       next.focus({ preventScroll: true });
       if (selection) next.setSelectionRange(...selection);
     } else
-      [...document.querySelectorAll("#view-content .phone-task-open, #view-content .task-row > .task-id, [data-action=task-new]")]
+      [...document.querySelectorAll("#view-content .phone-task-open, #view-content .task-row > .task-id, #view-content .agenda-task, [data-action=task-new]")]
         .find(el => el.getClientRects().length && !el.closest("[inert]"))?.focus({ preventScroll: true });
   }
   function schedulePaint(project, view) {

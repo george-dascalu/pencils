@@ -1237,24 +1237,26 @@ function assigneeHTML(t) {
 function priorityHTML(t) {
   return `<span class="field-chip field-chip-priority priority ${esc(t.priority)}" role="img" aria-label="Priority: ${esc(priorityLabel(t.priority))}" ${taskColorAttributes(state, "priority", t.priority)} title="${esc(priorityLabel(t.priority))} priority">${icon(`priority-${t.priority || "none"}`)}</span>`;
 }
-function dueHTML(t) {
+function dueHTML(t, text = t.due ? formatDay(t.due) : "") {
   const today = new Date(),
     local = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
   return t.due
-    ? `<span class="due ${t.due < local && !state.config.done.includes(t.status) ? "overdue" : ""}">${esc(formatDay(t.due))}</span>`
+    ? `<span class="due ${t.due < local && !state.config.done.includes(t.status) ? "overdue" : ""}">${esc(text)}</span>`
     : "";
 }
-function taskDateButton(t, className) {
+function taskDateButton(t, className, summary = "") {
   const dueOn = fieldOn(state.config, "due"), startOn = fieldOn(state.config, "start"), shownDate = dueOn ? t.due : t.start;
   const day = (value) => new Date(`${value}T12:00:00`).toLocaleDateString(undefined, { day: "numeric", month: "short" });
-  return `<button type="button" class="${className}" data-row-dates="${esc(t.id)}" aria-label="${esc(shownDate ? `${dueOn ? "Due" : "Start"} ${day(shownDate)}` : "Set dates")} — edit dates for ${esc(t.title)}" aria-haspopup="dialog" aria-expanded="false" title="${esc([startOn && `Start: ${t.start || "Not set"}`, dueOn && `Due: ${t.due || "Not set"}`].filter(Boolean).join(" · "))}">${(dueOn ? dueHTML(t) : t.start && `<span class="due">${esc(day(t.start))}</span>`) || `<span class="due no-date">${icon("calendar")}</span>`}</button>`;
+  const short = (dueOn ? dueHTML(t) : t.start && `<span class="due">${esc(day(t.start))}</span>`) || `<span class="due no-date">${icon("calendar")}</span>`;
+  const detail = summary && dueOn && startOn ? `<span class="row-date-summary">${dueHTML(t, summary) || `<span class="due">${esc(summary)}</span>`}</span><span class="row-date-short">${short}</span>` : short;
+  return `<button type="button" class="${className}" data-row-dates="${esc(t.id)}" aria-label="${esc(shownDate ? `${dueOn ? "Due" : "Start"} ${day(shownDate)}` : "Set dates")} — edit dates for ${esc(t.title)}" ${summary && dueOn && startOn ? `aria-description="${esc(summary)}"` : ""} aria-haspopup="dialog" aria-expanded="false" title="${esc([startOn && `Start: ${t.start || "Not set"}`, dueOn && `Due: ${t.due || "Not set"}`].filter(Boolean).join(" · "))}">${detail}</button>`;
 }
-function inlineTaskFields(t, extraClass = "") {
+function inlineTaskFields(t, extraClass = "", dateSummary = "") {
   const priority = t.priority || "none", assignee = t.assignee || "Unassigned";
   const control = (field, name) => `name="${field}" data-row-field="${field}" data-id="${esc(t.id)}" aria-label="${name} for ${esc(t.title)}" ${sourceReadOnly(t, field) ? 'disabled title="Managed by the connected source"' : ""}`;
-  return `<div class="row-fields field-box ${esc(extraClass)}" ${fieldBoxStyle(state, priority)}><label class="row-assignee row-choice ${extraClass ? 'kanban-assignee' : ''}" title="${esc(assignee)}">${assigneeHTML(t)}<select ${control("assignee", "Assignee")}>${assigneeOptions(state, t.assignee, esc)}</select></label>
+  return `<div class="row-fields field-box ${esc(extraClass)}" ${fieldBoxStyle(state, priority)}><label class="row-assignee row-choice ${extraClass === 'kanban-fields' ? 'kanban-assignee' : ''}" title="${esc(assignee)}">${assigneeHTML(t)}<select ${control("assignee", "Assignee")}>${assigneeOptions(state, t.assignee, esc)}</select></label>
     <label class="row-status row-choice" ${taskColorAttributes(state, "status", t.status)} title="${esc(statusNames[t.status] || t.status)}"><span class="field-chip field-chip-status" aria-hidden="true">${esc(statusNames[t.status] || t.status)}</span><select ${control("status", "Status")}>${options(nextStatuses(state.config, t.status), t.status, statusNames)}</select></label>
-    <label class="row-priority row-choice" ${taskColorAttributes(state, "priority", priority)} title="${esc(priorityLabel(priority))} priority"><span class="field-chip field-chip-priority priority ${esc(priority)}" aria-hidden="true">${icon(`priority-${priority}`)}</span><select ${control("priority", "Priority")}>${options(priorities, priority, priorityLabels)}</select></label>${taskDateButton(t,"row-due")}</div>`;
+    <label class="row-priority row-choice" ${taskColorAttributes(state, "priority", priority)} title="${esc(priorityLabel(priority))} priority"><span class="field-chip field-chip-priority priority ${esc(priority)}" aria-hidden="true">${icon(`priority-${priority}`)}</span><select ${control("priority", "Priority")}>${options(priorities, priority, priorityLabels)}</select></label>${taskDateButton(t,"row-due",dateSummary)}</div>`;
 }
 function taskRow(t, depth = null, hasChildren = false, flat = false) {
   const done = state.config.done.includes(t.status);
@@ -1673,6 +1675,7 @@ const features = installFeatures({ welcomePage,
   $,
   $$,
   assigneeHTML,
+  inlineTaskFields,
   priorityHTML,
   dueHTML,
   bookmarks,

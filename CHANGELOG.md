@@ -2,6 +2,11 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.21.46 — 2026-11-03
+
+### Added
+- Feature F0.21-46: Agenda rows show the shared assignee, status, priority and date group on the right. Edit each field directly without opening the card, keep the current scroll position, and see the full schedule range where space allows. Phones place a compact group below the title; disabled project fields stay hidden.
+
 ## 0.21.45 — 2026-11-03
 
 ### Added
