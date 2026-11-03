@@ -2,6 +2,11 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.21.58 — 2026-11-03
+
+### Changed
+- Feature F0.21-58: Board object and connector toolbars stay on one line on desktop, iPad and phones. Controls scroll sideways with directional hints when needed, preserving touch targets, keyboard navigation and contextual menus.
+
 ## 0.21.57 — 2026-11-03
 
 ### Changed

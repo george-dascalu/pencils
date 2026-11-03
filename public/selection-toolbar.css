@@ -13,10 +13,10 @@
     0 4px 18px #0002,
     0 1px 3px #0001;
 }
-/* One line when it fits; narrow boards wrap the two groups into scrolling rows. */
+/* One scrolling line on desktop, iPad and phones, without shrinking touch targets. */
 #selection-tools.selection-tools {
   flex-direction: row;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   align-items: center;
   gap: 2px;
   max-width: calc(100% - 24px);
@@ -28,6 +28,7 @@
   align-items: center;
   flex-wrap: nowrap;
   flex: 0 1 auto;
+  min-width: 0;
   max-width: 100%;
   overflow-x: auto;
   overscroll-behavior-x: contain;
@@ -41,6 +42,9 @@
 }
 .selection-row > .selection-group:first-child {
   border-left: 0;
+}
+#selection-tools .selection-group {
+  flex: 0 0 auto;
 }
 /* Menus leave the scrolling row (positionToolbarPopover puts them in viewport coordinates). */
 .selection-row .selection-menu > .selection-popover {

@@ -62,7 +62,7 @@ test("the toolbar is compact, with layer order and delete outside menus", async 
   // The common and note tools share one line when the board has enough room.
   const box = await toolbar(page).boundingBox();
   expect(box.width < 1200 && box.height < 60, JSON.stringify(box)).toBe(true);
-  await expect(toolbar(page).locator(":scope > .selection-row")).toHaveCount(2);
+  await expect(toolbar(page).locator(":scope > .selection-row")).toHaveCount(1);
   await expect(toolbar(page)).toHaveAttribute("role", "toolbar");
   await expect(toolbar(page).locator('[data-selection-menu="more"]')).toHaveCount(0);
   for (const action of ["selection-delete"]) {

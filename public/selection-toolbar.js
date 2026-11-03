@@ -49,8 +49,7 @@ export function selectionToolbar(
   }
   const group = (name, body) =>
     `<div class="selection-group" role="group" aria-label="${name}">${body}</div>`;
-  // Two rows at most (owner request, 31 October 2026): common tools, then the selection's own;
-  // each one line that scrolls sideways (selection-toolbar.css). With objects and connectors
+  // Common and type-specific tools share one scrolling line on every device. With objects and connectors
   // selected, the objects' tools show; duplicate and delete cover the connectors too.
   function html() {
     const arrows = pickEdges();
@@ -203,7 +202,7 @@ export function selectionToolbar(
             locked,
           )
         : `<span class="selection-kind" title="${nodes.length} selected">${icon(single ? { grid: "table", frame: "frame", query: "table", draw: "pencil", image: "image" }[n.type] || n.type : "group")}<span>${single ? esc((n.projectFrame ? "Project frame" : { sticky: "Note", query: "Live view", draw: "Drawing" }[n.type] || n.type).replace(/^./, (c) => c.toUpperCase())) : `${nodes.length} objects`}</span></span>`;
-    return `<div id="selection-tools" class="selection-tools" role="toolbar" aria-label="Selected objects"><div class="selection-row" role="group" aria-label="Common tools">${kind}${filterMenu}${group("Edit", `${single && !n.projectFrame ? pro("inline", n.type === "frame" ? "Rename frame" : "Edit", "pencil", locked) : ""}${color}`)}${group("Collaboration", single && n.type !== "draft" && !(n.type === "task" && !isTaskNote(n)) ? pro("comments", "Comment", "comment") : "")}${group("Organise", arrange + pro("zoom-selection", "Focus selection", "fit"))}${group("Layer order", menu("layer-order", "Layer order", icon("front"), feature("bring-front", "Bring to front", "front", locked) + feature("bring-forward", "Bring forward", "front", locked) + feature("send-backward", "Send backward", "back", locked) + feature("send-back", "Send to back", "back", locked), locked))}${group("Object actions", feature("duplicate", "Duplicate", "duplicate") + feature("lock", locked ? "Unlock selection" : "Lock selection", locked ? "unlock" : "local", false, `aria-pressed="${locked}"`) + more)}</div><div class="selection-row" role="group" aria-label="Tools for this selection">${single ? group("Appearance", objectGeometryControls(n, ctx) || pro("object-style", "Appearance and parent frame", "settings", locked)) : ""}${single && n.projectFrame ? feature("project-frame-update", "Update plan", "refresh", locked) : ""}${frameTools}${single && n.type === "draw" ? group("Stroke style", `<label class="pen-width" title="Stroke thickness">${icon("stroke-width")}<select data-stroke-width aria-label="Stroke thickness" ${locked ? "disabled" : ""}>${[1, 2, 3, 3.5, 5, 8, 12, 18, 24, 32].map((w) => `<option value="${w}" ${w === (n.strokeWidth || 3.5) ? "selected" : ""}>${w} px</option>`).join("")}</select></label>`) : ""}${single && n.type === "grid" ? gridToolbar(n, state, { button, menu, group, icon }) : ""}${group("Text alignment", textMenu)}${group("Delete", feature("selection-delete", single && n.type === "frame" ? "Delete frame (keep contents)" : "Delete", "trash", locked))}</div></div>`;
+    return `<div id="selection-tools" class="selection-tools" role="toolbar" aria-label="Selected objects"><div class="selection-row" role="group" aria-label="Object tools">${kind}${filterMenu}${group("Edit", `${single && !n.projectFrame ? pro("inline", n.type === "frame" ? "Rename frame" : "Edit", "pencil", locked) : ""}${color}`)}${group("Collaboration", single && n.type !== "draft" && !(n.type === "task" && !isTaskNote(n)) ? pro("comments", "Comment", "comment") : "")}${group("Organise", arrange + pro("zoom-selection", "Focus selection", "fit"))}${group("Layer order", menu("layer-order", "Layer order", icon("front"), feature("bring-front", "Bring to front", "front", locked) + feature("bring-forward", "Bring forward", "front", locked) + feature("send-backward", "Send backward", "back", locked) + feature("send-back", "Send to back", "back", locked), locked))}${group("Object actions", feature("duplicate", "Duplicate", "duplicate") + feature("lock", locked ? "Unlock selection" : "Lock selection", locked ? "unlock" : "local", false, `aria-pressed="${locked}"`) + more)}${single ? group("Appearance", objectGeometryControls(n, ctx) || pro("object-style", "Appearance and parent frame", "settings", locked)) : ""}${single && n.projectFrame ? feature("project-frame-update", "Update plan", "refresh", locked) : ""}${frameTools}${single && n.type === "draw" ? group("Stroke style", `<label class="pen-width" title="Stroke thickness">${icon("stroke-width")}<select data-stroke-width aria-label="Stroke thickness" ${locked ? "disabled" : ""}>${[1, 2, 3, 3.5, 5, 8, 12, 18, 24, 32].map((w) => `<option value="${w}" ${w === (n.strokeWidth || 3.5) ? "selected" : ""}>${w} px</option>`).join("")}</select></label>`) : ""}${single && n.type === "grid" ? gridToolbar(n, state, { button, menu, group, icon }) : ""}${group("Text alignment", textMenu)}${group("Delete", feature("selection-delete", single && n.type === "frame" ? "Delete frame (keep contents)" : "Delete", "trash", locked))}</div></div>`;
   }
   function render() {
     filter.sync();
@@ -219,7 +218,7 @@ export function selectionToolbar(
     $(".board-selection")?.remove();
     $("#selection-tools")?.remove();
     if (key) $("#canvas")?.insertAdjacentHTML("beforeend", html());
-    // The rows keep their sideways scroll while the selection lasts (a board change rebuilds the
+    // Keep the sideways scroll while the selection lasts (a board change rebuilds the
     // toolbar, and the canvas may have removed it first), and an open menu follows its button.
     $("#selection-tools")?.querySelectorAll(".selection-row").forEach((row, i) => {
       if (rowScroll[i]) row.scrollLeft = rowScroll[i];
@@ -424,17 +423,7 @@ export function selectionToolbar(
           ...host.querySelectorAll(
             "button:not(:disabled),summary:not([aria-disabled=true])",
           ),
-        ].filter((el) => el.getClientRects().length);
-        // Up and Down move to the nearest tool in the row above or below (T37).
-        const rows = host === root ? [...root.querySelectorAll(":scope > .selection-row")].filter((r) => r.getClientRects().length) : [];
-        const row = rows.indexOf(e.target.closest(".selection-row"));
-        if (["ArrowUp", "ArrowDown"].includes(e.key) && rows.length > 1 && row !== -1) {
-          const other = rows[row + (e.key === "ArrowUp" ? -1 : 1)];
-          if (!other) return;
-          const centre = (el) => { const r = el.getBoundingClientRect(); return r.left + r.width / 2; }, x = centre(e.target);
-          items.filter((el) => other.contains(el)).sort((a, b) => Math.abs(centre(a) - x) - Math.abs(centre(b) - x))[0]?.focus();
-          return;
-        }
+        ].filter((el) => el.getClientRects().length && !el.closest('.toolbar-scroll-indicators'));
         const i = items.indexOf(e.target),
           next =
             e.key === "Home"
