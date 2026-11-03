@@ -337,7 +337,7 @@ export function editableDocumentComponent({ element, raw, from, kind, editor, re
     // The fence's info string; its first word is the language.
     let info = token.lang || "";
     serialize = () => {
-      const text = (code.childNodes.length===1&&code.firstChild.nodeType===Node.TEXT_NODE?code.textContent:code.innerText).replace(/\n$/, "");
+      const text = ([...code.childNodes].every(node=>node.nodeType===Node.TEXT_NODE)?code.textContent:code.innerText).replace(/\n$/, "");
       if (token.codeBlockStyle === "indented" && !info) return text.split("\n").map(line => "    " + line).join("\n");
       const fence = documentCodeFence(text);
       return `${fence}${info}\n${text}\n${fence}`;

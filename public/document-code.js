@@ -120,6 +120,17 @@ function visibleOffsets(code, text) {
   return [Math.max(0, text.lastIndexOf('\n', from) + 1), Math.min(text.length, Math.max(from + 1, to), from + 24000)];
 }
 
+// WebKit's highlight painter is expensive when hundreds of ranges share one
+// enormous text node. Adjacent bounded text nodes render identically; splitText
+// also keeps native selections and carets attached to their original text.
+function chunkCodeText(code) {
+  const walker=document.createTreeWalker(code,NodeFilter.SHOW_TEXT);
+  for(let node=walker.nextNode();node;node=walker.nextNode())if(node.length>2048){
+    let at=2048;const before=node.data.charCodeAt(at-1),after=node.data.charCodeAt(at);
+    if(before>=0xd800&&before<=0xdbff&&after>=0xdc00&&after<=0xdfff)at--;
+    node.splitText(at);
+  }
+}
 async function paint(code, record) {
   const run = ++record.run, text = code.textContent, offsets = visibleOffsets(code, text);
   if (!offsets) { if (record.ranges.length) { record.ranges = []; schedule(); } return; }
@@ -131,6 +142,7 @@ async function paint(code, record) {
   if (record.text !== text || record.language !== support.language) {
     record.text = text; record.language = support.language; record.tree = support.language.parser.parse(text);
   }
+  chunkCodeText(code);
   const range = rangeFinder(code), ranges = [];
   highlightTree(record.tree, classHighlighter, (from, to, classes) => {
     if (ranges.length >= BLOCK_BUDGET) return;

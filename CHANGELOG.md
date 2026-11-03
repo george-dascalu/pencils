@@ -2,6 +2,15 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.21.56 — 2026-11-03
+
+### Added
+- Feature F0.21-56: Horizontally scrolling toolbars show directional arrow buttons and faded edges wherever more controls are available, including table formatting, document tabs, board tools and the touch navigation bar. The hints disappear when everything fits and retain compact sizing and touch targets.
+
+### Fixed
+- Keyboard focus keeps a toolbar control fully visible during smooth scrolling. Indicators follow their toolbar, stay with its dialog or contextual panel and disappear when it closes.
+- Large code blocks keep syntax colours with bounded text nodes, avoiding WebKit's expensive highlight repaints while scrolling. Unicode, the editing caret and source Undo remain intact.
+
 ## 0.21.55 — 2026-11-03
 
 ### Changed

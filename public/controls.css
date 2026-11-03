@@ -466,3 +466,22 @@ textarea,
 [data-inert-scrollbars="x y"] { scrollbar-width: none !important; }
 [data-inert-scrollbars~="x"]::-webkit-scrollbar { height: 0 !important; }
 [data-inert-scrollbars~="y"]::-webkit-scrollbar { width: 0 !important; }
+/* Scrolling control rows share visible directional controls, even on devices
+   that hide native scrollbars. Edge portals do not reserve a second row. */
+.toolbar-scroll-indicators { position: fixed; inset: auto; margin: 0; padding: 0; border: 0; max-width: none; max-height: none; overflow: visible; background: transparent; pointer-events: none; }
+.toolbar-scroll-indicators::backdrop { display: none; pointer-events: none; }
+[data-scroll-controls] { scroll-padding-inline: calc(var(--control-height) + 4px); }
+.toolbar-scroll-indicators[hidden], .toolbar-scroll-edge[hidden] { display: none !important; }
+.toolbar-scroll-indicators > .toolbar-scroll-edge.icon-button {
+  position: absolute; top: 50%; translate: 0 -50%; pointer-events: auto;
+  width: var(--control-height) !important; height: var(--control-height) !important;
+  padding: 0 !important; color: var(--green); border: 1px solid var(--line);
+  border-radius: var(--field-radius); background: var(--surface); box-shadow: 0 1px 4px #0002;
+}
+.toolbar-scroll-start { left: 0; }
+.toolbar-scroll-end { right: 0; }
+.toolbar-scroll-edge::before { content: ''; position: absolute; inset: -1px; z-index: -1; width: calc(100% + 14px); pointer-events: none; border-radius: inherit; }
+.toolbar-scroll-start::before { background: linear-gradient(to right, var(--surface) 70%, transparent); }
+.toolbar-scroll-end::before { left: auto; right: -1px; background: linear-gradient(to left, var(--surface) 70%, transparent); }
+.toolbar-scroll-indicators > .toolbar-scroll-edge.icon-button:hover { background: var(--surface-soft); }
+.rich-toolbar-shell > .rich-scroll { color: var(--green); background: var(--surface-soft); box-shadow: 0 0 0 1px var(--line) inset; }

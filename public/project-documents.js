@@ -26,6 +26,7 @@ import { richToolbar } from "./canvas-rich-text.js";
 import { installToolbarScroll, floatMenuPanel } from "./rich-toolbar-scroll.js";
 import { randomUUID } from "./uuid.js";
 import { allowsTextAutofocus, focusOnOpen } from "./open-focus.js";
+import { contextualPopoverSelector } from './toolbar-scroll.js';
 import { TABLE_TEMPLATE_MARKER, tableLayoutTemplates } from './document-table-format.js';
 import { makeDocumentTable } from './document-table-model.js';
 import { serializeDocumentTable } from './document-table-format.js';
@@ -417,7 +418,7 @@ export function projectDocuments(ctx) {
   }
   document.addEventListener('keydown', event => {
     if (event.key !== 'Escape' || event.defaultPrevented || !inFocus() || state.dialog || state.menu ||
-      document.querySelector('dialog[open], :popover-open, #shared-select-menu')) return;
+      document.querySelector(`dialog[open], ${contextualPopoverSelector}, #shared-select-menu`)) return;
     event.preventDefault(); event.stopPropagation();
     setFocus(false);
   });

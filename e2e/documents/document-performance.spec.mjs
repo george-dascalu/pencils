@@ -61,6 +61,8 @@ onDevices(['desktop', 'ipad', 'phone'], () => {
   test('code colours use bounded immutable ranges and repeated Reading searches keep responding @gate', async ({ page }) => {
     await open(page, code);
     await page.waitForFunction(() => CSS.highlights.get('document-code-keyword')?.size > 0);
+    const longest=()=>page.locator('.cm-content pre code[contenteditable],.document-reading pre code').first().evaluate(code=>{const walker=document.createTreeWalker(code,NodeFilter.SHOW_TEXT);let max=0;for(let node=walker.nextNode();node;node=walker.nextNode())max=Math.max(max,node.length);return max;});
+    await expect.poll(longest).toBeLessThanOrEqual(2048);
     const colours = await page.evaluate(() => [...CSS.highlights].filter(([name]) => name.startsWith('document-code-')).flatMap(([, ranges]) => [...ranges]).map(range => ({ immutable: range instanceof StaticRange })));
     expect(colours.length).toBeLessThanOrEqual(2048);
     expect(colours.every(range => range.immutable)).toBe(true);
@@ -72,6 +74,17 @@ onDevices(['desktop', 'ipad', 'phone'], () => {
     await expect(page.locator('.document-reading-search [role=status]')).toHaveText('1 of 3,300', { timeout: 4000 });
     await find.fill('no such phrase', { timeout: 4000 });
     await expect(page.locator('.document-reading-search [role=status]')).toHaveText('No matches', { timeout: 4000 });
+    await expect.poll(longest).toBeLessThanOrEqual(2048);
+  });
+
+  test('code text chunk boundaries preserve Unicode, the caret and source history @gate',async({page})=>{
+    const text='x'.repeat(2047)+'😀'+'y'.repeat(11000);await open(page,'```js\n'+text+'\n```\n');
+    const code=page.locator('pre code[contenteditable]').first();await expect.poll(()=>code.evaluate(el=>el.childNodes.length)).toBeGreaterThan(1);
+    expect(await code.textContent()).toBe(text);
+    const split=await code.evaluate(el=>{const text=[...el.childNodes].filter(n=>n.nodeType===3);return text.some(node=>/[\uD800-\uDBFF]$/.test(node.data)||/^[\uDC00-\uDFFF]/.test(node.data));});expect(split).toBe(false);
+    await code.evaluate(el=>{el.focus();const range=document.createRange();range.selectNodeContents(el);range.collapse(false);const selection=getSelection();selection.removeAllRanges();selection.addRange(range);});
+    await page.keyboard.press('z');await expect.poll(()=>editorSource(page)).toContain('😀'+'y'.repeat(11000)+'z');
+    await page.keyboard.press('ControlOrMeta+z');await expect.poll(()=>editorSource(page)).toBe('```js\n'+text+'\n```\n');
   });
 
   test('typing before regular components preserves their DOM, cells and decoded images @gate', async ({ page }) => {

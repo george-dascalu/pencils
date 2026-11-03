@@ -7,7 +7,7 @@
 // as 0.21.1, F0.21-100 as 0.22.0, then F0.22-1 as 0.22.1. Historical T IDs stay intact.
 export const roadmap = [
   { id: "F0.21-57", title: "Clearer card labels: remove Blocked and name All day in the date picker", status: "requested", requested: "2026-11-03", started: "", done: "", version: "" },
-  { id: "F0.21-56", title: "Consistent directional scroll indicators for every horizontally scrolling toolbar", status: "requested", requested: "2026-11-03", started: "", done: "", version: "" },
+  { id: "F0.21-56", title: "Consistent directional scroll indicators for every horizontally scrolling toolbar", status: "done", requested: "2026-11-03", started: "2026-11-03", done: "2026-11-03", version: "0.21.56" },
   { id: "F0.21-55", title: "Faster large and everyday Markdown documents, larger files and bounded inline table pages", status: "done", requested: "2026-11-03", started: "2026-11-03", done: "2026-11-03", version: "0.21.55" },
   { id: "F0.21-54", title: "Independent searchable document pickers in both split panes with file, open and bookmark filters", status: "done", requested: "2026-11-03", started: "2026-11-03", done: "2026-11-03", version: "0.21.54" },
   { id: "F0.21-53", title: "Open document web URLs with Ctrl-click or Cmd-click without editing text", status: "done", requested: "2026-11-03", started: "2026-11-03", done: "2026-11-03", version: "0.21.53" },

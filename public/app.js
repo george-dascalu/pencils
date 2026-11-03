@@ -6,6 +6,7 @@ import { DEFAULT_TASK_TYPES } from "./task-types.js";
 import { updateViewLayout } from "./view-layout.js";
 import { installEditableControlGuard } from "./editable-controls.js";
 import { installQuietScrollbars } from "./quiet-scrollbars.js";
+import { installToolbarScrollIndicators, contextualPopoverSelector } from "./toolbar-scroll.js";
 import { installOverflowTitles } from "./overflow-title.js";
 import { taskFocus } from "./task-focus.js";
 import { focusOnOpen, prepareDialogFocus } from "./open-focus.js";
@@ -239,6 +240,7 @@ const paths = {
 const icon = (name) =>
   `<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="${paths[name] || paths.task}"/></svg>`;
 const colorPicker = installColorPickers({ esc, icon });
+installToolbarScrollIndicators(icon);
 const bookmarks = installBookmarks({ api, esc, icon, toast });
 installAssigneeNames();
 const selectMenus = installSelectMenus({ esc, icon, taskColor: (field, value) => taskFieldColor(state, field, value) });
@@ -421,7 +423,7 @@ window.PencilsToast = toast;
 document.addEventListener("keydown", (event) => {
   if (event.key !== "Escape" || event.defaultPrevented) return;
   const last = $("#toasts .toast:last-child [data-toast-close]");
-  if (last && !document.querySelector("dialog[open], :popover-open, .select-menu[open]")) last.click();
+  if (last && !document.querySelector(`dialog[open], ${contextualPopoverSelector}, .select-menu[open]`)) last.click();
 });
 async function api(url, options = {}) {
   let response;
