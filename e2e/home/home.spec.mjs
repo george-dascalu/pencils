@@ -18,7 +18,10 @@ const layout = (page) => page.evaluate(async () => (await (await fetch("/api/hom
 const at = (page, type) => panel(page, type).evaluate((el) => ["x", "y", "w", "h"].map((k) => Number(el.style.getPropertyValue(`--${k}`))));
 async function dragBy(page, handle, dx, dy) {
   // Centred first, so the whole drag stays inside the viewport (iPad landscape is short).
-  await handle.evaluate((el) => el.scrollIntoView({ block: "center" }));
+  await handle.evaluate((el) => el.scrollIntoView({ block: "center", behavior: "instant" }));
+  // WebKit can finish scrolling after the DOM call returns. Its actionability
+  // check waits for the handle to settle before we take drag coordinates.
+  await handle.hover();
   const box = await handle.boundingBox();
   await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
   await page.mouse.down();
