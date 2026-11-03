@@ -2,6 +2,11 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.21.74 — 2026-11-03
+
+### Fixed
+- Feature F0.21-74: On phones, a full-screen board covered the menu button, so the sidebar couldn't be opened. The menu button now floats over the board in full screen, where it always sits, and the sidebar opens above the board.
+
 ## 0.21.73 — 2026-11-03
 
 ### Added

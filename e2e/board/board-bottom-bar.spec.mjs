@@ -66,4 +66,19 @@ onDevices(["phone"], () => {
     await expect(page.locator(".canvas.board-expanded")).toBeVisible();
     expect(Math.abs((await bottom(dock)) - before)).toBeLessThanOrEqual(1);
   });
+  // Owner report, 3 November 2026: full screen covered the menu button, so the sidebar was out of reach.
+  test("full screen keeps the menu button, which opens the sidebar over the board", async ({ page }) => {
+    await open(page);
+    await page.locator('[data-phone-category="navigate"]').click();
+    await page.locator("#board-expand").click();
+    await expect(page.locator(".canvas.board-expanded")).toBeVisible();
+    const menu = page.getByRole("button", { name: "Toggle sidebar", exact: true });
+    const box = await menu.boundingBox();
+    expect(await page.evaluate(([x, y]) => !!document.elementFromPoint(x, y)?.closest(".mobile-menu"), [box.x + box.width / 2, box.y + box.height / 2]), "nothing covers the menu button").toBe(true);
+    await menu.click();
+    const sidebar = page.locator("#workspace-sidebar");
+    await expect(sidebar).toBeVisible();
+    const item = await sidebar.locator("a, button").filter({ visible: true }).nth(1).boundingBox();
+    expect(await page.evaluate(([x, y]) => !!document.elementFromPoint(x, y)?.closest("#workspace-sidebar"), [item.x + item.width / 2, item.y + item.height / 2]), "the sidebar is above the board").toBe(true);
+  });
 });

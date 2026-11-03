@@ -167,6 +167,8 @@
   .canvas:not(.board-expanded) { --board-bottom-clear: var(--tabbar-clearance); }
   /* iPhone keeps Safari's bar in full screen, so the dock stays where it was (T94). */
   @media (max-width: 600px) { .canvas.board-expanded { --board-bottom-clear: var(--tabbar-clearance); } }
+  /* Full screen still floats the menu button over the board, where it always sits, so the sidebar stays a tap away. */
+  @media (max-width: 600px) { html.board-expanded-view .topbar .mobile-menu { position: fixed; top: calc(4px + env(safe-area-inset-top)); left: 8px; z-index: 101; } }
   /* Below 656px the centred bar (at most 480px wide) reaches under the tools on the left. */
   @media (max-width: 655px) { .board-tools { max-height: calc(100% - 36px - var(--board-bottom-clear, 0px)); } }
   .main.project-main > #view-content > :is(.table-scroll, .tree-wrapper, .kanban-swimlanes),
