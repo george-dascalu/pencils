@@ -5,7 +5,7 @@ import { statusLabel } from './workflow-model.js';
 const fields = {
   title: 'Title', type: 'Card type', assignee: 'Assignee', priority: 'Priority', status: 'Status',
   start: 'Start date', due: 'Due date', start_time: 'Start time', due_time: 'End time', body: 'Description', parent: 'Parent card',
-  dependencies: 'Blocked by', related_records: 'Related cards', documents: 'Documents', tags: 'Tags',
+  dependencies: 'Blocked by', related_records: 'Related cards', documents: 'Documents', boards: 'Boards', tags: 'Tags',
   estimate: 'Estimate', archived: 'Archived', recurrence: 'Recurrence',
 };
 const same = (a, b) => JSON.stringify(a ?? null) === JSON.stringify(b ?? null);
@@ -43,6 +43,7 @@ export function taskHistoryHTML(versions, current, { esc, icon, state, label, ta
     if (key === 'parent') return task(value)?.title || value;
     if (['dependencies', 'related_records'].includes(key)) return value.map(id => task(id)?.title || id).join('\n');
     if (key === 'documents') return value.map(id => (state.documents || []).find(d => d.id === id)?.title || id).join('\n');
+    if (key === 'boards') return value.map(id => (state.boards || []).find(b => b.id === id)?.title || id).join('\n');
     if (Array.isArray(value)) return value.join('\n');
     if (typeof value === 'boolean') return value ? 'Yes' : 'No';
     if (typeof value === 'object') return JSON.stringify(value, null, 2);

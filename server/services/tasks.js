@@ -7,6 +7,7 @@ import {
   transitionError,
 } from "../../public/workflow-model.js";
 import { membersForProject } from "../teams.js";
+import {validateTaskBoards} from '../task-board-links.js';
 import fs from "node:fs/promises";
 import path from "node:path";
 import { randomUUID } from "node:crypto";
@@ -254,6 +255,7 @@ export const tasksMethods = {
       "dependencies",
       "related_records",
       "documents",
+      "boards",
       "recurrence",
       "fields",
       "comments",
@@ -266,6 +268,7 @@ export const tasksMethods = {
       data.recurrence_source = internal.recurrenceSource;
     await this.assignPerson(project, data, input);
     this.validateTask(data, config);
+    await validateTaskBoards(this, project, data.boards);
     if (!internal.parentTask)
       await this.validateParent(project, id, data.parent);
     await this.validateHierarchy(project, data, config, internal.parentTask);
@@ -321,6 +324,7 @@ export const tasksMethods = {
       "dependencies",
       "related_records",
       "documents",
+      "boards",
       "recurrence",
       "fields",
       "comments",
@@ -341,6 +345,7 @@ export const tasksMethods = {
       );
     await this.assignPerson(project, data, input, current.data);
     this.validateTask(data, config);
+    await validateTaskBoards(this, project, data.boards, current.data.boards);
     // Notes, dates, status and assignee edits cannot change the task graph.
     // Avoid reading every sibling three times for these common saves.
     if (

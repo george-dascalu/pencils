@@ -2,6 +2,11 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.21.63 — 2026-11-03
+
+### Added
+- Feature F0.21-63: Cards have a Boards section beside Documents, with a searchable picker to link, open and remove board links. Links stay in card Markdown, version history, browser drafts and the offline save queue. Older board-to-card links appear in the same section.
+
 ## 0.21.62 — 2026-11-03
 
 ### Fixed

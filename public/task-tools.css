@@ -828,7 +828,7 @@ body.task-reordering, body.task-reordering * { cursor: grabbing !important; user
 .task-relationship-key { flex-shrink: 0; color: var(--muted); font-size: var(--type-meta); }
 .task-relationship-title { font-size: var(--type-body); }
 .task-relationship-title { flex: 1; min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
-.task-relationship-picker.selection-popover { position: fixed; inset: auto; margin: 0; padding: 12px; min-width: 0; container-type: inline-size; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); color: var(--ink); box-shadow: var(--shadow-popover); overflow: auto; overscroll-behavior: contain; }
+.task-relationship-picker.selection-popover { position: fixed; inset: auto; margin: 0; padding: var(--popover-padding); min-width: 0; container-type: inline-size; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); color: var(--ink); box-shadow: var(--shadow-popover); overflow: auto; overscroll-behavior: contain; }
 .task-relationship-picker:popover-open { display: block; }
 .task-relationship-picker::backdrop { background: transparent; pointer-events: none; }
 .task-relationship-controls { gap: 8px; margin-bottom: 8px; }
@@ -1533,9 +1533,9 @@ html.task-page-open,
 /* Popover titles share one size; the dates editor header keeps its actions on the right. */
 .popover-title { margin: 0 auto 0 0; font-size: 14px; font-weight: 600; }
 
-/* Documents linked from a card share the relationships list layout. */
-.task-documents { margin-top: 20px; }
-.task-documents [data-document-list] { margin-top: 4px; }
+/* Linked documents and boards share the relationships list layout. */
+.task-resources { margin-top: 20px; }
+.task-resources [data-resource-list] { margin-top: 4px; }
 .document-linked-cards { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; padding: 6px 0 2px; }
 .document-linked-cards > .caption { margin-right: 4px; }
 .document-linked-cards .task-relationship-title { max-width: 220px; }

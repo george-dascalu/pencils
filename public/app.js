@@ -1807,6 +1807,7 @@ function taskDialog(id = null, defaults = {}, replace = false) {
       <input type="hidden" name="pendingSubtasks" value="${esc(JSON.stringify(t.subtasks || []))}"><input type="hidden" name="creation_request" value="${id ? "" : randomUUID()}">
       ${(t.related_records || []).map(record => `<input type="hidden" name="related_records" value="${esc(record)}">`).join("")}
       ${(t.documents || []).map(document => `<input type="hidden" name="documents" value="${esc(document)}">`).join("")}
+      ${(t.boards || []).map(board => `<input type="hidden" name="boards" value="${esc(board)}">`).join("")}
       </div>
       <aside class="task-history-panel" aria-label="Card version history" hidden></aside></div>
     <div class="dialog-foot task-editor-foot">${id || isDraft ? '<span class="task-autosave-status" data-autosave-status role="status" aria-live="polite"></span>' : `<div class="task-create-actions"><label class="create-another"><input type="checkbox" name="createAnother" ${t.createAnother ? "checked" : ""}>Create another</label><button class="button primary" type="submit">Create card</button></div>`}</div></form></dialog>`;

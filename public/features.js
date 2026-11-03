@@ -271,6 +271,7 @@ export function installFeatures(ctx) {
       dependencies: data.getAll("dependencies"),
       related_records: data.getAll("related_records"),
       documents: data.getAll("documents"),
+      boards: data.getAll("boards"),
       recurrence: t.recurrence ?? null,
       fields,
       comments: [
@@ -328,8 +329,6 @@ export function installFeatures(ctx) {
       formBases.set(form, structuredClone(t));
       installTaskTimes(form);
       sources.decorateTask(form,t);
-      const linkedDrawings=state.boards.filter(b=>b.settings?.linked_tasks?.includes(t.id));
-      if(linkedDrawings.length)form.querySelector('.dialog-body').insertAdjacentHTML('beforeend',`<section><h3>Canvases</h3>${linkedDrawings.map(b=>`<a class="button small" href="#project/${state.project.id}/board/${b.id}" target="_blank">${esc(b.title)} ↗</a>`).join('')}</section>`);
       taskEditor = taskDescription(form, ctx.markdown, ctx.icon, state.project.id);
       attachments = taskAttachments(ctx, form, taskEditor);
       taskModal = taskModalControls(ctx, form, async (version) => {
@@ -436,7 +435,10 @@ export function installFeatures(ctx) {
           else if (state.view !== "settings") renderView(true);
         },
       });
-      documentsEditor = taskDocumentsEditor({ ...ctx, features: { openDocument: (id) => documentFeature.load().then(() => documents.openDocument(id)) } }, form, {
+      documentsEditor = taskDocumentsEditor({ ...ctx, features: {
+        openDocument: (id) => documentFeature.load().then(() => documents.openDocument(id)),
+        openBoard: (id) => drawingFeature.load().then(() => drawings.enter(id)),
+      } }, form, {
         flush: () => (form.dataset.id ? autosave?.flush() || Promise.resolve(false) : Promise.resolve(true)),
       });
     }
@@ -487,6 +489,10 @@ export function installFeatures(ctx) {
             : input.multiple
               ? [...input.selectedOptions].map((o) => o.value)
               : input.value;
+      }
+      if (kind === 'task') {
+        const values = new FormData(form);
+        for (const key of ['documents', 'boards']) data[key] = values.getAll(key);
       }
       storage.set(key, { time: Date.now(), data, base: formBases.get(form) });
     };
@@ -837,12 +843,22 @@ export function installFeatures(ctx) {
       if (draft) {
         for (const input of form.elements) {
           if (!(input.name in draft.data)) continue;
+          if (form.id === 'task-form' && ['documents', 'boards'].includes(input.name)) continue;
           if (input.type === "checkbox")
             input.checked = draft.data[input.name] === true;
           else if (input.multiple) {
             for (const o of input.options)
               o.selected = draft.data[input.name].includes(o.value);
           } else input.value = draft.data[input.name];
+        }
+        if (form.id === 'task-form') for (const key of ['documents', 'boards']) {
+          if (!Object.hasOwn(draft.data, key)) continue;
+          for (const input of form.querySelectorAll(`input[name="${key}"]`)) input.remove();
+          const values = Array.isArray(draft.data[key]) ? draft.data[key] : [draft.data[key]];
+          for (const value of values.filter(value => typeof value === 'string' && value)) {
+            const input = document.createElement('input');
+            input.type = 'hidden'; input.name = key; input.value = value; form.append(input);
+          }
         }
         // A Settings form saves the restored draft at once, against the revision the draft started
         // from, so a change made elsewhere since still conflicts.
@@ -855,6 +871,7 @@ export function installFeatures(ctx) {
         taskEditor?.reload();
         taskModal?.reload();
         relationships?.refresh();
+        documentsEditor?.refresh();
         reloadTeams?.();
         reloadWorkflow?.();
         if (settings) state.settingsDirty = true;
@@ -1194,6 +1211,7 @@ export function installFeatures(ctx) {
     taskSyncChanged: () => {
       autosave?.syncChanged();
       relationships?.refresh();
+      documentsEditor?.refresh();
     },
     dialogClosed: () => {
       relationships?.destroy();

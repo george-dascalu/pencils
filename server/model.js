@@ -4,6 +4,7 @@ import { Problem } from "./problem.js";
 import { DEFAULT_TASK_TYPES } from "../public/task-types.js";
 import { PRIORITIES } from "./values.js";
 import { CARD_FIELDS, VIEW_GROUPS } from "../public/card-fields.js";
+import {validTaskBoards} from './task-board-links.js';
 
 export const DEFAULT_SCHEMA = {
   statuses: ["backlog", "todo", "in-progress", "review", "done"],
@@ -225,6 +226,8 @@ export function validateExtras(data, config) {
       ))
   )
     fail("Linked documents must be document identifiers.");
+  if (!validTaskBoards(data.boards))
+    fail("Linked boards must be up to 200 unique board identifiers.");
   if (
     data.recurrence != null &&
     (!["day", "week", "month"].includes(data.recurrence.unit) ||
