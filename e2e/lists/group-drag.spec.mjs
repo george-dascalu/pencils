@@ -65,10 +65,14 @@ test('revealing an empty group above the card keeps the lifted copy under the po
 
 test('workflow refusals leave fields, order and grouping unchanged @gate',async({page})=>{
   const {project,a,b}=await seed({restricted:true});await page.goto(`${app.base}/#project/${project.id}/list`);await row(page,a.id).waitFor();
-  const before=(await app.store.snapshot(project.id)).tasks.map(({id,status,order})=>({id,status,order}));
+  // Store enumeration is not display order: compare records by ID and verify the visible order
+  // independently. A refused drag must preserve both the saved order values and the rendered rows.
+  const records=async()=>(await app.store.snapshot(project.id)).tasks.map(({id,status,order})=>({id,status,order})).sort((a,b)=>a.id.localeCompare(b.id));
+  const before=await records(),visibleBefore=await page.locator('[data-task-order-row]').evaluateAll(rows=>rows.map(row=>row.dataset.taskOrderRow));
   await begin(page,a.id);await over(page,row(page,b.id));await expect(page.locator('.task-reorder-ghost')).toHaveClass(/invalid/);await page.mouse.up();
   await expect(page.locator('#toasts .toast.error')).toContainText('Workflow does not allow');
-  expect((await app.store.snapshot(project.id)).tasks.map(({id,status,order})=>({id,status,order}))).toEqual(before);
+  expect(await records()).toEqual(before);
+  expect(await page.locator('[data-task-order-row]').evaluateAll(rows=>rows.map(row=>row.dataset.taskOrderRow))).toEqual(visibleBefore);
   await expect(group(page,'status','todo').locator(`[data-task-order-row="${a.id}"]`)).toBeVisible();
 });
 

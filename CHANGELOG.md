@@ -2,6 +2,14 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.21.68 — 2026-11-03
+
+### Changed
+- Feature F0.21-68: Backfilled Requested, Started, Done, Took and primary model/effort for 13 more historical Roadmap entries from archived requests, coding responses and release records. Removed older model attributions that could only be traced to settings saved before a gap in the work logs; those details remain unknown.
+
+### Fixed
+- The grouped List drag check compares saved card records by ID and independently checks visible row order, so unordered storage enumeration cannot falsely report a rejected workflow move as a card change.
+
 ## 0.21.67 — 2026-11-03
 
 ### Changed

@@ -46,6 +46,21 @@ test('numbered feature history has recovered timestamps, durations and primary m
   }
 });
 
+test('older backfills use actual coding responses, leaving models unknown across missing session logs', () => {
+  for (let n = 101; n <= 113; n++) {
+    const item = roadmap.find(i => i.id === `T${n}`);
+    assert.notEqual(recordedTime(item.requested), null, `${item.id} request or discovered follow-up`);
+    assert.notEqual(recordedTime(item.started), null, `${item.id} recorded response`);
+    assert.ok(took(item.started, item.done), `${item.id} elapsed time`);
+    assert.ok(item.model && item.effort, `${item.id} primary model settings`);
+    assert.equal(item.modelBasis, 'recorded coding response');
+  }
+  for (const item of roadmap.filter(i => /^T\d+$/.test(i.id) && +i.id.slice(1) < 101)) {
+    assert.equal(item.model, undefined, `${item.id}: an old setting before a logging gap does not establish the coding model`);
+    assert.equal(item.effort, undefined, `${item.id}: keep unrecorded effort unknown`);
+  }
+});
+
 test("every roadmap entry has a valid id, status and dates, and done entries name their release", () => {
   const when = /^\d{4}-\d{2}-\d{2}(?:T\d{2}:\d{2}(?::\d{2}(?:\.\d{1,3})?)?(?:Z|[+-]\d{2}:\d{2})?)?$/;
   const ids = new Set();
