@@ -10,20 +10,18 @@ const letters = (name) => {
 export const shortName = (state, name) =>
   state.organisation?.people?.find((p) => p.name === name)?.short_name ||
   letters(name);
+// A project's people (F0.21-72); one saved before then takes its teams' members, as the server does.
 export function projectPeople(state) {
-  const teams = new Set(state.project?.teams || []);
-  const ids = new Set(
-    (state.organisation?.teams || [])
-      .filter((t) => teams.has(t.id))
-      .flatMap((t) => t.members),
-  );
+  const project = state.project || {}, teams = new Set(project.teams || []);
+  const ids = new Set(Array.isArray(project.people) ? project.people
+    : (state.organisation?.teams || []).filter((t) => teams.has(t.id)).flatMap((t) => t.members));
   return (state.organisation?.people || []).filter((p) => ids.has(p.id));
 }
 export function assigneeHint(state) {
   if (projectPeople(state).length) return "";
-  if (!state.project?.teams?.length)
-    return "No teams assigned. Select a team in Project settings to make its members available as assignees.";
-  return "The project's teams have no members. In Settings → Organisation, select the people in each team and save. Adding someone to People alone does not add them to a team.";
+  return state.organisation?.people?.length
+    ? "No people in this project yet. Add them in Project settings → People to assign cards."
+    : "Add people in Settings → Organisation, then add them to this project in Project settings → People.";
 }
 export function assigneeOptions(state, current, esc) {
   const people = projectPeople(state);
@@ -62,7 +60,7 @@ export function organisationTeams(form, organisation, esc) {
       )
       .join(
         "",
-      )}</div><button type="button" class="button small" data-add-person>Add person</button></div><div data-directory-section="teams"><h3>Teams</h3><p class="field-hint">Choose which people belong to each team. Assign teams to projects in Project settings.</p>${!teams.length ? '<p class="directory-empty">No teams yet. Add a team, then choose its members.</p>' : ""}${teams.map((t) => `<fieldset data-team="${esc(t.id)}"><div class="team-heading"><input aria-label="Team name" data-team-name value="${esc(t.name)}" placeholder="Team name" maxlength="100" required><button type="button" class="icon-button danger" data-remove-team="${esc(t.id)}" aria-label="Delete team" title="Delete team"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18M9 6V3h6v3M6 6l1 15h10l1-15M10 10v7M14 10v7"/></svg></button></div><div class="team-members">${people.map((p) => `<label><input type="checkbox" data-member="${esc(p.id)}" ${t.members.includes(p.id) ? "checked" : ""}> <span data-person-name="${esc(p.id)}">${esc(p.name || "Unnamed person")}</span></label>`).join("") || "<p>Add people to the organisation to choose members.</p>"}</div></fieldset>`).join("")}<button type="button" class="button small" data-add-team>Add team</button></div>`;
+      )}</div><button type="button" class="button small" data-add-person>Add person</button></div><div data-directory-section="teams"><h3>Teams</h3><p class="field-hint">Teams are optional groups of people. In Project settings → People, a team adds all its members to a project at once.</p>${!teams.length ? '<p class="directory-empty">No teams yet. Add a team, then choose its members.</p>' : ""}${teams.map((t) => `<fieldset data-team="${esc(t.id)}"><div class="team-heading"><input aria-label="Team name" data-team-name value="${esc(t.name)}" placeholder="Team name" maxlength="100" required><button type="button" class="icon-button danger" data-remove-team="${esc(t.id)}" aria-label="Delete team" title="Delete team"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18M9 6V3h6v3M6 6l1 15h10l1-15M10 10v7M14 10v7"/></svg></button></div><div class="team-members">${people.map((p) => `<label><input type="checkbox" data-member="${esc(p.id)}" ${t.members.includes(p.id) ? "checked" : ""}> <span data-person-name="${esc(p.id)}">${esc(p.name || "Unnamed person")}</span></label>`).join("") || "<p>Add people to the organisation to choose members.</p>"}</div></fieldset>`).join("")}<button type="button" class="button small" data-add-team>Add team</button></div>`;
     sync();
   }
   host.addEventListener("input", (e) => {
@@ -146,25 +144,27 @@ export function organisationTeams(form, organisation, esc) {
     paint();
   };
 }
-export function projectTeamControls(form, state, esc) {
-  let selected =
-    form.dataset.edit === "true" ? [...(state.project.teams || [])] : [];
+// The project's people, one checkbox each; a team, chosen from the menu, ticks its members.
+export function projectPeopleControls(form, state, esc) {
+  let selected = form.dataset.edit === "true" ? projectPeople(state).map((p) => p.id) : [];
   const host = document.createElement("fieldset");
-  host.className = "project-team-settings";
+  host.className = "project-team-settings project-people-settings";
   form.querySelector('[name="organisation"]').closest("label").after(host);
-  const creating = !!form.closest(".project-create-dialog");
   function paint() {
-    const org = state.organisations.find(
-      (o) => o.id === form.elements.organisation.value,
-    );
-    host.innerHTML = `<legend>${creating ? "People" : "Project teams"}</legend><input type="hidden" name="teams" value="${esc(JSON.stringify(selected))}"><div class="team-members">${(org?.teams || []).map((t) => `<label><input type="checkbox" data-project-team="${esc(t.id)}" ${selected.includes(t.id) ? "checked" : ""}> ${esc(t.name)} <small>(${creating ? (org.people || []).filter(p => t.members.includes(p.id)).map(p => esc(p.name)).join(", ") || "No members" : t.members.length ? `${t.members.length} members` : "No members"})</small></label>`).join("") || '<p class="field-hint">Add people and teams in Settings → Organisation first.</p>'}</div><p class="field-hint">${creating ? "Choose the teams whose people can be assigned cards in this project." : "Assignees come from the selected teams. A person in several teams appears once."}</p>`;
+    const org = state.organisations.find((o) => o.id === form.elements.organisation.value);
+    const people = org?.people || [], teams = (org?.teams || []).filter((t) => t.members.length);
+    host.innerHTML = `<legend>People</legend><input type="hidden" name="people" value="${esc(JSON.stringify(selected))}"><div class="team-members">${people.map((p) => `<label><input type="checkbox" data-project-person="${esc(p.id)}" ${selected.includes(p.id) ? "checked" : ""}> ${esc(p.name)}</label>`).join("") || '<p class="field-hint">Add people in Settings → Organisation first.</p>'}</div>${teams.length ? `<label class="field">Add a team's people<select data-project-team-add><option value="">Choose a team…</option>${teams.map((t) => `<option value="${esc(t.id)}">${esc(t.name)} (${people.filter((p) => t.members.includes(p.id)).map((p) => esc(p.name)).join(", ")})</option>`).join("")}</select></label>` : ""}<p class="field-hint">The people who can be assigned cards in this project. Teams are optional groups of people in Settings → Organisation.</p>`;
   }
+  const sync = () => (form.elements.people.value = JSON.stringify(selected));
   host.addEventListener("change", (e) => {
-    if (!e.target.dataset.projectTeam) return;
-    selected = [...host.querySelectorAll("[data-project-team]:checked")].map(
-      (el) => el.dataset.projectTeam,
-    );
-    form.elements.teams.value = JSON.stringify(selected);
+    if (e.target.dataset.projectPerson) selected = [...host.querySelectorAll("[data-project-person]:checked")].map((el) => el.dataset.projectPerson);
+    else if (e.target.matches("[data-project-team-add]") && e.target.value) {
+      const team = state.organisations.find((o) => o.id === form.elements.organisation.value)?.teams?.find((t) => t.id === e.target.value);
+      selected = [...new Set([...selected, ...(team?.members || [])])];
+      for (const box of host.querySelectorAll("[data-project-person]")) box.checked = selected.includes(box.dataset.projectPerson);
+      e.target.value = "";
+    } else return;
+    sync();
   });
   form.elements.organisation.addEventListener("change", () => {
     selected = [];
@@ -172,7 +172,7 @@ export function projectTeamControls(form, state, esc) {
   });
   paint();
   return () => {
-    selected = JSON.parse(form.elements.teams.value || "[]");
+    selected = JSON.parse(form.elements.people.value || "[]");
     paint();
   };
 }

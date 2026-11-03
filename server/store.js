@@ -5,7 +5,7 @@ import { WriteJournal } from "./journal.js";
 import { changedFields } from "./audit.js";
 import { documentFolders, documentFolder } from "./document-folders.js";
 import { hierarchyError } from "../public/hierarchy-model.js";
-import { directory, projectTeams } from "./teams.js";
+import { directory, projectPeople, membersForProject } from "./teams.js";
 import { installIdentity } from "./identity.js";
 import fs from "node:fs/promises";
 import path from "node:path";
@@ -523,13 +523,14 @@ export class Store {
     const data = { ...current.data, updated: now() };
     if ("title" in input) data.title = title(input.title);
     if ("color" in input) data.color = color(input.color);
-    if ("people" in input || "teams" in input)
+    if ("people" in input || "teams" in input) {
       Object.assign(data, directory(input.people ?? data.people, input.teams ?? data.teams));
-    if ("teams" in input) {
-      const removed = new Set((current.data.teams || []).filter(t => !data.teams.some(next => next.id === t.id)).map(t => t.id));
-      const {projects} = await this.list(id);
-      if (projects.some(p => (p.teams || []).some(team => removed.has(team))))
-        throw new Problem(409, "Remove a team from its projects before deleting it.");
+      // Projects saved before they had people (F0.21-72) keep their teams' members from before this change.
+      const before = directory(current.data.people, current.data.teams);
+      for (const project of (await this.list(id)).projects.filter((p) => !Array.isArray(p.people))) {
+        const file = this.file(project.id, "project"), record = await this.read(file);
+        await this.write(file, { ...record.data, people: membersForProject(record.data, before).map((p) => p.id), teams: [] }, record.body, record);
+      }
     }
     return this.write(
       file,
@@ -733,7 +734,8 @@ export class Store {
         kind: "project",
         key: await this.projectKey(input.key, input.title),
         organisation: organisation.id,
-        teams: projectTeams(input.teams, organisation),
+        people: projectPeople(input.people, organisation, input.teams),
+        teams: [],
         title: title(input.title),
         color: color(input.color || "#587563"),
         created: now(),
@@ -809,9 +811,11 @@ export class Store {
       if (data.organisation !== current.data.organisation && (current.data.personal || isPersonalOrganisation(data.organisation)))
         throw new Problem(400, "Projects can't move into or out of a personal space.");
     }
-    if ("teams" in input || data.organisation !== current.data.organisation) {
-      const organisation = await this.getOrganisation(data.organisation);
-      data.teams = projectTeams(input.teams ?? (data.organisation === current.data.organisation ? data.teams : []), organisation);
+    // People belong to an organisation, so a move starts the list again.
+    if ("people" in input || "teams" in input || data.organisation !== current.data.organisation) {
+      const organisation = await this.getOrganisation(data.organisation), same = data.organisation === current.data.organisation;
+      data.people = projectPeople("people" in input ? input.people : same ? membersForProject(data, organisation).map((p) => p.id) : [], organisation, same ? input.teams : []);
+      data.teams = [];
     }
     if ("archived" in input) {
       if (typeof input.archived !== "boolean")
@@ -931,7 +935,7 @@ export class Store {
     const tasks = [];
     const teamDirectory = await this.getOrganisation(project.organisation);
     for (const input of entries)
-      tasks.push(await this.createTask(project.id, {...input, ...((teamDirectory.teams || []).length ? {assignee: ""} : {})}));
+      tasks.push(await this.createTask(project.id, {...input, ...((teamDirectory.people || []).length || (teamDirectory.teams || []).length ? {assignee: ""} : {})}));
     const board = (await this.children(project.id, "boards")).items[0];
     await this.updateBoard(project.id, board.id, {
       revision: board.revision,

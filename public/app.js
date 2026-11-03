@@ -2569,7 +2569,7 @@ document.addEventListener("submit", async (event) => {
         toast("Organisation created. Add its first project.");
       }
     } else if (form.id === "project-form") {
-      data.teams = JSON.parse(data.teams || "[]");
+      data.people = JSON.parse(data.people || "[]");
       const edit = form.dataset.edit === "true";
       data.schema = JSON.parse(data.workflowSchema);
       delete data.workflowSchema;

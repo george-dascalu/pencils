@@ -3,7 +3,7 @@ import { test, expect, onDevices, useApp } from "../fixtures.mjs";
 import { clickControl } from "../helpers/menu-controls.mjs";
 
 const app = useApp(async store => {
-  const organisation = await store.createOrganisation({ title: "Studio", people: [{ id: "alice", name: "Alice" }], teams: [{ id: "design", name: "Design", members: ["alice"] }] });
+  const organisation = await store.createOrganisation({ title: "Studio", people: [{ id: "alice", name: "Alice" }, { id: "bob", name: "Bob" }], teams: [{ id: "design", name: "Design", members: ["alice"] }] });
   const other = await store.createOrganisation({ title: "Other studio" });
   const project = await store.createProject({ title: "Existing project", organisation: organisation.id });
   return { organisation, other, project };
@@ -27,7 +27,11 @@ onDevices(["desktop", "ipad", "phone"], () => test("project setup keeps details,
   if (device !== "desktop") expect(await page.evaluate(() => document.activeElement.matches("input, textarea"))).toBe(false);
   await form.getByLabel("Project name", { exact: true }).fill(`New ${device} project`);
   await form.getByLabel("Project key", { exact: false }).fill(`NEW${device[0].toUpperCase()}`);
-  await form.locator('[data-project-team="design"]').check();
+  // Bob is in no team; the Design team adds Alice (F0.21-72).
+  await form.getByRole("checkbox", { name: "Bob", exact: true }).check();
+  await form.locator("[data-project-team-add]").selectOption("design");
+  await expect(form.getByRole("checkbox", { name: "Alice", exact: true })).toBeChecked();
+  await expect(form.locator("[data-project-team-add]"), "the menu is ready for another team").toHaveValue("");
   if (device !== "desktop") expect((await form.locator('.team-members label').first().boundingBox()).height).toBeGreaterThanOrEqual(44);
   await form.getByLabel("Description", { exact: true }).fill("A project with its own rules.");
   await next(form);
@@ -58,7 +62,7 @@ onDevices(["desktop", "ipad", "phone"], () => test("project setup keeps details,
   await expect(form.locator("[data-type-chips]")).toContainText("initiative");
   await expect(form.locator("[data-hierarchy-mode]")).toHaveValue("enforced");
   await form.getByRole("button", { name: "Back", exact: true }).click();
-  await expect(form.locator('[data-project-team="design"]')).toBeChecked();
+  for (const name of ["Alice", "Bob"]) await expect(form.getByRole("checkbox", { name, exact: true })).toBeChecked();
   await expect(form.getByLabel("Description", { exact: true })).toHaveValue("A project with its own rules.");
   await next(form); await next(form);
   expect(posts).toHaveLength(0);
@@ -66,7 +70,8 @@ onDevices(["desktop", "ipad", "phone"], () => test("project setup keeps details,
   await expect(dialog).toHaveCount(0);
   expect(posts).toHaveLength(1);
   const created = (await app.store.list(app.organisation.id)).projects.find(p => p.title === `New ${device} project`);
-  expect(created.teams).toEqual(["design"]);
+  expect(created.people).toEqual(["bob", "alice"]);
+  expect(created.teams).toEqual([]);
   expect(created.schema.types).toContain("initiative");
   expect(created.schema.types).not.toContain("bug");
   expect(created.schema.hierarchy.mode).toBe("enforced");
@@ -75,7 +80,7 @@ onDevices(["desktop", "ipad", "phone"], () => test("project setup keeps details,
   expect(created.schema.statuses).toContain("blocked");
 }));
 
-test("project setup validates each step, resets teams on organisation change and preserves edits after a failed create", async ({ page }) => {
+test("project setup validates each step, resets people on organisation change and preserves edits after a failed create", async ({ page }) => {
   const form = await open(page);
   await next(form);
   await expect(form).toHaveAttribute("data-step", "1");
@@ -85,9 +90,9 @@ test("project setup validates each step, resets teams on organisation change and
   await next(form);
   await expect(form).toHaveAttribute("data-step", "1");
   await form.locator('[name="key"]').fill("TRY");
-  await form.locator('[data-project-team="design"]').check();
+  await form.locator('[data-project-person="alice"]').check();
   await form.locator('[name="organisation"]').selectOption(app.other.id);
-  await expect(form.locator('[name="teams"]')).toHaveValue("[]");
+  await expect(form.locator('[name="people"]')).toHaveValue("[]");
   await next(form);
   while (await form.locator("[data-type-remove]").count()) await form.locator("[data-type-remove]").first().click();
   await next(form);
@@ -109,7 +114,7 @@ onDevices(["desktop", "phone"], () => test("a project draft restores every step 
   let form = await open(page);
   const before = (await app.store.list(app.organisation.id)).projects.length;
   await form.locator('[name="title"]').fill("Restored project");
-  await form.locator('[data-project-team="design"]').check();
+  await form.locator('[data-project-person="bob"]').check();
   await form.locator('[name="title"]').press("Enter");
   await expect(form).toHaveAttribute("data-step", "2");
   await form.getByLabel("New type name", { exact: true }).fill("research");
@@ -124,7 +129,7 @@ onDevices(["desktop", "phone"], () => test("a project draft restores every step 
   await form.locator("[data-feature=form-restore]").click();
   await expect(form).toHaveAttribute("data-step", "1");
   await expect(form.locator('[name="title"]')).toHaveValue("Restored project");
-  await expect(form.locator('[data-project-team="design"]')).toBeChecked();
+  await expect(form.locator('[data-project-person="bob"]')).toBeChecked();
   await next(form);
   await expect(form.locator("[data-type-chips]")).toContainText("research");
   await next(form);

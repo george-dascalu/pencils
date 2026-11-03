@@ -127,11 +127,9 @@ export const tasksMethods = {
       data.assignee = priorName;
       return;
     }
-    if (requestedId || (organisation.teams || []).length)
-      throw new Problem(
-        400,
-        "Choose an assignee from a team assigned to this project.",
-      );
+    // Free-text names only where the organisation has nobody set up yet.
+    if (requestedId || (organisation.people || []).length || (organisation.teams || []).length)
+      throw new Problem(400, "Choose an assignee from this project's people.");
     data.assignee_id = null;
   },
   async validateHierarchy(project, data, config, parentTask) {

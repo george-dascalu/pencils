@@ -11,7 +11,7 @@ const app = useApp(async (store) => {
   await store.createTask(project.id, { title: "Full name", assignee: "Wilhelmina Moss" });
   await store.createTask(project.id, { title: "Wide letters", assignee: "Mmmwide" });
   const organisation = await store.createOrganisation({ title: "Short names", people: [{ id: "george", name: "George" }, { id: "wilma", name: "Wilma" }], teams: [] });
-  const named = await store.createProject({ title: "Short name project", organisation: organisation.id });
+  const named = await store.createProject({ title: "Short name project", organisation: organisation.id, people: ["george", "wilma"] });
   await store.createTask(named.id, { title: "Named", assignee: "George" });
   await store.createTask(named.id, { title: "Default", assignee: "Wilma" });
   return { project, organisation, named };

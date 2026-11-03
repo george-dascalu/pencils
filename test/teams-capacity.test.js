@@ -136,14 +136,8 @@ test("Teams, assignments and capacity survive restart; foreign teams and assigne
       () => s.createProject({ title: "Bad", teams: ["design"] }),
       /belong/,
     );
-    await assert.rejects(
-      () =>
-        s.updateOrganisation(org.id, {
-          revision: org.revision,
-          teams: [teams[0]],
-        }),
-      /Remove a team/,
-    );
+    // The project's teams became its people (F0.21-72), so it no longer depends on them.
+    assert.deepEqual((await s.snapshot(p.id)).project.people, ["a", "b"]);
     const renamed = await s.updateOrganisation(org.id, {
       revision: org.revision,
       people: [{ ...people[0], name: "Alicia" }, people[1]],
@@ -154,7 +148,7 @@ test("Teams, assignments and capacity survive restart; foreign teams and assigne
     );
     const p2 = await s.updateProject(p.id, {
       revision: p.revision,
-      teams: [],
+      people: [],
       default_view: "capacity",
     });
     const old = await s.updateTask(p.id, task.id, {

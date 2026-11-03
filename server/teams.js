@@ -108,12 +108,20 @@ export function projectTeams(value = [], organisation) {
     fail("Project teams must belong to the project organisation.");
   return [...new Set(value)];
 }
+// Projects have people (F0.21-72); teams only add their members, once. A project saved before then
+// has no list yet, and takes its teams' members.
+const teamMembers = (ids = [], organisation) => {
+  const selected = new Set(ids);
+  return [...new Set((organisation.teams || []).filter((t) => selected.has(t.id)).flatMap((t) => t.members || []))];
+};
+export function projectPeople(value = [], organisation, teams = []) {
+  list(value, "Project people", 500);
+  const available = new Set((organisation.people || []).map((p) => p.id));
+  if (value.some((id) => !available.has(id)))
+    fail("Project people must belong to the project organisation.");
+  return [...new Set([...value, ...teamMembers(projectTeams(teams, organisation), organisation)])];
+}
 export function membersForProject(project, organisation) {
-  const selected = new Set(project.teams || []),
-    members = new Set(
-      (organisation.teams || [])
-        .filter((t) => selected.has(t.id))
-        .flatMap((t) => t.members || []),
-    );
+  const members = new Set(Array.isArray(project.people) ? project.people : teamMembers(project.teams, organisation));
   return (organisation.people || []).filter((p) => members.has(p.id));
 }

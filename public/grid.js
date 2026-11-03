@@ -432,7 +432,8 @@ export function grid(ctx) {
         map,
         state.config,
         state.tasks,
-        (state.organisation?.teams || []).length
+        // As the server: free-text names only while the organisation has nobody set up.
+        state.organisation?.people?.length || state.organisation?.teams?.length
           ? projectPeople(state).map((p) => p.name)
           : null,
       );

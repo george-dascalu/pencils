@@ -55,9 +55,9 @@ test("Home opens in the organisation in use, with direct project links and bookm
   await expect(page.locator('.home-panel[data-type="bookmarks"] .home-item')).toHaveText(["Kanban · Sweep"]);
 });
 
-test("Capacity's Choose project teams opens the project's teams settings", async ({ page }) => {
+test("Capacity's Choose project people opens the project's people settings", async ({ page }) => {
   await page.goto(url("capacity"));
-  await page.getByRole("button", { name: "Choose project teams", exact: true }).click();
+  await page.getByRole("button", { name: "Choose project people", exact: true }).click();
   await expect(page).toHaveURL(new RegExp(`#project/${app.project.id}/settings/teams$`));
 });
 

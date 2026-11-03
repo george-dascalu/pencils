@@ -370,7 +370,7 @@ test("card options obey project membership, workflow defaults and enforced hiera
       preview: p.preview,
       assignees: { "user-a": "outsider" },
     }),
-    /project's teams/,
+    /project's people/,
   );
   const ready = await importer.preview(project.id, user, {
     preview: p.preview,

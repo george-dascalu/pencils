@@ -98,7 +98,7 @@ test("a custom field survives another page, Back and a reload", { tag: "@gate" }
   await save(page);
   expect((await snapshot()).project.schema.fields[0].options).toEqual(["Alpha", "Beta"]);
   await section(page, "teams");
-  await page.locator("[data-settings-assignees]").waitFor();
+  await page.locator(".project-people-settings").waitFor();
   expect((await snapshot()).project.schema.fields[0].name).toBe("Release train");
   await page.goBack();
   await atHash(page, hash("fields"));

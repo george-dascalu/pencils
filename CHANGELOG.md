@@ -2,6 +2,11 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.21.72 — 2026-11-03
+
+### Changed
+- Feature F0.21-72: Projects have people instead of teams. Project settings → People (and the new-project dialog) lists the organisation's people to tick one by one, with no team needed; Add a team's people ticks a team's members in one go. Teams are now optional groups of people. Existing projects keep the people of the teams they had. Only a project's people can be assigned its cards, and Capacity's Team filter offers every team with someone from the project, under Everyone.
+
 ## 0.21.71 — 2026-11-03
 
 ### Added

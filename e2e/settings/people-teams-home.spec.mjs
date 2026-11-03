@@ -27,9 +27,9 @@ for (const kind of ["teams", "people"])
     await expect(page).toHaveURL(/#organisation\/[^/]+\/settings\/organisation$/);
   });
 
-test("Capacity without teams sends you to Settings → Organisation", async ({ page }) => {
+test("Capacity without people sends you to Settings → Organisation", async ({ page }) => {
   await page.goto(`${app.base}/#project/${app.project.id}/capacity`);
-  await page.getByRole("button", { name: "People and teams", exact: true }).click();
+  await page.getByRole("button", { name: "Organisation people", exact: true }).click();
   await expect(page.locator("#settings-page-title")).toHaveText("Organisation");
 });
 

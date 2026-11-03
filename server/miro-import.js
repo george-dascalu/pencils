@@ -526,7 +526,7 @@ export class MiroImport {
         if (person && !people.some((p) => p.id === person))
           throw new Problem(
             400,
-            "Choose an assignee from this project's teams.",
+            "Choose an assignee from this project's people.",
           );
       const converted = convertMiro(p.snapshot, opts, config, people);
       let target = null,

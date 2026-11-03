@@ -2,7 +2,7 @@ import { randomUUID } from "./uuid.js";
 import { focusOnOpen } from "./open-focus.js";
 import { workflowEditor } from "./workflow-editor.js";
 import { CARD_FIELDS, VIEW_GROUPS, fieldOn, viewOn } from "./card-fields.js";
-import { projectTeamControls, projectPeople } from "./teams.js";
+import { projectPeopleControls } from "./teams.js";
 import { priorityOptions, priorityLabel } from "./task-priority.js";
 import { taskFieldColor, priorityColors } from "./task-colors.js";
 import { projectRecords } from "./project-records.js";
@@ -41,10 +41,10 @@ export const settingsPages = [
   ],
   [
     "teams",
-    "Teams",
+    "People",
     "people",
     "Project",
-    "Move this project to another organisation, and choose the teams whose members can be assigned cards.",
+    "Move this project to another organisation, and choose the people who can be assigned cards.",
   ],
   [
     "workflow",
@@ -321,7 +321,7 @@ export function projectSettings(ctx, { sources, automations, personal, organisat
   }
   function teams() {
     return form(
-      `<label class="field">Organisation<select name="organisation" required>${state.organisations.map((o) => `<option value="${esc(o.id)}" ${o.id === state.project.organisation ? "selected" : ""}>${esc(o.title)}</option>`).join("")}</select></label><p class="field-hint">Moving organisations moves this project, its cards and boards; then choose its teams from the new organisation.</p><div class="settings-assignee-summary"><h3>Available assignees</h3><p data-settings-assignees></p></div>`,
+      `<label class="field">Organisation<select name="organisation" required>${state.organisations.map((o) => `<option value="${esc(o.id)}" ${o.id === state.project.organisation ? "selected" : ""}>${esc(o.title)}</option>`).join("")}</select></label><p class="field-hint">Moving organisations moves this project, its cards and boards; then choose its people from the new organisation.</p>`,
     );
   }
   function customField(
@@ -540,26 +540,12 @@ export function projectSettings(ctx, { sources, automations, personal, organisat
         defaults();
       }
       if (section === "teams") {
-        projectTeamControls(f, state, esc);
-        const paintPeople = () => {
-          const organisation = state.organisations.find(
-            (o) => o.id === f.elements.organisation.value,
-          );
-          const people = projectPeople({
-            organisation,
-            project: { teams: JSON.parse(f.elements.teams.value) },
-          });
-          f.querySelector("[data-settings-assignees]").textContent =
-            people.map((p) => p.name).join(", ") ||
-            "No assignees available. Select a team with members.";
-        };
-        f.addEventListener("change", paintPeople);
-        paintPeople();
+        projectPeopleControls(f, state, esc);
         // Moving to another organisation moves the cards and boards too: ask before it saves. Its
-        // teams belong to the old organisation, so they are chosen again there.
+        // people belong to the old organisation, so they are chosen again there.
         f.addEventListener("change", (event) => {
           const select = f.elements.organisation;
-          if (select.value === state.project.organisation || confirm(`Move this project to ${select.selectedOptions[0].text}? Its cards and boards move with it, and you then choose its teams there.`)) return;
+          if (select.value === state.project.organisation || confirm(`Move this project to ${select.selectedOptions[0].text}? Its cards and boards move with it, and you then choose its people there.`)) return;
           event.stopImmediatePropagation();
           select.value = state.project.organisation;
         }, true);
@@ -598,7 +584,7 @@ export function projectSettings(ctx, { sources, automations, personal, organisat
           if (section === "teams")
             changes = {
               organisation: data.get("organisation"),
-              teams: JSON.parse(data.get("teams")),
+              people: JSON.parse(data.get("people")),
             };
           if (["workflow", "hierarchy"].includes(section))
             changes = { schema: JSON.parse(data.get("workflowSchema")) };

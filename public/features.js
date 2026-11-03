@@ -20,7 +20,7 @@ import { taskAutosave } from "./task-autosave.js";
 import { boardComments } from "./board-comments.js";
 import { workflowEditor } from "./workflow-editor.js";
 import { projectCreateSteps } from "./project-create.js";
-import { organisationTeams, projectTeamControls, projectPeople } from "./teams.js";
+import { organisationTeams, projectPeopleControls, projectPeople } from "./teams.js";
 import { taskModalControls } from "./task-modal.js";
 import { taskAttachments } from "./task-attachments.js";
 import { taskRelationshipsEditor } from "./task-relationships.js";
@@ -334,7 +334,7 @@ export function installFeatures(ctx) {
             esc,
           )
         : kind === "project" && form
-          ? projectTeamControls(form, state, esc)
+          ? projectPeopleControls(form, state, esc)
           : null;
     if (kind === "organisation" && form?.dataset.id)
       formBases.set(form, structuredClone(state.organisation));

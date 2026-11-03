@@ -1,11 +1,11 @@
 // Teams and capacity: people and teams are created in the organisation editor, projects choose
-// their teams, only members of a project's teams can be assigned, board task cards edit the
+// their people (F0.21-72), only a project's people can be assigned, board task cards edit the
 // shared task (fitting their card with unclipped focus rings, zoomed and on phones), and the
 // Capacity view counts scheduled work against each person's limit, moves between weeks, fits
 // desktop and phone screens in both themes and opens tasks in the shared editor.
 // Part of the cross-browser release gate.
 import { test, expect, onDevices, useApp } from "../fixtures.mjs";
-import { selectProjectView, selectSettingsPage, openSettingsPage, chooseProject, settingsSaved } from "../helpers/menu-controls.mjs";
+import { selectProjectView, selectSettingsPage, openSettingsPage, settingsSaved } from "../helpers/menu-controls.mjs";
 import { newCard } from "../helpers/new-card.mjs";
 
 const today = new Date().toLocaleDateString("en-CA");
@@ -20,7 +20,7 @@ async function staffed(store, title, task = {}) {
 const app = useApp(async (store) => {
   const empty = await store.createOrganisation({ title: "New directory" });
   const fresh = await store.createProject({ title: "Team planning", organisation: empty.id });
-  const unstaffed = await store.createOrganisation({ title: "Unstaffed", people: [{ id: "alice", name: "Alice", task_capacity: 0 }], teams: [{ id: "design", name: "Design", members: [] }] });
+  const unstaffed = await store.createOrganisation({ title: "Unstaffed", people: [{ id: "alice", name: "Alice", task_capacity: 0 }], teams: [{ id: "design", name: "Design", members: [] }, { id: "crew", name: "Crew", members: ["alice"] }] });
   const membership = await store.createProject({ title: "Membership project", organisation: unstaffed.id, teams: ["design"] });
   const board = await staffed(store, "Board cards");
   const snapshot = await store.snapshot(board.project.id);
@@ -39,7 +39,7 @@ test.use({ viewportSize: { width: 1440, height: 1000 } });
 
 const snapshotTask = async (project, id) => (await app.store.snapshot(project.id)).tasks.find((t) => t.id === id);
 
-test("people and teams are created in the organisation editor, and a team without members offers no assignees", { tag: "@gate" }, async ({ page }) => {
+test("people and teams are created in the organisation editor, and a project without people offers no assignees", { tag: "@gate" }, async ({ page }) => {
   const project = app.fresh;
   await page.goto(`${app.base}/#project/${project.id}/list`);
   // Settings → Organisation also edits people and teams.
@@ -53,27 +53,37 @@ test("people and teams are created in the organisation editor, and a team withou
   const org = await app.store.getOrganisation(project.organisation);
   expect(org.people[0].task_capacity).toBe(0);
   expect(org.teams[0].members).toEqual([]);
-  // The single top-bar Settings button replaces the project gear (0.19.31).
+  // A team without members offers nothing to add; the person is there to add on their own.
   await openSettingsPage(page);
   await selectSettingsPage(page, "teams");
-  await page.locator("[data-project-team]").check();
-  await settingsSaved(page);
+  await expect(page.locator("[data-project-person]")).toHaveCount(1);
+  await expect(page.locator("[data-project-team-add]")).toHaveCount(0);
   await page.getByRole("button", { name: "Back to project", exact: true }).click();
   await newCard(page);
   await expect(page.locator("#task-form [name=assignee] option")).toHaveText(["Unassigned"]);
-  await expect(page.locator("#task-assignee-help")).toHaveText(/teams have no members/);
+  await expect(page.locator("#task-assignee-help")).toHaveText(/No people in this project yet/);
   await page.locator('[data-action="dialog-close"]').click();
 });
 
-test("adding a member to the project's team makes them assignable on a new card", { tag: "@gate" }, async ({ page }) => {
+test("adding a person to the project, with no team, makes them assignable on a new card", { tag: "@gate" }, async ({ page }) => {
   const project = app.membership;
   await page.goto(`${app.base}/#project/${project.id}/list`);
-  await openSettingsPage(page, "organisation");
-  await page.locator("[data-member]").check();
+  await openSettingsPage(page);
+  await selectSettingsPage(page, "teams");
+  const alice = page.getByRole("checkbox", { name: "Alice", exact: true }), people = async () => (await app.store.snapshot(project.id)).project.people;
+  await alice.check();
   await settingsSaved(page);
   const org = await app.store.getOrganisation(project.organisation);
-  expect(org.teams[0].members).toEqual([org.people[0].id]);
-  await chooseProject(page, project.id);
+  expect(org.teams[0].members, "the team is left as it was").toEqual([]);
+  expect(await people()).toEqual([org.people[0].id]);
+  await alice.uncheck();
+  await expect.poll(people).toEqual([]);
+  // A team only ticks its members; the menu is ready for another.
+  await page.locator("[data-project-team-add]").selectOption("crew");
+  await expect(alice).toBeChecked();
+  await expect(page.locator("[data-project-team-add]")).toHaveValue("");
+  await expect.poll(people).toEqual([org.people[0].id]);
+  await page.getByRole("button", { name: "Back to project", exact: true }).click();
   await newCard(page);
   await expect(page.locator("#task-assignee-help")).toHaveCount(0);
   await page.locator("#task-form [name=title]").fill("Planned work");
