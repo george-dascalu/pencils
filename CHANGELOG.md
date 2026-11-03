@@ -2,6 +2,11 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.21.47 — 2026-11-03
+
+### Added
+- Feature F0.21-47: Focus mode in the document toolbar clears navigation, formatting controls and secondary panes for writing. Press its icon again or Escape to restore the layout. The caret, undo history, document view and split size stay intact, automatic saving continues, and save problems remain visible. Works on desktop, iPad and phone, including Reading and Table documents.
+
 ## 0.21.46 — 2026-11-03
 
 ### Added

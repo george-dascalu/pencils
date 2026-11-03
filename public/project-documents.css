@@ -200,6 +200,19 @@
   border-bottom: 1px solid var(--line);
 }
 .document-heading .document-formatting { flex: 1 1 auto; }
+/* Focus is an app layout, not browser fullscreen: touch keyboards and regular editor shortcuts
+   keep working. The mounted editor, its selection, undo history and split preference stay intact. */
+.main.project-main.document-focus { --tabbar-clearance: 0px; }
+.main.project-main.document-focus > :is(.topbar, #view-toolbar) { display: none; }
+.main.project-main.document-focus > #view-content.documents-content { grid-row: 1 / -1; padding: 0; }
+.main.document-focus .documents-workspace {
+  grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(0, 1fr);
+  border: 0; border-radius: 0;
+}
+.main.document-focus #document-form .document-heading { border-bottom: 0; }
+.main.document-focus #document-form .document-heading > :not([data-document-action="focus"]) { display: none !important; }
+.main.project-main.document-focus :is(.document-pane, .document-split-divider, .document-linked-cards, .document-save) { display: none; }
+.main.document-focus #document-form :is(.cm-content, .document-reading .document-page) { padding-bottom: var(--document-page-padding); }
 .document-tools-button { position: relative; }
 .document-tools-button .document-mode-indicator { display: flex; transform: translateY(-3px); }
 .document-tools-button .document-mode-indicator .icon { width: 16px; height: 16px; }

@@ -28,6 +28,7 @@ export function projectDocuments(ctx) {
   const { state, api, sync, storage, esc, icon, renderView, toast } = ctx;
   let editor = null, form = null, current = null, project = null, renderer = null, paneEditor = null;
   let readingSearch = null, formatScroll = null, paneFormatScroll = null;
+  let focusProject = null; // Temporary writing mode; never saved to the document or project.
   let mode = storage.get("document-mode", "live");
   let documentWidth = storage.get("document-width", "page") === "full" ? "full" : "page";
   if (!["live", "source", "reading"].includes(mode)) mode = "live";
@@ -331,6 +332,42 @@ export function projectDocuments(ctx) {
     }
     editor?.view?.requestMeasure();
   }
+  const inFocus = () => focusProject === state.project?.id && state.view === 'documents';
+  function syncFocus() {
+    const active = !!(form?.isConnected && inFocus());
+    document.querySelector('.main')?.classList.toggle('document-focus', active);
+    const button = form?.querySelector('[data-document-action="focus"]');
+    if (button) {
+      button.setAttribute('aria-pressed', String(active));
+      button.title = active ? 'Exit focus mode (Esc)' : 'Focus mode';
+      button.innerHTML = icon(active ? 'shrink' : 'fullscreen');
+    }
+    editor?.view?.requestMeasure();
+    paneEditor?.view?.requestMeasure();
+  }
+  function setFocus(active) {
+    focusProject = active ? state.project.id : null;
+    if (active) {
+      ctx.closeList?.();
+      closePanel(); commentPanel?.close(); readingSearch?.close();
+      state.layoutTray = null; removeLayoutTray();
+      for (const menu of document.querySelectorAll('.document-formatting details[open]')) {
+        menu.open = false; floatMenuPanel(menu);
+      }
+    }
+    syncFocus();
+    if (!active) syncTray();
+    // Keep the caret and undo history. A toolbar tap must not summon a touch keyboard.
+    if (!allowsTextAutofocus()) form.querySelector('[data-document-action="focus"]').focus({ preventScroll: true });
+    else if (current.document_type !== 'table' && mode === 'reading') form.querySelector('.document-reading').focus({ preventScroll: true });
+    else editor?.focus();
+  }
+  document.addEventListener('keydown', event => {
+    if (event.key !== 'Escape' || event.defaultPrevented || !inFocus() || state.dialog || state.menu ||
+      document.querySelector('dialog[open], :popover-open, #shared-select-menu')) return;
+    event.preventDefault(); event.stopPropagation();
+    setFocus(false);
+  });
   // A card mention's chip: type, key, title (or the link's label) and status, in the shared field order.
   function cardHTML(task, label) {
     return `${icon(task.type || "task")}<span class="document-card-key">${esc(task.key || task.id)}</span><span class="document-card-title">${esc(label || task.title)}</span><span class="field-chip field-chip-status" ${task.archived ? "" : taskColorAttributes(state, "status", task.status)}>${esc(task.archived ? "Archived" : statusLabel(state.config, task.status))}</span>`;
@@ -662,6 +699,8 @@ export function projectDocuments(ctx) {
     button.dataset.configured = String(!!uri);
   }
   function reset() {
+    document.querySelector('.main')?.classList.remove('document-focus');
+    if (state.view !== 'documents' || focusProject !== state.project?.id) focusProject = null;
     document.querySelector(".topbar .document-tabs")?.remove();
     // The list panel holds the board list in board views (board-explorer.js).
     const host = document.querySelector("#list-panel");
@@ -936,6 +975,7 @@ export function projectDocuments(ctx) {
             <a class="document-obsidian-link" href="#" data-document-action="obsidian" hidden>Open in Obsidian</a>
             ${ctx.bookmarks.button("doc", state.project.id, doc.id)}
             <button type="button" class="icon-button" data-document-action="properties" aria-label="Properties" title="Properties" aria-haspopup="dialog" aria-expanded="false">${icon("settings")}</button>
+            <button type="button" class="icon-button" data-document-action="focus" aria-label="Focus mode" title="Focus mode" aria-pressed="false" aria-controls="document-form">${icon("fullscreen")}</button>
             <button type="button" class="icon-button document-tools-button" data-document-action="tools" ${doc.document_type === "table" ? 'data-sheet-action="tools" data-document-current-mode="table" aria-description="Current view: Table"' : ""} aria-label="Document tools" title="Document tools${doc.document_type === "table" ? " — Table" : ""}"><span class="document-mode-indicator" aria-hidden="true">${doc.document_type === "table" ? icon("table") : ""}</span><span class="document-tools-more" aria-hidden="true">${icon("more")}</span></button>
           </header>
           ${(() => { const cards = (state.tasks || []).filter((t) => (t.documents || []).includes(doc.id)); return cards.length ? `<div class="document-linked-cards"><span class="caption">Linked cards</span>${cards.map((t) => `<button type="button" class="button soft" data-action="task-open" data-id="${esc(t.id)}" title="Open ${esc(t.title)}">${icon(t.type || "task")}<span class="task-relationship-key">${esc(t.key || t.id)}</span><span class="task-relationship-title">${esc(t.title)}</span></button>`).join("")}</div>` : ""; })()}
@@ -947,11 +987,12 @@ export function projectDocuments(ctx) {
         </form>` : `<div class="empty document-empty">${icon("file")}<h2>${state.selectedDocument ? "Document unavailable" : "A home for your project notes"}</h2><p>${state.selectedDocument ? "Choose another document from the explorer." : "Write briefs, meeting notes and reference documents."}</p><button type="button" class="button soft" data-document-action="create">${icon("plus")}New document</button><button type="button" class="button document-empty-browse" data-list-toggle>${icon("documents")}Browse documents</button></div>`}
       </section></div>`;
     document.querySelector(".topbar .document-tabs")?.remove();
-    if (!doc) return;
+    if (!doc) { focusProject = null; return; }
     current = doc;
     placeTabs();
     project = state.project.id;
     form = document.querySelector("#document-form");
+    syncFocus();
     renderer = documentMarkdown({ documents: all, project: () => project, esc, icon, cards: () => state.tasks || [], cardHTML });
     const tableURL = endpoint(project, doc.id), tableProject = project;
     editor = doc.document_type === "table" ? createDocumentSheet({
@@ -1133,6 +1174,7 @@ export function projectDocuments(ctx) {
     try {
       if (action === "new-folder") explorer.panel(button);
       else if (action === "properties") propertiesPanel(button);
+      else if (action === "focus") setFocus(!inFocus());
       else if (action === "width") setDocumentWidth(documentWidth === "full" ? "page" : "full");
       else if (action === "move") movePanel(button);
       else if (action === "versions") await versionsPanel(form.querySelector('[data-document-action="tools"]'));

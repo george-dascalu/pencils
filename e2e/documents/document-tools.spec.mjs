@@ -22,7 +22,7 @@ onDevices(["phone", "ipad", "desktop"], () => test("the document bar holds its v
   const phone = device === "phone";
   // Desktop and iPad put the star before the title in the top bar. Since 0.20.94 the formatting is always
   // on screen outside Reading view, and Reading view lives in ⋯ with the other views (T27).
-  expect(await barControls(page), device).toEqual([...(device === "phone" ? ["Bookmark"] : []), "Properties", "Document tools"]);
+  expect(await barControls(page), device).toEqual([...(device === "phone" ? ["Bookmark"] : []), "Properties", "Focus mode", "Document tools"]);
   await expect(page.locator("#document-formatting"), `${device}: formatting shown`).toBeVisible();
 
   await page.locator('#document-form [data-document-action="tools"]').click();
