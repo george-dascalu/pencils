@@ -1,11 +1,12 @@
 import { createDocumentSheet, sheetFormatting, sheetContent } from "./document-sheet.js";
+import { documentEmbedPicker } from "./document-embed-picker.js";
 import { historyPages } from "./history-pages.js";
 import { syncTopbarTitle } from "./topbar-title.js";
 import { panelCategories } from "./document-insert.js";
 import { markdownDocumentEditor } from "./document-editor.js";
 import { documentReadingSearch } from "./document-reading-search.js";
 import { documentMarkdown } from "./document-markdown.js";
-import { documentHeadings, documentOutline, documentStats, documentReference, resolveDocument, resolveCard, obsidianDocumentURI } from "./document-model.js";
+import { documentHeadings, documentOutline, documentStats, documentReference, documentSection, resolveDocument, resolveCard, obsidianDocumentURI } from "./document-model.js";
 import { statusLabel, canTransition, initialStatus, transitionError } from "./workflow-model.js";
 import { priorityLabel } from "./task-priority.js";
 import { parseTaskQuery, runTaskQuery } from "./document-task-query.js";
@@ -26,13 +27,25 @@ import { mountLayoutTray, removeLayoutTray, tabBar } from "./layout-tray.js";
 
 export function projectDocuments(ctx) {
   const { state, api, sync, storage, esc, icon, renderView, toast } = ctx;
-  let editor = null, form = null, current = null, project = null, renderer = null, paneEditor = null;
+  let editor = null, form = null, current = null, project = null, renderer = null, paneEditor = null, paneRenderer = null;
   let readingSearch = null, formatScroll = null, paneFormatScroll = null;
   let focusProject = null; // Temporary writing mode; never saved to the document or project.
   let mode = storage.get("document-mode", "live");
   let documentWidth = storage.get("document-width", "page") === "full" ? "full" : "page";
   if (!["live", "source", "reading"].includes(mode)) mode = "live";
   const all = () => state.documents || [];
+  const loadEmbedTable = async record => record.table || (await api(endpoint(project, record.id))).table;
+  function rendererFor(id) {
+    const pid = project;
+    return documentMarkdown({ documents: () => state.project?.id === pid ? all() : [], project: () => pid,
+      current: () => all().find(d => d.id === id), loadTable: record => record.table || api(endpoint(pid, record.id)).then(d => d.table),
+      esc, icon, cards: () => state.tasks || [], cardHTML });
+  }
+  function embedPanel(button, target = editor) {
+    documentEmbedPicker({ button, panels, documents: all, currentId: current.id, esc, loadTable: loadEmbedTable,
+      insert: value => target?.insert(value, { block: true, focus: allowsTextAutofocus() }) });
+  }
+
   // showPanel returns the panel, or nothing when its opener, pressed again, closed it.
   const panels = anchoredPanel(ctx), showPanel = panels.show, closePanel = panels.close;
   const explorer = folderTree({ ...ctx, kind: "document", label: "Documents", placeholder: "Find a document or #tag…", glyph: d => d.document_type === "table" ? "table" : "file", panels,
@@ -81,7 +94,8 @@ export function projectDocuments(ctx) {
     form.querySelector("[data-document-recovery]").hidden = !problem;
     const secondary=document.querySelector('.document-pane'),paneProblem=secondary?.querySelector('[data-pane-save-problem]'),paneEntry=splitState()&&sync.entries.get(endpoint(project,splitState().id));
     if(paneProblem){const problem=paneEntry?.error||paneEntry?.conflict||sync.storageError;paneProblem.hidden=!problem;paneProblem.querySelector('span').textContent=sync.storageError?'Browser draft storage is unavailable. Keep this page open.':paneEntry?.conflict?'This document changed elsewhere. Review its pending save.':paneEntry?.error?'Changes kept in this browser. Review the pending save.':'';}
-    renderTaskQueries(form);if(secondary)renderTaskQueries(secondary);
+    renderTaskQueries(form); renderer?.hydrate(form);
+    if(secondary){renderTaskQueries(secondary);paneRenderer?.hydrate(secondary);}
     refreshComments();
     updateExplorer();
   }
@@ -666,10 +680,11 @@ export function projectDocuments(ctx) {
     if (!target) { toast("No matching document or card in this project. Use [[ to choose one.", true); return; }
     const fragment = reference.includes("#") ? reference.slice(reference.indexOf("#") + 1) : "";
     if (target.id !== current.id) open(target.id);
+    if (target.document_type === 'table') { if (fragment) void editor?.jumpReference?.('#' + fragment); return; }
     if (fragment) requestAnimationFrame(() => {
       if (!form) return;
-      const heading = documentHeadings(form.elements.body.value).find(h => h.title.toLocaleLowerCase() === fragment.toLocaleLowerCase());
-      const at = fragment.startsWith("^") ? form.elements.body.value.indexOf(fragment) : heading?.from;
+      const body = form.elements.body.value, section = documentSection(body, '#' + fragment);
+      const at = section ? body.indexOf(section) : -1;
       if (at >= 0) { setMode("live", false); editor.jump(at); }
     });
   }
@@ -716,6 +731,7 @@ export function projectDocuments(ctx) {
     paneEditor?.flush(); paneEditor?.destroy(); paneEditor = null;
     editor?.flush();
     editor?.destroy();
+    renderer?.destroy(); paneRenderer?.destroy(); paneRenderer = null;
     editor = form = current = project = renderer = null;
   }
   let scrolled = null; // { id, scroll: { selector: scrollTop } } for the open document
@@ -818,6 +834,7 @@ export function projectDocuments(ctx) {
     paneResize?.(); paneResize=null;
     paneFormatScroll?.destroy();paneFormatScroll=null;
     paneEditor?.flush(); paneEditor?.destroy(); paneEditor = null;
+    paneRenderer?.destroy(); paneRenderer = null;
     const workspace = document.querySelector(".documents-workspace"), split = form && !narrow() && splitState();
     workspace?.querySelector(".document-pane")?.remove();
     workspace?.querySelector(".document-split-divider")?.remove();
@@ -844,13 +861,14 @@ export function projectDocuments(ctx) {
     section.querySelector('.document-heading').prepend(section.querySelector('.document-pane-formatting'));
     section.querySelector('[data-pane-tools]')?.addEventListener('click',event=>{const button=event.currentTarget;showPanel(button,'Second document tools',MODES.map(([key,label,glyph])=>`<button type="button" class="document-panel-item" data-document-pane-mode="${key}" aria-pressed="${splitState()?.mode===key}">${icon(glyph)}${label}</button>`).join(''),220,{menu:true});});
     const url=endpoint(pid,doc.id);
+    paneRenderer = rendererFor(doc.id);
     paneEditor = isTable ? createDocumentSheet({
       form:section,record:doc,icon,esc,colorPicker:ctx.colorPicker,panels,storage,toast,
       async load(){const latest=doc.table?doc:await api(url),pending=sync.entries.get(url)?.local;return pending?.table||latest.table;},
       onChange(table){const base=all().find(d=>d.id===doc.id);if(!base||state.project?.id!==pid)return;state.documents=all().map(d=>d.id===doc.id?{...base,table}:d);void sync.enqueue(url,base,{table});}
     }) : markdownDocumentEditor({
       icon, panel: showPanel, toast, colorPicker: ctx.colorPicker, parent: section.querySelector(".document-codemirror"), text: all().find(d => d.id === split.id).body || "",
-      mode: split.mode === "source" ? "source" : "live", renderer, documents: all, hidden: ["attach", "card", "comment", "sketch"],
+      mode: split.mode === "source" ? "source" : "live", renderer: paneRenderer, documents: all, hidden: ["attach", "card", "comment", "sketch"],
       cards: () => (state.tasks || []).filter(t => !t.archived), taskQueries: renderTaskQueries,
       onChange(body) {
         const base = all().find(d => d.id === split.id);
@@ -859,6 +877,7 @@ export function projectDocuments(ctx) {
         void sync.enqueue(endpoint(pid, base.id), base, { body });
       },
       onError: message => toast(message, true), onLink: followLink,
+      onInsert: command => { if (command === "embed") embedPanel(section.querySelector("[data-pane-tools]"), paneEditor); },
     });
     section.addEventListener('submit',event=>{event.preventDefault();paneEditor?.flush();});
     if(!isTable)paneFormatScroll=installToolbarScroll(section.querySelector('.rich-toolbar-shell'));
@@ -912,7 +931,7 @@ export function projectDocuments(ctx) {
     section.querySelector(".document-codemirror").hidden = next === "reading";
     reading.hidden = next !== "reading";
     if (next === "reading") {
-      reading.innerHTML = `<div class="document-page document-prose">${renderer.render(paneEditor.value())}</div>`;
+      reading.innerHTML = `<div class="document-page document-prose">${paneRenderer.render(paneEditor.value())}</div>`;
       paneEditor.hydrate(reading);
     } else paneEditor.setMode(next);
   }
@@ -993,7 +1012,7 @@ export function projectDocuments(ctx) {
     project = state.project.id;
     form = document.querySelector("#document-form");
     syncFocus();
-    renderer = documentMarkdown({ documents: all, project: () => project, esc, icon, cards: () => state.tasks || [], cardHTML });
+    renderer = rendererFor(doc.id);
     const tableURL = endpoint(project, doc.id), tableProject = project;
     editor = doc.document_type === "table" ? createDocumentSheet({
       form, record: doc, icon, esc, colorPicker: ctx.colorPicker, panels, storage, toast, toolsExtras:splitToolsHTML,
@@ -1024,6 +1043,7 @@ export function projectDocuments(ctx) {
       },
       onError: message => toast(message, true), onLink: followLink, onComment: id => openThread(id), onSketch: file => sketch(file),
       onInsert(command) {
+        if (command === "embed") embedPanel(form.querySelector('[data-document-action="insert"]'));
         if (command === "attach") form.querySelector("#document-attachment").click();
         if (command === "card") makeCard().catch((error) => toast(error.message, true));
         if (command === "comment") commentOnText();
@@ -1243,9 +1263,10 @@ export function projectDocuments(ctx) {
         showPanel(button, "Delete document", '<p>Move this document to Trash? It stays there for 30 days.</p><button type="button" class="button danger" data-document-action="delete">Move to Trash</button>');
       } else if (action === "insert") {
         const categories = panelCategories(state.project.personal ? ["card"] : []);
-        showPanel(button, "Insert", `<div class="document-insert-options">${categories.map(([title, items]) => `<section aria-label="${title}">${items.map(([key,label,glyph]) => `<button type="button" class="document-panel-item" ${["attach", "card", "comment", "sketch"].includes(key) ? `data-document-action="${key}"` : `data-document-format="${key}"`}>${icon(glyph)}${label}</button>`).join("")}</section>`).join("")}</div>`, 280, { menu: true });
+        showPanel(button, "Insert", `<div class="document-insert-options">${categories.map(([title, items]) => `<section aria-label="${title}">${items.map(([key,label,glyph]) => `<button type="button" class="document-panel-item" ${["attach", "card", "comment", "sketch", "embed"].includes(key) ? `data-document-action="${key}"` : `data-document-format="${key}"`}>${icon(glyph)}${label}</button>`).join("")}</section>`).join("")}</div>`, 280, { menu: true });
 
-      } else if (action === "attach") { closePanel(); form.querySelector("#document-attachment").click(); }
+      } else if (action === "embed") { embedPanel(button); }
+      else if (action === "attach") { closePanel(); form.querySelector("#document-attachment").click(); }
       else if (action === "card") { closePanel(); await makeCard(); }
       else if (action === "comment") { closePanel(); commentOnText(); }
       else if (action === "sketch") { closePanel(); sketch(); }

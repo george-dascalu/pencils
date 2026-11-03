@@ -2,6 +2,14 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.21.50 — 2026-11-03
+
+### Added
+- Feature F0.21-50: Insert → Embed document and `/Embed` place a live, read-only document, heading section or Table worksheet/range inside a Markdown document. Whole Table embeds have worksheet tabs, calculated formulas, shared cell formatting, rich text and merged cells; previews scroll internally and render only visible rows and columns. Press the source name to open the document or selected spreadsheet range. References stay in the Markdown vault, source edits refresh embeds, and Help includes an embedding guide.
+
+### Fixed
+- Heading embeds resolve nested section paths, and block embeds omit their IDs and ignore fenced code. Missing sections and circular references show an inline message instead of an empty preview or recursive content.
+
 ## 0.21.49 — 2026-11-03
 
 ### Fixed

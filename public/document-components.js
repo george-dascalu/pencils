@@ -162,6 +162,7 @@ export function editableDocumentComponent({ element, raw, from, kind, editor, re
   }
   const api = {
     element,
+    end: () => position + source.length,
     update(nextFrom, nextRaw) {
       const next = trim(nextRaw);
       if (!writing && source !== next) return false;

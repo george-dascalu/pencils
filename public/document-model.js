@@ -53,13 +53,36 @@ export function documentOutline(text) {
 export function documentSection(text, fragment) {
   if (!fragment) return text;
   const value = fragment.replace(/^#/, "");
-  if (value.startsWith("^")) {
-    const id = value.slice(1).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-    const match = new RegExp(`(^|\\n)([^\\n]*(?:\\n[^\\n]+)*?)\\s+\\^${id}(?=\\s*(?:\\n|$))`).exec(text);
-    return match ? match[2].trim() : "";
+  if (value.startsWith("^") || /^%5e/i.test(value)) {
+    let id; try { id = decodeURIComponent(value).slice(1); } catch { return ''; }
+    const lines = text.split('\n'); let fence = null;
+    for (let n = 0; n < lines.length; n++) {
+      const marker = /^\s{0,3}(`{3,}|~{3,})/.exec(lines[n]);
+      if (marker) { if (!fence) fence = marker[1]; else if (marker[1][0] === fence[0] && marker[1].length >= fence.length) fence = null; continue; }
+      if (fence || !lines[n].trimEnd().endsWith('^' + id)) continue;
+      const markerAt = lines[n].lastIndexOf('^' + id);
+      if (markerAt && !/\s/.test(lines[n][markerAt - 1])) continue;
+      if (!lines[n].slice(0, markerAt).trim()) {
+        let end = n; while (end > 0 && !lines[end - 1].trim()) end--;
+        if (!end) return '';
+        let start = end - 1;
+        while (start > 0 && lines[start - 1].trim() && !/^#{1,6}\s/.test(lines[start - 1])) start--;
+        return lines.slice(start, end).join('\n').trim();
+      }
+      let start = n;
+      while (start > 0 && lines[start - 1].trim() && !/^#{1,6}\s/.test(lines[start - 1])) start--;
+      return [...lines.slice(start, n), lines[n].slice(0, markerAt)].join('\n').trim();
+    }
+    return '';
   }
   const headings = documentHeadings(text);
-  const at = headings.findIndex(h => h.title.toLocaleLowerCase() === value.toLocaleLowerCase());
+  const decode = part => { try { return decodeURIComponent(part).toLocaleLowerCase(); } catch { return part.toLocaleLowerCase(); } };
+  const path = value.split('#').map(decode), stack = [];
+  const at = headings.findIndex(h => {
+    while (stack.length && stack.at(-1).level >= h.level) stack.pop();
+    stack.push(h);
+    return path.length <= stack.length && path.every((name, i) => stack[stack.length - path.length + i].title.toLocaleLowerCase() === name);
+  });
   if (at < 0) return "";
   const end = headings.slice(at + 1).find(h => h.level <= headings[at].level)?.from ?? text.length;
   return text.slice(headings[at].from, end);

@@ -55,6 +55,7 @@ export function markdownDocumentEditor({ parent, text, mode = "live", renderer, 
       (hover && hover.from < to && hover.to > from);
   };
   function hydrate(element) {
+    renderer.hydrate?.(element);
     highlightCodeBlocks(element);
     if (element.querySelector("[data-document-task-query]")) taskQueries?.(element);
     if (element.querySelector("[data-document-diagram]"))
@@ -91,6 +92,7 @@ export function markdownDocumentEditor({ parent, text, mode = "live", renderer, 
         if (link) { event.preventDefault(); onLink(link.dataset.documentRef); }
       });
       element.addEventListener("mousedown", e => {
+        if (e.target.closest('.document-transclusion')) return;
         // A sketch opens in the sketch pad instead of revealing its Markdown.
         const sketch = e.target.closest("img[data-document-sketch]");
         if (sketch) { e.preventDefault(); onSketch?.(sketch.dataset.documentSketch); return; }
@@ -103,7 +105,7 @@ export function markdownDocumentEditor({ parent, text, mode = "live", renderer, 
       hydrate(element);
       return element;
     }
-    ignoreEvent(event) { return this.block || !!event.target?.closest?.("a, img[data-document-sketch]"); }
+    ignoreEvent(event) { return this.block || !!event.target?.closest?.("a, img[data-document-sketch], .document-transclusion"); }
   }
   class Checkbox extends WidgetType {
     constructor(checked, from) { super(); this.checked = checked; this.from = from; }
@@ -285,7 +287,7 @@ export function markdownDocumentEditor({ parent, text, mode = "live", renderer, 
     boost: 50 - index,
     apply(editor, _completion, from, to) {
       editor.dispatch({ changes: { from: from - 1, to }, selection: { anchor: from - 1 } });
-      if (["attach", "card", "comment", "sketch"].includes(command)) onInsert?.(command);
+      if (["attach", "card", "comment", "sketch", "embed"].includes(command)) onInsert?.(command);
       else format(command);
     },
   })));
@@ -389,6 +391,7 @@ export function markdownDocumentEditor({ parent, text, mode = "live", renderer, 
     }),
   });
   const selectionLife = new AbortController();
+  parent.addEventListener('document-embed-resize', () => view.requestMeasure(), { signal: selectionLife.signal });
   view.dom.addEventListener('mousedown', () => {
     selecting = true; clearTimeout(hoverTimer); view.dispatch({ effects: hoverEffect.of(null) });
   }, { signal: selectionLife.signal });
@@ -517,9 +520,18 @@ export function markdownDocumentEditor({ parent, text, mode = "live", renderer, 
       view.dispatch({ selection: EditorSelection.cursor(anchor), scrollIntoView: true });
       focusOnOpen(view.contentDOM, parent.closest("form")?.querySelector('[data-document-action="tools"]'));
     },
-    insert(value) {
-      if (focusedComponent?.element.isConnected && focusedComponent.insert(value)) return;
-      view.dispatch(view.state.replaceSelection(value)); view.focus();
+    insert(value, { block = false, focus = true } = {}) {
+      if (!block && focusedComponent?.element.isConnected && focusedComponent.insert(value)) return;
+      if (block) {
+        let { from, to } = view.state.selection.main;
+        if (focusedComponent?.element.isConnected) { focusedComponent.commit(); from = to = focusedComponent.end(); }
+        const source = view.state.doc.toString(), before = source.slice(0, from), after = source.slice(to);
+        const prefix = before.endsWith('\n\n') || !before ? '' : before.endsWith('\n') ? '\n' : '\n\n';
+        const suffix = after.startsWith('\n\n') ? '' : after.startsWith('\n') ? '\n' : '\n\n';
+        const insert = prefix + value + suffix;
+        view.dispatch({ changes: { from, to, insert }, selection: { anchor: from + insert.length }, userEvent: 'input', annotations: isolateHistory.of('full') });
+      } else view.dispatch(view.state.replaceSelection(value));
+      if (focus) view.focus();
     },
     destroy() { alive = false; clearTimeout(hoverTimer); selectionTools?.destroy(); selectionLife.abort(); view.destroy(); },
     flush() { if (focusedComponent?.element.isConnected) focusedComponent.commit(); },

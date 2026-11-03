@@ -56,6 +56,15 @@ export const helpArticles = [
     ],
   },
   {
+    id: 'embeds', title: 'Embed documents', group: 'Documents',
+    summary: 'Show a document, section, worksheet or cell range inside another Markdown document.',
+    sections: [
+      { id: 'insert', title: 'Insert an embed', html: '<p>In a Markdown document, choose <strong>Insert → Embed document</strong>, or type <code>/Embed</code> and choose Embed document. Select the source and either the whole document or a heading. Nested headings include their subsections and stop before the next heading at the same level.</p><p>Embeds appear in Live preview and Reading. They are read-only: press the source name to open it for editing. Changes to the source refresh the embed. Missing sources or sections show a message; circular references stop without freezing the document.</p>' },
+      { id: 'markdown', title: 'Markdown references', html: '<p>Embeds use <a href="https://help.obsidian.md/embeds" target="_blank" rel="noopener noreferrer">Obsidian-style references</a>. You can type a title or file path directly:</p><pre><code>![[Project brief]]\n![[Project brief#Goals]]\n![[Project brief#Goals#Next steps]]\n![[Project brief#^summary]]</code></pre><p>For a block reference, add <code>^summary</code> at the end of its paragraph. For a list or quote, put its block ID on a separate line after the block. The picker uses the stable vault file path, so renaming a document keeps its embeds linked. References stay in the Markdown file; no copy of the source is saved in the host.</p>' },
+      { id: 'tables', title: 'Tables, worksheets and ranges', html: '<p>Choose a Table in the same picker, then all worksheets or a single worksheet. An optional A1 range, such as <code>B2:D12</code>, limits the preview. Whole-workbook embeds have worksheet tabs. Formulas, rich text, cell formatting and merged cells use the saved spreadsheet data; the preview scrolls inside its own area and renders only visible rows and columns.</p><p>Pencils Table references name the worksheet and optional range after <code>#</code>:</p><pre><code>![[Budget]]\n![[Budget#Costs]]\n![[Budget#Costs!B2:D12]]</code></pre><p>Press the source name to open that worksheet and select its cells. Keep the source Table’s Markdown and JSON data together when moving or backing up the vault.</p>' },
+    ],
+  },
+  {
     id: "integrations",
     title: "Connect a project",
     group: "Project integrations",

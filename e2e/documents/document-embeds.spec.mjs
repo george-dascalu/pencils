@@ -1,0 +1,120 @@
+// Owner request: embed Markdown documents/sections and Table worksheets/ranges in another document.
+import { test, expect, useApp, onDevices } from '../fixtures.mjs';
+import { blankTable } from '../../public/document-sheet-model.js';
+import { chooseDocumentView, editorSource, documentName } from '../helpers/documents.mjs';
+const app = useApp(async store => {
+  const project = await store.createProject({ title: 'Embeds', key: 'EM' });
+  const note = await store.createDocument(project.id, { title: 'Project brief', body: '# Brief\n\n## Goals\n\n**Keep the files yours.**\n\n### Detail\nNested detail.\n\n## Other\nNot in the Goals section.\n' });
+  let table = await store.createDocument(project.id, { title: 'Budget', document_type: 'table' });
+  const data = blankTable(table.id, 'Budget'), sheet = data.workbook.sheets['sheet-1'];
+  sheet.name = 'Costs'; sheet.rowCount = 1000; sheet.columnCount = 200;
+  sheet.cellData = { 0: { 0: { v: 'Item', s: { bl: 1 } }, 1: { v: 'Cost' } }, 1: { 0: { v: 'Design' }, 1: { v: 80 }, 2: { f: '=B2*2' } }, 2: { 0: { v: 'Build' }, 1: { v: 120 } }, 999: { 0: { v: 'Last row' }, 199: { v: 'Far corner' } } };
+  data.workbook.sheetOrder.push('rates'); data.workbook.sheets.rates = { ...structuredClone(sheet), id: 'rates', name: 'Rates', cellData: { 0: { 0: { v: 'Hourly rate' }, 1: { v: 50 } } } };
+  table = await store.updateDocument(project.id, table.id, { revision: table.revision, table: data });
+  return { project, note, table };
+});
+async function open(page, body = '') {
+  const doc = await app.store.createDocument(app.project.id, { title: 'Host document', body });
+  await page.goto(`${app.base}/#project/${app.project.id}/documents/${doc.id}`);
+  await page.locator('#document-form .cm-content').waitFor(); return doc;
+}
+onDevices(['desktop', 'ipad', 'phone'], () => test('Insert embeds a selected document section without copying or editing its source', { tag: '@gate' }, async ({ page, device }) => {
+  const host = await open(page);
+  await page.locator('#document-form [data-document-action=insert]').click();
+  await page.getByRole('button', { name: 'Embed document', exact: true }).click();
+  const panel = page.getByRole('dialog', { name: 'Embed document', exact: true });
+  await panel.getByLabel('Document', { exact: true }).selectOption(app.note.id);
+  await panel.getByLabel('Section', { exact: true }).selectOption('Brief#Goals');
+  await panel.getByRole('button', { name: 'Insert embed', exact: true }).click();
+  await expect.poll(() => editorSource(page)).toContain(`![[${app.note.file.replace(/\.md$/, '')}#Brief#Goals]]`);
+  const embed = page.locator('#document-form .document-transclusion:visible');
+  await expect(embed).toContainText('Keep the files yours.'); await expect(embed).toContainText('Nested detail.');
+  await expect(embed).not.toContainText('Not in the Goals section.');
+  expect(await embed.evaluate(el => el.isContentEditable)).toBe(false);
+  await expect(embed.locator('strong')).toHaveCSS('font-weight', '700');
+  expect(await page.evaluate(() => document.documentElement.scrollWidth - innerWidth)).toBeLessThanOrEqual(1);
+  if (device !== 'desktop') await expect(page.locator('.cm-content')).not.toBeFocused();
+  await expect.poll(async () => (await app.store.getDocument(app.project.id, host.id)).body).toContain('![[Projects/');
+  expect((await app.store.getDocument(app.project.id, app.note.id)).body).toBe(app.note.body);
+  await chooseDocumentView(page, 'Reading'); await expect(embed).toContainText('Keep the files yours.');
+  await embed.locator('a[data-document-ref]').first().click(); await expect(documentName(page)).toHaveText('Project brief');
+}));
+onDevices(['desktop', 'ipad', 'phone'], () => test('Table embeds calculate ranges and virtualise whole worksheets without overflowing the page', { tag: '@gate' }, async ({ page }) => {
+  const ref = app.table.file.replace(/\.md$/, '');
+  await open(page, `![[${ref}#Costs!A1:C3]]\n\n![[${ref}]]\n`);
+  const embeds = page.locator('#document-form .document-transclusion:visible');
+  await expect(embeds.first().locator('[data-embed-cell="C2"]')).toHaveText('160');
+  await expect(embeds.first().locator('[data-embed-cell="A1"]')).toHaveCSS('font-weight', '700');
+  await expect(embeds.first().locator('[contenteditable=true],input,textarea')).toHaveCount(0);
+  expect(await embeds.first().evaluate(el => el.isContentEditable)).toBe(false);
+  const scroll = embeds.last().locator('.document-embed-grid-scroll');
+  await expect(scroll).toBeVisible(); expect(await embeds.last().locator('td[data-embed-cell]').count()).toBeLessThan(200);
+  await scroll.evaluate(el => el.scrollTop = el.scrollHeight);
+  await expect(embeds.last().locator('[data-embed-cell="A1000"]')).toHaveText('Last row');
+  await scroll.evaluate(el => el.scrollLeft = el.scrollWidth);
+  await expect(embeds.last().locator('[data-embed-cell="GR1000"]')).toHaveText('Far corner');
+  await embeds.last().getByRole('tab', { name: 'Rates', exact: true }).click();
+  await expect(embeds.last().locator('[data-embed-cell="A1"]')).toHaveText('Hourly rate');
+  expect(await page.evaluate(() => document.documentElement.scrollWidth - innerWidth)).toBeLessThanOrEqual(1);
+  await chooseDocumentView(page, 'Reading'); await expect(embeds.first().locator('[data-embed-cell="C2"]')).toHaveText('160');
+}));
+onDevices(['desktop', 'ipad', 'phone'], () => test('the embed picker validates Table ranges and opens their source worksheet and cells', { tag: '@gate' }, async ({ page, device }) => {
+  const host = await open(page);
+  await page.locator('#document-form [data-document-action=insert]').click();
+  await page.getByRole('button', { name: 'Embed document', exact: true }).click();
+  const panel = page.getByRole('dialog', { name: 'Embed document', exact: true });
+  await panel.getByLabel('Document', { exact: true }).selectOption(app.table.id);
+  await panel.getByLabel('Worksheet', { exact: true }).selectOption('sheet-1');
+  const range = panel.getByLabel('Cell range (optional)', { exact: true }); await range.fill('A1001');
+  await panel.getByRole('button', { name: 'Insert embed', exact: true }).click();
+  await expect(panel.getByRole('alert')).toContainText('within the worksheet');
+  expect((await app.store.getDocument(app.project.id, host.id)).body).toBe('');
+  await range.fill('B2:C3');
+  const sizing = await panel.getByRole('button', { name: 'Insert embed', exact: true }).evaluate(el => ({ height: el.getBoundingClientRect().height, token: parseFloat(getComputedStyle(el).getPropertyValue('--menu-control-height')) }));
+  expect(sizing.height).toBeGreaterThanOrEqual(device === 'desktop' ? sizing.token : 44);
+  await panel.getByRole('button', { name: 'Insert embed', exact: true }).click();
+  await expect.poll(() => editorSource(page)).toContain('#Costs!B2:C3');
+  const embed = page.locator('#document-form .document-transclusion:visible');
+  await expect(embed.locator('[data-embed-cell="C2"]')).toHaveText('160');
+  await embed.locator('a[data-document-ref]').click();
+  await expect(page.locator('.document-sheet')).toHaveAttribute('data-ready', 'true');
+  await expect(page.getByRole('tab', { name: 'Costs', exact: true })).toHaveAttribute('aria-selected', 'true');
+  await expect(page.getByLabel('Selected cell', { exact: true })).toHaveText('B2:C3');
+}));
+test('self sections and block IDs embed in Live preview and Reading without rewriting the host', { tag: '@gate' }, async ({ page }) => {
+  const body = '# Source\n\nA paragraph to share. ^paragraph\n\n# Collected\n\n![[#Source]]\n';
+  const host = await open(page, body);
+  await expect(page.locator('#document-form .document-transclusion:visible')).toContainText('A paragraph to share.');
+  await chooseDocumentView(page, 'Source'); await expect(page.locator('#document-form .document-transclusion:visible')).toHaveCount(0);
+  await chooseDocumentView(page, 'Reading'); await expect(page.locator('.document-reading .document-transclusion')).toContainText('A paragraph to share.');
+  expect((await app.store.getDocument(app.project.id, host.id)).body).toBe(body);
+  await chooseDocumentView(page, 'Live preview');
+  const ref = `![[${host.id}#^paragraph]]`;
+  await page.locator('.cm-content').evaluate(async (el, value) => {
+    const { EditorView } = await import('/vendor/editor/deps.js'); const view = EditorView.findFromDOM(el);
+    view.dispatch({ changes: { from: view.state.doc.length, insert: '\n' + value + '\n' } });
+  }, ref);
+  await expect(page.locator('#document-form .document-transclusion:visible').last()).toHaveText(/A paragraph to share\./);
+  await expect(page.locator('#document-form .document-transclusion:visible').last()).not.toContainText('^paragraph');
+});
+test('embeds report missing sections and cycles, and source updates refresh an open embed', { tag: '@gate' }, async ({ page }) => {
+  let recursive = await app.store.createDocument(app.project.id, { title: 'Recursive source', body: '' });
+  recursive = await app.store.updateDocument(app.project.id, recursive.id, { revision: recursive.revision, body: `![[${recursive.id}]]` });
+  await open(page, `![[${app.note.id}#Missing]]\n\n![[${recursive.id}]]\n\n![[${app.note.id}#Goals]]\n`);
+  await expect(page.locator('#document-form .document-transclusion:visible')).toHaveCount(4);
+  await expect(page.locator('#document-form')).toContainText('Section not found');
+  await expect(page.locator('#document-form')).toContainText('Circular embed');
+  const latest = await app.store.getDocument(app.project.id, app.note.id);
+  await app.store.mutate(() => app.store.updateDocument(app.project.id, app.note.id, { revision: latest.revision, body: latest.body.replace('Keep the files yours.', 'Updated in its source.') }));
+  await expect(page.locator('#document-form')).toContainText('Updated in its source.');
+});
+test('changing a source Table recalculates its open embed without rewriting the host', { tag: '@gate' }, async ({ page }) => {
+  const source = `![[${app.table.id}#Costs!A1:C3]]\n`, host = await open(page, source);
+  const cell = page.locator('#document-form .document-transclusion:visible [data-embed-cell="C2"]');
+  await expect(cell).toHaveText('160');
+  const latest = await app.store.getDocument(app.project.id, app.table.id), table = structuredClone(latest.table);
+  table.workbook.sheets['sheet-1'].cellData[1][1].v = 100;
+  await app.store.mutate(() => app.store.updateDocument(app.project.id, app.table.id, { revision: latest.revision, table }));
+  await expect(cell).toHaveText('200');
+  expect((await app.store.getDocument(app.project.id, host.id)).body).toBe(source);
+});

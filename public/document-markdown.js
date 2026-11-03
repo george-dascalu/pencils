@@ -1,7 +1,8 @@
 import { Marked } from "/vendor/marked.js";
 import DOMPurify from "/vendor/purify.js";
 import { katex, markedFootnote } from "/vendor/editor/deps.js";
-import { resolveDocument, resolveCard, documentSection } from "./document-model.js";
+import { resolveDocument, resolveCard, documentSection, documentReference } from "./document-model.js";
+import { documentEmbedViews } from './document-embed-view.js';
 import { listCallouts, listCalloutLabel } from "./document-list-callouts.js";
 import { textColor, textColorExtension } from './document-text-color.js';
 
@@ -19,8 +20,9 @@ const tableLayout = {
   renderer(token) { return `<div class="document-table-scroll">${this.parser.parse(token.tokens)}</div>`; },
 };
 
-export function documentMarkdown({ documents, project, esc, icon, cards = () => [], cardHTML }) {
-  let depth = 0, sequence = 0;
+export function documentMarkdown({ documents, project, esc, icon, cards = () => [], cardHTML, current = () => null, loadTable }) {
+  let sequence = 0, stack = [], context = [], embeds = 0, embeddedCharacters = 0;
+  const embedViews = documentEmbedViews({ documents, loadTable, render: source => render(source) });
   const inlineParser = new Marked({ gfm: true, breaks: false });
   inlineParser.use({ extensions: [textColorExtension] });
   // Preview range discovery must not mutate the footnote renderer's state.
@@ -104,14 +106,21 @@ export function documentMarkdown({ documents, project, esc, icon, cards = () => 
         },
         renderer(token) {
           const [ref, alias] = token.reference.split("|");
-          const record = resolveDocument(ref, documents());
+          const record = resolveDocument(ref, documents()) || (ref.startsWith('#') ? context.at(-1) : null);
           const label = alias || record?.title || ref;
-          if (record && token.embed && depth < 3) {
+          if (record && token.embed) {
             const fragment = ref.includes("#") ? ref.slice(ref.indexOf("#")) : "";
-            depth++;
+            const key = record.id + fragment, canonical = documentReference(record) + fragment;
+            let message = stack.includes(key) ? 'Circular embed — open the source to view it.' : stack.length >= 8 || ++embeds > 50 ? 'Embed limit reached — open the source to continue.' : '';
+            const source = record.document_type === 'table' ? '' : documentSection(record.body || '', fragment);
+            if (!message && record.document_type !== 'table' && fragment && !source) message = 'Section not found — choose another heading or block.';
+            embeddedCharacters += source.length;
+            if (embeddedCharacters > 500000) message = 'Embed limit reached — open the source to continue.';
+            stack.push(key); context.push(record);
             try {
-              return `<div class="document-transclusion" data-document-source="${esc(token.raw)}"><a href="#" data-document-ref="${esc(ref)}">${esc(label)}</a>${makeParser().parse(documentSection(record.body || "", fragment))}</div>`;
-            } finally { depth--; }
+              const content = message ? `<p class="field-hint">${esc(message)}</p>` : record.document_type === 'table' ? '<p class="field-hint" role="status">Opening embedded table…</p>' : makeParser().parse(source);
+              return `<div class="document-transclusion" contenteditable="false" role="group" aria-label="Embedded ${esc(label)}" data-document-source="${esc(token.raw)}" data-document-embed-id="${esc(record.id)}" data-document-embed-ref="${esc(canonical)}"${record.document_type === 'table' && !message ? ` data-document-embed-table="${esc(fragment)}"` : ''}><header class="document-embed-heading">${icon?.(record.document_type === 'table' ? 'table' : 'file') || ''}<a href="#" data-document-ref="${esc(canonical)}">${esc(label)}</a></header><div class="document-embed-content">${content}</div></div>`;
+            } finally { stack.pop(); context.pop(); }
           }
           // A card mention ("[[WEB-12]]") becomes a chip once the HTML is sanitised.
           const card = !record && resolveCard(ref, cards());
@@ -121,6 +130,7 @@ export function documentMarkdown({ documents, project, esc, icon, cards = () => 
             const file = ref.replace(/^\.\.\//, ""), sketch = /\/s-/.test(file);
             return `<img data-document-source="${esc(token.raw)}" src="/api/projects/${esc(project())}/${esc(file)}" alt="${esc(sketch && label === ref ? "Sketch" : label)}"${sketch ? ` data-document-sketch="${esc(file)}"` : ""}${/^\d{1,4}$/.test(alias || "") ? ` width="${alias}"` : ""}>`;
           }
+          if (token.embed) return `<div class="document-transclusion" contenteditable="false" data-document-source="${esc(token.raw)}" data-document-embed-ref="${esc(ref)}"><a href="#" class="unresolved-link" data-document-ref="${esc(ref)}">${esc(label)}</a><p class="field-hint">Document not found.</p></div>`;
           return `<a href="#" data-document-source="${esc(token.raw)}" class="${record ? "" : "unresolved-link"}" data-document-ref="${esc(ref)}">${esc(label)}</a>`;
         },
       },
@@ -129,11 +139,12 @@ export function documentMarkdown({ documents, project, esc, icon, cards = () => 
     return parser;
   }
   function render(text, inline = false) {
+    const origin = current(); stack = origin ? [origin.id] : []; context = origin ? [origin] : []; embeds = embeddedCharacters = 0;
     // Footnotes need a complete lexer pass, even for a small live-preview widget.
     const fragment = DOMPurify.sanitize(makeParser().parse(text), {
       RETURN_DOM_FRAGMENT: true,
       ALLOW_DATA_ATTR: false,
-      ADD_ATTR: ["data-document-sketch", "data-document-ref", "data-document-diagram", "data-document-source", "data-document-callout", "data-document-card", "data-document-task-query", "data-document-color"],
+      ADD_ATTR: ["data-document-sketch", "data-document-ref", "data-document-diagram", "data-document-source", "data-document-callout", "data-document-card", "data-document-task-query", "data-document-color", "data-document-embed-id", "data-document-embed-ref", "data-document-embed-table"],
       FORBID_TAGS: ["style", "form", "button", "textarea", "select", "option", "iframe", "object", "embed"],
       FORBID_ATTR: ["style"],
     });
@@ -216,5 +227,5 @@ export function documentMarkdown({ documents, project, esc, icon, cards = () => 
       return element.firstElementChild.innerHTML;
     return element.innerHTML;
   }
-  return { render, tokens: text => blockParser.lexer(text) };
+  return { render, tokens: text => blockParser.lexer(text), hydrate: embedViews.hydrate, destroy: embedViews.destroy };
 }

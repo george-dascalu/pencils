@@ -10,6 +10,10 @@ test("document references resolve stable vault paths and avoid ambiguous titles"
   assert.equal(resolveDocument("d-a.md", [a, b]), a);
   assert.equal(resolveDocument("Brief", [a, b]), null);
   assert.equal(resolveDocument("brief", [a]), a);
+  assert.equal(resolveDocument(a.file.replace(/\.md$/, ''), [a, b]), a);
+  assert.equal(resolveDocument(a.file.replace(/\.md$/, ''), [a, { ...b, aliases: [a.id] }]), a);
+  assert.equal(resolveDocument('Unrelated', [a, b]), null);
+  assert.equal(resolveDocument('Nickname', [{ ...a, aliases: ['Nickname'] }]).id, a.id);
 });
 
 test("outline and heading transclusions ignore fenced code and include nested sections", () => {
@@ -18,6 +22,7 @@ test("outline and heading transclusions ignore fenced code and include nested se
   assert.equal(documentSection(text, "#One"), text.slice(0, text.indexOf("# Two")));
   assert.equal(documentSection(text, "#Child"), "## Child\nDetails\n");
   assert.equal(documentSection(text, "#Unknown"), "");
+  assert.deepEqual(documentHeadings('````\n```\n# Not a heading\n~~~~\n````\n# Yes').map(h => h.title), ['Yes']);
 });
 
 test("Obsidian URI opens the exact file and safely encodes device vault names and folders", () => {
@@ -29,6 +34,9 @@ test("Obsidian URI opens the exact file and safely encodes device vault names an
   assert.equal(url.searchParams.get("file"), "Work notes/Pencils/Projects/p-a/documents/d-a.md");
   assert.equal(obsidianDocumentURI(record, {}), "");
   assert.throws(() => obsidianDocumentURI(record, { vault: "Work", folder: "../../Other" }));
+  assert.throws(() => obsidianDocumentURI(record, { vault: 'Work', folder: '..' }), /Use a folder inside/);
+  assert.throws(() => obsidianDocumentURI({file:''}, {vault:'Work'}), /no valid vault path/);
+  assert.throws(() => obsidianDocumentURI({file:'../Outside.md'}, {vault:'Work'}), /no valid vault path/);
 });
 import { documentOutline } from "../public/document-model.js";
 test("outline groups headings under their nearest ancestor, including skipped levels", () => {
@@ -48,4 +56,6 @@ test("card mentions resolve by key, an older key, id or alias", () => {
   assert.equal(resolveCard("fix login", tasks), card, "titles resolve through aliases, as in Obsidian");
   assert.equal(resolveCard("Missing", tasks), null);
   assert.equal(resolveCard("", tasks), null);
+  assert.equal(resolveCard('t-solo', [{ id: 't-solo', key: '', aliases: [] }]).id, 't-solo');
+  assert.equal(resolveCard('KEY-1', [{ id: 't-solo', key: 'KEY-1', aliases: [] }]).id, 't-solo');
 });

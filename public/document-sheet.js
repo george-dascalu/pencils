@@ -2,6 +2,7 @@ import { richPlainText, formatRichText } from './document-sheet-richtext.js';
 import { renderRichText, readRichText, richSelection, restoreRichSelection } from './document-sheet-rich-editor.js';
 import { checkTable, parseCSV, tableFromRows, tableCSV, TABLE_LIMITS, usedTableRange } from './document-sheet-model.js';
 import { parseTabSeparated } from './document-tables.js';
+import { tableEmbedSpec } from './document-embed-model.js';
 
 const columnName = n => { let name = ''; for (n++; n; n = Math.floor((n - 1) / 26)) name = String.fromCharCode(65 + (n - 1) % 26) + name; return name; };
 const address = (row, col) => `${columnName(col)}${row + 1}`;
@@ -60,17 +61,6 @@ export function createDocumentSheet({ form, record, load, onChange, icon, esc, c
       requestAnimationFrame(() => scroll.querySelector(`[data-sheet-cell="${address(r, c)}"]`)?.scrollIntoView({ block: 'nearest', inline: 'nearest' }));
     }
   }
-  function applyStyle(cell, style) {
-    if (!style) return;
-    if (style.bl) cell.style.fontWeight = '700'; if (style.it) cell.style.fontStyle = 'italic';
-    if (style.cl?.rgb) cell.style.color = style.cl.rgb; if (style.bg?.rgb) cell.style.backgroundColor = style.bg.rgb;
-    if (style.fs) cell.style.fontSize = `${Math.max(8, Math.min(72, style.fs))}px`;
-    if (style.ff) cell.style.fontFamily = style.ff;
-    if(style.ul?.s || style.st?.s)cell.style.textDecoration=[style.ul?.s?'underline':'',style.st?.s?'line-through':''].filter(Boolean).join(' ');
-    cell.style.textAlign = ({ 1: 'left', 2: 'center', 3: 'right' })[style.ht] || '';
-    if (style.tb === 3) cell.style.whiteSpace = 'pre-wrap';
-    for (const [key, side] of [['t', 'Top'], ['b', 'Bottom'], ['l', 'Left'], ['r', 'Right']]) if (style.bd?.[key]?.s) cell.style[`border${side}`] = `1px solid ${style.bd[key].cl?.rgb || 'currentColor'}`;
-  }
   function render() {
     const position={top:scroll.scrollTop,left:scroll.scrollLeft};
     const table = data(), s = sheet(), minimum = minimumTrack(), header = minimum;
@@ -110,7 +100,7 @@ export function createDocumentSheet({ form, record, load, onChange, icon, esc, c
       for (const c of colMap) {
         const cell = s.cellData?.[r]?.[c] || {}, td = tr.insertCell(); td.setAttribute('role', 'gridcell'); td.setAttribute('aria-colindex', String(c + 2)); td.dataset.r = r; td.dataset.c = c; td.dataset.sheetCell = address(r, c); const text = document.createElement('span'); text.className = 'sheet-cell-text'; if(cell.p)renderRichText(text,cell.p);else text.textContent = display[c] ?? String(cell.v ?? ''); text.style.maxHeight = `${height - 8}px`; td.append(text); td.title = cell.f ? `${cell.f}\n${td.textContent}` : td.textContent; td.setAttribute('aria-label', `${address(r, c)}${cell.f ? `, formula ${cell.f}` : ''}`);
         if (typeof cell.v === 'number') td.style.textAlign = 'right';
-        applyStyle(td, typeof cell.s === 'string' ? table.workbook.styles[cell.s] : cell.s);
+        applySheetStyle(td, typeof cell.s === 'string' ? table.workbook.styles[cell.s] : cell.s);
         if (c < frozenCols) { td.classList.add('sheet-frozen-column'); td.style.left = `${offsets[colMap.indexOf(c)]}px`; }
       }
       if (index < frozenRows) for (const cell of tr.children) { cell.classList.add('sheet-frozen-row'); cell.style.top = `${header + prefix[index]}px`; }
@@ -128,7 +118,7 @@ export function createDocumentSheet({ form, record, load, onChange, icon, esc, c
       const top=header+prefix[rowStart],left=offsets[colStart];
       const overlay=document.createElement('div');overlay.className='sheet-merge-row';overlay.id=`merge-${record.id}-${sid}-${m.startRow}-${m.startColumn}`;overlay.setAttribute('role','row');overlay.setAttribute('aria-rowindex',String(m.startRow+2));el.setAttribute('aria-colindex',String(m.startColumn+2));overlay.append(el);
       Object.assign(overlay.style,{top:`${m.startRow<frozenRows?`calc(${top}px + var(--sheet-scroll-top, 0px))`:`${top}px`}`,left:`${m.startColumn<frozenCols?`calc(${left}px + var(--sheet-scroll-left, 0px))`:`${left}px`}`,height:`${prefix[rowEnd+1]-prefix[rowStart]}px`,width:`${offsets[colEnd+1]-left}px`,zIndex:m.startRow<frozenRows||m.startColumn<frozenCols?'3':'1'});
-      applyStyle(el,typeof cell.s==='string'?table.workbook.styles[cell.s]:cell.s);overlays.push(overlay);
+      applySheetStyle(el,typeof cell.s==='string'?table.workbook.styles[cell.s]:cell.s);overlays.push(overlay);
     }
     if(overlays.length)grid.setAttribute('aria-owns',overlays.map(el=>el.id).join(' '));
     scroll.replaceChildren(grid,...overlays);
@@ -495,5 +485,24 @@ export function createDocumentSheet({ form, record, load, onChange, icon, esc, c
     escape() { if (editing) cancelEdit(); },
     insert: text => { if (engine) engine.setValue(sid, selected.r, selected.c, text); },
     focus: () => scroll.focus({ preventScroll: true }),
+    async jumpReference(fragment) {
+      await ready; if (destroyed || !engine) return;
+      try {
+        const spec = tableEmbedSpec(data(), fragment); sid = spec.sheets[0]; storage.set(`table-sheet:${record.id}`, sid); render();
+        if (spec.range) { const { r, c, rows, columns } = spec.range; setSelection(r, c, false, true); setSelection(r + rows - 1, c + columns - 1, true, true); }
+      } catch (problem) { error(problem.message); }
+    },
   };
+}
+
+export function applySheetStyle(cell, style) {
+  if (!style) return;
+  if (style.bl) cell.style.fontWeight = '700'; if (style.it) cell.style.fontStyle = 'italic';
+  if (style.cl?.rgb) cell.style.color = style.cl.rgb; if (style.bg?.rgb) cell.style.backgroundColor = style.bg.rgb;
+  if (style.fs) cell.style.fontSize = `${Math.max(8, Math.min(72, style.fs))}px`;
+  if (style.ff) cell.style.fontFamily = style.ff;
+  if(style.ul?.s || style.st?.s)cell.style.textDecoration=[style.ul?.s?'underline':'',style.st?.s?'line-through':''].filter(Boolean).join(' ');
+  cell.style.textAlign = ({ 1: 'left', 2: 'center', 3: 'right' })[style.ht] || '';
+  if (style.tb === 3) cell.style.whiteSpace = 'pre-wrap';
+  for (const [key, side] of [['t', 'Top'], ['b', 'Bottom'], ['l', 'Left'], ['r', 'Right']]) if (style.bd?.[key]?.s) cell.style[`border${side}`] = `1px solid ${style.bd[key].cl?.rgb || 'currentColor'}`;
 }
