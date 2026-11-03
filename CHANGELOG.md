@@ -2,6 +2,11 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.21.69 — 2026-11-03
+
+### Added
+- Feature F0.21-69: List groups can be reordered. A toggle beside Group by reverses the groups, and a handle on each group heading drags it to a new place (or Alt + Up/Down moves it). The order is kept per project and grouping field and survives reloads. Groups now have a fixed natural order: the workflow for Status, the project's order for Type, Urgent to None for Priority, and people A to Z with Unassigned last for Assignee, instead of following whichever card came first.
+
 ## 0.21.68 — 2026-11-03
 
 ### Changed

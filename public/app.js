@@ -58,6 +58,7 @@ import { kanbanDrag } from "./kanban-drag.js";
 import { observeKanbanLayout } from "./kanban-layout.js";
 import { kanbanGroup, kanbanLanes, laneKey } from "./kanban-model.js";
 import { taskReorderHandle } from "./task-reorder.js";
+import { groupReorderHandle, groupHeadingLabel } from "./task-group-order.js";
 import { compareTaskOrder } from "./task-order-model.js";
 import { SaveQueue } from "./sync.js";
 import { createMarkdown } from "./markdown.js";
@@ -1275,11 +1276,11 @@ function taskRow(t, depth = null, hasChildren = false, flat = false) {
     ${inlineTaskFields(t)}
     <div class="phone-task"><button type="button" class="phone-task-open" data-action="task-open" data-id="${esc(t.id)}" aria-label="Open ${esc(t.key || t.id)}: ${esc(t.title)}"><span class="phone-task-title ${done ? "done" : ""}">${esc(t.title)}</span></button><span class="phone-task-meta">${icon(t.type)}<span>${esc(t.key || t.id)}</span><span class="field-box phone-task-fields" ${fieldBoxStyle(state, priority)}>${phoneField("assignee", "Assignee", assignee, assigneeHTML(t))}${phoneField("status", "Status", statusNames[t.status] || t.status, `<span class="field-chip field-chip-status phone-task-status" ${taskColorAttributes(state, "status", t.status)}>${esc(statusNames[t.status] || t.status)}</span>`)}${phoneField("priority", "Priority", priorityLabel(priority), `<span class="field-chip field-chip-priority phone-task-priority" ${taskColorAttributes(state, "priority", priority)}>${icon(`priority-${priority}`)}</span>`)}${taskDateButton(t,"phone-field phone-due")}</span></span></div></div>`;
 }
-function listView(tasks) {
-  return statuses
+function listView(tasks, order = statuses) {
+  return order
     .map(
       (status) =>
-        `<section class="${tasks.some(t => t.status === status) ? 'list-group' : 'list-group-empty'}" ${tasks.some(t => t.status === status) ? '' : 'hidden'} data-task-drop-field="status" data-task-drop-value="${esc(status)}"><h2 class="section-title"><span class="status-dot ${status}" ${taskColorAttributes(state, "status", status)}></span>${esc(statusNames[status])}<span class="count">${state.statusTotals?.[status] ?? tasks.filter((t) => t.status === status).length}</span><span class="line"></span></h2><div>${tasks
+        `<section class="${tasks.some(t => t.status === status) ? 'list-group' : 'list-group-empty'}" ${tasks.some(t => t.status === status) ? '' : 'hidden'} data-task-drop-field="status" data-task-drop-value="${esc(status)}"><h2 class="section-title" ${groupHeadingLabel(statusNames[status], state.statusTotals?.[status] ?? tasks.filter((t) => t.status === status).length, esc)}>${groupReorderHandle(status, statusNames[status], esc)}<span class="status-dot ${status}" ${taskColorAttributes(state, "status", status)}></span>${esc(statusNames[status])}<span class="count">${state.statusTotals?.[status] ?? tasks.filter((t) => t.status === status).length}</span><span class="line"></span></h2><div>${tasks
           .filter((t) => t.status === status)
           .map((t) => taskRow(t))
           .join(

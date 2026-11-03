@@ -38,6 +38,8 @@ test('recorded timestamps show London time and durations use the actual instants
 
 test('numbered feature history has recovered timestamps, durations and primary model settings', () => {
   for (const item of roadmap.filter(i => i.id.startsWith('F0.21-'))) {
+    // Queued work is listed when requested; started and done follow as it progresses.
+    if (item.status !== 'done') { assert.notEqual(recordedTime(item.requested), null, `${item.id} requested`); continue; }
     for (const key of ['requested', 'started', 'done']) assert.notEqual(recordedTime(item[key]), null, `${item.id} ${key}`);
     assert.ok(took(item.started, item.done), `${item.id} elapsed time`);
     assert.ok(item.model && item.effort, `${item.id} primary model and effort`);

@@ -32,6 +32,7 @@ import { personalSettings } from "./personal-settings.js";
 import { planning } from "./planning.js";
 import { grid } from "./grid.js";
 import { taskReorder } from "./task-reorder.js";
+import { groupPreference, saveGroupPreference, orderGroups, groupReorderHandle, groupHeadingLabel, taskGroupDrag } from "./task-group-order.js";
 import { taskRowEditor } from "./task-row-editor.js";
 import { recoveryUI } from "./recovery-ui.js";
 import { clearDebugLog } from "./debug-log.js";
@@ -92,6 +93,7 @@ export function installFeatures(ctx) {
     hotkeys = (ctx.hotkeys = installHotkeys({ ...ctx, commands, run: binding => click(binding.type === "command" ? "command-run" : "search-open", { dataset: binding.type === "command" ? { command: binding.id } : binding }) })),
     personal = personalSettings(ctx);
   taskReorder(ctx, sheet);
+  taskGroupDrag(ctx);
   taskRowEditor(ctx);
   const formBases = new WeakMap();
   let reloadWorkflow = null,
@@ -173,6 +175,11 @@ export function installFeatures(ctx) {
     state.project = result;
     return result;
   }
+  // Group by's select, with the toggle that reverses its groups beside it.
+  function groupByField() {
+    const reversed = groupPreference(storage, state.project.id, state.groupBy || "status").dir === -1;
+    return `<div class="field group-by-field"><label for="group-by">Group by</label><span class="group-by-control"><select id="group-by">${options(["status", "type", "assignee", "priority", "none"].filter((field) => fieldOn(state.config, field)), state.groupBy || "status", { status: "Status", type: "Type", assignee: "Assignee", priority: "Priority", none: "No grouping" })}</select><button type="button" id="group-direction" class="icon-button group-direction" data-feature="group-direction" data-menu-keep-open aria-pressed="${reversed}" aria-label="Reverse group order" title="${reversed ? "Groups reversed · click to restore" : "Reverse group order"}" ${state.groupBy === "none" ? "disabled" : ""}>${icon("sort")}</button></span></div>`;
+  }
   function viewToolbar() {
     $(".advanced-filters")?.remove();
     const host = $("#view-toolbar");
@@ -180,7 +187,7 @@ export function installFeatures(ctx) {
     const f = state.extraFilters || {};
     host.insertAdjacentHTML(
       "afterbegin",
-      `${["board", "drawing", "overview"].includes(state.view) ? "" : `<div class="advanced-filters">${fieldFilters(f)}<label class="field">Deadline<select id="filter-due">${options(["", "overdue", "week", "none"], f.due || "", { "": "Any deadline", overdue: "Overdue", week: "Next 7 days", none: "No deadline" })}</select></label><label class="field">Completion<select id="filter-completion">${options(["", "open", "done"], f.completion || "", { "": "Any completion", open: "Open", done: "Completed" })}</select></label>${state.view === "list" ? `<label class="field">Group by<select id="group-by">${options(["status", "type", "assignee", "priority", "none"].filter((field) => fieldOn(state.config, field)), state.groupBy || "status", { status: "Status", type: "Type", assignee: "Assignee", priority: "Priority", none: "No grouping" })}</select></label>` : ""}<div class="filter-checks"><label><input type="checkbox" id="filter-blocked" ${f.blocked ? "checked" : ""}> Blocked</label><label><input type="checkbox" id="filter-archived" ${f.archived ? "checked" : ""}> Include archived</label></div><div class="menu-footer"><button type="button" class="button" data-action="filters-reset">Clear filters</button></div></div>`}`,
+      `${["board", "drawing", "overview"].includes(state.view) ? "" : `<div class="advanced-filters">${fieldFilters(f)}<label class="field">Deadline<select id="filter-due">${options(["", "overdue", "week", "none"], f.due || "", { "": "Any deadline", overdue: "Overdue", week: "Next 7 days", none: "No deadline" })}</select></label><label class="field">Completion<select id="filter-completion">${options(["", "open", "done"], f.completion || "", { "": "Any completion", open: "Open", done: "Completed" })}</select></label>${state.view === "list" ? groupByField() : ""}<div class="filter-checks"><label><input type="checkbox" id="filter-blocked" ${f.blocked ? "checked" : ""}> Blocked</label><label><input type="checkbox" id="filter-archived" ${f.archived ? "checked" : ""}> Include archived</label></div><div class="menu-footer"><button type="button" class="button" data-action="filters-reset">Clear filters</button></div></div>`}`,
     );
     if (state.view === "table") {
       $(".toolbar-right")?.setAttribute("hidden", "");
@@ -794,6 +801,13 @@ export function installFeatures(ctx) {
       plan.click(action, el)
     )
       return;
+    if (action === "group-direction") {
+      const field = state.groupBy || "status", preference = groupPreference(storage, state.project.id, field);
+      saveGroupPreference(storage, state.project.id, field, { ...preference, dir: -preference.dir });
+      renderView(true);
+      $('[data-feature="group-direction"]')?.focus({ preventScroll: true });
+      return;
+    }
     if (action === "dashboard") {
       clearProject();
       renderApp();
@@ -1266,20 +1280,20 @@ export function installFeatures(ctx) {
     canvasCamera: canvas.camera,
     groupedList(tasks, fallback, row) {
       const key = state.groupBy || "status";
-      if (key === "status") return fallback(tasks);
-      const groups = new Map();
-      for (const t of tasks) {
-        const name = key === "none" ? "All cards" : t[key] || "";
-        if (!groups.has(name)) groups.set(name, []);
-        groups.get(name).push(t);
-      }
-      const available = key === 'type' ? state.config.types : key === 'priority' ? priorityOptions : key === 'assignee' ? ['', ...projectPeople(state).map(person => person.name)] : [];
-      for (const name of available) if (!groups.has(name)) groups.set(name, []);
+      const { order, dir } = groupPreference(storage, state.project.id, key);
+      if (key === "status") return fallback(tasks, orderGroups(state.config.statuses, order, dir));
+      const value = (t) => key === "none" ? "All cards" : t[key] || "";
+      // Assignees run A to Z with Unassigned last; types and priorities keep the project's order.
+      const natural = key === "assignee"
+        ? [...new Set([...projectPeople(state).map(person => person.name), ...tasks.map(value)].filter(Boolean))].sort((a, b) => a.localeCompare(b)).concat("")
+        : [...new Set([...(key === "type" ? state.config.types : key === "priority" ? priorityOptions : []), ...tasks.map(value)])];
+      const groups = new Map(orderGroups(natural, order, dir).map(name => [name, []]));
+      for (const t of tasks) groups.get(value(t)).push(t);
       return [...groups]
-        .map(
-          ([name, items]) =>
-            `<section class="${items.length ? 'list-group' : 'list-group-empty'}" ${items.length ? '' : 'hidden'} ${key === 'none' ? '' : `data-task-drop-field="${esc(key)}" data-task-drop-value="${esc(name)}"`}><h2 class="section-title">${esc(key === "priority" ? priorityLabel(name) : label(name || 'Unassigned'))}<span class="count">${items.length}</span></h2>${items.map((t) => row(t)).join("")}</section>`,
-        )
+        .map(([name, items]) => {
+          const title = key === "priority" ? priorityLabel(name) : label(name || 'Unassigned');
+          return `<section class="${items.length ? 'list-group' : 'list-group-empty'}" ${items.length ? '' : 'hidden'} ${key === 'none' ? '' : `data-task-drop-field="${esc(key)}" data-task-drop-value="${esc(name)}"`}><h2 class="section-title" ${groupHeadingLabel(title, items.length, esc)}>${key === "none" ? "" : groupReorderHandle(name, title, esc)}${esc(title)}<span class="count">${items.length}</span></h2>${items.map((t) => row(t)).join("")}</section>`;
+        })
         .join("");
     },
   };

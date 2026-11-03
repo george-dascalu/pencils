@@ -1117,6 +1117,10 @@ html.table-viewport-view body {
 /* Filter fields line up with the other controls in the menu. */
 .board-menu-panel > .field { display: flex; flex-direction: column; align-items: stretch; text-align: start; margin: 0; padding-inline: 10px; }
 .board-menu-panel > .field > :is(select, input) { width: 100%; max-width: none; }
+/* Group by and the toggle that reverses its groups share one row. */
+.group-by-control { display: flex; align-items: center; gap: 4px; min-width: 0; }
+.board-menu-panel .group-by-control > select { flex: 1 1 auto; width: auto; min-width: 0; max-width: none; }
+.group-direction[aria-pressed="true"] { color: var(--green); }
 /* On phones the filters menu flows inside View options instead of floating over it. */
 @media (max-width: 600px) {
   .mobile-view-options-panel details.board-menu { flex: 1 1 100%; width: 100%; min-width: 0; max-width: 100%; }

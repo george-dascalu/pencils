@@ -30,7 +30,9 @@
 body.task-reordering #view-content .list-group-empty[hidden] { display: block !important; }
 .list-group-empty > .section-title { min-height: var(--control-height); margin-block: 8px; padding-block: 4px; }
 .task-group-drop-target > .section-title { color: var(--green); }
-body.task-reordering, body.task-reordering * { cursor: grabbing !important; user-select: none !important; -webkit-user-select: none !important; }
+body:is(.task-reordering, .task-group-reordering), body:is(.task-reordering, .task-group-reordering) * { cursor: grabbing !important; user-select: none !important; -webkit-user-select: none !important; }
+/* A group heading shows its handle like a row does: on hover or focus, always on touch. */
+.section-title:is(:hover, :focus-within) > .task-reorder-handle > .icon { opacity: 1; }
 .task-reorder-marker {
   position: fixed;
   height: 3px;
