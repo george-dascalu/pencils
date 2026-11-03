@@ -743,3 +743,7 @@ img[data-document-sketch] {
 .document-pane .document-pane-formatting { flex: 1 1 0; width: 0; min-width: 0; padding: 0; border: 0; }
 .document-pane .document-heading > :is(button, .document-tools-button) { flex: none; }
 .document-pane .document-heading [data-document-pane-select] { flex: 0 1 140px; min-width: 0; }
+.documents-workspace[data-split] :is(#document-form,.document-pane) .document-heading > select.document-pane-select {
+  flex: 0 0 160px; width: 160px; min-width: var(--control-height); max-width: 40%; margin-inline-end: 4px;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}

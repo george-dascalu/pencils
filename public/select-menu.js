@@ -1,5 +1,6 @@
 import { selectSymbol } from "./select-symbols.js";
 import { positionPopover } from "./popover-position.js";
+import { focusOnOpen } from './open-focus.js';
 // Keep native selects as the form controls; share a themed menu across every view.
 export function installSelectMenus({ esc, icon, taskColor = () => "" }) {
   let source,
@@ -11,6 +12,8 @@ export function installSelectMenus({ esc, icon, taskColor = () => "" }) {
     typedAt = 0,
     touchStart,
     touchClick;
+  let searchQuery = '', category = 'all', filters = [];
+  const searchable = () => !!source?.hasAttribute('data-select-search') && !source.multiple;
   // A label around (or for) a select activates it; route that through the app menu too.
   const controlOf = (target) => {
     if (!(target instanceof Element)) return null;
@@ -77,7 +80,7 @@ export function installSelectMenus({ esc, icon, taskColor = () => "" }) {
       return close();
     const r = anchor.getBoundingClientRect();
     positionPopover(menu, r, {
-      width: Math.max(r.width, source.dataset.selectSymbol ? 116 : 220),
+      width: Math.max(r.width, searchable() ? 360 : source.dataset.selectSymbol ? 116 : 220),
     });
   }
   function track() {
@@ -93,10 +96,14 @@ export function installSelectMenus({ esc, icon, taskColor = () => "" }) {
       if (focused != null) menu.querySelector(`input[data-select-index="${focused}"]`)?.focus({preventScroll:true});
       return;
     }
-    let group;
-    menu.innerHTML = [...source.options]
+    let group, count = 0;
+    const words = searchQuery.toLocaleLowerCase().trim().split(/\s+/).filter(Boolean);
+    const rows = [...source.options]
       .map((option, index) => {
         if (option.hidden || option.parentElement.hidden) return "";
+        if (searchable() && (category !== 'all' && !option.dataset.selectCategories?.split(' ').includes(category) ||
+          !words.every(word => `${option.label} ${option.dataset.selectDescription || ''} ${option.dataset.selectKeywords || ''}`.toLocaleLowerCase().includes(word)))) return '';
+        count++;
         const parent = option.parentElement;
         const heading =
           parent.tagName === "OPTGROUP" && parent !== group
@@ -114,9 +121,20 @@ export function installSelectMenus({ esc, icon, taskColor = () => "" }) {
         const colorField =
           source.closest("[data-task-color]")?.dataset.taskColor || field;
         const color = taskColor(colorField, option.value);
-        return `${heading}<button type="button" role="option" tabindex="-1" ${color ? `data-task-color="${esc(colorField)}" style="--task-field-color:${color}"` : ""} data-select-index="${index}" aria-selected="${option.selected}" title="${esc(option.label)}" ${option.disabled || parent.disabled ? "disabled" : ""}>${color && colorField !== "priority" ? '<span class="task-color-dot" aria-hidden="true"></span>' : ""}${sample || (symbol ? icon(symbol) : "")}<span class="select-option-label${sample ? " sr-only" : ""}">${esc(option.label)}</span>${icon("check")}</button>`;
+        const text = `<span class="select-option-label${sample ? ' sr-only' : ''}">${esc(option.label)}</span>`;
+        const copy = option.dataset.selectDescription ? `<span class="select-option-copy">${text}<small class="select-option-description">${esc(option.dataset.selectDescription)}</small></span>` : text;
+        return `${heading}<button type="button" role="option" tabindex="-1" ${color ? `data-task-color="${esc(colorField)}" style="--task-field-color:${color}"` : ""} data-select-index="${index}" aria-selected="${option.selected}" title="${esc([option.label,option.dataset.selectDescription].filter(Boolean).join(' — '))}" ${option.disabled || parent.disabled ? "disabled" : ""}>${color && colorField !== "priority" ? '<span class="task-color-dot" aria-hidden="true"></span>' : ""}${sample || (symbol ? icon(symbol) : "")}${copy}${icon("check")}</button>`;
       })
       .join("");
+    if (searchable()) {
+      if (!menu.querySelector('[data-select-search-input]')) menu.innerHTML = `<div class="select-search-header"><input type="search" data-select-search-input aria-label="${esc(source.dataset.selectSearchLabel || 'Search options')}" placeholder="${esc(source.dataset.selectSearch || 'Search…')}" autocomplete="off" spellcheck="false"><button type="button" class="icon-button" data-select-clear aria-label="Clear search" title="Clear search">${icon('eraser')}</button><button type="button" class="icon-button" data-select-close aria-label="Close ${esc(label(source))}" title="Close">${icon('close')}</button></div>${filters.length ? `<div class="select-search-filters" role="group" aria-label="${esc(source.dataset.selectFilterLabel || 'Filters')}">${filters.map(filter => `<button type="button" class="icon-button" data-select-filter="${esc(filter.id)}" aria-label="${esc(filter.label)}" title="${esc(filter.label)}">${icon(filter.icon)}</button>`).join('')}</div>` : ''}<div class="select-search-options" role="listbox" aria-label="${esc(label(source))}"></div><output class="select-search-count" role="status"></output>`;
+      menu.querySelector('.select-search-options').innerHTML = rows;
+      const input = menu.querySelector('[data-select-search-input]');
+      if (input.value !== searchQuery) input.value = searchQuery;
+      menu.querySelector('[data-select-clear]').hidden = !searchQuery;
+      for (const button of menu.querySelectorAll('[data-select-filter]')) button.setAttribute('aria-pressed', String(button.dataset.selectFilter === category));
+      menu.querySelector('output').textContent = count ? `${count} ${source.dataset.selectItemLabel || 'option'}${count === 1 ? '' : 's'}` : source.dataset.selectEmpty || 'No matching options.';
+    } else menu.innerHTML = rows;
     position();
     if (focused != null)
       menu
@@ -129,20 +147,24 @@ export function installSelectMenus({ esc, icon, taskColor = () => "" }) {
     source = select;
     anchorEl = anchor;
     query = "";
+    searchQuery = ''; category = 'all'; filters = [];
+    select.dispatchEvent(new Event('selectopen'));
+    if (searchable()) { try { filters = JSON.parse(select.dataset.selectFilters || '[]'); } catch { /* no optional filters */ } }
     // One menu at a time: a menu still fading out goes at once.
     for (const stale of document.querySelectorAll("#shared-select-menu, .select-menu.closing")) stale.remove();
     menu = document.createElement("div");
     // A menu opened from the sidebar takes the sidebar's dark colours (select-menu.css).
-    menu.className = `select-menu${select.closest(".sidebar") ? " sidebar-select-menu" : ""}`;
+    menu.className = `select-menu${select.closest(".sidebar") ? " sidebar-select-menu" : ""}${searchable() ? ' select-menu-searchable' : ''}`;
     menu.id = "shared-select-menu";
     menu.setAttribute("popover", "manual");
-    menu.setAttribute("role", select.multiple ? "dialog" : "listbox");
+    menu.setAttribute("role", select.multiple || searchable() ? "dialog" : "listbox");
     if (select.multiple) menu.setAttribute('aria-modal','false');
     menu.setAttribute("aria-label", label(select));
     // Stay inside the owning dialog/date picker; top-layer positioning escapes clipping and board zoom.
     (select.closest("dialog, [popover]") || document.body).append(menu);
     select.setAttribute("aria-controls", menu.id);
     select.setAttribute("aria-expanded", "true");
+    if (searchable()) select.setAttribute('aria-haspopup', 'dialog');
     if (anchor !== select) {
       anchor.setAttribute("aria-controls", menu.id);
       anchor.setAttribute("aria-expanded", "true");
@@ -154,7 +176,8 @@ export function installSelectMenus({ esc, icon, taskColor = () => "" }) {
     const current =
       menu.querySelector('[aria-selected="true"]:not(:disabled)') ||
       options()[0] || menu.querySelector('[data-select-close]');
-    current?.focus({ preventScroll: true });
+    if (searchable()) focusOnOpen(menu.querySelector('[data-select-search-input]'), current || menu.querySelector('[data-select-close]'));
+    else current?.focus({ preventScroll: true });
     current?.scrollIntoView({ block: "nearest" });
     track();
   }
@@ -285,15 +308,25 @@ export function installSelectMenus({ esc, icon, taskColor = () => "" }) {
         }
         open(control);
       } else if (menu?.contains(event.target)) {
+        if (event.target.matches('[data-select-search-input]')) { event.stopImmediatePropagation(); return; }
         event.preventDefault();
         event.stopImmediatePropagation();
         if (event.target.closest('[data-select-close]')) return close(true);
+        if (event.target.closest('[data-select-clear]')) {
+          searchQuery = ''; paint(); focusOnOpen(menu.querySelector('[data-select-search-input]'), menu.querySelector('[data-select-close]')); return;
+        }
+        const filter = event.target.closest('[data-select-filter]');
+        if (filter) { category = filter.dataset.selectFilter; paint(); return; }
         const button = event.target.closest("[data-select-index]") || event.target.closest('.select-checkbox-row')?.querySelector('[data-select-index]');
         if (button) choose(button);
       }
     },
     true,
   );
+  document.addEventListener('input', event => {
+    if (!menu?.contains(event.target) || !event.target.matches('[data-select-search-input]')) return;
+    searchQuery = event.target.value; paint();
+  }, true);
   document.addEventListener(
     "keydown",
     (event) => {
@@ -313,6 +346,22 @@ export function installSelectMenus({ esc, icon, taskColor = () => "" }) {
         return;
       }
       if (!inside) return;
+      if (searchable()) {
+        const input = menu.querySelector('[data-select-search-input]');
+        if (event.key === 'Tab') return;
+        if (event.key === 'Escape' && searchQuery) {
+          event.preventDefault(); event.stopImmediatePropagation(); searchQuery = ''; paint(); focusOnOpen(input, menu.querySelector('[data-select-close]')); return;
+        }
+        if (event.target === input) {
+          event.stopImmediatePropagation();
+          if (event.key === 'Escape') { event.preventDefault(); close(true); }
+          else if (['ArrowDown', 'ArrowUp'].includes(event.key)) { event.preventDefault(); (event.key === 'ArrowDown' ? options()[0] : options().at(-1))?.focus({preventScroll:true}); }
+          else if (event.key === 'Enter') { event.preventDefault(); const first = options()[0]; if (first) choose(first); }
+          return;
+        }
+        if (event.target.closest('[data-select-filter],[data-select-clear]') && ['Enter',' '].includes(event.key)) { event.stopImmediatePropagation(); return; }
+        if (event.key === 'ArrowUp' && event.target === options()[0]) { event.preventDefault(); event.stopImmediatePropagation(); focusOnOpen(input, menu.querySelector('[data-select-close]')); return; }
+      }
       if (event.key === "Tab") {
         close(true);
         return;

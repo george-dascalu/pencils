@@ -26,6 +26,17 @@
 .select-checkbox-row > input { flex: none; }
 .select-checkbox-row > span { overflow-wrap: anywhere; }
 .select-checkbox-empty { margin: 4px; color: var(--muted); font-size: var(--control-font-size); }
+.select-menu.select-menu-searchable { display: flex; flex-direction: column; overflow: hidden; }
+.select-search-header { display: flex; flex: none; gap: 4px; padding-bottom: 4px; }
+.select-search-header > input { flex: 1; min-width: 0; }
+.select-search-header > [hidden] { display: none !important; }
+.select-search-filters { display: flex; flex: none; gap: 0; border-bottom: 1px solid var(--line); padding-bottom: 4px; }
+.select-search-filters [aria-pressed="true"] { color: var(--green); background: var(--surface-soft); }
+.select-search-options { flex: 1 1 auto; min-height: 0; overflow-y: auto; overscroll-behavior: contain; }
+.select-search-count { flex: none; padding: 4px; color: var(--muted); font-size: var(--type-meta); }
+.select-menu .select-option-copy { display: grid; gap: 1px; min-width: 0; line-height: 1; }
+.select-option-copy > :is(.select-option-label,.select-option-description) { display: block; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.select-option-description { color: var(--muted); font-size: var(--type-meta); line-height: 1; }
 /* Opened from the sidebar, the menu wears the sidebar's surface and text (styles.css .sidebar). */
 .select-menu.sidebar-select-menu {
   --surface: var(--side);

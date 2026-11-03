@@ -7,6 +7,7 @@ export function installBookmarks({ api, esc, icon, toast }) {
   const sync = () => {
     for (const el of document.querySelectorAll("[data-bookmark]"))
       el.setAttribute("aria-pressed", String(marked.has(key(el.dataset.kind, el.dataset.project, el.dataset.id))));
+    document.dispatchEvent(new Event('bookmarks-changed'));
   };
   // The bookmarks with their current names, after any saves on their way; the stars on the page
   // follow, unless one was pressed meanwhile.
@@ -34,5 +35,5 @@ export function installBookmarks({ api, esc, icon, toast }) {
       toast(error.message, true);
     });
   });
-  return { button, list, load: () => list().catch(() => {}) };
+  return { button, list, has: (kind, project, id) => marked.has(key(kind, project, id)), load: () => list().catch(() => {}) };
 }

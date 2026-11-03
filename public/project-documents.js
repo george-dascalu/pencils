@@ -1,3 +1,4 @@
+import { documentPaneChoices } from "./document-pane-picker.js";
 import { createDocumentSheet, sheetFormatting, sheetContent } from "./document-sheet.js";
 import { documentEmbedPicker } from "./document-embed-picker.js";
 import { historyPages } from "./history-pages.js";
@@ -794,10 +795,8 @@ export function projectDocuments(ctx) {
       if (close) { close.title = `Close ${doc.title}`; close.setAttribute('aria-label', close.title); }
     }
     else if (strip) strip.outerHTML = tabsHTML();
-    for (const option of document.querySelectorAll('[data-document-pane-select] option')) {
-      const doc = all().find(d => d.id === option.value);
-      if (doc) option.textContent = doc.title;
-    }
+    for (const select of document.querySelectorAll('[data-document-pane-select],[data-document-first-select]')) fillPanePicker(select);
+
   }
   function renameTab(button) {
     const id = button.dataset.documentTab, doc = all().find(d => d.id === id);
@@ -860,6 +859,50 @@ export function projectDocuments(ctx) {
     const split = splitState();
     if (split?.id === id) setSplit({ ...split, id: state.selectedDocument });
   }
+  const paneFilters = [
+    { id: 'all', label: 'All files', icon: 'documents' }, { id: 'markdown', label: 'Documents', icon: 'file' },
+    { id: 'table', label: 'Tables', icon: 'table' }, { id: 'open', label: 'Open files', icon: 'folder' }, { id: 'bookmarked', label: 'Bookmarked files', icon: 'star' },
+  ];
+  function panePickerHTML(first = false) {
+    return `<select class="document-pane-select" ${first ? 'data-document-first-select' : 'data-document-pane-select'} aria-label="Document in the ${first ? 'first' : 'second'} pane" data-select-search="Search files…" data-select-search-label="Search files" data-select-item-label="file" data-select-empty="No matching files." data-select-filter-label="File filters" data-select-filters="${esc(JSON.stringify(paneFilters))}"></select>`;
+  }
+  function fillPanePicker(select) {
+    const first = select.hasAttribute('data-document-first-select'), split = splitState();
+    const id = first ? current?.id : split?.id, exclude = first ? split?.id : current?.id;
+    const rows = documentPaneChoices({ documents: all(), folders: folders(), current: id, exclude,
+      opened: [...openTabs(), current?.id, split?.id], bookmarked: all().filter(doc => ctx.bookmarks?.has('doc', project, doc.id)).map(doc => doc.id) });
+    select.innerHTML = rows.map(row => `<option value="${esc(row.id)}" data-icon="${row.icon}" data-select-description="${esc(row.description)}" data-select-keywords="${esc(row.keywords)}" data-select-categories="${row.categories.join(' ')}" ${row.id === id ? 'selected' : ''}>${esc(row.title)}</option>`).join('');
+    select.title = all().find(doc => doc.id === id)?.title || '';
+  }
+  function bindPanePicker(select) {
+    fillPanePicker(select);
+    select.addEventListener('selectopen', () => fillPanePicker(select));
+    select.addEventListener('change', () => {
+      if (select.hasAttribute('data-document-first-select')) {
+        if (select.value !== current.id) openFirstPane(select.value);
+        document.querySelector('[data-document-first-select]')?.focus({preventScroll:true});
+      } else {
+        setSplit({ ...splitState(), id: select.value }); showPane();
+        document.querySelector('[data-document-pane-select]')?.focus({preventScroll:true});
+      }
+    });
+  }
+  document.addEventListener('bookmarks-changed', () => {
+    for (const select of document.querySelectorAll('[data-document-first-select],[data-document-pane-select]')) fillPanePicker(select);
+  });
+  let retainedPane = null;
+  function openFirstPane(id) {
+    const section = document.querySelector('.document-pane'), split = splitState();
+    if (!section || !split || id === split.id) return open(id);
+    paneEditor?.flush(); editor?.flush(); closePanel();
+    paneResize?.(); paneResize = null;
+    retainedPane = { section, divider: document.querySelector('.document-split-divider'), editor: paneEditor, renderer: paneRenderer, formatting: paneFormatScroll, id: split.id, project };
+    section.remove(); retainedPane.divider?.remove(); paneEditor = paneRenderer = paneFormatScroll = null;
+    try { open(id); }
+    finally {
+      if (retainedPane) { retainedPane.editor?.destroy(); retainedPane.renderer?.destroy(); retainedPane.formatting?.destroy(); retainedPane = null; }
+    }
+  }
   let paneResize = null;
   let paneScroll = null; // { id, selector, top } for the second pane, kept across rebuilds
   // Rebuilds the second pane from the saved split: its own editor and view, saving to its own document.
@@ -870,6 +913,17 @@ export function projectDocuments(ctx) {
     paneEditor?.flush(); paneEditor?.destroy(); paneEditor = null;
     paneRenderer?.destroy(); paneRenderer = null;
     const workspace = document.querySelector(".documents-workspace"), split = form && !narrow() && splitState();
+    const leftPicker = form?.querySelector('[data-document-first-select]');
+    if (!split) leftPicker?.remove();
+    else if (!leftPicker) { form.querySelector('.document-heading').insertAdjacentHTML('afterbegin',panePickerHTML(true)); bindPanePicker(form.querySelector('[data-document-first-select]')); }
+    else fillPanePicker(leftPicker);
+    if (retainedPane && workspace && split?.id === retainedPane.id && project === retainedPane.project) {
+      const kept = retainedPane; retainedPane = null;
+      workspace.dataset.split = split.direction; workspace.style.setProperty('--document-split-size',`${split.size}%`);
+      workspace.append(kept.divider,kept.section); paneEditor = kept.editor; paneRenderer = kept.renderer; paneFormatScroll = kept.formatting;
+      fillPanePicker(kept.section.querySelector('[data-document-pane-select]')); installPaneResize(workspace,split);
+      paneEditor?.view?.requestMeasure(); syncChanged(); return;
+    }
     workspace?.querySelector(".document-pane")?.remove();
     workspace?.querySelector(".document-split-divider")?.remove();
     if (!workspace) return;
@@ -880,7 +934,7 @@ export function projectDocuments(ctx) {
     const doc=all().find(d=>d.id===split.id), isTable=doc.document_type==='table';
     workspace.insertAdjacentHTML("beforeend", `<div class="document-split-divider" role="separator" tabindex="0" aria-label="Resize document panes" aria-orientation="${split.direction==='columns'?'vertical':'horizontal'}" aria-valuemin="25" aria-valuemax="75" aria-valuenow="${split.size}"></div><form class="document-pane" id="document-pane-form" role="region" data-document-type="${isTable?'table':'markdown'}" aria-label="Second document">
       <header class="document-heading">
-        <select data-document-pane-select aria-label="Document in the second pane">${all().filter(d => d.id !== current.id).map(d => `<option value="${esc(d.id)}" ${d.id === split.id ? "selected" : ""}>${esc(d.title)}</option>`).join("")}</select>
+        ${panePickerHTML()}
         ${isTable?'':`<button type="button" class="icon-button document-tools-button" data-pane-tools aria-label="Second document tools" title="Second document tools">${icon(MODES.find(([key])=>key===split.mode)?.[2]||'more')}</button>`}
         <button type="button" class="icon-button" data-document-action="split-close-first" aria-label="Close first pane" title="Close first pane">${icon("close")}</button>
         <button type="button" class="icon-button" data-document-action="split-swap" aria-label="Swap documents" title="Swap documents">${icon("swap")}</button>
@@ -892,7 +946,7 @@ export function projectDocuments(ctx) {
       <div class="document-writing">${isTable?sheetContent(icon):'<div class="document-codemirror"></div><article class="document-reading" tabindex="0" aria-label="Second document reading view" hidden></article>'}</div>
     </form>`);
     const section = workspace.querySelector(".document-pane"), pid = project;
-    section.querySelector('.document-heading').prepend(section.querySelector('.document-pane-formatting'));
+    section.querySelector('[data-document-pane-select]').after(section.querySelector('.document-pane-formatting'));
     section.querySelector('[data-pane-tools]')?.addEventListener('click',event=>{const button=event.currentTarget;showPanel(button,'Second document tools',MODES.map(([key,label,glyph])=>`<button type="button" class="document-panel-item" data-document-pane-mode="${key}" aria-pressed="${splitState()?.mode===key}">${icon(glyph)}${label}</button>`).join(''),220,{menu:true});});
     const url=endpoint(pid,doc.id);
     paneRenderer = rendererFor(doc.id);
@@ -916,11 +970,7 @@ export function projectDocuments(ctx) {
     section.addEventListener('submit',event=>{event.preventDefault();paneEditor?.flush();});
     if(!isTable)paneFormatScroll=installToolbarScroll(section.querySelector('.rich-toolbar-shell'));
     installPaneResize(workspace,split);
-    section.querySelector("[data-document-pane-select]").addEventListener("change", event => {
-      setSplit({ ...splitState(), id: event.target.value });
-      showPane();
-      document.querySelector("[data-document-pane-select]")?.focus();
-    });
+    bindPanePicker(section.querySelector('[data-document-pane-select]'));
     section.addEventListener("keydown", event => {
       if (!(event.ctrlKey || event.metaKey) || event.altKey) return;
       const key = event.key.toLowerCase();

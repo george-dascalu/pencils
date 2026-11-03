@@ -2,6 +2,14 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.21.54 — 2026-11-03
+
+### Added
+- Feature F0.21-54: Both document panes have matching file pickers. Search by name, folder or tag, see file-type icons and folder paths, and filter to Markdown documents, Tables, open files or bookmarks. Keyboard navigation, clear search and empty results work in the shared dropdown. Touch pickers keep the keyboard closed until the search field is tapped.
+
+### Fixed
+- Choosing a different file in the first pane preserves the second pane's mounted editor, pending edits and Undo history. The same picker is available in side-by-side and top-and-bottom layouts; closing the split removes it.
+
 ## 0.21.53 — 2026-11-03
 
 ### Fixed

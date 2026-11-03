@@ -6,6 +6,7 @@
 // From the 0.21.0 baseline, new features use F<major>.<minor>-<1..100>: F0.21-1 releases
 // as 0.21.1, F0.21-100 as 0.22.0, then F0.22-1 as 0.22.1. Historical T IDs stay intact.
 export const roadmap = [
+  { id: "F0.21-54", title: "Independent searchable document pickers in both split panes with file, open and bookmark filters", status: "done", requested: "2026-11-03", started: "2026-11-03", done: "2026-11-03", version: "0.21.54" },
   { id: "F0.21-53", title: "Open document web URLs with Ctrl-click or Cmd-click without editing text", status: "done", requested: "2026-11-03", started: "2026-11-03", done: "2026-11-03", version: "0.21.53" },
   { id: "F0.21-52", title: "Inline document table handles, selection, merging, rich content and reusable layouts", status: "done", requested: "2026-11-03", started: "2026-11-03", done: "2026-11-03", version: "0.21.52" },
   { id: "F0.21-51", title: "Keep Table embeds populated after source metadata changes and in-place refreshes", status: "done", requested: "2026-11-03", started: "2026-11-03", done: "2026-11-03", version: "0.21.51" },
