@@ -1,20 +1,28 @@
 // Bundled guides work locally. External links are references, not loaded resources.
-import { roadmap, shortWhen, took } from "./roadmap.js";
+import { roadmap, shortWhen, fullWhen, took } from "./roadmap.js";
 
 // The Roadmap page: the requests under each status, done ones newest first, in reference tables.
 const escapeHtml = (value) => String(value ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
 const byId = (a, b) => a.id.localeCompare(b.id, undefined, { numeric: true });
+const roadmapWhen = (item, field) => {
+  const value = item[field], basis = item[`${field}Basis`];
+  return value ? `<time datetime="${escapeHtml(value)}" title="${escapeHtml(fullWhen(value) + (basis ? ` · ${basis}` : ''))}">${shortWhen(value)}</time>` : '<span title="Not recorded">—</span>';
+};
+const roadmapModel = item => item.model
+  ? `<span class="roadmap-model" title="Primary coding model${item.modelBasis ? ` · ${escapeHtml(item.modelBasis)}` : ''}">${escapeHtml(item.model)}</span><span class="roadmap-effort" title="Reasoning effort setting">${escapeHtml(item.effort || 'Not recorded')}</span>`
+  : '<span title="Model and effort were not recorded">—</span>';
 const roadmapTable = (items) =>
   items.length
-    ? `<div class="help-table"><table><thead><tr><th>ID</th><th>Request</th><th>Requested</th><th>Started</th><th>Done</th><th>Took</th><th>Release</th></tr></thead><tbody>${items
-        .map((i) => `<tr data-roadmap="${escapeHtml(i.id)}"><td>${escapeHtml(i.id)}</td><td>${escapeHtml(i.title)}</td><td>${shortWhen(i.requested)}</td><td>${shortWhen(i.started)}</td><td>${shortWhen(i.done)}</td><td>${took(i.started, i.done)}</td><td>${escapeHtml(i.version || "")}</td></tr>`)
+    ? `<div class="help-table"><table class="roadmap-table"><thead><tr><th>ID</th><th>Request</th><th>Requested</th><th title="Recorded start; recovered history uses the first response">Started</th><th>Done</th><th title="Elapsed time from Started to Done, including planning, queueing and tests">Took</th><th>Model / effort</th><th>Release</th></tr></thead><tbody>${items
+        .map((i) => `<tr data-roadmap="${escapeHtml(i.id)}"><td>${escapeHtml(i.id)}</td><td>${escapeHtml(i.title)}</td><td>${roadmapWhen(i, 'requested')}</td><td>${roadmapWhen(i, 'started')}</td><td>${roadmapWhen(i, 'done')}</td><td title="${took(i.started, i.done) ? 'Elapsed time, including planning, queueing and tests' : 'Start or finish time was not recorded'}">${escapeHtml(took(i.started, i.done) || '—')}</td><td>${roadmapModel(i)}</td><td>${escapeHtml(i.version || "")}</td></tr>`)
         .join("")}</tbody></table></div>`
     : "<p>Nothing here at the moment.</p>";
 const roadmapArticle = {
   id: "roadmap",
   title: "Roadmap",
   group: "Pencils",
-  summary: "Every feature request, its status and when it was started and done. Updated with each release.",
+  summary: "",
+  contents: false,
   sections: [
     { id: "in-progress", title: "In progress", html: roadmapTable(roadmap.filter((i) => i.status === "in progress").sort(byId)) },
     { id: "requested", title: "Requested", html: roadmapTable(roadmap.filter((i) => i.status === "requested").sort(byId)) },

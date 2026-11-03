@@ -2,6 +2,11 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.21.67 — 2026-11-03
+
+### Changed
+- Feature F0.21-67: Roadmap IDs stay on one line in a wider column. Requested, Started and Done show recorded times in Europe/London, Took shows elapsed time, and a Model / effort column records the primary coding session. Numbered feature history is backfilled from recorded requests, first responses and release commits, with the timing basis on hover; unrecorded historical details stay explicitly unknown. The Roadmap introduction and On this page box are removed. Future releases require timestamps and model/effort metadata.
+
 ## 0.21.66 — 2026-11-03
 
 ### Changed

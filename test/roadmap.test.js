@@ -3,7 +3,7 @@
 // started to done in the shortest useful unit, shown only when both carry a time.
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { roadmap, shortWhen, took } from "../public/roadmap.js";
+import { roadmap, shortWhen, took, recordedTime, fullWhen } from "../public/roadmap.js";
 
 test("short times and durations", () => {
   assert.equal(shortWhen("2026-10-31T20:05"), "31 Oct 20:05");
@@ -16,8 +16,38 @@ test("short times and durations", () => {
   assert.equal(took("2026-10-31T16:15", ""), "", "not done");
 });
 
+test('recorded timestamps show London time and durations use the actual instants', () => {
+  assert.equal(shortWhen('2026-11-03T16:37:39.240Z'), '3 Nov 16:37');
+  assert.equal(shortWhen('2026-07-01T23:30:00Z'), '2 Jul 00:30');
+  assert.equal(shortWhen('2026-11-03T19:37:00+03:00'), '3 Nov 16:37');
+  assert.match(fullWhen('2026-11-03T16:37:39.240Z'), /3 November 2026.*16:37:39.*GMT/);
+  assert.match(fullWhen('2026-10-31'), /time not recorded/i);
+  assert.equal(took('2026-11-03T16:37:39Z', '2026-11-03T16:51:59Z'), '14m');
+  assert.equal(took('2026-11-03T16:37:39Z', '2026-11-03T16:38:00Z'), '<1m');
+  assert.equal(took('2026-11-03T16:37:39Z', '2026-11-03T16:37:39Z'), '<1m');
+  assert.equal(took('2026-11-03T16:37:39Z', '2026-11-03T16:38:39Z'), '1m');
+  assert.equal(took('2026-10-25T01:30:00+01:00', '2026-10-25T01:30:00Z'), '1h');
+  for (const invalid of ['nonsense', '2026-13-01T12:30', '2026-02-30T12:30', '2026-11-03T25:00', '2026-11-03T24:00', '2026-11-03T16:60', '2026-11-03T16:37:60']) {
+    assert.equal(recordedTime(invalid), null);
+    assert.equal(shortWhen(invalid), '');
+    assert.equal(took(invalid, '2026-11-03T16:00'), '');
+  }
+  assert.equal(recordedTime('2026-11-03'), null, 'a date is not a recorded midnight timestamp');
+  assert.equal(took('2026-11-03T17:00', '2026-11-03T16:00'), '', 'invalid order is not zero work');
+});
+
+test('numbered feature history has recovered timestamps, durations and primary model settings', () => {
+  for (const item of roadmap.filter(i => i.id.startsWith('F0.21-'))) {
+    for (const key of ['requested', 'started', 'done']) assert.notEqual(recordedTime(item[key]), null, `${item.id} ${key}`);
+    assert.ok(took(item.started, item.done), `${item.id} elapsed time`);
+    assert.ok(item.model && item.effort, `${item.id} primary model and effort`);
+    assert.ok(recordedTime(item.requested) <= recordedTime(item.started), `${item.id} requested before started`);
+    assert.ok(recordedTime(item.started) <= recordedTime(item.done), `${item.id} started before done`);
+  }
+});
+
 test("every roadmap entry has a valid id, status and dates, and done entries name their release", () => {
-  const when = /^\d{4}-\d{2}-\d{2}(T\d{2}:\d{2})?$/;
+  const when = /^\d{4}-\d{2}-\d{2}(?:T\d{2}:\d{2}(?::\d{2}(?:\.\d{1,3})?)?(?:Z|[+-]\d{2}:\d{2})?)?$/;
   const ids = new Set();
   for (const item of roadmap) {
     assert.ok(!ids.has(item.id), `duplicate feature ${item.id}`);

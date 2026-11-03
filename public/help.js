@@ -31,10 +31,10 @@ export function helpPageHTML(id, { esc, icon }) {
             .join("")}
         </nav></details>
       </aside>
-      <article class="help-article" aria-labelledby="help-title">
+      <article class="help-article" data-help-article="${esc(article.id)}" aria-labelledby="help-title">
         <div class="help-breadcrumb"><a href="#help/start" data-action="help-article" data-id="start">Help</a><span aria-hidden="true">/</span><span>${esc(article.group)}</span></div>
-        <h1 id="help-title" tabindex="-1">${esc(article.title)}</h1><p class="help-intro">${esc(article.summary)}</p>
-        <nav class="help-contents" aria-label="On this page"><strong>On this page</strong>${article.sections.map((s) => `<button type="button" data-help-section="${s.id}">${esc(s.title)}</button>`).join("")}</nav>
+        <h1 id="help-title" tabindex="-1">${esc(article.title)}</h1>${article.summary ? `<p class="help-intro">${esc(article.summary)}</p>` : ''}
+        ${article.contents === false ? '' : `<nav class="help-contents" aria-label="On this page"><strong>On this page</strong>${article.sections.map((s) => `<button type="button" data-help-section="${s.id}">${esc(s.title)}</button>`).join("")}</nav>`}
         ${article.sections.map((s) => `<section class="help-section"><h2 id="help-section-${s.id}" tabindex="-1">${esc(s.title)}</h2>${content(s.html)}</section>`).join("")}
         <footer class="help-article-footer">${esc(article.footer || `Guides for this installation · Documentation checked ${article.updated || "17 October 2026"}`)}</footer>
       </article>

@@ -9,7 +9,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { command, deploy, projectRoot, pruneReleaseImages } from "./deploy.mjs";
 import { affected, changedFiles, describe, runAffected } from "./affected.mjs";
-import { roadmap } from "../public/roadmap.js";
+import { roadmap, recordedTime } from "../public/roadmap.js";
 
 const SEMVER = /^(\d+)\.(\d+)\.(\d+)$/;
 
@@ -32,6 +32,12 @@ export function releaseFeature(current, entries) {
   const items = entries.filter(item => item.version === version);
   if (items.length !== 1 || items[0].id !== id || items[0].status !== "done")
     throw new Error(`Record exactly one completed feature ${id} for ${version} in public/roadmap.js before releasing.`);
+  if (version.localeCompare('0.21.67', undefined, { numeric: true }) >= 0) {
+    const item = items[0], times = ['requested', 'started', 'done'].map(key => recordedTime(item[key]));
+    if (times.some(time => time === null)) throw new Error(`${id}: record Requested, Started and Done timestamps before releasing.`);
+    if (times[0] > times[1] || times[1] > times[2]) throw new Error(`${id}: timestamps must be in Requested, Started, Done order.`);
+    if (!item.model?.trim() || !item.effort?.trim()) throw new Error(`${id}: record the actual model and effort used before releasing.`);
+  }
   return items[0];
 }
 

@@ -232,6 +232,17 @@
 .help-table tr:last-child > * {
   border-bottom: 0;
 }
+.help-article[data-help-article="roadmap"] { max-width: none; }
+.roadmap-table :is(th, td):first-child {
+  min-width: 112px;
+  white-space: nowrap;
+  overflow-wrap: normal;
+}
+.roadmap-table :is(th, td):nth-child(2) { min-width: 260px; }
+.roadmap-table :is(th, td):nth-child(n + 3) { white-space: nowrap; font-variant-numeric: tabular-nums; }
+.roadmap-table time { white-space: nowrap; }
+.roadmap-model, .roadmap-effort { display: block; }
+.roadmap-effort { color: var(--muted); font-size: var(--type-small); }
 .help-article-footer {
   color: var(--muted);
   font-size: 12px;
