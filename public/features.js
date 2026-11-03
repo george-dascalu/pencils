@@ -24,6 +24,7 @@ import { taskModalControls } from "./task-modal.js";
 import { taskAttachments } from "./task-attachments.js";
 import { taskRelationshipsEditor } from "./task-relationships.js";
 import { taskDocumentsEditor } from "./task-documents.js";
+import { taskNotes } from './task-notes.js';
 import { taskDescription } from "./task-description.js";
 import { projectLayout } from "./project-layout.js";
 import { personalSettings } from "./personal-settings.js";
@@ -99,6 +100,7 @@ export function installFeatures(ctx) {
     attachments = null,
     relationships = null,
     documentsEditor = null,
+    notesEditor = null,
     autosave = null,
     taskComments = null,
     activeDraft = null,
@@ -272,6 +274,7 @@ export function installFeatures(ctx) {
       related_records: data.getAll("related_records"),
       documents: data.getAll("documents"),
       boards: data.getAll("boards"),
+      notes: JSON.parse(data.get('notes') || '[]'),
       recurrence: t.recurrence ?? null,
       fields,
       comments: [
@@ -307,6 +310,8 @@ export function installFeatures(ctx) {
     taskModal = null;
     attachments?.destroy();
     attachments = null;
+    notesEditor?.destroy();
+    notesEditor = null;
     taskEditor?.destroy();
     taskEditor = null;
     const form = pageForm || $("dialog form");
@@ -329,7 +334,8 @@ export function installFeatures(ctx) {
       formBases.set(form, structuredClone(t));
       installTaskTimes(form);
       sources.decorateTask(form,t);
-      taskEditor = taskDescription(form, ctx.markdown, ctx.icon, state.project.id);
+      const description = taskDescription(form, ctx.markdown, ctx.icon, state.project.id);
+      taskEditor = {...description, flush() { description.flush(); notesEditor?.flush(); }, reload() { description.reload(); notesEditor?.reload(); }};
       attachments = taskAttachments(ctx, form, taskEditor);
       taskModal = taskModalControls(ctx, form, async (version) => {
         if (
@@ -442,6 +448,7 @@ export function installFeatures(ctx) {
         flush: () => (form.dataset.id ? autosave?.flush() || Promise.resolve(false) : Promise.resolve(true)),
       });
     }
+    if (kind === 'task' && form && fieldOn(state.config, 'notes')) notesEditor = taskNotes(ctx, form);
     if (kind === "project" && form) {
       const c =
         form.dataset.edit === "true"
@@ -1186,7 +1193,8 @@ export function installFeatures(ctx) {
     filter,
     progress,
     dialogOpened,
-    flushTask: () => autosave?.flush() || Promise.resolve(true),
+    taskBusy: () => !!notesEditor?.busy,
+    flushTask: () => notesEditor?.busy ? notesEditor.settled().then(() => autosave?.flush() || true) : autosave?.flush() || Promise.resolve(true),
     selectTaskPane: (pane, trigger) => ['details', 'history', 'comments'].includes(pane)
       ? click(`task-${pane}`, trigger).catch(error => toast(error.message, true))
       : Promise.resolve(),
@@ -1226,6 +1234,8 @@ export function installFeatures(ctx) {
       taskModal = null;
       attachments?.destroy();
       attachments = null;
+      notesEditor?.destroy();
+      notesEditor = null;
       taskEditor?.destroy();
       taskEditor = null;
     },

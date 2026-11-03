@@ -6,6 +6,8 @@ export function taskAttachments(
   { api, route, state, esc, icon },
   form,
   editor,
+  { section = form.querySelector('.task-description'), sourceName = 'body', dropTarget = form.closest('dialog'),
+    heading = 'Attachments', addLabel = 'Add attachments', previewId = 'attachment-preview', onPending = () => {} } = {},
 ) {
   const dialog = form.closest("dialog"),
     project = state.project.id,
@@ -15,18 +17,19 @@ export function taskAttachments(
     input = document.createElement("input"),
     overlay = document.createElement("div"),
     list = document.createElement("section"),
-    preview = attachmentPreview({ esc, icon }, dialog);
+    preview = attachmentPreview({ esc, icon }, dialog, previewId),
+    source = form.querySelector(`[name="${sourceName}"]`);
   list.className = "task-attachments";
-  list.setAttribute("aria-label", "Attachments");
+  list.setAttribute("aria-label", heading);
   // The + beside the title adds files, as Relationships' controls and the sidebar's lists do.
-  list.innerHTML = '<div class="task-attachments-heading"><h3>Attachments</h3></div><ul class="task-attachment-list"></ul>';
-  form.querySelector(".task-description").append(list);
+  list.innerHTML = `<div class="task-attachments-heading"><h3>${esc(heading)}</h3></div><ul class="task-attachment-list"></ul>`;
+  section.append(list);
   status.className = "field-hint task-attachment-status";
   status.setAttribute("role", "status");
   choose.type = "button";
   choose.className = "task-attachment-choose icon-button";
-  choose.setAttribute("aria-label", "Add attachments");
-  choose.title = "Add attachments";
+  choose.setAttribute("aria-label", addLabel);
+  choose.title = addLabel;
   choose.innerHTML = icon("plus");
   list.querySelector(".task-attachments-heading").append(choose);
   input.type = "file";
@@ -39,11 +42,11 @@ export function taskAttachments(
     enqueue([...input.files]);
     input.value = "";
   });
-  form.querySelector(".task-description").append(input, status);
+  section.append(input, status);
   overlay.className = "task-file-drop-overlay";
   overlay.textContent = "Drop files to attach";
   overlay.hidden = true;
-  dialog.append(overlay);
+  dropTarget.append(overlay);
   let disposed = false,
     depth = 0,
     pending = 0,
@@ -55,7 +58,7 @@ export function taskAttachments(
     rendered = "";
   function refresh() {
     if (!active()) return;
-    files = taskAttachmentContent(form.elements.body.value, project).files;
+    files = taskAttachmentContent(source.value, project).files;
     const html = files
       .map(
         (file) =>
@@ -70,7 +73,7 @@ export function taskAttachments(
     list.querySelector("ul").hidden = !files.length;
   }
   function bodyChanged(event) {
-    if (event.target === form.elements.body) refresh();
+    if (event.target === source) refresh();
   }
   list.addEventListener("click", (event) => {
     const button = event.target.closest("[data-attachment-file]");
@@ -92,6 +95,7 @@ export function taskAttachments(
   };
   function report() {
     if (!active()) return;
+    onPending(pending);
     status.classList.toggle("form-error", !!errors.length);
     status.textContent =
       [
@@ -119,7 +123,7 @@ export function taskAttachments(
       if (!active()) return;
       // Flush typing that happened during the upload before appending its link.
       editor.flush();
-      const body = form.elements.body;
+      const body = source;
       const name = file.name
         .replace(/[\r\n]/g, " ")
         .replace(/[\\[\]]/g, "\\$&");
@@ -135,25 +139,25 @@ export function taskAttachments(
     }
   }
   function enter(event) {
-    if (!hasFiles(event)) return;
+    if (!hasFiles(event) || !ownsDrop(event)) return;
     event.preventDefault();
     depth++;
     highlight(true);
   }
   function over(event) {
-    if (!hasFiles(event)) return;
+    if (!hasFiles(event) || !ownsDrop(event)) return;
     event.preventDefault();
     event.stopPropagation();
     event.dataTransfer.dropEffect = "copy";
     highlight(true);
   }
   function leave(event) {
-    if (!hasFiles(event)) return;
+    if (!hasFiles(event) || !ownsDrop(event)) return;
     depth = Math.max(0, depth - 1);
     if (!depth) highlight(false);
   }
   function drop(event) {
-    if (!hasFiles(event)) return;
+    if (!hasFiles(event) || !ownsDrop(event)) return;
     event.preventDefault();
     event.stopPropagation();
     depth = 0;
@@ -178,22 +182,28 @@ export function taskAttachments(
   function finalise(event) {
     if (event.target.closest('[data-feature="draft-finalise"]')) submit(event);
   }
-  dialog.addEventListener("dragenter", enter, true);
-  dialog.addEventListener("dragover", over, true);
-  dialog.addEventListener("dragleave", leave, true);
-  dialog.addEventListener("drop", drop, true);
+  function ownsDrop(event) {
+    const scope = event.target.closest('[data-attachment-scope]');
+    return !scope || scope === section;
+  }
+  dropTarget.addEventListener("dragenter", enter, true);
+  dropTarget.addEventListener("dragover", over, true);
+  dropTarget.addEventListener("dragleave", leave, true);
+  dropTarget.addEventListener("drop", drop, true);
   form.addEventListener("submit", submit, true);
   form.addEventListener("click", finalise, true);
   return {
+    get pending() { return pending; },
+    settled: () => queue,
     destroy() {
       disposed = true;
       preview.destroy();
       form.removeEventListener("input", bodyChanged);
       form.removeEventListener("task-description-reloaded", refresh);
-      dialog.removeEventListener("dragenter", enter, true);
-      dialog.removeEventListener("dragover", over, true);
-      dialog.removeEventListener("dragleave", leave, true);
-      dialog.removeEventListener("drop", drop, true);
+      dropTarget.removeEventListener("dragenter", enter, true);
+      dropTarget.removeEventListener("dragover", over, true);
+      dropTarget.removeEventListener("dragleave", leave, true);
+      dropTarget.removeEventListener("drop", drop, true);
       form.removeEventListener("submit", submit, true);
       form.removeEventListener("click", finalise, true);
       overlay.remove();

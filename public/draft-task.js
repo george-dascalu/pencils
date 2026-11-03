@@ -1,3 +1,4 @@
+import {validTaskNotes} from './task-note-model.js';
 // Drafts live in the canvas document. They become project tasks only on conversion.
 export const draftTaskData = (node) => ({
   ...node.draft,
@@ -16,6 +17,7 @@ export function draftTaskFields(data) {
       "due",
       "dependencies",
       "subtasks",
+      "notes",
     ]
       .filter((key) => data[key] !== undefined)
       .map((key) => [key, structuredClone(data[key])]),
@@ -34,6 +36,7 @@ export function validDraftTask(node) {
       (key) =>
         d[key] == null || (typeof d[key] === "string" && d[key].length <= 300),
     ) &&
+    validTaskNotes(d.notes) &&
     (d.dependencies == null ||
       (Array.isArray(d.dependencies) &&
         d.dependencies.length <= 200 &&

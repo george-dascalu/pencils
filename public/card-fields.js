@@ -5,6 +5,7 @@
 export const CARD_FIELDS = [
   ["type", "Type"], ["assignee", "Assignee"], ["status", "Status"], ["priority", "Priority"],
   ["start", "Start date"], ["due", "Due date"], ["estimate", "Estimate"], ["tags", "Tags"], ["parent", "Parent"],
+  ["notes", "Notes"],
 ];
 // A view stays while one of its fields is on (Calendar and Timeline place cards by start or due).
 const NEEDS = { kanban: ["status"], tree: ["parent"], calendar: ["start", "due"], timeline: ["start", "due"], capacity: ["assignee"] };

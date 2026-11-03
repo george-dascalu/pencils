@@ -15,12 +15,14 @@ const VIEWS = VIEW_GROUPS.flatMap(([, , views]) => views);
 // Timeline a date, Capacity the assignee.
 const NEEDS = { kanban: ["status"], tree: ["parent"], calendar: ["start", "due"], timeline: ["start", "due"], capacity: ["assignee"] };
 const needsMet = (off, view) => !NEEDS[view] || NEEDS[view].some((field) => !off.includes(field));
-// A saved Table view that uses every built-in field somewhere.
+// A saved Table view uses every queryable built-in field. Notes is a rich-text
+// component that can be hidden, rather than a Table column or a query operand.
+const QUERY_FIELDS = FIELDS.filter(key => offeredFields(schema({})).some(field => field.key === key));
 const SAVED = {
   groups: ["status", "assignee"],
   sorts: [{ field: "due", dir: 1 }, { field: "priority", dir: -1 }, { field: "title", dir: 1 }],
-  filters: FIELDS.map((field) => ({ field, op: "not-empty" })),
-  query: { match: "all", rules: [{ field: "title", op: "contains", value: "a" }, ...FIELDS.map((field) => ({ field, op: "not-empty" })), { match: "any", rules: [{ field: "tags", op: "eq", value: "x" }] }] },
+  filters: QUERY_FIELDS.map((field) => ({ field, op: "not-empty" })),
+  query: { match: "all", rules: [{ field: "title", op: "contains", value: "a" }, ...QUERY_FIELDS.map((field) => ({ field, op: "not-empty" })), { match: "any", rules: [{ field: "tags", op: "eq", value: "x" }] }] },
 };
 const fieldsIn = (node) => (node.rules ? node.rules.flatMap(fieldsIn) : [node.field]);
 

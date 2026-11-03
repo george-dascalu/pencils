@@ -2,6 +2,11 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.21.64 — 2026-11-03
+
+### Added
+- Feature F0.21-64: Cards have Notes with rich text, headings, tables, checklists, quotes and code blocks. Add and delete notes, browse one at a time with Previous/Next, arrow keys or a touch swipe, and attach or preview files on each note. Notes stay with the card in Markdown, history, browser and board drafts, and offline saves; projects can hide Notes in Card fields.
+
 ## 0.21.63 — 2026-11-03
 
 ### Added

@@ -1536,6 +1536,25 @@ html.task-page-open,
 /* Linked documents and boards share the relationships list layout. */
 .task-resources { margin-top: 20px; }
 .task-resources [data-resource-list] { margin-top: 4px; }
+/* Notes reuse the description's rich editor, with one bounded card mounted at a time. */
+.task-notes { margin-top: 20px; min-width: 0; }
+.task-notes-heading, .task-notes-heading > div, .task-notes-navigation { display: flex; align-items: center; gap: 4px; }
+.task-notes-heading { margin-bottom: 4px; }
+.task-notes-heading h3 { margin: 0 auto 0 0; font-size: var(--type-body); }
+.task-notes-heading .danger { color: var(--danger); }
+.task-note-card { position: relative; min-width: 0; border: 1px solid var(--line); border-radius: var(--field-radius); background: var(--surface); overflow: hidden; }
+.task-note-card .task-rich-tools { border: 0; border-bottom: 1px solid var(--line); border-radius: 0 !important; }
+.task-note-card .rich-toolbar { flex-wrap: nowrap; }
+.task-note-card :is(.inline-rich,.inline-preview,.markdown-source) { width: 100%; min-height: 120px; max-height: 320px; margin: 0; padding: var(--popover-padding); border: 0; border-radius: 0; overflow: auto; overscroll-behavior: contain; overflow-wrap: anywhere; }
+.task-note-card .inline-preview { touch-action: pan-y; }
+.task-note-card .document-prose { --document-font-size: var(--type-body); --document-line-height: 1.6; --document-block-gap: 8px; }
+.task-note-card .inline-rich[data-empty="true"]::before { content: attr(data-placeholder); color: var(--muted); font-style: italic; pointer-events: none; }
+.task-note-card .task-attachments { margin: 0; padding: var(--popover-padding); border-top: 1px solid var(--line); }
+.task-note-card .task-attachments-heading { margin-bottom: 0; }
+.task-note-card .task-attachment-status { padding-inline: var(--popover-padding); }
+.task-note-card .task-file-drop-overlay:not([hidden]) { position: absolute; inset: 4px; }
+.task-notes-navigation { justify-content: center; margin-top: 4px; }
+.task-notes-navigation output { min-width: 48px; text-align: center; font-size: var(--type-meta); color: var(--muted); font-variant-numeric: tabular-nums; }
 .document-linked-cards { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; padding: 6px 0 2px; }
 .document-linked-cards > .caption { margin-right: 4px; }
 .document-linked-cards .task-relationship-title { max-width: 220px; }

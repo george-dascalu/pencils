@@ -21,6 +21,12 @@ export function taskChanges(previous, next) {
   }
   for (const key of new Set([...Object.keys(before.fields || {}), ...Object.keys(after.fields || {})]))
     if (!same(before.fields?.[key], after.fields?.[key])) changes.push({ key: `field:${key}`, label: key, before: before.fields?.[key], after: after.fields?.[key] });
+  const oldNotes = new Map((before.notes || []).map((note, i) => [note.id, {...note, index: i + 1}]));
+  const newNotes = new Map((after.notes || []).map((note, i) => [note.id, {...note, index: i + 1}]));
+  for (const id of new Set([...oldNotes.keys(), ...newNotes.keys()])) {
+    const old = oldNotes.get(id), current = newNotes.get(id);
+    if (!same(old?.body, current?.body)) changes.push({key: 'note', label: `Note ${current?.index || old.index}`, before: old ? old.body || '(Empty note)' : null, after: current ? current.body || '(Empty note)' : null});
+  }
   const oldComments = new Map((before.comments || []).map(c => [c.id, c]));
   const newComments = new Map((after.comments || []).map(c => [c.id, c]));
   for (const id of new Set([...oldComments.keys(), ...newComments.keys()])) {

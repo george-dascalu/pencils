@@ -7,7 +7,7 @@ import { canParent } from "../public/hierarchy-model.js";
 
 // Owner request (T23): a project can turn off any built-in card field; cards keep ID and title.
 test("a project can turn off built-in card fields, and only those", () => {
-  assert.deepEqual(CARD_FIELDS.map(([key]) => key), ["type", "assignee", "status", "priority", "start", "due", "estimate", "tags", "parent"]);
+  assert.deepEqual(CARD_FIELDS.map(([key]) => key), ["type", "assignee", "status", "priority", "start", "due", "estimate", "tags", "parent", "notes"]);
   assert.deepEqual(schema({ off: ["status", "parent"] }).off, ["status", "parent"]);
   assert.equal(schema({}).off, undefined, "nothing is off by default");
   for (const off of [["title"], ["key"], ["status", "status"], "status", [1]])

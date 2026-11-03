@@ -11,7 +11,7 @@ let count = 0;
 // A project per test, with one card that has every field set.
 async function seed(off = []) {
   const project = await app.store.createProject({ title: `Fields ${++count}`, key: `FD${count}` });
-  const task = await app.store.createTask(project.id, { title: "A card", status: "todo", priority: "high", assignee: "Ann", start: "2026-11-02", due: "2026-11-05" });
+  const task = await app.store.createTask(project.id, { title: "A card", status: "todo", priority: "high", assignee: "Ann", start: "2026-11-02", due: "2026-11-05", notes: [{id: 'n-kept', body: 'A saved note'}] });
   if (off.length) await setOff(project.id, off);
   return { project, task };
 }
@@ -26,11 +26,11 @@ test("turning fields off in Settings hides them and the views that need them, an
   const s = await seed();
   await page.goto(url(s, "settings/workflow"));
   const fields = page.getByRole("group", { name: "Card fields" });
-  await expect(fields.getByRole("checkbox")).toHaveCount(9);
-  for (const name of ["Assignee", "Status", "Priority", "Start date", "Due date", "Parent"])
+  await expect(fields.getByRole("checkbox")).toHaveCount(10);
+  for (const name of ["Assignee", "Status", "Priority", "Start date", "Due date", "Parent", "Notes"])
     await fields.getByRole("checkbox", { name, exact: true }).uncheck();
   await settingsSaved(page);
-  expect((await app.store.snapshot(s.project.id)).project.schema.off).toEqual(["assignee", "status", "priority", "start", "due", "parent"]);
+  expect((await app.store.snapshot(s.project.id)).project.schema.off).toEqual(["assignee", "status", "priority", "start", "due", "parent", "notes"]);
 
   await page.goto(url(s, "list"));
   await expect(row(page).locator(".task-id")).toBeVisible();
@@ -54,6 +54,7 @@ test("turning fields off in Settings hides them and the views that need them, an
   await expect(form.locator('[data-task-picker="type"]')).toBeVisible();
   for (const part of ['select[name="status"]', '[data-task-picker="priority"]', ".task-assignee-field", ".task-dates"])
     await expect(form.locator(part), part).toBeHidden();
+  await expect(form.getByRole('region', {name: 'Notes', exact: true})).toHaveCount(0);
   await page.keyboard.press("Escape");
   // A saved default view that's now hidden stays chosen, so saving Views keeps it.
   const { project } = await app.store.snapshot(s.project.id);
@@ -66,6 +67,7 @@ test("turning fields off in Settings hides them and the views that need them, an
   await page.goto(url(s, "list"));
   await expect(row(page).locator(".row-status")).toContainText("To do");
   await expect(row(page).locator(".row-assignee")).toBeVisible();
+  expect((await app.store.snapshot(s.project.id)).tasks.find(t => t.id === s.task.id).notes).toEqual([{id: 'n-kept', body: 'A saved note'}]);
 });
 
 test("filters and Table columns leave fields that are off", async ({ page }) => {

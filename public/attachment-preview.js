@@ -1,6 +1,6 @@
 import { positionPopover } from "./popover-position.js";
 
-export function attachmentPreview({ esc, icon }, owner) {
+export function attachmentPreview({ esc, icon }, owner, id = 'attachment-preview') {
   const lifecycle = new AbortController();
   let active = null,
     frame;
@@ -31,13 +31,13 @@ export function attachmentPreview({ esc, icon }, owner) {
     if (active?.anchor === anchor) return close(true);
     close();
     const panel = document.createElement("section");
-    panel.id = "attachment-preview";
+    panel.id = id;
     panel.className = "selection-popover attachment-preview";
     panel.setAttribute("popover", "manual");
     panel.setAttribute("role", "dialog");
     panel.setAttribute("aria-modal", "false");
-    panel.setAttribute("aria-labelledby", "attachment-preview-title");
-    panel.innerHTML = `<header><strong id="attachment-preview-title">${esc(file.name)}</strong><button type="button" class="icon-button" data-preview-close aria-label="Close attachment preview">${icon("close")}</button></header><div class="attachment-preview-content" aria-busy="true"><p role="status">Loading preview…</p></div><footer><span class="field-hint" data-preview-info></span><a class="button small" data-preview-download hidden download="${esc(file.name)}">${icon("download")}Download</a></footer>`;
+    panel.setAttribute("aria-labelledby", `${id}-title`);
+    panel.innerHTML = `<header><strong id="${id}-title">${esc(file.name)}</strong><button type="button" class="icon-button" data-preview-close aria-label="Close attachment preview">${icon("close")}</button></header><div class="attachment-preview-content" aria-busy="true"><p role="status">Loading preview…</p></div><footer><span class="field-hint" data-preview-info></span><a class="button small" data-preview-download hidden download="${esc(file.name)}">${icon("download")}Download</a></footer>`;
     owner.append(panel);
     const current = (active = {
       panel,

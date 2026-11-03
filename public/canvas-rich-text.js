@@ -17,6 +17,7 @@ export function canvasRichText(
     reposition = () => {},
     onAlignment = () => {},
     sourceName = "text",
+    focusOnMount = true,
     readSource = value => value,
     writeSource = value => value,
   } = {},
@@ -166,7 +167,7 @@ export function canvasRichText(
     }
     form.dataset.editorMode = next;
     reposition();
-    if (next !== "preview")
+    if (next !== "preview" && (!opening || focusOnMount))
       focusOnOpen(next === "rich" ? rich : source, opening ? null : modeButton.closest("details")?.querySelector("summary") || modeButton);
   }
   const remember = () => {

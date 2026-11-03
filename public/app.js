@@ -1441,6 +1441,7 @@ function closeDialog(force = false, { confirmDirty = true, keepDraft = false } =
       .finished.catch(() => {}).then(() => copy.remove());
   }
   const form = $("#task-form");
+  if (!force && form && features.taskBusy()) return false;
   if (form?.dataset.id || form?.dataset.draftNode) {
     void features.flushTask();
     if (!force && !keepDraft && features.taskHasChanges() && (!form.checkValidity() || !form.elements.title.value.trim())) {
@@ -1808,6 +1809,7 @@ function taskDialog(id = null, defaults = {}, replace = false) {
       ${(t.related_records || []).map(record => `<input type="hidden" name="related_records" value="${esc(record)}">`).join("")}
       ${(t.documents || []).map(document => `<input type="hidden" name="documents" value="${esc(document)}">`).join("")}
       ${(t.boards || []).map(board => `<input type="hidden" name="boards" value="${esc(board)}">`).join("")}
+      <input type="hidden" name="notes" value="${esc(JSON.stringify(t.notes || []))}">
       </div>
       <aside class="task-history-panel" aria-label="Card version history" hidden></aside></div>
     <div class="dialog-foot task-editor-foot">${id || isDraft ? '<span class="task-autosave-status" data-autosave-status role="status" aria-live="polite"></span>' : `<div class="task-create-actions"><label class="create-another"><input type="checkbox" name="createAnother" ${t.createAnother ? "checked" : ""}>Create another</label><button class="button primary" type="submit">Create card</button></div>`}</div></form></dialog>`;
