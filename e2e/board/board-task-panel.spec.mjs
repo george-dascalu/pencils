@@ -172,7 +172,8 @@ test("Details opens the card in the side panel without moving the board, and His
   await expect(page.locator("#task-form")).toHaveAttribute("data-id", task.id);
   await expect(editor(page).locator(".board-task-editor-heading .task-key")).toHaveText(task.key);
   await expect(page.locator("#canvas-world"), "opening the card does not move the board").toHaveAttribute("style", camera);
-  await expect(editor(page).locator(".task-editor-actions button")).toHaveCount(5);
+  // Delete, Duplicate, Archive, Version history, Comments and Card board (F0.21-76).
+  await expect(editor(page).locator(".task-editor-actions button")).toHaveCount(6);
   await expect(editor(page).locator(".task-subtasks")).toHaveCount(0);
   await checkMetadataLayout(page);
   await chooseCardPane(page, 'history');

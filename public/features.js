@@ -922,7 +922,7 @@ export function installFeatures(ctx) {
     }
     // A second tap on the open pane returns to the details: wide screens have no Info button.
     // Read before the save below, which may wait, and skip it when only closing the pane.
-    if (["task-comments", "task-history"].includes(action) && el?.getAttribute("aria-pressed") === "true") action = "task-details";
+    if (["task-comments", "task-history", "task-board"].includes(action) && el?.getAttribute("aria-pressed") === "true") action = "task-details";
     if (
       [
         "task-duplicate",
@@ -933,6 +933,8 @@ export function installFeatures(ctx) {
       !(await autosave.flush())
     )
       return;
+    // The card's board (F0.21-76): its details as fixed panels over the app; the other sections leave it.
+    if (["task-board", "task-details", "task-history", "task-comments"].includes(action)) $(".task-dialog")?.classList.toggle("card-board", action === "task-board");
     if (action === "draft-finalise") {
       if (!autosave || !(await autosave.flush())) return;
       const id = $("#task-form")?.dataset.draftNode;
@@ -942,7 +944,7 @@ export function installFeatures(ctx) {
       return;
     }
     const currentTask = task($("#task-form")?.dataset.id);
-    if (action === "task-details" && currentTask) {
+    if (["task-details", "task-board"].includes(action) && currentTask) {
       taskComments?.close();
       taskModal?.hideHistory();
       if (!el?.matches('select')) el?.focus({ preventScroll: true });
@@ -1217,7 +1219,7 @@ export function installFeatures(ctx) {
     dialogOpened,
     taskBusy: () => !!notesEditor?.busy,
     flushTask: () => notesEditor?.busy ? notesEditor.settled().then(() => autosave?.flush() || true) : autosave?.flush() || Promise.resolve(true),
-    selectTaskPane: (pane, trigger) => ['details', 'history', 'comments'].includes(pane)
+    selectTaskPane: (pane, trigger) => ['details', 'board', 'history', 'comments'].includes(pane)
       ? click(`task-${pane}`, trigger).catch(error => toast(error.message, true))
       : Promise.resolve(),
     taskHasChanges: () => autosave?.hasChanges() ?? state.dirty,

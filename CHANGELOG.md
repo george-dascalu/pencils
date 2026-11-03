@@ -2,6 +2,11 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.21.76 — 2026-11-03
+
+### Added
+- Feature F0.21-76: Every card has a board, a section of the card beside Details, Versions and Comments (the Card board button on wide screens, Board in Card section on phones and narrow panels). It opens over the whole app: the card's title and fields at the top, then its description (with attachments), notes, relationships, linked documents and linked boards as panels on the board's dots, in columns that wrap to the screen. Nothing on it is placed by hand; each panel edits the card as the editor does. Choosing it again, another section or Close leaves it. It is part of the card, so it never appears in the Boards list.
+
 ## 0.21.75 — 2026-11-03
 
 ### Fixed

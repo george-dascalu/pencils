@@ -173,7 +173,7 @@ test("the board's task panel updates its card live, keeps its header actions in 
   await expect(node.locator(".task-title")).toHaveText("Live on the board");
   await expect(title(page)).toHaveValue("Live on the board");
   const actions = await panel.locator('.task-editor-actions button, .board-task-editor-heading [data-action="dialog-close"]').evaluateAll((els) => els.map((el) => el.getAttribute("aria-label")));
-  expect(actions).toEqual(["Version history", "Card comments", "Duplicate card", "Archive card", "Delete card", "Close card"]);
+  expect(actions).toEqual(["Card board", "Version history", "Card comments", "Duplicate card", "Archive card", "Delete card", "Close card"]);
   for (const width of [1400, 390])
     for (const theme of ["light", "dark"]) {
       await page.setViewportSize({ width, height: 1000 });

@@ -34,7 +34,7 @@ export function boardTaskEditor(
     const choice = document.createElement('select');
     choice.className = 'task-section-picker';
     choice.setAttribute('aria-label', 'Card section');
-    choice.innerHTML = '<option value="details" data-icon="info">Details</option><option value="history" data-icon="clock">Versions</option><option value="comments" data-icon="comment">Comments</option>';
+    choice.innerHTML = '<option value="details" data-icon="info">Details</option><option value="board" data-icon="board">Board</option><option value="history" data-icon="clock">Versions</option><option value="comments" data-icon="comment">Comments</option>';
     choice.addEventListener('input', event => event.stopPropagation());
     choice.addEventListener('change', event => {
       event.stopPropagation(); // Navigation is not a card edit and must not trigger autosave.
@@ -42,7 +42,7 @@ export function boardTaskEditor(
       void selectPane(choice.value, choice).finally(position);
     });
     panes.append(choice);
-    for (const pane of ["history", "comments"]) {
+    for (const pane of ["board", "history", "comments"]) {
       const button = actions.querySelector(`[data-feature="task-${pane}"]`);
       button.dataset.editorPane = pane;
       panes.append(button);
@@ -59,20 +59,22 @@ export function boardTaskEditor(
     actions.append(more);
   }
   const phone = () => innerWidth <= 600;
-  const activePane = () => dialog.classList.contains('with-task-comments') ? 'comments' : dialog.classList.contains('with-task-history') ? 'history' : 'details';
+  // The card's board (F0.21-76) is its details over the whole app, so it is a page like the phone's.
+  const paged = () => phone() || dialog.classList.contains("card-board");
+  const activePane = () => dialog.classList.contains('with-task-comments') ? 'comments' : dialog.classList.contains('with-task-history') ? 'history' : dialog.classList.contains('card-board') ? 'board' : 'details';
   const releaseScroll = containPanelScroll(dialog, target => {
     if (phone()) return dialog.querySelector("#task-form");
     const own = target?.closest('.task-comments-panel, .task-history-panel');
     if (own) return own;
-    const pane = dialog.dataset.paneLayout === 'compact' && activePane() !== 'details' ? activePane() === 'comments' ? '.task-comments-panel' : '.task-history-panel' : '.task-editor-content > .dialog-body';
+    const pane = dialog.dataset.paneLayout === 'compact' && !['details', 'board'].includes(activePane()) ? activePane() === 'comments' ? '.task-comments-panel' : '.task-history-panel' : '.task-editor-content > .dialog-body';
     return dialog.querySelector(pane);
   });
   let releasePage = null;
   function updatePageMode() {
-    if (phone() === !!releasePage) return;
     dialog.classList.toggle("task-editor-page", phone());
-    dialog.setAttribute("aria-modal", String(phone()));
-    if (!phone()) {
+    if (paged() === !!releasePage) return;
+    dialog.setAttribute("aria-modal", String(paged()));
+    if (!paged()) {
       releasePage();
       releasePage = null;
       dialog.querySelector("#task-form").scrollTop = 0;
@@ -96,7 +98,7 @@ export function boardTaskEditor(
   }
   function updatePanes(split) {
     const pane = activePane();
-    const auxiliary = !split && pane !== 'details';
+    const auxiliary = !split && !['details', 'board'].includes(pane);
     dialog.querySelector(".task-editor-content > .dialog-body").hidden = auxiliary;
     dialog.querySelector(".task-editor-foot").hidden = auxiliary;
     for (const button of panes.querySelectorAll("button")) button.setAttribute("aria-pressed", String(button.dataset.editorPane === pane));
@@ -117,7 +119,7 @@ export function boardTaskEditor(
     updatePanes(split);
     const auxiliary = split && activePane() !== 'details' ? 280 : 0;
     dialog.querySelector('.task-panel-resizer')?.setAttribute('aria-valuemin', auxiliary ? '620' : '360');
-    if (phone()) {
+    if (paged()) {
       // iOS keeps the layout viewport tall when the software keyboard opens.
       // Fit both existing and new task panels to the part that is visible.
       const viewport = window.visualViewport;

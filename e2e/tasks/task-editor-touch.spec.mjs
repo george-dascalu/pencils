@@ -40,17 +40,20 @@ async function openCard(page, device, { project, main }) {
 const reviewTests = (device, phone) => {
   const relationships = (page) => form(page).locator(".task-relationships");
 
-  test("Details, Comments and History are the editor's three panes", async ({ page }) => {
+  // The card's board (F0.21-76) is the fourth section.
+  test("Details, Board, Comments and History are the editor's sections", async ({ page }) => {
     await openCard(page, device, app.review);
     await relationships(page).waitFor();
     await expect(page.locator(".task-mobile-panes")).toHaveCount(0);
-    await expect(form(page).locator("[data-editor-pane]")).toHaveCount(2);
+    await expect(form(page).locator("[data-editor-pane]")).toHaveCount(3);
     const dialog = page.locator(".task-dialog");
     await chooseCardPane(page, 'comments');
     await expect(dialog).toHaveClass(/\bwith-task-comments\b/);
     await chooseCardPane(page, 'history');
     await expect(dialog).toHaveClass(/\bwith-task-history\b/);
     await expect(dialog).not.toHaveClass(/\bwith-task-comments\b/);
+    await chooseCardPane(page, 'board');
+    await expect(dialog).not.toHaveClass(/\bwith-task-history\b/);
     await expect(page.getByRole('button', {name:'Card details',exact:true})).toHaveCount(0);
     await chooseCardPane(page, 'details');
     await form(page).locator(".task-metadata").waitFor();

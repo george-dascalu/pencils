@@ -1,10 +1,11 @@
 .canvas,
 .background-preview,
-.pattern-sample {
+.pattern-sample,
+.card-board {
   --board-paper: #f5f6ee;
   --board-line: #ced6c1;
 }
-[data-theme="dark"] :is(.canvas, .background-preview, .pattern-sample) {
+[data-theme="dark"] :is(.canvas, .background-preview, .pattern-sample, .card-board) {
   --board-paper: #17221c;
   --board-line: #415448;
 }

@@ -1658,3 +1658,52 @@ html.task-page-open,
 .task-dialog .task-tag-add {
   width: auto;
 }
+
+/* The card's board (F0.21-76): over the whole app, the card's parts as fixed panels in columns on
+   the board's dots. Nothing is placed by hand; each panel edits the card as the editor does. */
+/* board-task-editor.js sizes it to the visible viewport, as it does the phone's card page. */
+.dialog.task-dialog.card-board {
+  z-index: 100;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  background: var(--board-paper) radial-gradient(var(--board-line) 1px, transparent 1px) 0 0 / 20px 20px;
+}
+.task-dialog.card-board .task-editor-content > .dialog-body {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  align-content: flex-start;
+  gap: 16px;
+  padding: 16px;
+  background: transparent;
+}
+.task-dialog.card-board .dialog-body > :not(.task-description, .task-notes, .task-relationships, .task-resources) {
+  flex: 1 0 100%;
+}
+.task-dialog.card-board .dialog-body > :is(.task-description, .task-notes, .task-relationships, .task-resources) {
+  flex: 1 1 360px;
+  min-width: 0;
+  margin: 0;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: calc(10px * var(--style-roundness, 1));
+  background: var(--surface);
+  box-shadow: var(--shadow-popover);
+}
+.task-dialog.card-board .task-editor-head {
+  background: var(--surface);
+  border-bottom: 1px solid var(--line);
+}
+.task-dialog.card-board .task-panel-resizer {
+  display: none;
+}
+/* Every panel on the board names itself; the description's name is otherwise only for screen readers. */
+.task-dialog.card-board .dialog-body > .task-description::before {
+  content: "Description" / "";
+  display: block;
+  margin-bottom: 8px;
+  font-size: var(--type-section);
+  font-weight: 600;
+  line-height: 1.3;
+}
