@@ -233,11 +233,12 @@ textarea,
 .task-attachment-choose { min-height: var(--control-height); text-align: start; }
 @media (pointer: coarse) {
   /* Small editable text triggers iPhone focus magnification. Keep text entry
-     readable without enlarging toolbar buttons or transformed board cards. */
+     readable without enlarging toolbar buttons or transformed board cards
+     (the board's world; its panels, such as search, are fields like any other). */
   :is(
     input:not([type="hidden"], [type="checkbox"], [type="radio"], [type="range"], [type="color"], [type="file"]),
     select, textarea, [contenteditable="true"], [contenteditable="plaintext-only"]
-  ):not(#canvas *, .title-input) { font-size: var(--touch-text-font-size) !important; }
+  ):not(#canvas-world *, .title-input) { font-size: var(--touch-text-font-size) !important; }
   /* Title fields set their own size, never below 16px on touch. */
 }
 @media (pointer: coarse) {

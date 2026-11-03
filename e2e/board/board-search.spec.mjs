@@ -88,6 +88,19 @@ onDevices(["desktop", "phone"], () => test("the panel stays on screen in both th
   }
 }));
 
+// iPhone zooms the page into a focused field whose text is under 16px (F0.21-77). Card text on the
+// board scales with the board and keeps its own size; the search panel's fields do not.
+onDevices(["phone", "ipad-portrait"], () => test("the search and filter fields are 16px on touch, so focusing them never zooms", async ({ page }) => {
+  await openBoard(page);
+  await openSearch(page);
+  for (const id of ["#canvas-find", "#canvas-owner", "#canvas-status"]) {
+    const size = await page.locator(id).evaluate((el) => parseFloat(getComputedStyle(el).fontSize));
+    expect(size, `${id} is at least 16px`).toBeGreaterThanOrEqual(16);
+  }
+  const card = await page.locator('[data-node="task"]').evaluate((el) => getComputedStyle(el).fontSize);
+  expect(card, "board cards keep their board-scale text").not.toBe("16px");
+}));
+
 onDevices(["phone"], () => test("a refresh in flight does not steal search focus or reset the field", async ({ page }) => {
   await openBoard(page);
   let unblock, reached;

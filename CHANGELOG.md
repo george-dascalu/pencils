@@ -2,6 +2,11 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.21.77 — 2026-11-03
+
+### Fixed
+- Feature F0.21-77: On iPhone and iPad, tapping a board's search field (or its owner and status filters) no longer zooms the page in: the board's panels use the 16px text other fields use on touch screens, while cards on the board keep their own size.
+
 ## 0.21.76 — 2026-11-03
 
 ### Added
