@@ -2,6 +2,11 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.22.13 — 2026-11-04
+
+### Fixed
+- Feature F0.22-13: A browser test that draws on a newly created board waits for that board to open before choosing the pen, so a click can no longer start on the previous board's tool bar as it is replaced (seen in Safari's engine, WebKit, under load).
+
 ## 0.22.12 — 2026-11-04
 
 ### Fixed

@@ -92,8 +92,12 @@ test("a pencil stroke on a new board saves to the server and this device, and th
   await clickControl(page.locator('#list-panel [data-board-menu="board-new"] [data-action="board-new"]'));
   await page.locator('#board-form [name="title"]').fill("Fresh sketch");
   await page.locator('#board-form .dialog-foot button[type="submit"]').click();
+  // The old board's canvas is still there: wait for the new board, whose render replaces the bar a
+  // Pen click could otherwise start on (seen in WebKit under load).
+  await expect(page.locator(".topbar .breadcrumb strong")).toHaveText("Fresh sketch");
   await page.locator("#canvas").waitFor();
   await page.locator('.board-tools [data-feature="draw-tool"]').click();
+  await expect(page.locator("#canvas")).toHaveClass(/\bpen-mode\b/);
   const rect = await page.locator("#canvas").boundingBox();
   await drawStroke(page, { x: rect.x + 220, y: rect.y + 200 }, { x: rect.x + 360, y: rect.y + 280 }, 12);
   await expect(page.locator("[data-drawing-save]")).toContainText("server");
