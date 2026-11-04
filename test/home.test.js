@@ -14,16 +14,21 @@ import { framingAllowed, privateAddress, checkEmbed, fetchEmbed } from "../serve
 import { compact, stackOrder } from "../public/home-grid.js";
 
 const user = { username: "george", name: "George" };
-async function store() {
+async function store(t) {
   const root = await fs.mkdtemp(path.join(os.tmpdir(), "pencils-home-"));
   const s = new Store(root);
   await s.init();
+  // Each test's vault goes when it ends, instead of piling up in the temporary folder.
+  t.after(async () => {
+    s.close();
+    await fs.rm(root, { recursive: true, force: true });
+  });
   return s;
 }
 const fakeBookmarks = { resolve: async (u, b) => (b.id === "gone" ? null : { kind: b.kind, project: b.project, id: b.id, title: `Title of ${b.id}` }) };
 
-test("a person without a layout gets the default panels, and a saved layout comes back as saved", async () => {
-  const home = new Home(await store());
+test("a person without a layout gets the default panels, and a saved layout comes back as saved", async (t) => {
+  const home = new Home(await store(t));
   const first = await home.list(user);
   assert.deepEqual(first.panels.map((p) => p.type), defaultPanels().map((p) => p.type));
   assert.ok(first.panels.every((p) => PANEL_TYPES.includes(p.type)));
@@ -33,8 +38,8 @@ test("a person without a layout gets the default panels, and a saved layout come
   assert.deepEqual((await home.list({ username: "other" })).panels.map((p) => p.type), defaultPanels().map((p) => p.type), "layouts are per person");
 });
 
-test("a layout is validated: known types, panels inside the 12 columns, a limit, and settings kept to known keys", async () => {
-  const home = new Home(await store());
+test("a layout is validated: known types, panels inside the 12 columns, a limit, and settings kept to known keys", async (t) => {
+  const home = new Home(await store(t));
   const bad = async (panels, message) => assert.rejects(() => home.replace(user, { panels }), (e) => e.status === 400, message);
   await bad([{ id: "a", type: "weather", x: 0, y: 0, w: 4, h: 4 }], "unknown type");
   await bad([{ id: "a", type: "note", x: 10, y: 0, w: 4, h: 4 }], "past the right edge");
@@ -46,8 +51,8 @@ test("a layout is validated: known types, panels inside the 12 columns, a limit,
   assert.deepEqual((await home.list(user)).panels[0].settings, { text: "x" }, "unknown settings are dropped");
 });
 
-test("visits give a recent list, newest first and unique, and most visited counts within a window, leaving out what is gone", async () => {
-  const visits = new Visits(await store(), fakeBookmarks);
+test("visits give a recent list, newest first and unique, and most visited counts within a window, leaving out what is gone", async (t) => {
+  const visits = new Visits(await store(t), fakeBookmarks);
   const at = (days) => new Date(Date.now() - days * 864e5).toISOString();
   for (const [id, when] of [["one", 40], ["two", 2], ["one", 1], ["gone", 0.5], ["two", 0.2]]) await visits.record(user, { kind: "card", project: "p1", id }, at(when));
   const { recent, visited } = await visits.list(user, { days: 30 });
@@ -57,8 +62,8 @@ test("visits give a recent list, newest first and unique, and most visited count
   assert.deepEqual((await visits.list({ username: "other" })).recent, []);
 });
 
-test("a visit list stays bounded per person", async () => {
-  const visits = new Visits(await store(), fakeBookmarks);
+test("a visit list stays bounded per person", async (t) => {
+  const visits = new Visits(await store(t), fakeBookmarks);
   for (let i = 0; i < 600; i++) await visits.record(user, { kind: "doc", project: "p1", id: `d${i}` });
   assert.ok((await visits.all())[user.username].length <= 500);
 });

@@ -2,6 +2,11 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.22.15 — 2026-11-04
+
+### Fixed
+- Feature F0.22-15: The Home unit tests remove their test vaults when they finish, instead of leaving four folders in the temporary folder on every test run.
+
 ## 0.22.14 — 2026-11-04
 
 ### Fixed
