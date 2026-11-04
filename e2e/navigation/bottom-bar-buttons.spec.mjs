@@ -47,6 +47,31 @@ onDevices(["phone", "ipad"], () => test("Settings → You adds commands and book
   await expect(page).toHaveURL(new RegExp(`/documents/${app.doc.id}$`));
 }));
 
+// F0.22-10: Settings fetches the saved bar again as it opens; a button added before that answer
+// arrives stays, instead of the older answer replacing it (and the next save dropping it).
+onDevices(["phone"], () => test("a button added while Settings is still fetching the saved bar stays", async ({ page }) => {
+  await reset(page);
+  let release;
+  const held = new Promise((resolve) => (release = resolve));
+  // The bar as saved before the button is added, answered only after it is.
+  await page.route("**/api/bar", async (route) => {
+    if (route.request().method() !== "GET") return route.continue();
+    const response = await route.fetch();
+    await held;
+    await route.fulfill({ response });
+  });
+  await page.goto(`${app.base}/#project/${app.project.id}/settings/personal`);
+  const editor = page.locator(".bar-editor").first();
+  await editor.locator("[data-bar-add=command]").selectOption({ label: "New card" });
+  await expect(editor.locator(".bar-editor-item")).toHaveText([/New card/]);
+  // Settings paints the editor again once its fetch is answered: mark this one to see that happen.
+  await page.locator(".bar-editor").evaluateAll((els) => els.forEach((el) => (el.dataset.before = "")));
+  release();
+  await expect(page.locator(".bar-editor[data-before]")).toHaveCount(0);
+  await expect(editor.locator(".bar-editor-item")).toHaveText([/New card/]);
+  await expect.poll(async () => (await (await page.request.get(`${app.base}/api/bar`)).json()).items.map((b) => b.id)).toEqual(["new-task"]);
+}));
+
 onDevices(["phone"], () => test("a long press on the bottom bar edits it in place, and the bar scrolls sideways when full", async ({ page }) => {
   const commands = ["new-task", "today", "quick-capture", "view-list", "view-kanban", "view-calendar"];
   await reset(page, commands.map((id) => ({ type: "command", id })));

@@ -64,6 +64,8 @@ export function installBottomBar({ api, esc, icon, toast, viewLabel, bookmarks, 
   // Changes show at once and save in order; a refused one reloads the saved bar.
   function save(next, focus) {
     if (!ready) return;
+    // A fetch still out was asked for before this change: its answer would undo it (F0.22-10).
+    loads++;
     items = next;
     paint(focus);
     const body = { items: next.map(({ type, id, kind, project }) => (type === "command" ? { type, id } : { type, kind, project, id })) };

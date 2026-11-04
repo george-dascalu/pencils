@@ -220,7 +220,9 @@ test("with thousands of objects selected, the selection toolbar fits a phone wid
   await expect(page.locator(".selection-filter-total")).toHaveText("10080");
   await page.setViewportSize({ width: 390, height: 844 });
   await page.waitForFunction(() => document.querySelector(".sidebar").getBoundingClientRect().right <= 1);
-  const toolbar = await page.locator("#selection-tools").boundingBox();
-  expect(toolbar.x).toBeGreaterThanOrEqual(0);
-  expect(toolbar.x + toolbar.width).toBeLessThanOrEqual(391);
+  // The toolbar is laid out again on the resize that follows, which a board this size can delay.
+  await expect.poll(async () => {
+    const toolbar = await page.locator("#selection-tools").boundingBox();
+    return [toolbar.x >= 0, toolbar.x + toolbar.width <= 391];
+  }, { message: "the selection toolbar fits a phone width" }).toEqual([true, true]);
 });

@@ -2,6 +2,11 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.22.10 — 2026-11-04
+
+### Fixed
+- Feature F0.22-10: A button added to the bottom bar right after opening Settings → You stays, instead of disappearing when Settings finished loading the saved bar (the next change then saved the bar without it). A browser test that measured the selection toolbar on a huge board before the phone layout applied now waits for it.
+
 ## 0.22.9 — 2026-11-04
 
 ### Fixed
