@@ -98,3 +98,13 @@ test("Day headers omit weekends while keeping exact dates and month headers use 
   assert.ok(month.months.some((m) => m.label === "Jan 2027"));
   assert.ok(month.ticks.every((t) => new Date(t.date).getUTCDay() === 1));
 });
+
+// F0.21-89: a Timeline range is dates or a quick range that moves with today, and the scale
+// follows how many days are shown.
+import { validTimelineChoice, timelineScaleFor } from "../public/timeline-dates.js";
+test("Timeline ranges accept dates or a known quick range, and the scale follows the days shown", () => {
+  assert.equal(validTimelineChoice({ start: "2026-10-01", end: "2026-10-31" }), true);
+  for (const quick of ["this-week", "next-week", "this-month", "next-month", "next-7", "next-14", "next-30", "next-90"]) assert.equal(validTimelineChoice({ quick }), true, quick);
+  for (const bad of [{ quick: "today" }, { quick: "next-5000" }, { quick: "auto" }, { quick: "this-week", start: "2026-10-01" }, { start: "2026-10-31", end: "2026-10-01" }, {}, "this-week"]) assert.equal(validTimelineChoice(bad), false, JSON.stringify(bad));
+  assert.deepEqual([1, 31, 32, 183, 184, 3000].map(timelineScaleFor), ["day", "day", "week", "week", "month", "month"]);
+});

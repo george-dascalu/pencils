@@ -42,8 +42,7 @@ test("the work item is called a card", async ({ page }) => {
   expect(await taskWords(page), "card editor").toEqual([]);
 });
 
-test("Timeline names undated cards Unscheduled and its scales in sentence case", async ({ page }) => {
+test("Timeline names undated cards Unscheduled", async ({ page }) => {
   await page.goto(url("timeline"));
   await expect(page.locator(".timeline-section-label")).toHaveText(/^Unscheduled \(1\)$/);
-  await expect(page.locator("[data-timeline-scale] option")).toHaveText(["Day", "Week", "Month"]);
 });

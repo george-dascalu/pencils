@@ -18,6 +18,16 @@ export function validTimelineRange(range) {
     stamp(range.end) - stamp(range.start) <= 3660 * DAY;
 }
 
+// F0.21-89: a Timeline shows chosen dates, a quick range that moves with today, or (null) all
+// its cards' dates.
+export const TIMELINE_QUICK = ["this-week", "next-week", "this-month", "next-month", "next-7", "next-14", "next-30", "next-90"];
+export function validTimelineChoice(range) {
+  if (range && typeof range === "object" && "quick" in range) return Object.keys(range).length === 1 && TIMELINE_QUICK.includes(range.quick);
+  return validTimelineRange(range);
+}
+// Days for a month or less, weeks to half a year, then months.
+export const timelineScaleFor = (days) => (days <= 31 ? "day" : days <= 183 ? "week" : "month");
+
 export function timelineBarBounds(axis, start, end, width, range = null) {
   const left = axis.x(start), right = axis.end(end);
   const outside = !!range && (end < range.start || start > range.end || width <= 0);

@@ -288,7 +288,8 @@
   display: none;
 }
 .board-menu > summary:hover,
-.board-menu[open] > summary {
+.board-menu[open] > summary,
+.range-trigger:is(:hover, [aria-expanded="true"]) {
   background: var(--surface-soft, #edf1e7);
   border-color: var(--green);
 }
@@ -1020,8 +1021,8 @@ html.table-viewport-view body {
 }
 
 /* Menu carets are icons like every other glyph; they turn when a menu is open. */
-.board-menu > summary > .menu-caret { width: 12px; height: 12px; margin-inline-start: 2px; flex-shrink: 0; transition: transform 0.15s; }
-.board-menu[open] > summary > .menu-caret { transform: rotate(180deg); }
+.board-menu > summary > .menu-caret, .range-trigger > .menu-caret { width: 12px; height: 12px; margin-inline-start: 2px; flex-shrink: 0; transition: transform 0.15s; }
+.board-menu[open] > summary > .menu-caret, .range-trigger[aria-expanded="true"] > .menu-caret { transform: rotate(180deg); }
 .table-menu-footer, .table-columns-footer, .menu-footer { margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--line); display: flex; gap: 6px; }
 .board-menu-panel > .menu-footer { padding-inline: 10px; }
 /* A view's options in Filters (project-layout.js arrangeToolbar) follow its filters after a divider. */

@@ -30,7 +30,7 @@ onDevices(['desktop', 'ipad', 'phone'], () => {
     await expect(page.locator('#agenda-period, #agenda-date')).toHaveCount(0);
     await expect(await reveal(menu(page).locator('summary'))).toHaveAccessibleName('Agenda range: This week');
     await openRange(page);
-    const quick = menu(page).locator('[data-agenda-quick]');
+    const quick = menu(page).locator('[data-range-quick]');
     await expect(quick).toHaveText(['Today', 'Tomorrow', 'This week', 'Next week', 'This month', 'Next month', 'Next 7 days', 'Next 14 days', 'Next 30 days']);
     await expect(quick.filter({ hasText: 'This week' })).toHaveAttribute('aria-pressed', 'true');
     if (device !== 'desktop') for (const box of await quick.evaluateAll(els => els.map(el => el.getBoundingClientRect().height))) expect(box).toBeGreaterThanOrEqual(44);
@@ -42,7 +42,7 @@ onDevices(['desktop', 'ipad', 'phone'], () => {
     await dates.locator('input[name="from"]').fill('2026-10-09');
     await dates.locator('input[name="to"]').fill('2026-10-01');
     await dates.getByRole('button', { name: 'Show dates' }).click();
-    await expect(dates.locator('[data-agenda-range-error]')).toBeVisible();
+    await expect(dates.locator('[data-range-error]')).toBeVisible();
     // A day chosen in the field's date picker keeps the menu open.
     await dates.locator('.date-field:has(input[name="from"]) [data-date-picker]').click();
     await page.locator('.date-picker-popover [data-date-value="2026-10-02"]').click();
@@ -60,7 +60,7 @@ onDevices(['desktop', 'ipad', 'phone'], () => {
     await expect.poll(() => shown(page)).toEqual(['2026-10-14']);
     // A quick range closes the menu and is remembered.
     await openRange(page);
-    await menu(page).locator('[data-agenda-quick="tomorrow"]').click();
+    await menu(page).locator('[data-range-quick="tomorrow"]').click();
     await expect(menu(page)).not.toHaveAttribute('open', '');
     await expect(menu(page).locator('summary'), 'focus returns to the range').toBeFocused();
     await closeOptions(page);

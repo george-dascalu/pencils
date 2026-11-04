@@ -245,46 +245,58 @@
 .calendar-timed-card.calendar-resize-sibling { visibility: hidden; }
 /* A layout's own controls come first; a divider sets them apart from the ones every layout shares. */
 .planning-separator { flex: none; align-self: center; width: 1px; height: calc(var(--control-height) - 8px); margin-inline: 4px; background: var(--line); }
-/* The Agenda's range: dates on the left, quick ranges on the right. */
-.agenda-range-menu > summary { gap: 6px; white-space: nowrap; }
-.agenda-range-menu > .agenda-range-panel { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); width: min(420px, calc(100vw - 32px)); }
-.agenda-range-dates { display: flex; flex-direction: column; gap: 4px; min-width: 0; padding: 4px 8px 8px 4px; border-right: 1px solid var(--line); }
-.agenda-range-dates > strong { padding: 4px 0; font-size: var(--type-body); }
-.agenda-range-dates > .field { display: flex; flex-direction: column; align-items: stretch; gap: 4px; padding: 0; text-align: start; }
-.agenda-range-dates > [data-agenda-range-error] { margin: 0; color: var(--danger, #b42318); }
-.agenda-range-dates > button { align-self: flex-start; margin-top: 4px; }
-.agenda-quick-ranges { display: flex; flex-direction: column; min-width: 0; padding-left: 4px; }
-.agenda-quick-ranges > button { display: flex; align-items: center; min-height: var(--control-height); padding: 0 var(--control-padding); border: 0; border-radius: var(--field-radius, 6px); background: transparent; color: var(--ink); font: inherit; font-size: var(--control-font-size); text-align: start; cursor: pointer; }
-.agenda-quick-ranges > button:hover { background: var(--surface-soft); }
-.agenda-quick-ranges > button[aria-pressed="true"] { background: var(--surface-soft); color: var(--green); font-weight: 600; }
-@media (pointer: coarse) { .agenda-quick-ranges > button { min-height: 44px; } }
+/* Agenda's and Timeline's range (range-menu.js): dates on the left, quick ranges on the right. */
+.range-trigger { gap: 6px; white-space: nowrap; }
+.range-panel { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); width: min(420px, calc(100vw - 32px)); }
+.range-dates { display: flex; flex-direction: column; gap: 4px; min-width: 0; padding: 4px 8px 8px 4px; border-right: 1px solid var(--line); }
+.range-dates > strong { padding: 4px 0; font-size: var(--type-body); }
+.range-dates > .field { display: flex; flex-direction: column; align-items: stretch; gap: 4px; margin: 0; padding: 0; text-align: start; }
+.range-dates > [data-range-error] { margin: 0; color: var(--danger, #b42318); }
+.range-dates > button { align-self: flex-start; margin-top: 4px; }
+.range-quick { display: flex; flex-direction: column; min-width: 0; padding-left: 4px; }
+.range-quick > button { display: flex; align-items: center; min-height: var(--control-height); padding: 0 var(--control-padding); border: 0; border-radius: var(--field-radius, 6px); background: transparent; color: var(--ink); font: inherit; font-size: var(--control-font-size); text-align: start; cursor: pointer; }
+.range-quick > button:hover { background: var(--surface-soft); }
+.range-quick > button[aria-pressed="true"] { background: var(--surface-soft); color: var(--green); font-weight: 600; }
+@media (pointer: coarse) { .range-quick > button { min-height: 44px; } }
+/* Timeline's opens as a popover, so it also works inside a board (timeline-range.js). */
+.range-popover.range-panel { position: fixed; inset: auto; margin: 0; padding: var(--menu-panel-padding); overflow: auto; }
+.range-popover .range-dates > strong { color: var(--ink); }
+.range-popover:not(:popover-open) { display: none; }
+.range-popover::backdrop { background: transparent; pointer-events: none; }
 @media (max-width: 600px) {
-  .agenda-range-menu > .agenda-range-panel { grid-template-columns: minmax(0, 1fr); width: 100%; }
-  .agenda-range-dates { padding-right: 4px; border-right: 0; border-bottom: 1px solid var(--line); }
-  .agenda-quick-ranges { padding-left: 0; }
+  .range-panel { grid-template-columns: minmax(0, 1fr); }
+  .agenda-range-menu > .range-panel { width: 100%; }
+  .range-dates { padding-right: 4px; border-right: 0; border-bottom: 1px solid var(--line); }
+  .range-quick { padding-left: 0; }
   .planning-separator { flex: 1 1 100%; width: auto; height: 1px; margin: 4px 0; }
   /* In View options the range reads like the other rows: its name, then its value. */
-  .agenda-range-menu > summary > .control-label { margin-right: auto; }
+  .range-trigger > .control-label { margin-right: auto; }
 }
 /* Week board: days as columns, a row per value of the chosen field, cards as on Kanban. */
 /* Columns share the width down to a card's width, then the board scrolls sideways. */
-.week-board { --week-board-column: 176px; display: grid; grid-template-columns: minmax(80px, 128px) repeat(var(--week-board-days), minmax(var(--week-board-column), 1fr)); align-content: start; min-width: calc(80px + var(--week-board-days) * var(--week-board-column)); }
+.week-board { --week-board-column: 184px; display: grid; grid-template-columns: minmax(80px, 128px) repeat(var(--week-board-days), minmax(var(--week-board-column), 1fr)); align-content: start; min-width: calc(80px + var(--week-board-days) * var(--week-board-column)); }
 .week-board-row, .week-board-head-row { display: contents; }
 .week-board-corner, .week-board-day-head { position: sticky; top: 0; z-index: 2; background: var(--surface); border-bottom: 1px solid var(--line); }
 .week-board-corner { left: 0; z-index: 3; }
 .week-board-empty { margin: 0; padding: 4px 10px 8px; }
 .week-board-day-head { padding: 8px 10px; font-size: var(--type-body); font-weight: 600; color: var(--muted); text-align: start; }
 .week-board-day-head.today { color: var(--green); }
+/* Weekends stand out a little (F0.21-89); the sticky heading keeps its own fill under the shade. */
+.week-board-cell.weekend, .calendar-hours-day.weekend { background-color: var(--weekend-shade); }
+.week-board-day-head.weekend { background-image: linear-gradient(var(--weekend-shade), var(--weekend-shade)); }
 .week-board-row-head { position: sticky; left: 0; z-index: 1; display: flex; align-items: flex-start; gap: 6px; padding: 10px 8px; background: var(--surface); border-bottom: 1px solid var(--line); font-size: var(--type-body); font-weight: 600; }
 .week-board[data-rows="none"] { grid-template-columns: 0 repeat(var(--week-board-days), minmax(var(--week-board-column), 1fr)); min-width: calc(var(--week-board-days) * var(--week-board-column)); }
 .week-board[data-rows="none"] .week-board-row-head { padding: 0; }
 .week-board-row-head > .count { padding: 0 6px; border-radius: 4px; background: var(--surface-soft); color: var(--muted); font-size: var(--type-meta); font-weight: 500; }
 .week-board-cell { display: flex; flex-direction: column; gap: 6px; min-width: 0; min-height: 64px; padding: 6px; border-bottom: 1px solid var(--line); border-left: 1px solid var(--line); }
-.week-board-card { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: 4px 2px; padding: 4px 6px 6px 2px; border: 1px solid var(--line); border-left: 3px solid var(--task-field-color, var(--line)); border-radius: var(--field-radius, 6px); background: var(--surface); box-shadow: var(--shadow-card, none); }
+/* The field box sits 8px in from both sides and 6px above the bottom (F0.21-89). */
+.week-board-card { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: 4px 2px; padding: 4px 8px 6px; border: 1px solid var(--line); border-left: 3px solid var(--task-field-color, var(--line)); border-radius: var(--field-radius, 6px); background: var(--surface); box-shadow: var(--shadow-card, none); }
 .week-board-card > .calendar-move { width: 24px; min-width: 24px; color: var(--muted); }
 .week-board-title { min-width: 0; padding: 2px 0; border: 0; background: none; color: var(--ink); font: inherit; font-size: var(--type-body); text-align: start; overflow-wrap: anywhere; cursor: pointer; }
 /* The field box spans the card, the status giving way; the date shows its whole range. */
-.week-board-card > .week-board-fields { grid-column: 1 / -1; width: 100%; min-width: 0; }
+/* Its box is drawn at list-chip height inside the taller targets (controls.css); the margin takes
+   the space below the box back, so the card's bottom padding is the gap you see. */
+.week-board-card > .week-board-fields { grid-column: 1 / -1; width: 100%; min-width: 0; margin-bottom: calc((var(--list-field-height) - var(--control-height)) / 2); }
 .week-board-fields > .row-status { flex: 1 1 0; min-width: 0; }
 .week-board-fields .row-date-short { display: none; }
 .week-board-fields .field-chip-status { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

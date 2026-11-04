@@ -13,7 +13,7 @@ export async function agendaDates(page, from, to = from) {
   await menu.getByRole("button", { name: "Show dates", exact: true }).click();
 }
 export async function agendaQuick(page, key) {
-  await (await openRange(page)).locator(`[data-agenda-quick="${key}"]`).click();
+  await (await openRange(page)).locator(`[data-range-quick="${key}"]`).click();
 }
 // Month and Week move with their arrows; this goes to the month holding `day`.
 export async function calendarMonth(page, day) {

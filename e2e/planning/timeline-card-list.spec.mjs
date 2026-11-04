@@ -25,8 +25,8 @@ onDevices(["desktop", "ipad-portrait", "phone"], () => test("the card list shows
   await expect(page.locator("[data-timeline-list]")).toHaveValue("full");
   // Desktop and iPad keep the toolbar to one row, with Card list waiting in Filters.
   if (device !== "phone") {
-    const [search, review] = await Promise.all([page.locator("#view-toolbar #search"), page.locator('#view-toolbar [data-feature="schedule-preview"]')].map((l) => l.boundingBox()));
-    expect(Math.abs(search.y + search.height / 2 - (review.y + review.height / 2)), `${device}: one row`).toBeLessThan(4);
+    const [search, range] = await Promise.all([page.locator("#view-toolbar #search"), page.locator("#view-toolbar [data-timeline-range]")].map((l) => l.boundingBox()));
+    expect(Math.abs(search.y + search.height / 2 - (range.y + range.height / 2)), `${device}: one row`).toBeLessThan(4);
     await expect(page.locator('#view-toolbar [data-board-menu="filters"] [data-timeline-list]')).toHaveCount(1);
   }
   const shown = () => label(page).locator(".timeline-task-open").evaluate((el) => el.innerText.trim());

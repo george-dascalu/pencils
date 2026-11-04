@@ -83,8 +83,9 @@ test.describe("editing", () => {
 
   test("keyboard and drag edit dates, dropping schedules an unplanned row, and filters keep the layout", { tag: "@gate" }, async ({ page }) => {
     const { project, planned, unplanned, another } = app.editing;
+    // A week of cards shows days (F0.21-89: the scale follows the dates shown).
     await open(page, app.editing);
-    await page.locator("[data-timeline-scale]").selectOption("day");
+    await expect(page.locator("[data-timeline]").first()).toHaveAttribute("data-scale", "day");
     const bar = page.locator(`[data-timeline-task="${planned.id}"]`);
     await bar.focus();
     await page.keyboard.press("Alt+ArrowRight");

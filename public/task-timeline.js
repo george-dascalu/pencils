@@ -1,7 +1,9 @@
 import { sourceReadOnly } from "./source-model.js";
 import { taskFieldColor, taskColorDot } from "./task-colors.js";
 import { taskDateEditor } from "./task-date-editor.js";
-import { timelineRangeEditor, timelineRoot } from "./timeline-range.js";
+import { timelineRangeEditor, timelineRoot, timelineRangeName } from "./timeline-range.js";
+import { rangeLabelHTML } from "./range-menu.js";
+import { agendaQuickRange } from "./calendar-model.js";
 import { timelineSelection } from "./timeline-select.js";
 import { pageOf, localDate } from "./task-visibility.js";
 import { cardKeyNumber } from "./card-key.js";
@@ -13,14 +15,21 @@ import {
   weekStart,
   timelineAxis,
   timelineHeader,
-  validTimelineRange,
+  validTimelineChoice,
+  timelineScaleFor,
   timelineBarBounds,
 } from "./timeline-dates.js";
 export { shiftDate } from "./timeline-dates.js";
+// The dates a range choice shows: its own, or a quick range's as of today (F0.21-89).
+function shownRange(choice) {
+  if (!validTimelineChoice(choice)) return null;
+  if (!choice.quick) return choice;
+  const { from, to } = agendaQuickRange(choice.quick, localDate());
+  return { start: from, end: to };
+}
 export function timelineHTML(
   tasks,
   ctx,
-  scale = "week",
   scope = "project",
   showWeekends = true,
   requestedRange = null,
@@ -28,7 +37,7 @@ export function timelineHTML(
 ) {
   const { esc } = ctx;
   if (!["full", "number", "hidden"].includes(list)) list = "full";
-  const range = validTimelineRange(requestedRange) ? requestedRange : null;
+  const range = shownRange(requestedRange);
   const allDated = tasks.filter((t) => t.start || t.due);
   const allUndated = tasks.filter((t) => !t.start && !t.due);
   const pageKey = `${ctx.state?.project?.id || ""}/${scope}`;
@@ -44,6 +53,8 @@ export function timelineHTML(
   );
   const min = range ? Date.parse(range.start) : weekStart(stamps.length ? Math.min(...stamps) : localDate());
   const max = range ? Date.parse(range.end) : stamps.length ? Math.max(...stamps) : min;
+  // The scale follows the days shown (F0.21-89, no Day/Week/Month choice).
+  const scale = timelineScaleFor(Math.round((max - min) / DAY) + 1);
   const unit = scale === "day" ? 42 : scale === "month" ? 4 : 16;
   const axis = timelineAxis(min, unit, showWeekends);
   const width = range ? Math.max(unit, axis.end(max)) : Math.max(700, axis.end(max) + 4 * unit);
@@ -56,8 +67,8 @@ export function timelineHTML(
       ? `<div class="timeline-page-summary" role="status">Page ${page.page + 1} of ${page.pages} · ${tasks.length} cards<button class="button small" data-timeline-page="${page.page - 1}" ${!page.page ? "disabled" : ""}>Previous cards</button><button class="button small" data-timeline-page="${page.page + 1}" ${page.page + 1 >= page.pages ? "disabled" : ""}>Next cards</button></div>`
       : "";
   // The project Timeline shows its options in the toolbar row; a board's Timeline keeps them inside.
-  const head = `<div class="planning-head" data-timeline-options="${esc(scope)}" ${scope === "project" ? "data-phone-options" : ""}><div class="timeline-options"><label data-filters-option><span class="control-label">Card list</span> <select data-timeline-list="${esc(scope)}" aria-label="Card list">${[["full", "Full list"], ["number", "Card numbers"], ["hidden", "List hidden"]].map(([value, name]) => `<option value="${value}" ${list === value ? "selected" : ""}>${name}</option>`).join("")}</select></label><label><span class="control-label">Scale</span> <select data-timeline-scale aria-label="Timeline scale">${["day", "week", "month"].map((s) => `<option value="${s}" ${scale === s ? "selected" : ""}>${ctx.label(s)}</option>`).join("")}</select></label><label class="check-control"><input type="checkbox" data-timeline-weekends data-weekends-toggle ${showWeekends ? "checked" : ""}>Show weekends</label><button type="button" class="button small" data-timeline-range aria-haspopup="dialog" aria-expanded="false" title="${range ? `${range.start} to ${range.end}` : "Fit dates automatically"}">${ctx.icon("width-full")}Timeline range${range ? " · Custom" : ""}</button></div><span class="timeline-hint" role="status">${range && axis.end(max) === 0 ? "No weekdays in this range. Show weekends or change the range." : "Choose a row to set its start and end dates. Drag bars to move or resize."}</span><button type="button" class="button small" data-feature="schedule-preview">Review schedule</button></div>`;
-  const section = (options) => `<section class="task-timeline" data-timeline="${esc(scope)}" data-list="${esc(list)}" data-min="${min}" data-unit="${unit}" data-scale="${scale}" data-weekends="${showWeekends}" data-range-start="${range?.start || ""}" data-range-end="${range?.end || ""}" data-auto-end="${axis.dateAt(width - 1)}" style="--timeline-unit:${unit}px;--timeline-step:${step * unit}px;--timeline-week:${7 * unit}px;--timeline-work:${5 * unit}px">
+  const head = `<div class="planning-head" data-timeline-options="${esc(scope)}" ${scope === "project" ? "data-phone-options" : ""}><div class="timeline-options"><label data-filters-option><span class="control-label">Card list</span> <select data-timeline-list="${esc(scope)}" aria-label="Card list">${[["full", "Full list"], ["number", "Card numbers"], ["hidden", "List hidden"]].map(([value, name]) => `<option value="${value}" ${list === value ? "selected" : ""}>${name}</option>`).join("")}</select></label><button type="button" class="button small range-trigger" data-timeline-range aria-haspopup="dialog" aria-expanded="false" aria-label="Timeline range: ${esc(timelineRangeName(requestedRange, range))}" title="Timeline range">${rangeLabelHTML(timelineRangeName(requestedRange, range), ctx)}</button><label class="check-control"><input type="checkbox" data-timeline-weekends data-weekends-toggle ${showWeekends ? "checked" : ""}>Show weekends</label></div><span class="timeline-hint" role="status">${range && axis.end(max) === 0 ? "No weekdays in this range. Show weekends or change the range." : "Choose a row to set its start and end dates. Drag bars to move or resize."}</span></div>`;
+  const section = (options) => `<section class="task-timeline" data-timeline="${esc(scope)}" data-list="${esc(list)}" data-min="${min}" data-unit="${unit}" data-scale="${scale}" data-weekends="${showWeekends}" data-range-start="${range?.start || ""}" data-range-end="${range?.end || ""}" data-range-choice="${range && requestedRange.quick ? esc(requestedRange.quick) : ""}" data-auto-end="${axis.dateAt(width - 1)}" style="--timeline-unit:${unit}px;--timeline-step:${step * unit}px;--timeline-week:${7 * unit}px;--timeline-work:${5 * unit}px">
     ${options}${pager}
     <div class="timeline-scroll" tabindex="0" role="region" aria-label="Project timeline"><div class="timeline-sheet" style="width:${tasks.length ? `calc(${width}px + var(--timeline-label))` : "100%"}">
       <div class="timeline-header"><span class="timeline-task-label"><span class="timeline-head-full">Card</span><span class="timeline-head-number">#</span></span><div class="timeline-ruler"></div></div>
@@ -388,12 +399,6 @@ export function timelineInteractions(ctx, onOption) {
     true,
   );
   document.addEventListener("change", (e) => {
-    if (e.target.matches("[data-timeline-scale]"))
-      onOption(
-        timelineRoot(e.target).dataset.timeline,
-        "scale",
-        e.target.value,
-      );
     // Its own scope: on desktop and iPad it waits in Filters, away from the other options.
     if (e.target.matches("[data-timeline-list]"))
       onOption(e.target.dataset.timelineList, "list", e.target.value);

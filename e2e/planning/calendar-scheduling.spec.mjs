@@ -189,7 +189,7 @@ test("the agenda lists ongoing and start-only work with readable titles and move
   await expect(page.locator(".planning-period")).toHaveText(/November 2026/);
 });
 
-test("Timeline dependency arrows follow the scale, hidden weekends and a custom range", async ({ page }) => {
+test("Timeline dependency arrows follow hidden weekends and a custom range", async ({ page }) => {
   const seed = app.arrows, { work, dueOnly } = seed;
   await page.goto(`${app.base}/#project/${seed.project.id}/calendar`);
   await selectProjectView(page, "timeline");
@@ -198,16 +198,15 @@ test("Timeline dependency arrows follow the scale, hidden weekends and a custom 
   await expect(edge).toHaveAttribute("marker-end", /url\(#timeline-arrow-project\)/);
   expect(await page.locator(".timeline-dependencies").evaluate((e) => getComputedStyle(e).zIndex)).toBe("1");
   const oldPath = await edge.getAttribute("d");
-  await page.locator("[data-timeline-scale]").selectOption("day");
-  await expect(edge).not.toHaveAttribute("d", oldPath);
   await setWeekends(page, false);
   await expect(page.locator("[data-timeline]").first()).toHaveAttribute("data-weekends", "false");
-  await edge.waitFor();
+  await expect(edge).not.toHaveAttribute("d", oldPath);
   expect(await edge.getAttribute("d")).not.toContain("NaN");
+  // The range menu (F0.21-89, as Agenda's): dates, then Show dates.
   await page.locator("[data-timeline-range]").click();
-  await page.getByLabel("Timeline start date", { exact: true }).fill("2026-10-01");
-  await page.getByLabel("Timeline end date", { exact: true }).fill("2026-10-20");
-  await page.getByRole("button", { name: "Apply range", exact: true }).click();
+  await page.locator('#timeline-range-popover input[name="from"]').fill("2026-10-01");
+  await page.locator('#timeline-range-popover input[name="to"]').fill("2026-10-20");
+  await page.getByRole("button", { name: "Show dates", exact: true }).click();
   await expect(page.locator("[data-timeline]").first()).toHaveAttribute("data-range-end", "2026-10-20");
   await edge.waitFor();
   expect(await edge.getAttribute("d"), "Custom range arrows stay aligned").not.toContain("NaN");

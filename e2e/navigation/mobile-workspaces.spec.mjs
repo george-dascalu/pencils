@@ -81,16 +81,15 @@ onDevices(["phone"], () => {
     await page.locator(".calendar").waitFor();
   });
 
-  test("Timeline options set scale, weekends and range, and a tap opens the dates", async ({ page }) => {
+  test("Timeline options set weekends and range, and a tap opens the dates", async ({ page }) => {
     await goto(page, "timeline");
     await options(page);
-    await page.locator("[data-timeline-scale]").selectOption("day");
     await setWeekends(page, false);
     await expect(page.locator(".task-timeline")).toHaveAttribute("data-weekends", "false");
-    await page.getByRole("button", { name: "Timeline range", exact: true }).click();
-    await page.getByLabel("Timeline start date", { exact: true }).fill("2026-10-01");
-    await page.getByLabel("Timeline end date", { exact: true }).fill("2026-11-01");
-    await page.getByRole("button", { name: "Apply range", exact: true }).click();
+    await page.getByRole("button", { name: /^Timeline range: / }).click();
+    await page.locator('#timeline-range-popover input[name="from"]').fill("2026-10-01");
+    await page.locator('#timeline-range-popover input[name="to"]').fill("2026-11-01");
+    await page.getByRole("button", { name: "Show dates", exact: true }).click();
     await expect(page.locator(".task-timeline")).toHaveAttribute("data-range-start", "2026-10-01");
     await closeOptions(page);
     await page.locator("[data-task-dates]").first().tap();

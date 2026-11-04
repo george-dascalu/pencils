@@ -72,20 +72,20 @@ async function waitDates(page, seed, id, start, due) {
   expect((await current(seed, id)).start).toBe(start);
   expect((await current(seed, id)).due).toBe(due);
 }
+// The range menu (F0.21-89, as Agenda's): From and To, then Show dates.
 async function custom(page, start, end) {
   await clickControl(page.locator("[data-timeline-range]"));
-  await rangePanel(page).getByLabel("Timeline start date", { exact: true }).fill(start);
-  await rangePanel(page).getByLabel("Timeline end date", { exact: true }).fill(end);
-  await rangePanel(page).getByRole("button", { name: "Apply range", exact: true }).click();
+  await rangePanel(page).getByLabel("From", { exact: true }).fill(start);
+  await rangePanel(page).getByLabel("To", { exact: true }).fill(end);
+  await rangePanel(page).getByRole("button", { name: "Show dates", exact: true }).click();
   await rangePanel(page).waitFor({ state: "detached" });
   await expect(page.locator("[data-timeline]").first()).toHaveAttribute("data-range-start", start);
   await expect(page.locator("[data-timeline]").first()).toHaveAttribute("data-range-end", end);
 }
+// Five weeks of cards show weeks (F0.21-89); taps find dates from the timeline's own unit.
 async function openDays(page, { project }) {
   await page.goto(`${app.base}/#project/${project.id}/timeline`);
-  await (await reveal(page.locator("[data-timeline-scale]"))).selectOption("day");
-  if (await page.locator(".mobile-view-options[open]").count()) await page.getByRole("button", { name: "Close view options", exact: true }).click();
-  await expect(page.locator("[data-timeline]").first()).toHaveAttribute("data-scale", "day");
+  await expect(page.locator("[data-timeline]").first()).toHaveAttribute("data-scale", "week");
 }
 const reload = (page) => Promise.all([page.waitForEvent("domcontentloaded"), page.evaluate(() => location.reload())]);
 
@@ -128,7 +128,8 @@ test("Escape and other controls cancel a selection, an earlier end is refused, a
   await page.locator(".timeline-range-preview").waitFor();
   await clickControl(page.locator("[data-timeline-range]"));
   await expect(page.locator(".timeline-range-preview"), "Other controls cancel unapplied selection").toHaveCount(0);
-  await page.locator("[data-range-close]").click();
+  await page.keyboard.press("Escape");
+  await expect(rangePanel(page)).toHaveCount(0);
   await tap(page, other.id, "2026-10-22");
   await tap(page, other.id, "2026-10-20");
   await expect(page.locator(".timeline-hint")).toHaveText(/on or after/);
@@ -198,9 +199,9 @@ test("invalid range bounds stay editable and never alter the timeline", { tag: "
   await openDays(page, seed);
   await custom(page, "2026-10-20", "2026-10-27");
   await clickControl(page.locator("[data-timeline-range]"));
-  await rangePanel(page).getByLabel("Timeline start date", { exact: true }).fill("2026-11-01");
-  await rangePanel(page).getByRole("button", { name: "Apply range", exact: true }).click();
-  await expect(rangePanel(page).locator(".form-error")).toHaveText(/on or after/);
+  await rangePanel(page).getByLabel("From", { exact: true }).fill("2026-11-01");
+  await rangePanel(page).getByRole("button", { name: "Show dates", exact: true }).click();
+  await expect(rangePanel(page).locator("[data-range-error]")).toHaveText(/on or before the To date/);
   await expect(page.locator("[data-timeline]").first()).toHaveAttribute("data-range-start", "2026-10-20");
   await page.keyboard.press("Escape");
   await expect(rangePanel(page)).toHaveCount(0);
@@ -221,18 +222,18 @@ for (const width of [1500, 390]) {
         await clickControl(page.locator("[data-timeline-range]"));
         const box = await rangePanel(page).boundingBox();
         expect(box.x >= 0 && box.x + box.width <= width && box.y + box.height <= 844, JSON.stringify(box)).toBe(true);
-        await rangePanel(page).getByRole("button", { name: "Choose Timeline start date", exact: true }).click();
+        await rangePanel(page).getByRole("button", { name: "Choose From", exact: true }).click();
         await page.locator("#shared-date-picker").waitFor();
         await page.keyboard.press("Escape");
         await expect(page.locator("#shared-date-picker")).toBeHidden();
-        await rangePanel(page).getByRole("button", { name: "Close timeline range" }).click();
+        await page.keyboard.press("Escape");
         await expect(rangePanel(page)).toHaveCount(0);
       }
     });
   });
 }
 
-test("a range of only hidden weekend days cannot schedule an invisible Monday, and Automatic range resets it", { tag: "@gate" }, async ({ page }) => {
+test("a range of only hidden weekend days cannot schedule an invisible Monday, and All cards resets it", { tag: "@gate" }, async ({ page }) => {
   const seed = app.weekendOnly;
   await openDays(page, seed);
   await setWeekends(page, false);
@@ -245,7 +246,7 @@ test("a range of only hidden weekend days cannot schedule an invisible Monday, a
   expect(await tasks(seed)).toEqual(prior);
   await expect(page.locator(".timeline-range-preview")).toHaveCount(0);
   await clickControl(page.locator("[data-timeline-range]"));
-  await rangePanel(page).getByRole("button", { name: "Automatic range", exact: true }).click();
+  await rangePanel(page).getByRole("button", { name: "All cards", exact: true }).click();
   await page.locator('[data-range-end=""]').waitFor();
 });
 

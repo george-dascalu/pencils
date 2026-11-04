@@ -270,7 +270,7 @@ export function projectLayout(ctx) {
   window.addEventListener("resize", positionLayoutTray);
   document.addEventListener("click", event => {
     const inside = event.composedPath().some(el => el.classList?.contains("mobile-view-options"));
-    if (compact?.open && !inside && !event.target.closest(".select-menu,.date-picker-popover,.task-dates-popover,#dialogs")) {
+    if (compact?.open && !inside && !event.target.closest(".select-menu,.date-picker-popover,.task-dates-popover,.range-popover,#dialogs")) {
       compact.open = state.mobileViewOptions = false;
     }
   });

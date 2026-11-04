@@ -174,8 +174,11 @@
   width: var(--timeline-unit);
   text-align: center;
 }
+/* Weekends stand out a little (F0.21-89), in the header and down the rows. */
 .timeline-ticks > span.weekend {
-  background: color-mix(in srgb, var(--line) 35%, transparent);
+  background: var(--weekend-shade);
+  /* Darker than other labels, to keep their contrast on the shade. */
+  color: color-mix(in srgb, var(--muted) 60%, var(--ink));
 }
 .timeline-today {
   position: absolute;
@@ -302,7 +305,7 @@
   background: repeating-linear-gradient(to right, var(--surface-soft) 0, var(--surface-soft) calc(var(--timeline-step) - 1px), var(--line) calc(var(--timeline-step) - 1px), var(--line) var(--timeline-step));
 }
 .task-timeline[data-weekends="true"] .timeline-track {
-  background-image: repeating-linear-gradient(to right, transparent 0, transparent var(--timeline-work), color-mix(in srgb, var(--line) 35%, transparent) var(--timeline-work), color-mix(in srgb, var(--line) 35%, transparent) var(--timeline-week)), repeating-linear-gradient(to right, var(--surface-soft) 0, var(--surface-soft) calc(var(--timeline-step) - 1px), var(--line) calc(var(--timeline-step) - 1px), var(--line) var(--timeline-step));
+  background-image: repeating-linear-gradient(to right, transparent 0, transparent var(--timeline-work), var(--weekend-shade) var(--timeline-work), var(--weekend-shade) var(--timeline-week)), repeating-linear-gradient(to right, var(--surface-soft) 0, var(--surface-soft) calc(var(--timeline-step) - 1px), var(--line) calc(var(--timeline-step) - 1px), var(--line) var(--timeline-step));
   background-position-x: var(--timeline-offset, 0px);
 }
 .timeline-track[aria-disabled="true"] { cursor: default; }

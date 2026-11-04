@@ -66,9 +66,9 @@ test("task views have no hidden caption", async ({ page }) => {
   await expect(page.locator("#view-toolbar .caption")).toHaveCount(0);
 });
 
-test("Timeline's Range has its own icon", async ({ page }) => {
+test("Timeline's Range has Agenda's range icon", async ({ page }) => {
   await page.goto(`${app.base}/#project/${app.project.id}/timeline`);
   await page.locator("[data-timeline-range]").waitFor();
-  // The range icon (width-full in app.js), not the Weekends calendar.
-  await expect(page.locator("[data-timeline-range] svg path").first()).toHaveAttribute("d", "M3 4v16M21 4v16M4 12h16M8 8l-4 4 4 4M16 8l4 4-4 4");
+  // The calendar (app.js), as on Agenda's range (F0.21-89), not the Weekends calendar.
+  await expect(page.locator("[data-timeline-range] svg path").first()).toHaveAttribute("d", "M4 5h16v16H4zM8 3v4M16 3v4M4 10h16M8 14h2M14 14h2M8 18h2");
 });

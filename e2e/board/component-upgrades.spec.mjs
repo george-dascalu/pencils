@@ -153,9 +153,11 @@ test("dragging a timeline bar reschedules the task and the milestone toggle save
   await selectProjectView(page, "timeline");
   const bar = page.locator(`[data-timeline-task="${app.task.id}"]`);
   const b = await bar.boundingBox();
+  // Two days to the right, in the timeline's own day width (its scale follows the dates, F0.21-89).
+  const unit = await page.locator("[data-timeline]").first().evaluate((el) => +el.dataset.unit);
   await page.mouse.move(b.x + b.width / 2, b.y + b.height / 2);
   await page.mouse.down();
-  await page.mouse.move(b.x + b.width / 2 + 32, b.y + b.height / 2, { steps: 5 });
+  await page.mouse.move(b.x + b.width / 2 + 2 * unit, b.y + b.height / 2, { steps: 5 });
   await page.mouse.up();
   await poll(async () => (await taskOf(app.task.id)).start).toBe("2026-10-16");
   await page.locator(`[data-milestone="${app.task.id}"]`).click();

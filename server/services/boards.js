@@ -2,7 +2,7 @@ import { validBoardCardFields } from "../../public/board-card-fields.js";
 import { BOARD_LIMITS } from "../../public/board-limits.js";
 import { validDependencyStyle } from "../../public/dependency-style.js";
 import { validDraftTask } from "../../public/draft-task.js";
-import { validTimelineRange } from "../../public/timeline-dates.js";
+import { validTimelineChoice } from "../../public/timeline-dates.js";
 import { commentReactions } from "../../public/comment-model.js";
 import { validObjectGeometry } from "../../public/object-geometry.js";
 import { validConnectorGeometry } from "../../public/connector-path.js";
@@ -145,10 +145,10 @@ export const boardsMethods = {
         typeof node.timelineShowWeekends !== "boolean"
       )
         throw new Problem(400, "Invalid timeline weekend setting.");
-      if (node.timelineRange != null && !validTimelineRange(node.timelineRange))
+      if (node.timelineRange != null && !validTimelineChoice(node.timelineRange))
         throw new Problem(
           400,
-          "Use a valid timeline start/end range of ten years or less.",
+          "Use a valid timeline start/end range of ten years or less, or a quick range.",
         );
       if (!validObjectGeometry(node))
         throw new Problem(400, "Invalid object geometry.");

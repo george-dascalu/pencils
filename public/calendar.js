@@ -15,6 +15,7 @@ import { dateKey, shiftDate, stamp, DAY, weekStart, isWeekend } from "./timeline
 import { localDate } from "./task-visibility.js";
 import { taskColorDot, taskFieldColor } from "./task-colors.js";
 import { taskDateEditor } from "./task-date-editor.js";
+import { rangeChoicesHTML, rangeLabelHTML } from "./range-menu.js";
 
 export function calendarView(ctx) {
   const { state, esc, icon, storage, renderView, task, patchTask, toast } = ctx;
@@ -43,21 +44,21 @@ export function calendarView(ctx) {
   // A quick range on one side and dates on the other, like a dashboard's time picker.
   function rangePicker(agenda, heading) {
     const name = AGENDA_RANGES.find(([key]) => key === agenda.quick)?.[1] || heading;
-    return `<details class="board-menu agenda-range-menu" data-board-menu="agenda-range"><summary class="button small" aria-label="Agenda range: ${esc(name)}" title="Agenda range"><span class="control-label">Range</span>${icon("calendar")}<span>${esc(name)}</span><svg class="icon menu-caret" viewBox="0 0 24 24" aria-hidden="true"><path d="m8 10 4 4 4-4"/></svg></summary><div class="board-menu-panel agenda-range-panel"><form class="agenda-range-dates" data-agenda-range novalidate><strong>Dates</strong><label class="field">From<input type="date" name="from" value="${agenda.from}" required></label><label class="field">To<input type="date" name="to" value="${agenda.to}" required></label><p class="field-hint" data-agenda-range-error hidden></p><button type="submit" class="button primary small">Show dates</button></form><div class="agenda-quick-ranges" role="group" aria-label="Quick ranges">${AGENDA_RANGES.map(([key, label]) => `<button type="button" data-agenda-quick="${key}" aria-pressed="${key === agenda.quick}">${label}</button>`).join("")}</div></div></details>`;
+    return `<details class="board-menu agenda-range-menu" data-board-menu="agenda-range"><summary class="button small range-trigger" aria-label="Agenda range: ${esc(name)}" title="Agenda range">${rangeLabelHTML(name, ctx)}</summary><div class="board-menu-panel agenda-range-panel range-panel">${rangeChoicesHTML({ name: "agenda", from: agenda.from, to: agenda.to, quick: agenda.quick, ranges: AGENDA_RANGES, esc })}</div></details>`;
   }
   document.addEventListener("click", e => {
-    const choice = e.target.closest("[data-agenda-quick]");
+    const choice = e.target.closest(".agenda-range-menu [data-range-quick]");
     if (!choice || state.view !== "calendar") return;
-    quick = choice.dataset.agendaQuick; picked = null;
+    quick = choice.dataset.rangeQuick; picked = null;
     storage.set("agenda-range", quick);
     renderView(true);
     document.querySelector(".agenda-range-menu > summary")?.focus({ preventScroll: true });
   });
   document.addEventListener("submit", e => {
-    const form = e.target.closest("[data-agenda-range]");
+    const form = e.target.closest('[data-range-form="agenda"]');
     if (!form) return;
     e.preventDefault();
-    const range = agendaRange({ from: form.elements.from.value, to: form.elements.to.value }, localDate()), error = form.querySelector("[data-agenda-range-error]");
+    const range = agendaRange({ from: form.elements.from.value, to: form.elements.to.value }, localDate()), error = form.querySelector("[data-range-error]");
     if (range.quick) {
       error.textContent = "Choose a From date on or before the To date, at most a year apart.";
       error.hidden = false;
@@ -79,9 +80,9 @@ export function calendarView(ctx) {
     const name = value => field === "status" ? statusLabel(state.config, value) : field === "priority" ? priorityLabel(value) : value ? ctx.label(value) : field === "type" ? "No type" : "Unassigned";
     const card = t => `<article class="week-board-card" data-calendar-card="${esc(t.id)}" data-task-color="status" style="--task-field-color:${taskFieldColor(state, "status", t.status)}">${sourceReadOnly(t, "due") ? "" : `<button type="button" class="icon-button calendar-move" data-calendar-move aria-label="Move ${esc(t.title)}" title="Drag to another day or row">${icon("drag")}</button>`}<button type="button" class="week-board-title" data-action="task-open" data-id="${esc(t.id)}" title="${esc(title(t))}">${esc(title(t))}</button>${ctx.inlineTaskFields(t, "week-board-fields", rangeLabel(t))}</article>`;
     // A table to assistive technology: days are column headers, rows' names row headers.
-    return `${placed.length ? "" : '<p class="field-hint week-board-empty">No cards scheduled this week.</p>'}<div class="calendar-scroll week-board-scroll" role="region" aria-label="Week board" tabindex="0"><div class="week-board" role="table" aria-label="Week board" data-rows="${field}" style="--week-board-days:${days.length}"><div class="week-board-head-row" role="row"><div class="week-board-corner" role="columnheader"><span class="sr-only">${field === "none" ? "Cards" : esc(ROW_FIELDS.find(([key]) => key === field)[1])}</span></div>${days.map(day => `<div class="week-board-day-head${day === localDate() ? " today" : ""}" role="columnheader" data-calendar-date="${day}"><time datetime="${day}">${esc(format(day, { weekday: "short" }))}</time></div>`).join("")}</div>${rows.map(row => {
+    return `${placed.length ? "" : '<p class="field-hint week-board-empty">No cards scheduled this week.</p>'}<div class="calendar-scroll week-board-scroll" role="region" aria-label="Week board" tabindex="0"><div class="week-board" role="table" aria-label="Week board" data-rows="${field}" style="--week-board-days:${days.length}"><div class="week-board-head-row" role="row"><div class="week-board-corner" role="columnheader"><span class="sr-only">${field === "none" ? "Cards" : esc(ROW_FIELDS.find(([key]) => key === field)[1])}</span></div>${days.map(day => `<div class="week-board-day-head${day === localDate() ? " today" : ""}${isWeekend(day) ? " weekend" : ""}" role="columnheader" data-calendar-date="${day}"><time datetime="${day}">${esc(format(day, { weekday: "short" }))}</time></div>`).join("")}</div>${rows.map(row => {
       const count = placed.filter(t => value(t) === row).length;
-      return `<div class="week-board-row" role="row" data-week-board-value="${esc(row)}"><div class="week-board-row-head" role="rowheader">${field === "none" ? '<span class="sr-only">All cards</span>' : `<span>${esc(name(row))}</span><span class="count" aria-label="${count} ${count === 1 ? "card" : "cards"}">${count}</span>`}</div>${days.map(day => `<div class="week-board-cell" role="cell" data-calendar-date="${day}" data-week-board-value="${esc(row)}">${(byDay.get(day) || []).filter(t => value(t) === row).map(card).join("")}</div>`).join("")}</div>`;
+      return `<div class="week-board-row" role="row" data-week-board-value="${esc(row)}"><div class="week-board-row-head" role="rowheader">${field === "none" ? '<span class="sr-only">All cards</span>' : `<span>${esc(name(row))}</span><span class="count" aria-label="${count} ${count === 1 ? "card" : "cards"}">${count}</span>`}</div>${days.map(day => `<div class="week-board-cell${isWeekend(day) ? " weekend" : ""}" role="cell" data-calendar-date="${day}" data-week-board-value="${esc(row)}">${(byDay.get(day) || []).filter(t => value(t) === row).map(card).join("")}</div>`).join("")}</div>`;
     }).join("")}</div></div>`;
   }
   function render(tasks) {

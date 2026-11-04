@@ -2,6 +2,15 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.21.89 — 2026-11-04
+
+### Changed
+- Feature F0.21-89: Timeline's range is a menu like Agenda's, with dates on one side and quick ranges on the other: All cards, this or next week or month, or the next 7, 14, 30 or 90 days. Quick ranges move with today, on a board's Timeline too.
+- Feature F0.21-89: Timeline no longer has a Day, Week or Month choice. It shows days for a month or less, weeks up to half a year and months beyond.
+- Feature F0.21-89: Timeline's toolbar no longer has Review schedule. It is still in a card's Dependencies.
+- Feature F0.21-89: Weekends stand out a little more on Timeline, in the header and down the rows, and Week board and Week shade their weekend days the same way.
+- Feature F0.21-89: A Week board card's field box sits evenly inside the card, with more room at the sides and less below.
+
 ## 0.21.88 — 2026-11-04
 
 ### Added

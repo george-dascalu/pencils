@@ -3,6 +3,8 @@
    Content cards, multiline editors, canvas objects and resize handles are not
    controls and keep their own dimensions. */
 :root {
+  /* Weekends stand out a little on Timeline, Week and Week board (F0.21-89). */
+  --weekend-shade: color-mix(in srgb, var(--line) 80%, transparent);
   --control-height: 32px;
   --control-padding: 8px;
   --control-font-size: 13px;
@@ -90,7 +92,7 @@ textarea,
 
 /* Dropdown contents use one compact variant; triggers retain the page size. */
 :is(.board-menu-panel, .select-menu, .task-picker-popover, .document-panel,
-    .selection-menu > .selection-popover) {
+    .selection-menu > .selection-popover, .range-panel) {
   --control-height: var(--menu-control-height);
   --control-padding: 8px;
   --control-font-size: 12px;
@@ -100,14 +102,14 @@ textarea,
 @media (pointer: coarse) {
   /* On touch screens menu rows read at the body size, like the rest of their 44px rows. */
   :is(.board-menu-panel, .select-menu, .task-picker-popover, .document-panel,
-      .selection-menu > .selection-popover) { --control-font-size: var(--type-body); }
+      .selection-menu > .selection-popover, .range-panel) { --control-font-size: var(--type-body); }
 }
 /* Rows run edge to edge, like Obsidian's menus. */
 .board-menu .board-menu-panel {
   padding: var(--menu-panel-padding);
   gap: 0;
 }
-.board-menu-panel .field {
+:is(.board-menu-panel, .range-panel) .field {
   gap: 4px;
   padding-block: 3px;
   font-size: var(--control-font-size);

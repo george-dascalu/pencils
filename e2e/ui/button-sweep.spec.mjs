@@ -79,7 +79,7 @@ test("Escape closes the row date editor, the timeline range, the Text style menu
   await page.goto(url("timeline"));
   await page.locator("[data-timeline-range]").first().click();
   const range = page.getByRole("dialog", { name: "Timeline range", exact: true });
-  await expect(range.locator('input[name="start"]')).toBeFocused();
+  await expect(range.locator('[data-range-quick][aria-pressed="true"]'), "the chosen range takes focus").toBeFocused();
   await page.keyboard.press("Escape");
   await expect(range).toBeHidden();
 
