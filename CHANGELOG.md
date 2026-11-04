@@ -2,6 +2,11 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.21.86 — 2026-11-04
+
+### Changed
+- Feature F0.21-86: Timeline's card list no longer slides sideways when a drag reaches the timeline's edge on iPhone. A new Card list option shows the list in full, as card numbers only (without the project key), or hides it so the timeline has the whole width (unscheduled rows then name their card in their track); it is remembered, and a board's Timeline keeps its own. Phones show it in View options; desktop and iPad keep it in Filters so the toolbar stays one row.
+
 ## 0.21.85 — 2026-11-04
 
 ### Added

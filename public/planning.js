@@ -11,20 +11,22 @@ export function planning(ctx) {
   const calendar = calendarView(ctx);
   let timelineScale = ctx.storage.get("timeline-scale", "week");
   let timelineWeekends = ctx.storage.get("timeline-weekends", true) !== false;
+  let timelineList = ctx.storage.get("timeline-list", "full");
   const timelineController = timelineInteractions(ctx, (scope, option, value) => {
     if (scope === "project") {
       if (option === "scale") timelineScale = value;
       else if (option === "weekends") timelineWeekends = value;
+      else if (option === "list") timelineList = value;
       ctx.storage.set(option === "range" ? `timeline-range:${state.project.id}` : `timeline-${option}`, value);
       renderView(true);
     } else
       return ctx.changeBoard((b) => {
         const n = b.nodes.find((n) => n.id === scope);
-        if (n) n[{ scale: "timelineScale", weekends: "timelineShowWeekends", range: "timelineRange" }[option]] = value;
+        if (n) n[{ scale: "timelineScale", weekends: "timelineShowWeekends", range: "timelineRange", list: "timelineList" }[option]] = value;
       });
   });
   function timeline(tasks) {
-    return timelineHTML(tasks, ctx, timelineScale, "project", timelineWeekends, ctx.storage.get(`timeline-range:${state.project.id}`, null));
+    return timelineHTML(tasks, ctx, timelineScale, "project", timelineWeekends, ctx.storage.get(`timeline-range:${state.project.id}`, null), timelineList);
   }
   function overview(metric) {
     const tasks = state.tasks.filter((t) => !t.archived),

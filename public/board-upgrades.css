@@ -110,8 +110,22 @@
   overflow: auto;
   position: relative;
   min-height: 0;
-  overscroll-behavior: contain;
+  /* No bounce at the edges: on iPhone it pulled the card list sideways with the sheet. */
+  overscroll-behavior: none;
 }
+/* The card list (F0.21-86): in full, as card numbers only, or hidden, so the timeline has the room. */
+.task-timeline { --timeline-label: 240px; }
+.task-timeline[data-list="number"] { --timeline-label: 56px; }
+.task-timeline[data-list="hidden"] { --timeline-label: 0px; }
+.task-timeline[data-list="hidden"] .timeline-task-label,
+.timeline-key-number,
+.timeline-head-number,
+.task-timeline[data-list="number"] :is(.timeline-key-full, .timeline-title, .timeline-head-full, .timeline-date-action) { display: none; }
+.task-timeline[data-list="number"] :is(.timeline-key-number, .timeline-head-number) { display: inline; }
+/* With no list, an unscheduled row names its card in its track. */
+.timeline-hint-card { display: none; }
+.task-timeline[data-list="hidden"] .timeline-hint-card { display: inline; }
+.task-timeline[data-list="number"] :is(.timeline-task-open, .timeline-header > .timeline-task-label) { padding-inline: 8px; }
 .timeline-sheet {
   position: relative;
   min-width: 100%;
@@ -202,8 +216,8 @@
   border: 0;
 }
 .task-timeline .timeline-task-label {
-  width: 240px;
-  min-width: 240px;
+  width: var(--timeline-label);
+  min-width: var(--timeline-label);
   text-align: left;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -376,7 +390,7 @@
   color: var(--green);
   stroke: currentColor;
   stroke-width: 1.5;
-  width: calc(100% - 240px);
+  width: calc(100% - var(--timeline-label));
 }
 .timeline-bar.milestone {
   border: 2px solid var(--accent);
