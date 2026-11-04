@@ -41,14 +41,19 @@ export function installToolbarScrollIndicators(icon) {
       visible(overlay,true);
       Object.assign(overlay.style,{left:`${left}px`,top:`${top}px`,width:`${right-left}px`,height:`${bottom-top}px`});
       // A contextual panel, dialog or sidebar must keep ownership of the pointer.
+      // Arrows fade and slide in and out (data-shown, controls.css), so a fling that reaches an end
+      // eases its arrow away instead of dropping it (F0.21-82).
       for(const [side,more] of [['start',scroller.scrollLeft>1],['end',scroller.scrollLeft<max-1]]){
-        const button=overlay.querySelector(`[data-toolbar-scroll="${side}"]`);button.hidden=!more;
-        if(!more)continue;
-        const box=button.getBoundingClientRect(),x=box.left+box.width/2,y=box.top+box.height/2;
-        const under=document.elementsFromPoint(x,y).find(node=>!node.closest('.toolbar-scroll-indicators'));
-        button.hidden=!under||!(scroller===under||scroller.contains(under));
+        const button=overlay.querySelector(`[data-toolbar-scroll="${side}"]`);let shown=more;
+        if(more){
+          // A hidden arrow has no box, so test the point it would cover at the row's edge.
+          const half=Math.min(bottom-top,right-left)/2,x=side==='start'?left+half:right-half,y=(top+bottom)/2;
+          const under=document.elementsFromPoint(x,y).find(node=>!node.closest('.toolbar-scroll-indicators'));
+          shown=!!under&&(scroller===under||scroller.contains(under));
+        }
+        button.toggleAttribute('data-shown',shown);
       }
-      visible(overlay,[...overlay.children].some(button=>!button.hidden));
+      visible(overlay,[...overlay.children].some(button=>button.hasAttribute('data-shown')));
     }
   }
   const mutations=new MutationObserver(records=>{

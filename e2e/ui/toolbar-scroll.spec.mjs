@@ -13,16 +13,31 @@ onDevices(['desktop','ipad','phone'],()=>{
     const row=page.locator('#test-scroll-toolbar'),hints=page.locator('[data-scroll-toolbar="test-scroll-toolbar"]'),left=hints.locator('[data-toolbar-scroll=start]'),right=hints.locator('[data-toolbar-scroll=end]');
     await expect(right).toBeVisible();await expect(left).toBeHidden();
     await page.evaluate(()=>window.PencilsToast('Escape still works',true));await page.keyboard.press('Escape');await expect(page.getByText('Escape still works',{exact:true})).toHaveCount(0,{timeout:1500});
-    const style=await right.evaluate(node=>{const css=getComputedStyle(node),r=node.getBoundingClientRect();return {background:css.backgroundColor,width:r.width,height:r.height,color:css.color,border:css.borderTopWidth};});
-    expect(style.background).not.toBe('rgba(0, 0, 0, 0)');expect(style.border).toBe('1px');expect(style.width).toBeGreaterThanOrEqual(device==='desktop'?28:44);expect(style.height).toBeGreaterThanOrEqual(device==='desktop'?28:44);
+    // Subtle (F0.21-82): no box, border or shadow, a fade over the row's edge and a small muted chevron
+    // that fades and slides in and out, keeping its full-size target.
+    const style=await right.evaluate(node=>{const css=getComputedStyle(node),fade=getComputedStyle(node,'::before'),icon=node.querySelector('svg').getBoundingClientRect(),r=node.getBoundingClientRect(),probe=document.createElement('span');probe.style.color='var(--muted)';document.body.append(probe);const muted=getComputedStyle(probe).color;probe.remove();return {background:css.backgroundColor,width:Math.round(r.width),height:Math.round(r.height),color:css.color,muted,border:css.borderTopWidth,shadow:css.boxShadow,fade:fade.backgroundImage,icon:icon.width,motion:css.transitionProperty,duration:parseFloat(css.transitionDuration)};});
+    expect(style.background).toBe('rgba(0, 0, 0, 0)');expect(style.border).toBe('0px');expect(style.shadow).toBe('none');expect(style.fade).toContain('gradient');
+    expect(style.color).toBe(style.muted);expect(style.icon).toBeLessThanOrEqual(16);
+    expect(style.motion).toContain('opacity');expect(style.duration).toBeGreaterThan(0);
+    expect(style.width).toBeGreaterThanOrEqual(device==='desktop'?28:44);expect(style.height).toBeGreaterThanOrEqual(device==='desktop'?28:44);
     const widthBefore=await row.evaluate(el=>el.clientWidth);
     await right.click();await expect(left).toBeVisible();await expect.poll(()=>row.evaluate(el=>el.scrollLeft)).toBeGreaterThan(0);
-    await row.evaluate(el=>el.scrollLeft=el.scrollWidth);await expect(right).toBeHidden();await expect(left).toBeVisible();
+    // A fling to the end fades the end arrow out (sliding outwards) rather than dropping it.
+    await row.evaluate(el=>el.scrollLeft=el.scrollWidth);await expect(right).not.toHaveAttribute('data-shown');
+    const leaving=await right.evaluate(node=>({opacity:getComputedStyle(node).opacity,pointer:getComputedStyle(node).pointerEvents}));
+    expect(leaving.pointer,'a leaving arrow takes no taps').toBe('none');
+    await expect(right).toBeHidden();await expect(left).toBeVisible();
     await left.click();await expect(right).toBeVisible();
     await row.getByRole('button',{name:'Tool 14',exact:true}).focus();await expect(right).toBeHidden();
     expect(await row.evaluate(el=>el.clientWidth)).toBe(widthBefore);
     await row.evaluate(el=>{while(el.children.length>2)el.lastElementChild.remove();});await expect(hints).toBeHidden();
     await row.evaluate(el=>el.remove());await expect(hints).toHaveCount(0);
+  });
+  test('with reduced motion the arrows show and hide at once',async({page})=>{
+    await page.goto(app.base);
+    await page.evaluate(()=>{const row=document.createElement('div');row.id='still-toolbar';row.setAttribute('role','toolbar');Object.assign(row.style,{position:'fixed',left:'20px',top:'160px',width:'240px',height:'var(--control-height)',display:'flex',overflowX:'auto',zIndex:'105'});for(let i=0;i<12;i++){const b=document.createElement('button');b.className='icon-button';b.textContent='x';b.style.flex='0 0 var(--control-height)';row.append(b);}document.body.append(row);});
+    const end=page.locator('[data-scroll-toolbar="still-toolbar"] [data-toolbar-scroll=end]');await expect(end).toBeVisible();
+    expect(await end.evaluate(node=>getComputedStyle(node).transitionDuration.split(',').every(d=>parseFloat(d)===0))).toBe(true);
   });
   test('toolbar arrows follow their row and never cover a contextual panel @gate',async({page})=>{
     await page.goto(app.base);

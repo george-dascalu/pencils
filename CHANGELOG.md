@@ -2,6 +2,11 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.21.82 — 2026-11-04
+
+### Changed
+- Feature F0.21-82: The arrows at the ends of horizontally scrolling rows (toolbars, tabs, the board's tools) are subtler: a small muted arrow on a soft fade instead of a bordered button. They fade and slide in when there is more to scroll and ease out when you reach an end, including after a fling; with reduced motion they appear and go at once.
+
 ## 0.21.81 — 2026-11-04
 
 ### Changed

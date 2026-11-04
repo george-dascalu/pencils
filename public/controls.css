@@ -475,16 +475,30 @@ textarea,
 .toolbar-scroll-indicators::backdrop { display: none; pointer-events: none; }
 [data-scroll-controls] { scroll-padding-inline: calc(var(--control-height) + 4px); }
 .toolbar-scroll-indicators[hidden], .toolbar-scroll-edge[hidden] { display: none !important; }
+/* Subtle (F0.21-82): a small muted chevron on a fade over the row's edge, with no box, keeping its
+   full-size target; it fades and slides in from its edge, and out again when that end is reached. */
 .toolbar-scroll-indicators > .toolbar-scroll-edge.icon-button {
-  position: absolute; top: 50%; translate: 0 -50%; pointer-events: auto;
+  position: absolute; top: 50%; translate: 0 -50%; pointer-events: none;
   width: var(--control-height) !important; height: var(--control-height) !important;
-  padding: 0 !important; color: var(--green); border: 1px solid var(--line);
-  border-radius: var(--field-radius); background: var(--surface); box-shadow: 0 1px 4px #0002;
+  padding: 0 !important; color: var(--muted); border: 0; border-radius: 0; background: transparent; box-shadow: none;
+  display: none; opacity: 0;
+  transition: opacity var(--menu-motion), translate var(--menu-motion), display 160ms allow-discrete;
 }
+/* Hidden arrows leave the layout (display: none) once they have faded; they fade in from their edge. */
+.toolbar-scroll-indicators > .toolbar-scroll-edge.icon-button[data-shown] { display: inline-flex; opacity: 1; pointer-events: auto; }
+@starting-style { .toolbar-scroll-indicators > .toolbar-scroll-edge.icon-button[data-shown] { opacity: 0; } }
+.toolbar-scroll-indicators > .toolbar-scroll-start:not([data-shown]) { translate: -6px -50%; }
+.toolbar-scroll-indicators > .toolbar-scroll-end:not([data-shown]) { translate: 6px -50%; }
+@starting-style {
+  .toolbar-scroll-indicators > .toolbar-scroll-start[data-shown] { translate: -6px -50%; }
+  .toolbar-scroll-indicators > .toolbar-scroll-end[data-shown] { translate: 6px -50%; }
+}
+.toolbar-scroll-edge .icon { width: 16px; height: 16px; }
 .toolbar-scroll-start { left: 0; }
 .toolbar-scroll-end { right: 0; }
-.toolbar-scroll-edge::before { content: ''; position: absolute; inset: -1px; z-index: -1; width: calc(100% + 14px); pointer-events: none; border-radius: inherit; }
-.toolbar-scroll-start::before { background: linear-gradient(to right, var(--surface) 70%, transparent); }
-.toolbar-scroll-end::before { left: auto; right: -1px; background: linear-gradient(to left, var(--surface) 70%, transparent); }
-.toolbar-scroll-indicators > .toolbar-scroll-edge.icon-button:hover { background: var(--surface-soft); }
+.toolbar-scroll-edge::before { content: ''; position: absolute; inset: 0; z-index: -1; width: calc(100% + 12px); pointer-events: none; }
+.toolbar-scroll-start::before { background: linear-gradient(to right, var(--surface) 62%, transparent); }
+.toolbar-scroll-end::before { left: auto; right: 0; background: linear-gradient(to left, var(--surface) 62%, transparent); }
+.toolbar-scroll-indicators > .toolbar-scroll-edge.icon-button:hover { color: var(--ink); background: transparent; }
+@media (prefers-reduced-motion: reduce) { .toolbar-scroll-indicators > .toolbar-scroll-edge.icon-button { transition: none !important; } }
 .rich-toolbar-shell > .rich-scroll { color: var(--green); background: var(--surface-soft); box-shadow: 0 0 0 1px var(--line) inset; }
