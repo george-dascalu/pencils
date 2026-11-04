@@ -4,7 +4,7 @@ import { boardScene, paintOverviewEdges } from "./board-scene.js";
 import { resizeTaskCard, taskCardHeight } from "./task-card-layout.js";
 import { priorityOptions, priorityLabel, defaultPriority } from "./task-priority.js";
 import { taskColorAttributes, fieldBoxStyle } from "./task-colors.js";
-import { canvasPointerTool } from "./drawing-input.js";
+import { canvasPointerTool, drawingWith } from "./drawing-input.js";
 import {hierarchyError} from "./hierarchy-model.js";
 import {sourceLabel} from "./source-model.js";
 import { renderCanvasEdges, renderConnectorSelection } from "./canvas-lines.js";
@@ -3087,6 +3087,7 @@ export function canvasPro(ctx, basic) {
       }
       if (
         event.pointerType === "pen" &&
+        drawingWith() !== "finger" &&
         event.button === 0 &&
         !event.target.closest(
           "button,input,select,#pen-tools,.inline-editing,.canvas-panel",

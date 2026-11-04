@@ -2,6 +2,11 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.21.83 — 2026-11-04
+
+### Added
+- Feature F0.21-83: The board's pen bar is one line, grouped as tools, presets, colour and width, then Draw with and Pen settings, then Done; it fits an iPad in either orientation and scrolls sideways on a phone. Draw with chooses what draws: the pen (fingers select, move, pan and pinch, as before), a finger (one finger draws, two pan or pinch, and the pen selects) or both. Your choice is remembered. Pressure sensitivity and Recognise shapes moved into Pen settings as checkboxes.
+
 ## 0.21.82 — 2026-11-04
 
 ### Changed

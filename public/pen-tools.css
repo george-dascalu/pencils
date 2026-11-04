@@ -5,7 +5,11 @@
   z-index: 35;
   display: flex;
   align-items: center;
-  flex-wrap: wrap;
+  /* One line (F0.21-83): a bar wider than the board scrolls sideways, with the shared edge arrows. */
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: none;
   gap: var(--control-bar-gap);
   max-width: calc(100% - 92px);
   padding: var(--control-bar-padding);
@@ -19,7 +23,7 @@
   display: flex;
   align-items: center;
   gap: 3px;
-  padding: 0 5px;
+  padding: 0 3px;
   border-left: 0;
   border-right: 1px solid var(--line);
 }
@@ -46,11 +50,15 @@
   align-items: center;
   gap: 3px;
 }
-.pen-width select {
+.pen-width select, #pen-tools .pen-input {
   padding: 5px;
-  width: 68px;
+  width: 64px;
   font-size: 12px;
 }
+#pen-tools .pen-input { width: 66px; flex-shrink: 0; }
+#pen-tools::-webkit-scrollbar { display: none; }
+#pen-tools .selection-group { flex-shrink: 0; }
+#pen-tools .check-control { white-space: nowrap; }
 .canvas.pen-mode,
 .canvas.pen-mode .board-node {
   cursor: crosshair;

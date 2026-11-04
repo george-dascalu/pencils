@@ -1,4 +1,5 @@
 import { makeStroke, penStyle } from "./pen-model.js";
+import { canvasPointerTool } from "./drawing-input.js";
 export function partialErase(n, from, to, radius, uid) {
   const dx = to.x - from.x,
     dy = to.y - from.y,
@@ -169,7 +170,7 @@ export function lassoTool(ctx, basic) {
     (e) => {
       if (
         state.tool !== "lasso" ||
-        (state.view === "board" && e.pointerType === "touch") ||
+        (state.view === "board" && canvasPointerTool("lasso", e.pointerType) !== "lasso") ||
         !e.target.closest("#canvas") ||
         e.target.closest(
           "button,input,select,.canvas-panel,#selection-tools",

@@ -2,10 +2,15 @@ import { readGestures, tapGestures } from "./drawing-gestures.js";
 
 const chrome =
   "button,input,select,textarea,a,summary,[contenteditable],[data-group-resize],.inline-editing,.inline-floating-tools,.board-tools,#selection-tools,#pen-tools,.canvas-panel,.canvas-find,.canvas-filters,#canvas-minimap,.board-controls,[data-board-settings]";
-// Fingers manipulate objects even while an ink tool is active. Explicit
-// placement/connection tools still work by touch on the shared Board.
+// What draws with an ink tool (Draw with, in the pen bar; F0.21-83): the pen, while fingers select,
+// move, pan and pinch (the default); a finger, while the pen selects; or both. A mouse always draws,
+// and explicit placement/connection tools still work by touch on the shared Board.
+let drawWith = "pen";
+export const setDrawWith = (mode) => { drawWith = ["finger", "both"].includes(mode) ? mode : "pen"; };
+export const drawingWith = () => drawWith;
 export const canvasPointerTool = (tool, pointerType) =>
-  pointerType === "touch" && ["draw", "erase", "lasso"].includes(tool)
+  ["draw", "erase", "lasso"].includes(tool) &&
+  ((pointerType === "touch" && drawWith === "pen") || (pointerType === "pen" && drawWith === "finger"))
     ? "cursor"
     : tool;
 export function drawingInput(ctx, basic) {
@@ -24,6 +29,8 @@ export function drawingInput(ctx, basic) {
     cameraFrame = null,
     cameraDirty = false;
   const active = () => state.view === "board" && !!$("#canvas");
+  // An ink tool that fingers draw with (Draw with: Finger or Both).
+  const fingersInk = () => ["draw", "erase", "lasso"].includes(state.tool) && canvasPointerTool(state.tool, "touch") !== "cursor";
   const stop = (e) => {
     e.preventDefault();
     e.stopImmediatePropagation();
@@ -177,6 +184,9 @@ export function drawingInput(ctx, basic) {
         basic.cancel();
         rebase();
         for (const pointerId of touches.keys()) capture({ pointerId });
+      } else if (fingersInk()) {
+        // One finger draws with an ink tool when Draw with allows it; a second finger turns it
+        // into a pinch (above), which cancels the stroke.
       } else if ((!node && !placing) || placeOnTap) {
         stop(e);
         rebase();
@@ -299,7 +309,8 @@ export function drawingInput(ctx, basic) {
       }
       if (navigated) paintCamera(true);
     }
-    if (gesture && !cancel) {
+    // While fingers draw, two quick dots are ink, not a double tap (two fingers still undo).
+    if (gesture && !cancel && !(gesture === "doubleTap" && fingersInk())) {
       // Let a normal object tap finish selecting before applying its shortcut.
       const id = identity;
       queueMicrotask(() => {
