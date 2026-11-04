@@ -71,6 +71,15 @@ test('array merges preserve concurrent comments, deletion and distinct reorder c
   for(const [a,b,c] of [[[],['x'],['y']],[['a'],null,['b']],[[],[{id:2}],[{id:3}]],[{},[],['a']]])assert.equal(merge(a,b,c).conflicts.length,1);
   assert.deepEqual(merge(comments,[comments[1],comments[0]],[comments[2],comments[0]]).conflicts,[]);
 });
+// F0.22-11: the server lists a note's fields in its own order; the same note is not a change, so
+// deleting a note whose creation is still being acknowledged is not a conflict.
+test('values that differ only in key order are the same, so a delete during a save merges cleanly',()=>{
+  const note={id:'n',type:'sticky',x:1,y:2,text:'',color:'#f5e7a2'},other={id:'o',type:'text',x:5,y:5,text:'Keep'};
+  const sent={nodes:[other,note]},local={nodes:[other]},remote={nodes:[{type:'text',text:'Keep',id:'o',x:5,y:5},{type:'sticky',id:'n',color:'#f5e7a2',text:'',x:1,y:2}]};
+  const result=merge(sent,local,remote);
+  assert.deepEqual(result.conflicts,[]);
+  assert.deepEqual(result.value.nodes.map(n=>n.id),['o']);
+});
 test('packed board recovery retains original changed nodes, unrelated remote nodes and delivery data',async t=>{
   const {queue,storage}=setup(t),boardURL='/api/projects/p/boards/b';
   const node={id:'a',type:'note',x:0,y:0,w:100,h:100,text:'Original'},other={...node,id:'remote',text:'Remote'},old={id:'b',revision:'base',nodes:[node],edges:[]},local={...old,nodes:[{...node,text:'Edited'}]};

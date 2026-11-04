@@ -1,6 +1,9 @@
 import { boardDifference, applyBoardDelta } from "./board-delta.js";
 import { BOARD_LIMITS } from "./board-limits.js";
-const equal = (a, b) => JSON.stringify(a) === JSON.stringify(b);
+// Equal whatever the order of their keys: the server lists a record's fields in its own order, and the
+// same note sent and acknowledged was taken for a change, which a delete then made a conflict (F0.22-11).
+const stable = (value) => JSON.stringify(value, (_, v) => (v && typeof v === "object" && !Array.isArray(v) ? Object.fromEntries(Object.entries(v).sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))) : v));
+const equal = (a, b) => stable(a) === stable(b);
 const clone = (value) =>
   value === undefined ? undefined : structuredClone(value);
 

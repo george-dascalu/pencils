@@ -2,6 +2,11 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.22.11 — 2026-11-04
+
+### Fixed
+- Feature F0.22-11: A board note deleted just after it was placed, while its first save was still being answered, is deleted on the server too. Before, the board showed "Conflicting edits need review" and the server kept the note, because the server's copy of the same note, with its fields in another order, was taken for a change.
+
 ## 0.22.10 — 2026-11-04
 
 ### Fixed
