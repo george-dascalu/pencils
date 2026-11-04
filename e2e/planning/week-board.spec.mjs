@@ -45,6 +45,27 @@ async function drag(page, id, target) {
   await page.mouse.up();
 }
 
+// F0.22-9: over a day's name the landing place stays where it was, instead of going away and letting
+// the rows below jump, and a drop there lands in it.
+test('over a day name the landing place stays where it was, and a drop there lands in it', async ({ page }) => {
+  await open(page);
+  const from = await card(page, app.one.id).locator('.week-board-title').boundingBox();
+  await page.mouse.move(from.x + from.width / 2, from.y + from.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(from.x + from.width / 2 + 10, from.y + from.height / 2 + 10, { steps: 3 });
+  // Ann's is the first row: straight up from its cell, the pointer meets only the day's name.
+  const to = await cell(page, 'Ann', '2026-11-04').boundingBox();
+  await page.mouse.move(to.x + to.width / 2, to.y + 20, { steps: 8 });
+  await expect(cell(page, 'Ann', '2026-11-04').locator('.calendar-placement')).toHaveCount(1);
+  const head = await page.locator('.week-board-day-head').filter({ hasText: '4 Nov' }).boundingBox();
+  await page.mouse.move(to.x + to.width / 2, head.y + head.height / 2, { steps: 4 });
+  // The copy beside the pointer follows it once a frame: the pointer has been seen over the name.
+  await expect.poll(async () => (await page.locator('.calendar-drag-preview').boundingBox()).y).toBeLessThan(to.y + 30);
+  await expect(cell(page, 'Ann', '2026-11-04').locator('.calendar-placement'), 'the landing place stays').toHaveCount(1);
+  await page.mouse.up();
+  await expect.poll(async () => { const t = await saved(app.one.id); return [t.due, t.assignee]; }).toEqual(['2026-11-04', 'Ann']);
+});
+
 onDevices(['desktop', 'ipad', 'phone'], () => {
   test('Week board shows the week as day columns with rows by a field, without hours @gate', async ({ page, device }) => {
     await open(page);

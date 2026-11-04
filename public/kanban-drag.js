@@ -1,6 +1,7 @@
 import { kanbanDropChanges, kanbanDropError, inLane } from "./kanban-model.js";
 import { reorderTasks } from "./task-order-model.js";
 import { snapKanbanColumns } from "./kanban-layout.js";
+import { slideMoves } from "./slide-moves.js";
 // A light tick: Android vibrates; Safari on iOS 18 ticks when a switch toggles, here a hidden one.
 function haptic() {
   if (navigator.vibrate) {
@@ -31,7 +32,6 @@ export function kanbanDrag(ctx) {
   function dropError(t, column) {
     return t ? kanbanDropError(state.config, t, changesFor(t, column), state.tasks) : "This card is no longer available.";
   }
-  const reduce = matchMedia("(prefers-reduced-motion: reduce)");
   function clean() {
     const board = drag?.card.closest(".kanban");
     cancelAnimationFrame(frame);
@@ -51,6 +51,12 @@ export function kanbanDrag(ctx) {
     state.kanbanDragging = false;
     drag = null;
   }
+  // Moves the landing place; the cards and lanes it pushes slide to their new places.
+  function place(parent, anchor) {
+    if (drag.placeholder.parentElement === parent && drag.placeholder.nextElementSibling === anchor) return;
+    const moving = [...drag.card.closest(".kanban").querySelectorAll(".kanban-lane, [data-drag-task]")].filter((el) => el !== drag.card);
+    slideMoves(moving, () => parent.insertBefore(drag.placeholder, anchor));
+  }
   function update(x, y) {
     if (!drag) return;
     drag.x = x;
@@ -58,12 +64,23 @@ export function kanbanDrag(ctx) {
     const column = document
       .elementFromPoint(x, y)
       ?.closest("[data-drop-status]");
-    const permitted = column && !dropError(task(drag.id), column);
+    // Between columns (a gap, a heading) the landing place stays where it was, and a drop lands
+    // there: taking it away let the lanes below jump under the pointer (F0.22-9). Outside the board
+    // it goes away, and a drop changes nothing.
+    const r = drag.card.closest(".kanban").getBoundingClientRect();
+    if (!column && x >= r.left && x <= r.right && y >= r.top && y <= r.bottom) return;
     document.querySelectorAll(".kanban-column.over").forEach((el) => {
       if (el !== column) el.classList.remove("over");
     });
-    if (!permitted) {
+    if (!column) {
       drag.placeholder.remove();
+      drag.column = null;
+      return;
+    }
+    if (dropError(task(drag.id), column)) {
+      // A column the card can't enter: the landing place goes back where the card was, and a drop
+      // changes nothing.
+      place(drag.card.parentElement, drag.card);
       drag.column = null;
       return;
     }
@@ -76,29 +93,8 @@ export function kanbanDrag(ctx) {
       const r = el.getBoundingClientRect();
       return y < r.top + r.height / 2;
     });
-    const anchor = before || column.querySelector(".add-row");
     drag.before = before?.dataset.dragTask || null;
-    if (
-      drag.placeholder.parentElement !== column ||
-      drag.placeholder.nextElementSibling !== anchor
-    ) {
-      const boxes = new Map(
-        cards.map((el) => [el, el.getBoundingClientRect().top]),
-      );
-      column.insertBefore(drag.placeholder, anchor);
-      if (!reduce.matches)
-        for (const [el, top] of boxes) {
-          const delta = top - el.getBoundingClientRect().top;
-          if (delta)
-            el.animate(
-              [
-                { transform: `translateY(${delta}px)` },
-                { transform: "translateY(0)" },
-              ],
-              { duration: 140, easing: "ease-out" },
-            );
-        }
-    }
+    place(column, before || column.querySelector(".add-row"));
   }
   function scroll() {
     if (!drag) return;

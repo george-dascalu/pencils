@@ -2,6 +2,11 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.22.9 — 2026-11-04
+
+### Fixed
+- Feature F0.22-9: Dragging a card in Kanban and on the Week board is smooth. The dashed outline where the card will land stays in place while the pointer crosses the gaps between columns, lanes or day names, so the board no longer jumps and flickers; letting go there drops the card where the outline shows. Over a column the card can't enter, the outline goes back to the card's own place, and letting go changes nothing. Cards and lanes that make room slide into place instead of jumping.
+
 ## 0.22.8 — 2026-11-04
 
 ### Fixed

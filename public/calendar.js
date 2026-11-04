@@ -16,6 +16,7 @@ import { localDate } from "./task-visibility.js";
 import { taskColorDot, taskFieldColor } from "./task-colors.js";
 import { taskDateEditor } from "./task-date-editor.js";
 import { rangeChoicesHTML, rangeLabelHTML } from "./range-menu.js";
+import { slideMoves } from "./slide-moves.js";
 
 export function calendarView(ctx) {
   const { state, esc, icon, storage, renderView, task, patchTask, toast } = ctx;
@@ -188,6 +189,11 @@ export function calendarView(ctx) {
     }
     return change;
   }
+  // Over a Week board row's or day's name the landing place stays where it was, and a drop there
+  // lands in it (F0.22-9).
+  function landing(d, x, y) {
+    return dropChange(d, x, y) || (mode === "board" && !d.reason && document.elementFromPoint(x, y)?.closest(".week-board-row-head, .week-board-day-head") ? d.next ?? null : null);
+  }
   function clearPlacement(d) {
     d.placements?.forEach(el => el.remove());
     d.weekLanes?.forEach(([el, lanes]) => el.style.setProperty('--calendar-lanes', lanes));
@@ -197,6 +203,12 @@ export function calendarView(ctx) {
     const key = JSON.stringify(d.next);
     if (d.placementKey === key) return;
     d.placementKey = key;
+    // The Week board rows the landing place pushes slide to their new places (F0.22-9).
+    const board = mode === 'board' && document.querySelector('.week-board');
+    if (board) slideMoves([...board.querySelectorAll('.week-board-cell, .week-board-row-head, .week-board-card:not(.calendar-placement)')], () => place(d, next));
+    else place(d, next);
+  }
+  function place(d, next) {
     clearPlacement(d);
     if (!d.next) return;
     const items = shownTasks.map(t => t.id === next.id ? next : t);
@@ -249,7 +261,7 @@ export function calendarView(ctx) {
         else if (d.y < r.top + 24) scroller.scrollTop -= 12;
       }
     }
-    d.next = dropChange(d, d.x, d.y);
+    d.next = landing(d, d.x, d.y);
     const next = { ...d.task, ...d.next }, range = d.next && calendarRange(next);
     if (d.hours && d.next) {
       const segment = hourlySegments([next], [d.hours.dataset.calendarDate])[0] || { start: 0, end: 0 };
@@ -372,7 +384,7 @@ export function calendarView(ctx) {
   document.addEventListener("pointerup", e => {
     if (drag?.pointer !== e.pointerId) return;
     if (drag.active) {
-      drag.next = dropChange(drag, e.clientX, e.clientY);
+      drag.next = landing(drag, e.clientX, e.clientY);
     }
     finish();
   }, true);
