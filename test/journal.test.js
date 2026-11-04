@@ -93,6 +93,43 @@ test("a write staged while its transaction ends does not crash", async (t) => {
   assert.equal(store.journal.active, null);
   assert.equal(await fs.readFile(moved, "utf8"), "before", "the move still happens");
 });
+// F0.22-8: a save outside a transaction (a read that assigns card numbers, a test's direct write)
+// is not the transaction's to undo: a failure there rolled it back too, losing a new card.
+test("a write made outside a failing transaction is kept", async (t) => {
+  const { store, project } = await fixture(t),
+    task = await store.createTask(project.id, { title: "Original" }),
+    ledger = path.join(store.projectDir(project.id), "identity.md"), numbers = await fs.readFile(ledger, "utf8");
+  let release, inside;
+  const gate = new Promise((resolve) => (release = resolve)), started = new Promise((resolve) => (inside = resolve));
+  const failing = store.mutate(async () => {
+    await store.createTask(project.id, { title: "Temporary" });
+    inside();
+    await gate;
+    throw Error("Injected failure");
+  });
+  await started;
+  await store.updateTask(project.id, task.id, { revision: task.revision, title: "Edited outside" });
+  release();
+  await assert.rejects(failing, /Injected/);
+  // The transaction's own writes, the card number taken through the identity queue too, still roll back.
+  assert.equal(await fs.readFile(ledger, "utf8"), numbers);
+  assert.deepEqual((await store.snapshot(project.id)).tasks.map((t) => t.title), ["Edited outside"]);
+});
+test("a write made while a transaction starts is kept when it fails", async (t) => {
+  const { store, project } = await fixture(t),
+    task = await store.createTask(project.id, { title: "Original" }),
+    persist = store.journal.persist.bind(store.journal);
+  let release, starting;
+  const gate = new Promise((resolve) => (release = resolve)), started = new Promise((resolve) => (starting = resolve));
+  // Hold the transaction's first record, written while it starts.
+  store.journal.persist = async () => { store.journal.persist = persist; starting(); await gate; return persist(); };
+  const failing = store.mutate(async () => { throw Error("Injected failure"); });
+  await started;
+  await store.updateTask(project.id, task.id, { revision: task.revision, title: "Edited outside" });
+  release();
+  await assert.rejects(failing, /Injected/);
+  assert.deepEqual((await store.snapshot(project.id)).tasks.map((t) => t.title), ["Edited outside"]);
+});
 // T35: a write that starts while its transaction is closing goes unjournaled, and does not bring
 // back the record its commit removed.
 test("a write that starts while the transaction closes leaves no record behind", async (t) => {

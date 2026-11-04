@@ -174,10 +174,10 @@ export class Store {
   mutate(fn, { user = "System", action } = {}) {
     const next = this.queue.then(async () => {
       await this.init();
-      await this.journal.start();
+      await this.journal.start({ scoped: true });
       this.auditPending = new Map(); this.auditUser = user; this.auditAction = action;
       const version=this.version;
-      try {await this.autoBackup();const result=await fn();await this.journal.finish(true);
+      try {const result=await this.journal.run(async()=>{await this.autoBackup();return fn();});await this.journal.finish(true);
         const changes=this.changeLog.filter(c=>c.version>version);
         if(changes.length){const projects=new Set(changes.map(c=>c.record?.kind!=="project"?c.record?.project:null));if(projects.has(null)||projects.has(undefined))this.events.emit("change",this.version,{});else for(const project of projects)this.events.emit("change",this.version,{project});}
         if (this.audit) for (const entry of this.auditPending.values()) {

@@ -2,6 +2,11 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.22.8 — 2026-11-04
+
+### Fixed
+- Feature F0.22-8: A save that fails no longer undoes another change saved at the same moment. Before, a card created or edited elsewhere just then could disappear with the failed save, and the failed save could end in a server error.
+
 ## 0.22.7 — 2026-11-04
 
 ### Fixed

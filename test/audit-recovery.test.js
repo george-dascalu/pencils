@@ -113,6 +113,24 @@ test("automatic backups protect a vault beyond the ZIP limit and can restore it"
   assert.equal((await fs.stat(file)).size, BACKUP_EXPANDED_BYTES + 1);
   assert.ok((await fs.readdir(path.join(root, ".backups"))).length);
 });
+// F0.22-8: a restore asked for outside a transaction waits for one of its own, even while another
+// write's transaction runs, instead of working inside that one.
+test("a restore started while another write runs waits for its own transaction", async t => {
+  const { store } = await fixture(t), backup = await store.createBackup();
+  let release, inside;
+  const gate = new Promise((resolve) => (release = resolve)), started = new Promise((resolve) => (inside = resolve));
+  const other = store.mutate(async () => { inside(); await gate; });
+  await started;
+  const directory = store.backupDirectory.bind(store);
+  let reads = 0;
+  store.backupDirectory = (id) => { reads++; return directory(id); };
+  const restore = store.restoreBackup(backup.id);
+  assert.equal(reads, 0, "the restore waits for the running transaction");
+  release();
+  await other;
+  await restore;
+  assert.ok(reads > 0, "the restore ran once the other write finished");
+});
 test("history pages contain summaries and fetch only the chosen version's contents", async t => {
   const { root, store, project } = await fixture(t);
   let doc = await store.createDocument(project.id, { title: "Versions", body: "first" });

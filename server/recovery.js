@@ -429,7 +429,8 @@ export function installRecovery(Store) {
       }
     },
     async restoreBackup(id) {
-      if (!this.journal.active) return this.mutate(() => this.restoreBackup(id));
+      // Outside a transaction, or beside another write's, the restore runs in one of its own.
+      if (!this.journal.active || this.journal.foreign(this.journal.active)) return this.mutate(() => this.restoreBackup(id));
       const directory = await this.backupDirectory(id);
       if (directory) await this.verifyBackup(id);
       const entries = directory ? null : await unpack(await this.backupBytes(id));

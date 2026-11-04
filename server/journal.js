@@ -2,6 +2,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import os from "node:os";
 import { spawn } from "node:child_process";
+import { AsyncLocalStorage } from "node:async_hooks";
 import { createHash, randomUUID } from "node:crypto";
 import { Problem } from "./problem.js";
 const digest = (bytes) => createHash("sha256").update(bytes).digest("hex");
@@ -28,6 +29,16 @@ export class WriteJournal {
     this.root = path.join(store.root, ".pencils", "journal");
     this.lock = path.join(store.root, ".pencils", "writer.lock");
     this.active = null;
+    this.context = new AsyncLocalStorage();
+  }
+  // Runs fn as the active transaction's own work.
+  run(fn) {
+    return this.context.run(this.active, fn);
+  }
+  // A scoped transaction (mutate's) takes only the writes made inside run(): another writer's save,
+  // even one made while it starts, goes unjournaled instead of being undone with it (F0.22-8).
+  foreign(tx) {
+    return tx.scoped && this.context.getStore() !== tx;
   }
   async acquire() {
     if (this.handle) throw new Problem(423, "Another Pencils process is writing this vault. Retry shortly.");
@@ -103,13 +114,13 @@ export class WriteJournal {
     try { await fs.rm(this.lock, { recursive: true, force: true }); }
     finally { await this.handle.close(); this.handle = null; }
   }
-  async start() {
+  async start({ scoped = false } = {}) {
     await this.acquire();
     try {
       await this.store.safe(this.root);
       await fs.mkdir(this.root, { recursive: true });
       const id = randomUUID();
-      this.active = { id, phase: "active", files: [], moves: [] };
+      this.active = { id, phase: "active", files: [], moves: [], ...(scoped && { scoped }) };
       await fs.mkdir(path.join(this.root, id));
       await this.persist();
     } catch (error) {
@@ -129,7 +140,7 @@ export class WriteJournal {
   async stage(file, text) {
     // A closing transaction (finish has begun) counts as ended (T35).
     const tx = this.active, ended = () => this.active !== tx || tx.closing;
-    if (!tx || tx.closing) return;
+    if (!tx || tx.closing || this.foreign(tx)) return;
     const relative = path.relative(this.store.root, file);
     await this.store.safe(file);
     if (ended()) return;
@@ -173,7 +184,7 @@ export class WriteJournal {
   }
   async move(source, target) {
     const tx = this.active;
-    if (!tx) return fs.rename(source, target);
+    if (!tx || this.foreign(tx)) return fs.rename(source, target);
     await this.store.safe(source);
     await this.store.safe(target);
     const hash = await this.fingerprint(source);
