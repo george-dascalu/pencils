@@ -2,6 +2,11 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.21.80 — 2026-11-03
+
+### Fixed
+- Feature F0.21-80: A card ID that would be cut short now shows only its number (12 rather than "TEST…"), everywhere IDs appear: List, Tree and phone rows, card editors, relationships, documents, Home and boards. The full ID stays in its tooltip. On phones, field boxes show the assignee in its short form so "In progress" fits, and a date that would touch the box's border wraps onto two lines instead of being cut. A document's card list on a phone puts the field box on its own line, so it no longer covers the card ID and title.
+
 ## 0.21.79 — 2026-11-03
 
 ### Changed

@@ -1481,9 +1481,14 @@ html.task-page-open,
      wraps onto two lines. */
   .phone-task-meta .due { font-size: 10px; line-height: 1.15; white-space: normal; text-align: center; }
   .phone-task-fields > .phone-due { flex: 0 0 44px; width: 44px; }
+  /* A date that would touch the box's border wraps onto two lines, at the fields' one text size (F0.21-80). */
+  .phone-task-fields > .phone-due > .due { max-width: calc(100% - 6px); }
+  /* The assignee is one 44px target, so a name shows as its short form and the status keeps its
+     room for "In progress" (F0.21-80). */
+  .phone-task-fields > [data-field="assignee"] { flex: 0 0 44px; width: 44px; }
   /* The type and key on the left and the field box, with the date, at one width at the row's end
-     (so the boxes line up down the list). Short of room, the key shortens and the box narrows to
-     its four 44px targets. */
+     (so the boxes line up down the list). Short of room, the key shows its number and the box
+     narrows to its four 44px targets. */
   .phone-task-meta { display: grid; grid-template-columns: minmax(16px, 1fr) minmax(var(--phone-box-min), var(--phone-box-width)); gap: 4px; }
   .phone-task-meta > .icon { grid-area: 1 / 1; }
   .phone-task-meta > span:not([class]) { grid-area: 1 / 1; min-width: 0; margin-inline-start: 16px; overflow: hidden; text-overflow: ellipsis; }

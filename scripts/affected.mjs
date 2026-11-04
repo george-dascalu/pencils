@@ -26,12 +26,12 @@ const AREAS = {
   board: /^(alignment-guides|board-|list-panel|camera-motion|canvas|comment-model|connector-|dependency-style|drag-feedback|drawing-|edge-labels|frame-|grid-merge|ink-|miro-import|node-layout|note-style|object-|orthogonal-route|pen-|phone-board-tools|project-frame|query-|rule-diagram|scroll-gestures|select-symbols|selection-|spatial-index|text-alignment|viewport-cache)/,
   documents: /^(history-pages|document-|project-documents|folder-|list-panel|markdown|rich-toolbar-scroll|sketch-|ink-capture)/,
   tasks: /^(history-pages|task-(?!timeline)|card-fields|draft-|attachment-preview|recurrence-|dependency-model|hierarchy-model)/,
-  lists: /^(grid(?!-merge)|table-|kanban-|view-layout|project-filters|drag-feedback|task-row-editor|task-order-model|task-reorder|task-group-order|task-colors)/,
+  lists: /^(grid(?!-merge)|table-|kanban-|view-layout|project-filters|drag-feedback|task-row-editor|task-order-model|task-reorder|task-group-order|task-colors|card-key)/,
   planning: /^(calendar|capacity|planning|project-filters|timeline-|task-timeline|schedule-|teams)/,
   settings: /^(hotkey|history-pages|project-create|project-settings|project-tags|project-records|debug-log|personal-settings|capture-settings|style-settings|project-sources|source-model|project-automations|workflow-|teams|recovery-ui|backup-limits)/,
   navigation: /^(hotkey|boot-progress|help|topbar-title|bookmarks|bottom-bar|roadmap)/,
   home: /^home/,
-  ui: /^(quiet-scrollbars|toolbar-scroll|assignee-name|color-|select-menu|date-picker|confirm-popover|format-date|in-place-editing)/,
+  ui: /^(quiet-scrollbars|toolbar-scroll|assignee-name|card-key|color-|select-menu|date-picker|confirm-popover|format-date|in-place-editing)/,
 };
 const shared = (file) => SHARED.some((rule) => rule.test(file));
 const areasOf = (name) => Object.keys(AREAS).filter((area) => AREAS[area].test(name));

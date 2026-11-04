@@ -1,4 +1,5 @@
 import { installAssigneeNames } from "./assignee-name.js";
+import { installCardKeys } from "./card-key.js";
 import { closePopup, finishPopupExits } from "./popup-motion.js";
 import { projectCreateHTML } from "./project-create.js";
 import { taskTimeFields } from "./task-time-fields.js";
@@ -247,6 +248,7 @@ const colorPicker = installColorPickers({ esc, icon });
 installToolbarScrollIndicators(icon);
 const bookmarks = installBookmarks({ api, esc, icon, toast });
 installAssigneeNames();
+installCardKeys();
 const selectMenus = installSelectMenus({ esc, icon, taskColor: (field, value) => taskFieldColor(state, field, value) });
 installTaskControlColors(() => state);
 installTaskTags(() => state, esc, icon, (...args) => toast(...args));

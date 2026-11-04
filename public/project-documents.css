@@ -452,6 +452,15 @@ span.document-list-callout { display: block; }
 .document-task-title { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .document-task-fields { display: flex; flex: none; align-items: center; gap: 4px; }
 .document-task-fields > .field-chip-status { width: auto; }
+@media (max-width: 600px) {
+  /* On phones a card row puts its type, ID and title on the first line and the field box, at the
+     phone box width (these rows show no date), at the end of the second, so the box never covers
+     the ID and the boxes line up, as in List rows (F0.21-80). */
+  .document-task-row { display: grid; grid-template-columns: auto minmax(0, 1fr); column-gap: 8px; }
+  .document-task-row > .document-task-fields { grid-column: 2; justify-self: end; width: calc(var(--phone-box-width) - 44px * var(--box-date)); }
+  .document-task-row > .document-task-fields > :is(.task-assignee, .field-chip-priority) { flex: 0 0 44px; width: 44px; }
+  .document-task-row > .document-task-fields > .field-chip-status { flex: 1 1 0; min-width: 0; justify-content: center; overflow: hidden; text-overflow: ellipsis; }
+}
 [data-list-callout="important"] { --list-callout-color: var(--style-list-important, #d64545); }
 [data-list-callout="question"] { --list-callout-color: var(--style-list-question, #e07b24); }
 [data-list-callout="bookmark"] { --list-callout-color: var(--style-list-bookmark, #b08900); }
