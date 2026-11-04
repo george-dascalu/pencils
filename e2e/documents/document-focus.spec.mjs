@@ -1,9 +1,10 @@
 // Owner request: a document-toolbar Focus mode clears the surrounding UI for writing.
 import { test, expect, useApp, onDevices } from '../fixtures.mjs';
-import { chooseDocumentView, editorSource, scrollEditorTo } from '../helpers/documents.mjs';
+import { chooseDocumentView, documentBarAction, editorSource, scrollEditorTo } from '../helpers/documents.mjs';
 
 const app = useApp(async store => ({ project: await store.createProject({ title: 'Focused writing', key: 'FW' }) }));
-const focus = page => page.getByRole('button', { name: 'Focus mode', exact: true });
+// The bar's button, also while phones keep it hidden outside Focus mode (F0.21-87).
+const focus = page => page.locator('#document-form .document-heading [data-document-action="focus"]');
 const make = (title, body = 'Write without distractions.\n', type = 'markdown') => app.store.createDocument(app.project.id, { title, body, document_type: type });
 async function open(page, doc) {
   await page.goto(`${app.base}/#project/${app.project.id}/documents/${doc.id}`);
@@ -28,8 +29,9 @@ onDevices(['desktop', 'ipad', 'phone'], () => {
       document.addEventListener('focusin', event => { if (event.target.matches('input, textarea, [contenteditable=true]')) window.__focusTextEvents++; });
     });
     const before = await caret(page), top = (await page.locator('.document-writing').boundingBox()).y;
-    if (device === 'desktop') await focus(page).click(); else await focus(page).tap();
+    await documentBarAction(page, 'Focus mode', { tap: device !== 'desktop' });
     await expect(focus(page)).toHaveAttribute('aria-pressed', 'true');
+    await expect(focus(page)).toHaveAccessibleName('Focus mode');
     await expect(page.locator('.topbar')).toBeHidden();
     await expect(page.locator('.topbar .tabs')).toBeHidden();
     await expect(page.locator('#document-formatting')).toBeHidden();
@@ -57,7 +59,7 @@ onDevices(['desktop', 'ipad', 'phone'], () => {
     expect(await original.evaluate(el => el.isConnected)).toBe(true);
     // Compact mode uses the same shared button height, and Escape is an alternative exit.
     if (device === 'desktop') await page.evaluate(() => document.documentElement.dataset.density = 'compact');
-    await focus(page).click();
+    await documentBarAction(page, 'Focus mode');
     await expect(focus(page)).toHaveCSS('height', device === 'desktop' ? '28px' : '44px');
     await page.keyboard.press('Escape');
     await expect(focus(page)).toHaveAttribute('aria-pressed', 'false');

@@ -3,7 +3,7 @@
 // top. A tap on a checkbox now toggles it without focusing the editor, and a
 // refresh of the Documents view keeps the open document's scroll position.
 import { test, expect, onDevices, useApp } from "../fixtures.mjs";
-import { documentName, openNewDocument, editorSource } from "../helpers/documents.mjs";
+import { documentBarAction, documentName, openNewDocument, editorSource } from "../helpers/documents.mjs";
 
 const app = useApp(async (store) => ({ project: await store.createProject({ title: "Docs", key: "DC" }) }));
 const body = "# Plan\n\n" + Array.from({ length: 40 }, (_, i) => `Paragraph ${i} with enough words to fill a line or two on a phone screen.\n\n- [ ] Task ${i}\n`).join("\n");
@@ -124,7 +124,7 @@ onDevices(['phone', 'ipad'], () => test('property and task-query checkboxes shar
   let doc = await app.store.createDocument(app.project.id, { title, body: `\`\`\`tasks\ntitle includes ${title}\n\`\`\`` });
   doc = await app.store.updateDocument(app.project.id, doc.id, { revision: doc.revision, document_properties: { set: { Approved: false } } });
   await page.goto(`${app.base}/#project/${app.project.id}/documents/${doc.id}`);
-  await page.getByRole('button', {name:'Properties',exact:true}).click();
+  await documentBarAction(page, 'Properties');
   for (const checkbox of [page.getByRole('checkbox', { name: 'Approved', exact: true }), page.getByRole('checkbox', { name: `Done: ${title}`, exact: true })]) {
     await checkbox.scrollIntoViewIfNeeded();
     const target = await checkbox.locator('..').boundingBox(), box = await checkbox.boundingBox();
@@ -133,7 +133,8 @@ onDevices(['phone', 'ipad'], () => test('property and task-query checkboxes shar
     await page.touchscreen.tap(box.x + box.width / 2 + 12, box.y + box.height / 2);
     await expect(checkbox).toBeChecked();
     expect(await page.evaluate(() => !!document.activeElement?.closest('.cm-editor'))).toBe(false);
-    if (await page.getByRole('dialog', {name:'Properties',exact:true}).isVisible()) await page.getByRole('button', {name:'Properties',exact:true}).click();
+    // Phones have no Properties button in the bar to close it with (F0.21-87).
+    if (await page.getByRole('dialog', {name:'Properties',exact:true}).isVisible()) await page.keyboard.press('Escape');
   }
   await expect.poll(async () => (await app.store.getDocument(app.project.id, doc.id)).Approved).toBe(true);
   await expect.poll(async () => (await app.store.snapshot(app.project.id)).tasks.find(t => t.id === task.id).status).toBe('done');

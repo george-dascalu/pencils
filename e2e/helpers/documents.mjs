@@ -62,6 +62,14 @@ export async function documentTool(page, name, { tap = false } = {}) {
   if (!(await dialog.isVisible())) await press(page.locator('#document-form .document-heading [data-document-action="tools"]'));
   await press(dialog.getByRole("button", { name, exact: true }));
 }
+// Properties and Focus mode sit in the document bar on desktop and iPad, and in Document tools on
+// phones (F0.21-87). Presses the one shown.
+export async function documentBarAction(page, name, { tap = false } = {}) {
+  await page.locator('#document-form .document-heading [data-document-action="tools"]').waitFor();
+  const direct = page.locator("#document-form .document-heading").getByRole("button", { name, exact: true });
+  if (await direct.isVisible()) return tap ? direct.tap() : direct.click();
+  await documentTool(page, name, { tap });
+}
 // Chooses a document's view (Live preview, Source or Reading). Phones and touch screens use the
 // Documents tab's tray above the bottom bar (owner request, 30 October 2026), after dismissing the
 // keyboard, which hides the bar; other screens use Document tools. Waits until the view shows.

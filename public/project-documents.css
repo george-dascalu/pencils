@@ -203,6 +203,11 @@
 /* Focus is an app layout, not browser fullscreen: touch keyboards and regular editor shortcuts
    keep working. The mounted editor, its selection, undo history and split preference stay intact. */
 .main.project-main.document-focus { --tabbar-clearance: 0px; }
+/* Phones open Properties and Focus mode from Document tools (F0.21-87); Focus mode's exit stays. */
+@media (max-width: 600px), (max-height: 500px) {
+  #document-form .document-heading > [data-document-action="properties"],
+  .main:not(.document-focus) #document-form .document-heading > [data-document-action="focus"] { display: none; }
+}
 .main.project-main.document-focus > :is(.topbar, #view-toolbar) { display: none; }
 .main.project-main.document-focus > #view-content.documents-content { grid-row: 1 / -1; padding: 0; }
 .main.document-focus .documents-workspace {

@@ -1,5 +1,5 @@
 // The header names only what is open: the board or document, or else the project. Phones keep
-// the name for screen readers only (project-layout.css).
+// the name for screen readers only, except an open document's (project-layout.css).
 
 export function openItemTitle(state) {
   if (!state.project || state.helpArticle || state.directoryPage) return null;

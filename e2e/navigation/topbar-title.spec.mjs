@@ -75,8 +75,8 @@ onDevices(["phone", "ipad", "desktop"], () => test("an open document names itsel
   expect(current).toMatch(/notes/);
   await expect(heading(page)).toHaveText(current);
   const h = await header(page);
-  // Desktop and iPad name it with its tab, in the title's place; phones show no title.
-  expect([h.trail, h.tab]).toEqual([[], device === "phone" ? null : current]);
+  // Desktop and iPad name it with its tab, in the title's place; phones show the title itself (F0.21-87).
+  expect([h.trail, h.tab]).toEqual(device === "phone" ? [[current], null] : [[], current]);
   // Renaming the document (Document tools → Rename) renames the header.
   await renameDocument(page, `Weekly ${device} notes`);
   await expect(heading(page)).toHaveText(`Weekly ${device} notes`);

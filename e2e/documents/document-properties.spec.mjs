@@ -2,6 +2,7 @@
 // frontmatter, edited in a Properties section at the top of the document, and #tag in the finder.
 import { test, expect, onDevices, useApp } from "../fixtures.mjs";
 import { openList } from "../helpers/menu-controls.mjs";
+import { documentBarAction } from "../helpers/documents.mjs";
 
 const today = new Date().toLocaleDateString("en-CA");
 const app = useApp(async (store) => ({ project: await store.createProject({ title: "Properties", key: "PR" }) }));
@@ -11,7 +12,7 @@ onDevices(["desktop", "phone"], () => test("properties and tags are edited in th
   let doc = await app.store.createDocument(app.project.id, { title: `Plan ${device}`, body: "Text" });
   doc = await app.store.updateDocument(app.project.id, doc.id, { revision: doc.revision, document_properties: { set: { status: "Draft" }, tags: ["plans"] } });
   await page.goto(`${app.base}/#project/${app.project.id}/documents/${doc.id}`);
-  await page.getByRole("button", {name:"Properties",exact:true}).click();
+  await documentBarAction(page, "Properties");
   const section = page.locator(".document-panel .document-properties");
   await expect(section.getByLabel("Tags",{exact:true})).toHaveValue("plans");
   const status = section.getByRole("textbox", { name: "status", exact: true });

@@ -1,6 +1,6 @@
 // Owner request: select rendered letters cleanly, format the selection, and set portable text colours.
 import { test, expect, useApp, onDevices } from '../fixtures.mjs';
-import { chooseDocumentView, editorSource } from '../helpers/documents.mjs';
+import { chooseDocumentView, documentBarAction, editorSource } from '../helpers/documents.mjs';
 const app = useApp(async store => ({ project: await store.createProject({ title: 'Text selections', key: 'TS' }) }));
 const tools = page => page.getByRole('toolbar', { name: 'Format selection', exact: true });
 async function open(page, body = 'Before selected words after.\n') {
@@ -26,7 +26,7 @@ async function colour(page, value) {
 }
 onDevices(['desktop', 'ipad', 'phone'], () => test('selection formatting preserves the selected letters, colours and undo in Focus mode', { tag: '@gate' }, async ({ page, device }) => {
   const doc = await open(page);
-  await page.getByRole('button', { name: 'Focus mode', exact: true }).click();
+  await documentBarAction(page, 'Focus mode');
   await select(page, 'selected words');
   await tools(page).getByRole('button', { name: 'Bold', exact: true }).click();
   await expect.poll(() => editorSource(page)).toContain('**selected words**');

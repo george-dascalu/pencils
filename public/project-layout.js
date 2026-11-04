@@ -68,7 +68,7 @@ export function projectLayout(ctx) {
     if (!(ipad && taskViews.includes(state.view))) lowerTools();
     phoneBoard.sync();
     boardAppearance();
-    if (!narrow.matches) starBeforeTitle();
+    if (!narrow.matches || state.view === "documents") starBeforeTitle();
     // Desktop boards use the header's spare right side; touch keeps its existing toolbar.
     if (state.view === "board" && !tabBar.matches && $("#canvas")) {
       moveTo($("#view-toolbar > .board-toolbar"), el => $(".topbar .top-actions").append(el));
@@ -184,7 +184,7 @@ export function projectLayout(ctx) {
     row?.toggleAttribute("data-empty", ![...row.querySelectorAll(".toolbar > * > *")].some((el) => el.getClientRects().length));
   }
   // Every view's bookmark star sits before the title, on desktop and iPad (owner requests, 31 Oct and
-  // 1 Nov 2026); phones show no title.
+  // 1 Nov 2026); phones show a title, with the star before it, only for an open document (F0.21-87).
   function starBeforeTitle() {
     const title = $(".topbar .breadcrumb strong");
     if (title) moveTo($("#view-toolbar .bookmark-button, .board-toolbar > .bookmark-button, .document-heading > .bookmark-button"), (el) => title.before(el));
@@ -193,7 +193,7 @@ export function projectLayout(ctx) {
   // an earlier document's star goes with its heading.
   function documentStar() {
     lowerTools();
-    if (!narrow.matches) starBeforeTitle();
+    starBeforeTitle();
   }
   function boardAppearance() {
     const button = $("#expanded-board-settings"), tools = $('.board-toolbar > [data-board-menu="tools"]');

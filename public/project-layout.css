@@ -950,6 +950,11 @@ html.table-viewport-view body {
      and New buttons float as round buttons over the page, styled like the bottom bar. */
   :root .main > .topbar { background: transparent; border-bottom: 0; }
   .topbar .breadcrumb strong { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+  /* Except an open document or spreadsheet, named between the floating buttons with its star before
+     it (F0.21-87). */
+  .topbar .breadcrumb:has(> .bookmark-button) { display: flex; align-items: center; gap: 4px; }
+  .topbar .breadcrumb:has(> .bookmark-button) > .bookmark-button { margin-inline-start: auto; }
+  .main.project-main .topbar .breadcrumb:has(> .bookmark-button) > strong { position: static; width: auto; height: auto; max-width: none; clip-path: none; margin-inline-end: auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; font-size: var(--type-body); }
   .topbar :is(.mobile-menu, .settings-back, .phone-new-task > summary.icon-button) {
     width: var(--control-height); height: var(--control-height); border: 1px solid var(--line); border-radius: 50%;
     background: var(--surface); box-shadow: 0 6px 20px rgb(0 0 0 / 0.12);

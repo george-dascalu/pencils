@@ -412,7 +412,11 @@ export function projectDocuments(ctx) {
     syncFocus();
     if (!active) syncTray();
     // Keep the caret and undo history. A toolbar tap must not summon a touch keyboard.
-    if (!allowsTextAutofocus()) form.querySelector('[data-document-action="focus"]').focus({ preventScroll: true });
+    if (!allowsTextAutofocus()) {
+      // Phones hide the button outside Focus mode (F0.21-87), so the keyboard goes to ⋯, which holds it.
+      const button = form.querySelector('[data-document-action="focus"]');
+      (button.getClientRects().length ? button : form.querySelector('[data-document-action="tools"]')).focus({ preventScroll: true });
+    }
     else if (current.document_type !== 'table' && mode === 'reading') form.querySelector('.document-reading').focus({ preventScroll: true });
     else editor?.focus();
   }
@@ -1284,7 +1288,8 @@ export function projectDocuments(ctx) {
     event.preventDefault();
     try {
       if (action === "new-folder") explorer.panel(button);
-      else if (action === "properties") propertiesPanel(button);
+      // Phones open these from Document tools (F0.21-87): Properties then opens beside its ⋯.
+      else if (action === "properties") propertiesPanel(button.matches(".document-panel-item") ? form.querySelector('[data-document-action="tools"]') : button);
       else if (action === "focus") setFocus(!inFocus());
       else if (action === "width") setDocumentWidth(documentWidth === "full" ? "page" : "full");
       else if (action === "move") movePanel(button);
@@ -1314,9 +1319,9 @@ export function projectDocuments(ctx) {
         const item = (name, glyph, label, extra = "") => `<button type="button" class="document-panel-item" data-document-action="${name}" ${extra}>${icon(glyph)}${label}</button>`;
         showPanel(button, "Document tools", [
           group("Document view", MODES.map(([key, title, glyph]) => `<button type="button" class="document-panel-item" data-document-mode="${key}" aria-pressed="${mode === key}">${icon(glyph)}${title}${mode === key ? icon("check") : ""}</button>`).join("")),
-          group("Layout", `${narrow() ? "" : item("split-columns", "split-columns", "Split side by side", `aria-pressed="${splitState()?.direction === "columns"}"`) + item("split-rows", "split-rows", "Split top and bottom", `aria-pressed="${splitState()?.direction === "rows"}"`)}${item("width", "width-full", documentWidth === "full" ? "Use page width" : "Use full width", `aria-pressed="${documentWidth === "full"}"`)}${item("outline", "tree", "Document outline")}`),
+          group("Layout", `${narrow() ? item("focus", "fullscreen", "Focus mode") : item("split-columns", "split-columns", "Split side by side", `aria-pressed="${splitState()?.direction === "columns"}"`) + item("split-rows", "split-rows", "Split top and bottom", `aria-pressed="${splitState()?.direction === "rows"}"`)}${item("width", "width-full", documentWidth === "full" ? "Use page width" : "Use full width", `aria-pressed="${documentWidth === "full"}"`)}${item("outline", "tree", "Document outline")}`),
           group("Edit", `<button type="button" class="document-panel-item" data-document-format="undo">${icon("undo")}Undo</button><button type="button" class="document-panel-item" data-document-format="redo">${icon("redo")}Redo</button>${item("find", "search", "Find in document")}`),
-          group("Document", item("rename", "pencil", "Rename") + item("move", "folder", "Move to folder")),
+          group("Document", (narrow() ? item("properties", "settings", "Properties") : "") + item("rename", "pencil", "Rename") + item("move", "folder", "Move to folder")),
           group("History and links", item("versions", "clock", "Page versions") + item("links", "link", "Backlinks and mentions") + item("comments", "comment", "Comments")),
           group("Files", item("export", "download", "Export Markdown") + item("obsidian", "external", "Open in Obsidian") + item("obsidian-settings", "settings", "Obsidian settings")),
           group("Delete", `<button type="button" class="document-panel-item danger" data-document-action="confirm-delete">${icon("trash")}Delete document</button>`),

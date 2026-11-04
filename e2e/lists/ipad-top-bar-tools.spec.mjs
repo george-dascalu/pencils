@@ -56,7 +56,7 @@ onDevices(["desktop", "phone"], () => test("desktop and phones keep search, filt
 
 // Owner request, 31 October 2026 (iPad): Board, Planning and an open document put the bookmark star
 // before the title too, as the task views do; since T74 (owner request T40, 1 November 2026) desktop
-// does too. Phones show no title.
+// does too. Phones show no title, except an open document's, with its star before it (F0.21-87).
 onDevices(["ipad", "ipad-portrait", "desktop"], () => test("every view puts the star before the title", async ({ page, device }) => {
   const { project, board, doc, second } = app;
   for (const [name, path, kind] of [["list", "list", "view"], ["table", "table", "view"], ["board", `board/${board.id}`, "board"], ["calendar", "calendar", "view"], ["timeline", "timeline", "view"], ["capacity", "capacity", "view"], ["document", `documents/${doc.id}`, "doc"]]) {
@@ -92,7 +92,8 @@ onDevices(["ipad", "ipad-portrait", "desktop"], () => test("every view puts the 
   // Through a phone width and back, the star and the documents tray are each there once.
   const size = page.viewportSize();
   await page.setViewportSize({ width: 390, height: 844 });
-  await expect(page.locator(".topbar .breadcrumb .bookmark-button"), `${device}: phones keep the star in the document bar`).toHaveCount(0);
+  await expect(page.locator(".topbar .breadcrumb .bookmark-button"), `${device}: phones keep it before the title too (F0.21-87)`).toHaveAttribute("data-id", second.id);
+  await expect(page.locator(".bookmark-button")).toHaveCount(1);
   await page.setViewportSize(size);
   await expect(page.locator(".topbar .breadcrumb .bookmark-button"), `${device}: back before the title`).toHaveAttribute("data-id", second.id);
   await expect(page.locator(".bookmark-button")).toHaveCount(1);

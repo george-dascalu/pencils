@@ -2,6 +2,11 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.21.87 — 2026-11-04
+
+### Changed
+- Feature F0.21-87: On phones an open document or spreadsheet shows its title in the top bar, between the menu and New buttons, with its bookmark star before it. Properties and Focus mode move from the document's bar into Document tools (⋯), as they do on any screen less than 500px tall; in Focus mode its exit icon still shows. Desktop and iPad are otherwise unchanged.
+
 ## 0.21.86 — 2026-11-04
 
 ### Changed

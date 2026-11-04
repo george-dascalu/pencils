@@ -22,7 +22,8 @@ onDevices(["phone", "ipad", "desktop"], () => test("the document bar holds its v
   const phone = device === "phone";
   // Desktop and iPad put the star before the title in the top bar. Since 0.20.94 the formatting is always
   // on screen outside Reading view, and Reading view lives in ⋯ with the other views (T27).
-  expect(await barControls(page), device).toEqual([...(device === "phone" ? ["Bookmark"] : []), "Properties", "Focus mode", "Document tools"]);
+  // Phones put the star before the title in the top bar too, and Properties and Focus mode in ⋯ (F0.21-87).
+  expect(await barControls(page), device).toEqual(phone ? ["Document tools"] : ["Properties", "Focus mode", "Document tools"]);
   await expect(page.locator("#document-formatting"), `${device}: formatting shown`).toBeVisible();
 
   await page.locator('#document-form [data-document-action="tools"]').click();
@@ -32,9 +33,9 @@ onDevices(["phone", "ipad", "desktop"], () => test("the document bar holds its v
   expect(groups.map(([name]) => name)).toEqual(["Document view", "Layout", "Edit", "Document", "History and links", "Files", "Delete"]);
   const items = Object.fromEntries(groups);
   expect(items["Document view"]).toEqual(["Live preview", "Source", "Reading"]);
-  expect(items.Layout.slice(0, phone ? 0 : 2)).toEqual(phone ? [] : ["Split side by side", "Split top and bottom"]);
-  expect(items.Layout.slice(phone ? 0 : 2)).toEqual([expect.stringMatching(width), "Document outline"]);
-  expect(items.Document).toEqual(["Rename", "Move to folder"]);
+  expect(items.Layout.slice(0, phone ? 1 : 2)).toEqual(phone ? ["Focus mode"] : ["Split side by side", "Split top and bottom"]);
+  expect(items.Layout.slice(phone ? 1 : 2)).toEqual([expect.stringMatching(width), "Document outline"]);
+  expect(items.Document).toEqual([...(phone ? ["Properties"] : []), "Rename", "Move to folder"]);
   expect(items.Edit).toEqual(["Undo", "Redo", "Find in document"]);
   expect(items["History and links"]).toEqual(["Page versions", "Backlinks and mentions", "Comments"]);
   expect(items.Files).toEqual(["Export Markdown", "Open in Obsidian", "Obsidian settings"]);

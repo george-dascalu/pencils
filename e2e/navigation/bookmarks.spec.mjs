@@ -61,7 +61,8 @@ onDevices(["desktop", "phone"], () => test("bookmarks made from each bar come fi
   await star(page, ".task-title-row");
   await page.keyboard.press("Escape");
   await page.goto(`${app.base}/#project/${project.id}/documents/${doc.id}`);
-  await star(page, bar(".document-heading"));
+  // A document's star sits before its title on phones too (F0.21-87).
+  await star(page, ".topbar .breadcrumb");
   await page.goto(`${app.base}/#project/${project.id}/board`);
   await star(page, bar(".board-toolbar"));
 
