@@ -73,9 +73,6 @@
   box-shadow: inset 3px 0 var(--green);
   font-weight: 650;
 }
-.settings-return {
-  margin-top: 24px;
-}
 .settings-content {
   min-width: 0;
 }
@@ -377,9 +374,6 @@
   .settings-mobile-nav {
     display: flex;
     margin-top: 16px;
-  }
-  .settings-navigation .settings-return {
-    margin-top: 12px;
   }
   #settings-panel :is(.dialog-body, .settings-page-body) {
     padding: 16px;

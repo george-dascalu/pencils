@@ -2,6 +2,11 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.21.84 — 2026-11-04
+
+### Changed
+- Feature F0.21-84: Settings has a back button in the top bar, next to the menu button (round, like it, on phones), that returns to the page you had open: the board, document or view inside a project, or Home. It replaces the Back to project button at the bottom of the section list.
+
 ## 0.21.83 — 2026-11-04
 
 ### Added

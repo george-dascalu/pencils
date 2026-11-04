@@ -950,7 +950,7 @@ html.table-viewport-view body {
      and New buttons float as round buttons over the page, styled like the bottom bar. */
   :root .main > .topbar { background: transparent; border-bottom: 0; }
   .topbar .breadcrumb strong { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
-  .topbar :is(.mobile-menu, .phone-new-task > summary.icon-button) {
+  .topbar :is(.mobile-menu, .settings-back, .phone-new-task > summary.icon-button) {
     width: var(--control-height); height: var(--control-height); border: 1px solid var(--line); border-radius: 50%;
     background: var(--surface); box-shadow: 0 6px 20px rgb(0 0 0 / 0.12);
   }
