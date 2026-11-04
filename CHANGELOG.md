@@ -2,6 +2,11 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.21.85 — 2026-11-04
+
+### Added
+- Feature F0.21-85: In Search, drag Bookmarks and Commands by their handle into any order within their own list (or move one with Alt+Up/Down), and remove an item from Search with its hide button. Settings → You lists the removed items under Search, each with Bring back. Your order and removed items are saved for you on every device.
+
 ## 0.21.84 — 2026-11-04
 
 ### Changed

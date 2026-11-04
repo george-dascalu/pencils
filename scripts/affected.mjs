@@ -29,7 +29,7 @@ const AREAS = {
   lists: /^(grid(?!-merge)|table-|kanban-|view-layout|project-filters|drag-feedback|task-row-editor|task-order-model|task-reorder|task-group-order|task-colors|card-key)/,
   planning: /^(calendar|capacity|planning|project-filters|timeline-|task-timeline|schedule-|teams)/,
   settings: /^(hotkey|history-pages|project-create|project-settings|project-tags|project-records|debug-log|personal-settings|capture-settings|style-settings|project-sources|source-model|project-automations|workflow-|teams|recovery-ui|backup-limits)/,
-  navigation: /^(hotkey|boot-progress|help|topbar-title|bookmarks|bottom-bar|roadmap)/,
+  navigation: /^(hotkey|boot-progress|help|topbar-title|bookmarks|bottom-bar|roadmap|search-items)/,
   home: /^home/,
   ui: /^(quiet-scrollbars|toolbar-scroll|assignee-name|card-key|color-|select-menu|date-picker|confirm-popover|format-date|in-place-editing)/,
 };

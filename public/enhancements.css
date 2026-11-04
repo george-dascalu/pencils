@@ -363,6 +363,20 @@ summary:focus-visible,
   color: var(--ink);
   padding: 0 1px;
 }
+/* Bookmarks and Commands rows (search-items.js): the result, then Remove from Search and a drag
+   handle, which a mouse sees on hover or focus and touch screens always. */
+.search-item { display: flex; align-items: center; border-bottom: 1px solid var(--line); }
+.search-item > .search-result { flex: 1 1 auto; min-width: 0; border-bottom: 0; }
+.search-item > .icon-button { flex: none; color: var(--muted); }
+.search-item-handle { cursor: grab; touch-action: none; }
+.search-item-dragging { position: relative; z-index: 1; background: var(--surface-soft); border-radius: 12px; box-shadow: 0 4px 12px rgb(0 0 0 / 0.16); }
+.search-item-dragging .search-item-handle { cursor: grabbing; }
+@media (hover: hover) and (pointer: fine) {
+  .search-item:not(:hover, :focus-within, .search-item-dragging) > .icon-button { opacity: 0; }
+}
+@media (max-width: 600px) { .search-item { border-bottom: 0; } }
+.search-removed-list { list-style: none; margin: 0; padding: 0; }
+.search-removed-list > li { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-height: var(--control-height); border-bottom: 1px solid var(--line); }
 /* The search window has no title: the field sits at its top, its ✕ clearing the text or closing
    the window, and the window keeps one size while results come and go (phones use a sheet). */
 .search-dialog-field { position: relative; }

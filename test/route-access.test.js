@@ -15,7 +15,7 @@ const PUBLIC = new Set(["/api/health", "/api/session", "/api/miro-callback", "/a
 const ADMIN = new Set(["/api/accounts", "/api/backups", "/api/backups/:backup", "/api/backups/:backup/:action", "/api/backups/upload", "/api/trash"]);
 // Signed-in routes that serve each person's own data or filter by access, so a member of no
 // organisation still gets an answer (checked for private content below).
-const OWN = new Set(["/api/bar", "/api/hotkeys", "/api/bookmarks", "/api/home", "/api/home/embed", "/api/visits", "/api/personal", "/api/overview", "/api/search", "/api/changes", "/api/events", "/api/organisations", "/api/projects", "/api/capture-tokens", "/api/capture-tokens/:project", "/api/diagnostics", "/api/demo", "/api/history"]);
+const OWN = new Set(["/api/bar", "/api/hotkeys", "/api/search-items", "/api/bookmarks", "/api/home", "/api/home/embed", "/api/visits", "/api/personal", "/api/overview", "/api/search", "/api/changes", "/api/events", "/api/organisations", "/api/projects", "/api/capture-tokens", "/api/capture-tokens/:project", "/api/diagnostics", "/api/demo", "/api/history"]);
 
 async function registered() {
   const source = await fs.readFile(new URL("../server/http/application.ts", import.meta.url), "utf8");

@@ -84,7 +84,7 @@ test.describe("phone width", () => {
     await open(page);
     await page.keyboard.press("Control+k");
     await page.locator("#global-search-input").fill("open table");
-    await expect(page.locator('#command-results button')).toHaveCount(1);
+    await expect(page.locator('#command-results .search-result')).toHaveCount(1);
     await page.getByRole("button", { name: "Open Table view", exact: true }).click();
     await expect(page.locator(".spreadsheet")).toHaveCount(1);
     // Since 0.18.26 phone Table puts the title first (column 0) and the ID next to it, so

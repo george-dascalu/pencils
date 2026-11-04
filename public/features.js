@@ -16,6 +16,7 @@ import { localDate } from "./task-visibility.js";
 import { draftAutosave } from "./draft-autosave.js";
 import { installHotkeys } from "./hotkeys.js";
 import { installBottomBar } from "./bottom-bar.js";
+import { installSearchItems } from "./search-items.js";
 import { taskAutosave } from "./task-autosave.js";
 import { boardComments } from "./board-comments.js";
 import { workflowEditor } from "./workflow-editor.js";
@@ -93,6 +94,7 @@ export function installFeatures(ctx) {
     canvasFeature = deferredController(() => import("./canvas.js").then(m => m.canvasFeatures({ ...ctx, layout, openBoard: drawings.enter })), { visible: () => [], edges: "", busy: false, click: false }),
     canvas = canvasFeature.controller,
     bottomBar = (ctx.bottomBar = installBottomBar({ ...ctx, commands })),
+    searchItems = (ctx.searchItems = installSearchItems({ ...ctx, commands, changed: () => void searchResults($("#global-search-input")?.value || "") })),
     hotkeys = (ctx.hotkeys = installHotkeys({ ...ctx, commands, run: binding => click(binding.type === "command" ? "command-run" : "search-open", { dataset: binding.type === "command" ? { command: binding.id } : binding }) })),
     personal = personalSettings(ctx);
   taskReorder(ctx, sheet);
@@ -533,6 +535,7 @@ export function installFeatures(ctx) {
     sync.load(state.session.user?.username || "shared");
     ctx.bookmarks.load();
     bottomBar.load();
+    searchItems.load();
     hotkeys.load().catch(error => toast(error.message, true));
     return true;
   }
@@ -668,6 +671,7 @@ export function installFeatures(ctx) {
       viewport.addEventListener("scroll", fit, { signal: searchViewport.signal });
     }
     bookmarked = ctx.bookmarks.list().catch(() => []);
+    searchItems.load(); // fresh, in case another device changed the order
     clearTimeout(searchTimer); // a search typed in the last dialog doesn't fill this one
     searchResults("");
   }
@@ -726,20 +730,23 @@ export function installFeatures(ctx) {
   }
   async function searchResults(query) {
     if (!$("#command-results")) return; // closed while the search waited
+    const sequence=++searchSequence;
+    await searchItems.loaded();
+    if (sequence !== searchSequence || !$("#command-results")) return;
     const words = query.toLowerCase().trim().split(/\s+/);
     const found = (text) => words.every((word) => text.toLowerCase().includes(word));
-    const matches = commands().filter((command) => found(command.title));
+    // Bookmarks and Commands in the person's own order, without the ones they removed (search-items.js).
+    const matches = searchItems.shown("commands", commands()).filter((command) => found(command.title));
     $("#command-results").innerHTML =
-      `<p class="field-hint">Commands</p>${matches.map((command) => `<button class="search-result command-result" data-feature="command-run" data-command="${esc(command.id)}">${esc(command.title)}</button>`).join("") || "<p>No matching commands.</p>"}`;
-    const sequence=++searchSequence;
+      `<p class="field-hint">Commands</p>${matches.length ? searchItems.list("commands", matches.map((command) => searchItems.row(`<button class="search-result command-result" data-feature="command-run" data-command="${esc(command.id)}">${esc(command.title)}</button>`, command, command.title)).join("")) : "<p>No matching commands.</p>"}`;
     // Bookmarks first, in their own list as soon as they arrive: all of them before typing, the
     // ones matching the query's plain words as you type (quotes dropped; -word, #tag and in: are
     // left to the server).
     const plain = query.toLowerCase().replace(/"/g, " ").split(/\s+/).filter((word) => word && !/^(-|#|in:)/.test(word));
     void bookmarked.then((all) => {
       if (sequence !== searchSequence || !$("#bookmark-results")) return;
-      const marks = all.filter((b) => plain.every((word) => `${b.key || ""} ${resultTitle(b)} ${b.project_title}`.toLowerCase().includes(word)));
-      $("#bookmark-results").innerHTML = marks.length ? `<p class="field-hint">Bookmarks</p>${marks.map(resultHTML).join("")}` : "";
+      const marks = searchItems.shown("bookmarks", all).filter((b) => plain.every((word) => `${b.key || ""} ${resultTitle(b)} ${b.project_title}`.toLowerCase().includes(word)));
+      $("#bookmark-results").innerHTML = marks.length ? `<p class="field-hint">Bookmarks</p>${searchItems.list("bookmarks", marks.map((b) => searchItems.row(resultHTML(b), b, resultTitle(b))).join(""))}` : "";
     });
     if (!query.trim()) { $("#global-search-results").innerHTML = ""; return; }
     // One ranked list from the server: cards, documents and boards in every project you can open.
@@ -751,17 +758,19 @@ export function installFeatures(ctx) {
   }
   document.addEventListener("keydown", (event) => {
     if (
+      event.defaultPrevented || // a row moved with Alt+Up/Down (search-items.js)
       state.dialog !== "search" ||
       !["ArrowDown", "ArrowUp", "Enter"].includes(event.key)
     )
       return;
     const results = [
       ...document.querySelectorAll(
-        "#bookmark-results button, #command-results button, #global-search-results button",
+        "#bookmark-results .search-result, #command-results .search-result, #global-search-results button",
       ),
     ];
     if (!results.length) return;
-    const index = results.indexOf(document.activeElement);
+    // From a Bookmark's or Command's own tools, its result (search-items.js).
+    const index = results.indexOf(document.activeElement?.closest?.(".search-item")?.querySelector(".search-result") || document.activeElement);
     // Alt+Enter: a [[link]] to the focused (or first) result at the open document's caret.
     if (event.key === "Enter" && event.altKey) {
       const chosen = document.activeElement?.closest?.('[data-feature="search-open"]') || $('#global-search-results [data-feature="search-open"]');

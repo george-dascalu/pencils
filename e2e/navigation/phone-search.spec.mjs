@@ -89,7 +89,7 @@ onDevices(["desktop"], () => test("dragging from the field to outside keeps Sear
   await expect(sheet(page)).toHaveCount(1);
   await input.focus();
   await page.keyboard.press("ArrowUp");
-  const results = sheet(page).locator("#bookmark-results button, #command-results button, #global-search-results button");
+  const results = sheet(page).locator("#bookmark-results .search-result, #command-results .search-result, #global-search-results button");
   await expect(results.last(), "ArrowUp from the field goes to the last result").toBeFocused();
   await page.keyboard.press("Escape");
   await expect(sheet(page)).toHaveCount(0);

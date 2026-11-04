@@ -24,6 +24,7 @@ export interface Services {
   bookmarks: LegacyService;
   bar: LegacyService;
   hotkeys: LegacyService;
+  searchItems: LegacyService;
   home: LegacyService;
   visits: LegacyService;
   embed: Record<string, unknown>;

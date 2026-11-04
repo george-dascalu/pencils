@@ -23,6 +23,7 @@ import { Bookmarks } from "../bookmarks.js";
 import { Hotkeys } from "../hotkeys.js";
 import { hotkeysRoutes } from "./routes/hotkeys.js";
 import { Bar } from "../bar.js";
+import { SearchItems } from "../search-items.js";
 import { Problem } from "../problem.js";
 import { staticAssets } from "../static-assets.js";
 import { BACKUP_BYTES } from "../../public/backup-limits.js";
@@ -49,6 +50,7 @@ import { homeRoutes } from "./routes/home.js";
 import { Home } from "../home.js";
 import { Visits } from "../visits.js";
 import { barRoutes } from "./routes/bar.js";
+import { searchItemsRoutes } from "./routes/search-items.js";
 
 interface ServerOptions {
   auth?: LegacyService;
@@ -116,6 +118,7 @@ export function createServer(
     bookmarks,
     bar: new Bar(store, bookmarks),
     hotkeys: new Hotkeys(store, bookmarks),
+    searchItems: new SearchItems(store, bookmarks),
     home: new Home(store),
     visits: new Visits(store, bookmarks),
     embed: (options as { home?: Record<string, unknown> }).home || {},
@@ -335,6 +338,7 @@ export function createServer(
   route(["/api/home", "/api/home/embed"], homeRoutes);
   route(["/api/visits"], homeRoutes, false, 64e3);
   route(["/api/bar"], barRoutes);
+  route(["/api/search-items"], searchItemsRoutes);
   route(["/api/hotkeys"], hotkeysRoutes);
   route(
     ["/api/projects", "/api/projects/:project", "/api/demo", "/api/projects/:project/trash", "/api/projects/:project/audit"],
