@@ -7,6 +7,7 @@ import { agendaQuickRange } from "./calendar-model.js";
 import { timelineSelection } from "./timeline-select.js";
 import { pageOf, localDate } from "./task-visibility.js";
 import { cardKeyNumber } from "./card-key.js";
+import { relationshipChanges } from "./task-relationship-model.js";
 import {
   DAY,
   dateKey,
@@ -60,6 +61,9 @@ export function timelineHTML(
   const width = range ? Math.max(unit, axis.end(max)) : Math.max(700, axis.end(max) + 4 * unit);
   const step = scale === "day" ? 1 : showWeekends ? 7 : 5;
   const x = axis.x;
+  // Dots at a bar's ends drag an arrow to another card (F0.21-90); pointer only, as the card's
+  // Dependencies section does the same from the keyboard.
+  const linkDots = '<span class="timeline-link" data-link-end="start" aria-hidden="true" title="Drag to a card this one waits for"></span><span class="timeline-link" data-link-end="due" aria-hidden="true" title="Drag to a card that waits for this one"></span>';
   const taskLabel = (t, unplanned = false) =>
     `<div class="timeline-task-label"><button class="timeline-task-open" data-action="task-open" data-id="${esc(t.id)}" title="${esc(t.key || "")} ${esc(t.title)}" aria-label="${esc(t.key || "")} ${esc(t.title)}" ${unplanned ? `draggable="${!sourceReadOnly(t,"due")}" data-unscheduled="${esc(t.id)}"` : ""}>${taskColorDot(ctx.state, "status", t.status)}<span class="timeline-key-full">${esc(t.key || "")}</span><span class="timeline-key-number">${esc(t.key ? cardKeyNumber(t.key) : t.title)}</span> <span class="timeline-title">${esc(t.title)}</span></button><button type="button" class="icon-button timeline-date-action ${unplanned ? "timeline-schedule" : ""}" data-task-dates="${esc(t.id)}" aria-label="${unplanned ? "Set" : "Edit"} dates for ${esc(t.title)}" title="${unplanned ? "Set" : "Edit"} dates" aria-haspopup="dialog" aria-expanded="false">${ctx.icon("calendar")}</button></div>`;
   const pager =
@@ -73,12 +77,14 @@ export function timelineHTML(
     <div class="timeline-scroll" tabindex="0" role="region" aria-label="Project timeline"><div class="timeline-sheet" style="width:${tasks.length ? `calc(${width}px + var(--timeline-label))` : "100%"}">
       <div class="timeline-header"><span class="timeline-task-label"><span class="timeline-head-full">Card</span><span class="timeline-head-number">#</span></span><div class="timeline-ruler"></div></div>
       <svg class="timeline-dependencies" height="${dated.length * 44}" style="left:var(--timeline-label);top:60px" role="img" aria-label="Card dependencies"></svg>
-      ${dated.map((t) => `<div class="timeline-row" data-timeline-row="${esc(t.id)}">${taskLabel(t)}<div class="timeline-track" data-schedule-target tabindex="0" role="group" aria-label="Choose start and end dates for ${esc(t.title)}" title="Choose a start, then an end" ${sourceReadOnly(t,"due") ? 'aria-disabled="true"' : ""}><div tabindex="0" role="slider" aria-label="Schedule ${esc(t.title)}" aria-valuetext="${esc(t.start || t.due)} to ${esc(t.due || t.start)}" class="timeline-bar ${t.milestone ? "milestone" : ""} ${!showWeekends && axis.end(t.due || t.start) === x(t.start || t.due) ? "weekend-only" : ""}" data-timeline-task="${esc(t.id)}" title="${esc(t.start || t.due)} to ${esc(t.due || t.start)} · Select to edit dates · Alt+arrows moves by a ${showWeekends ? "day" : "weekday"}" data-task-color="status" style="--task-field-color:${taskFieldColor(ctx.state, "status", t.status)};left:${x(t.start || t.due)}px;width:${Math.max(12, axis.end(t.due || t.start) - x(t.start || t.due))}px"><span data-date-end="start" role="separator" aria-label="Resize start date"></span>${esc(t.title)}<span data-date-end="due" role="separator" aria-label="Resize due date"></span></div><span class="timeline-outside" hidden>Outside range</span><button class="milestone-toggle" data-milestone="${esc(t.id)}" aria-pressed="${!!t.milestone}" title="Toggle milestone">◇</button></div></div>`).join("")}
+      ${dated.map((t) => `<div class="timeline-row" data-timeline-row="${esc(t.id)}">${taskLabel(t)}<div class="timeline-track" data-schedule-target tabindex="0" role="group" aria-label="Choose start and end dates for ${esc(t.title)}" title="Choose a start, then an end" ${sourceReadOnly(t,"due") ? 'aria-disabled="true"' : ""}><div tabindex="0" role="slider" aria-label="Schedule ${esc(t.title)}" aria-valuetext="${esc(t.start || t.due)} to ${esc(t.due || t.start)}" class="timeline-bar ${t.milestone ? "milestone" : ""} ${!showWeekends && axis.end(t.due || t.start) === x(t.start || t.due) ? "weekend-only" : ""} ${linkEdges(x(t.start || t.due), Math.max(12, axis.end(t.due || t.start) - x(t.start || t.due)), width)}" data-timeline-task="${esc(t.id)}" title="${esc(t.start || t.due)} to ${esc(t.due || t.start)} · Select to edit dates · Alt+arrows moves by a ${showWeekends ? "day" : "weekday"}" data-task-color="status" style="--task-field-color:${taskFieldColor(ctx.state, "status", t.status)};left:${x(t.start || t.due)}px;width:${Math.max(12, axis.end(t.due || t.start) - x(t.start || t.due))}px"><span data-date-end="start" role="separator" aria-label="Resize start date"></span><span class="timeline-bar-text">${esc(t.title)}</span><span data-date-end="due" role="separator" aria-label="Resize due date"></span>${linkDots}</div><span class="timeline-outside" hidden>Outside range</span><button class="milestone-toggle" data-milestone="${esc(t.id)}" aria-pressed="${!!t.milestone}" title="Toggle milestone">◇</button></div></div>`).join("")}
       ${undated.length ? `<div class="timeline-section-label"><span>Unscheduled (${allUndated.length})</span></div>${undated.map((t) => `<div class="timeline-row timeline-unplanned" data-timeline-row="${esc(t.id)}">${taskLabel(t, true)}<div class="timeline-track" data-schedule-target tabindex="0" role="group" aria-label="Choose start and end dates for ${esc(t.title)}" title="Choose a start, then an end" ${sourceReadOnly(t,"due") ? 'aria-disabled="true"' : ""}><span class="timeline-schedule-hint" aria-hidden="true"><span class="timeline-hint-card">${esc(t.key || "")} ${esc(t.title)} · </span>Set start, then end</span></div></div>`).join("")}` : ""}
       ${!tasks.length ? `<div class="empty">${ctx.icon("leaf")}<h2>${ctx.state?.tasks?.length ? "No matching cards" : "No cards yet"}</h2><button class="button soft" data-action="${ctx.state?.tasks?.length ? "filters-reset" : "task-new"}">${ctx.state?.tasks?.length ? "Clear filters" : "Add a card"}</button></div>` : ""}
     </div></div></section>`;
   return scope === "project" ? { controls: head, html: section("") } : section(head);
 }
+// A link dot that would fall past the timeline's edge is left out (board-upgrades.css).
+const linkEdges = (left, width, track) => `${left < 24 ? "link-edge-start" : ""} ${track - left - width < 24 ? "link-edge-due" : ""}`;
 export function timelineInteractions(ctx, onOption) {
   const { state, patchTask, task, renderView, toast } = ctx;
   const dateEditor = taskDateEditor(ctx);
@@ -157,6 +163,8 @@ export function timelineInteractions(ctx, onOption) {
           bar.style.width = `${box.width}px`;
           bar.classList.toggle("clipped-start", box.clippedStart);
           bar.classList.toggle("clipped-end", box.clippedEnd);
+          bar.classList.toggle("link-edge-start", box.left < 24);
+          bar.classList.toggle("link-edge-due", ruler.clientWidth - box.left - box.width < 24);
           const outside = bar.parentElement.querySelector(".timeline-outside");
           outside.hidden = !box.outside;
           outside.textContent = days ? "Outside range" : "No weekdays in range";
@@ -220,8 +228,64 @@ export function timelineInteractions(ctx, onOption) {
   }
 
   let drag = null,
+    link = null,
     unscheduled = null,
     suppress = false;
+  // Dragging a link dot (F0.21-90): a dashed arrow follows the pointer, and the card under it
+  // waits for this one (from the end dot) or this one waits for it (from the start dot).
+  function linkPoint(svg, x, y) {
+    const r = svg.getBoundingClientRect(), z = r.width / svg.clientWidth || 1;
+    return [(x - r.left) / z, (y - r.top) / z];
+  }
+  function startLink(e, dot) {
+    if (link) return;
+    const root = dot.closest("[data-timeline]"), svg = root.querySelector(".timeline-dependencies"), bar = dot.closest("[data-timeline-task]");
+    const box = bar.getBoundingClientRect(), path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+    path.setAttribute("class", "timeline-link-preview");
+    svg.append(path);
+    dateEditor.close();
+    link = { pointer: e.pointerId, root, svg, path, from: bar.dataset.timelineTask, end: dot.dataset.linkEnd, target: null,
+      start: linkPoint(svg, dot.dataset.linkEnd === "due" ? box.right : box.left, box.top + box.height / 2) };
+    root.dataset.linking = "";
+    state.toolDragging = true;
+    root.setPointerCapture(e.pointerId);
+    moveLink(e);
+  }
+  function moveLink(e) {
+    // A re-render replaced the timeline: drop the arrow rather than link from a stale view.
+    if (!link.root.isConnected) return void endLink(true);
+    if (link.cancelled) return;
+    const [x, y] = linkPoint(link.svg, e.clientX, e.clientY), [sx, sy] = link.start;
+    link.path.setAttribute("d", `M${sx},${sy} L${x},${y}`);
+    const row = document.elementFromPoint(e.clientX, e.clientY)?.closest("[data-timeline-row]");
+    const id = row && link.root.contains(row) && row.dataset.timelineRow !== link.from ? row.dataset.timelineRow : null;
+    if (id === link.target) return;
+    link.root.querySelector("[data-link-target]")?.removeAttribute("data-link-target");
+    row?.toggleAttribute("data-link-target", !!id);
+    link.target = id;
+  }
+  function clearLink(l) {
+    l.path.remove();
+    delete l.root.dataset.linking;
+    l.root.querySelector("[data-link-target]")?.removeAttribute("data-link-target");
+  }
+  async function endLink(cancel) {
+    const l = link;
+    link = null;
+    state.toolDragging = false;
+    clearLink(l);
+    if (l.root.hasPointerCapture(l.pointer)) l.root.releasePointerCapture(l.pointer);
+    suppress = true;
+    setTimeout(() => (suppress = false), 0);
+    if (cancel || l.cancelled || !l.target) return;
+    try {
+      const [change] = relationshipChanges(state.tasks, state.config, l.from, l.end === "due" ? "blocks" : "blocked-by", l.target);
+      const next = change?.changes.dependencies;
+      if (next && next.length !== (task(change.id)?.dependencies || []).length) await patchTask(change.id, change.changes);
+    } catch (err) {
+      toast(err.message, true);
+    }
+  }
   const stop = (e) => {
     e.preventDefault();
     e.stopImmediatePropagation();
@@ -229,6 +293,12 @@ export function timelineInteractions(ctx, onOption) {
   document.addEventListener(
     "pointerdown",
     (e) => {
+      const dot = e.target.closest("[data-link-end]");
+      if (dot && e.button === 0) {
+        stop(e);
+        startLink(e, dot);
+        return;
+      }
       const el = e.target.closest("[data-timeline-task]");
       if (!el || e.button !== 0) return;
       stop(e);
@@ -265,6 +335,11 @@ export function timelineInteractions(ctx, onOption) {
   document.addEventListener(
     "pointermove",
     (e) => {
+      if (link && e.pointerId === link.pointer) {
+        stop(e);
+        moveLink(e);
+        return;
+      }
       if (!drag || e.pointerId !== drag.pointer) return;
       stop(e);
       const d = drag,
@@ -289,7 +364,7 @@ export function timelineInteractions(ctx, onOption) {
         if (d.end === "start") d.next.start = d.next.due;
         else d.next.due = d.next.start;
       }
-      d.el.textContent = `${d.next.start} → ${d.next.due}`;
+      d.el.querySelector(".timeline-bar-text").textContent = `${d.next.start} → ${d.next.due}`;
       const bounds = timelineBarBounds(d.axis, d.next.start, d.next.due, d.width, d.range);
       d.el.style.left = `${bounds.left}px`;
       d.el.style.width = `${bounds.width}px`;
@@ -298,6 +373,10 @@ export function timelineInteractions(ctx, onOption) {
     true,
   );
   async function finish(e, cancel = false) {
+    if (link && (e?.pointerId == null || e.pointerId === link.pointer)) {
+      e?.stopImmediatePropagation();
+      return endLink(cancel);
+    }
     if (!drag || (e?.pointerId != null && e.pointerId !== drag.pointer)) return;
     e?.stopImmediatePropagation();
     const d = drag;
@@ -316,6 +395,20 @@ export function timelineInteractions(ctx, onOption) {
       toast(err.message, true);
     }
   }
+  // A mouse near a bar's row shows its link dots; touch never does (see board-upgrades.css).
+  let nearBar = null;
+  const showNear = (bar) => {
+    if (bar === nearBar) return;
+    nearBar?.removeAttribute("data-near");
+    bar?.setAttribute("data-near", "");
+    nearBar = bar;
+  };
+  document.addEventListener("pointermove", (e) => {
+    if (e.pointerType !== "mouse" || drag || link) return;
+    const bar = e.target.closest?.("[data-timeline-row]")?.querySelector("[data-timeline-task]:not([hidden])"), r = bar?.getBoundingClientRect();
+    showNear(r && e.clientX > r.left - 32 && e.clientX < r.right + 32 ? bar : null);
+  }, { passive: true });
+  document.documentElement.addEventListener("mouseleave", () => showNear(null));
   document.addEventListener("pointerup", (e) => finish(e), true);
   document.addEventListener("pointercancel", (e) => finish(e, true), true);
   window.addEventListener("blur", () => finish(null, true));
@@ -325,6 +418,12 @@ export function timelineInteractions(ctx, onOption) {
       if (drag && e.key === "Escape") {
         stop(e);
         finish(null, true);
+      }
+      // Escape drops the arrow; the pointer still ends the drag, so its click does nothing.
+      if (link && e.key === "Escape") {
+        stop(e);
+        clearLink(link);
+        link.cancelled = true;
       }
       const el = e.target.closest("[data-timeline-task]");
       if (el && ["Enter", " "].includes(e.key)) {

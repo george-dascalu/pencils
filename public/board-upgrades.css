@@ -329,6 +329,49 @@
 }
 .timeline-bar.clipped-start [data-date-end="start"],
 .timeline-bar.clipped-end [data-date-end="due"] { display: none; }
+/* Resize grips (F0.21-90) show on hover or focus, and always on touch screens. Link dots show when
+   a mouse comes near the bar (data-near, task-timeline.js) and are hidden otherwise, so a finger's
+   tap beside a bar never lands on one. */
+.timeline-bar-text { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.timeline-bar [data-date-end]::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 3px;
+  height: 12px;
+  translate: -50% -50%;
+  border-inline: 1px solid var(--task-field-color, currentColor);
+  opacity: 0;
+}
+.timeline-link { position: absolute; top: 50%; z-index: 1; width: 24px; height: 28px; translate: 0 -50%; cursor: crosshair; touch-action: none; visibility: hidden; }
+.timeline-link[data-link-end="start"] { right: 100%; }
+.timeline-link[data-link-end="due"] { left: 100%; }
+/* A dot that would fall past the timeline's edge stays hidden; the other card's dot links them. */
+.timeline-bar.link-edge-start .timeline-link[data-link-end="start"],
+.timeline-bar.link-edge-due .timeline-link[data-link-end="due"] { display: none; }
+.timeline-link::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  box-sizing: border-box;
+  width: 10px;
+  height: 10px;
+  translate: 0 -50%;
+  border: 2px solid var(--task-field-color, var(--green));
+  border-radius: 50%;
+  background: var(--surface);
+}
+.timeline-link[data-link-end="start"]::after { right: 3px; }
+.timeline-link[data-link-end="due"]::after { left: 3px; }
+.timeline-bar:is(:hover, :focus-visible) [data-date-end]::after { opacity: 0.7; }
+.timeline-bar[data-near] .timeline-link { visibility: visible; }
+@media (pointer: coarse) {
+  .timeline-bar [data-date-end]::after { opacity: 0.7; }
+}
+.task-timeline[data-linking] .timeline-bar { cursor: crosshair; }
+.timeline-row[data-link-target] .timeline-track { box-shadow: inset 0 0 0 2px var(--green); }
+.timeline-link-preview { stroke-dasharray: 4 3; }
 .timeline-bar.clipped-start { border-left: 2px dashed var(--surface); }
 .timeline-bar.clipped-end { border-right: 2px dashed var(--surface); }
 .timeline-outside { display: inline-block; margin: 12px; color: var(--muted); font-size: 12px; pointer-events: none; }
@@ -366,7 +409,8 @@
   cursor: grab;
   touch-action: none;
   padding: 4px 12px;
-  overflow: hidden;
+  /* The title clips itself (.timeline-bar-text), so the link dots can sit past the ends. */
+  overflow: visible;
   white-space: nowrap;
   font-size: 11px;
 }
@@ -375,7 +419,6 @@
   top: 0;
   bottom: 0;
   width: 9px;
-  background: #ffffff33;
   cursor: ew-resize;
 }
 .timeline-bar [data-date-end="start"] {
@@ -394,6 +437,9 @@
   stroke: currentColor;
   stroke-width: 1.5;
   width: calc(100% - var(--timeline-label));
+  /* Down to the last row (below the 60px header), so an arrow being dragged reaches unscheduled
+     cards too; a replaced element needs a height, not top and bottom. */
+  height: calc(100% - 60px);
 }
 .timeline-bar.milestone {
   border: 2px solid var(--accent);

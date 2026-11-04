@@ -2,6 +2,12 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.21.90 — 2026-11-04
+
+### Added
+- Feature F0.21-90: Timeline bars show grips at both ends when you point at them, and always on touch screens; drag one to change the start or end date.
+- Feature F0.21-90: When the mouse comes close to a Timeline bar, a dot appears at each end. Drag the end dot onto another card to make that card wait for this one, or the start dot to make this card wait for it. Links that would make a loop are refused, and Escape cancels.
+
 ## 0.21.89 — 2026-11-04
 
 ### Changed
