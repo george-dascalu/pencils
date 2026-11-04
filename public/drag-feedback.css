@@ -48,6 +48,12 @@
   overflow: hidden;
   pointer-events: none;
 }
+/* The copy of an item under the pointer while dragging looks the same in every view: the item itself
+   on the raised surface with the popover shadow, a little see-through, and fainter where it can't
+   drop. Each view adds its own position and size. */
+/* The doubled class and body outrank a view's own card styling (such as the Calendar's task colours). */
+body .drag-ghost.drag-ghost { background: var(--surface); color: var(--ink); box-shadow: var(--shadow-popover); opacity: .92; pointer-events: none; }
+body .drag-ghost.drag-ghost.invalid { opacity: .5; }
 /* The drag preview is a plain, opaque copy of the card with its own light border: Safari draws
    drag images of transformed elements wrongly (WebKit bug 246734), which showed as black boxes on
    iPad, and a dark border read as a dark frame on iPhone. */
@@ -56,14 +62,11 @@
   top: 0;
   left: 0;
   z-index: 1000;
-  pointer-events: none;
-  box-shadow: none;
-  background: var(--surface);
-  color: var(--ink);
 }
+/* The native drag image of a mouse drag has no shadow or see-through, which Safari paints black. */
+body .drag-ghost.kanban-drag-image:not(.kanban-touch-lift) { box-shadow: none; opacity: 1; }
 /* A card lifted by touch (a long press) is raised a little and follows the finger (kanban-drag.js). */
 .kanban-drag-image.kanban-touch-lift {
-  box-shadow: var(--shadow-popover);
   scale: 1.03;
 }
 /* The long press lifts the card, so it brings up no callout or text selection, nor selects the

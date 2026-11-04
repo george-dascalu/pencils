@@ -316,7 +316,7 @@ export function taskRelationshipsEditor(ctx, form, { flush, changed }) {
         );
       if (!active()) return;
       if (button.dataset.relationshipOpen) {
-        taskDialog(button.dataset.relationshipOpen);
+        taskDialog(button.dataset.relationshipOpen, {}, "follow");
         return;
       }
       const patches = relationshipChanges(

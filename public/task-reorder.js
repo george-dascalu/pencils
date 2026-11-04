@@ -215,8 +215,8 @@ export function taskReorder(ctx, tableTools) {
     // shows the title.
     if (state.view === "table") {
       d.ghost = document.createElement("div");
-      d.ghost.className = "task-reorder-ghost";
-      d.ghost.textContent = task(d.id)?.title || "Card";
+      d.ghost.className = "task-reorder-ghost drag-ghost";
+      d.ghost.textContent = [task(d.id)?.key, task(d.id)?.title || "Card"].filter(Boolean).join(" ");
     } else {
       const r = sourceBox;
       d.ghost = d.row.cloneNode(true);
@@ -225,7 +225,7 @@ export function taskReorder(ctx, tableTools) {
       for (const el of d.ghost.querySelectorAll("[id], [data-action], [data-id], [data-row-field], [data-row-dates], [data-task-reorder]"))
         for (const name of ["id", "data-action", "data-id", "data-row-field", "data-row-dates", "data-task-reorder"]) el.removeAttribute(name);
       d.ghost.inert = true;
-      d.ghost.classList.add("task-reorder-ghost", "task-reorder-lifted");
+      d.ghost.classList.add("task-reorder-ghost", "task-reorder-lifted", "drag-ghost");
       Object.assign(d.ghost.style, { left: `${r.left}px`, width: `${r.width}px` });
       d.grab = d.startY - r.top;
     }

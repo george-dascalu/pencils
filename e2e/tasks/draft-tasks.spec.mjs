@@ -115,7 +115,7 @@ test("the draft editor autosaves while focused, keeps back a blank title and wai
   savedDraft = await node();
 });
 
-test("a draft card leads with its type icon and Draft badge, then Finalise, collapse, Comments and Edit", { tag: "@gate" }, async ({ page }) => {
+test("a draft card leads with its type icon and Draft badge, then Finalise, Comments and Edit, with collapse at the bottom", { tag: "@gate" }, async ({ page }) => {
   await openBoard(page);
   // Card type, ID, ... order since 0.19.9; the type tooltip marks the draft.
   await expect(card(page).locator(".canvas-task-type")).toHaveAttribute("aria-label", "Task");
@@ -124,7 +124,6 @@ test("a draft card leads with its type icon and Draft badge, then Finalise, coll
   // Since 0.16.9 the description collapse/expand button sits before Comments.
   expect(await card(page).locator(".live-card-actions button").evaluateAll((buttons) => buttons.map((button) => button.dataset.pro)), "Finalise leads the card header, then collapse and Comments").toEqual([
     "convert",
-    "task-collapse",
     "comments",
     "draft-edit",
   ]);

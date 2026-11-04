@@ -49,24 +49,19 @@ body:is(.task-reordering, .task-group-reordering), body:is(.task-reordering, .ta
   z-index: 10002;
   max-width: min(300px, calc(100vw - 32px));
   padding: 10px 14px;
-  border: 1px solid var(--green);
+  border: 1px solid var(--line);
   border-radius: 8px;
-  background: var(--surface);
-  color: var(--ink);
-  box-shadow: var(--shadow-popover);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  pointer-events: none;
 }
 /* List and Tree rows lift as a slightly see-through copy with a shadow, under the insertion line;
    a drop highlights the moved row. */
 .task-reorder-ghost.task-reorder-lifted {
   max-width: none; white-space: normal; overflow: visible;
-  border-color: var(--line); opacity: .92; animation: task-reorder-lift 120ms ease-out;
+  animation: task-reorder-lift 120ms ease-out;
 }
 .task-reorder-lifted .task-reorder-handle > .icon { opacity: 1; }
-.task-reorder-ghost.invalid { opacity: .5; }
 @keyframes task-reorder-lift { from { box-shadow: none; opacity: 1; } }
 .task-reorder-moved { animation: task-reorder-moved 1.2s ease-out; }
 @keyframes task-reorder-moved { from { background-color: color-mix(in srgb, var(--green) 18%, var(--surface)); } }
@@ -531,7 +526,7 @@ body:is(.task-reordering, .task-group-reordering), body:is(.task-reordering, .ta
 .board-node.task .live-card-state > .field-box {
   overflow: visible;
   display: grid;
-  grid-template-columns: clamp(var(--card-control-size), calc(30cqw - 60px), 120px) minmax(0, 1fr) calc(var(--card-control-size) + 12px) auto;
+  grid-template-columns: clamp(var(--card-control-size), calc(30cqw - 60px), 120px) minmax(var(--box-status-min), 1fr) calc(var(--card-control-size) + 12px) minmax(var(--box-date-min), auto);
   align-items: center;
   min-width: 0;
 }
@@ -617,7 +612,20 @@ body:is(.task-reordering, .task-group-reordering), body:is(.task-reordering, .ta
   width: 16px;
   height: 16px;
 }
-.board-node.task [data-pro="task-collapse"][aria-expanded="true"] .icon {
+/* Description toggle at the bottom edge, centred (F0.21-100); the content leaves it 16px. */
+.board-node.task > .board-node-content:has(> .task-card-toggle) { padding-bottom: 16px; box-sizing: border-box; }
+.board-node.task .task-card-toggle {
+  position: absolute; left: 50%; bottom: 0; transform: translateX(-50%);
+  display: flex; align-items: center; justify-content: center;
+  width: 44px; height: 16px; min-height: 0; padding: 0; border: 0; border-radius: 8px 8px 0 0;
+  background: transparent; color: var(--muted, #6b7864); cursor: pointer; z-index: 2;
+}
+.board-node.task .task-card-toggle:is(:hover, :focus-visible) { background: color-mix(in srgb, currentColor 12%, transparent); color: inherit; }
+.board-node.task .task-card-toggle:focus-visible { outline: var(--focus-ring); outline-offset: -2px; }
+.board-node.task .task-card-toggle:disabled { opacity: .4; cursor: default; }
+.board-node.task .task-card-toggle .icon { width: 14px; height: 14px; }
+@media (pointer: coarse) { .board-node.task .task-card-toggle::before { content: ""; position: absolute; inset: -28px 0 0; } } /* 44px target on touch only */
+.board-node.task .task-card-toggle[aria-expanded="true"] .icon {
   transform: rotate(180deg);
 }
 .board-node.task .task-card-description[hidden] {
@@ -1261,7 +1269,7 @@ html.task-page-open,
 .board-node.task .canvas-task-identity { display: flex; flex-direction: column; align-items: center; justify-content: center; flex: 0 0 auto; gap: 2px; max-width: 76px; }
 .board-node.task .canvas-task-identity .canvas-task-type { display: flex; align-items: center; justify-content: center; }
 .board-node.task .canvas-task-identity .canvas-task-key { max-width: 100%; font-size: 9px; line-height: 1.2; }
-.board-node.task .canvas-task-dates { display: inline-flex; align-items: center; justify-content: center; gap: 4px; min-width: 0; height: var(--card-control-size); padding-inline: 7px; font-size: 11px; white-space: nowrap; }
+.board-node.task .canvas-task-dates { display: inline-flex; align-items: center; justify-content: center; gap: 4px; min-width: var(--box-date-min); height: var(--card-control-size); padding-inline: 7px; font-size: 11px; white-space: nowrap; }
 .board-node.task .canvas-task-dates > .icon { width: 14px; height: 14px; flex: none; }
 /* Each date's shared calendar field lies invisibly over its text, so a tap on the date opens the calendar. */
 .board-node.task .canvas-task-date { position: relative; display: inline-flex; align-items: center; height: 100%; padding-inline: 2px; }
@@ -1347,6 +1355,7 @@ html.task-page-open,
 .task-dialog.board-task-editor .task-editor-header-row .task-key { max-width: 90px; overflow: hidden; text-overflow: ellipsis; }
 .task-dialog.board-task-editor .task-editor-header-row .task-editor-actions { order: 0; flex: 1 1 auto; flex-basis: auto; min-width: 0; justify-content: flex-end; flex-wrap: nowrap; overflow-x: auto; }
 .task-editor-header-row > button { flex-shrink: 0; }
+.task-editor-header-row:has(> [data-action="task-back"]) { gap: 4px; }
 .task-dialog .task-title-row { display: flex; align-items: center; gap: 8px; width: 100%; min-width: 0; }
 .task-dialog.board-task-editor .task-title-row .title-input { display: block; width: 0; flex: 1; min-width: 0; font-size: var(--type-title) !important; line-height: 1.4; padding: 5px 4px; }
 .task-dialog .task-metadata { padding-bottom: 16px; border-bottom: 1px solid var(--line); }
@@ -1537,6 +1546,11 @@ html.task-page-open,
   .task-editor-header-row .task-pane-switcher { grid-area: 1 / 1; justify-self: start; }
   .task-editor-header-row .task-secondary-actions { grid-area: 2 / 1 / 3 / -1; justify-self: end; }
   .task-editor-header-row > [data-action="dialog-close"] { grid-area: 1 / 2; }
+  /* Back takes its own first column, so it never lands on the secondary actions. */
+  .task-dialog.board-task-editor .task-editor-header-row:has(> [data-action="task-back"]) { grid-template-columns: var(--control-height) minmax(0, 1fr) var(--control-height); }
+  .task-editor-header-row > [data-action="task-back"] { grid-area: 1 / 1; }
+  .task-editor-header-row:has(> [data-action="task-back"]) .task-pane-switcher { grid-area: 1 / 2; }
+  .task-editor-header-row:has(> [data-action="task-back"]) > [data-action="dialog-close"] { grid-area: 1 / 3; }
 }
 @container task-dates (max-width: 340px) {
   .task-dialog .task-date-range { display: grid; grid-template-columns: 16px minmax(0, 1fr); gap: 0; }
@@ -1635,26 +1649,39 @@ html.task-page-open,
   .relationship-field-choice > .field-chip-status { width: auto; max-width: 100%; }
 }
 
-/* A card's tags (F0.21-73): chips in their tag's colour, then the Add tag menu. */
-.task-dialog .task-tags {
+/* The tag field (F0.22-1): chips, the input, clear-all and a chevron in one field at control height. */
+.task-dialog .task-tags { margin-top: 8px; }
+.tag-combo {
+  --tag-chip-height: calc(var(--control-height) - 8px);
   display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 4px;
-  margin-top: 8px;
+  align-items: flex-start;
+  box-sizing: border-box;
+  min-height: var(--control-height);
+  border: 1px solid var(--line);
+  border-radius: var(--field-radius);
+  background: var(--surface);
+  color: var(--ink);
+  font-size: var(--type-body);
+  cursor: text;
 }
+.tag-combo:focus-within { outline: var(--focus-ring); outline-offset: -1px; }
+.tag-combo-body { display: flex; flex: 1; flex-wrap: wrap; align-items: center; gap: 4px; min-width: 0; padding: 3px 4px; }
+.tag-combo-end { display: flex; flex: none; align-items: center; min-height: calc(var(--control-height) - 2px); }
 .tag-chip {
   display: inline-flex;
   align-items: center;
+  box-sizing: border-box;
   min-width: 0;
   max-width: 100%;
-  padding-left: 8px;
+  height: var(--tag-chip-height);
+  padding-inline: 8px;
   border: 1px solid var(--line);
   border-radius: var(--field-radius);
   background: var(--surface);
   color: var(--ink);
   font-size: var(--type-body);
 }
+.tag-combo .tag-chip { padding-inline: 8px 0; cursor: default; }
 /* The palette's colours are light, so a coloured chip keeps dark text in both themes. */
 .tag-chip[style] {
   border-color: transparent;
@@ -1666,11 +1693,31 @@ html.task-page-open,
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-.tag-chip .icon-button {
-  color: inherit;
+/* Own buttons, not .icon-button: controls.css forces that one square at control height. */
+.tag-combo .tag-combo-button {
+  display: inline-flex; align-items: center; justify-content: center; flex: none;
+  width: var(--tag-chip-height); height: var(--tag-chip-height); padding: 0; border: 0; border-radius: var(--field-radius);
+  background: transparent; color: inherit; cursor: pointer;
 }
-.task-dialog .task-tag-add {
-  width: auto;
+.tag-combo .tag-combo-button:is(:hover, :focus-visible) { background: color-mix(in srgb, currentColor 14%, transparent); }
+.tag-combo .tag-combo-button:disabled { opacity: .4; cursor: default; }
+.tag-combo .tag-combo-button .icon { width: 14px; height: 14px; }
+.tag-combo-end .tag-combo-button { color: var(--muted); }
+.tag-combo-end [data-tag-toggle][aria-expanded="true"] .icon { transform: rotate(180deg); }
+/* controls.css gives every input the control height with !important. */
+.task-tags .tag-combo input.tag-combo-input {
+  flex: 1 1 6em; min-width: 4em; height: var(--tag-chip-height) !important; min-height: 0 !important;
+  padding: 0 4px !important; border: 0 !important; background: transparent !important; box-shadow: none !important; outline: none !important;
+}
+.tag-combo-menu [role="option"] > .tag-chip { flex: none; padding-inline: 8px; max-width: 100%; }
+.tag-combo-menu [role="option"] > .icon:last-child { margin-inline-start: auto; }
+.tag-combo-menu [role="option"].active { background: var(--surface-soft, #eff2e7); }
+.tag-combo-empty { margin: 4px; color: var(--muted); font-size: var(--control-font-size); }
+@media (pointer: coarse) {
+  .tag-combo { --tag-chip-height: 36px; }
+  .tag-combo-body { row-gap: 8px; }
+  .tag-combo .tag-combo-button { width: 44px; height: 44px; margin-block: -4px; }
+  .tag-combo .tag-chip .tag-combo-button { margin-inline-start: -4px; }
 }
 
 /* The card's board (F0.21-76): over the whole app, the card's parts as fixed panels in columns on
@@ -1721,3 +1768,11 @@ html.task-page-open,
   font-weight: 600;
   line-height: 1.3;
 }
+
+/* Resizable description (F0.21-99): the grip sets --description-height, replacing the old caps. */
+.task-dialog:not(.card-board) .task-description[data-resized] :is(.inline-rich, .inline-preview, .markdown-source) { height: min(var(--description-height), 70vh); min-height: 0; max-height: none; }
+.task-dialog.card-board .description-resize { display: none; }
+.description-resize { display: flex; align-items: center; justify-content: center; height: 16px; margin-top: 2px; cursor: ns-resize; touch-action: none; border-radius: var(--field-radius, 6px); }
+.description-resize > span { width: 40px; height: 4px; border-radius: 2px; background: var(--line-strong, var(--muted)); opacity: .6; }
+.description-resize:is(:hover, :focus-visible) > span { background: var(--accent, var(--muted)); opacity: 1; }
+@media (pointer: coarse) { .description-resize { height: 44px; margin-top: 0; } }

@@ -108,7 +108,7 @@ export function tableColumnDrag({ state, renderView }, fieldName) {
     d.source.forEach(cell => cell.classList.add("table-column-drag-source"));
     document.body.classList.add("table-column-dragging");
     d.ghost = document.createElement("div");
-    d.ghost.className = "table-column-drag-ghost";
+    d.ghost.className = "table-column-drag-ghost drag-ghost";
     d.ghost.style.width = `${Math.min(280, Math.max(144, d.button.closest("th").offsetWidth))}px`;
     const heading = document.createElement("strong");
     heading.textContent = fieldName(d.key);

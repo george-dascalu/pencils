@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { calendarRange, calendarDateChange, calendarWeeks, agendaGroups } from "../public/calendar-model.js";
+import { calendarRange, calendarDateChange, calendarWeeks, agendaGroups, isoWeek } from "../public/calendar-model.js";
 
 test("calendar moves preserve duration across DST and month/year boundaries", () => {
   assert.deepEqual(calendarDateChange({ start: "2026-10-24", due: "2026-10-27" }, "2026-10-25", "2026-11-02"), { start: "2026-11-01", due: "2026-11-04" });
@@ -50,4 +50,15 @@ test('resizing an overnight timed card by date keeps a positive time range', () 
   const task={start:'2026-11-02',due:'2026-11-04',start_time:'23:00',due_time:'01:00'};
   assert.deepEqual(calendarDateChange(task,null,'2026-11-04','start'),{start:'2026-11-03'});
   assert.deepEqual(calendarDateChange(task,null,'2026-11-02','due'),{due:'2026-11-03'});
+});
+
+test("a run of weeks starts at the week holding `from` and ISO week numbers follow Monday weeks", () => {
+  const weeks = calendarWeeks([], "2026-11-04", true, { from: "2026-10-01", count: 10 });
+  assert.equal(weeks.length, 10);
+  assert.equal(weeks[0].days[0], "2026-09-28");
+  assert.equal(isoWeek("2026-11-04"), 45);
+  assert.equal(isoWeek("2026-12-31"), 53);
+  assert.equal(isoWeek("2027-01-03"), 53);
+  assert.equal(isoWeek("2027-01-04"), 1);
+  assert.equal(isoWeek("2024-12-30"), 1);
 });

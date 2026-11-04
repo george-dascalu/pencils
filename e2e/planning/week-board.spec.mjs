@@ -1,3 +1,5 @@
+// Owner request (F0.21-97): no card counts or drag grips, a row-name column that differs from the day
+// columns, dividers between days, one-line titles, and a date picker on the heading.
 // Owner request (F0.21-71): a Week board layout, days as columns without hours and cards in rows
 // by a chosen field; dragging moves a card's dates or changes its row's field.
 import { test, expect, useApp, onDevices } from '../fixtures.mjs';
@@ -30,7 +32,7 @@ async function open(page) {
   await expect(page.locator('.week-board')).toBeVisible();
 }
 async function drag(page, id, target) {
-  const grip = card(page, id).locator('[data-calendar-move]');
+  const grip = card(page, id).locator('.week-board-title');
   // The last drag's save can repaint the board just now, replacing the grip: find it again.
   let from;
   await expect(async () => { await grip.scrollIntoViewIfNeeded({ timeout: 1000 }); from = await grip.boundingBox(); expect(from).toBeTruthy(); }).toPass();
@@ -126,4 +128,67 @@ test('a status no longer in the workflow and a card without a priority keep rows
   await page.getByRole('button', { name: 'Next period', exact: true }).click();
   await expect(page.locator('.week-board-empty')).toHaveText('No cards scheduled this week.');
   await expect(page.locator('.week-board-cell').first()).toBeVisible();
+});
+
+onDevices(['desktop', 'ipad', 'phone'], () => {
+  test('Week board rows have no count, the row names stand apart from the days, days have dividers and titles are one line @gate', async ({ page }) => {
+    await open(page);
+    await expect(page.locator('.week-board-row-head .count')).toHaveCount(0);
+    await expect(page.locator('.week-board [data-calendar-move]')).toHaveCount(0);
+    const style = (selector, prop) => page.locator(selector).first().evaluate((el, prop) => getComputedStyle(el)[prop], prop);
+    const head = await style('.week-board-row-head', 'backgroundColor');
+    expect(head).not.toBe(await style('.week-board-day-head', 'backgroundColor'));
+    expect(await style('.week-board-corner', 'backgroundColor')).toBe(head);
+    for (const selector of ['.week-board-day-head', '.week-board-cell']) expect(await style(selector, 'borderLeftWidth')).toBe('1px');
+    const title = card(page, app.one.id).locator('.week-board-title');
+    expect(await title.evaluate(el => { const s = getComputedStyle(el); return [s.whiteSpace, s.textOverflow, s.overflowX]; })).toEqual(['nowrap', 'ellipsis', 'hidden']);
+    await expect(title).toHaveAttribute('title', /Ann on Tuesday/);
+  });
+
+  test('the period heading opens a date picker that shows the week holding the chosen day @gate', async ({ page }) => {
+    await open(page);
+    const heading = page.locator('.planning-period h2');
+    await expect(heading).toHaveText('2 Nov – 8 Nov 2026');
+    await heading.locator('[data-date-picker]').click();
+    const picker = page.locator('.date-picker-popover');
+    await expect(picker).toBeVisible();
+    await page.keyboard.press('Escape');
+    await expect(picker).toHaveCount(0);
+    await heading.locator('[data-date-picker]').click();
+    await picker.locator('[data-date-value="2026-11-18"]').click();
+    await expect(heading).toHaveText('16 Nov – 22 Nov 2026');
+    await expect(page.locator('.week-board-day-head').first()).toHaveAttribute('data-calendar-date', '2026-11-16');
+  });
+});
+
+onDevices(['phone'], () => {
+  test('a long press anywhere on a Week board card lifts it, and a swipe does not @gate', async ({ page, browserName }) => {
+    await open(page);
+    const title = card(page, app.span.id).locator('.week-board-title');
+    await title.scrollIntoViewIfNeeded();
+    const box = await title.boundingBox(), x = box.x + 20, y = box.y + box.height / 2;
+    // Synthetic touch pointers (both engines): moving before the press is long enough scrolls, and
+    // holding still lifts the card.
+    const touch = (type, dy = 0) => title.evaluate((el, [type, x, y]) => el.dispatchEvent(new PointerEvent(type, { pointerType: 'touch', pointerId: 7, isPrimary: true, bubbles: true, cancelable: true, composed: true, button: 0, buttons: type === 'pointerup' ? 0 : 1, clientX: x, clientY: y })), [type, x, y + dy]);
+    await touch('pointerdown');
+    await touch('pointermove', 30);
+    await page.waitForTimeout(450); // intentional: outlasts the 350ms hold, so a move that arrived first must have cancelled it
+    await expect(card(page, app.span.id)).not.toHaveClass(/calendar-armed/);
+    await touch('pointerup', 30);
+    await touch('pointerdown');
+    await expect(card(page, app.span.id)).toHaveClass(/calendar-armed/);
+    await touch('pointerup');
+    await expect(card(page, app.span.id)).not.toHaveClass(/calendar-armed/);
+    if (browserName !== 'chromium') return;
+    // Real touches (DevTools): hold, then drag to the next day, scrolled in beside the card's column.
+    await page.locator('.week-board-scroll').evaluate((el, id) => { el.scrollLeft += el.querySelector(`[data-calendar-card="${id}"]`).closest('.week-board-cell').getBoundingClientRect().left - el.getBoundingClientRect().left - 110; }, app.span.id);
+    const at = await title.boundingBox(), to = await cell(page, 'Bo', '2026-11-05').boundingBox(), px = at.x + 20, py = at.y + at.height / 2;
+    const client = await page.context().newCDPSession(page);
+    await client.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x: px, y: py }] });
+    await expect(card(page, app.span.id)).toHaveClass(/calendar-armed/);
+    await client.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [{ x: px + 10, y: py + 10 }] });
+    await client.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [{ x: to.x + 20, y: to.y + to.height / 2 }] });
+    await client.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+    await expect.poll(async () => { const t = await saved(app.span.id); return [t.start, t.due]; }).toEqual(['2026-11-05', '2026-11-07']);
+  });
 });

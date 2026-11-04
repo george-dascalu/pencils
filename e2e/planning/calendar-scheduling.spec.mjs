@@ -90,7 +90,7 @@ test("filters live in the Filters menu, an empty filtered month still shows its 
   await expect(page.locator('[data-board-menu="filters"] #filter-status')).toHaveCount(1);
   await (await reveal(page.locator("#filter-type"))).selectOption("bug");
   await expect(page.locator(".calendar-task")).toHaveCount(0);
-  await expect(page.locator(".calendar-day"), "Empty filtered calendars still show dates").toHaveCount(42);
+  expect(await page.locator(".calendar-day").count(), "Empty filtered calendars still show dates").toBeGreaterThan(42);
   await (await reveal(page.locator("#filter-type"))).selectOption("all");
   await card(page, seed.work.id).waitFor();
   await page.locator('[data-board-menu="filters"] > summary').click();

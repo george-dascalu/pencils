@@ -110,9 +110,8 @@
 .document-explorer [data-tree-insert="after"]::after { bottom: 0; }
 .document-drag-preview {
   position: fixed; z-index: 500; max-width: min(260px, 70vw); padding: 6px 10px;
-  border: 1px solid var(--line); border-radius: var(--field-radius); background: var(--surface);
-  color: var(--ink); box-shadow: var(--shadow-popover); font-size: var(--type-body);
-  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; pointer-events: none;
+  border: 1px solid var(--line); border-radius: var(--field-radius); font-size: var(--type-body);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 :is(#document-list, #board-list) ul { list-style: none; padding: 0 0 0 16px; margin: 0; }
 :is(#document-list, #board-list) [hidden] { display: none; }

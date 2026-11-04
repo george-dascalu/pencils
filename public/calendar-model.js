@@ -26,10 +26,17 @@ export function calendarDateChange(task, grabbed, target, handle = null) {
   };
 }
 
-// The six weeks of the month holding `anchor`, or with { week: true } the anchor's own week.
-export function calendarWeeks(tasks, anchor, weekends = true, { week: one = false } = {}) {
-  const first = dateKey(weekStart(one ? anchor : `${anchor.slice(0, 7)}-01`));
-  const weeks = Array.from({ length: one ? 1 : 6 }, (_, week) => {
+// ISO 8601 week number of the week holding `day` (weeks start on Monday).
+export function isoWeek(day) {
+  const start = weekStart(day);
+  return Math.round((start - weekStart(Date.UTC(new Date(start + 3 * DAY).getUTCFullYear(), 0, 4))) / (7 * DAY)) + 1;
+}
+
+// The six weeks of the month holding `anchor`, with { week: true } the anchor's own week, or with
+// { from, count } `count` weeks from the week holding `from` (Month's continuous scroll).
+export function calendarWeeks(tasks, anchor, weekends = true, { week: one = false, from, count } = {}) {
+  const first = dateKey(weekStart(from || (one ? anchor : `${anchor.slice(0, 7)}-01`)));
+  const weeks = Array.from({ length: count || (one ? 1 : 6) }, (_, week) => {
     const days = Array.from({ length: weekends ? 7 : 5 }, (_, day) => shiftDate(first, week * 7 + day));
     const lanes = [], segments = [];
     for (const task of tasks) {

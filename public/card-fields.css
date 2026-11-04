@@ -25,6 +25,8 @@
 :root[data-fields-off~="assignee"][data-fields-off~="status"][data-fields-off~="priority"] .task-dialog .task-metadata-main > .task-dates { grid-column: 1 / -1; }
 /* Field boxes count only the fields they show: 1 while a field is on, 0 once it is off. On phones a
    box is 44px per field and 40px more for the status, 216px with all four. */
+/* Minimum widths in a narrow box: the status keeps room for a short word, the date its start (F0.22-3). */
+:root { --box-status-min: 44px; --box-date-min: 44px; }
 :root { --box-assignee: 1; --box-status: 1; --box-priority: 1; --box-date: 1;
   --phone-box-min: calc(44px * (var(--box-assignee) + var(--box-status) + var(--box-priority) + var(--box-date)));
   --phone-box-width: calc(var(--phone-box-min) + 40px * var(--box-status)); }

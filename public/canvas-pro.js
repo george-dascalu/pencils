@@ -145,7 +145,8 @@ export function canvasPro(ctx, basic) {
     state.session?.user?.username ||
     `Guest ${sync.client.slice(-4)}`;
   const btn = (action, text, extra = "") =>
-    `<button type="button" class="button small${action === "collapse" ? " icon-button" : ""}" data-pro="${action}" ${extra}>${text}</button>`;
+    `<button type="button" class="${action === "task-collapse" ? "task-card-toggle" : `button small${action === "collapse" ? " icon-button" : ""}`}" data-pro="${action}" ${extra}>${text}</button>`;
+  // The description toggle sits at the card's bottom edge, outside the header's buttons (F0.21-100).
   const disclosure = (n) => btn("task-collapse", icon("chevron"),
     `data-id="${esc(n.id)}" aria-label="${n.taskCollapsed ? "Expand" : "Collapse"} card description" title="${n.taskCollapsed ? "Expand" : "Collapse"} description" aria-expanded="${!n.taskCollapsed}" ${n.locked ? "disabled" : ""}`);
   const input = (name, label, value = "", extra = "") =>
@@ -512,9 +513,9 @@ export function canvasPro(ctx, basic) {
     hide('.canvas-task-dates', !visible('start') && !visible('due'));
     const columns = [
       visible('assignee') && (visible('status') ? 'var(--board-assignee-column)' : 'minmax(var(--card-control-size), 1fr)'),
-      visible('status') && 'minmax(0, 1fr)',
+      visible('status') && 'minmax(var(--box-status-min), 1fr)',
       visible('priority') && 'calc(var(--card-control-size) + 12px)',
-      (visible('start') || visible('due')) && 'auto',
+      (visible('start') || visible('due')) && 'minmax(var(--box-date-min), auto)',
     ].filter(Boolean);
     hide('.live-card-state', !columns.length);
     const box = el.querySelector('.live-card-state > .field-box');
@@ -576,7 +577,7 @@ export function canvasPro(ctx, basic) {
       if (n.type === "draft") {
         const d = draftTaskData(n),
           count = n.comments?.filter((c) => !c.deleted).length || 0;
-        el.innerHTML = `<div class="live-card-heading"><span class="canvas-task-type" role="img" aria-label="${esc(ctx.label(d.type))}" title="Draft · ${esc(ctx.label(d.type))}">${icon(d.type)}</span><strong class="task-title" title="${esc(d.title)}">${esc(d.title)}</strong><div class="live-card-actions">${btn("convert", icon("task"), `data-id="${esc(n.id)}" aria-label="Finalise card" title="Finalise card" ${n.locked ? "disabled" : ""}`)}${disclosure(n)}${btn("comments", icon("comment") + (count ? `<span class="task-comment-count">${count}</span>` : ""), `data-id="${esc(n.id)}" aria-label="Comments on ${esc(d.title)}"`)}${btn("draft-edit", "↗", `data-id="${esc(n.id)}" aria-label="Edit draft card" title="Edit draft card"`)}</div></div><div class="draft-task-meta"><span class="draft-task-badge">${icon("pencil")}Draft</span>${cardAssignee(d, `data-draft-node="${esc(n.id)}" ${n.locked ? "disabled" : ""}`)}${cardPriority(d, `data-draft-node="${esc(n.id)}" ${n.locked ? "disabled" : ""}`)}</div><div class="canvas-markdown task-card-description" ${n.taskCollapsed ? "hidden" : ""}>${d.body ? markdown(d.body) : '<span class="is-placeholder">Add card notes…</span>'}</div>`;
+        el.innerHTML = `<div class="live-card-heading"><span class="canvas-task-type" role="img" aria-label="${esc(ctx.label(d.type))}" title="Draft · ${esc(ctx.label(d.type))}">${icon(d.type)}</span><strong class="task-title" title="${esc(d.title)}">${esc(d.title)}</strong><div class="live-card-actions">${btn("convert", icon("task"), `data-id="${esc(n.id)}" aria-label="Finalise card" title="Finalise card" ${n.locked ? "disabled" : ""}`)}${btn("comments", icon("comment") + (count ? `<span class="task-comment-count">${count}</span>` : ""), `data-id="${esc(n.id)}" aria-label="Comments on ${esc(d.title)}"`)}${btn("draft-edit", "↗", `data-id="${esc(n.id)}" aria-label="Edit draft card" title="Edit draft card"`)}</div></div><div class="draft-task-meta"><span class="draft-task-badge">${icon("pencil")}Draft</span>${cardAssignee(d, `data-draft-node="${esc(n.id)}" ${n.locked ? "disabled" : ""}`)}${cardPriority(d, `data-draft-node="${esc(n.id)}" ${n.locked ? "disabled" : ""}`)}</div><div class="canvas-markdown task-card-description" ${n.taskCollapsed ? "hidden" : ""}>${d.body ? markdown(d.body) : '<span class="is-placeholder">Add card notes…</span>'}</div>${disclosure(n)}`;
         displayCardFields(el, n, d);
       } else if (n.type === "task" && !byTask.has(n.task)) {
         el.classList.remove("overdue", "blocked-task", "dimmed");
@@ -610,7 +611,7 @@ export function canvasPro(ctx, basic) {
         if (asNote) {
           el.innerHTML = `<div class="note-content ${section?.text ? "has-body" : ""}"><div class="note-title canvas-markdown" data-inline-title>${esc(t.title)}</div><div class="note-body node-text canvas-markdown">${section ? (section.text ? markdown(section.text) : "") : "<p>Heading or block not found.</p>"}</div></div>`;
         } else {
-          el.innerHTML = `<div class="live-card-heading"><span class="canvas-task-identity"><span class="canvas-task-type" role="img" aria-label="${esc(ctx.label(t.type))}" title="${esc(ctx.label(t.type))}">${icon(t.type)}</span><span class="canvas-task-key" title="${esc(t.key || t.id)}">${esc(t.key || t.id)}</span></span><strong class="task-title" title="${esc(t.title)}" data-inline-title>${esc(t.title)}</strong><div class="live-card-actions">${disclosure(n)}${btn("comments", icon("comment") + (commentCount ? `<span class="task-comment-count" aria-hidden="true">${commentCount}</span>` : ""), `data-id="${esc(n.id)}" aria-label="Comments on ${esc(t.title)}${commentCount ? ` (${commentCount})` : ""}" title="Comments${commentCount ? ` (${commentCount})` : ""}"`)}${btn("task-details", "↗", `data-task="${esc(t.id)}" aria-label="Open card details" title="Open card details"`)}</div></div><div class="live-card-state"><span class="field-box" ${fieldBoxStyle(state, t.priority)}>${cardAssignee(t, `data-task="${esc(t.id)}"`)}<select class="canvas-task-status" ${taskColorAttributes(state, "status", t.status)} data-canvas-status="${esc(t.id)}" ${sourceReadOnly(t,"status")?"disabled":""} aria-label="Card status" title="${esc(statusLabel(state.config, t.status))}">${nextStatuses(
+          el.innerHTML = `<div class="live-card-heading"><span class="canvas-task-identity"><span class="canvas-task-type" role="img" aria-label="${esc(ctx.label(t.type))}" title="${esc(ctx.label(t.type))}">${icon(t.type)}</span><span class="canvas-task-key" title="${esc(t.key || t.id)}">${esc(t.key || t.id)}</span></span><strong class="task-title" title="${esc(t.title)}" data-inline-title>${esc(t.title)}</strong><div class="live-card-actions">${btn("comments", icon("comment") + (commentCount ? `<span class="task-comment-count" aria-hidden="true">${commentCount}</span>` : ""), `data-id="${esc(n.id)}" aria-label="Comments on ${esc(t.title)}${commentCount ? ` (${commentCount})` : ""}" title="Comments${commentCount ? ` (${commentCount})` : ""}"`)}${btn("task-details", "↗", `data-task="${esc(t.id)}" aria-label="Open card details" title="Open card details"`)}</div></div><div class="live-card-state"><span class="field-box" ${fieldBoxStyle(state, t.priority)}>${cardAssignee(t, `data-task="${esc(t.id)}"`)}<select class="canvas-task-status" ${taskColorAttributes(state, "status", t.status)} data-canvas-status="${esc(t.id)}" ${sourceReadOnly(t,"status")?"disabled":""} aria-label="Card status" title="${esc(statusLabel(state.config, t.status))}">${nextStatuses(
             state.config,
             t.status,
           )
@@ -620,7 +621,7 @@ export function canvasPro(ctx, basic) {
             )
             .join(
               "",
-            )}</select>${cardPriority(t, `data-task="${esc(t.id)}"`)}${cardDates(t)}</span></div>${t.source?`<small class="source-badge">${esc(sourceLabel(t))} · Planning edits stay in Pencils</small>`:""}<div class="canvas-markdown task-card-description" ${n.taskCollapsed ? "hidden" : ""}>${section ? (section.text ? markdown(section.text) : '<span class="is-placeholder">Add card notes…</span>') : "<p>Heading or block not found.</p>"}</div>${n.subpath ? `<small class="embed-label">${esc(n.subpath)}</small>` : ""}`;
+            )}</select>${cardPriority(t, `data-task="${esc(t.id)}"`)}${cardDates(t)}</span></div>${t.source?`<small class="source-badge">${esc(sourceLabel(t))} · Planning edits stay in Pencils</small>`:""}<div class="canvas-markdown task-card-description" ${n.taskCollapsed ? "hidden" : ""}>${section ? (section.text ? markdown(section.text) : '<span class="is-placeholder">Add card notes…</span>') : "<p>Heading or block not found.</p>"}</div>${disclosure(n)}${n.subpath ? `<small class="embed-label">${esc(n.subpath)}</small>` : ""}`;
         }
         if (!asNote) displayCardFields(el, n, t);
       } else if (n.type === "file") {

@@ -108,7 +108,7 @@ onDevices(["desktop", "phone"], () => test("Week board's Group by sits in Filter
   await choose(page, "#week-board-rows", "tags");
   await expect.poll(() => groups(page, ".week-board-row", ".week-board-row-head > span:not(.count)", "[data-calendar-card]", "data-calendar-card")).toEqual(expected(s));
   // Dragging a card from one tag's row to another's swaps that tag.
-  const grip = page.locator(`.week-board-cell[data-week-board-value="build"] [data-calendar-card="${s.both.id}"] [data-calendar-move]`);
+  const grip = page.locator(`.week-board-cell[data-week-board-value="build"] [data-calendar-card="${s.both.id}"] .week-board-title`);
   await grip.scrollIntoViewIfNeeded();
   const from = await grip.boundingBox();
   await page.mouse.move(from.x + from.width / 2, from.y + from.height / 2);

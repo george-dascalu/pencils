@@ -28,10 +28,10 @@ const HEAVY = [/^public\/(canvas|board-(delta|scene|session|limits|preview|detai
 // public/ file name prefixes per area; a file may belong to several.
 const AREAS = {
   board: /^(alignment-guides|board-|list-panel|camera-motion|canvas|comment-model|connector-|dependency-style|drag-feedback|drawing-|edge-labels|frame-|grid-merge|ink-|miro-import|node-layout|note-style|object-|orthogonal-route|pen-|phone-board-tools|project-frame|query-|rule-diagram|scroll-gestures|select-symbols|selection-|spatial-index|text-alignment|viewport-cache)/,
-  documents: /^(history-pages|document-|project-documents|folder-|list-panel|markdown|rich-toolbar-scroll|sketch-|ink-capture)/,
+  documents: /^(drag-feedback|history-pages|document-|project-documents|folder-|list-panel|markdown|rich-toolbar-scroll|sketch-|ink-capture)/,
   tasks: /^(history-pages|task-(?!timeline)|card-fields|draft-|attachment-preview|recurrence-|dependency-model|hierarchy-model)/,
   lists: /^(grid(?!-merge)|table-|kanban-|view-layout|project-filters|drag-feedback|task-row-editor|task-order-model|task-reorder|task-group-order|task-colors|card-key)/,
-  planning: /^(calendar|capacity|planning|project-filters|range-menu|timeline-|task-timeline|schedule-|teams)/,
+  planning: /^(drag-feedback|calendar|capacity|planning|project-filters|range-menu|timeline-|task-timeline|schedule-|teams)/,
   settings: /^(hotkey|history-pages|project-create|project-settings|project-tags|project-records|debug-log|personal-settings|capture-settings|style-settings|project-sources|source-model|project-automations|workflow-|teams|recovery-ui|backup-limits)/,
   navigation: /^(hotkey|boot-progress|help|topbar-title|bookmarks|bottom-bar|roadmap|search-items)/,
   home: /^home/,
@@ -259,7 +259,8 @@ export function changedFiles(root = projectRoot) {
 
 // Each file's changed lines since the last release commit, for narrowing and the touch check.
 export function gitChanges(root = projectRoot, tree = root) {
-  const git = (...args) => execFileSync("git", args, { cwd: root, encoding: "utf8", maxBuffer: 64 * 1024 * 1024 });
+  // A file new since the release has no old copy; keep git's "exists on disk, but not in" off the log.
+  const git = (...args) => execFileSync("git", args, { cwd: root, encoding: "utf8", maxBuffer: 64 * 1024 * 1024, stdio: ["ignore", "pipe", "pipe"] });
   const base = git("log", "-1", "--format=%H", "--grep=^Release ").trim() || "HEAD";
   return (file) => {
     let before = null, after = null;

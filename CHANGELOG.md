@@ -2,6 +2,24 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.22.4 — 2026-11-04
+
+### Added
+- Feature F0.21-96: Calendar's Month layout scrolls through the months, one after another, with no scroll bar. Each week shows its week number on the left, alternate months are tinted, and the heading follows the month in view; previous and next jump to a month's start.
+- Feature F0.21-98: Opening a card from inside the card editor (a relationship, or a recurrence's linked card) shows it in place with a Back button at the top left that returns to the card you came from, one card at a time. Edits are saved first, a double click goes back one card, a card deleted meanwhile is skipped, and closing the editor forgets the trail.
+- Feature F0.21-99: The card editor's description can be resized: drag the grip at its bottom edge (mouse, pen or finger) or press Arrow Up/Down on it. The height is remembered in this browser, up to most of the screen's height. The card board's fixed description panel is unchanged.
+
+### Changed
+- Feature F0.21-95: The item you drag looks the same in every view. Calendar, List, Tree, Table, Kanban, the Documents list and the Board grid show a copy of the item itself, with the same shadow and slight transparency, dimmed where it can't be dropped. Calendar's copy keeps the dates you are choosing under it, and where an item will land is outlined with a dashed line.
+- Feature F0.21-97: Week board has no card counts or drag handles: drag a card by any part of it (on touch, press and hold). Titles stay on one line, row names have their own shade, and days have dividers. Clicking the period heading in Month, Week and Week board opens a small calendar: choosing a day always shows it, and Month scrolls to that day's week.
+- Feature F0.21-100: A board card's Expand/Collapse description button sits at the bottom edge of the card, centred and small like Miro's, instead of in the card's header.
+- Feature F0.22-1: A card's tags are one field in the card editor: chips in their colours with × to remove them, a place to type that filters the list or creates a tag, a clear-all button and a chevron that opens the project's tags. Backspace removes the last chip.
+- Feature F0.22-3: Fields in the field box keep a minimum width: on narrow cards a long date is cut short with an ellipsis (its full range stays in the tooltip) before the status is squeezed, and a cut status shows an ellipsis too, so the status always shows a few letters. This covers List, Tree, Kanban, Agenda, Week board, board cards and Calendar cards.
+
+### Fixed
+- Feature F0.22-2: A frame's title no longer moves when the frame is collapsed or expanded; it stays level with the frame's buttons.
+- Feature F0.22-4: In dark mode the card ID no longer has a background of its own in List, Tree and Table.
+
 ## 0.21.94 — 2026-11-04
 
 ### Changed

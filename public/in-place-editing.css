@@ -80,6 +80,11 @@
   overflow: hidden;
   text-overflow: ellipsis;
 }
+/* An open frame keeps the shared padding but lifts its title to where a collapsed frame shows it,
+   level with the header buttons, so collapsing doesn't move it. */
+.board-node.frame:not(.collapsed-frame) > .board-node-content {
+  margin-top: -6px;
+}
 .board-node.frame.collapsed-frame {
   padding: 10px var(--board-text-padding);
 }

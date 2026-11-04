@@ -31,7 +31,7 @@ export function gridReorderPreview(ctx, n, axis, from, start) {
   const width = horizontal ? sizes[from] : n.w,
     height = horizontal ? n.h - 24 : sizes[from];
   const ghost = document.createElement("div");
-  ghost.className = "grid-drag-preview";
+  ghost.className = "grid-drag-preview drag-ghost";
   ghost.inert = true;
   ghost.setAttribute("aria-hidden", "true");
   Object.assign(ghost.style, {

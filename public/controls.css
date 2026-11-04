@@ -267,9 +267,10 @@ textarea,
     min-height: var(--control-height) !important;
     height: var(--control-height) !important;
   }
+  #canvas .canvas-task-status { min-width: max(var(--control-height), var(--box-status-min)) !important; }
   #canvas .canvas-task-priority select { height: 100% !important; }
   #canvas .board-node.task .live-card-state > .field-box {
-    grid-template-columns: var(--card-control-size) minmax(0, 1fr) calc(var(--card-control-size) + 12px) auto;
+    grid-template-columns: var(--card-control-size) minmax(var(--box-status-min), 1fr) calc(var(--card-control-size) + 12px) minmax(var(--box-date-min), auto);
   }
 }
 
@@ -412,6 +413,14 @@ textarea,
 /* Row targets are taller than the box, so hover shades the field inside it. */
 .field-box > .row-choice:hover { background-color: transparent !important; }
 .field-box > .row-choice:has(select:enabled):hover > :is(.field-chip, .task-assignee) { background-color: var(--surface-soft) !important; }
+/* Minimum widths in a narrow box (F0.22-3): the status keeps room for a short word and the date its
+   start, so the date gives way first, cut with an ellipsis (its full value stays in the tooltip). */
+.field-box > :is(.row-status, .canvas-task-status, .field-chip-status) { min-width: var(--box-status-min); }
+.field-box > :is(.row-due, .canvas-task-dates) { flex-shrink: 1; min-width: var(--box-date-min); overflow: hidden; }
+/* Ellipsis needs a block of text: the status chip is a flex box and the date's text sits in a span. */
+.field-box > .row-due .due { display: block; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.field-box .canvas-task-status { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.field-box .field-chip-status { display: block; line-height: calc(var(--list-field-height) - 2px); }
 /* Every visible value in a group uses its group's text step. Editors retain the body
    step (16px on touch); board values stay in document coordinates while zooming. */
 .field-box :is(.task-assignee, .field-chip-status, .canvas-task-status, .canvas-task-date, .due, .row-due, .task-picker-trigger, select) { font-size: var(--field-font-size) !important; }

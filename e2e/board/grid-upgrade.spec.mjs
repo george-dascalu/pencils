@@ -144,6 +144,10 @@ test("a row drag previews the move without saving and cancels with Escape, outsi
   await page.mouse.move(to.x, to.y, { steps: 10 });
   await expect(page.locator(".grid-reorder-marker")).toBeVisible();
   await expect(page.locator(".grid-drag-preview")).toBeVisible();
+  // The shared ghost look (F0.21-95).
+  await expect(page.locator(".grid-drag-preview")).toHaveClass(/\bdrag-ghost\b/);
+  await expect(page.locator(".grid-drag-preview")).toHaveCSS("opacity", "0.92");
+  expect(await page.locator(".grid-drag-preview").evaluate((el) => getComputedStyle(el).boxShadow)).not.toBe("none");
   expect(await page.locator(".grid-drag-preview .board-node").count()).toBeGreaterThan(0);
   await expect(page.locator(".grid-drag-status")).toContainText("Release to move");
   expect((await current()).nodes, "Reorder previews do not save intermediate layouts").toEqual(beforeCancel.nodes);

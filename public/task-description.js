@@ -1,4 +1,5 @@
 import { canvasRichText, richToolbar } from "./canvas-rich-text.js";
+import { installDescriptionResize } from "./task-description-resize.js";
 import { taskAttachmentContent, retainTaskAttachments } from "./task-attachment-model.js";
 
 export function taskDescriptionHTML(body, { esc, icon }) {
@@ -12,6 +13,7 @@ export function taskDescription(form, markdown, icon, project) {
     readSource: value => taskAttachmentContent(value, project).description,
     writeSource: (value, original) => retainTaskAttachments(value, original, project),
   });
+  installDescriptionResize(form.querySelector(".task-description"));
   form.addEventListener("submit", () => editor.flush(), true);
   form.addEventListener(
     "invalid",

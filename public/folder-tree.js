@@ -292,7 +292,7 @@ export function folderTree({ kind, label, placeholder, glyph, state, api, esc, i
       press.dragging = true;
       press.target.classList.add("document-dragging");
       drag = { what: press.what, id: press.id, project: state.project.id };
-      preview = document.createElement("div"); preview.className = "document-drag-preview";
+      preview = document.createElement("div"); preview.className = "document-drag-preview drag-ghost";
       preview.textContent = press.target.textContent; preview.setAttribute("aria-hidden", "true"); document.body.append(preview);
     }
     if (!press.dragging) return;

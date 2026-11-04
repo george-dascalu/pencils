@@ -492,7 +492,6 @@ body {
     .status-badge,
     .type-badge,
     .count,
-    .task-id,
     .calendar-day.muted
   ) {
   background: var(--surface-soft);

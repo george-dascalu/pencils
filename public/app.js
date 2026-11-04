@@ -31,6 +31,7 @@ import { installSelectMenus } from "./select-menu.js";
 import { taskColorAttributes, taskColorDot, taskFieldColor, installTaskControlColors, fieldBoxStyle } from "./task-colors.js";
 import { boardObjectDialog } from "./board-object-panel.js";
 import { boardTaskEditor } from "./board-task-editor.js";
+import { cardTrail } from "./task-trail.js";
 import { installDatePickers } from "./date-picker.js";
 import {
   canTransition,
@@ -1484,6 +1485,7 @@ function closeDialog(force = false, { confirmDirty = true, keepDraft = false } =
   )
     return;
   if (force) features.clearDraft();
+  cardTrail.clear();
   // Navigation guards see an accepted close immediately; only disposal waits for the fade.
   state.dialog = null;
   state.boardTaskEditor = null;
@@ -1758,8 +1760,12 @@ function draftTaskDialog(nodeId = "new") {
   taskDialog(null, { ...(node ? draftTaskData(node) : {}), draftNode: nodeId });
 }
 
+let trailBusy = false;
 function taskDialog(id = null, defaults = {}, replace = false) {
   finishPopupExits();
+  // "follow": opened from inside the editor, so Back can return to the card it replaces (F0.21-98).
+  const from = replace === "follow" ? $("#task-form")?.dataset.id : null;
+  if (!replace && !$(".task-dialog")) cardTrail.clear();
   if (id && state.project) features.homeVisit("card", state.project.id, id);
   if (!id && state.boardTaskEditor && !$("#task-form")?.dataset.id) {
     focusOnOpen($("#task-form [name=title]"), $('.task-dialog [data-action="dialog-close"]'));
@@ -1780,6 +1786,7 @@ function taskDialog(id = null, defaults = {}, replace = false) {
         ...defaults,
       };
   if (!t) return;
+  if (from && id && from !== id) cardTrail.push(from);
   const isDraft = !!t.draftNode;
   state.dialogTask = t;
   const picker = (name, title, value, choices, iconOnly = false) =>
@@ -1802,7 +1809,7 @@ function taskDialog(id = null, defaults = {}, replace = false) {
   // A new card has no actions, so its close button ends the title row instead of a row of its own (F0.21-93).
   const closeButton = `<button type="button" class="icon-button" data-action="dialog-close" aria-label="Close dialog">${icon("close")}</button>`;
   const html = `<dialog class="dialog task-dialog" aria-label="Card editor"><form id="task-form" class="${id ? "task-edit-form" : "task-create-form"}" data-board="${esc(!id && ["board", "drawing"].includes(state.view) ? state.selectedBoard : "")}" data-draft-node="${esc(t.draftNode || "")}" data-id="${esc(id || "")}" data-revision="${esc(t.revision || "")}">
-    <div class="dialog-head task-editor-head">${id || isDraft ? `<div class="task-editor-header-row">${id ? `<div class="task-editor-actions" role="group" aria-label="Card actions"><button type="button" class="icon-button danger" data-action="task-delete" data-id="${esc(id)}" aria-label="Delete card" title="Delete card">${icon("trash")}</button><button type="button" class="icon-button" data-feature="task-duplicate" aria-label="Duplicate card" title="Duplicate card">${icon("duplicate")}</button><button type="button" class="icon-button" data-feature="task-archive" aria-label="${t.archived ? "Unarchive card" : "Archive card"}" title="${t.archived ? "Unarchive card" : "Archive card"}">${icon("archive")}</button><button type="button" class="icon-button" data-feature="task-history" aria-expanded="false" aria-label="Version history" title="Version history">${icon("clock")}</button><button type="button" class="icon-button" data-feature="task-comments" aria-expanded="false" aria-label="Card comments" title="Comments">${icon("comment")}</button><button type="button" class="icon-button" data-feature="task-board" aria-pressed="false" aria-label="Card board" title="Card board">${icon("board")}</button></div>` : isDraft ? `<div class="task-editor-actions" role="group" aria-label="Draft actions"><button type="button" class="icon-button" data-feature="draft-finalise" aria-label="Finalise card" title="Finalise card">${icon("task")}</button></div>` : ""}${closeButton}</div>` : ""}<div class="task-title-row"><div class="task-identity-row">
+    <div class="dialog-head task-editor-head">${id || isDraft ? `<div class="task-editor-header-row">${id && cardTrail.peek() ? (() => { const name = `Back to ${task(cardTrail.peek())?.key || cardTrail.peek()}`; return `<button type="button" class="icon-button" data-action="task-back" aria-label="${esc(name)}" title="${esc(name)}">${icon("arrow-left")}</button>`; })() : ""}${id ? `<div class="task-editor-actions" role="group" aria-label="Card actions"><button type="button" class="icon-button danger" data-action="task-delete" data-id="${esc(id)}" aria-label="Delete card" title="Delete card">${icon("trash")}</button><button type="button" class="icon-button" data-feature="task-duplicate" aria-label="Duplicate card" title="Duplicate card">${icon("duplicate")}</button><button type="button" class="icon-button" data-feature="task-archive" aria-label="${t.archived ? "Unarchive card" : "Archive card"}" title="${t.archived ? "Unarchive card" : "Archive card"}">${icon("archive")}</button><button type="button" class="icon-button" data-feature="task-history" aria-expanded="false" aria-label="Version history" title="Version history">${icon("clock")}</button><button type="button" class="icon-button" data-feature="task-comments" aria-expanded="false" aria-label="Card comments" title="Comments">${icon("comment")}</button><button type="button" class="icon-button" data-feature="task-board" aria-pressed="false" aria-label="Card board" title="Card board">${icon("board")}</button></div>` : isDraft ? `<div class="task-editor-actions" role="group" aria-label="Draft actions"><button type="button" class="icon-button" data-feature="draft-finalise" aria-label="Finalise card" title="Finalise card">${icon("task")}</button></div>` : ""}${closeButton}</div>` : ""}<div class="task-title-row"><div class="task-identity-row">
       ${picker(
         "type",
         "Card type",
@@ -2308,12 +2315,30 @@ document.addEventListener("click", async (event) => {
       case "task-open":
         taskDialog(id);
         break;
+      case "task-back": {
+        if (trailBusy || event.detail > 1) return;
+        trailBusy = true;
+        try {
+          if (!(await features.flushTask())) return;
+          // Skip cards deleted meanwhile; with none left, redraw so Back goes.
+          while (cardTrail.peek() && !task(cardTrail.peek())) cardTrail.pop();
+          const previous = cardTrail.pop();
+          taskDialog(previous || $("#task-form")?.dataset.id, {}, true);
+        } finally { trailBusy = false; }
+        break;
+      }
       case "phone-field": {
         const select = el.closest(".task-row")?.querySelector(`select[data-row-field="${el.dataset.field}"]`);
         if (select) selectMenus.open(select, el);
         break;
       }
       case "wiki-open":
+        if ($("#task-form")?.dataset.id) {
+          if (await features.flushTask()) {
+            taskDialog(id, {}, "follow");
+            break;
+          }
+        }
         closeDialog();
         if (!state.dialog) taskDialog(id);
         break;

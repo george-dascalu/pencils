@@ -133,7 +133,7 @@ export function kanbanDrag(ctx) {
       placeholder = document.createElement("div");
     ghost.removeAttribute("data-drag-task");
     ghost.removeAttribute("draggable");
-    ghost.classList.add("kanban-drag-image");
+    ghost.classList.add("kanban-drag-image", "drag-ghost");
     ghost.dataset.group = card.closest(".kanban")?.dataset.group || "none"; // hides the lanes' field, as on the card
     ghost.style.width = `${r.width}px`;
     ghost.setAttribute("aria-hidden", "true");

@@ -87,6 +87,11 @@ onDevices(['ipad', 'phone'], () => test('real touch holds reorder a row without 
   await expect(source).toHaveClass(/document-held/);
   await cdp.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [to] });
   await expect(s.row('folder:a')).toHaveAttribute('data-tree-insert', 'before');
+  // The shared ghost look (F0.21-95): the item's name on the raised surface.
+  const ghost = page.locator('.document-drag-preview');
+  await expect(ghost).toHaveClass(/\bdrag-ghost\b/);
+  await expect(ghost).toHaveCSS('opacity', '0.92');
+  expect(await ghost.evaluate(el => getComputedStyle(el).boxShadow)).not.toBe('none');
   await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
   await expect.poll(s.root).toEqual(['item:' + s.last.id, 'folder:a', 'folder:b', 'item:' + s.first.id]);
 }));

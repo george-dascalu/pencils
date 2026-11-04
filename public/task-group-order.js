@@ -118,7 +118,7 @@ export function taskGroupDrag({ state, storage, renderView }) {
     d.ghost = heading.cloneNode(true);
     for (const el of [d.ghost, ...d.ghost.querySelectorAll("[id], [data-group-reorder]")]) el.removeAttribute("id"), el.removeAttribute("data-group-reorder");
     d.ghost.inert = true;
-    d.ghost.classList.add("task-reorder-ghost", "task-reorder-lifted", "task-group-ghost");
+    d.ghost.classList.add("task-reorder-ghost", "task-reorder-lifted", "task-group-ghost", "drag-ghost");
     Object.assign(d.ghost.style, { left: `${r.left}px`, width: `${r.width}px` });
     d.grab = d.startY - r.top;
     d.marker = document.createElement("div");
