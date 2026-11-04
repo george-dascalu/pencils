@@ -2,6 +2,11 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.22.12 — 2026-11-04
+
+### Fixed
+- Feature F0.22-12: In a spreadsheet, a cell's editor no longer closes by itself just after it opens in Safari (WebKit), which can send a scroll event that moves nothing; only a scroll that moves the grid ends the edit. Browser tests also wait for a last save to land before removing their test vault.
+
 ## 0.22.11 — 2026-11-04
 
 ### Fixed

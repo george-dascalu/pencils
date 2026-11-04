@@ -153,7 +153,7 @@ export function createDocumentSheet({ form, record, load, onChange, icon, esc, c
     const input = document.createElement('div');input.contentEditable='true';input.setAttribute('role','textbox');input.setAttribute('aria-multiline','true'); input.dataset.sheetEditor = ''; input.setAttribute('aria-label', `Edit cell ${address(selected.r, selected.c)}`);
     if(initial===undefined && current().p)renderRichText(input,current().p);else input.textContent=initial??rawText(current());
     const cellRect=cell.getBoundingClientRect(),viewport=scroll.getBoundingClientRect(),inset=Math.max(0,viewport.top+minimumTrack()-cellRect.top);if(inset>0){input.style.top=`${inset}px`;input.style.bottom='auto';input.style.height=`${Math.min(cellRect.height-inset,scroll.clientHeight-minimumTrack())}px`;}
-    cell.append(input);editing={input,original:structuredClone(current()),selection:{start:0,end:input.textContent.length}};input.focus({preventScroll:true});restoreRichSelection(input,editing.selection);
+    cell.append(input);editing={input,original:structuredClone(current()),selection:{start:0,end:input.textContent.length},top:scroll.scrollTop,left:scroll.scrollLeft};input.focus({preventScroll:true});restoreRichSelection(input,editing.selection);
     input.addEventListener('input',event=>{if(!editing)return;const selection=richSelection(input);if(editing.typingStyle&&event.data&&!event.isComposing&&event.inputType?.startsWith('insert')&&selection){const p=readRichText(input),result=formatRichText(p,Math.max(0,selection.start-event.data.length),selection.start,editing.typingStyle);renderRichText(input,result);restoreRichSelection(input,selection);}editing.selection=selection;saveEditing();updateFormatControls();});
     input.addEventListener('beforeinput',event=>{if(event.inputType==='insertParagraph'||event.inputType==='insertLineBreak'){event.preventDefault();document.execCommand('insertText',false,'\n');}});
     input.addEventListener('paste',event=>{event.preventDefault();document.execCommand('insertText',false,event.clipboardData.getData('text/plain'));});
@@ -389,7 +389,8 @@ export function createDocumentSheet({ form, record, load, onChange, icon, esc, c
   }, { signal });
   scroll.addEventListener('dblclick', event => { if (!touch() && event.target.closest('[data-r][data-c]')) beginEdit(); }, { signal });
   let renderedTop=0;
-  scroll.addEventListener('scroll', () => { scroll.style.setProperty('--sheet-scroll-top',`${scroll.scrollTop}px`);scroll.style.setProperty('--sheet-scroll-left',`${scroll.scrollLeft}px`);if (editing) commit(); if(Math.abs(scroll.scrollTop-renderedTop)>minimumTrack()){renderedTop=scroll.scrollTop;refresh();} }, { passive: true, signal });
+  // A scroll that moves the grid ends an edit; WebKit also sends one that moves nothing (F0.22-12).
+  scroll.addEventListener('scroll', () => { scroll.style.setProperty('--sheet-scroll-top',`${scroll.scrollTop}px`);scroll.style.setProperty('--sheet-scroll-left',`${scroll.scrollLeft}px`);if (editing && (scroll.scrollTop !== editing.top || scroll.scrollLeft !== editing.left)) commit(); if(Math.abs(scroll.scrollTop-renderedTop)>minimumTrack()){renderedTop=scroll.scrollTop;refresh();} }, { passive: true, signal });
   const resize = new ResizeObserver(refresh); resize.observe(scroll);
   scroll.addEventListener('pointerdown', event => {
     if (!engine) return;

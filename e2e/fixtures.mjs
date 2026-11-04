@@ -122,10 +122,12 @@ export async function startApp(name = "app") {
     async close() {
       server.closeAllConnections?.();
       await new Promise((resolve) => server.close(resolve));
-      await store.queue;
+      // A request still being handled can queue a write after the server closed: wait for each one.
+      for (let queue; queue !== store.queue; ) await (queue = store.queue);
       await store.audit?.queue;
       await store.close?.();
-      await fs.rm(root, { recursive: true, force: true });
+      // A write still landing made the vault's folder "not empty" (ENOTEMPTY): try again shortly.
+      await fs.rm(root, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
     },
   };
 }

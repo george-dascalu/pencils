@@ -47,6 +47,16 @@ test('a tall merged cell remains editable when its anchor scrolls out of the vir
  const scroll=page.locator('.document-sheet-scroll');await scroll.press('F2');await expect(page.locator('[data-sheet-editor]')).toBeFocused();await page.locator('[data-sheet-editor]').fill('Edited merge');await page.locator('[data-sheet-editor]').press('Enter');await expect(cell(page,'A1')).toHaveText('Edited merge');
 });
 
+// F0.22-12: WebKit can send a scroll event that moves nothing just after a cell's editor opens; the
+// editor stays open, where it closed before. Only a scroll that moves the grid ends the edit.
+test('a scroll event that moves nothing leaves the cell editor open @gate',async({page})=>{
+ const doc=await app.store.mutate(()=>app.store.createDocument(app.project.id,{title:'Still scroll',document_type:'table'}));
+ await page.goto(`${app.base}/#project/${app.project.id}/documents/${doc.id}`);await expect(page.locator('.document-sheet')).toHaveAttribute('data-ready','true');
+ const scroll=page.locator('.document-sheet-scroll');await scroll.press('F2');await expect(page.locator('[data-sheet-editor]')).toBeFocused();
+ await scroll.evaluate(el=>el.dispatchEvent(new Event('scroll')));
+ await expect(page.locator('[data-sheet-editor]'),'the editor stays open').toBeFocused();
+ await page.locator('[data-sheet-editor]').fill('Kept');await page.locator('[data-sheet-editor]').press('Enter');await expect(cell(page,'A1')).toHaveText('Kept');
+});
 test('Escape cancels an autosaved rich edit and plain paste retains its line breaks @gate',async({page})=>{
  const doc=await open(page);await cell(page,'A1').dblclick();let editor=page.locator('[data-sheet-editor]');await editor.fill('Original');await editor.press('Enter');await expect(cell(page,'A1')).toHaveText('Original');
  await page.locator('.document-sheet-scroll').press('ArrowUp');await page.locator('.document-sheet-scroll').press('F2');editor=page.locator('[data-sheet-editor]');await editor.fill('Cancelled');await editor.press('Escape');await expect(cell(page,'A1')).toHaveText('Original');
