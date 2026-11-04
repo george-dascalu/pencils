@@ -1,9 +1,23 @@
 import { priorityOptions } from "./task-priority.js";
+import { projectTags, listableTag } from "./project-tags.js";
+
+// Tag groups (F0.21-91): a card is in each of its tags' groups, or in No tag ("") without one.
+export const tagGroups = (task) => (task.tags?.length ? [...new Set(task.tags)] : [""]);
+export const inGroup = (task, key, value) => (key === "tags" ? tagGroups(task).includes(value) : (task[key] || "") === value);
+// A card moved from one tag's group to another's swaps that tag; No tag clears them all.
+export function tagMove(task, from, to) {
+  const tags = task.tags || [];
+  if (to && !listableTag(to)) throw new Error("Choose a tag without commas, up to 80 characters.");
+  if (from === to) return null;
+  const kept = tags.filter((tag) => tag !== from), next = !to ? [] : kept.includes(to) ? kept : [...kept, to];
+  return next.length === tags.length && next.every((tag, i) => tag === tags[i]) ? null : next;
+}
 
 // Assignees run A to Z with Unassigned last; statuses, types and priorities keep the project's order.
 export function naturalGroups(key, tasks, config, people = []) {
   const value = (t) => t[key] || "";
   if (key === "status") return [...new Set([...config.statuses, ...tasks.map(value)])];
+  if (key === "tags") return [...projectTags(config, tasks).map((tag) => tag.name), ""];
   if (key === "assignee") return [...new Set([...people, ...tasks.map(value)].filter(Boolean))].sort((a, b) => a.localeCompare(b)).concat("");
   return [...new Set([...(key === "type" ? config.types : key === "priority" ? priorityOptions : []), ...tasks.map(value)])];
 }

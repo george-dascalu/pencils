@@ -98,3 +98,13 @@ test("Saved Kanban views accept supported swimlanes only", () => {
   assert.equal(validateViews([view])[0].kanbanGroupBy, "assignee");
   assert.throws(() => validateViews([{ ...view, kanbanGroupBy: "arbitrary" }]));
 });
+
+// F0.21-91: swimlanes by tag show a card in each of its tags' lanes; a drop swaps that tag.
+test("tag swimlanes follow the project's tags and a drop swaps the lane's tag", () => {
+  const config = { statuses: ["todo", "done"], types: ["task"], tags: [{ name: "design" }, { name: "build" }] };
+  const both = { id: "a", status: "todo", tags: ["build", "design"] }, design = { id: "b", status: "todo", tags: ["design"] }, none = { id: "c", status: "todo" };
+  assert.equal(kanbanGroup("tags"), "tags");
+  assert.deepEqual(kanbanLanes([both, design, none], "tags", config).map(([value, items]) => [value, items.map((t) => t.id)]), [["design", ["a", "b"]], ["build", ["a"]], ["", ["c"]]]);
+  assert.deepEqual(kanbanDropChanges(both, "todo", "tags", "zebra", "build"), { tags: ["design", "zebra"] });
+  assert.deepEqual(kanbanDropChanges(both, "done", "tags", "build", "build"), { status: "done" });
+});

@@ -1275,12 +1275,13 @@ function inlineTaskFields(t, extraClass = "", dateSummary = "") {
     <label class="row-status row-choice" ${taskColorAttributes(state, "status", t.status)} title="${esc(statusNames[t.status] || t.status)}"><span class="field-chip field-chip-status" aria-hidden="true">${esc(statusNames[t.status] || t.status)}</span><select ${control("status", "Status")}>${options(nextStatuses(state.config, t.status), t.status, statusNames)}</select></label>
     <label class="row-priority row-choice" ${taskColorAttributes(state, "priority", priority)} title="${esc(priorityLabel(priority))} priority"><span class="field-chip field-chip-priority priority ${esc(priority)}" aria-hidden="true">${icon(`priority-${priority}`)}</span><select ${control("priority", "Priority")}>${options(priorities, priority, priorityLabels)}</select></label>${taskDateButton(t,"row-due",dateSummary)}</div>`;
 }
-function taskRow(t, depth = null, hasChildren = false, flat = false) {
+// group: the List group this row sits in, as a card with several tags sits in each tag's.
+function taskRow(t, depth = null, hasChildren = false, flat = false, group = null) {
   const done = state.config.done.includes(t.status);
   const priority = t.priority || "none";
   const assignee = t.assignee || "Unassigned";
   const phoneField = (field, name, value, chip) => `<button type="button" class="phone-field" data-action="phone-field" data-field="${field}" data-id="${esc(t.id)}" aria-haspopup="listbox" aria-label="${name} for ${esc(t.title)}: ${esc(value)}" ${sourceReadOnly(t, field) ? "disabled" : ""}>${chip}</button>`;
-  return `<div data-task-order-row="${esc(t.id)}" data-task-order-group="${esc(depth !== null || state.groupBy === "none" ? "" : t[state.groupBy || "status"] || "")}" class="task-row ${depth !== null ? "tree-row" : ""}${flat ? " tree-flat" : ""} ${t.contextOnly ? "tree-context" : ""}" ${depth !== null ? `style="--depth:${Math.min(depth, 12)}"` : ""}>
+  return `<div data-task-order-row="${esc(t.id)}" data-task-order-group="${esc(group ?? (depth !== null || state.groupBy === "none" ? "" : t[state.groupBy || "status"] || ""))}" class="task-row ${depth !== null ? "tree-row" : ""}${flat ? " tree-flat" : ""} ${t.contextOnly ? "tree-context" : ""}" ${depth !== null ? `style="--depth:${Math.min(depth, 12)}"` : ""}>
     ${depth !== null ? `<button class="tree-toggle ${state.collapsed.has(t.id) ? "collapsed" : ""}" data-action="collapse" data-id="${esc(t.id)}" aria-label="${state.collapsed.has(t.id) ? "Expand" : "Collapse"} subtasks" ${hasChildren ? `aria-expanded="${!state.collapsed.has(t.id)}" title="${state.tasks.filter(c => c.parent === t.id).length} subtasks"` : "disabled"}>${hasChildren ? icon("chevron") : ""}</button>` : ""}
     ${taskReorderHandle(t, esc)}
     <button type="button" class="task-type row-task-link ${esc(t.type)}" data-action="task-open" data-id="${esc(t.id)}" aria-label="Open ${esc(t.title)} (${esc(label(t.type))})" title="${esc(label(t.type))} · Open card details">${icon(t.type)}</button>
@@ -1377,7 +1378,7 @@ function kanbanView(tasks) {
   const lanes = kanbanLanes(tasks, field, state.config);
   return `<div class="kanban kanban-swimlanes" role="region" aria-label="Kanban board" tabindex="0" data-group="${field}" style="--kanban-columns:${statuses.length}"><div class="kanban-lanes-content"><div class="kanban-lanes-header">${statuses.map(status => header(status, tasks.filter(t => t.status === status))).join("")}</div>${lanes.map(([value, items], index) => {
     const key = laneKey(field, value), collapsed = (state.kanbanCollapsed || []).includes(key);
-    const title = field === "assignee" ? value || "Unassigned" : field === "priority" ? priorityLabel(value) : label(value);
+    const title = field === "assignee" ? value || "Unassigned" : field === "priority" ? priorityLabel(value) : field === "tags" ? value || "No tag" : label(value);
     return `<section class="kanban-lane" data-lane-value="${esc(value)}"><h2 class="kanban-lane-heading"><button type="button" data-kanban-collapse="${esc(key)}" aria-expanded="${!collapsed}" aria-controls="kanban-lane-${index}">${icon("chevron")}${["assignee", "priority"].includes(field) ? taskColorDot(state, field, value) : ""}<span>${esc(title)}</span><span class="count">${items.length}</span></button></h2><div class="kanban-lane-row" id="kanban-lane-${index}" ${collapsed ? "hidden" : ""}>${statuses.map(status => column(status, items.filter(t => t.status === status), value)).join("")}</div></section>`;
   }).join("")}</div></div>`;
 }
@@ -2299,7 +2300,7 @@ document.addEventListener("click", async (event) => {
       case "task-new":
         taskDialog(null, {
           status: el.dataset.status || initialStatus(state.config),
-          ...(kanbanGroup(el.dataset.kanbanField) !== "none" ? { [el.dataset.kanbanField]: el.dataset.kanbanValue } : {}),
+          ...(kanbanGroup(el.dataset.kanbanField) !== "none" ? { [el.dataset.kanbanField]: el.dataset.kanbanField === "tags" ? (el.dataset.kanbanValue ? [el.dataset.kanbanValue] : []) : el.dataset.kanbanValue } : {}),
         });
         break;
       case "task-open":

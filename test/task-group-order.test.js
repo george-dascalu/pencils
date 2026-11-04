@@ -40,3 +40,14 @@ test('natural group order: workflow, project types, priorities, then people A to
   assert.deepEqual(naturalGroups('priority', tasks, config), ['urgent', 'high', 'medium', 'low', 'none', '']);
   assert.deepEqual(naturalGroups('assignee', tasks, config, ['Mia', 'Zoe']), ['alice', 'Mia', 'Zoe', '']);
 });
+
+// F0.21-91: tag groups follow the project's tag list, then other tags A to Z, then No tag.
+import { naturalGroups, tagGroups } from '../public/task-group-order.js';
+test('tag groups list the project tags, then the others, then No tag, and a card sits in each of its tags', () => {
+  const config = { statuses: ['todo'], types: ['task'], tags: [{ name: 'design' }, { name: 'build' }] };
+  const tasks = [{ tags: ['zebra', 'build'] }, { tags: ['apple'] }, {}];
+  assert.deepEqual(naturalGroups('tags', tasks, config), ['design', 'build', 'apple', 'zebra', '']);
+  assert.deepEqual(tagGroups({ tags: ['b', 'a', 'b'] }), ['b', 'a']);
+  assert.deepEqual(tagGroups({ tags: [] }), ['']);
+  assert.deepEqual(tagGroups({}), ['']);
+});

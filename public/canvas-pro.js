@@ -401,7 +401,7 @@ export function canvasPro(ctx, basic) {
     if (n.viewType === "timeline")
       return (
         `<div class="query-title">${esc(n.text || "Live cards")}</div>` +
-        timelineHTML(tasks, ctx, n.id, n.timelineShowWeekends !== false, n.timelineRange, n.timelineList)
+        timelineHTML(tasks, ctx, n.id, n.timelineShowWeekends !== false, n.timelineRange, n.timelineList, n.timelineGroup)
       );
     if (n.viewType === "kanban")
       return `<div class="query-title">${esc(n.text || "Live cards")}</div><div class="embedded-kanban">${state.config.statuses

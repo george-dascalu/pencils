@@ -2,6 +2,15 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.21.91 — 2026-11-04
+
+### Added
+- Feature F0.21-91: List, Table, Kanban swimlanes, Week board and Timeline can group cards by tag. A card with several tags shows under each, one with none under No tag, and moving a card from one tag's group to another swaps that tag (onto No tag clears its tags).
+- Feature F0.21-91: Timeline can group its rows by status, card type, assignee, priority or tag, with Group by in Filters (View options on phones).
+
+### Changed
+- Feature F0.21-91: Week board's Rows is now Group by and sits in Filters, like List's grouping (View options on phones).
+
 ## 0.21.90 — 2026-11-04
 
 ### Added

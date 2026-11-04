@@ -8,6 +8,14 @@ import { timelineSelection } from "./timeline-select.js";
 import { pageOf, localDate } from "./task-visibility.js";
 import { cardKeyNumber } from "./card-key.js";
 import { relationshipChanges } from "./task-relationship-model.js";
+import { naturalGroups, inGroup } from "./task-group-order.js";
+import { fieldOn } from "./card-fields.js";
+import { statusLabel } from "./workflow-model.js";
+import { priorityLabel } from "./task-priority.js";
+import { projectPeople } from "./teams.js";
+
+// Timeline's Group by (F0.21-91): the card fields List groups by, and tags.
+const GROUPS = [["none", "No grouping"], ["status", "Status"], ["type", "Type"], ["assignee", "Assignee"], ["priority", "Priority"], ["tags", "Tag"]];
 import {
   DAY,
   dateKey,
@@ -35,9 +43,12 @@ export function timelineHTML(
   showWeekends = true,
   requestedRange = null,
   list = "full",
+  group = "none",
 ) {
   const { esc } = ctx;
   if (!["full", "number", "hidden"].includes(list)) list = "full";
+  const config = ctx.state?.config || {}, groups = GROUPS.filter(([key]) => key === "none" || fieldOn(config, key));
+  if (!groups.some(([key]) => key === group)) group = "none";
   const range = shownRange(requestedRange);
   const allDated = tasks.filter((t) => t.start || t.due);
   const allUndated = tasks.filter((t) => !t.start && !t.due);
@@ -63,6 +74,12 @@ export function timelineHTML(
   const x = axis.x;
   // Dots at a bar's ends drag an arrow to another card (F0.21-90); pointer only, as the card's
   // Dependencies section does the same from the keyboard.
+  // Scheduled rows under a band per group, in the order List's groups take; a card with several
+  // tags shows under each.
+  const groupName = (value) => group === "status" ? statusLabel(config, value) : group === "priority" ? priorityLabel(value) : group === "tags" ? value || "No tag" : group === "type" ? (value ? ctx.label(value) : "No type") : value || "Unassigned";
+  const groupedRows = (rows, row) => group === "none" ? rows.map(row).join("") : naturalGroups(group, rows, config, projectPeople(ctx.state).map((p) => p.name))
+    .map((value) => [value, rows.filter((t) => inGroup(t, group, value))]).filter(([, items]) => items.length)
+    .map(([value, items]) => `<div class="timeline-section-label timeline-group-label" data-timeline-group-value="${esc(value)}"><span>${esc(groupName(value))} (${items.length})</span></div>${items.map(row).join("")}`).join("");
   const linkDots = '<span class="timeline-link" data-link-end="start" aria-hidden="true" title="Drag to a card this one waits for"></span><span class="timeline-link" data-link-end="due" aria-hidden="true" title="Drag to a card that waits for this one"></span>';
   const taskLabel = (t, unplanned = false) =>
     `<div class="timeline-task-label"><button class="timeline-task-open" data-action="task-open" data-id="${esc(t.id)}" title="${esc(t.key || "")} ${esc(t.title)}" aria-label="${esc(t.key || "")} ${esc(t.title)}" ${unplanned ? `draggable="${!sourceReadOnly(t,"due")}" data-unscheduled="${esc(t.id)}"` : ""}>${taskColorDot(ctx.state, "status", t.status)}<span class="timeline-key-full">${esc(t.key || "")}</span><span class="timeline-key-number">${esc(t.key ? cardKeyNumber(t.key) : t.title)}</span> <span class="timeline-title">${esc(t.title)}</span></button><button type="button" class="icon-button timeline-date-action ${unplanned ? "timeline-schedule" : ""}" data-task-dates="${esc(t.id)}" aria-label="${unplanned ? "Set" : "Edit"} dates for ${esc(t.title)}" title="${unplanned ? "Set" : "Edit"} dates" aria-haspopup="dialog" aria-expanded="false">${ctx.icon("calendar")}</button></div>`;
@@ -71,13 +88,13 @@ export function timelineHTML(
       ? `<div class="timeline-page-summary" role="status">Page ${page.page + 1} of ${page.pages} · ${tasks.length} cards<button class="button small" data-timeline-page="${page.page - 1}" ${!page.page ? "disabled" : ""}>Previous cards</button><button class="button small" data-timeline-page="${page.page + 1}" ${page.page + 1 >= page.pages ? "disabled" : ""}>Next cards</button></div>`
       : "";
   // The project Timeline shows its options in the toolbar row; a board's Timeline keeps them inside.
-  const head = `<div class="planning-head" data-timeline-options="${esc(scope)}" ${scope === "project" ? "data-phone-options" : ""}><div class="timeline-options"><label data-filters-option><span class="control-label">Card list</span> <select data-timeline-list="${esc(scope)}" aria-label="Card list">${[["full", "Full list"], ["number", "Card numbers"], ["hidden", "List hidden"]].map(([value, name]) => `<option value="${value}" ${list === value ? "selected" : ""}>${name}</option>`).join("")}</select></label><button type="button" class="button small range-trigger" data-timeline-range aria-haspopup="dialog" aria-expanded="false" aria-label="Timeline range: ${esc(timelineRangeName(requestedRange, range))}" title="Timeline range">${rangeLabelHTML(timelineRangeName(requestedRange, range), ctx)}</button><label class="check-control"><input type="checkbox" data-timeline-weekends data-weekends-toggle ${showWeekends ? "checked" : ""}>Show weekends</label></div><span class="timeline-hint" role="status">${range && axis.end(max) === 0 ? "No weekdays in this range. Show weekends or change the range." : "Choose a row to set its start and end dates. Drag bars to move or resize."}</span></div>`;
+  const head = `<div class="planning-head" data-timeline-options="${esc(scope)}" ${scope === "project" ? "data-phone-options" : ""}><div class="timeline-options"><label data-filters-option><span class="control-label">Group by</span> <select data-timeline-group="${esc(scope)}" aria-label="Group by">${groups.map(([value, name]) => `<option value="${value}" ${group === value ? "selected" : ""}>${name}</option>`).join("")}</select></label><label data-filters-option><span class="control-label">Card list</span> <select data-timeline-list="${esc(scope)}" aria-label="Card list">${[["full", "Full list"], ["number", "Card numbers"], ["hidden", "List hidden"]].map(([value, name]) => `<option value="${value}" ${list === value ? "selected" : ""}>${name}</option>`).join("")}</select></label><button type="button" class="button small range-trigger" data-timeline-range aria-haspopup="dialog" aria-expanded="false" aria-label="Timeline range: ${esc(timelineRangeName(requestedRange, range))}" title="Timeline range">${rangeLabelHTML(timelineRangeName(requestedRange, range), ctx)}</button><label class="check-control"><input type="checkbox" data-timeline-weekends data-weekends-toggle ${showWeekends ? "checked" : ""}>Show weekends</label></div><span class="timeline-hint" role="status">${range && axis.end(max) === 0 ? "No weekdays in this range. Show weekends or change the range." : "Choose a row to set its start and end dates. Drag bars to move or resize."}</span></div>`;
   const section = (options) => `<section class="task-timeline" data-timeline="${esc(scope)}" data-list="${esc(list)}" data-min="${min}" data-unit="${unit}" data-scale="${scale}" data-weekends="${showWeekends}" data-range-start="${range?.start || ""}" data-range-end="${range?.end || ""}" data-range-choice="${range && requestedRange.quick ? esc(requestedRange.quick) : ""}" data-auto-end="${axis.dateAt(width - 1)}" style="--timeline-unit:${unit}px;--timeline-step:${step * unit}px;--timeline-week:${7 * unit}px;--timeline-work:${5 * unit}px">
     ${options}${pager}
     <div class="timeline-scroll" tabindex="0" role="region" aria-label="Project timeline"><div class="timeline-sheet" style="width:${tasks.length ? `calc(${width}px + var(--timeline-label))` : "100%"}">
       <div class="timeline-header"><span class="timeline-task-label"><span class="timeline-head-full">Card</span><span class="timeline-head-number">#</span></span><div class="timeline-ruler"></div></div>
       <svg class="timeline-dependencies" height="${dated.length * 44}" style="left:var(--timeline-label);top:60px" role="img" aria-label="Card dependencies"></svg>
-      ${dated.map((t) => `<div class="timeline-row" data-timeline-row="${esc(t.id)}">${taskLabel(t)}<div class="timeline-track" data-schedule-target tabindex="0" role="group" aria-label="Choose start and end dates for ${esc(t.title)}" title="Choose a start, then an end" ${sourceReadOnly(t,"due") ? 'aria-disabled="true"' : ""}><div tabindex="0" role="slider" aria-label="Schedule ${esc(t.title)}" aria-valuetext="${esc(t.start || t.due)} to ${esc(t.due || t.start)}" class="timeline-bar ${t.milestone ? "milestone" : ""} ${!showWeekends && axis.end(t.due || t.start) === x(t.start || t.due) ? "weekend-only" : ""} ${linkEdges(x(t.start || t.due), Math.max(12, axis.end(t.due || t.start) - x(t.start || t.due)), width)}" data-timeline-task="${esc(t.id)}" title="${esc(t.start || t.due)} to ${esc(t.due || t.start)} · Select to edit dates · Alt+arrows moves by a ${showWeekends ? "day" : "weekday"}" data-task-color="status" style="--task-field-color:${taskFieldColor(ctx.state, "status", t.status)};left:${x(t.start || t.due)}px;width:${Math.max(12, axis.end(t.due || t.start) - x(t.start || t.due))}px"><span data-date-end="start" role="separator" aria-label="Resize start date"></span><span class="timeline-bar-text">${esc(t.title)}</span><span data-date-end="due" role="separator" aria-label="Resize due date"></span>${linkDots}</div><span class="timeline-outside" hidden>Outside range</span><button class="milestone-toggle" data-milestone="${esc(t.id)}" aria-pressed="${!!t.milestone}" title="Toggle milestone">◇</button></div></div>`).join("")}
+      ${groupedRows(dated, (t) => `<div class="timeline-row" data-timeline-row="${esc(t.id)}">${taskLabel(t)}<div class="timeline-track" data-schedule-target tabindex="0" role="group" aria-label="Choose start and end dates for ${esc(t.title)}" title="Choose a start, then an end" ${sourceReadOnly(t,"due") ? 'aria-disabled="true"' : ""}><div tabindex="0" role="slider" aria-label="Schedule ${esc(t.title)}" aria-valuetext="${esc(t.start || t.due)} to ${esc(t.due || t.start)}" class="timeline-bar ${t.milestone ? "milestone" : ""} ${!showWeekends && axis.end(t.due || t.start) === x(t.start || t.due) ? "weekend-only" : ""} ${linkEdges(x(t.start || t.due), Math.max(12, axis.end(t.due || t.start) - x(t.start || t.due)), width)}" data-timeline-task="${esc(t.id)}" title="${esc(t.start || t.due)} to ${esc(t.due || t.start)} · Select to edit dates · Alt+arrows moves by a ${showWeekends ? "day" : "weekday"}" data-task-color="status" style="--task-field-color:${taskFieldColor(ctx.state, "status", t.status)};left:${x(t.start || t.due)}px;width:${Math.max(12, axis.end(t.due || t.start) - x(t.start || t.due))}px"><span data-date-end="start" role="separator" aria-label="Resize start date"></span><span class="timeline-bar-text">${esc(t.title)}</span><span data-date-end="due" role="separator" aria-label="Resize due date"></span>${linkDots}</div><span class="timeline-outside" hidden>Outside range</span><button class="milestone-toggle" data-milestone="${esc(t.id)}" aria-pressed="${!!t.milestone}" title="Toggle milestone">◇</button></div></div>`)}
       ${undated.length ? `<div class="timeline-section-label"><span>Unscheduled (${allUndated.length})</span></div>${undated.map((t) => `<div class="timeline-row timeline-unplanned" data-timeline-row="${esc(t.id)}">${taskLabel(t, true)}<div class="timeline-track" data-schedule-target tabindex="0" role="group" aria-label="Choose start and end dates for ${esc(t.title)}" title="Choose a start, then an end" ${sourceReadOnly(t,"due") ? 'aria-disabled="true"' : ""}><span class="timeline-schedule-hint" aria-hidden="true"><span class="timeline-hint-card">${esc(t.key || "")} ${esc(t.title)} · </span>Set start, then end</span></div></div>`).join("")}` : ""}
       ${!tasks.length ? `<div class="empty">${ctx.icon("leaf")}<h2>${ctx.state?.tasks?.length ? "No matching cards" : "No cards yet"}</h2><button class="button soft" data-action="${ctx.state?.tasks?.length ? "filters-reset" : "task-new"}">${ctx.state?.tasks?.length ? "Clear filters" : "Add a card"}</button></div>` : ""}
     </div></div></section>`;
@@ -93,15 +110,11 @@ export function timelineInteractions(ctx, onOption) {
   function editDates(id, trigger) {
     const projectId = state.project.id;
     const scope = trigger.closest("[data-timeline]").dataset.timeline;
-    dateEditor.open(id, () =>
-      state.project?.id === projectId
-        ? document.querySelector(
-            `[data-timeline="${CSS.escape(scope)}"] [data-task-dates="${CSS.escape(id)}"]`,
-          )
-        : null,
-      { chooseOnTimeline: () => selection.arm(document.querySelector(
-        `[data-timeline="${CSS.escape(scope)}"] [data-timeline-row="${CSS.escape(id)}"] [data-schedule-target]`,
-      )) },
+    // The chosen row while it shows (a card grouped under several tags has a row in each), else the card's first.
+    const row = () => (trigger.isConnected && trigger.closest("[data-timeline-row]")) ||
+      document.querySelector(`[data-timeline="${CSS.escape(scope)}"] [data-timeline-row="${CSS.escape(id)}"]`);
+    dateEditor.open(id, () => (state.project?.id === projectId ? row()?.querySelector("[data-task-dates]") : null),
+      { chooseOnTimeline: () => selection.arm(row()?.querySelector("[data-schedule-target]")) },
     );
   }
   function drawDependencies(root) {
@@ -501,6 +514,8 @@ export function timelineInteractions(ctx, onOption) {
     // Its own scope: on desktop and iPad it waits in Filters, away from the other options.
     if (e.target.matches("[data-timeline-list]"))
       onOption(e.target.dataset.timelineList, "list", e.target.value);
+    if (e.target.matches("[data-timeline-group]"))
+      onOption(e.target.dataset.timelineGroup, "group", e.target.value);
     if (e.target.matches("[data-timeline-weekends]") && e.target.type === "checkbox")
       onOption(
         timelineRoot(e.target).dataset.timeline,

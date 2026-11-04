@@ -265,3 +265,19 @@ test("saved table preferences reject malformed rules and drop removed fields", (
 test("default table fields lead with the shared identity, fields and dates", () => {
   assert.deepEqual(tableFields(config).slice(0, 8).map(f => f.key), ["type", "key", "title", "assignee", "status", "priority", "start", "due"]);
 });
+
+// F0.21-91: grouping the Table by tags puts a card in each of its tags' groups.
+test("Table groups by tag once per tag, with No tag last, without changing the cards", () => {
+  const cards = [{ id: "a", title: "A", tags: ["build", "design"] }, { id: "b", title: "B", tags: ["design"] }, { id: "c", title: "C" }];
+  const copy = structuredClone(cards);
+  const result = tableResult(cards, prefs({ groups: ["tags"] }), config);
+  assert.deepEqual(result.tasks.map((t) => [t.id, result.groupPath(t)[0]]), [["a", "build"], ["a", "design"], ["b", "design"], ["c", ""]]);
+  assert.equal(result.counts.get('["design"]'), 2);
+  assert.deepEqual(result.tasks[0].tags, ["build", "design"], "rows keep all their tags");
+  assert.deepEqual(cards, copy);
+});
+test("Table's tag groups follow the project's tag list, then other tags, as List's do", () => {
+  const cards = [{ id: "a", title: "A", tags: ["build", "design"] }, { id: "b", title: "B", tags: ["zebra"] }, { id: "c", title: "C", tags: ["alpha"] }, { id: "d", title: "D" }];
+  const result = tableResult(cards, prefs({ groups: ["tags"] }), { ...config, tags: [{ name: "design" }, { name: "build" }] });
+  assert.deepEqual(result.tasks.map((t) => result.groupPath(t)[0]), ["design", "build", "alpha", "zebra", ""]);
+});

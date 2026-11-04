@@ -48,7 +48,8 @@ export function grid(ctx) {
   let matchingRows = [], dragging = false, pressed = false;
   // The rows a cell range spans, as in a spreadsheet: Bulk edit's "Selected rows" when there are two or more.
   const rangeRows = () => (anchor && focus ? rowIds.slice(Math.min(anchor[0], focus[0]), Math.max(anchor[0], focus[0]) + 1) : []);
-  const bulkIds=()=> $("#bulk-scope")?.value === "matching" ? matchingRows.map(t=>t.id) : $("#bulk-scope")?.value === "page" ? [...rowIds] : rangeRows();
+  // A card grouped under several tags has a row in each; bulk edits reach it once.
+  const bulkIds=()=> [...new Set($("#bulk-scope")?.value === "matching" ? matchingRows.map(t=>t.id) : $("#bulk-scope")?.value === "page" ? rowIds : rangeRows())];
   const bulkDescription = (count) => {
     const cards = `${count} ${count === 1 ? "card" : "cards"}`;
     return $("#bulk-scope")?.value === "matching" ? `all ${count} matching ${count === 1 ? "card" : "cards"}`
@@ -65,7 +66,7 @@ export function grid(ctx) {
     return `<details class="board-menu table-bulk-menu" data-board-menu="table-bulk" ${state.headerMenu === "table-bulk" ? "open" : ""}>
       <summary>Bulk edit<svg class="icon menu-caret" viewBox="0 0 24 24" aria-hidden="true"><path d="m8 10 4 4 4-4"/></svg></summary>
       <div class="board-menu-panel table-menu-panel" id="grid-bulk" role="group" aria-label="Bulk edit">
-        <label class="field"><span>Apply to</span><select id="bulk-scope"><option value="selected" disabled>Selected rows</option><option value="page" selected>This page (${rowIds.length})</option><option value="matching">All matching (${matchingRows.length})</option></select></label>
+        <label class="field"><span>Apply to</span><select id="bulk-scope"><option value="selected" disabled>Selected rows</option><option value="page" selected>This page (${new Set(rowIds).size})</option><option value="matching">All matching (${matchingRows.length})</option></select></label>
         <label class="field"><span>Status</span><select id="bulk-status"><option value="">Choose status…</option>${options(state.config.statuses, "")}</select></label>
         <div class="menu-footer"><button type="button" class="button small" data-feature="bulk-archive">${ctx.icon("archive")}Archive cards</button></div>
       </div></details>`;
@@ -166,7 +167,7 @@ export function grid(ctx) {
     const result = tableResult(input, preferences, state.config, state.tasks, {
       me: state.session?.user?.username || "",
     });
-    matchingRows = result.tasks;
+    matchingRows = [...new Map(result.tasks.map((t) => [t.id, t])).values()];
     state.tableGroupPaths = [...result.counts.keys()];
     const total = result.tasks.length;
     const pages = Math.max(1, Math.ceil(total / 100));

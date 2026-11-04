@@ -1,4 +1,5 @@
 import { fieldOn } from "./card-fields.js";
+import { projectTags } from "./project-tags.js";
 import { validQuery, compileQuery } from "./query-model.js";
 // Shared table rules: no task mutations, stable ordering, and empty values last.
 export const tableFieldKeys =
@@ -35,6 +36,8 @@ export const emptyValue = (v) =>
   v == null || v === "" || (Array.isArray(v) && !v.length);
 export const valueKey = (v) =>
   emptyValue(v) ? "" : Array.isArray(v) ? [...v].sort().join(", ") : String(v);
+// Grouped by tags (F0.21-91), a row stands for one of its card's tags; it keeps all of them.
+const TAG_GROUP = Symbol("tag group");
 export function validTablePreferences(p) {
   const field = (key) => typeof key === "string" && tableFieldKeys.test(key);
   const string = (v) => typeof v === "string" && v.length <= 500;
@@ -172,19 +175,27 @@ export function tableResult(tasks, p, config, allTasks = tasks, context = {}) {
       p.filters.every((f) => matchesTableFilter(t, f, fields)) &&
       query(t),
   );
-  const ordered = [...filtered].sort((a, b) => {
+  const rows = p.groups.includes("tags")
+    ? filtered.flatMap((t) => (t.tags?.length ? [...new Set(t.tags)] : [""]).map((tag) => ({ ...t, [TAG_GROUP]: tag })))
+    : filtered;
+  const groupValue = (t, key) => key === "tags" && TAG_GROUP in t ? t[TAG_GROUP] : tableValue(t, key);
+  // Tag groups follow the tag list, as List's do: the project's tags, then others.
+  const tagRank = new Map(p.groups.includes("tags") ? projectTags(config, allTasks).map((tag, i) => [tag.name, i]) : []);
+  const ordered = [...rows].sort((a, b) => {
     for (const key of p.groups) {
-      const cmp = compareTableValues(
-        tableValue(a, key),
-        tableValue(b, key),
+      const cmp = key === "tags" && a[TAG_GROUP] && b[TAG_GROUP]
+        ? (tagRank.get(a[TAG_GROUP]) ?? tagRank.size) - (tagRank.get(b[TAG_GROUP]) ?? tagRank.size)
+        : compareTableValues(
+        groupValue(a, key),
+        groupValue(b, key),
         key,
         1,
         config,
         lookup,
       );
       if (cmp) return cmp;
-      const tie = valueKey(tableValue(a, key)).localeCompare(
-        valueKey(tableValue(b, key)),
+      const tie = valueKey(groupValue(a, key)).localeCompare(
+        valueKey(groupValue(b, key)),
       );
       if (tie) return tie;
     }
@@ -201,7 +212,7 @@ export function tableResult(tasks, p, config, allTasks = tasks, context = {}) {
     }
     return 0;
   });
-  const groupPath = (t) => p.groups.map((k) => valueKey(tableValue(t, k)));
+  const groupPath = (t) => p.groups.map((k) => valueKey(groupValue(t, k)));
   const counts = new Map(),
     summaries = new Map();
   for (const t of ordered)

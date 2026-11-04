@@ -1,4 +1,4 @@
-import { kanbanDropChanges, kanbanDropError, laneValue } from "./kanban-model.js";
+import { kanbanDropChanges, kanbanDropError, inLane } from "./kanban-model.js";
 import { reorderTasks } from "./task-order-model.js";
 import { snapKanbanColumns } from "./kanban-layout.js";
 // A light tick: Android vibrates; Safari on iOS 18 ticks when a switch toggles, here a hidden one.
@@ -25,7 +25,8 @@ export function kanbanDrag(ctx) {
     frame = null,
     press = null;
   function changesFor(t, column) {
-    return kanbanDropChanges(t, column.dataset.dropStatus, column.dataset.kanbanField, column.dataset.kanbanValue);
+    // A tag lane swaps the tag of the lane the card came from (F0.21-91).
+    return kanbanDropChanges(t, column.dataset.dropStatus, column.dataset.kanbanField, column.dataset.kanbanValue, drag?.from ?? "");
   }
   function dropError(t, column) {
     return t ? kanbanDropError(state.config, t, changesFor(t, column), state.tasks) : "This card is no longer available.";
@@ -149,7 +150,7 @@ export function kanbanDrag(ctx) {
         col.title = error;
       }
     }
-    drag = { card, id: card.dataset.dragTask, ghost, placeholder, x, y, dx: x - r.left, dy: y - r.top };
+    drag = { card, id: card.dataset.dragTask, from: card.closest("[data-kanban-value]")?.dataset.kanbanValue ?? "", ghost, placeholder, x, y, dx: x - r.left, dy: y - r.top };
     state.kanbanDragging = true;
     document.body.classList.add("kanban-dragging");
   }
@@ -176,7 +177,7 @@ export function kanbanDrag(ctx) {
       .filter((key) => key !== id);
     const hidden = state.tasks
       .filter(
-        (t) => t.status === status && (!field || laneValue(t, field) === value) && t.id !== id && !visible.includes(t.id),
+        (t) => t.status === status && (!field || inLane(t, field, value)) && t.id !== id && !visible.includes(t.id),
       )
       .sort(
         (a, b) => (a.order || 0) - (b.order || 0) || a.id.localeCompare(b.id),

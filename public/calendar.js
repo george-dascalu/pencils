@@ -5,7 +5,7 @@ import { timedCard, calendarTimeMove, calendarTimeSelection, calendarTimeResize,
 import { anchoredPanel } from "./anchored-panel.js";
 import { mainWidth } from "./layout-width.js";
 import { calendarRange, calendarDateChange, calendarWeeks, agendaGroups, AGENDA_RANGES, agendaRange, shiftAgendaRange } from "./calendar-model.js";
-import { naturalGroups } from "./task-group-order.js";
+import { naturalGroups, inGroup } from "./task-group-order.js";
 import { groupedTaskPatch } from "./task-order-model.js";
 import { projectPeople } from "./teams.js";
 import { fieldOn } from "./card-fields.js";
@@ -26,9 +26,9 @@ export function calendarView(ctx) {
   let mode = storage.get("calendar-mode", mainWidth() <= 780 ? "agenda" : "month");
   let quick = storage.get("agenda-range", { day: "today", week: "this-week", month: "this-month" }[storage.get("agenda-period", "week")] || "this-week"), picked = null, anchor = localDate();
   let weekends = storage.get("calendar-weekends", true) !== false, undated = [], shownTasks = [];
-  // Week board rows: a card field, or one row for every card.
+  // Week board rows: a card field or tag, or one row for every card (Group by, in Filters: F0.21-91).
   let boardRows = storage.get("week-board-rows", "assignee");
-  const ROW_FIELDS = [["assignee", "By assignee"], ["status", "By status"], ["priority", "By priority"], ["type", "By card type"], ["none", "No rows"]];
+  const ROW_FIELDS = [["assignee", "Assignee"], ["status", "Status"], ["priority", "Priority"], ["type", "Card type"], ["tags", "Tag"], ["none", "No grouping"]];
   const rowField = () => ROW_FIELDS.some(([key]) => key === boardRows) && (boardRows === "none" || fieldOn(state.config, boardRows)) ? boardRows : "none";
   let drag = null, suppressUntil = 0, suppressId = "";
   const format = (day, options = {}) => new Date(`${day}T12:00:00`).toLocaleDateString(undefined, { day: "numeric", month: "short", ...options });
@@ -76,13 +76,14 @@ export function calendarView(ctx) {
     const byDay = new Map(agendaGroups(tasks, from, to, weekends)), placed = [...byDay.values()].flat();
     // A card without a priority has priority None; statuses no longer in the workflow keep a row.
     const value = t => field === "none" ? "" : field === "priority" ? t.priority || "none" : t[field] || "";
-    const rows = field === "none" ? [""] : naturalGroups(field, placed.map(t => ({ [field]: value(t) })), state.config, projectPeople(state).map(p => p.name));
-    const name = value => field === "status" ? statusLabel(state.config, value) : field === "priority" ? priorityLabel(value) : value ? ctx.label(value) : field === "type" ? "No type" : "Unassigned";
+    const inRow = (t, row) => field === "tags" ? inGroup(t, field, row) : value(t) === row;
+    const rows = field === "none" ? [""] : field === "tags" ? naturalGroups(field, placed, state.config) : naturalGroups(field, placed.map(t => ({ [field]: value(t) })), state.config, projectPeople(state).map(p => p.name));
+    const name = value => field === "status" ? statusLabel(state.config, value) : field === "priority" ? priorityLabel(value) : field === "tags" ? value || "No tag" : value ? ctx.label(value) : field === "type" ? "No type" : "Unassigned";
     const card = t => `<article class="week-board-card" data-calendar-card="${esc(t.id)}" data-task-color="status" style="--task-field-color:${taskFieldColor(state, "status", t.status)}">${sourceReadOnly(t, "due") ? "" : `<button type="button" class="icon-button calendar-move" data-calendar-move aria-label="Move ${esc(t.title)}" title="Drag to another day or row">${icon("drag")}</button>`}<button type="button" class="week-board-title" data-action="task-open" data-id="${esc(t.id)}" title="${esc(title(t))}">${esc(title(t))}</button>${ctx.inlineTaskFields(t, "week-board-fields", rangeLabel(t))}</article>`;
     // A table to assistive technology: days are column headers, rows' names row headers.
     return `${placed.length ? "" : '<p class="field-hint week-board-empty">No cards scheduled this week.</p>'}<div class="calendar-scroll week-board-scroll" role="region" aria-label="Week board" tabindex="0"><div class="week-board" role="table" aria-label="Week board" data-rows="${field}" style="--week-board-days:${days.length}"><div class="week-board-head-row" role="row"><div class="week-board-corner" role="columnheader"><span class="sr-only">${field === "none" ? "Cards" : esc(ROW_FIELDS.find(([key]) => key === field)[1])}</span></div>${days.map(day => `<div class="week-board-day-head${day === localDate() ? " today" : ""}${isWeekend(day) ? " weekend" : ""}" role="columnheader" data-calendar-date="${day}"><time datetime="${day}">${esc(format(day, { weekday: "short" }))}</time></div>`).join("")}</div>${rows.map(row => {
-      const count = placed.filter(t => value(t) === row).length;
-      return `<div class="week-board-row" role="row" data-week-board-value="${esc(row)}"><div class="week-board-row-head" role="rowheader">${field === "none" ? '<span class="sr-only">All cards</span>' : `<span>${esc(name(row))}</span><span class="count" aria-label="${count} ${count === 1 ? "card" : "cards"}">${count}</span>`}</div>${days.map(day => `<div class="week-board-cell${isWeekend(day) ? " weekend" : ""}" role="cell" data-calendar-date="${day}" data-week-board-value="${esc(row)}">${(byDay.get(day) || []).filter(t => value(t) === row).map(card).join("")}</div>`).join("")}</div>`;
+      const count = placed.filter(t => inRow(t, row)).length;
+      return `<div class="week-board-row" role="row" data-week-board-value="${esc(row)}"><div class="week-board-row-head" role="rowheader">${field === "none" ? '<span class="sr-only">All cards</span>' : `<span>${esc(name(row))}</span><span class="count" aria-label="${count} ${count === 1 ? "card" : "cards"}">${count}</span>`}</div>${days.map(day => `<div class="week-board-cell${isWeekend(day) ? " weekend" : ""}" role="cell" data-calendar-date="${day}" data-week-board-value="${esc(row)}">${(byDay.get(day) || []).filter(t => inRow(t, row)).map(card).join("")}</div>`).join("")}</div>`;
     }).join("")}</div></div>`;
   }
   function render(tasks) {
@@ -112,7 +113,7 @@ export function calendarView(ctx) {
       return `<div class="calendar-task" data-calendar-card="${esc(t.id)}" data-id="${esc(t.id)}" data-task-color="status" style="--task-field-color:${taskFieldColor(state, "status", t.status)};grid-column:${s.from + 1} / ${s.to + 2};grid-row:${s.lane + 2}" title="${esc(title(t))} · ${s.range.start} – ${s.range.end}${sourceReadOnly(t,"due") ? ' · Dates managed by source' : ' · Drag to move'}">${handle("start", s.resizeStart)}<button type="button" class="calendar-card-title" data-action="task-open" data-id="${esc(t.id)}" aria-label="Open ${esc(title(t))}">${esc(t.title)}</button>${handle("due", s.resizeEnd)}</div>`;
     }).join("")}</div>`).join("")}${mode === "week" ? "</div>" : ""}${mode === "week" ? calendarHoursHTML(tasks, weeks[0].days, ctx) : ""}</div></div>`;
     zoom.restore();
-    return { controls: `<button type="button" class="button small" data-calendar-unscheduled data-after-filters aria-label="Unscheduled cards (${undated.length})" title="Unscheduled cards (${undated.length})" aria-haspopup="dialog" aria-expanded="false">${icon("clock")}<span>${undated.length}</span></button><div class="planning-head"><div class="planning-period"><button class="icon-button" data-feature="month-prev" aria-label="Previous period" title="Previous period">${icon("arrow")}</button><h2>${esc(heading)}</h2><button class="icon-button" data-feature="month-next" aria-label="Next period" title="Next period">${icon("arrow")}</button></div><div class="planning-options" data-phone-options>${mode === "week" ? zoom.controls() : mode === "agenda" ? rangePicker(range, heading) : mode === "board" ? `<label><span class="control-label">Rows</span><select id="week-board-rows">${ROW_FIELDS.filter(([key]) => key === "none" || fieldOn(state.config, key)).map(([key, name]) => `<option value="${key}" ${key === rowField() ? "selected" : ""}>${name}</option>`).join("")}</select></label>` : ""}${mode === "month" ? "" : '<span class="planning-separator" aria-hidden="true"></span>'}<button type="button" id="calendar-weekends" class="icon-button" data-calendar-weekends data-weekends-toggle aria-label="Show weekends" aria-pressed="${weekends}" title="${weekends ? "Hide weekends" : "Show weekends"}">${icon("calendar-weekends")}</button><label><span class="control-label">Layout</span> <select id="calendar-mode"><option value="month" ${mode === "month" ? "selected" : ""}>Month</option><option value="week" ${mode === "week" ? "selected" : ""}>Week</option><option value="board" ${mode === "board" ? "selected" : ""}>Week board</option><option value="agenda" ${mode === "agenda" ? "selected" : ""}>Agenda</option></select></label></div></div>`, html: `${empty}${mode === "agenda" ? agenda : mode === "board" ? weekBoard(tasks, from, to) : month}<span class="sr-only" data-calendar-announcement role="status" aria-live="polite"></span>` };
+    return { controls: `<button type="button" class="button small" data-calendar-unscheduled data-after-filters aria-label="Unscheduled cards (${undated.length})" title="Unscheduled cards (${undated.length})" aria-haspopup="dialog" aria-expanded="false">${icon("clock")}<span>${undated.length}</span></button><div class="planning-head"><div class="planning-period"><button class="icon-button" data-feature="month-prev" aria-label="Previous period" title="Previous period">${icon("arrow")}</button><h2>${esc(heading)}</h2><button class="icon-button" data-feature="month-next" aria-label="Next period" title="Next period">${icon("arrow")}</button></div><div class="planning-options" data-phone-options>${mode === "week" ? zoom.controls() : mode === "agenda" ? rangePicker(range, heading) : mode === "board" ? `<label data-filters-option><span class="control-label">Group by</span><select id="week-board-rows" aria-label="Group by">${ROW_FIELDS.filter(([key]) => key === "none" || fieldOn(state.config, key)).map(([key, name]) => `<option value="${key}" ${key === rowField() ? "selected" : ""}>${name}</option>`).join("")}</select></label>` : ""}${["week", "agenda"].includes(mode) ? '<span class="planning-separator" aria-hidden="true"></span>' : ""}<button type="button" id="calendar-weekends" class="icon-button" data-calendar-weekends data-weekends-toggle aria-label="Show weekends" aria-pressed="${weekends}" title="${weekends ? "Hide weekends" : "Show weekends"}">${icon("calendar-weekends")}</button><label><span class="control-label">Layout</span> <select id="calendar-mode"><option value="month" ${mode === "month" ? "selected" : ""}>Month</option><option value="week" ${mode === "week" ? "selected" : ""}>Week</option><option value="board" ${mode === "board" ? "selected" : ""}>Week board</option><option value="agenda" ${mode === "agenda" ? "selected" : ""}>Agenda</option></select></label></div></div>`, html: `${empty}${mode === "agenda" ? agenda : mode === "board" ? weekBoard(tasks, from, to) : month}<span class="sr-only" data-calendar-announcement role="status" aria-live="polite"></span>` };
   }
   function editDates(id, trigger) {
     const project = state.project.id;
@@ -151,8 +152,9 @@ export function calendarView(ctx) {
     const day = dayAt(x, y);
     if (!day) return null;
     const change = calendarDateChange(d.task, d.grabbed, day, d.handle), row = mode === "board" && !d.handle && hit?.closest(".week-board-cell");
-    if (row && rowField() !== "none" && (rowField() === "priority" ? d.task.priority || "none" : d.task[rowField()] || "") !== row.dataset.weekBoardValue) {
-      try { Object.assign(change, groupedTaskPatch(state.config, state.tasks, d.task.id, rowField(), row.dataset.weekBoardValue)); }
+    const current = rowField() === "tags" ? d.fromRow : rowField() === "priority" ? d.task.priority || "none" : d.task[rowField()] || "";
+    if (row && rowField() !== "none" && current !== row.dataset.weekBoardValue) {
+      try { Object.assign(change, groupedTaskPatch(state.config, state.tasks, d.task.id, rowField(), row.dataset.weekBoardValue, d.fromRow)); }
       catch (error) { d.reason = error.message; return null; }
     }
     return change;
@@ -285,7 +287,7 @@ export function calendarView(ctx) {
     const timedDay = card.closest('.calendar-hours-day');
     const r = timedDay?.getBoundingClientRect();
     const offset = timedDay ? (stamp(timedDay.dataset.calendarDate) - stamp(t.start)) / DAY * 1440 + (e.clientY - r.top) / r.height * 1440 - timeMinutes(t.start_time) : 0;
-    drag = { card, timedDay, offset, hours: timeEnd && card.closest('.calendar-hours-day'), originalStyle: card.getAttribute('style'), originalTime: card.querySelector('.calendar-event-time')?.textContent, panel: card.closest(".calendar-unscheduled"), task: { ...t }, project: state.project.id, pointer: e.pointerId, handle, grabbed: dayAt(e.clientX, e.clientY) || calendarRange(t)?.start, x: e.clientX, y: e.clientY, originX: e.clientX, originY: e.clientY, active: false };
+    drag = { card, fromRow: card.closest(".week-board-cell")?.dataset.weekBoardValue ?? "", timedDay, offset, hours: timeEnd && card.closest('.calendar-hours-day'), originalStyle: card.getAttribute('style'), originalTime: card.querySelector('.calendar-event-time')?.textContent, panel: card.closest(".calendar-unscheduled"), task: { ...t }, project: state.project.id, pointer: e.pointerId, handle, grabbed: dayAt(e.clientX, e.clientY) || calendarRange(t)?.start, x: e.clientX, y: e.clientY, originX: e.clientX, originY: e.clientY, active: false };
     if (handle) e.preventDefault();
   }, true);
   document.addEventListener("pointermove", e => {

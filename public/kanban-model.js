@@ -1,15 +1,20 @@
 import { sourceReadOnly } from "./source-model.js";
 import { hierarchyError } from "./hierarchy-model.js";
 import { canTransition, transitionError } from "./workflow-model.js";
+import { naturalGroups, tagGroups, tagMove } from "./task-group-order.js";
 
-export const kanbanGroups = ["none", "assignee", "priority", "type"];
+export const kanbanGroups = ["none", "assignee", "priority", "type", "tags"];
 export const kanbanGroup = (value) =>
   kanbanGroups.includes(value) ? value : "none";
 export const laneValue = (task, field) =>
   String(task[field] || (field === "priority" ? "none" : ""));
 export const laneKey = (field, value) => JSON.stringify([field, value]);
+// Whether a card belongs in a lane; a card with several tags is in each tag's lane (F0.21-91).
+export const inLane = (task, field, value) => field === "tags" ? tagGroups(task).includes(value) : laneValue(task, field) === value;
 
 export function kanbanLanes(tasks, field, config) {
+  if (field === "tags")
+    return naturalGroups("tags", tasks, config).map((value) => [value, tasks.filter((t) => inLane(t, field, value))]).filter(([, items]) => items.length);
   const groups = new Map();
   for (const task of tasks) {
     const value = laneValue(task, field);
@@ -44,10 +49,13 @@ export function kanbanLanes(tasks, field, config) {
   );
 }
 
-export function kanbanDropChanges(task, status, field = "none", value = "") {
+export function kanbanDropChanges(task, status, field = "none", value = "", from = "") {
   const changes = {};
   if (task.status !== status) changes.status = status;
-  if (kanbanGroup(field) !== "none" && laneValue(task, field) !== value)
+  if (field === "tags") {
+    const tags = tagMove(task, from, value);
+    if (tags) changes.tags = tags;
+  } else if (kanbanGroup(field) !== "none" && laneValue(task, field) !== value)
     changes[field] = value;
   return changes;
 }

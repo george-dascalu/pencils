@@ -36,7 +36,7 @@ import { personalSettings } from "./personal-settings.js";
 import { planning } from "./planning.js";
 import { grid } from "./grid.js";
 import { taskReorder } from "./task-reorder.js";
-import { groupPreference, saveGroupPreference, orderGroups, naturalGroups, groupReorderHandle, groupHeadingLabel, taskGroupDrag } from "./task-group-order.js";
+import { groupPreference, saveGroupPreference, orderGroups, naturalGroups, groupReorderHandle, groupHeadingLabel, taskGroupDrag, tagGroups } from "./task-group-order.js";
 import { taskRowEditor } from "./task-row-editor.js";
 import { recoveryUI } from "./recovery-ui.js";
 import { clearDebugLog } from "./debug-log.js";
@@ -183,7 +183,7 @@ export function installFeatures(ctx) {
   // Group by's select, with the toggle that reverses its groups beside it.
   function groupByField() {
     const reversed = groupPreference(storage, state.project.id, state.groupBy || "status").dir === -1;
-    return `<div class="field group-by-field"><label for="group-by">Group by</label><span class="group-by-control"><select id="group-by">${options(["status", "type", "assignee", "priority", "none"].filter((field) => fieldOn(state.config, field)), state.groupBy || "status", { status: "Status", type: "Type", assignee: "Assignee", priority: "Priority", none: "No grouping" })}</select><button type="button" id="group-direction" class="icon-button group-direction" data-feature="group-direction" data-menu-keep-open aria-pressed="${reversed}" aria-label="Reverse group order" title="${reversed ? "Groups reversed · click to restore" : "Reverse group order"}" ${state.groupBy === "none" ? "disabled" : ""}>${icon("sort")}</button></span></div>`;
+    return `<div class="field group-by-field"><label for="group-by">Group by</label><span class="group-by-control"><select id="group-by">${options(["status", "type", "assignee", "priority", "tags", "none"].filter((field) => fieldOn(state.config, field)), state.groupBy || "status", { status: "Status", type: "Type", assignee: "Assignee", priority: "Priority", tags: "Tag", none: "No grouping" })}</select><button type="button" id="group-direction" class="icon-button group-direction" data-feature="group-direction" data-menu-keep-open aria-pressed="${reversed}" aria-label="Reverse group order" title="${reversed ? "Groups reversed · click to restore" : "Reverse group order"}" ${state.groupBy === "none" ? "disabled" : ""}>${icon("sort")}</button></span></div>`;
   }
   function viewToolbar() {
     $(".advanced-filters")?.remove();
@@ -205,7 +205,7 @@ export function installFeatures(ctx) {
     $(".kanban-group-control")?.remove();
     $(".kanban-id-control")?.remove();
     if (state.view === "kanban") {
-      $(".toolbar-right")?.insertAdjacentHTML("afterbegin", `<label class="kanban-group-control">Swimlanes<select id="kanban-group" class="filter" aria-label="Kanban swimlanes">${options(kanbanGroups.filter((field) => fieldOn(state.config, field)), kanbanGroup(state.kanbanGroupBy), { none: "None", assignee: "Assignee", priority: "Priority", type: "Card type" })}</select></label><label class="kanban-group-control kanban-id-control check-control"><input type="checkbox" id="kanban-show-ids" ${storage.get(`kanban-show-ids:${state.project.id}`, false) === true ? "checked" : ""}>Show card IDs</label>`);
+      $(".toolbar-right")?.insertAdjacentHTML("afterbegin", `<label class="kanban-group-control">Swimlanes<select id="kanban-group" class="filter" aria-label="Kanban swimlanes">${options(kanbanGroups.filter((field) => fieldOn(state.config, field)), kanbanGroup(state.kanbanGroupBy), { none: "None", assignee: "Assignee", priority: "Priority", type: "Card type", tags: "Tag" })}</select></label><label class="kanban-group-control kanban-id-control check-control"><input type="checkbox" id="kanban-show-ids" ${storage.get(`kanban-show-ids:${state.project.id}`, false) === true ? "checked" : ""}>Show card IDs</label>`);
     }
     layout.projectHeader();
   }
@@ -1302,11 +1302,12 @@ export function installFeatures(ctx) {
       const value = (t) => key === "none" ? "All cards" : t[key] || "";
       const natural = key === "none" ? [...new Set(tasks.map(value))] : naturalGroups(key, tasks, state.config, projectPeople(state).map(person => person.name));
       const groups = new Map(orderGroups(natural, order, dir).map(name => [name, []]));
-      for (const t of tasks) groups.get(value(t)).push(t);
+      // A card with several tags shows in each tag's group (F0.21-91).
+      for (const t of tasks) for (const name of key === "tags" ? tagGroups(t) : [value(t)]) groups.get(name)?.push(t);
       return [...groups]
         .map(([name, items]) => {
-          const title = key === "priority" ? priorityLabel(name) : label(name || 'Unassigned');
-          return `<section class="${items.length ? 'list-group' : 'list-group-empty'}" ${items.length ? '' : 'hidden'} ${key === 'none' ? '' : `data-task-drop-field="${esc(key)}" data-task-drop-value="${esc(name)}"`}><h2 class="section-title" ${groupHeadingLabel(title, items.length, esc)}>${key === "none" ? "" : groupReorderHandle(name, title, esc)}${esc(title)}<span class="count">${items.length}</span></h2>${items.map((t) => row(t)).join("")}</section>`;
+          const title = key === "priority" ? priorityLabel(name) : key === "tags" ? name || "No tag" : label(name || 'Unassigned');
+          return `<section class="${items.length ? 'list-group' : 'list-group-empty'}" ${items.length ? '' : 'hidden'} ${key === 'none' ? '' : `data-task-drop-field="${esc(key)}" data-task-drop-value="${esc(name)}"`}><h2 class="section-title" ${groupHeadingLabel(title, items.length, esc)}>${key === "none" ? "" : groupReorderHandle(name, title, esc)}${esc(title)}<span class="count">${items.length}</span></h2>${items.map((t) => row(t, null, false, false, name)).join("")}</section>`;
         })
         .join("");
     },

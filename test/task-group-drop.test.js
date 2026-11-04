@@ -17,7 +17,8 @@ test('group drops respect workflow transitions, disabled fields and project type
   assert.throws(()=>patch('status','done',card,{...config,transitions:{todo:['backlog']}}),/Workflow does not allow/);
   assert.deepEqual(patch('status','backlog',card,{...config,transitions:{todo:['backlog']}}),{status:'backlog'});
   for (const field of ['status','assignee','priority','type']) assert.throws(()=>patch(field,'done',card,{...config,off:[field]}),/disabled|off/i);
-  for (const [field,value] of [['status','missing'],['priority','missing'],['type','missing'],['tags','done'],['parent','done']]) assert.throws(()=>patch(field,value),/group|priority|type|status/i);
+  // Tags became a group field in F0.21-91 (tested below).
+  for (const [field,value] of [['status','missing'],['priority','missing'],['type','missing'],['parent','done']]) assert.throws(()=>patch(field,value),/group|priority|type|status/i);
   assert.throws(()=>patch('assignee',{}),/group|value/i);
   assert.throws(()=>groupedTaskPatch(config,[],'missing','status','done'),/no longer exists/i);
 });
@@ -43,4 +44,16 @@ test('allowed type changes use the real parent and only the actual children', ()
   assert.deepEqual(patch('type','activity',child,cfg,[unrelated,parent,child]),{type:'activity'});
   const decoy={...parent,id:'decoy'};
   assert.deepEqual(patch('type','activity',parent,cfg,[decoy,parent,child]),{type:'activity'});
+});
+
+// F0.21-91: a card's tags are its groups; a drop swaps the tag it came from.
+test('tag groups swap the tag a card came from, No tag clears them, and bad or turned-off tags are refused', () => {
+  const tagged = {...card, tags: ['build','design']};
+  assert.deepEqual(groupedTaskPatch(config,[tagged],'a','tags','zebra','build'), {tags:['design','zebra']});
+  assert.deepEqual(groupedTaskPatch(config,[tagged],'a','tags','design','build'), {tags:['design']});
+  assert.deepEqual(groupedTaskPatch(config,[tagged],'a','tags','','design'), {tags:[]});
+  assert.deepEqual(groupedTaskPatch(config,[card],'a','tags','build',''), {tags:['build']});
+  assert.deepEqual(groupedTaskPatch(config,[tagged],'a','tags','build','build'), {});
+  assert.throws(() => groupedTaskPatch(config,[tagged],'a','tags','a,b','build'), /tag/i);
+  assert.throws(() => groupedTaskPatch({...config,off:['tags']},[tagged],'a','tags','x','build'), /turned off/);
 });

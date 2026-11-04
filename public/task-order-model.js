@@ -3,14 +3,17 @@ import { hierarchyError } from './hierarchy-model.js';
 import { sourceReadOnly } from './source-model.js';
 import { fieldOn } from './card-fields.js';
 import { priorityOptions } from './task-priority.js';
+import { tagMove } from './task-group-order.js';
 
-// A List group represents a field value; changing groups never edits other fields.
-export function groupedTaskPatch(config, tasks, id, field, value) {
+// A List group represents a field value; changing groups never edits other fields. A tag group
+// (F0.21-91) swaps the tag the card came from (`from`) for the group's.
+export function groupedTaskPatch(config, tasks, id, field, value, from = '') {
   const card = tasks.find(task => task.id === id);
   if (!card) throw new Error('Card no longer exists.');
-  if (!['status', 'assignee', 'priority', 'type'].includes(field) || typeof value !== 'string')
+  if (!['status', 'assignee', 'priority', 'type', 'tags'].includes(field) || typeof value !== 'string')
     throw new Error('Invalid group value.');
   if (!fieldOn(config, field)) throw new Error('This grouping field is turned off.');
+  if (field === 'tags') { const tags = tagMove(card, from, value); return tags ? { tags } : {}; }
   if (sourceReadOnly(card, field)) throw new Error('Card type is managed by the connected source.');
   if (field === 'status' && !canTransition(config, card.status, value)) throw new Error(transitionError(config, card.status, value));
   if (field === 'priority' && !priorityOptions.includes(value)) throw new Error('Invalid priority group.');
