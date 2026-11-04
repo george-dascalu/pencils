@@ -2,6 +2,11 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.21.81 — 2026-11-04
+
+### Changed
+- Feature F0.21-81: In Tree and List, a card with subtasks shows its expand arrow as a round button with a bold chevron in the text colour, so it stands out from the rows around it. Cards without subtasks keep an empty space.
+
 ## 0.21.80 — 2026-11-03
 
 ### Fixed

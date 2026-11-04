@@ -105,6 +105,11 @@ body:is(.task-reordering, .task-group-reordering), body:is(.task-reordering, .ta
 .task-row > :is(.tree-toggle, .tree-toggle-spacer) { width: 24px; height: 28px; flex: 0 0 24px; }
 /* A tree without subtasks has nothing to expand: no expand column, so its rows line up with List's. */
 .task-row.tree-flat > .tree-toggle { display: none; }
+/* A row with children shows its toggle as a round button with a bold chevron in the text colour,
+   so the hierarchy reads at a glance (F0.21-81). */
+.task-row > .tree-toggle[aria-expanded] { color: var(--ink); }
+.task-row > .tree-toggle[aria-expanded] svg { box-sizing: content-box; width: 16px; height: 16px; padding: 4px; border-radius: 50%; background: var(--surface-soft); stroke-width: 2.25; }
+.task-row > .tree-toggle[aria-expanded]:hover svg { background: color-mix(in srgb, var(--ink) 12%, var(--surface-soft)); }
 .task-row > .task-type { flex: 0 0 24px; justify-content: center; }
 .task-row > .row-task-link { height: 28px; padding: 0; border-radius: 4px; }
 .task-row > .task-id {
