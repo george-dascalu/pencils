@@ -1215,6 +1215,11 @@ html.table-viewport-view body {
 /* The Sort button wears the active sort's icon, tinted, with a small direction arrow; Manual order
    (no sort) keeps the plain icon (project-layout.js). */
 #sort-button { position: relative; }
+/* Sort looks like the Filters button it follows (F0.21-92); phones keep it like View options. */
+@media (min-width: 601px) {
+  #sort-button { border: 1px solid var(--line); border-radius: 6px; background: var(--surface, #fff); color: var(--ink); }
+  #sort-button:hover, #sort-button[aria-expanded="true"] { background: var(--surface-soft, #edf1e7); border-color: var(--green); }
+}
 #sort-button.sort-active { color: var(--green); }
 #sort-button.sort-active > .icon { translate: -3px -2px; }
 #sort-button > .sort-direction { position: absolute; right: 2px; bottom: 2px; display: flex; }

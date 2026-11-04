@@ -141,7 +141,7 @@
   align-items: center;
   gap: 7px;
 }
-.table-view-tools .table-menu-panel {
+.table-view-tools .table-menu-panel, [data-board-menu="table-sorts"] > .table-menu-panel {
   width: 360px;
   max-width: calc(100vw - 32px);
   max-height: min(65dvh, 620px);

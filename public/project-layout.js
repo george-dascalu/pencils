@@ -106,7 +106,10 @@ export function projectLayout(ctx) {
     const filtersSummary = toolbar.querySelector(':scope > details.board-menu[data-board-menu="filters"] > summary');
     if (filtersSummary) filtersBadge(filtersSummary, activeFilters);
     if (!narrow.matches) {
-      if (sortButton) sort.after(sortButton);
+      // Sort sits right after Filters, looking like it (F0.21-92): the task views' button, or Table's Sort menu.
+      const filtersMenu = toolbar.querySelector(':scope > details.board-menu[data-board-menu="filters"]');
+      if (sortButton) (filtersMenu || sort).after(sortButton);
+      if (filtersMenu && state.view === "table") moveTo($('.table-view-tools > [data-board-menu="table-sorts"]'), (el) => filtersMenu.after(el));
       // A view's less-used options (Capacity's Measure, Scope and Team) wait in Filters, keeping the
       // toolbar to one row; phones list them in View options.
       const filters = toolbar.querySelector(':scope > details.board-menu[data-board-menu="filters"] > .board-menu-panel');
@@ -147,8 +150,8 @@ export function projectLayout(ctx) {
     // Clear filters sits left of Close as an icon (T34); the filters' own footer keeps it on wider screens.
     if (panel.querySelector('[data-action="filters-reset"]'))
       panel.querySelector("header button").insertAdjacentHTML("beforebegin", `<button type="button" class="icon-button" data-action="filters-reset" aria-label="Clear filters" title="Clear filters">${icon("eraser")}</button>`);
-    if (sortButton) toolbar.append(sortButton);
     toolbar.append(compact);
+    if (sortButton) toolbar.append(sortButton);
     const active = toolbar.querySelector(":scope > .active-filters");
     if (active) toolbar.append(active);
     afterFilters(toolbar);
@@ -178,8 +181,11 @@ export function projectLayout(ctx) {
     }
     moveTo(toolbar.querySelector(":scope > .search"), (el) => tools.append(el));
     moveTo(toolbar.querySelector(':scope > details.board-menu[data-board-menu="filters"]'), (el) => tools.append(el));
-    moveTo(toolbar.querySelector(":scope > .active-filters"), (el) => tools.append(el));
+    // Sort follows Filters here too; Table's menu already left its slot, so it just moves along.
     if (sortButton) tools.append(sortButton);
+    const tableSort = toolbar.querySelector(':scope > [data-board-menu="table-sorts"]');
+    if (tableSort) tools.append(tableSort);
+    moveTo(toolbar.querySelector(":scope > .active-filters"), (el) => tools.append(el));
     const row = $("#view-toolbar");
     row?.toggleAttribute("data-empty", ![...row.querySelectorAll(".toolbar > * > *")].some((el) => el.getClientRects().length));
   }

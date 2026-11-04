@@ -172,6 +172,10 @@ body:is(.task-reordering, .task-group-reordering), body:is(.task-reordering, .ta
 .task-row > .row-task-link:hover { background-color: var(--surface-soft); }
 /* Kanban reuses row fields and their full-height targets inside a compact shared box. */
 .card-bottom > .kanban-fields { width: 100%; }
+/* Swimlanes name the field they group by, so their cards leave it out, as Week board's rows do (F0.21-92). */
+:is(.kanban, .kanban-drag-image)[data-group="assignee"] .kanban-fields > .row-assignee,
+:is(.kanban, .kanban-drag-image)[data-group="priority"] .kanban-fields > .row-priority,
+:is(.kanban, .kanban-drag-image)[data-group="type"] .card-top > .task-type { display: none; }
 .card-bottom > .kanban-fields > .row-assignee { flex: 1 1 96px; min-width: var(--control-height); }
 .kanban-fields > .row-status { flex: 1 1 100px; min-width: var(--control-height); }
 .kanban-fields > .row-due { flex: 0 0 72px; min-width: var(--control-height); }

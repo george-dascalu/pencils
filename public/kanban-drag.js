@@ -134,6 +134,7 @@ export function kanbanDrag(ctx) {
     ghost.removeAttribute("data-drag-task");
     ghost.removeAttribute("draggable");
     ghost.classList.add("kanban-drag-image");
+    ghost.dataset.group = card.closest(".kanban")?.dataset.group || "none"; // hides the lanes' field, as on the card
     ghost.style.width = `${r.width}px`;
     ghost.setAttribute("aria-hidden", "true");
     // In the page, so its styles (such as touch text sizes) still apply to the copy, but outside

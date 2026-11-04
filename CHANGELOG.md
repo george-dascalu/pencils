@@ -2,6 +2,12 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.21.92 — 2026-11-04
+
+### Changed
+- Feature F0.21-92: In List, Tree, Table and Kanban, Sort sits right after Filters and has the same bordered look (on phones, right after View options).
+- Feature F0.21-92: Kanban cards leave out the field their swimlanes group by: grouped by assignee, cards no longer show the assignee; by priority, the priority; by card type, the type icon.
+
 ## 0.21.91 — 2026-11-04
 
 ### Added
