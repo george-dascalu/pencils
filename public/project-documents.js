@@ -101,6 +101,7 @@ export function projectDocuments(ctx) {
   const selected = () => all().find(d => d.id === state.selectedDocument);
   const listKey = () => `document:${state.project.id}`;
   const MODES = [["live", "Live preview", "pencil"], ["source", "Source", "code"], ["reading", "Reading", "preview"]];
+  const viewsGroup = () => `<section class="document-tool-group" aria-label="Document view">${MODES.map(([key, title, glyph]) => `<button type="button" class="document-panel-item" data-document-mode="${key}" aria-pressed="${mode === key}">${icon(glyph)}${title}${mode === key ? icon("check") : ""}</button>`).join("")}</section>`;
   // Open documents show as tabs, and a second pane can show another document beside or below
   // (iPad and desktop). Both are remembered per project in this browser; phones keep one document.
   const narrow = () => matchMedia("(max-width: 600px), (max-height: 500px)").matches;
@@ -345,12 +346,16 @@ export function projectDocuments(ctx) {
   }
   function setMode(next, focus = true) {
     readingSearch?.close();
-    if (next === "reading") editor.escape();
+    // A spreadsheet keeps a cell being edited instead (its setMode commits it).
+    if (next === "reading" && current?.document_type !== "table") editor.escape();
     mode = next; storage.set("document-mode", next);
     form.dataset.documentMode = mode;
+    const table = current?.document_type === "table";
     const reading = form.querySelector(".document-reading"), host = form.querySelector(".document-codemirror");
-    host.hidden = mode === "reading";
-    reading.hidden = mode !== "reading";
+    if (!table) {
+      host.hidden = mode === "reading";
+      reading.hidden = mode !== "reading";
+    }
     form.querySelector(".document-formatting").hidden = mode === "reading";
     const [, label, glyph] = MODES.find(([key]) => key === mode);
     const tools = form.querySelector('.document-heading [data-document-action="tools"]');
@@ -361,6 +366,11 @@ export function projectDocuments(ctx) {
     for (const button of document.querySelectorAll("#document-form [data-document-mode], .layout-tray [data-document-mode]"))
       button.setAttribute("aria-pressed", String(button.dataset.documentMode === mode));
     editor.setMode(mode);
+    // A spreadsheet's views (F0.21-88) act like a document's, on its grid.
+    if (table) {
+      if (focus) allowsTextAutofocus() ? editor.focus() : document.querySelector(".tabs .tab.active")?.focus({ preventScroll: true });
+      return;
+    }
     if (mode === "reading") {
       reading.innerHTML = `<div class="document-page document-prose">${renderer.render(form.elements.body.value,false,true)}</div>`;
       for (const heading of reading.querySelectorAll("h1,h2,h3,h4,h5,h6")) if (!heading.id) heading.id = `document-heading-${heading.textContent.trim().replace(/\s+/g, "-").toLocaleLowerCase()}`;
@@ -1033,7 +1043,6 @@ export function projectDocuments(ctx) {
   function syncTray() {
     if (!selected()) return removeLayoutTray();
     const tray = document.createElement("template");
-    if (selected()?.document_type === "table") return removeLayoutTray();
     tray.innerHTML = `<div class="view-layout-switcher" role="group" aria-label="Document view"><button type="button" data-list-toggle aria-label="Documents" title="Documents">${icon("folder")}<span>Documents</span></button><span class="tray-divider" role="separator"></span>${MODES.map(([key, label, glyph]) => `<button type="button" data-document-mode="${key}" aria-label="${label}" aria-pressed="${mode === key}" title="${label}">${icon(glyph)}<span>${label}</span></button>`).join("")}</div>`;
     mountLayoutTray(tray.content.firstElementChild, state.layoutTray === state.view);
   }
@@ -1088,7 +1097,7 @@ export function projectDocuments(ctx) {
             ${ctx.bookmarks.button("doc", state.project.id, doc.id)}
             <button type="button" class="icon-button" data-document-action="properties" aria-label="Properties" title="Properties" aria-haspopup="dialog" aria-expanded="false">${icon("settings")}</button>
             <button type="button" class="icon-button" data-document-action="focus" aria-label="Focus mode" title="Focus mode" aria-pressed="false" aria-controls="document-form">${icon("fullscreen")}</button>
-            <button type="button" class="icon-button document-tools-button" data-document-action="tools" ${doc.document_type === "table" ? 'data-sheet-action="tools" data-document-current-mode="table" aria-description="Current view: Table"' : ""} aria-label="Document tools" title="Document tools${doc.document_type === "table" ? " — Table" : ""}"><span class="document-mode-indicator" aria-hidden="true">${doc.document_type === "table" ? icon("table") : ""}</span><span class="document-tools-more" aria-hidden="true">${icon("more")}</span></button>
+            <button type="button" class="icon-button document-tools-button" data-document-action="tools" ${doc.document_type === "table" ? 'data-sheet-action="tools"' : ""} aria-label="Document tools" title="Document tools"><span class="document-mode-indicator" aria-hidden="true"></span><span class="document-tools-more" aria-hidden="true">${icon("more")}</span></button>
           </header>
           ${(() => { const cards = (state.tasks || []).filter((t) => (t.documents || []).includes(doc.id)); return cards.length ? `<div class="document-linked-cards"><span class="caption">Linked cards</span>${cards.map((t) => `<button type="button" class="button soft" data-action="task-open" data-id="${esc(t.id)}" title="Open ${esc(t.title)}">${icon(t.type || "task")}<span class="task-relationship-key">${esc(t.key || t.id)}</span><span class="task-relationship-title">${esc(t.title)}</span></button>`).join("")}</div>` : ""; })()}
           <input type="hidden" name="title" value="${esc(doc.title)}">
@@ -1108,7 +1117,7 @@ export function projectDocuments(ctx) {
     renderer = rendererFor(doc.id);
     const tableURL = endpoint(project, doc.id), tableProject = project;
     editor = doc.document_type === "table" ? createDocumentSheet({
-      form, record: doc, icon, esc, colorPicker: ctx.colorPicker, panels, storage, toast, toolsExtras:splitToolsHTML,
+      form, record: doc, icon, esc, colorPicker: ctx.colorPicker, panels, storage, toast, toolsExtras:splitToolsHTML, toolsViews: viewsGroup,
       async load() {
         const latest = doc.table ? doc : await api(tableURL);
         const pending = sync.entries.get(tableURL)?.local;
@@ -1148,11 +1157,13 @@ export function projectDocuments(ctx) {
     if (pendingCaret?.id === doc.id) { editor.jump(pendingCaret.at); pendingCaret = null; }
     refreshComments();
     if (state.project.personal) loadEverywhere().catch(error => toast(error.message, true));
-    if (doc.document_type !== "table") readingSearch = documentReadingSearch({ form, content: form.querySelector(".document-reading"), icon });
+    readingSearch = doc.document_type !== "table" ? documentReadingSearch({ form, content: form.querySelector(".document-reading"), icon }) : null;
     if (doc.document_type === "table") {
       form.addEventListener("submit", event => { event.preventDefault(); editor.flush(); });
       form.addEventListener("input", changed);
-      updateObsidianLink(); syncChanged(); syncTopbarTitle(state); showPane(); return;
+      // Ctrl/⌘ E switches Source and Live preview, as in a document.
+      form.addEventListener("keydown", e => { if ((e.ctrlKey || e.metaKey) && !e.altKey && e.key.toLowerCase() === "e") { e.preventDefault(); setMode(mode === "source" ? "live" : "source"); } });
+      setMode(mode, false); updateObsidianLink(); syncChanged(); syncTopbarTitle(state); showPane(); return;
     }
     formatScroll=installToolbarScroll(form.querySelector(".document-formatting .rich-toolbar-shell"));
     form.addEventListener("input", changed);
@@ -1318,7 +1329,7 @@ export function projectDocuments(ctx) {
         const group = (name, items) => `<section class="document-tool-group" aria-label="${name}">${items}</section>`;
         const item = (name, glyph, label, extra = "") => `<button type="button" class="document-panel-item" data-document-action="${name}" ${extra}>${icon(glyph)}${label}</button>`;
         showPanel(button, "Document tools", [
-          group("Document view", MODES.map(([key, title, glyph]) => `<button type="button" class="document-panel-item" data-document-mode="${key}" aria-pressed="${mode === key}">${icon(glyph)}${title}${mode === key ? icon("check") : ""}</button>`).join("")),
+          viewsGroup(),
           group("Layout", `${narrow() ? item("focus", "fullscreen", "Focus mode") : item("split-columns", "split-columns", "Split side by side", `aria-pressed="${splitState()?.direction === "columns"}"`) + item("split-rows", "split-rows", "Split top and bottom", `aria-pressed="${splitState()?.direction === "rows"}"`)}${item("width", "width-full", documentWidth === "full" ? "Use page width" : "Use full width", `aria-pressed="${documentWidth === "full"}"`)}${item("outline", "tree", "Document outline")}`),
           group("Edit", `<button type="button" class="document-panel-item" data-document-format="undo">${icon("undo")}Undo</button><button type="button" class="document-panel-item" data-document-format="redo">${icon("redo")}Redo</button>${item("find", "search", "Find in document")}`),
           group("Document", (narrow() ? item("properties", "settings", "Properties") : "") + item("rename", "pencil", "Rename") + item("move", "folder", "Move to folder")),
@@ -1472,8 +1483,7 @@ export function projectDocuments(ctx) {
   // Search's Alt+Enter: text at the open document's caret; false when no document is open.
   function insertText(text) {
     if (!editor || !form?.isConnected) return false;
-    editor.insert(text);
-    return true;
+    return editor.insert(text) !== false; // a spreadsheet in Reading refuses
   }
   return { render, reset, syncChanged, create, openDocument, templatePanel, today, insertText };
 }

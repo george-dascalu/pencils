@@ -106,7 +106,8 @@ test('Reading and Table documents support focus, and leaving Documents restores 
   await expect(page.locator('#document-form')).toHaveAttribute('data-document-mode', 'reading');
   expect((await page.locator('.document-reading').boundingBox()).height).toBeGreaterThan(page.viewportSize().height * 0.8);
   await page.keyboard.press('Escape');
-  const table = await make('Table focus', '', 'table'); await open(page, table); await focus(page).click();
+  // Spreadsheets share the documents' view (F0.21-88), so edit in Live preview.
+  const table = await make('Table focus', '', 'table'); await open(page, table); await chooseDocumentView(page, 'Live preview'); await focus(page).click();
   const cell = page.locator('#document-form [data-sheet-cell=A1]');
   await cell.dblclick(); await page.locator('[data-sheet-editor]').fill('Focused cell');
   await page.locator('[data-sheet-editor]').press('Enter');

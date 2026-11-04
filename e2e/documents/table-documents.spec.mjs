@@ -59,5 +59,6 @@ test('the browser formula engine calculates before any vendor UI mounts', async 
   expect(result.value).toBe(160);expect(result.snapshot.v).toBe(160);
 });
 onDevices(['desktop','ipad','phone'],()=>test('the open Documents tab returns from a Table to the shared document list @gate',async({page})=>{
- const record=await seed();await open(page,record);await page.locator('.tabs [data-view="documents"]:visible').click();await expect(page.locator('#list-panel')).toBeVisible();await expect(page.locator('.layout-tray')).toHaveCount(0);await page.keyboard.press('Escape');await expect(page.locator('#list-panel')).toBeHidden();await expect(page.locator('.document-sheet')).toHaveAttribute('data-ready','true');
+ const record=await seed();await open(page,record);await page.locator('.tabs [data-view="documents"]:visible').click();// Like a document's (F0.21-88): the tray holds the list and the views.
+await expect(page.locator('.layout-tray[data-open]').getByRole('button',{name:'Reading',exact:true})).toBeVisible();await page.locator('.layout-tray[data-open]').getByRole('button',{name:'Documents',exact:true}).click();await expect(page.locator('#list-panel')).toBeVisible();await page.keyboard.press('Escape');await expect(page.locator('#list-panel')).toBeHidden();await expect(page.locator('.document-sheet')).toHaveAttribute('data-ready','true');
 }));

@@ -2,6 +2,11 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.21.88 — 2026-11-04
+
+### Added
+- Feature F0.21-88: Spreadsheets have a document's views. Live preview is the grid as before; Source shows what each cell holds, such as its formula, and edits it; Reading shows the values without the formatting bar, the formula bar or anything that edits them. Choose them from Document tools or the Documents tab's tray, or switch Source with Ctrl/⌘ E; the view is the same one documents use.
+
 ## 0.21.87 — 2026-11-04
 
 ### Changed

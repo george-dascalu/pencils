@@ -83,3 +83,7 @@
 
 .sheet-merge-row { position: absolute; }
 .sheet-merge-row > .sheet-merged { position: relative; width: 100%; height: 100%; }
+
+/* Reading (F0.21-88): the values, without the tools that change them. */
+.document-sheet[data-view="reading"] :is(.sheet-formula-bar, .sheet-column-resize, .sheet-row-resize, [data-sheet-action="add-sheet"], [data-sheet-action="sheet-menu"], .sheet-axis-heading > .icon) { display: none; }
+.document-sheet[data-view="reading"] .sheet-axis-heading { cursor: default; }

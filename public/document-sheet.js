@@ -15,12 +15,16 @@ export function sheetContent(icon) {
   return `<section class="document-sheet" aria-label="Table worksheet" data-ready="false"><div class="sheet-formula-bar"><output class="sheet-address" aria-label="Selected cell">A1</output><span aria-hidden="true">ƒx</span><input class="sheet-formula" aria-label="Cell value or formula" autocomplete="off" spellcheck="false"><button type="button" class="icon-button" data-sheet-action="apply" aria-label="Apply cell value" title="Apply cell value">${icon('check')}</button></div><div class="sheet-error" role="status" hidden></div><div class="document-sheet-scroll" tabindex="0" role="region" aria-label="Worksheet grid"><p class="sheet-loading" role="status">Opening table…</p></div><footer class="sheet-footer"><button type="button" class="icon-button" data-sheet-action="add-sheet" aria-label="Add worksheet" title="Add worksheet">${icon('plus')}</button><div class="sheet-tabs" role="tablist" aria-label="Worksheets"></div><button type="button" class="icon-button" data-sheet-action="sheet-menu" aria-label="Worksheet options" title="Worksheet options">${icon('more')}</button><output class="sheet-selection-summary" aria-live="polite"></output></footer></section>`;
 }
 
-export function createDocumentSheet({ form, record, load, onChange, icon, esc, colorPicker, panels, storage, toast, toolsExtras = () => '' }) {
+export function createDocumentSheet({ form, record, load, onChange, icon, esc, colorPicker, panels, storage, toast, toolsExtras = () => '', toolsViews = () => '' }) {
   const root = form.querySelector('.document-sheet'), scroll = root.querySelector('.document-sheet-scroll'), formula = root.querySelector('.sheet-formula');
   const lifecycle = new AbortController(), signal = lifecycle.signal;
   const editableControls = [...form.querySelectorAll('[data-sheet-action]:not([data-sheet-action="tools"]),[data-sheet-font],[data-sheet-size]'), formula];
   editableControls.forEach(control => { control.disabled = true; });
   let engine, sid, selected = { r: 0, c: 0, endR: 0, endC: 0 }, editing, formulaDirty = false, destroyed = false, frame, rowMap = [], colMap = [], prefix = [], dragged = false;
+  // The document's view (F0.21-88): Live preview shows values, Source what each cell holds, and
+  // Reading shows values with nothing that changes them.
+  let view = 'live';
+  const reading = () => view === 'reading';
   const touch = () => matchMedia('(pointer: coarse)').matches;
   const minimumTrack = () => 1 + Math.max(touch() ? 44 : 28, parseFloat(getComputedStyle(root).getPropertyValue('--control-height')) || 32);
   const safe = fn => { try { return fn(); } catch (error) { toast(error.message, true); } };
@@ -88,7 +92,7 @@ export function createDocumentSheet({ form, record, load, onChange, icon, esc, c
     const head = grid.createTHead().insertRow(); const corner = document.createElement('th'); corner.textContent = '#'; corner.className = 'sheet-corner'; head.append(corner);
     const heading = (axis,index,trackHeight=header) => {
       const base = axis === 'row' ? String(index+1) : columnName(index), label=s[axis === 'row' ? 'rowData' : 'columnData']?.[index]?.custom?.pencilsLabel;
-      return `<button type="button" class="sheet-axis-heading" style="height:${trackHeight-1}px" data-sheet-axis="${axis}" data-axis-index="${index}" aria-label="${axis === 'row' ? 'Row' : 'Column'} ${base} options" title="${esc(label ? base + ' · ' + label : base)}"><span>${base}${label ? ` · ${esc(label)}` : ''}</span>${icon('chevron')}</button>`;
+      return `<button type="button" class="sheet-axis-heading" style="height:${trackHeight-1}px" data-sheet-axis="${axis}" data-axis-index="${index}" aria-label="${reading() ? `Select ${axis} ${base}` : `${axis === 'row' ? 'Row' : 'Column'} ${base} options`}" title="${esc(label ? base + ' · ' + label : base)}"><span>${base}${label ? ` · ${esc(label)}` : ''}</span>${icon('chevron')}</button>`;
     };
     widths.forEach((width,i) => { const c=colMap[i],th=document.createElement('th');th.scope='col';th.innerHTML=heading('column',c);th.dataset.column=c;th.style.height=`${header}px`;if(c<frozenCols){th.className='sheet-frozen-column';th.style.left=`${offsets[i]}px`;}const handle=document.createElement('span');handle.className='sheet-column-resize';handle.dataset.resizeColumn=c;handle.setAttribute('role','separator');handle.setAttribute('aria-label',`Resize column ${columnName(c)}`);th.append(handle);head.append(th); });
     const body = grid.createTBody(); let cursor = 0;
@@ -98,7 +102,7 @@ export function createDocumentSheet({ form, record, load, onChange, icon, esc, c
       const label = document.createElement('th'); label.scope = 'row'; label.innerHTML = heading('row',r,height); label.dataset.row = r; const handle = document.createElement('span'); handle.className = 'sheet-row-resize'; handle.dataset.resizeRow = r; handle.setAttribute('role', 'separator'); handle.setAttribute('aria-label', `Resize row ${r + 1}`); label.append(handle); tr.append(label);
       let display; try { display = worksheet().getRange(r, 0, 1, s.columnCount).getDisplayValues()[0]; } catch { display = []; }
       for (const c of colMap) {
-        const cell = s.cellData?.[r]?.[c] || {}, td = tr.insertCell(); td.setAttribute('role', 'gridcell'); td.setAttribute('aria-colindex', String(c + 2)); td.dataset.r = r; td.dataset.c = c; td.dataset.sheetCell = address(r, c); const text = document.createElement('span'); text.className = 'sheet-cell-text'; if(cell.p)renderRichText(text,cell.p);else text.textContent = display[c] ?? String(cell.v ?? ''); text.style.maxHeight = `${height - 8}px`; td.append(text); td.title = cell.f ? `${cell.f}\n${td.textContent}` : td.textContent; td.setAttribute('aria-label', `${address(r, c)}${cell.f ? `, formula ${cell.f}` : ''}`);
+        const cell = s.cellData?.[r]?.[c] || {}, td = tr.insertCell(); td.setAttribute('role', 'gridcell'); td.setAttribute('aria-colindex', String(c + 2)); td.dataset.r = r; td.dataset.c = c; td.dataset.sheetCell = address(r, c); const text = document.createElement('span'); text.className = 'sheet-cell-text'; if(view==='source')text.textContent=rawText(cell);else if(cell.p)renderRichText(text,cell.p);else text.textContent = display[c] ?? String(cell.v ?? ''); text.style.maxHeight = `${height - 8}px`; td.append(text); td.title = cell.f ? `${cell.f}\n${td.textContent}` : td.textContent; td.setAttribute('aria-label', `${address(r, c)}${cell.f ? `, formula ${cell.f}` : ''}`);
         if (typeof cell.v === 'number') td.style.textAlign = 'right';
         applySheetStyle(td, typeof cell.s === 'string' ? table.workbook.styles[cell.s] : cell.s);
         if (c < frozenCols) { td.classList.add('sheet-frozen-column'); td.style.left = `${offsets[colMap.indexOf(c)]}px`; }
@@ -114,7 +118,7 @@ export function createDocumentSheet({ form, record, load, onChange, icon, esc, c
       if(rowEnd<rowStart||colEnd<colStart||!visible.some(i=>i>=rowStart&&i<=rowEnd))continue;
       for(const ri of visible)if(ri>=rowStart&&ri<=rowEnd)for(let ci=colStart;ci<=colEnd;ci++){const td=renderedCells.get(`${rowMap[ri]}:${colMap[ci]}`);if(td){delete td.dataset.sheetCell;td.classList.add('sheet-merge-covered');td.textContent='';td.setAttribute('aria-hidden','true');}}
       const cell=s.cellData?.[m.startRow]?.[m.startColumn]||{},el=document.createElement('div');el.className='sheet-merged';el.dataset.sheetCell=address(m.startRow,m.startColumn);el.dataset.r=m.startRow;el.dataset.c=m.startColumn;el.setAttribute('role','gridcell');el.setAttribute('aria-label',`${address(m.startRow,m.startColumn)} to ${address(m.endRow,m.endColumn)}`);el.setAttribute('aria-rowspan',m.endRow-m.startRow+1);el.setAttribute('aria-colspan',m.endColumn-m.startColumn+1);
-      const text=document.createElement('span');text.className='sheet-cell-text';if(cell.p)renderRichText(text,cell.p);else text.textContent=worksheet().getRange(m.startRow,m.startColumn,1,1).getDisplayValues()[0][0]??rawText(cell);el.append(text);
+      const text=document.createElement('span');text.className='sheet-cell-text';if(view==='source')text.textContent=rawText(cell);else if(cell.p)renderRichText(text,cell.p);else text.textContent=worksheet().getRange(m.startRow,m.startColumn,1,1).getDisplayValues()[0][0]??rawText(cell);el.append(text);
       const top=header+prefix[rowStart],left=offsets[colStart];
       const overlay=document.createElement('div');overlay.className='sheet-merge-row';overlay.id=`merge-${record.id}-${sid}-${m.startRow}-${m.startColumn}`;overlay.setAttribute('role','row');overlay.setAttribute('aria-rowindex',String(m.startRow+2));el.setAttribute('aria-colindex',String(m.startColumn+2));overlay.append(el);
       Object.assign(overlay.style,{top:`${m.startRow<frozenRows?`calc(${top}px + var(--sheet-scroll-top, 0px))`:`${top}px`}`,left:`${m.startColumn<frozenCols?`calc(${left}px + var(--sheet-scroll-left, 0px))`:`${left}px`}`,height:`${prefix[rowEnd+1]-prefix[rowStart]}px`,width:`${offsets[colEnd+1]-left}px`,zIndex:m.startRow<frozenRows||m.startColumn<frozenCols?'3':'1'});
@@ -144,7 +148,7 @@ export function createDocumentSheet({ form, record, load, onChange, icon, esc, c
     refresh();
   }
   function beginEdit(initial) {
-    if (!engine || editing) return;
+    if (!engine || editing || reading()) return;
     const cell = scroll.querySelector(`[data-sheet-cell="${address(selected.r, selected.c)}"]`); if (!cell) return;
     const input = document.createElement('div');input.contentEditable='true';input.setAttribute('role','textbox');input.setAttribute('aria-multiline','true'); input.dataset.sheetEditor = ''; input.setAttribute('aria-label', `Edit cell ${address(selected.r, selected.c)}`);
     if(initial===undefined && current().p)renderRichText(input,current().p);else input.textContent=initial??rawText(current());
@@ -279,6 +283,8 @@ export function createDocumentSheet({ form, record, load, onChange, icon, esc, c
     event.preventDefault(); event.stopPropagation();
     try {
       const action = button.dataset.sheetAction;
+      // Reading changes nothing: only Document tools and Export work there (F0.21-88).
+      if (reading() && !['tools', 'export'].includes(action)) return;
       if (action !== 'tools' && !engine) return;
       if (action === 'select-axis') return selectAxesPanel(button);
       if (action === 'rename-axis') return renameAxis(button);
@@ -313,7 +319,7 @@ export function createDocumentSheet({ form, record, load, onChange, icon, esc, c
       if (action === 'export') { engine.flush(); download(tableCSV(data(), sid), 'csv', 'text/csv;charset=utf-8'); return; }
       if (action === 'tools') {
         const documentItem = (action, label, glyph) => `<button type="button" class="document-panel-item ${action === 'confirm-delete' ? 'danger' : ''}" data-document-action="${action}">${icon(glyph)}${label}</button>`;
-        panel(button, 'Document tools', `<section class="document-tool-group">${item('import', 'Import CSV', 'upload', engine ? '' : 'disabled')}${item('export', 'Export CSV', 'download', engine ? '' : 'disabled')}</section>${toolsExtras()}<section class="document-tool-group">${matchMedia('(max-width: 600px), (max-height: 500px)').matches ? documentItem('properties', 'Properties', 'settings') + documentItem('focus', 'Focus mode', 'fullscreen') : ''}${documentItem('rename', 'Rename', 'pencil')}${documentItem('move', 'Move to folder', 'folder')}${documentItem('versions', 'Page versions', 'clock')}${documentItem('links', 'Backlinks and mentions', 'link')}${documentItem('export', 'Export Markdown', 'download')}${documentItem('obsidian', 'Open in Obsidian', 'file')}${documentItem('obsidian-settings', 'Obsidian settings', 'settings')}</section><section class="document-tool-group">${documentItem('confirm-delete', 'Delete document', 'trash')}</section>`, 260, true); return;
+        panel(button, 'Document tools', `${toolsViews()}<section class="document-tool-group">${item('import', 'Import CSV', 'upload', engine && !reading() ? '' : 'disabled')}${item('export', 'Export CSV', 'download', engine ? '' : 'disabled')}</section>${toolsExtras()}<section class="document-tool-group">${matchMedia('(max-width: 600px), (max-height: 500px)').matches ? documentItem('properties', 'Properties', 'settings') + documentItem('focus', 'Focus mode', 'fullscreen') : ''}${documentItem('rename', 'Rename', 'pencil')}${documentItem('move', 'Move to folder', 'folder')}${documentItem('versions', 'Page versions', 'clock')}${documentItem('links', 'Backlinks and mentions', 'link')}${documentItem('export', 'Export Markdown', 'download')}${documentItem('obsidian', 'Open in Obsidian', 'file')}${documentItem('obsidian-settings', 'Obsidian settings', 'settings')}</section><section class="document-tool-group">${documentItem('confirm-delete', 'Delete document', 'trash')}</section>`, 260, true); return;
       }
       if (action === 'sheet-menu') { panel(button, 'Worksheet options', `${item('rename-sheet', 'Rename worksheet', 'pencil')}${item('delete-sheet', 'Delete worksheet', 'trash', data().workbook.sheetOrder.length < 2 ? 'disabled' : '')}`, 240, true); return; }
       if (action === 'delete-sheet') {
@@ -367,11 +373,11 @@ export function createDocumentSheet({ form, record, load, onChange, icon, esc, c
     signal.addEventListener('abort',clean,{once:true});
   }
   scroll.addEventListener('touchmove',e=>{if(axisDrag?.active)e.preventDefault();},{passive:false,signal});
-  scroll.addEventListener('contextmenu',event=>{const button=event.target.closest('[data-sheet-axis]');if(button){event.preventDefault();if(!axisDrag)axisMenu(button,button.dataset.sheetAxis,+button.dataset.axisIndex);}},{signal});
+  scroll.addEventListener('contextmenu',event=>{const button=event.target.closest('[data-sheet-axis]');if(button){event.preventDefault();if(!axisDrag&&!reading())axisMenu(button,button.dataset.sheetAxis,+button.dataset.axisIndex);}},{signal});
   let lastTap = 0, tappedCell;
   scroll.addEventListener('click', event => {
     const axisButton=event.target.closest('[data-sheet-axis]');
-    if (axisButton) {if(Date.now()<axisClickUntil){event.preventDefault();return;}if(editing||formulaDirty)commit();axisMenu(axisButton,axisButton.dataset.sheetAxis,+axisButton.dataset.axisIndex,event.shiftKey);return;}
+    if (axisButton) {if(reading()){selectAxis(axisButton.dataset.sheetAxis,+axisButton.dataset.axisIndex);return;}if(Date.now()<axisClickUntil){event.preventDefault();return;}if(editing||formulaDirty)commit();axisMenu(axisButton,axisButton.dataset.sheetAxis,+axisButton.dataset.axisIndex,event.shiftKey);return;}
     const header = event.target.closest('th[data-column], th[data-row]');
     if (header && !event.target.closest('[role=separator]')) { if (editing || formulaDirty) commit(); if (header.hasAttribute('data-column')) { selected = { r: 0, c: +header.dataset.column, endR: sheet().rowCount - 1, endC: +header.dataset.column }; } else { selected = { r: +header.dataset.row, c: 0, endR: +header.dataset.row, endC: sheet().columnCount - 1 }; } setSelection(selected.endR, selected.endC, true); scroll.focus({ preventScroll: true }); return; }
     const cell = event.target.closest('[data-r][data-c]'); if (!cell || event.target.closest('[data-sheet-editor]') || !engine) return;
@@ -388,6 +394,7 @@ export function createDocumentSheet({ form, record, load, onChange, icon, esc, c
   scroll.addEventListener('pointerdown', event => {
     if (!engine) return;
     const handle = event.target.closest('[data-resize-column], [data-resize-row]');
+    if (handle && reading()) return;
     if (handle) {
       event.preventDefault(); event.stopPropagation();
       const isColumn = handle.hasAttribute('data-resize-column'), key = +(isColumn ? handle.dataset.resizeColumn : handle.dataset.resizeRow), initial = isColumn ? sheet().columnData?.[key]?.w || 120 : sheet().rowData?.[key]?.h || (touch() ? 44 : 28), origin = isColumn ? event.clientX : event.clientY;
@@ -399,7 +406,7 @@ export function createDocumentSheet({ form, record, load, onChange, icon, esc, c
       return;
     }
     const axisButton=event.target.closest('[data-sheet-axis]');
-    if(axisButton && !event.button) {startAxisDrag(event,axisButton);return;}
+    if(axisButton && !event.button) {if(!reading())startAxisDrag(event,axisButton);return;}
     const cell = event.target.closest('[data-r][data-c]');
     if (!cell || event.pointerType === 'touch' || event.button || event.target.closest('[data-sheet-editor]')) return;
     dragged = false; event.preventDefault(); if (editing || formulaDirty) commit(); setSelection(+cell.dataset.r, +cell.dataset.c, event.shiftKey); scroll.focus({ preventScroll: true });
@@ -416,7 +423,7 @@ export function createDocumentSheet({ form, record, load, onChange, icon, esc, c
   }, { signal });
   scroll.addEventListener('keydown', event => {
     if (!engine || (event.key === 'Tab' && (event.ctrlKey || event.metaKey))) return;
-    if((event.ctrlKey||event.metaKey)&&!event.altKey&&['b','i','u'].includes(event.key.toLowerCase())){event.preventDefault();event.stopPropagation();safe(()=>toggleText({b:'bold',i:'italic',u:'underline'}[event.key.toLowerCase()]));return;}
+    if((event.ctrlKey||event.metaKey)&&!event.altKey&&['b','i','u'].includes(event.key.toLowerCase())&&!reading()){event.preventDefault();event.stopPropagation();safe(()=>toggleText({b:'bold',i:'italic',u:'underline'}[event.key.toLowerCase()]));return;}
     const input = event.target.closest('[data-sheet-editor]');
     if (input) {
       if (event.key === 'Escape') { event.preventDefault(); cancelEdit(); scroll.focus({ preventScroll: true }); return; }
@@ -424,8 +431,8 @@ export function createDocumentSheet({ form, record, load, onChange, icon, esc, c
       return;
     }
     if (event.ctrlKey || event.metaKey) {
-      if (event.key.toLowerCase() === 'z') { event.preventDefault(); void (event.shiftKey ? engine.redo() : engine.undo()); }
-      if (event.key.toLowerCase() === 'y') { event.preventDefault(); void engine.redo(); }
+      if (event.key.toLowerCase() === 'z' && !reading()) { event.preventDefault(); void (event.shiftKey ? engine.redo() : engine.undo()); }
+      if (event.key.toLowerCase() === 'y' && !reading()) { event.preventDefault(); void engine.redo(); }
       if (event.key.toLowerCase() === 'a') { event.preventDefault(); selected = { r: 0, c: 0, endR: sheet().rowCount - 1, endC: sheet().columnCount - 1 }; setSelection(selected.endR, selected.endC, true); }
       if (event.key.toLowerCase() === 's') { event.preventDefault(); engine.flush(); }
       return;
@@ -433,6 +440,7 @@ export function createDocumentSheet({ form, record, load, onChange, icon, esc, c
     const directions = { ArrowUp: [-1, 0], ArrowDown: [1, 0], ArrowLeft: [0, -1], ArrowRight: [0, 1], Tab: [0, event.shiftKey ? -1 : 1], Enter: [1, 0] };
     if (event.key === 'Tab' && ((!event.shiftKey && selected.r === sheet().rowCount - 1 && selected.c === sheet().columnCount - 1) || (event.shiftKey && selected.r === 0 && selected.c === 0))) return;
     if (directions[event.key]) { event.preventDefault(); const [dr, dc] = directions[event.key]; const merge=(sheet().mergeData||[]).find(m=>selected.r===m.startRow&&selected.c===m.startColumn); const fromR=event.shiftKey && event.key !== 'Tab' ? selected.endR : selected.r,fromC=event.shiftKey && event.key !== 'Tab' ? selected.endC : selected.c;setSelection(dr?rowMap[Math.max(0,Math.min(rowMap.length-1,rowMap.indexOf(!event.shiftKey&&dr>0&&merge?merge.endRow:fromR)+dr))]??fromR:fromR,dc?colMap[Math.max(0,Math.min(colMap.length-1,colMap.indexOf(!event.shiftKey&&dc>0&&merge?merge.endColumn:fromC)+dc))]??fromC:fromC,event.shiftKey && event.key !== 'Tab',true); }
+    else if (reading()) return;
     else if (event.key === 'F2') { event.preventDefault(); beginEdit(); }
     else if (event.key === 'Delete' || event.key === 'Backspace') { event.preventDefault(); engine.mutate(() => range().clearContent()); }
     else if (event.key.length === 1 && !event.altKey) { event.preventDefault(); beginEdit(event.key); }
@@ -447,7 +455,7 @@ export function createDocumentSheet({ form, record, load, onChange, icon, esc, c
     event.preventDefault(); event.clipboardData.setData('text/plain', text); event.clipboardData.setData('application/x-pencils-table', JSON.stringify(copyData));
   }, { signal });
   scroll.addEventListener('paste', event => {
-    if (!engine || event.target.closest('[data-sheet-editor],input')) return;
+    if (!engine || reading() || event.target.closest('[data-sheet-editor],input')) return;
     event.preventDefault(); safe(() => {
       const payload = event.clipboardData.getData('application/x-pencils-table'), plain = event.clipboardData.getData('text/plain');
       if (payload && payload.length <= TABLE_LIMITS.bytes) {
@@ -483,7 +491,14 @@ export function createDocumentSheet({ form, record, load, onChange, icon, esc, c
     destroy() { if (editing || formulaDirty) commit(); destroyed = true; resize.disconnect(); lifecycle.abort(); cancelAnimationFrame(frame); engine?.destroy(); },
     value: () => form.elements.body.value,
     escape() { if (editing) cancelEdit(); },
-    insert: text => { if (engine) engine.setValue(sid, selected.r, selected.c, text); },
+    setMode(next) {
+      if (next === view) return;
+      if (editing || formulaDirty) commit();
+      view = next; root.dataset.view = next;
+      panels.close(); // an open format, axis or worksheet panel would edit in Reading
+      if (engine) render();
+    },
+    insert: text => { if (!engine || reading()) return false; engine.setValue(sid, selected.r, selected.c, text); },
     focus: () => scroll.focus({ preventScroll: true }),
     async jumpReference(fragment) {
       await ready; if (destroyed || !engine) return;
