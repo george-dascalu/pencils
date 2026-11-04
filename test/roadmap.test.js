@@ -72,7 +72,14 @@ test("every roadmap entry has a valid id, status and dates, and done entries nam
     const feature = item.id.match(/^F(\d+)\.(\d+)-([1-9]\d?|100)$/);
     if (feature) {
       const [, major, minor, number] = feature.map(Number);
-      if (item.version) assert.equal(item.version, `${major}.${minor + Math.floor(number / 100)}.${number % 100}`, item.id);
+      // Its own number's release, or a later one that shipped it with others in one run (F0.21-94).
+      const own = `${major}.${minor + Math.floor(number / 100)}.${number % 100}`;
+      if (item.version && item.version !== own) {
+        assert.ok(item.version.localeCompare(own, undefined, { numeric: true }) > 0, `${item.id}: ${item.version} is before its own ${own}`);
+        const [vMajor, vMinor, vPatch] = item.version.split(".").map(Number);
+        const numbered = vPatch === 0 ? `F${vMajor}.${vMinor - 1}-100` : `F${vMajor}.${vMinor}-${vPatch}`;
+        assert.ok(roadmap.some((other) => other.id === numbered && other.version === item.version), `${item.id}: ${item.version} ships ${numbered} too`);
+      }
     } else {
       assert.match(item.id, /^T\d+$/, item.id);
       assert.ok(item.version && item.version.localeCompare("0.21.0", undefined, { numeric: true }) <= 0, `${item.id}: new features use F<major>.<minor>-<1..100>`);

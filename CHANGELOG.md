@@ -2,6 +2,14 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.21.94 — 2026-11-04
+
+### Changed
+- Feature F0.21-94: Releases are faster. One release ships every feature finished since the last one in a single test run; it runs from a snapshot, so work on the next feature carries on meanwhile; its browser tests fail fast (the changed tests and the app-wide checks first, stopping at the first failure); WebKit runs only for touch and phone changes; and a scoped change to shared styling runs only the tests that use it. Releases commit and push themselves.
+
+### Fixed
+- Feature F0.21-94: A Week board drag test no longer fails now and then in WebKit when the board repaints between two drags.
+
 ## 0.21.93 — 2026-11-04
 
 ### Changed

@@ -31,8 +31,9 @@ async function open(page) {
 }
 async function drag(page, id, target) {
   const grip = card(page, id).locator('[data-calendar-move]');
-  await grip.scrollIntoViewIfNeeded();
-  const from = await grip.boundingBox();
+  // The last drag's save can repaint the board just now, replacing the grip: find it again.
+  let from;
+  await expect(async () => { await grip.scrollIntoViewIfNeeded({ timeout: 1000 }); from = await grip.boundingBox(); expect(from).toBeTruthy(); }).toPass();
   await page.mouse.move(from.x + from.width / 2, from.y + from.height / 2);
   await page.mouse.down();
   await page.mouse.move(from.x + from.width / 2 + 10, from.y + from.height / 2 + 10, { steps: 3 });

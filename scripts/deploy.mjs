@@ -99,7 +99,9 @@ export async function pruneReleaseImages(run, { version, health }) {
   return result;
 }
 
-export async function deploy(root, version, { log, signal, url, rollback = `pencils:rollback-request-${Date.now()}` } = {}) {
+// context: a snapshot to build the image from (npm run release); compose still runs from root, so the
+// container keeps its project, vault and settings.
+export async function deploy(root, version, { log, signal, url, rollback = `pencils:rollback-request-${Date.now()}`, context, check } = {}) {
   let env = childEnvironment();
   const run = (cmd, args, opts = {}) => command(cmd, args, { cwd: root, log, signal, env, ...opts });
   const container = (await run("docker", ["compose", "ps", "-q", "pencils"])).trim();
@@ -117,8 +119,10 @@ export async function deploy(root, version, { log, signal, url, rollback = `penc
   env = { ...env, ...production, VAULT_PATH: vault, OBSIDIAN_CONTAINER_ROOT: production.OBSIDIAN_ROOT || "", ...(binding ? { PORT: binding.HostPort, BIND_ADDRESS: binding.HostIp || "0.0.0.0" } : {}), ...(uid ? { LOCAL_UID: uid } : {}), ...(gid ? { LOCAL_GID: gid } : {}) };
   const compose = args => run("docker", ["compose", "--env-file", "/dev/null", ...args]);
   await run("docker", ["tag", image, rollback]);
-  await compose(["build", "pencils"]);
+  await (context ? run("docker", ["build", "--load", "-t", "pencils:local", context]) : compose(["build", "pencils"]));
   try {
+    // compose reads root's compose.yaml now, after the build: let the caller confirm it is still the tested one.
+    check?.();
     await compose(["up", "-d", "--no-deps", "pencils"]);
     for (let i = 0; i < 45; i++) {
       try {
