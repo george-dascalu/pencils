@@ -21,6 +21,8 @@
 :root[data-fields-off~="assignee"][data-fields-off~="status"][data-fields-off~="priority"] :is(#task-form .task-fields, .task-relationship-metadata, .calendar-event-fields) {
   display: none !important;
 }
+/* With its field box gone, the card editor's dates take the whole row and fit one line (F0.21-93). */
+:root[data-fields-off~="assignee"][data-fields-off~="status"][data-fields-off~="priority"] .task-dialog .task-metadata-main > .task-dates { grid-column: 1 / -1; }
 /* Field boxes count only the fields they show: 1 while a field is on, 0 once it is off. On phones a
    box is 44px per field and 40px more for the status, 216px with all four. */
 :root { --box-assignee: 1; --box-status: 1; --box-priority: 1; --box-date: 1;

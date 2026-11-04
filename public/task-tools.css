@@ -1519,7 +1519,7 @@ html.task-page-open,
 /* New and existing task headers keep the close button in the top-right corner. */
 .task-editor-header-row > [data-action="dialog-close"] { margin-inline-start: auto; }
 .task-editor-header-row > .task-editor-actions + [data-action="dialog-close"] { margin-inline-start: 0; }
-.task-editor-header-row > [data-action="dialog-close"] { color: var(--danger, #b64132); }
+:is(.task-editor-header-row, .task-title-row) > [data-action="dialog-close"] { color: var(--danger, #b64132); }
 
 
 /* Phone card page: the pane switcher is icon-only and its first icon lines up

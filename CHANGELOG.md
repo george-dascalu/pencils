@@ -2,6 +2,14 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.21.93 — 2026-11-04
+
+### Changed
+- Feature F0.21-93: The new card popup puts its close button at the right of the title, with no empty row above it.
+
+### Fixed
+- Feature F0.21-93: In projects that turn off assignee, status and priority, the new card popup's start and due dates sit on one line again instead of stacking.
+
 ## 0.21.92 — 2026-11-04
 
 ### Changed
