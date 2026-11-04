@@ -39,6 +39,6 @@ onDevices(['desktop','ipad','phone'],()=>{
   const before=await form.locator('[data-bookmark]').getAttribute('aria-pressed');
   await form.locator('[data-bookmark]').click();
   await expect(form.locator('[data-bookmark]')).toHaveAttribute('aria-pressed',before==='true'?'false':'true');
-  await page.screenshot({path:`/tmp/card-header-${device}.png`});
+  await page.screenshot({path: test.info().outputPath(`card-header-${device}.png`)});
  });
 });

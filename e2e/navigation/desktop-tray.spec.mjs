@@ -17,7 +17,7 @@ onDevices(["desktop", "narrow"], () => test("the active top tab opens layouts be
   expect(panel.x + panel.width).toBeLessThanOrEqual(page.viewportSize().width);
   const buttons = await tray.getByRole('button').evaluateAll(els => els.map(el => ({left:el.getBoundingClientRect().left,right:el.getBoundingClientRect().right})));
   for(const button of buttons) { expect(button.left).toBeGreaterThanOrEqual(panel.x); expect(button.right).toBeLessThanOrEqual(panel.x+panel.width); }
-  await page.screenshot({path:`/tmp/layout-tray-${page.viewportSize().width}.png`});
+  await page.screenshot({path: test.info().outputPath(`layout-tray-${page.viewportSize().width}.png`)});
   expect(await page.locator(".tabs").evaluate(el => getComputedStyle(el).overflowY)).toBe("visible");
   await tray.getByRole("button", { name: "Tree", exact: true }).click();
   await expect(page).toHaveURL(/\/tree$/);

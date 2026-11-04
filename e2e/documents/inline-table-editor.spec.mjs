@@ -23,7 +23,7 @@ onDevices(['desktop','ipad','phone'],()=>test('a single layout icon toggles, edg
   const icon=await toggle.evaluate(el=>{const box=el.getBoundingClientRect(),svg=el.querySelector('svg').getBoundingClientRect();return {width:box.width,height:box.height,fits:svg.width<=box.width&&svg.height<=box.height};});expect(icon.width).toBe(icon.height);expect(icon.fits).toBe(true);
   const heights=await root.locator('button[data-table-axis]:visible').evaluateAll(list=>list.map(el=>el.getBoundingClientRect().height));
   for(const height of heights)expect(height).toBeGreaterThanOrEqual(device==='desktop'?28:44);
-  await page.screenshot({path:`/tmp/pencils-inline-table-${device}.png`});
+  await page.screenshot({path:test.info().outputPath(`inline-table-${device}.png`)});
 }));
 onDevices(['desktop','ipad','phone'],()=>test('merges preserve content, unmerge and undo work, and row deletion applies to the whole selection',{tag:'@gate'},async({page})=>{
   const doc=await open(page),root=table(page);

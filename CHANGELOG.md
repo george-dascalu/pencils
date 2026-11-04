@@ -2,6 +2,11 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.22.16 — 2026-11-04
+
+### Fixed
+- Feature F0.22-16: Browser tests keep their screenshots with their own results instead of writing them to the temporary folder.
+
 ## 0.22.15 — 2026-11-04
 
 ### Fixed

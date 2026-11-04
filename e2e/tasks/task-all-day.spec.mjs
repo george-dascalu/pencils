@@ -52,7 +52,7 @@ onDevices(['desktop', 'ipad', 'phone'], () => {
     await expect(form.getByLabel('Start time', { exact: true })).toHaveValue('09:00');
     await expect(form.getByLabel('Start time', { exact: true })).not.toBeFocused();
     await expect.poll(async () => (await saved()).due_time).toBe('10:00');
-    await page.screenshot({ path: `/tmp/all-day-${device}.png` });
+    await page.screenshot({ path: test.info().outputPath(`all-day-${device}.png`) });
     await form.locator('[data-action="dialog-close"]').click();
     await newCard(page);
     await expect(page.locator('#task-form').getByRole('button', { name: 'All day', exact: true })).toHaveAttribute('aria-pressed', 'true');

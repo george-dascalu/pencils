@@ -28,7 +28,7 @@ onDevices(['desktop','ipad'],()=>test('picker search, type filters, keyboard sel
   await search.fill('Planning guide');await expect(menu.getByRole('option')).toHaveCount(1);await search.press('ArrowDown');await page.keyboard.press('Enter');await expect(second(page).locator('.cm-content')).toContainText('Guide text');
   await picker.click();await expect(page.getByRole('dialog',{name:'Document in the second pane',exact:true})).toBeVisible();await page.keyboard.press('Escape');await expect(page.locator('#shared-select-menu')).toHaveCount(0);
   await picker.click();expect(await axeViolations(page,['#shared-select-menu'])).toEqual([]);const sizes=await menu.locator('button:visible,input:visible').evaluateAll(els=>els.map(el=>el.getBoundingClientRect().height));for(const height of sizes)expect(height).toBeGreaterThanOrEqual(device==='ipad'?44:28);
-  await page.screenshot({path:`/tmp/pencils-pane-picker-${device}.png`});
+  await page.screenshot({path:test.info().outputPath(`pane-picker-${device}.png`)});
 }));
 onDevices(['desktop','ipad'],()=>test('open-file and bookmark filters use the current person and tags are searchable',{tag:'@gate'},async({page})=>{
   await page.goto(`${app.base}/#project/${project.id}/documents/${docs.d.id}`);const star=page.locator('.topbar [data-bookmark]');await expect(star).toBeVisible();if(await star.getAttribute('aria-pressed')!=='true')await star.click();await expect(star).toHaveAttribute('aria-pressed','true');await expect.poll(async()=>{const response=await page.request.get(`${app.base}/api/bookmarks`);return (await response.json()).bookmarks.some(item=>item.kind==='doc'&&item.project===project.id&&item.id===docs.d.id);}).toBe(true);await open(page);

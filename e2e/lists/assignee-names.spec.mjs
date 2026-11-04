@@ -21,7 +21,7 @@ onDevices(['desktop','ipad','phone'],()=>test('names use the available space and
    else expect(divider.content).toBe('none');
   }
  }
- await page.screenshot({path:`/tmp/assignee-names-${device}.png`});
+ await page.screenshot({path: test.info().outputPath(`assignee-names-${device}.png`)});
  // A real name slot reacts to space, not to a transformed board camera scale.
  const name=page.locator('.main .task-assignee[data-full-name="George"]:visible').first();
  for(const [width,label] of [[120,'George'],[38,'Geo'],[14,'G']]) {

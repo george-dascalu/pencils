@@ -84,7 +84,7 @@ onDevices(["desktop", "ipad", "ipad-portrait", "phone", "small"], () => test("ea
   }
   await page.evaluate(()=>window.PencilsAppearance.write({density:"comfortable"}));
   await check(page, `${device} note`, { common: ["[data-selection-menu=convert]", "[data-selection-menu=layer-order]", "[data-feature=duplicate]"], specific: ["[data-selection-menu=text-align]"] });
-  await page.screenshot({path:`/tmp/pencils-note-toolbar58-${device}.png`});
+  await page.screenshot({path:test.info().outputPath(`note-toolbar-${device}.png`)});
   await findOnBoard(page, "task-a", "Write specification");
   await check(page, `${device} task`, { common: [], specific: ["[data-selection-menu=text-align]"] });
   await findOnBoard(page, "grid", "Research grid");
@@ -138,5 +138,5 @@ onDevices(["desktop", "ipad", "ipad-portrait", "phone", "small"], () => test("ea
   await page.keyboard.press("Escape");
   await page.locator('[data-edge="e1"]').first().click({ force: true });
   await check(page, `${device} connector`, { common: ["[data-feature=duplicate]"], specific: ["[data-selection-menu=dependency]", '[role=group][aria-label="Endpoints"]'] });
-  await page.screenshot({path:`/tmp/pencils-object-toolbar58-${device}.png`});
+  await page.screenshot({path:test.info().outputPath(`object-toolbar-${device}.png`)});
 }));

@@ -50,7 +50,7 @@ onDevices(['desktop','ipad','phone'],()=>test('move a timed card within a day an
   await expect(fields).toBeHidden();
   await page.evaluate(()=>document.documentElement.removeAttribute('data-fields-off'));
  } else await expect(fields).toBeHidden();
- await page.screenshot({path:`/tmp/calendar-move-${device}.png`});
+ await page.screenshot({path: test.info().outputPath(`calendar-move-${device}.png`)});
  if(device==='desktop') {
   await card().evaluate(el=>el.style.height='60px');
   await expect(fields).toBeHidden();
