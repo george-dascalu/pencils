@@ -44,6 +44,9 @@ onDevices(['desktop', 'ipad', 'phone'], () => test('personal hotkeys record comm
   await expect(create).toHaveText('Set hotkey');
   await page.getByRole('button', { name: 'Reset hotkeys', exact: true }).click();
   await expect.poll(() => list(page)).toEqual([]);
+  // The server has the reset before the page does: wait for the page's own repaint, which
+  // replaces the rows measured below.
+  await expect(page.locator('[data-hotkey-message]')).toHaveText('');
   const box = await page.locator('.hotkeys-settings').boundingBox();
   expect(box.x).toBeGreaterThanOrEqual(0);
   expect(box.x + box.width).toBeLessThanOrEqual(page.viewportSize().width);

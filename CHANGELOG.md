@@ -2,6 +2,11 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.22.14 — 2026-11-04
+
+### Fixed
+- Feature F0.22-14: The browser test for personal hotkeys waits for Settings to finish showing a reset before it measures the shortcut buttons, instead of sometimes measuring a button that was just being replaced.
+
 ## 0.22.13 — 2026-11-04
 
 ### Fixed
