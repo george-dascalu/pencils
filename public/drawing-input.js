@@ -28,7 +28,8 @@ export function drawingInput(ctx, basic) {
     hold = null,
     cameraFrame = null,
     cameraDirty = false;
-  const active = () => state.view === "board" && !!$("#canvas");
+  // Nothing draws while the open board is still loading (board() is undefined then).
+  const active = () => state.view === "board" && !!$("#canvas") && !!board();
   // An ink tool that fingers draw with (Draw with: Finger or Both).
   const fingersInk = () => ["draw", "erase", "lasso"].includes(state.tool) && canvasPointerTool(state.tool, "touch") !== "cursor";
   const stop = (e) => {

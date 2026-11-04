@@ -2,6 +2,11 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.22.7 — 2026-11-04
+
+### Fixed
+- Feature F0.22-7: A pencil stroke drawn just after opening or creating a board is no longer lost. A background refresh sent before the switch could briefly unload the new board, so the stroke stayed on this device instead of reaching the server, with an error in the console.
+
 ## 0.22.6 — 2026-11-04
 
 ### Changed

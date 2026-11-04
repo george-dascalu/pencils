@@ -674,7 +674,7 @@ function setLoading(value) {
 async function refresh(render = true, shouldApply = () => true, { quiet = false } = {}) {
   await boardQueue;
   if (!shouldApply()) return;
-  const projectId = state.project?.id;
+  const projectId = state.project?.id, openBoard = state.selectedBoard;
   try {
   let snapshot=null,workspace=null;
   if(projectId && Number.isInteger(state.snapshotVersion)){
@@ -690,6 +690,9 @@ async function refresh(render = true, shouldApply = () => true, { quiet = false 
   if(!snapshot){workspace=await fetchWorkspace();snapshot=projectId?await api(`/projects/${projectId}`):null;}
   // A user may start editing or placing an object while these requests are in flight.
   if (!shouldApply() || state.project?.id !== projectId) return;
+  // The answer holds only the board open when it was asked for in full: one opened meanwhile would
+  // come back as a summary and unload, so ask again (F0.22-7).
+  if (state.selectedBoard !== openBoard) return refresh(render, shouldApply, { quiet });
   if(workspace)applyWorkspace(workspace);
   if (snapshot) {
     if (state.boardConflict) snapshot.boards = state.boards;
