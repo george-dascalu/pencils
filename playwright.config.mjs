@@ -6,6 +6,7 @@
 //   npx playwright test --project=audit       audits, which report findings rather than guard a change
 //   npx playwright test --project=docker      the offline Docker image check, which changes host networking and
 //                                             would abort other tests' requests, so it never runs alongside them
+import os from "node:os";
 import { defineConfig } from "@playwright/test";
 
 const gate = (process.env.GATE_BROWSERS || "firefox,webkit").split(",").filter(Boolean);
@@ -28,9 +29,13 @@ export default defineConfig({
   retries: 1,
   // A test that passes only on its retry fails the batch check (RELEASE=1), so flaky tests get fixed.
   failOnFlakyTests: process.env.RELEASE === "1",
-  workers: Number(process.env.E2E_WORKERS) || 8,
+  // Up to 12 workers, half the host's threads (F0.22-5). On this 32-thread host 16 ran Chromium about
+  // 10% faster than 12, but left WebKit CPU-bound and, with every engine at once, under 2 GB of memory free.
+  workers: Number(process.env.E2E_WORKERS) || Math.max(1, Math.min(12, Math.floor(os.availableParallelism() / 2))),
   reporter: [["list"], ["html", { open: "never", outputFolder: "playwright-report" }]],
-  use: { trace: "retain-on-failure", screenshot: "only-on-failure" },
+  // A trace of every test cost a fifth of each run and hid timing races (F0.22-5): only a retry
+  // records one, so a failure still comes with its trace.
+  use: { trace: "on-first-retry", screenshot: "only-on-failure" },
   projects: [
     // The @heavy scale tests (100,000-object boards, 100 members) run in the batch check
     // (RELEASE=1) or with HEAVY=1, which scripts/affected.mjs sets when board data or storage changes.
@@ -43,6 +48,8 @@ export default defineConfig({
     // affected ones (IOS=0 skips them on a host without WebKit).
     // Every phone and iPad test (onDevices tags them @touch), besides scale tests and audits.
     { name: "ios", use: { ...webkit, touchEngine: "webkit" }, grep: /@touch/, grepInvert: /@heavy|@audit/ },
-    ...gate.map((browserName) => ({ name: browserName, use: browserName === "webkit" ? webkit : { browserName }, grep: /@gate/ })),
+    // The gate takes desktop presets only: touch presets would run in Chromium again (fixtures.mjs),
+    // and phone and iPad tests already run in WebKit through the ios project.
+    ...gate.map((browserName) => ({ name: browserName, use: browserName === "webkit" ? webkit : { browserName }, grep: /@gate/, grepInvert: /@touch/ })),
   ],
 });

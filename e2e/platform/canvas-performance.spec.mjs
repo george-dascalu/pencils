@@ -111,7 +111,9 @@ test("panning keeps a p95 frame under 150 ms and leaves the zoom and participant
 });
 
 test("animated zoom reuses the overview then preloads cards without rebuilding retained detail", async ({ page }) => {
-  await open(page);
+  const { beats } = await open(page);
+  // As for the pan timing: no snapshot refresh may rebuild the board during the zoom.
+  await settled(beats);
   const duringZoom = await page.evaluate(async () => {
     const canvas = document.querySelector("#canvas"), world = document.querySelector("#canvas-world");
     const ids = new Set([...world.querySelectorAll(".board-node")].map((el) => el.dataset.node));

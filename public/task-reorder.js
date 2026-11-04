@@ -10,7 +10,8 @@ export function taskReorderHandle(t, esc) {
 
 export function taskReorder(ctx, tableTools) {
   const { state, task, patchTask, renderView, storage, toast, sync, route } = ctx;
-  let drag = null, suppressClick = false, saving = false;
+  // saves: moves whose saves are still out. A new move needn't wait for them: the save queue merges and resends.
+  let drag = null, suppressClick = false, saves = 0;
   const rowSelector = "#view-content [data-task-order-row]";
   const rows = () => [...document.querySelectorAll(rowSelector)];
   const groupedList = () => state.view === 'list' && state.groupBy !== 'none';
@@ -75,7 +76,7 @@ export function taskReorder(ctx, tableTools) {
   // from: where the moved row's copy was dropped, so it settles from there.
   // sourceRow, targetRow: the rows themselves, as a card with several tags shows in each tag's group.
   async function move(id, target, after, from, droppedGroup, sourceRow, targetRow) {
-    if (saving || (target && !siblings(id, target))) return;
+    if (target && !siblings(id, target)) return;
     const all = rows(), source = sourceRow || all.find(r => r.dataset.taskOrderRow === id), destination = targetRow || all.find(r => r.dataset.taskOrderRow === target);
     if (!source || (!destination && !droppedGroup)) return;
     const region = destination?.closest('[data-task-drop-field]');
@@ -108,7 +109,8 @@ export function taskReorder(ctx, tableTools) {
       if (crossGroup) tableTools.preferences().groups = [];
       tableTools.persist();
     }
-    saving = state.taskReordering = true;
+    saves++;
+    state.taskReordering = true;
     try {
       // The existing save queue makes these updates optimistic and durable offline.
       const pending = [...updates].map(([id, patch]) => patchTask(id, patch, false));
@@ -129,7 +131,8 @@ export function taskReorder(ctx, tableTools) {
     } catch (error) {
       toast(error.message, true);
     } finally {
-      saving = state.taskReordering = false;
+      // Background repaints wait until the last move has saved and no drag is under way.
+      if (!--saves && !drag) state.taskReordering = false;
     }
   }
   function paint() {
@@ -250,7 +253,7 @@ export function taskReorder(ctx, tableTools) {
     clearDropTargets();
     document.body.classList.remove("task-reordering");
     if (d.button.hasPointerCapture(d.pointer)) d.button.releasePointerCapture(d.pointer);
-    state.taskReordering = false;
+    state.taskReordering = saves > 0;
     const dropped = d.ghost?.getBoundingClientRect().top;
     const ghost = d.ghost;
     if (commit && d.active && d.valid && (d.target || d.destinationGroup)) {
@@ -271,7 +274,7 @@ export function taskReorder(ctx, tableTools) {
   document.addEventListener("pointerdown", e => {
     if (drag && drag.pointer !== e.pointerId) { finish(false); return; }
     const button = e.target.closest("[data-task-reorder]");
-    if (!button || e.button !== 0 || saving || !["table", "list", "tree"].includes(state.view)) return;
+    if (!button || e.button !== 0 || !["table", "list", "tree"].includes(state.view)) return;
     e.preventDefault(); e.stopImmediatePropagation();
     finish(false);
     button.focus({ preventScroll: true });

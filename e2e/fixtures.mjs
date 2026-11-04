@@ -15,7 +15,8 @@
 // desktop preset. Every test fails on page errors, console errors and server errors (500 and
 // above); a test that expects some lists them with test.use({ allowErrors: [/pattern/] }).
 // Touch devices use Chromium with coarse-pointer emulation, or WebKit in the ios project (onDevices
-// tags them @touch); desktop devices use the project's browser (Chromium, or Firefox/WebKit in the gate).
+// tags them @touch); desktop devices use the project's browser (Chromium, or Firefox/WebKit in the gate,
+// which runs desktop presets only).
 // With COVERAGE=1 (npm run e2e:coverage), Chromium pages record which code of the app's modules ran.
 import { test as base, expect } from "@playwright/test";
 import fs from "node:fs/promises";

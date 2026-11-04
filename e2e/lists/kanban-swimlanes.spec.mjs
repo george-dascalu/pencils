@@ -93,19 +93,20 @@ test("a collapsed lane stays collapsed after reload", gate, async ({ page }) => 
 test("dragging across lanes sets the lane's assignee, priority or type, and imported cards save local assignments", gate, async ({ page }) => {
   await open(page, "assignee");
   await move(page, app.a.id, "Pat", "in-progress");
-  expect((await task(app.a.id)).assignee).toBe("Pat");
+  // A drop may save in more than one request: wait for the stored value, not the first answer.
+  await expect.poll(async () => (await task(app.a.id)).assignee).toBe("Pat");
   expect((await task(app.a.id)).priority).toBe("high");
   expect((await task(app.b.id)).status).toBe("todo");
   // Placement updates optimistically; wait for the save before reading the durable snapshot.
   await move(page, app.imported.id, "Pat", "in-progress");
   await expect(lane(page, "Pat").locator(`[data-drag-task="${app.imported.id}"]`)).toBeVisible();
-  expect((await task(app.imported.id)).assignee).toBe("Pat");
+  await expect.poll(async () => (await task(app.imported.id)).assignee).toBe("Pat");
   await group(page).selectOption("priority");
   await move(page, app.a.id, "low", "in-progress");
-  expect((await task(app.a.id)).priority).toBe("low");
+  await expect.poll(async () => (await task(app.a.id)).priority).toBe("low");
   await group(page).selectOption("type");
   await move(page, app.a.id, "bug", "in-progress");
-  expect((await task(app.a.id)).type).toBe("bug");
+  await expect.poll(async () => (await task(app.a.id)).type).toBe("bug");
 });
 
 test("lane grouping is remembered across reload without a named view, and an empty search keeps one full-size lane", gate, async ({ page }) => {

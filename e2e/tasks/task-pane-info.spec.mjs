@@ -17,7 +17,10 @@ async function open(page,view){
   await page.locator(view==='board'?'[data-node="card"] [data-pro="task-details"]':`[data-action="task-open"][data-id="${app.card.id}"]:visible`).first().click();
   await expect(page.locator('#task-form')).toBeVisible();
 }
+// A resize applies the new layout on the next resize event, so wait for it before measuring or choosing a pane.
+const layout=(page,split)=>expect(page.locator('.task-dialog')).toHaveAttribute('data-pane-layout',split?'split':'compact');
 async function geometry(page,pane,split){
+  await layout(page,split);
   const form=page.locator('#task-form'),panel=form.locator(pane==='history'?'.task-history-panel':'.task-comments-panel'),body=form.locator('.task-editor-content > .dialog-body');
   await expect(panel).toHaveCSS('position','static');
   const [p,d]=await Promise.all([panel.boundingBox(),page.locator('.task-dialog').boundingBox()]);
@@ -58,8 +61,9 @@ onDevices(['desktop','ipad','phone'],()=>{
     const widths=device==='desktop'?[1440,1180,1024,900,760]:device==='ipad'?[1024,820]:[390,320];
     for(const width of widths){
       await page.setViewportSize({width,height:900});
-      await expect(page.getByRole('button',{name:'Card details',exact:true})).toHaveCount(0);
       const split=width>=1024;
+      await layout(page,split);
+      await expect(page.getByRole('button',{name:'Card details',exact:true})).toHaveCount(0);
       for(const pane of ['history','comments']){
         await chooseCardPane(page,pane);await geometry(page,pane,split);
       }

@@ -301,13 +301,13 @@ npm run check                       # syntax and types, about 2 seconds
 npm test                            # unit tests, about 2 seconds
 npm run e2e                         # every browser test in Chromium, in parallel (a few minutes)
 npm run e2e -- e2e/board            # a folder or file;  -- -g "drawer"  for matching titles
-npx playwright show-trace test-results/…/trace.zip   # step through a failed test
+npx playwright show-trace test-results/…/trace.zip   # step through a failed test's retry
 
 # Release the working tree to the running container (see AGENTS.md › Deployment)
 npm run release -- patch
 ```
 
-Browser tests are Playwright Test specs in `e2e/<area>/` (see `e2e/README.md`). Each file starts its own server and temporary vault; failures are retried once and reported as flaky, with a trace. Audits run with `npx playwright test --project=audit`, and the offline Docker image check with `--project=docker` (it changes host networking, so it never runs alongside the other tests). `npm run test:release` adds the `@gate` tests in Firefox and WebKit (`GATE_BROWSERS=firefox` limits it to installed engines).
+Browser tests are Playwright Test specs in `e2e/<area>/` (see `e2e/README.md`). Each file starts its own server and temporary vault; failures are retried once, recording a trace on the retry, and reported as flaky. Audits run with `npx playwright test --project=audit`, and the offline Docker image check with `--project=docker` (it changes host networking, so it never runs alongside the other tests). `npm run test:release` adds the `@gate` tests in Firefox and WebKit (`GATE_BROWSERS=firefox` limits it to installed engines).
 
 `npm run release` refuses to start unless `CHANGELOG.md` has the changes under `## Unreleased`. It runs the checks and unit tests, sets the version in `package.json`, `package-lock.json` and `public/app-version.js`, dates the changelog entry (Europe/London), builds the image, tags the running image `pencils:rollback-before-<version>`, recreates the container with its existing settings and waits for `/api/health` to report the new version. If the new version does not become healthy, it restores the previous image. Afterwards it tags `pencils:release-<version>`.
 

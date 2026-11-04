@@ -8,9 +8,9 @@ async function seed(off) {
   const project = await app.store.createProject({ title: `Fit ${++count}`, key: `FIT${count}` });
   const { project: p } = await app.store.snapshot(project.id);
   await app.store.updateProject(project.id, { revision: p.revision, schema: { ...p.schema, off } });
-  await app.store.createTask(project.id, { title: 'Short', due: '2026-11-04' });
+  const short = await app.store.createTask(project.id, { title: 'Short', due: '2026-11-04' });
   await app.store.createTask(project.id, { title: 'Longer range', start: '2026-11-04', due: '2026-11-07' });
-  return project;
+  return { ...project, card: short.id };
 }
 // Each visible field's width and the box's, for every row's box.
 const measure = locator => locator.evaluateAll(boxes => boxes.map(box => {
@@ -26,6 +26,8 @@ onDevices(['desktop', 'ipad', 'phone'], () => {
       await page.goto(`${app.base}/#project/${project.id}/calendar`);
       await (await reveal(page.locator('#calendar-mode'))).selectOption('agenda');
       if (await page.locator('.mobile-view-options[open]').count()) await page.getByRole('button', { name: 'Close view options', exact: true }).click();
+      // Every project has two cards: wait for this one's, not the last project's rows.
+      await expect(page.locator(`.calendar-agenda [data-calendar-card="${project.card}"]`)).toBeVisible();
       const boxes = page.locator('.calendar-agenda .agenda-fields');
       await expect(boxes).toHaveCount(2);
       const rows = await measure(boxes);
@@ -39,6 +41,7 @@ onDevices(['desktop', 'ipad', 'phone'], () => {
     const list = {};
     for (const [name, project] of [['full', full], ['date', dateOnly], ['two', twoFields]]) {
       await page.goto(`${app.base}/#project/${project.id}/list`);
+      await expect(page.locator(`#view-content [data-task-order-row="${project.card}"]`)).toBeVisible();
       const boxes = page.locator(device === 'phone' ? '#view-content .phone-task-fields' : '#view-content .task-row > .row-fields');
       await expect(boxes).toHaveCount(2);
       const rows = await measure(boxes);

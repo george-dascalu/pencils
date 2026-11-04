@@ -185,6 +185,36 @@ test.describe("desktop", () => {
     await page.mouse.up();
     expect(byOrder(await tasks(longProject))).toEqual(longSaved);
   });
+
+  // F0.22-5: a move used to be ignored while the one before it was still saving, so pressing
+  // Alt+Down twice quickly moved a card one place, and a drag right after a move didn't start.
+  test("moves go ahead while the previous move is still saving", async ({ page }) => {
+    const project = await app.store.createProject({ title: "Quick moves" });
+    const made = [];
+    for (const [i, title] of ["One", "Two", "Three", "Four"].entries()) made.push(await app.store.createTask(project.id, { title, order: i * 1024 }));
+    const [one, two, three, four] = made.map((t) => t.id);
+    // A slow server: every save is still out when the next move starts.
+    const url = `**/api/projects/${project.id}/tasks/**`;
+    await page.route(url, async (route) => {
+      if (route.request().method() !== "GET") await new Promise((resolve) => setTimeout(resolve, 600));
+      await route.continue();
+    });
+    await page.goto(`${app.base}/#project/${project.id}/list`);
+    await row(page, one).waitFor();
+    await handle(page, one).focus();
+    await page.keyboard.press("Alt+ArrowDown");
+    await page.keyboard.press("Alt+ArrowDown");
+    await waitOrder(page, [two, three, one, four]);
+    // A drag while those saves are still out moves Four above Two.
+    await start(page, four);
+    const top = await row(page, two).boundingBox();
+    await page.mouse.move(top.x + 25, top.y + top.height * 0.2, { steps: 12 });
+    await page.mouse.up();
+    await waitOrder(page, [four, two, three, one]);
+    await settled(page);
+    expect(byOrder(await tasks(project))).toEqual([four, two, three, one]);
+    await page.unroute(url);
+  });
 });
 
 onDevices(["phone"], () => {

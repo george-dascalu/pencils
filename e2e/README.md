@@ -3,12 +3,12 @@
 Playwright Test, one folder per area (`board`, `documents`, `tasks`, `lists`, `planning`, `navigation`, `settings`, `platform`, `ui`). Unit tests stay in `test/*.test.js` (`npm test`).
 
 ```bash
-npm run e2e                                # every test in Chromium except @heavy, 8 workers, failures retried once and reported as flaky
+npm run e2e                                # every test in Chromium except @heavy, up to 12 workers, failures retried once (with a trace) and reported as flaky
 npm run e2e:affected                       # only the areas your changes since the last release need (scripts/affected.mjs; npm run release runs it too)
 HEAVY=1 npm run e2e -- e2e/platform        # include the @heavy scale tests (100,000-object boards, 100 members)
 npm run e2e -- e2e/board                   # a folder or file
 npm run e2e -- -g "drawer"                 # tests whose title matches
-npx playwright show-trace test-results/…/trace.zip   # what a failed test saw, step by step
+npx playwright show-trace test-results/…/trace.zip   # what a failed test's retry saw, step by step (only retries record traces)
 npx playwright test --project=audit        # audits (tag @audit): they report findings rather than guard a change
 npx playwright test --project=docker       # the offline Docker image check (changes host networking, so never alongside other tests)
 npm run test:release                       # the batch check: checks, unit tests, every test including @heavy, @gate tests in Firefox/WebKit, Docker
@@ -43,5 +43,5 @@ onDevices(["phone", "ipad", "desktop"], () => {
 - The batch check (`RELEASE=1`) fails on flaky tests (`failOnFlakyTests`): fix them instead of rerunning.
 - Phone and iPad tests run in WebKit too: `npx playwright test --project=ios` (once per host: `scripts/webkit-local.sh`). Calls to `newCDPSession` skip the test outside Chromium, and so does the mouse wheel on mobile WebKit. WebKit runs without the desktop's session bus, so a failed desktop service can't slow it down.
 - Name tests after the behaviour, as a sentence. Start the file with a comment naming the owner request or the rule it guards.
-- Tag tests that belong in the cross-browser release gate with `{ tag: "@gate" }`, and slow scale tests (many objects or users) with `{ tag: "@heavy" }` so they run in the batch check rather than on every change.
+- Tag tests that belong in the cross-browser release gate with `{ tag: "@gate" }` (Firefox and WebKit run their desktop presets; phone and iPad ones run in WebKit through `ios`), and slow scale tests (many objects or users) with `{ tag: "@heavy" }` so they run in the batch check rather than on every change.
 - Shared helpers for menus, the New menu and the card editor are in `e2e/helpers/`.

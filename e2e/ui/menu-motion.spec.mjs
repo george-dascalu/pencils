@@ -70,6 +70,9 @@ onDevices(["desktop", "phone"], () => test("dropdowns fade only when motion is a
   if (await details.evaluate((el) => el.open)) await details.locator(":scope > summary").click();
   await expect(details).not.toHaveAttribute("open", "");
   expect(await details.evaluate((el, panelSelector) => {
+    // A panel fades in from @starting-style only if its closed style was computed: read it first,
+    // as a frame would between a person's close and reopen.
+    getComputedStyle(el.querySelector(panelSelector)).display;
     el.querySelector(":scope > summary").click();
     return el.open && el.querySelector(panelSelector).getAnimations().length > 0;
   }, panelSelector), `${device}: the panel fades in`).toBe(true);
@@ -87,7 +90,10 @@ onDevices(["desktop", "phone"], () => test("dropdowns fade only when motion is a
 test("every dropdown opens with a fade, drop and grow only when motion is allowed, and still works", { tag: "@gate" }, async ({ page }) => {
   const modes = [["reduce", []], ["no-preference", ["opacity", "scale", "translate"]]];
   // What a dropdown's panel animates once its trigger is pressed, read in the press's own task.
+  // A closed panel's style is read first, as a frame would, so @starting-style has a state to start from.
   const opening = (trigger, panel) => trigger.evaluate((el, panel) => {
+    const closed = document.querySelector(panel);
+    if (closed) getComputedStyle(closed).display;
     el.click();
     return document.querySelector(panel).getAnimations().map((a) => a.transitionProperty).sort();
   }, panel);

@@ -2,6 +2,15 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.22.6 — 2026-11-04
+
+### Changed
+- Feature F0.22-5: Browser test runs are faster with every test kept. Traces are recorded only when a failed test is retried, which removes a fifth of each run's time; runs use 12 workers; and the Firefox and WebKit checks no longer repeat the phone and iPad tests, which already run in WebKit. Tests in six files that passed only while tracing slowed them down now wait for what they check.
+- Feature F0.22-6: The longest test file, Table tools, is split in two, and its longest test into one test per theme, so they run side by side instead of holding up the end of a run.
+
+### Fixed
+- Feature F0.22-5: In List, Tree and Table, pressing Alt+Down or Alt+Up twice quickly moves a card two places, and a drag started right after a move works. Before, a new move was ignored until the previous one had saved.
+
 ## 0.22.4 — 2026-11-04
 
 ### Added

@@ -48,7 +48,8 @@ test("a board draft saves its fields on close without creating a task or moving 
   await expect(page.getByRole("button", { name: "Save draft", exact: true })).toHaveCount(0);
   await page.locator("#task-form [data-action=dialog-close]").click();
   await expect(page.locator("#task-form")).toHaveCount(0);
-  await expect.poll(async () => (await snap()).boards[0].nodes.some((n) => n.type === "draft")).toBe(true);
+  // Closing saves the fields after the draft node exists: wait for them, not just the node.
+  await expect.poll(async () => (await snap()).boards[0].nodes.find((n) => n.type === "draft")?.text || "").toMatch(/Ideas before commitment/);
   const data = await snap();
   const draft = data.boards[0].nodes.find((n) => n.type === "draft");
   draftId = draft.id;
