@@ -2,6 +2,14 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.22.20 — 2026-11-05
+
+### Fixed
+- Feature F0.22-20: A Kanban card that moves only with its lane while another card is dragged no longer starts a slide of its own of a fraction of a pixel, which made a browser test fail now and then.
+
+### Added
+- Feature F0.22-19: Every test file has an importance tier (critical, important or peripheral), from how often people use what it guards and what a failure would cost, and `node scripts/tiers.mjs` runs the tests tier by tier, most important first, stopping after a tier that fails.
+
 ## 0.22.18 — 2026-11-05
 
 ### Changed

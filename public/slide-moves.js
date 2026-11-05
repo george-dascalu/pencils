@@ -11,8 +11,9 @@ export function slideMoves(elements, change) {
     let around = el.parentElement;
     while (around && !moved.has(around)) around = around.parentElement;
     const own = delta - (moved.get(around) || 0);
-    // Only what is on screen needs to slide; added to a slide still running, so nothing jumps.
-    if (own && tops.get(el) < innerHeight && tops.get(el) > -el.offsetHeight)
+    // Only what is on screen needs to slide; added to a slide still running, so nothing jumps. Under
+    // half a pixel is rounding left by moving with its lane (F0.22-19), not a move of its own.
+    if (Math.abs(own) >= 0.5 && tops.get(el) < innerHeight && tops.get(el) > -el.offsetHeight)
       el.animate([{ transform: `translateY(${own}px)` }, { transform: "translateY(0)" }], { duration: 140, easing: "ease-out", composite: "add" });
   }
 }

@@ -44,4 +44,5 @@ onDevices(["phone", "ipad", "desktop"], () => {
 - Phone and iPad tests run in WebKit too: `npx playwright test --project=ios` (once per host: `scripts/webkit-local.sh`). Calls to `newCDPSession` skip the test outside Chromium, and so does the mouse wheel on mobile WebKit. WebKit runs without the desktop's session bus, so a failed desktop service can't slow it down.
 - Name tests after the behaviour, as a sentence. Start the file with a comment naming the owner request or the rule it guards.
 - Tag tests that belong in the cross-browser release gate with `{ tag: "@gate" }` (Firefox and WebKit run their desktop presets; phone and iPad ones run in WebKit through `ios`), and slow scale tests (many objects or users) with `{ tag: "@heavy" }` so they run in the batch check rather than on every change.
+- Give a new spec a tier in `scripts/tiers.mjs` (1 critical, 2 important, 3 peripheral); `node scripts/tiers.mjs 1` runs only the critical tests, unit and browser.
 - Shared helpers for menus, the New menu and the card editor are in `e2e/helpers/`.

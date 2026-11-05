@@ -16,7 +16,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { command, projectRoot } from "./deploy.mjs";
 
-const NONE = [/\.md$/, /^test\//, /^reports\//, /^artifacts\//, /^\.claude\//, /^scripts\/(release|deploy|affected|mutants)\.mjs$/];
+const NONE = [/\.md$/, /^test\//, /^reports\//, /^artifacts\//, /^\.claude\//, /^scripts\/(release|deploy|affected|mutants|tiers)\.mjs$/];
 const SHARED = [
   /^public\/(app|features|navigation|project-layout|sync|save-state|open-focus|editable-controls|overflow-title|app-status|app-version|appearance|layout-width|popover-position|popup-motion|deferred-controller|uuid|layout-tray)\.js$/,
   /^public\/(controls|styles|appearance|enhancements|project-layout|fonts|themes)\.css$/,

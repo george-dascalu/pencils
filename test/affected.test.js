@@ -33,7 +33,7 @@ test("board data and storage code add the heavy scale tests, which live in e2e/p
 
 test("a changed spec runs itself; docs and unit tests need no browser tests", () => {
   assert.deepEqual(affected(["e2e/lists/table-tools.spec.mjs"]).paths, ["e2e/lists/table-tools.spec.mjs"]);
-  const none = affected(["CHANGELOG.md", "AGENTS.md", "test/store.test.js", "scripts/affected.mjs"]);
+  const none = affected(["CHANGELOG.md", "AGENTS.md", "test/store.test.js", "scripts/affected.mjs", "scripts/tiers.mjs"]);
   assert.equal(none.all, false);
   assert.deepEqual(none.paths, []);
 });
