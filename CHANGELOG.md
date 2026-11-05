@@ -2,6 +2,11 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.22.17 — 2026-11-05
+
+### Changed
+- Feature F0.22-17: A board card's description button is a small rounded pill that reads Expand or Collapse beside its arrow, with a light fill that brightens on hover, instead of a bare arrow tab.
+
 ## 0.22.16 — 2026-11-04
 
 ### Fixed
