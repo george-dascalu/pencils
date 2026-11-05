@@ -2,6 +2,11 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.22.18 — 2026-11-05
+
+### Changed
+- Feature F0.22-18: A board card's description button is a small round arrow across the card's bottom edge, half outside it, like Miro's, and the card no longer keeps room for it. On a selected card the bottom connection point sits just below it, and a selection toolbar below the card clears both.
+
 ## 0.22.17 — 2026-11-05
 
 ### Changed

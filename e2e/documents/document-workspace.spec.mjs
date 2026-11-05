@@ -177,19 +177,20 @@ test("board task cards collapse and expand their description, saved with the pla
   const card = page.locator(`[data-node="${parentId}"]`);
   await card.waitFor();
   expect(await card.locator(".live-card-actions button").evaluateAll((els) => els.map((e) => e.dataset.pro))).toEqual(["comments", "task-details"]);
-  // F0.21-100: the description toggle sits at the card's bottom edge, centred, clear of the content.
+  // F0.21-100: the description toggle sits at the card's bottom edge, centred, clear of the content;
+  // since F0.22-18 across that edge, half outside the card.
   const toggle = card.locator("[data-pro=task-collapse]");
   const place = async () => ({ c: await card.boundingBox(), t: await toggle.boundingBox(), d: await card.locator(".task-card-description").boundingBox() });
   let at = await place();
   expect(Math.abs(at.t.x + at.t.width / 2 - (at.c.x + at.c.width / 2)), "centred").toBeLessThan(2);
-  expect(at.t.y + at.t.height, "inside the card's bottom edge").toBeLessThanOrEqual(at.c.y + at.c.height + 0.5);
+  expect(Math.abs(at.t.y + at.t.height / 2 - (at.c.y + at.c.height)), "across the card's bottom edge").toBeLessThan(1.5);
   expect(at.t.y, "below the description").toBeGreaterThanOrEqual(at.d.y + at.d.height - 0.5);
   expect(at.t.height, "small").toBeLessThanOrEqual(24);
   await card.getByRole("button", { name: "Collapse card description", exact: true }).click();
   await expect.poll(async () => (await node(parentId)).taskCollapsed).toBe(true);
   await expect(card.locator(".task-card-description")).toBeHidden();
   at = await place();
-  expect(at.t.y + at.t.height, "collapsed: inside the bottom edge").toBeLessThanOrEqual(at.c.y + at.c.height + 0.5);
+  expect(Math.abs(at.t.y + at.t.height / 2 - (at.c.y + at.c.height)), "collapsed: across the bottom edge").toBeLessThan(1.5);
   expect(at.t.y, "collapsed: clear of the fields").toBeGreaterThanOrEqual((await card.locator(".live-card-state").boundingBox()).y + (await card.locator(".live-card-state").boundingBox()).height - 0.5);
   expect((await node(parentId)).h).toBeLessThan(220);
   await page.reload();

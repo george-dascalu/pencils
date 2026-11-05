@@ -146,10 +146,10 @@ export function canvasPro(ctx, basic) {
     `Guest ${sync.client.slice(-4)}`;
   const btn = (action, text, extra = "") =>
     `<button type="button" class="${action === "task-collapse" ? "task-card-toggle" : `button small${action === "collapse" ? " icon-button" : ""}`}" data-pro="${action}" ${extra}>${text}</button>`;
-  // The description toggle sits at the card's bottom edge, outside the header's buttons (F0.21-100),
-  // as a pill that names what it does (F0.22-17).
-  const disclosure = (n) => btn("task-collapse", `${icon("chevron")}<span>${n.taskCollapsed ? "Expand" : "Collapse"}</span>`,
-    `data-id="${esc(n.id)}" aria-label="${n.taskCollapsed ? "Expand" : "Collapse"} card description" aria-expanded="${!n.taskCollapsed}" ${n.locked ? "disabled" : ""}`);
+  // The description toggle sits across the card's bottom edge, outside the header's buttons
+  // (F0.21-100), as a round arrow like Miro's (F0.22-18).
+  const disclosure = (n) => btn("task-collapse", icon("chevron"),
+    `data-id="${esc(n.id)}" aria-label="${n.taskCollapsed ? "Expand" : "Collapse"} card description" title="${n.taskCollapsed ? "Expand" : "Collapse"} description" aria-expanded="${!n.taskCollapsed}" ${n.locked ? "disabled" : ""}`);
   const input = (name, label, value = "", extra = "") =>
     extra === 'type="color"'
       ? `<div class="field">Colour${ctx.colorPicker({ name, value, label: "Colour" })}</div>`
@@ -669,6 +669,9 @@ export function canvasPro(ctx, basic) {
         content.append(...el.childNodes);
         el.append(content);
       }
+      // So does the description toggle, which sits across the bottom edge (F0.22-18).
+      const toggle = el.querySelector(":scope > .board-node-content > .task-card-toggle");
+      if (toggle) el.append(toggle);
       paintTextStyle(el, n);
       if (n.type === "text") {
         const parent = index.get(parents.get(n.id));

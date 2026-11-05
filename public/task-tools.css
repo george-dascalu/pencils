@@ -612,24 +612,28 @@ body:is(.task-reordering, .task-group-reordering), body:is(.task-reordering, .ta
   width: 16px;
   height: 16px;
 }
-/* Description toggle at the bottom edge, centred (F0.21-100): a pill with Expand or Collapse beside
-   its chevron (F0.22-17), 4px above the edge; the content leaves it 28px. */
-.board-node.task > .board-node-content:has(> .task-card-toggle) { padding-bottom: 28px; box-sizing: border-box; }
-.board-node.task .task-card-toggle {
-  position: absolute; left: 50%; bottom: 4px; transform: translateX(-50%);
-  display: inline-flex; align-items: center; justify-content: center; gap: 4px;
-  height: 20px; min-height: 0; padding: 0 9px 0 7px; box-sizing: border-box;
-  border: 1px solid color-mix(in srgb, currentColor 18%, transparent); border-radius: 999px;
-  background: color-mix(in srgb, var(--paper, #fff) 72%, transparent); color: var(--muted, #626b5e);
-  font: 500 12px/1 var(--app-font, inherit); white-space: nowrap; cursor: pointer; z-index: 2;
+/* Description toggle across the bottom edge, centred, half outside the card, like Miro (F0.21-100,
+   F0.22-18): a round arrow on the card itself, outside its clipped content, which keeps no room for it.
+   A selected card's bottom connection point moves below it. */
+.board-node.task > .task-card-toggle {
+  position: absolute; left: 50%; bottom: -12px; transform: translateX(-50%);
+  display: flex; align-items: center; justify-content: center;
+  width: 24px; height: 24px; min-height: 0; padding: 0; box-sizing: border-box;
+  border: 1px solid var(--control-border, #dce0d5); border-radius: 50%;
+  background: var(--paper, #fff); color: var(--muted, #626b5e); box-shadow: 0 1px 3px #0000001f;
+  cursor: pointer; z-index: 5;
   transition: background-color .12s ease, border-color .12s ease, color .12s ease;
 }
-.board-node.task .task-card-toggle:is(:hover, :focus-visible) { background: var(--paper, #fff); border-color: color-mix(in srgb, currentColor 32%, transparent); color: var(--ink, inherit); }
-.board-node.task .task-card-toggle:focus-visible { outline: var(--focus-ring); outline-offset: 1px; }
-.board-node.task .task-card-toggle:disabled { opacity: .4; cursor: default; }
-.board-node.task .task-card-toggle .icon { width: 12px; height: 12px; flex: none; }
-@media (prefers-reduced-motion: reduce) { .board-node.task .task-card-toggle { transition: none; } }
-@media (pointer: coarse) { .board-node.task .task-card-toggle::before { content: ""; position: absolute; inset: -22px 0 -4px; } } /* 44px target on touch only (inside the 1px border), within the card */
+.board-node.task > .task-card-toggle:is(:hover, :focus-visible) { border-color: color-mix(in srgb, var(--ink, #303b35) 35%, transparent); color: var(--ink, inherit); }
+.board-node.task > .task-card-toggle:focus-visible { outline: var(--focus-ring); outline-offset: 1px; }
+.board-node.task > .task-card-toggle:disabled { opacity: .4; cursor: default; }
+.board-node.task > .task-card-toggle .icon { width: 14px; height: 14px; }
+@media (prefers-reduced-motion: reduce) { .board-node.task > .task-card-toggle { transition: none; } }
+.board-node.task:has(> .task-card-toggle) > .port-bottom { bottom: -31px; }
+@media (pointer: coarse) {
+  .board-node.task > .task-card-toggle::before { content: ""; position: absolute; inset: -11px; border-radius: 50%; } /* 44px target on touch only */
+  .board-node.task:has(> .task-card-toggle) > .port-bottom { bottom: -48px; }
+}
 .board-node.task .task-card-toggle[aria-expanded="true"] .icon {
   transform: rotate(180deg);
 }

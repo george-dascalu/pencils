@@ -197,7 +197,11 @@ export function canvasControls(ctx, basic) {
       handleGap -
       (nodes.some((n) => n.type === "grid") ? 26 : 0);
     const safeTop = canvas.clientWidth < 600 ? 160 : 110;
-    if (y < safeTop) y = bottom + handleGap;
+    if (y < safeTop) {
+      // Below the selection, clear its connection points, which a card's description toggle pushes further out (F0.22-18).
+      const origin = canvas.getBoundingClientRect().top;
+      y = Math.max(bottom + handleGap, ...$$(".board-node.selected > .connection-port").map((port) => port.getBoundingClientRect().bottom - origin + 8));
+    }
     // Clear of the tool rail where it fits beside it (phones dock the tools at the bottom).
     const rail = canvas.querySelector(".board-tools"),
       beside = rail?.offsetParent && !rail.closest(".phone-board-dock") ? rail.offsetLeft + rail.offsetWidth + 8 : 12,
