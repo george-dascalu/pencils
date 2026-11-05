@@ -4,7 +4,7 @@ import {validTaskBoards,validateTaskBoards} from '../server/task-board-links.js'
 
 test('board link identifiers form an optional, unique list limited to 200',()=>{
  for(const value of [undefined,null,[],['b-a'],['b-A_1-2'],Array.from({length:200},(_,i)=>`b-${i}`)])assert.equal(validTaskBoards(value),true,JSON.stringify(value));
- for(const value of [false,0,'b-a',{},[null],[3],['d-a'],['b-'],['b-a/b'],['b-a','b-a'],Array.from({length:201},(_,i)=>`b-${i}`)])assert.equal(validTaskBoards(value),false,JSON.stringify(value));
+ for(const value of [false,0,'b-a',{},[null],[3],['d-a'],['x-b'],['b-'],['b-a/b'],['b-a','b-a'],Array.from({length:201},(_,i)=>`b-${i}`)])assert.equal(validTaskBoards(value),false,JSON.stringify(value));
 });
 test('new links must resolve to this project and existing deleted links are preserved',async()=>{
  const allowed=new Set(['p-a/boards/b-one','p-a/boards/b-two']);

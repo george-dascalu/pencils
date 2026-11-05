@@ -1,10 +1,10 @@
 // Inline document components: callouts, tables (rows, columns, undo), quotes,
 // code and math are edited in place in Live preview and autosave as Markdown,
-// without rewriting the rest of the file. Switching modes stays lossless, and the
-// workspace passes accessibility checks on desktop and phone widths in both themes.
+// without rewriting the rest of the file. Switching modes stays lossless. (The accessibility
+// sweep is in document-components-important.spec.mjs.)
 import { test, expect, useApp, onDevices } from "../fixtures.mjs";
 import { browserTabShortcuts } from "../helpers/browser-tab-shortcuts.mjs";
-import { axeViolations, chooseDocumentView, noHorizontalScroll, setTheme } from "../helpers/documents.mjs";
+import { chooseDocumentView } from "../helpers/documents.mjs";
 
 const body = [
   "# Notebook", "", "Keep **this paragraph** exactly as written.", "",
@@ -137,20 +137,6 @@ test("code and math blocks save, and switching modes stays lossless", async ({ p
   for (const name of ["Source", "Reading", "Live preview"]) {
     await chooseDocumentView(page, name);
     expect(await saved(), "Switching modes remains lossless.").toBe(current);
-  }
-});
-
-test("components stay accessible at desktop and phone widths in both themes", async ({ page }) => {
-  const { saved } = await open(page);
-  for (const width of [1440, 390]) {
-    await page.setViewportSize({ width, height: 1050 });
-    for (const theme of ["light", "dark"]) {
-      await setTheme(page, theme);
-      await textbox(page, "Callout title").fill(`Heading ${width} ${theme}`);
-      await expect.poll(saved).toContain(`Heading ${width} ${theme}`);
-      expect(await axeViolations(page, ".documents-workspace"), `${width} ${theme}`).toEqual([]);
-      expect(await noHorizontalScroll(page), `${width} ${theme} fits`).toBe(true);
-    }
   }
 });
 

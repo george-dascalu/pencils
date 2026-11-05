@@ -3,12 +3,12 @@ import {chooseCardPane} from '../helpers/card-panes.mjs';
 // (AGENTS.md "Dialogs and contextual panels"). The board stays usable, drafts are recovered,
 // the fields keep the shared order (assignee, status, priority, then dates; 0.19.9) on desktop
 // and phone in both themes, linked cards show their fields with neutral fills and coloured
-// borders (0.19.12), and History opens beside the panel and restores a version.
-import { test, expect, onDevices, useApp } from "../fixtures.mjs";
+// borders (0.19.12), and History opens beside the panel and restores a version. How the panel fits
+// phones and themes is in board-task-panel-fit.spec.mjs (split by tier, F0.22-21).
+import { test, expect, useApp } from "../fixtures.mjs";
 import { legacySubtasks } from "../helpers/task-editor-helpers.mjs";
 import { selectProjectView, acceptConfirm, clickControl } from "../helpers/menu-controls.mjs";
 import { newCard } from "../helpers/new-card.mjs";
-import { presetCamera } from "../helpers/board-canvas.mjs";
 
 const app = useApp();
 
@@ -48,17 +48,6 @@ async function checkMetadataLayout(page) {
   expect(fields[0].x < fields[1].x && fields[1].x < fields[2].x, "assignee, status and priority left to right").toBe(true);
   expect(Math.abs(fields[0].y - fields[2].y), "assignee and priority share a row").toBeLessThan(2);
   expect(Math.abs(fields[3].y - fields[4].y), "start and due share a row").toBeLessThan(2);
-}
-const noHorizontalOverflow = (locator) => expect.poll(() => locator.evaluate((el) => el.scrollWidth <= el.clientWidth + 1)).toBe(true);
-// The focus ring: 1px inset outline in the shared green, no shadow.
-function focusStyle(el) {
-  const style = getComputedStyle(el);
-  const probe = document.createElement("span");
-  probe.style.color = "var(--green)";
-  el.parentElement.append(probe);
-  const expected = getComputedStyle(probe).color;
-  probe.remove();
-  return { color: style.outlineColor, width: style.outlineWidth, offset: style.outlineOffset, shadow: style.boxShadow, expected };
 }
 
 test("a new card opens as a compact panel, the board stays usable, and the recovered draft saves with all its fields", async ({ page }) => {
@@ -106,39 +95,6 @@ test("a new card opens as a compact panel, the board stays usable, and the recov
   expect(saved.tasks.find((t) => t.title === "Child from panel").parent).toBe(task.id);
   expect(saved.boards[0].nodes.filter((n) => n.task === task.id), "the card is placed on the board").toHaveLength(1);
 });
-
-onDevices(["desktop", "phone"], () => test("the new card panel fits the screen with the shared field order and focus ring in both themes", async ({ page, device }) => {
-  await openBoard(page, await newProject());
-  await openNewCardPanel(page);
-  await title(page).fill("Compact task");
-  for (const theme of ["light", "dark"]) {
-    await page.evaluate((t) => window.PencilsAppearance.write({ theme: t }), theme);
-    await page.waitForFunction(() => {
-      const r = document.querySelector(".board-task-editor").getBoundingClientRect();
-      return r.left >= 0 && r.right <= innerWidth && r.bottom <= innerHeight;
-    });
-    await noHorizontalOverflow(editor(page));
-    await checkMetadataLayout(page);
-    const titleBox = await title(page).boundingBox();
-    const typeBox = await typeTrigger(page).boundingBox();
-    expect(titleBox.x, "title follows the type, ID and bookmark").toBeGreaterThanOrEqual(typeBox.x + typeBox.width);
-    expect(titleBox.y + titleBox.height/2).toBeCloseTo(typeBox.y + typeBox.height/2, 0);
-    expect(titleBox.width, "the title spans the panel width").toBeGreaterThan(typeBox.width * 3);
-    await title(page).evaluate((el) => el.focus({ focusVisible: true }));
-    const focused = await title(page).evaluate(focusStyle);
-    expect(focused.width).toBe("1px");
-    expect(focused.offset).toBe("-1px");
-    expect(focused.color).toBe(focused.expected);
-    expect(focused.shadow).toBe("none");
-    // Keyboard order follows the visible title layout.
-    await page.keyboard.press("Shift+Tab");
-    await expect(typeTrigger(page)).toBeFocused();
-    await typeTrigger(page).evaluate((el) => el.focus({ focusVisible: true }));
-    const keyboardFocus = await typeTrigger(page).evaluate(focusStyle);
-    expect(keyboardFocus.color).toBe(keyboardFocus.expected);
-    expect(keyboardFocus.width).toBe("1px");
-  }
-}));
 
 test("linked card fields follow the shared order in one box coloured by priority, and status colours its text", async ({ page }) => {
   const { project, task } = await seedCard();
@@ -190,28 +146,6 @@ test("Details opens the card in the side panel without moving the board, and His
   await expect(page.locator(".board-task-editor-heading")).toHaveCount(1);
   await expect(page.locator("dialog:modal")).toHaveCount(0);
 });
-
-onDevices(["phone"], () => test("History and Details fit a phone screen in both themes", async ({ page }) => {
-  const { project, board } = await seedCard();
-  // Keep the whole card on the narrow screen.
-  await presetCamera(page, board.id, { x: 10, y: 10, z: 1 });
-  await openBoard(page, project);
-  await card(page).locator("[data-pro=task-details]").click();
-  await chooseCardPane(page, 'history');
-  const history = editor(page).locator(".task-history-panel");
-  await history.locator(".recovery-item").first().waitFor();
-  const width = page.viewportSize().width;
-  for (const theme of ["light", "dark"]) {
-    await page.evaluate((t) => window.PencilsAppearance.write({ theme: t }), theme);
-    await expect.poll(async () => {
-      const box = await history.boundingBox();
-      return box.x >= 0 && box.x + box.width <= width;
-    }, `${theme}: History stays on screen`).toBe(true);
-  }
-  await chooseCardPane(page, 'details');
-  await checkMetadataLayout(page);
-  await noHorizontalOverflow(editor(page));
-}));
 
 test("edits in the side panel save automatically and keep one card on the board", async ({ page }) => {
   const { project, task } = await seedCard();

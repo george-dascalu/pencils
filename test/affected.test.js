@@ -1,6 +1,8 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { affected, phases } from "../scripts/affected.mjs";
+import { affected, phases, specFiles } from "../scripts/affected.mjs";
+import { projectRoot } from "../scripts/deploy.mjs";
+import { TIERS } from "../scripts/tiers.mjs";
 
 test("a view's own code runs its area and the shared UI checks", () => {
   const plan = affected(["public/calendar.js"]);
@@ -111,13 +113,23 @@ test("a shared script's change runs everything, markup lines included", () => {
   assert.equal(affected(["public/project-layout.js"], { changes: edit(markup, [1]) }).all, true, "markup a shared module builds may show in any view");
 });
 
-test("release runs go in two phases that fail fast: changed specs and e2e/ui first, then the rest once", () => {
+test("release runs fail fast: changed specs and e2e/ui first, then the rest once, by tier", () => {
+  const tierOf = (spec) => TIERS.findIndex((files) => files.includes(spec)) + 1;
   const plan = affected(["public/calendar.js", "e2e/lists/group-by-tag.spec.mjs"], { changes: edit("x\n", [1]) });
-  const [first, rest] = phases(plan);
+  const [first, ...rest] = phases(plan);
   assert.deepEqual(first, ["e2e/lists/group-by-tag.spec.mjs", "e2e/ui"]);
-  assert.ok(rest.includes("e2e/planning") && !rest.includes("e2e/ui") && !rest.includes("e2e/lists/group-by-tag.spec.mjs"), rest.join(" "));
-  const all = phases(affected(["server/store.js"]))[1];
-  assert.ok(!all.includes("e2e/ui") && all.includes("e2e/board") && !all.includes("e2e/helpers"), all.join(" "));
-  const inside = phases(affected(["e2e/planning/week-board.spec.mjs", "public/calendar.js"], { changes: edit("x\n", [1]) }))[1];
-  assert.ok(!inside.includes("e2e/planning") && inside.includes("e2e/planning/timeline-toolbar.spec.mjs") && !inside.includes("e2e/planning/week-board.spec.mjs"), "the rest of an area whose spec ran first");
+  const later = rest.flat();
+  assert.ok(later.includes("e2e/planning/calendar-move.spec.mjs") && !later.some((spec) => spec.startsWith("e2e/ui/")) && !later.includes("e2e/lists/group-by-tag.spec.mjs"), later.join(" "));
+  // Critical specs, then important, then peripheral, each phase stopping at its first failure.
+  const all = phases(affected(["server/store.js"])).slice(1);
+  assert.deepEqual(all.map((specs) => [...new Set(specs.map(tierOf))]), [[1], [2], [3]]);
+  const every = specFiles(projectRoot, "e2e").filter((spec) => !spec.startsWith("e2e/ui/"));
+  assert.deepEqual(all.flat().sort(), every, "every other spec once");
+  const inside = phases(affected(["e2e/planning/week-board.spec.mjs", "public/calendar.js"], { changes: edit("x\n", [1]) })).slice(1).flat();
+  assert.ok(inside.includes("e2e/planning/timeline-toolbar.spec.mjs") && !inside.includes("e2e/planning/week-board.spec.mjs"), "the rest of an area whose spec ran first");
+});
+
+test("a spec without a tier runs with the critical ones", () => {
+  const plan = { all: false, paths: ["e2e/lists/zz-untiered.spec.mjs"], specs: [] };
+  assert.deepEqual(phases(plan, { tiers: [[], [], []] }), [["e2e/lists/zz-untiered.spec.mjs"]]);
 });

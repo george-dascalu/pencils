@@ -54,7 +54,10 @@ onDevices(["phone"], () => test("Home's row centres a Homepage title with Edit o
   const title = page.locator("#view-toolbar .home-title");
   await expect(title).toBeVisible();
   await expect(title).toHaveText("Homepage", { useInnerText: true });
-  const [t, edit, menu] = await Promise.all([title, page.locator("#home-edit"), page.locator(".mobile-menu")].map((l) => l.boundingBox()));
+  const [t, edit, menu, panel] = await Promise.all([title, page.locator("#home-edit"), page.locator(".mobile-menu"), page.locator(".home-panel").first()].map((l) => l.boundingBox()));
+  // Owner report T33 (31 October 2026): Edit sits in the menu button's row, with no gap above the panels.
+  expect(Math.abs(edit.y + edit.height / 2 - (menu.y + menu.height / 2)), "Edit in the menu button's row").toBeLessThan(4);
+  expect(panel.y - (menu.y + menu.height), "the panels start right under the header").toBeLessThan(24);
   expect(Math.abs(t.x + t.width / 2 - width / 2), "the title is in the middle").toBeLessThan(4);
   expect(Math.abs(t.y + t.height / 2 - (menu.y + menu.height / 2)), "in the menu button's row").toBeLessThan(4);
   expect(edit.x, "Edit is on the right").toBeGreaterThan(t.x + t.width);

@@ -36,8 +36,8 @@ onDevices(["phone"], () => {
     expect(await foldColumn(page)).toEqual({ width: 0, markers: 0 });
     const i = await insets(page, ".document-codemirror", ".document-codemirror .cm-line");
     expect(i.lines, "the paragraph wraps").toBeGreaterThan(1);
-    expect(i.left, `same margin on both sides ${JSON.stringify(i)}`).toBe(i.right);
-    expect(i.left, `16px margins ${JSON.stringify(i)}`).toBe(16);
+    expect(Math.abs(i.left - i.right), `same margin on both sides ${JSON.stringify(i)}`).toBeLessThanOrEqual(1);
+    expect(Math.abs(i.left - 16), `16px margins, within a pixel ${JSON.stringify(i)}`).toBeLessThanOrEqual(1);
   });
 
   test("reading mode has the same equal margins", async ({ page }) => {
@@ -45,8 +45,8 @@ onDevices(["phone"], () => {
     await chooseDocumentView(page, "Reading");
     await page.locator(".document-reading p").first().waitFor();
     const i = await insets(page, ".document-reading", ".document-reading p");
-    expect(i.left, `same margin on both sides ${JSON.stringify(i)}`).toBe(i.right);
-    expect(i.left, JSON.stringify(i)).toBe(16);
+    expect(Math.abs(i.left - i.right), `same margin on both sides ${JSON.stringify(i)}`).toBeLessThanOrEqual(1);
+    expect(Math.abs(i.left - 16), `16px margins, within a pixel ${JSON.stringify(i)}`).toBeLessThanOrEqual(1);
   });
 });
 

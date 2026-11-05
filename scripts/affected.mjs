@@ -15,6 +15,7 @@ import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { command, projectRoot } from "./deploy.mjs";
+import { TIERS } from "./tiers.mjs";
 
 const NONE = [/\.md$/, /^test\//, /^reports\//, /^artifacts\//, /^\.claude\//, /^scripts\/(release|deploy|affected|mutants|tiers)\.mjs$/];
 const SHARED = [
@@ -234,8 +235,9 @@ export function affected(files, { root = projectRoot, changes = () => null } = {
 }
 
 // Release runs fail fast (F0.21-94): first the changed specs and e2e/ui (sizing, visual rules,
-// accessibility), then everything else chosen, each test once.
-export function phases(plan, { root = projectRoot } = {}) {
+// accessibility), then everything else chosen, each test once, by tier (F0.22-22): critical,
+// important, then peripheral, with a spec that has no tier among the critical ones.
+export function phases(plan, { root = projectRoot, tiers = TIERS } = {}) {
   const ui = plan.all || plan.paths.some((p) => p === "e2e/ui" || p.startsWith("e2e/ui/"));
   const first = [...plan.specs.filter((spec) => !spec.startsWith("e2e/ui/")), ...(ui ? ["e2e/ui"] : [])];
   const chosen = plan.all ? fs.readdirSync(path.join(root, "e2e"), { withFileTypes: true }).filter((e) => e.isDirectory() && e.name !== "helpers").map((e) => `e2e/${e.name}`) : plan.paths;
@@ -245,7 +247,10 @@ export function phases(plan, { root = projectRoot } = {}) {
     const inside = first.filter((spec) => spec.startsWith(`${target}/`));
     rest.push(...(inside.length ? specFiles(root, target).filter((spec) => !inside.includes(spec)) : [target]));
   }
-  return [first, rest].filter((list) => list.length);
+  const byTier = [[], [], []];
+  for (const spec of rest.flatMap((target) => (target.endsWith(".spec.mjs") ? [target] : specFiles(root, target))))
+    byTier[Math.max(0, tiers.findIndex((files) => files.includes(spec)))].push(spec);
+  return [first, ...byTier].filter((list) => list.length);
 }
 
 // Files changed since the last release commit, committed or not, including deleted, renamed

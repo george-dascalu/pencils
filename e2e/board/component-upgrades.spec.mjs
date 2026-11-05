@@ -1,9 +1,8 @@
 // Board component upgrades: typography, shape geometry and rotation, merged grid cells, named
 // layers, multi-object resize, embedded live task views (Kanban moves update the project task),
-// timeline drag and milestones, local frame PDF export, board session timer and votes, frame deep
-// links with opt-in presenter following across devices, keyboard object resizing, and the
-// personal mouse/trackpad and single-key preferences.
-import fs from "node:fs/promises";
+// timeline drag and milestones, frame deep links with opt-in presenter following across devices,
+// keyboard object resizing, and the personal mouse/trackpad and single-key preferences. PDF export
+// and the session timer and votes are in component-upgrades-rare.spec.mjs (split by tier, F0.22-21).
 import { test, expect, useApp } from "../fixtures.mjs";
 import { openBoardSearch, selectProjectView } from "../helpers/menu-controls.mjs";
 import { newGrid } from "../../public/grid-model.js";
@@ -162,32 +161,6 @@ test("dragging a timeline bar reschedules the task and the milestone toggle save
   await poll(async () => (await taskOf(app.task.id)).start).toBe("2026-10-16");
   await page.locator(`[data-milestone="${app.task.id}"]`).click();
   await poll(async () => (await taskOf(app.task.id)).milestone).toBe(true);
-});
-
-test("frames export locally as a PDF", async ({ page }) => {
-  await openBoard(page);
-  await find(page, "frame", "Frame one");
-  await menu(page, "arrange");
-  const download = page.waitForEvent("download");
-  await page.locator("[data-feature=frames-pdf]").click();
-  const bytes = await fs.readFile(await (await download).path());
-  expect(bytes.subarray(0, 4).toString()).toBe("%PDF");
-  expect(bytes.length).toBeGreaterThan(1000);
-});
-
-test("a board session's timer and votes persist", async ({ page }) => {
-  await openBoard(page);
-  await find(page, "note", "Typography");
-  // Board session lives in Board tools (0.20.94).
-  await page.locator("[data-board-menu=tools] > summary").click();
-  await page.locator("[data-session=open]").first().click();
-  await page.locator("[data-session=timer]").click();
-  await poll(async () => (await current()).settings?.session?.timerEnd > Date.now()).toBe(true);
-  await page.locator("[data-session=vote-start]").click();
-  await poll(async () => !!(await current()).settings?.session?.voting).toBe(true);
-  await page.locator("[data-session=vote-cast]").click();
-  await poll(async () => !!(await current()).settings?.session?.votes?.[0]?.nodes.includes("note")).toBe(true);
-  await page.locator("[data-action=dialog-close]").click();
 });
 
 // Closed pages from earlier tests stay present for 15 seconds; start from an empty board room.

@@ -2,6 +2,12 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.22.22 — 2026-11-05
+
+### Changed
+- Feature F0.22-22: Releases run the browser tests left after the changed ones by importance, critical first, then important, then peripheral, so a broken core journey stops a release sooner.
+- Feature F0.22-21: The 25 test files flagged as low value were checked one by one. Three were fixed: a Home phone test merged into the Home bar test, a duplicated board link check removed, and the document phone margins check now allows a pixel of rounding. The other 22 stay, because each checks something no other test does. Seven files that mixed tiers were split so each test runs in its own tier.
+
 ## 0.22.20 — 2026-11-05
 
 ### Fixed

@@ -6,7 +6,6 @@ import {Store} from '../server/store.js';
 import {createServer} from '../server/index.js';
 import {Auth} from '../server/auth.js';
 import {taskChanges,taskHistoryHTML} from '../public/task-history.js';
-import {validTaskBoards} from '../server/task-board-links.js';
 
 async function fixture(t){
   const root=await fs.mkdtemp('/tmp/pencils-task-boards-'),store=new Store(root);await store.init();
@@ -15,10 +14,6 @@ async function fixture(t){
   t.after(async()=>{await store.close();await fs.rm(root,{recursive:true,force:true});});
   return{root,store,project,board,foreign};
 }
-test('board link shape validation accepts optional values and the exact 200-link limit',()=>{
-  for(const value of [undefined,null,[],['b-a'],Array.from({length:200},(_,i)=>`b-${i}`)])assert.equal(validTaskBoards(value),true);
-  for(const value of [false,'b-a',{},[null],['b-a','b-a'],['x-b'],['b-'],['b-a/b'],[3],Array.from({length:201},(_,i)=>`b-${i}`)])assert.equal(validTaskBoards(value),false);
-});
 test('card board links persist in Markdown, survive unrelated updates and restart, duplicate, and unlink without changing the board',async t=>{
   const {root,store,project,board}=await fixture(t);
   const before=await store.read(store.file(project.id,'boards',board.id));

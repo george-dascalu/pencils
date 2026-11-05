@@ -1,8 +1,8 @@
 // Board: linked cards show the state of their task. Archived tasks get a badge with
 // Unarchive, deleted tasks become placeholders (cards and notes) with Restore, a missing task
 // file reads "Card unavailable", a deletion elsewhere reaches the open board without a reload,
-// connectors survive, and the board fits desktop and phone screens in both themes.
-import { test, expect, onDevices, useApp } from "../fixtures.mjs";
+// connectors survive.
+import { test, expect, useApp } from "../fixtures.mjs";
 import { selectProjectView } from "../helpers/menu-controls.mjs";
 
 const app = useApp();
@@ -54,16 +54,6 @@ test("archived and missing cards show their state, and a deletion elsewhere reac
   await expect(node(page, "deleted-card").locator("select,[data-inline-title],[data-pro=task-details]"), "a deleted card cannot be edited").toHaveCount(0);
   await expect(page.locator('[data-edge="link"] .canvas-edge'), "the connector survives").toHaveCount(1);
 });
-
-onDevices(["desktop", "phone"], () => test("placeholder cards fit the screen in both themes", async ({ page }) => {
-  const { project } = await seed({ deleteLive: true });
-  await openBoard(page, project);
-  await expect(node(page, "deleted-card").getByText("Deleted card", { exact: true })).toBeAttached();
-  for (const theme of ["light", "dark"]) {
-    await page.evaluate((t) => (document.documentElement.dataset.theme = t), theme);
-    expect(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), `${theme}: no horizontal scroll`).toBe(false);
-  }
-}));
 
 test("Restore and Unarchive bring the cards back and the task count follows", async ({ page }) => {
   const { project, archived } = await seed({ deleteLive: true });

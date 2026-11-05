@@ -216,6 +216,7 @@ export const TIERS = [
     "e2e/board/board-popovers.spec.mjs", // change board settings, open comments
     "e2e/board/board-search.spec.mjs", // search within a board
     "e2e/board/board-task-drag.spec.mjs", // drag a project task onto board
+    "e2e/board/board-task-panel-fit.spec.mjs", // the board's card panel and its History and Details fit on phones and in both themes (split by tier)
     "e2e/board/board-topbar.spec.mjs", // use board actions in the header
     "e2e/board/board-touch-selection.spec.mjs", // select objects by touch on iPad/phone
     "e2e/board/board-zoom-transition.spec.mjs", // zoom a large board
@@ -231,6 +232,7 @@ export const TIERS = [
     "e2e/documents/document-block-keys.spec.mjs", // type inside code blocks and table cells
     "e2e/documents/document-card-mentions.spec.mjs", // link cards from documents
     "e2e/documents/document-comments.spec.mjs", // comment on document text
+    "e2e/documents/document-components-important.spec.mjs", // document components pass the accessibility sweep (split by tier)
     "e2e/documents/document-embeds.spec.mjs", // embed documents and spreadsheet ranges
     "e2e/documents/document-focus.spec.mjs", // write in Focus mode
     "e2e/documents/document-properties.spec.mjs", // edit properties and tags of a document
@@ -246,7 +248,6 @@ export const TIERS = [
     "e2e/documents/table-editing.spec.mjs", // edit spreadsheet cells, formulas, sort
     "e2e/documents/table-structure.spec.mjs", // rename/hide/drag rows and columns
     "e2e/home/home-panels.spec.mjs", // see Home panels
-    "e2e/home/home-phone.spec.mjs", // Home row on phone
     "e2e/home/home-toolbar.spec.mjs", // edit Home layout
     "e2e/lists/active-filters.spec.mjs", // see and remove active filters in List/Calendar
     "e2e/lists/assignee-label.spec.mjs", // read assignee short name in a row
@@ -279,6 +280,7 @@ export const TIERS = [
     "e2e/planning/agenda-inline-fields.spec.mjs", // edit fields in Agenda rows
     "e2e/planning/calendar-toolbar.spec.mjs", // use calendar toolbar
     "e2e/planning/calendar-week.spec.mjs", // use Week layout
+    "e2e/planning/project-people-assignees.spec.mjs", // add people and teams, make them assignable (split by tier)
     "e2e/planning/timeline-date-editor.spec.mjs", // set dates from Timeline
     "e2e/planning/timeline-selection.spec.mjs", // schedule a row on Timeline by two clicks
     "e2e/planning/timeline-viewport.spec.mjs", // use Timeline
@@ -315,6 +317,7 @@ export const TIERS = [
     "e2e/ui/control-sizing.spec.mjs", // tap and click controls
     "e2e/ui/font-scale.spec.mjs", // read card popup and Table
     "e2e/ui/layout-priorities.spec.mjs", // view layout of navigation vs context
+    "e2e/ui/ui-controls-polish.spec.mjs", // focus rings, states, icons, sliders, toasts and empty states look right (split by tier)
     "e2e/ui/view-options.spec.mjs", // use phone View options
   ],
   // Tier 3: peripheral
@@ -375,13 +378,16 @@ export const TIERS = [
     "e2e/board/board-rail.spec.mjs", // see the tool rail
     "e2e/board/board-settings.spec.mjs", // change board appearance
     "e2e/board/board-sweep-fixes.spec.mjs", // use board tools after UI sweep
+    "e2e/board/board-task-state-fit.spec.mjs", // placeholder cards fit their text (split by tier)
     "e2e/board/board-zoom-appearance.spec.mjs", // use zoom menu and Board appearance
     "e2e/board/bullet-shortcuts.spec.mjs", // type lists in board text
     "e2e/board/card-display.spec.mjs", // choose card details shown
     "e2e/board/card-labels.spec.mjs", // see blocked cards
     "e2e/board/card-toggle.spec.mjs", // expand a card description
+    "e2e/board/component-upgrades-rare.spec.mjs", // export a board to PDF; session timer and votes (split by tier)
     "e2e/board/connector-zoom.spec.mjs", // zoom with arrow labels
     "e2e/board/drawing-gestures.spec.mjs", // draw with Apple Pencil
+    "e2e/board/drawing-view-fit.spec.mjs", // the drawing gallery and offline names fit (split by tier)
     "e2e/board/frame-capacity.spec.mjs", // open board with thousands of frames
     "e2e/board/frame-scale.spec.mjs", // paste 5,000 frames
     "e2e/board/frame-title-steady.spec.mjs", // collapse a frame
