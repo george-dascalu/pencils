@@ -58,6 +58,8 @@ export function canvasRichText(
       inlineCode: () => !!element?.closest("code"),
       checklist: () => !!element?.closest("li")?.querySelector(':scope > input[type="checkbox"]'),
       codeBlock: () => !!element?.closest("pre"),
+      // The browser counts a heading's weight as bold; only bold text is (F0.22-36).
+      bold: () => !!element?.closest("strong,b"),
     };
     for (const button of controls.querySelectorAll(
       "[data-rich-command][aria-pressed]",
@@ -69,6 +71,9 @@ export function canvasRichText(
       );
     }
   }
+  // A heading, list, quote or code block started by a shortcut is content: the placeholder would
+  // push it onto the next line (F0.22-35).
+  const blank = () => !rich.textContent.trim() && !rich.querySelector("img,h1,h2,h3,h4,h5,h6,li,blockquote,pre,hr,table");
   function selectionElement() {
     const node = window.getSelection()?.anchorNode;
     const element = node?.nodeType === Node.ELEMENT_NODE ? node : node?.parentElement;
@@ -107,9 +112,7 @@ export function canvasRichText(
   function flush() {
     if (mode !== "rich" || rich.innerHTML === lastHTML) return;
     source.value = writeSource(plain ? rich.innerText : converter.turndown(rich), source.value);
-    rich.dataset.empty = String(
-      !rich.textContent.trim() && !rich.querySelector("img"),
-    );
+    rich.dataset.empty = String(blank());
     lastHTML = rich.innerHTML;
     source.dispatchEvent(new Event("input", { bubbles: true }));
   }
@@ -128,9 +131,7 @@ export function canvasRichText(
         line.append(document.createElement("br"));
         rich.replaceChildren(line);
       }
-      rich.dataset.empty = String(
-        !rich.textContent.trim() && !rich.querySelector("img"),
-      );
+      rich.dataset.empty = String(blank());
       for (const el of rich.querySelectorAll("[data-md-source]"))
         el.contentEditable = "false";
       lastHTML = rich.innerHTML;

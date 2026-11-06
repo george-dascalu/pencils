@@ -1380,7 +1380,7 @@ html.task-page-open,
 .task-time-range > .field { margin: 0; }
 .task-time-range input { min-width: 0; width: 100%; }
 .task-dialog .task-metadata-main > .task-dates { container: task-dates / inline-size; display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 5px; grid-column: 1 / -1; margin: 0; }
-.icon-button.task-allday-toggle[aria-pressed="true"] { background: var(--green) !important; border-color: var(--green); color: var(--paper) !important; }
+.icon-button:is(.task-allday-toggle, [data-note-action="edit"])[aria-pressed="true"] { background: var(--green) !important; border-color: var(--green); color: var(--paper) !important; }
 .task-allday-toggle [data-task-time-icon] { display: inline-flex; align-items: center; justify-content: center; }
 .task-allday-toggle[aria-pressed="true"] [data-task-time-icon="timed"],
 .task-allday-toggle[aria-pressed="false"] [data-task-time-icon="all-day"] { display: none; }

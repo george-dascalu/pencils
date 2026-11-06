@@ -2,6 +2,15 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.22.37 — 2026-11-06
+
+### Changed
+- Feature F0.22-37: While you edit a note, its Finish editing button is a tick filled with the accent colour.
+
+### Fixed
+- Feature F0.22-36: The Bold button no longer lights up whenever the cursor is in a heading, only in bold text.
+- Feature F0.22-35: Typing "#" or "##" and a space in an empty note or description starts the heading on the line you're on. The placeholder no longer pushes it onto the next line.
+
 ## 0.22.34 — 2026-11-06
 
 ### Added

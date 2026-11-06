@@ -28,6 +28,8 @@ export function taskNotes(ctx, form) {
     button('previous').disabled = !!pending || index === 0;
     button('next').disabled = !!pending || index >= notes.length - 1;
     button('edit').setAttribute('aria-pressed', String(editing));
+    // A tick while editing, filled like a chosen tool (F0.22-37).
+    if (button('edit').dataset.glyph !== String(editing)) { button('edit').dataset.glyph = String(editing); button('edit').innerHTML = icon(editing ? 'check' : 'pencil'); }
     button('edit').setAttribute('aria-label', editing ? 'Finish editing note' : 'Edit note');
     button('edit').title = editing ? 'Finish editing note' : 'Edit note';
     host.setAttribute('aria-busy', String(!!pending));

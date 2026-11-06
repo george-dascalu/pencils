@@ -220,3 +220,41 @@ onDevices(['desktop', 'phone'], () => test('rich notes render document component
     await page.screenshot({path: testInfo.outputPath(`notes-${theme}.png`)});
   }
 }));
+// F0.22-35, F0.22-36: "## " in an empty note or description makes the heading where the caret is,
+// not on a line under the placeholder, and Bold lights only for bold text, not for a heading's weight.
+test('a heading typed into an empty note or description starts on the first line, and Bold stays off in it', async ({page}) => {
+  const card = await app.store.createTask(app.project.id, {title: 'Heading shortcut', body: '', notes: [{id: 'n-heading', body: ''}]});
+  await open(page, card);
+  await section(page).getByRole('button', {name: 'Edit note', exact: true}).click();
+  for (const [editor, tools] of [[rich(page), section(page).getByRole('toolbar', {name: 'Format note'})],
+    [page.getByRole('textbox', {name: 'Card description', exact: true}), page.getByRole('toolbar', {name: 'Format description'})]]) {
+    await editor.click(); await page.keyboard.type('## ');
+    await expect(editor.locator('h2')).toHaveCount(1);
+    const [line, top, placeholder] = await editor.evaluate(el => { const s = getComputedStyle(el); return [el.getBoundingClientRect().top + parseFloat(s.paddingTop) + parseFloat(s.borderTopWidth), el.querySelector('h2').getBoundingClientRect().top, getComputedStyle(el, '::before').content]; });
+    expect(Math.abs(top - line), 'the heading starts on the first line').toBeLessThan(2);
+    expect(placeholder, 'the placeholder goes once there is a heading').toBe('none');
+    await page.keyboard.type('Plan');
+    const bold = tools.getByRole('button', {name: 'Bold', exact: true});
+    await expect(bold, 'a heading is not bold text').toHaveAttribute('aria-pressed', 'false');
+    await page.keyboard.press('Enter'); await page.keyboard.press('Control+b'); await page.keyboard.type('Strong');
+    await expect(bold, 'bold text lights it').toHaveAttribute('aria-pressed', 'true');
+  }
+});
+// F0.22-37: while a note is edited, its edit button is a tick filled with the accent colour.
+test('the finish editing button is a filled tick', async ({page}) => {
+  const card = await app.store.createTask(app.project.id, {title: 'Tick', notes: [{id: 'n-tick', body: 'Tick note'}]});
+  await open(page, card);
+  const edit = section(page).getByRole('button', {name: 'Edit note', exact: true});
+  const look = (button) => button.evaluate(el => ({path: el.querySelector('svg path')?.getAttribute('d'), fill: getComputedStyle(el).backgroundColor, ink: getComputedStyle(el).color}));
+  const before = await look(edit);
+  await edit.click();
+  const done = section(page).getByRole('button', {name: 'Finish editing note', exact: true});
+  const after = await look(done);
+  expect(after.path, 'a tick').toBe('m5 12 4 4L19 6');
+  expect(before.path, 'a pencil while reading').not.toBe(after.path);
+  const green = await page.evaluate(() => { const probe = document.createElement('i'); probe.style.color = 'var(--green)'; document.body.append(probe); const c = getComputedStyle(probe).color; probe.remove(); return c; });
+  expect(after.fill, 'filled with the accent').toBe(green);
+  expect(after.ink, 'its tick contrasts with the fill').not.toBe(green);
+  await done.click();
+  expect((await look(edit)).path, 'back to the pencil').toBe(before.path);
+});
