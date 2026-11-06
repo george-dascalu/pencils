@@ -84,7 +84,7 @@ onDevices(["desktop", "ipad", "phone"], (device) => {
 
   test("card subsection headings share one style", async ({ page }) => {
     await openCard(page);
-    const children = { size: await px(page, ".task-relationship-group > h4"), weight: await weight(page, ".task-relationship-group > h4") };
+    const children = { size: await px(page, ".task-relationship-group-heading > h4"), weight: await weight(page, ".task-relationship-group-heading > h4") };
     await chooseCardPane(page, 'history');
     await page.locator(".task-history-month").waitFor();
     const month = { size: await px(page, ".task-history-month"), weight: await weight(page, ".task-history-month") };

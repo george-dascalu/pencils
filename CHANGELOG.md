@@ -2,6 +2,11 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.22.26 — 2026-11-06
+
+### Added
+- Feature F0.22-26: Each relationship group in a card (Children, Blocked by, Blocks, Related to) has its own + that opens the add menu on that kind, ready to find or create the next one. Parent has none, as a card has one parent.
+
 ## 0.22.25 — 2026-11-06
 
 ### Added

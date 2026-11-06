@@ -55,8 +55,11 @@ export function taskRelationshipsEditor(ctx, form, { flush, changed }) {
     if (sortMenu.open) positionPopover(sortMenu.lastElementChild, sortMenu.firstElementChild.getBoundingClientRect(), { width: 230, bounds: form.closest("dialog").getBoundingClientRect() });
   };
   sortMenu.addEventListener("toggle", () => { if (sortMenu.open) { close(); positionSort(); } });
+  // The + that opened the picker: the heading's, or a group's own (F0.22-26).
+  let anchorKind = null;
+  const anchor = () => (anchorKind && host.querySelector(`[data-relationship-group-add="${anchorKind}"]`)) || toggle;
   const positionPicker = () => {
-    if (!picker.hidden) positionPopover(picker, toggle.getBoundingClientRect(), {
+    if (!picker.hidden) positionPopover(picker, anchor().getBoundingClientRect(), {
       width: 520, maxHeight: 420, bounds: form.closest("dialog").getBoundingClientRect(), gap: 8,
     });
   };
@@ -166,10 +169,11 @@ export function taskRelationshipsEditor(ctx, form, { flush, changed }) {
       host.querySelector("[data-relationship-list]"),
       kinds()
         .map(([kind, label]) => {
+          const name = kind === "child" ? "Children" : label;
           const group = rows.filter((row) => row.kind === kind).sort((a, b) =>
             compareRelationshipTasks(list.find(t => t.id === a.target), list.find(t => t.id === b.target), sortField, sortDirection, state.config));
           return group.length
-            ? `<div class="task-relationship-group"><h4>${kind === "child" ? "Children" : label}</h4>${group
+            ? `<div class="task-relationship-group"><div class="task-relationship-group-heading"><h4>${name}</h4>${kind === "parent" ? "" : `<button type="button" class="icon-button" data-relationship-group-add="${kind}" aria-label="Add to ${name}" title="Add to ${name}" aria-haspopup="dialog" aria-controls="${picker.id}" aria-expanded="${!picker.hidden && anchorKind === kind}" ${busy ? "disabled" : ""}>${icon("plus")}</button>`}</div>${group
                 .map((row) => {
                   const task = list.find((task) => task.id === row.target);
                   const error = problem(kind, row.target, true);
@@ -239,11 +243,25 @@ export function taskRelationshipsEditor(ctx, form, { flush, changed }) {
       }
     }
   }
+  function open(kind = null) {
+    anchorKind = kind;
+    if (kind) type.value = kind;
+    sortMenu.open = false;
+    toggle.setAttribute("aria-expanded", String(!kind));
+    picker.hidden = false;
+    if (!picker.matches(":popover-open")) picker.showPopover();
+    search.value = "";
+    refresh();
+    focusOnOpen(search, picker.querySelector("[data-relationship-close]"));
+  }
   function close(focus = false) {
+    const wasOpen = !picker.hidden;
     if (picker.matches(":popover-open")) picker.hidePopover();
     picker.hidden = true;
     toggle.setAttribute("aria-expanded", "false");
-    if (focus) toggle.focus();
+    // Repaint the groups' + so none still reads as open; outside clicks often find it closed already.
+    if (wasOpen) refresh();
+    if (focus) anchor().focus();
   }
   function writeFields(changes) {
     for (const [name, value] of Object.entries(changes)) {
@@ -300,22 +318,18 @@ export function taskRelationshipsEditor(ctx, form, { flush, changed }) {
       refresh();
       return;
     }
-    if (button === toggle) {
-      if (!picker.hidden) return close(true);
-      sortMenu.open = false;
-      picker.hidden = false;
-      picker.showPopover();
-      toggle.setAttribute("aria-expanded", "true");
-      search.value = "";
-      refresh();
-      focusOnOpen(search, picker.querySelector("[data-relationship-close]"));
-      return;
+    if (button === toggle || button.dataset.relationshipGroupAdd) {
+      const kind = button.dataset.relationshipGroupAdd || null;
+      if (!picker.hidden && anchorKind === kind) return close(true);
+      return open(kind);
     }
     if (button.hasAttribute("data-relationship-close")) return close(true);
     const target =
       button.dataset.relationshipAdd || button.dataset.relationshipRemove;
     const remove = !!button.dataset.relationshipRemove;
     const kind = remove ? button.dataset.relationshipKind : type.value;
+    // Focus returns to the removed row's group +, or the heading's when that group goes.
+    if (remove) anchorKind = kind;
     busy = true;
     refresh();
     try {
@@ -373,7 +387,7 @@ export function taskRelationshipsEditor(ctx, form, { flush, changed }) {
       if (draft && active()) say(remove ? "" : "Saved with the card.");
       if (active()) {
         if (!remove) close(true);
-        else toggle.focus();
+        else anchor().focus();
         refresh();
       }
     } catch (error) {
@@ -382,7 +396,7 @@ export function taskRelationshipsEditor(ctx, form, { flush, changed }) {
       busy = false;
       refresh();
       if (active())
-        focusOnOpen(picker.hidden ? toggle : search, picker.querySelector("[data-relationship-close]"));
+        focusOnOpen(picker.hidden ? anchor() : search, picker.querySelector("[data-relationship-close]"));
     }
   });
   picker.addEventListener("input", (event) => {
@@ -418,7 +432,7 @@ export function taskRelationshipsEditor(ctx, form, { flush, changed }) {
   };
   host.addEventListener("keydown", keydown);
   const outside = (event) => {
-    if (!picker.contains(event.target) && !toggle.contains(event.target)) close();
+    if (!picker.contains(event.target) && !event.target.closest?.("[data-relationship-toggle], [data-relationship-group-add]")) close();
     if (!sortMenu.contains(event.target)) sortMenu.open = false;
   };
   document.addEventListener("pointerdown", outside, true);

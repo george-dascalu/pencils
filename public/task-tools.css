@@ -836,7 +836,9 @@ body:is(.task-reordering, .task-group-reordering), body:is(.task-reordering, .ta
 .task-relationship-metadata { display: grid; grid-template-columns: clamp(var(--list-field-height), 12cqw, 100px) var(--list-field-status-width) var(--list-field-priority-width); align-items: center; flex-shrink: 0; gap: 8px; font-size: var(--type-meta); }
 .task-relationship-assignee { display: flex; align-items: center; min-width: 0; width: 100%; }
 .task-relationship-group { margin-top: 12px; }
-.task-relationship-group h4 { margin: 0 0 4px; font-size: var(--type-small); color: var(--muted); font-weight: 600; }
+.task-relationship-group h4 { margin: 0; font-size: var(--type-small); color: var(--muted); font-weight: 600; }
+/* A group's own + sits over the rows' remove buttons (F0.22-26). */
+.task-relationship-group-heading { display: flex; align-items: center; justify-content: space-between; gap: 4px; margin-bottom: 4px; }
 .task-relationship-row { display: flex; align-items: center; gap: 4px; border-bottom: 1px solid var(--line); }
 .task-relationship-link {
   display: flex;
