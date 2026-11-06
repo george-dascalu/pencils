@@ -34,7 +34,7 @@ export async function recordsRoutes(ctx: RequestContext): Promise<unknown> {
     const data = await input(req);
     const created: Input = await mutate(() =>
       kind === "tasks"
-        ? store.createTask(project, data)
+        ? store.createTask(project, data, { assign: true })
         : store.createBoard(project, data),
     );
     return json(201, created);

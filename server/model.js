@@ -99,6 +99,9 @@ export function schema(value = DEFAULT_SCHEMA) {
         );
     }
   }
+  // The person the project's new cards start assigned to (F0.22-25), by id.
+  if (result.default_assignee != null && (typeof result.default_assignee !== "string" || !/^[\w-]{1,100}$/.test(result.default_assignee)))
+    fail("Choose a person to auto-assign new cards to.");
   // The project's tags (F0.21-73), in order, each with an optional colour.
   if (result.tags != null) {
     const names = Array.isArray(result.tags) ? result.tags.map((t) => t?.name) : null;

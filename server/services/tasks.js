@@ -145,13 +145,13 @@ export const tasksMethods = {
       if (error) throw new Problem(400, error);
     }
   },
-  async createTaskBundle(project, input) {
+  async createTaskBundle(project, input, { assign } = {}) {
     if (!Array.isArray(input.subtasks) || input.subtasks.length > 100)
       throw new Problem(400, "Add up to 100 subtasks at a time.");
     const parent = await this.createTask(
       project,
       { ...input, subtasks: undefined },
-      { prepare: true },
+      { prepare: true, assign },
     );
     const children = [];
     for (const child of input.subtasks) {
@@ -218,10 +218,16 @@ export const tasksMethods = {
       if (existing) return existing;
     }
     if (!internal.prepare && input.subtasks !== undefined)
-      return this.createTaskBundle(project, input);
-    const config = schema(
-      (await this.read(this.file(project, "project"))).data.schema,
-    );
+      return this.createTaskBundle(project, input, internal);
+    const projectData = (await this.read(this.file(project, "project"))).data;
+    const config = schema(projectData.schema);
+    // Cards people make in the app (internal.assign) start with the project's auto-assignee
+    // (F0.22-25) when they name nobody, while that person is still in the project and the
+    // Assignee field is on.
+    if (internal.assign && config.default_assignee && !config.off?.includes("assignee") && input.assignee === undefined && input.assignee_id === undefined) {
+      const person = membersForProject(projectData, await this.getOrganisation(projectData.organisation)).find((p) => p.id === config.default_assignee);
+      if (person) input = { ...input, assignee: person.name, assignee_id: person.id };
+    }
     const id = `t-${randomUUID().slice(0, 8)}`;
     const data = {
       id,

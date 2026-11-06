@@ -2,6 +2,11 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.22.25 — 2026-11-06
+
+### Added
+- Feature F0.22-25: Projects can auto-assign new cards. In Settings → People, Auto-assign new cards chooses one of the project's people: new cards start assigned to them, in the new card form (where you can still change it) and when made without it, such as a quick child card. Nobody turns it off.
+
 ## 0.22.24 — 2026-11-06
 
 ### Changed

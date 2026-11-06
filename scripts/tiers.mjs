@@ -190,6 +190,7 @@ export const TIERS = [
     "test/project-filters.test.js", // assignee and tag filters
     "test/project-frame.test.js", // nested card placement in project frames
     "test/project-people.test.js", // project people lists and teams
+    "test/auto-assign.test.js", // new cards take the project's auto-assignee
     "test/project-tags.test.js", // project tag list ordering
     "test/query-model.test.js", // saved query groups, malformed fail closed
     "test/release-snapshot.test.js", // release snapshot holds right files
@@ -281,6 +282,7 @@ export const TIERS = [
     "e2e/planning/calendar-toolbar.spec.mjs", // use calendar toolbar
     "e2e/planning/calendar-week.spec.mjs", // use Week layout
     "e2e/planning/project-people-assignees.spec.mjs", // add people and teams, make them assignable (split by tier)
+    "e2e/settings/auto-assign.spec.mjs", // choose who new cards are auto-assigned to
     "e2e/planning/timeline-date-editor.spec.mjs", // set dates from Timeline
     "e2e/planning/timeline-selection.spec.mjs", // schedule a row on Timeline by two clicks
     "e2e/planning/timeline-viewport.spec.mjs", // use Timeline

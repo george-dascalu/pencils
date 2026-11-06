@@ -40,7 +40,7 @@ import {
   statusLabel,
   transitionError,
 } from "./workflow-model.js";
-import { assigneeOptions, assigneeHint, shortName } from "./teams.js";
+import { assigneeOptions, assigneeHint, shortName, projectPeople } from "./teams.js";
 import { taskTagsHTML, installTaskTags } from "./task-tags.js";
 import { taskPickerHTML } from "./task-modal.js";
 import { updateFrameMembership } from "./frame-model.js";
@@ -1784,7 +1784,8 @@ function taskDialog(id = null, defaults = {}, replace = false) {
         status: initialStatus(state.config),
         priority: defaultPriority,
         parent: null,
-        assignee: "",
+        // The project's auto-assignee (F0.22-25), while they are in the project.
+        assignee: (fieldOn(state.config, "assignee") && projectPeople(state).find((p) => p.id === state.config.default_assignee)?.name) || "",
         due: "",
         tags: [],
         ...defaults,

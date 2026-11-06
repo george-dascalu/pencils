@@ -2,7 +2,7 @@ import { randomUUID } from "./uuid.js";
 import { focusOnOpen } from "./open-focus.js";
 import { workflowEditor } from "./workflow-editor.js";
 import { CARD_FIELDS, VIEW_GROUPS, fieldOn, viewOn } from "./card-fields.js";
-import { projectPeopleControls } from "./teams.js";
+import { projectPeopleControls, projectPeople } from "./teams.js";
 import { tagsSettingsHTML, tagsSettings, tagRows } from "./project-tags-settings.js";
 import { priorityOptions, priorityLabel } from "./task-priority.js";
 import { taskFieldColor, priorityColors } from "./task-colors.js";
@@ -329,7 +329,7 @@ export function projectSettings(ctx, { sources, automations, personal, organisat
   }
   function teams() {
     return form(
-      `<label class="field">Organisation<select name="organisation" required>${state.organisations.map((o) => `<option value="${esc(o.id)}" ${o.id === state.project.organisation ? "selected" : ""}>${esc(o.title)}</option>`).join("")}</select></label><p class="field-hint">Moving organisations moves this project, its cards and boards; then choose its people from the new organisation.</p>`,
+      `<label class="field">Organisation<select name="organisation" required>${state.organisations.map((o) => `<option value="${esc(o.id)}" ${o.id === state.project.organisation ? "selected" : ""}>${esc(o.title)}</option>`).join("")}</select></label><p class="field-hint">Moving organisations moves this project, its cards and boards; then choose its people from the new organisation.</p>${fieldOn(state.config, "assignee") ? `<label class="field">Auto-assign new cards<select name="default_assignee"><option value="">Nobody</option>${projectPeople(state).map((p) => `<option value="${esc(p.id)}" ${p.id === state.config?.default_assignee ? "selected" : ""}>${esc(p.name)}</option>`).join("")}</select></label><p class="field-hint">New cards start assigned to this person, and can still be changed.</p>` : ""}`,
     );
   }
   function customField(
@@ -592,11 +592,16 @@ export function projectSettings(ctx, { sources, automations, personal, organisat
             const on = data.getAll("project-view"), off = VIEW_GROUPS.flatMap(([, , views]) => views).filter((view) => !on.includes(view));
             if (off.join() !== (config.views_off || []).join()) changes.schema = { ...config, views_off: off.length ? off : undefined };
           }
-          if (section === "teams")
+          if (section === "teams") {
             changes = {
               organisation: data.get("organisation"),
               people: JSON.parse(data.get("people")),
             };
+            // A person leaving the project, or a move to another organisation, clears it.
+            const choice = f.elements.default_assignee ? data.get("default_assignee") : config.default_assignee;
+            const assignee = choice && changes.organisation === state.project.organisation && changes.people.includes(choice) ? choice : undefined;
+            if (assignee !== config.default_assignee) changes.schema = { ...config, default_assignee: assignee };
+          }
           if (["workflow", "hierarchy"].includes(section))
             changes = { schema: JSON.parse(data.get("workflowSchema")) };
           if (section === "tags") changes = { schema: { ...config, tags: tagRows(f) } };
