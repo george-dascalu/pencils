@@ -313,6 +313,7 @@ export const TIERS = [
     "e2e/tasks/task-editor-adapt.spec.mjs", // open card editor at narrow widths
     "e2e/tasks/task-pane-info.spec.mjs", // dock comments/history panes
     "e2e/tasks/task-relationships.spec.mjs", // add and remove parent/child/blocks links
+    "e2e/tasks/task-children.spec.mjs", // create a new child card from a card
     "e2e/ui/button-sweep.spec.mjs", // click through screens and buttons
     "e2e/ui/control-sizing.spec.mjs", // tap and click controls
     "e2e/ui/font-scale.spec.mjs", // read card popup and Table

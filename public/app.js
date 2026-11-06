@@ -1346,7 +1346,8 @@ function treeView(tasks) {
     .map((t) => walk(t, 0))
     .join("");
   const [glyph, name] = { normal: ["tree", "normal"], expanded: ["expand", "all expanded"], collapsed: ["shrink", "all collapsed"] }[state.treeMode];
-  return `<div class="section-title">${icon("tree")}The big picture<span class="line"></span>${flat ? "" : `<button type="button" class="icon-button" data-action="tree-cycle" aria-label="Subtasks: ${name}" title="Subtasks: ${name}">${icon(glyph)}</button>`}</div><div class="tree-wrapper">${html}</div>`;
+  // No title above the tree (F0.22-24): the row holds only the Subtasks button, when there is one.
+  return `${flat ? "" : `<div class="section-title"><span class="line"></span><button type="button" class="icon-button" data-action="tree-cycle" aria-label="Subtasks: ${name}" title="Subtasks: ${name}">${icon(glyph)}</button></div>`}<div class="tree-wrapper">${html}</div>`;
 }
 function parentOptions(current, exclude) {
   return `<option value="">No parent</option>${state.tasks

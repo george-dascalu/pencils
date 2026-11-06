@@ -5,6 +5,7 @@ import {
   relationshipChanges,
   compareRelationshipTasks,
 } from "../public/task-relationship-model.js";
+import { childType } from "../public/hierarchy-model.js";
 const config = { types: ["epic", "task"] };
 test("Relationship sorting uses assignee names, highest priority first and configured status order", () => {
   const rows = [
@@ -108,4 +109,11 @@ test("Cycles, self-links, missing targets and enforced hierarchy are rejected", 
     () => relationshipChanges(tasks, enforced, "a", "child", "b", true),
     /requires an allowed parent/,
   );
+});
+
+test("a new child card takes the usual card type when its parent may hold it, else the first type allowed", () => {
+  assert.equal(childType({ types: ["epic", "task"] }, "epic"), "task");
+  const enforced = { types: ["epic", "story", "task"], hierarchy: { mode: "enforced", roots: ["epic"], children: { epic: ["story"], story: ["task"], task: [] } } };
+  assert.equal(childType(enforced, "epic"), "story");
+  assert.equal(childType(enforced, "task"), null);
 });

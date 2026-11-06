@@ -1,6 +1,7 @@
 // Owner request, 30 October 2026: one icon button in Tree cycles through all expanded, all
 // collapsed and back to normal, the rows opened and closed by hand. A step that would look the
-// same is skipped, and a tree with nothing to expand has no button.
+// same is skipped, and a tree with nothing to expand has no button. The row above the tree has no
+// title (F0.22-24): it holds only that button, and goes when there is none.
 import { test, expect, onDevices, useApp } from "../fixtures.mjs";
 
 const app = useApp(async (store) => {
@@ -24,6 +25,8 @@ onDevices(["phone", "desktop"], () => test("one button cycles all expanded, all 
   await expect(page.locator('[data-action="expand-all"]')).toHaveCount(0);
   await expect(cycle).toHaveAttribute("aria-label", "Subtasks: normal");
   await expect(cycle.locator(".icon")).toHaveCount(1);
+  await expect(page.locator("#view-content > .section-title"), "no title beside the button").toHaveText("");
+  await expect(page.locator("#view-content > .section-title .icon")).toHaveCount(1);
   const box = await cycle.boundingBox();
   if (device === "phone") expect(box.width, "a 44px target").toBeGreaterThanOrEqual(44);
   // Normal: B closed by hand.
@@ -74,4 +77,5 @@ test("the keyboard keeps focus on the button, and a tree without subtasks has no
   await page.goto(`${app.base}/#project/${app.flat.id}/tree`);
   await expect(page.locator(".task-row", { hasText: "FL-1" })).toBeVisible();
   await expect(page.locator('[data-action="tree-cycle"]')).toHaveCount(0);
+  await expect(page.locator("#view-content > .section-title"), "no empty row above the tree").toHaveCount(0);
 });

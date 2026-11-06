@@ -2,6 +2,14 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.22.24 — 2026-11-06
+
+### Changed
+- Feature F0.22-24: Tree has no "The big picture" title. The row above the tree holds only the Subtasks button, and goes when there is nothing to expand.
+
+### Added
+- Feature F0.22-23: A card can create its own children. In Relationships, choose Child in the + menu and type a title: Create child (or Enter) adds a new card under this one, in the usual card type when the card hierarchy allows it, and lists it under Children. A new card can hold children once it is saved.
+
 ## 0.22.22 — 2026-11-05
 
 ### Changed

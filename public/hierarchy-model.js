@@ -27,3 +27,9 @@ export function hierarchyError(config, task, parent) {
     ? `Cards Hierarchies: ${parent.type} cannot parent ${task.type} (${task.title}).`
     : `Cards Hierarchies: ${task.type} requires an allowed parent (${task.title}).`;
 }
+
+// A new child takes the usual new-card type when its parent may hold it, else the first type it may.
+export function childType(config, parentType) {
+  const usual = config.types.includes("task") ? "task" : config.types[0];
+  return [usual, ...config.types].find((type) => canParent(config, type, parentType)) ?? null;
+}

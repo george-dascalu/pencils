@@ -14,9 +14,11 @@ import { statusLabel } from "./workflow-model.js";
 import { positionPopover } from "./popover-position.js";
 import { focusOnOpen } from "./open-focus.js";
 import { fieldOn } from "./card-fields.js";
+import { childType } from "./hierarchy-model.js";
+import { randomUUID } from "./uuid.js";
 
 export function taskRelationshipsEditor(ctx, form, { flush, changed }) {
-  const { state, esc, icon, sync, patchTask, taskDialog } = ctx;
+  const { state, esc, icon, sync, patchTask, taskDialog, api } = ctx;
   // Without the Parent field (T23) a card has no parent or children to show.
   const kinds = () => relationshipTypes.filter(([kind]) => fieldOn(state.config, "parent") || !["parent", "child"].includes(kind));
   // A new card has no id yet: its own fields are written into the form and
@@ -81,7 +83,8 @@ export function taskRelationshipsEditor(ctx, form, { flush, changed }) {
   }
   form.append(related);
   let disposed = false,
-    busy = false;
+    busy = false,
+    creation = null;
   const pending = new Set();
   const rendered = new WeakMap();
   const paint = (element, html) => {
@@ -205,9 +208,15 @@ export function taskRelationshipsEditor(ctx, form, { flush, changed }) {
             return `<button type="button" class="task-relationship-option" data-relationship-add="${esc(task.id)}" ${error || busy ? "disabled" : ""}><span class="task-relationship-link">${detail(task)}${icon("plus")}</span>${hint ? `<small>${esc(hint)}</small>` : ""}</button>`;
           })
           .join("") || '<p class="field-hint">No matching cards.</p>';
+      // With Child chosen, the typed title can also be a new card under this one (F0.22-23).
+      const kidType = childType(state.config, own().type);
+      const createHint = draft ? "Save this card first." : kidType ? "" : `Cards Hierarchies: ${own().type} cannot parent a card.`;
+      const create = type.value === "child" && search.value.trim()
+        ? `<button type="button" class="task-relationship-option" data-relationship-create ${createHint || busy ? "disabled" : ""}><span class="task-relationship-link">${icon(kidType || "task")}<span class="task-relationship-title">Create child “${esc(search.value.trim())}”</span>${icon("plus")}</span>${createHint ? `<small>${esc(createHint)}</small>` : ""}</button>`
+        : "";
       paint(
         host.querySelector("[data-relationship-options]"),
-        options +
+        create + (create && !matches.length ? "" : options) +
           (matches.length > 40
             ? '<p class="field-hint">Keep typing to narrow the results.</p>'
             : ""),
@@ -319,6 +328,23 @@ export function taskRelationshipsEditor(ctx, form, { flush, changed }) {
         taskDialog(button.dataset.relationshipOpen, {}, "follow");
         return;
       }
+      if (button.hasAttribute("data-relationship-create")) {
+        say("Creating child card…");
+        // One request id per title, so a retry after a lost answer doesn't add a second card.
+        const title = search.value.trim();
+        if (creation?.title !== title) creation = { title, id: randomUUID() };
+        const created = await api(`/projects/${project}/tasks`, {
+          method: "POST",
+          body: { title, type: childType(state.config, own().type), parent: id, creation_request: creation.id },
+        });
+        creation = null;
+        if (!state.tasks.some((task) => task.id === created.id)) state.tasks.push(created);
+        if (!active()) return;
+        changed(created.id);
+        say("Child card created.");
+        close(true);
+        return;
+      }
       const patches = relationshipChanges(
         tasks(),
         state.config,
@@ -382,8 +408,13 @@ export function taskRelationshipsEditor(ctx, form, { flush, changed }) {
       event.preventDefault();
       event.stopPropagation();
       close(true);
-    } else if (event.key === "Enter" && event.target === search)
+    } else if (event.key === "Enter" && event.target === search) {
       event.preventDefault();
+      // Enter creates only a title no card has yet; Create child still makes a namesake.
+      const typed = search.value.trim().toLowerCase();
+      if (!event.isComposing && !tasks().some((task) => task.id !== id && task.title?.trim().toLowerCase() === typed))
+        host.querySelector("[data-relationship-create]:not(:disabled)")?.click();
+    }
   };
   host.addEventListener("keydown", keydown);
   const outside = (event) => {
