@@ -309,6 +309,7 @@ export const TIERS = [
     "e2e/tasks/new-card-head.spec.mjs", // open new card popup
     "e2e/tasks/relationship-fields.spec.mjs", // edit fields in relationship rows
     "e2e/tasks/task-attachments.spec.mjs", // attach files to a card
+    "e2e/tasks/task-attachment-paste.spec.mjs", // paste or drag images onto a card or note
     "e2e/tasks/task-card-comments-history.spec.mjs", // comment on a card and view history
     "e2e/tasks/task-colors.spec.mjs", // see field colours on cards
     "e2e/tasks/task-creation-tools.spec.mjs", // create cards with subtasks and set dates

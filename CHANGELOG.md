@@ -2,6 +2,11 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.22.30 — 2026-11-06
+
+### Added
+- Feature F0.22-30: Pasting an image into a card's description or a note, even one you're reading, attaches it there as "Pasted image" with the date and time, as Obsidian names them. A paste that also holds text, such as cells from a spreadsheet, stays a text paste. An image dragged from a web page without a file extension takes one from its type, so it uploads instead of being refused.
+
 ## 0.22.29 — 2026-11-06
 
 ### Changed

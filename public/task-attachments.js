@@ -1,6 +1,20 @@
 import { taskAttachmentContent } from "./task-attachment-model.js";
 import { attachmentPreview } from "./attachment-preview.js";
 
+const IMAGE_TYPES = { "image/png": "png", "image/jpeg": "jpg", "image/gif": "gif", "image/webp": "webp" };
+const ALLOWED = /\.(png|jpe?g|gif|webp|pdf|txt|md|csv|zip)$/i;
+// An image dragged from a web page may have no extension; its type gives one (F0.22-30).
+function named(file, name = file.name) {
+  if (!ALLOWED.test(name) && IMAGE_TYPES[file.type]) name = `${name || "image"}.${IMAGE_TYPES[file.type]}`;
+  return name === file.name ? file : new File([file], name, { type: file.type });
+}
+// Pasted pictures are named like Obsidian's: "Pasted image 20261106123045.png".
+function pastedName(file, index) {
+  const d = new Date(), p = (n) => String(n).padStart(2, "0");
+  const stamp = `${d.getFullYear()}${p(d.getMonth() + 1)}${p(d.getDate())}${p(d.getHours())}${p(d.getMinutes())}${p(d.getSeconds())}`;
+  return `Pasted image ${stamp}${index ? `-${index + 1}` : ""}.${IMAGE_TYPES[file.type]}`;
+}
+
 // Bind uploads to this editor, even if another task opens before a request ends.
 export function taskAttachments(
   { api, route, state, esc, icon },
@@ -110,7 +124,7 @@ export function taskAttachments(
   async function upload(file) {
     if (!active()) return;
     try {
-      if (!/\.(png|jpe?g|gif|webp|pdf|txt|md|csv|zip)$/i.test(file.name))
+      if (!ALLOWED.test(file.name))
         throw new Error("Use an image, PDF, text, Markdown, CSV or ZIP file.");
       if (file.size > 10000000) throw new Error("Use a file under 10 MB.");
       const bytes = new Uint8Array(await file.arrayBuffer());
@@ -164,7 +178,20 @@ export function taskAttachments(
     event.stopPropagation();
     depth = 0;
     highlight(false);
-    enqueue([...event.dataTransfer.files]);
+    enqueue([...event.dataTransfer.files].map((file) => named(file)));
+  }
+  // A pasted image (a screenshot, or Copy image) uploads like a dropped file. A paste that also holds
+  // text is left to the editor: a spreadsheet's copy adds a picture of the cells beside their text.
+  function paste(event) {
+    const files = [...(event.clipboardData?.files || [])];
+    // A file manager's copy gives each file's name or path as text: that is not text to keep.
+    const text = event.clipboardData?.getData("text/plain").trim().split(/\r?\n/).filter(Boolean) || [];
+    const onlyNames = text.every((line, i) => files[i] && line.trim().endsWith(files[i].name));
+    if (!files.length || !onlyNames || !ownsDrop(event)) return;
+    event.preventDefault();
+    event.stopPropagation();
+    // The browser calls a clipboard picture image.png; a copied file keeps its own name.
+    enqueue(files.map((file, i) => IMAGE_TYPES[file.type] && /^image\.\w+$/.test(file.name || "image.png") ? named(file, pastedName(file, i)) : named(file)));
   }
   function enqueue(files) {
     if (!files.length) return;
@@ -192,6 +219,7 @@ export function taskAttachments(
   dropTarget.addEventListener("dragover", over, true);
   dropTarget.addEventListener("dragleave", leave, true);
   dropTarget.addEventListener("drop", drop, true);
+  section.addEventListener("paste", paste, true);
   form.addEventListener("submit", submit, true);
   form.addEventListener("click", finalise, true);
   return {
@@ -207,6 +235,7 @@ export function taskAttachments(
       dropTarget.removeEventListener("dragover", over, true);
       dropTarget.removeEventListener("dragleave", leave, true);
       dropTarget.removeEventListener("drop", drop, true);
+      section.removeEventListener("paste", paste, true);
       form.removeEventListener("submit", submit, true);
       form.removeEventListener("click", finalise, true);
       overlay.remove();
