@@ -66,6 +66,15 @@ test('over a day name the landing place stays where it was, and a drop there lan
   await expect.poll(async () => { const t = await saved(app.one.id); return [t.due, t.assignee]; }).toEqual(['2026-11-04', 'Ann']);
 });
 
+// F0.22-29: the Unassigned row (or No tag, No type) shows only while it holds a card that week.
+test('a week where every card has an assignee shows no Unassigned row', async ({ page }) => {
+  const loose = await saved(app.loose.id);
+  await app.store.updateTask(app.project.id, loose.id, { revision: loose.revision, assignee: 'Ann' });
+  await open(page);
+  await expect(page.locator('.week-board-row')).toHaveCount(2);
+  expect(await page.locator('.week-board-row').evaluateAll(els => els.map(el => el.dataset.weekBoardValue))).toEqual(['Ann', 'Bo']);
+});
+
 onDevices(['desktop', 'ipad', 'phone'], () => {
   test('Week board shows the week as day columns with rows by a field, without hours @gate', async ({ page, device }) => {
     await open(page);

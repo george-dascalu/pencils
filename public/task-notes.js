@@ -12,7 +12,8 @@ export function taskNotes(ctx, form) {
   const host = document.createElement('section');
   host.className = 'task-notes'; host.setAttribute('aria-label', 'Notes');
   const action = (name, glyph, label, extra = '') => `<button type="button" class="icon-button ${extra}" data-note-action="${name}" aria-label="${label}" title="${label}">${icon(glyph)}</button>`;
-  host.innerHTML = `<header class="task-notes-heading"><h3>Notes</h3><div role="group" aria-label="Note actions">${action('edit', 'pencil', 'Edit note')}${action('add', 'plus', 'Add note')}${action('delete', 'trash', 'Delete note', 'danger')}</div></header><div class="task-note-slot"></div><nav class="task-notes-navigation" aria-label="Browse notes">${action('previous', 'chevron-left', 'Previous note')}<output aria-live="polite" aria-atomic="true"></output>${action('next', 'chevron-right', 'Next note')}</nav>`;
+  // New sits in the middle of the bar, like the top bar's New; Attach files follows Edit (F0.22-28).
+  host.innerHTML = `<header class="task-notes-heading"><h3>Notes</h3><button type="button" class="button primary task-note-new" data-note-action="add" aria-label="New note" title="New note">${icon('plus')}New</button><div role="group" aria-label="Note actions">${action('edit', 'pencil', 'Edit note')}${action('attach', 'paperclip', 'Attach files to note')}${action('delete', 'trash', 'Delete note', 'danger')}</div></header><div class="task-note-slot"></div><nav class="task-notes-navigation" aria-label="Browse notes">${action('previous', 'chevron-left', 'Previous note')}<output aria-live="polite" aria-atomic="true"></output>${action('next', 'chevron-right', 'Next note')}</nav>`;
   form.querySelector('.task-description').after(host);
   const slot = host.querySelector('.task-note-slot'), nav = host.querySelector('nav'), count = host.querySelector('output');
   let notes = JSON.parse(source.value || '[]') || [], index = 0, editing = false, editor = null, files = null, disposed = false, swiping = null;
@@ -21,9 +22,9 @@ export function taskNotes(ctx, form) {
     const exists = !!notes.length;
     count.textContent = exists ? `${index + 1} / ${notes.length}` : '';
     nav.hidden = !exists;
-    for (const name of ['edit', 'delete']) button(name).hidden = !exists;
+    for (const name of ['edit', 'attach', 'delete']) button(name).hidden = !exists;
     button('add').disabled = !!pending || notes.length >= TASK_NOTE_LIMIT;
-    button('edit').disabled = button('delete').disabled = !!pending;
+    button('edit').disabled = button('attach').disabled = button('delete').disabled = !!pending;
     button('previous').disabled = !!pending || index === 0;
     button('next').disabled = !!pending || index >= notes.length - 1;
     button('edit').setAttribute('aria-pressed', String(editing));
@@ -61,12 +62,13 @@ export function taskNotes(ctx, form) {
     if (!editing) editor.preview();
     article.querySelector('.task-rich-tools').hidden = !editing;
     files = taskAttachments(ctx, form, editor, {section: article, sourceName: 'note-body', dropTarget: article,
-      heading: 'Note attachments', addLabel: 'Add note attachments', previewId: 'task-note-attachment-preview', onPending: controls});
+      heading: 'Note attachments', addButton: false, previewId: 'task-note-attachment-preview', onPending: controls});
     controls();
   }
   function move(to) {
     if (files?.pending || to < 0 || to >= notes.length || to === index) return;
-    flush(); index = to; editing = false; mount();
+    // Paging keeps editing or reading as it was (F0.22-27).
+    flush(); index = to; mount();
   }
   host.addEventListener('click', async event => {
     const target = event.target.closest('[data-note-action]');
@@ -76,6 +78,8 @@ export function taskNotes(ctx, form) {
     flush();
     if (name === 'add') {
       notes.push({id: `n-${randomUUID()}`, body: ''}); index = notes.length - 1; editing = true; write('change'); mount();
+    } else if (name === 'attach') {
+      files?.pick();
     } else if (name === 'edit') {
       editing = !editing; editor.preview();
       slot.firstElementChild.dataset.editing = String(editing);

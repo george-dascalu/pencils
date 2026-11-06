@@ -101,7 +101,10 @@ export function calendarView(ctx) {
     // A card without a priority has priority None; statuses no longer in the workflow keep a row.
     const value = t => field === "none" ? "" : field === "priority" ? t.priority || "none" : t[field] || "";
     const inRow = (t, row) => field === "tags" ? inGroup(t, field, row) : value(t) === row;
-    const rows = field === "none" ? [""] : field === "tags" ? naturalGroups(field, placed, state.config) : naturalGroups(field, placed.map(t => ({ [field]: value(t) })), state.config, projectPeople(state).map(p => p.name));
+    // The row for no value (Unassigned, No tag, No type) shows only while it holds a card (F0.22-29),
+    // or is the only row, so an empty board still has cells to drop cards on.
+    const rows = field === "none" ? [""] : (field === "tags" ? naturalGroups(field, placed, state.config) : naturalGroups(field, placed.map(t => ({ [field]: value(t) })), state.config, projectPeople(state).map(p => p.name)))
+      .filter((row, _, all) => row || all.length === 1 || placed.some(t => inRow(t, row)));
     const name = value => field === "status" ? statusLabel(state.config, value) : field === "priority" ? priorityLabel(value) : field === "tags" ? value || "No tag" : value ? ctx.label(value) : field === "type" ? "No type" : "Unassigned";
     const card = t => `<article class="week-board-card" data-calendar-card="${esc(t.id)}" data-task-color="status" style="--task-field-color:${taskFieldColor(state, "status", t.status)}"><button type="button" class="week-board-title" data-action="task-open" data-id="${esc(t.id)}" title="${esc(title(t))}">${esc(title(t))}</button>${ctx.inlineTaskFields(t, "week-board-fields", rangeLabel(t))}</article>`;
     // A table to assistive technology: days are column headers, rows' names row headers.

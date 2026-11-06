@@ -15,11 +15,11 @@ onDevices(['desktop', 'ipad', 'phone'], () => {
   test('notes add, format, page, save, reopen and delete without changing the description @gate', async ({page, device}) => {
     const card = await app.store.createTask(app.project.id, {title: 'Notes on this device', body: 'Separate description'});
     await open(page, card); const notes = section(page);
-    await notes.getByRole('button', {name: 'Add note', exact: true}).click();
+    await notes.getByRole('button', {name: 'New note', exact: true}).click();
     if (device !== 'desktop') await expect(rich(page)).not.toBeFocused();
     await rich(page).fill('First note'); await rich(page).selectText();
     await notes.getByRole('button', {name: 'Bold', exact: true}).click();
-    await notes.getByRole('button', {name: 'Add note', exact: true}).click();
+    await notes.getByRole('button', {name: 'New note', exact: true}).click();
     await rich(page).fill('Second note');
     await expect(notes.locator('output')).toHaveText('2 / 2');
     await notes.getByRole('button', {name: 'Finish editing note', exact: true}).click();
@@ -34,7 +34,7 @@ onDevices(['desktop', 'ipad', 'phone'], () => {
     await section(page).getByRole('button', {name: 'Edit note', exact: true}).click();
     await expect(section(page).locator('.rich-toolbar')).toHaveCSS('flex-wrap', 'nowrap');
     await expect(section(page).locator('.task-notes-heading')).toHaveCSS('display', 'flex');
-    const add = section(page).getByRole('button', {name: 'Add note', exact: true});
+    const add = section(page).getByRole('button', {name: 'New note', exact: true});
     expect((await add.boundingBox()).height).toBeGreaterThanOrEqual(device === 'desktop' ? 32 : 44);
     for (let i = 0; i < 2; i++) {
       await section(page).getByRole('button', {name: 'Delete note', exact: true}).click();
@@ -44,13 +44,52 @@ onDevices(['desktop', 'ipad', 'phone'], () => {
     await expect(section(page)).toContainText('No notes yet.');
   });
 });
+test('paging keeps the note being edited, or read, as it was (F0.22-27)', async ({page}) => {
+  const card = await app.store.createTask(app.project.id, {title: 'Paging notes', notes: [{id: 'n-a', body: 'Note A'}, {id: 'n-b', body: 'Note B'}]});
+  await open(page, card); const notes = section(page);
+  await notes.getByRole('button', {name: 'Edit note', exact: true}).click();
+  await notes.getByRole('button', {name: 'Next note', exact: true}).click();
+  await expect(notes.locator('output')).toHaveText('2 / 2');
+  await expect(rich(page)).toBeVisible();
+  await expect(notes.getByRole('button', {name: 'Finish editing note', exact: true})).toBeVisible();
+  await notes.getByRole('button', {name: 'Finish editing note', exact: true}).click();
+  await notes.getByRole('button', {name: 'Previous note', exact: true}).click();
+  await expect(notes.locator('.inline-preview')).toHaveText('Note A');
+  await expect(rich(page)).toBeHidden();
+});
+onDevices(['desktop', 'small'], () => test('the notes bar centres New, and Attach files after Edit adds files to the note (F0.22-28)', async ({page, device}) => {
+  const card = await app.store.createTask(app.project.id, {title: 'Notes bar', notes: [{id: 'n-bar', body: 'Bar note'}]});
+  await open(page, card); const notes = section(page), bar = notes.locator('.task-notes-heading');
+  const add = notes.getByRole('button', {name: 'New note', exact: true});
+  await expect(add).toHaveText('New');
+  await expect(add).toHaveClass(/\bprimary\b/);
+  const [b, a] = [await bar.boundingBox(), await add.boundingBox()];
+  // In the middle where there is room; on a phone the actions keep their width and New moves aside.
+  if (device === 'desktop') expect(Math.abs(a.x + a.width / 2 - (b.x + b.width / 2)), 'New sits in the middle of the bar').toBeLessThan(2);
+  const [title, group] = [await notes.locator('.task-notes-heading h3').boundingBox(), await notes.locator('.task-notes-heading [role=group]').boundingBox()];
+  expect(a.x, 'New clears the title').toBeGreaterThanOrEqual(title.x + title.width - 1);
+  expect(a.x + a.width, 'New clears the actions').toBeLessThanOrEqual(group.x + 1);
+  expect(group.x + group.width, 'the actions stay in the bar').toBeLessThanOrEqual(b.x + b.width + 1);
+  expect(await notes.locator('.task-notes-heading [role=group] button:visible').evaluateAll(els => els.every(el => el.getBoundingClientRect().left >= el.parentElement.getBoundingClientRect().left - 1)), 'no action spills out of its group').toBe(true);
+  expect(await notes.locator('.task-notes-heading [role=group] button:visible').evaluateAll(els => els.map(el => el.getAttribute('aria-label'))))
+    .toEqual(['Edit note', 'Attach files to note', 'Delete note']);
+  // The bar's button is the one way to attach; the empty attachments list stays out of sight.
+  await expect(notes.locator('.task-attachment-choose')).toHaveCount(0);
+  await expect(notes.locator('.task-attachments')).toBeHidden();
+  const chooser = page.waitForEvent('filechooser');
+  await notes.getByRole('button', {name: 'Attach files to note', exact: true}).click();
+  await (await chooser).setFiles({name: 'bar.txt', mimeType: 'text/plain', buffer: Buffer.from('From the bar')});
+  await expect(notes.getByRole('button', {name: 'Preview bar.txt', exact: true})).toBeVisible();
+  await expect(notes.locator('.task-attachments')).toBeVisible();
+  await expect.poll(async () => (await saved(card.id)).notes?.[0]?.body).toContain('bar.txt');
+}));
 test('note attachments use the shared uploader and preview, stay with their note and survive edits', async ({page}) => {
   const card = await app.store.createTask(app.project.id, {title: 'Note attachments'}); await open(page, card);
-  await section(page).getByRole('button', {name: 'Add note', exact: true}).click(); await rich(page).fill('Evidence');
+  await section(page).getByRole('button', {name: 'New note', exact: true}).click(); await rich(page).fill('Evidence');
   await section(page).locator('input[type=file]').setInputFiles({name: 'note [evidence].txt', mimeType: 'text/plain', buffer: Buffer.from('Attached to this note')});
   await expect(section(page).getByRole('button', {name: 'Preview note [evidence].txt', exact: true})).toBeVisible();
   await rich(page).fill('Revised evidence');
-  await section(page).getByRole('button', {name: 'Add note', exact: true}).click(); await rich(page).fill('Without files');
+  await section(page).getByRole('button', {name: 'New note', exact: true}).click(); await rich(page).fill('Without files');
   await expect(section(page).locator('.task-attachment-open')).toHaveCount(0);
   await section(page).getByRole('button', {name: 'Previous note', exact: true}).click();
   await section(page).getByRole('button', {name: 'Preview note [evidence].txt', exact: true}).click();
@@ -62,7 +101,7 @@ test('note attachments use the shared uploader and preview, stay with their note
 });
 test('new card browser drafts retain the whole deck and history records note changes', async ({page}) => {
   await page.goto(`${app.base}/#project/${app.project.id}/list`); await newCard(page);
-  for (const text of ['Draft one', 'Draft two']) { await section(page).getByRole('button', {name: 'Add note', exact: true}).click(); await rich(page).fill(text); }
+  for (const text of ['Draft one', 'Draft two']) { await section(page).getByRole('button', {name: 'New note', exact: true}).click(); await rich(page).fill(text); }
   page.once('dialog', d => d.accept()); await page.locator('.task-dialog [data-action="dialog-close"]').click();
   await newCard(page); await page.getByRole('button', {name: 'Restore draft', exact: true}).click();
   await expect(section(page).locator('output')).toHaveText('1 / 2');
@@ -95,22 +134,22 @@ onDevices(['ipad', 'phone'], () => test('a swipe pages a reading note without op
 }));
 test('an upload stays on its note while typing and blocks paging or closing until it finishes', async ({page}) => {
   const card = await app.store.createTask(app.project.id, {title: 'Pending note files'}); await open(page, card);
-  await section(page).getByRole('button', {name: 'Add note', exact: true}).click();
+  await section(page).getByRole('button', {name: 'New note', exact: true}).click();
   let release, reached; const arrived = new Promise(resolve => {reached = resolve;});
   await page.route(`**/api/projects/${app.project.id}/attachments`, async route => {
     await new Promise(resolve => {release = resolve; reached();}); await route.continue();
   });
   await section(page).locator('input[type=file]').setInputFiles({name: 'pending.txt', mimeType: 'text/plain', buffer: Buffer.from('Pending file')});
-  await arrived; await expect(section(page).getByRole('button', {name: 'Add note', exact: true})).toBeDisabled();
+  await arrived; await expect(section(page).getByRole('button', {name: 'New note', exact: true})).toBeDisabled();
   await rich(page).fill('Typed while uploading'); await page.locator('.task-dialog [data-action="dialog-close"]').click();
   await expect(page.locator('#task-form')).toBeVisible(); release();
-  await expect(section(page).getByRole('button', {name: 'Add note', exact: true})).toBeEnabled();
+  await expect(section(page).getByRole('button', {name: 'New note', exact: true})).toBeEnabled();
   await expect.poll(async () => (await saved(card.id)).notes?.[0]?.body).toContain('pending.txt');
   expect((await saved(card.id)).notes[0].body).toContain('Typed while uploading');
 });
 test('dropping a file on a note uploads once and leaves the card description attachments alone', async ({page}) => {
   const card = await app.store.createTask(app.project.id, {title: 'Drop on note', body: 'Card description'}); await open(page, card);
-  await section(page).getByRole('button', {name: 'Add note', exact: true}).click();
+  await section(page).getByRole('button', {name: 'New note', exact: true}).click();
   let uploads = 0; page.on('request', request => {if (request.method() === 'POST' && request.url().endsWith('/attachments')) uploads++;});
   await section(page).locator('.task-note-card').evaluate(el => {
     const dataTransfer = new DataTransfer(); dataTransfer.items.add(new File(['Dropped note file'], 'dropped.txt', {type: 'text/plain'}));
@@ -125,7 +164,7 @@ test('a board draft keeps notes through reload and finalising it into a project 
   await page.goto(`${app.base}/#project/${app.project.id}/board`);
   await page.locator('[data-action="board-task"]').click(); await page.locator('[data-action="board-create-draft"]').click();
   await page.locator('#task-form [name=title]').fill('Draft with notes');
-  await section(page).getByRole('button', {name: 'Add note', exact: true}).click(); await rich(page).fill('Board draft note');
+  await section(page).getByRole('button', {name: 'New note', exact: true}).click(); await rich(page).fill('Board draft note');
   await page.locator('.task-dialog [data-action="dialog-close"]').click();
   await expect.poll(async () => (await app.store.snapshot(app.project.id)).boards[0].nodes.find(n => n.draft?.title === 'Draft with notes')?.draft?.notes?.[0]?.body).toBe('Board draft note');
   const draft = (await app.store.snapshot(app.project.id)).boards[0].nodes.find(n => n.draft?.title === 'Draft with notes');
@@ -140,7 +179,7 @@ test('notes survive failed saves and reload, then sync when the server returns',
   const card = await app.store.createTask(app.project.id, {title: 'Offline note'}); await open(page, card);
   const url = `**/api/projects/${app.project.id}/tasks/${card.id}`;
   await page.route(url, route => route.request().method() === 'PATCH' ? route.fulfill({status: 503, json: {error: 'Test offline'}}) : route.continue());
-  await section(page).getByRole('button', {name: 'Add note', exact: true}).click(); await rich(page).fill('Kept offline');
+  await section(page).getByRole('button', {name: 'New note', exact: true}).click(); await rich(page).fill('Kept offline');
   await expect(page.locator('[data-autosave-status]')).toContainText('Pending');
   await page.reload(); await page.locator(`[data-action="task-open"][data-id="${card.id}"]:visible`).first().click();
   await expect(section(page).locator('.inline-preview')).toContainText('Kept offline'); await page.unroute(url);

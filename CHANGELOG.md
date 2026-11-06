@@ -2,6 +2,13 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.22.29 — 2026-11-06
+
+### Changed
+- Feature F0.22-29: Week board shows its Unassigned row (or No tag, No type) only while a card that week sits in it, unless it is the board's only row.
+- Feature F0.22-28: A card's Notes bar has New in the middle, styled like the top bar's New, and Attach files after Edit, which adds files to the note shown. A note's attachment list shows only once it holds files.
+- Feature F0.22-27: Paging through a card's notes keeps them in edit mode or reading mode, as they were.
+
 ## 0.22.26 — 2026-11-06
 
 ### Added

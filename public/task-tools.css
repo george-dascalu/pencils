@@ -1586,7 +1586,13 @@ html.task-page-open,
 .task-notes { margin-top: 20px; min-width: 0; }
 .task-notes-heading, .task-notes-heading > div, .task-notes-navigation { display: flex; align-items: center; gap: 4px; }
 .task-notes-heading { margin-bottom: 4px; }
-.task-notes-heading h3 { margin: 0 auto 0 0; font-size: var(--type-body); }
+.task-notes-heading h3 { margin: 0; font-size: var(--type-body); }
+/* Equal sides keep New in the middle of the bar (F0.22-28). */
+/* The actions keep their width on narrow phones, where New moves aside rather than under them. */
+.task-notes-heading h3, .task-notes-heading > [role=group] { flex: 1 1 0; }
+.task-notes-heading h3 { min-width: 0; }
+.task-notes-heading > [role=group] { justify-content: flex-end; }
+.task-notes-heading > .task-note-new { flex: none; }
 .task-notes-heading .danger { color: var(--danger); }
 .task-note-card { position: relative; min-width: 0; border: 1px solid var(--line); border-radius: var(--field-radius); background: var(--surface); overflow: hidden; }
 .task-note-card .task-rich-tools { border: 0; border-bottom: 1px solid var(--line); border-radius: 0 !important; }

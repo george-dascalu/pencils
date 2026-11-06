@@ -7,7 +7,7 @@ export function taskAttachments(
   form,
   editor,
   { section = form.querySelector('.task-description'), sourceName = 'body', dropTarget = form.closest('dialog'),
-    heading = 'Attachments', addLabel = 'Add attachments', previewId = 'attachment-preview', onPending = () => {} } = {},
+    heading = 'Attachments', addLabel = 'Add attachments', addButton = true, previewId = 'attachment-preview', onPending = () => {} } = {},
 ) {
   const dialog = form.closest("dialog"),
     project = state.project.id,
@@ -31,7 +31,8 @@ export function taskAttachments(
   choose.setAttribute("aria-label", addLabel);
   choose.title = addLabel;
   choose.innerHTML = icon("plus");
-  list.querySelector(".task-attachments-heading").append(choose);
+  // Without its own + (a note's bar has Attach files), the list shows only when it holds files.
+  if (addButton) list.querySelector(".task-attachments-heading").append(choose);
   input.type = "file";
   input.multiple = true;
   input.hidden = true;
@@ -71,6 +72,7 @@ export function taskAttachments(
       rendered = html;
     }
     list.querySelector("ul").hidden = !files.length;
+    if (!addButton) list.hidden = !files.length;
   }
   function bodyChanged(event) {
     if (event.target === source) refresh();
@@ -193,6 +195,7 @@ export function taskAttachments(
   form.addEventListener("submit", submit, true);
   form.addEventListener("click", finalise, true);
   return {
+    pick: () => input.click(),
     get pending() { return pending; },
     settled: () => queue,
     destroy() {
