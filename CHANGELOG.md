@@ -2,6 +2,18 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.22.34 — 2026-11-06
+
+### Added
+- Feature F0.22-33: Each attachment of a card or note has a remove button. It asks first, then takes the file's links out of the description or note. Earlier versions of the card still have it.
+
+### Changed
+- Feature F0.22-34: Attaching files no longer leaves "Files attached." under the description or note; the list shows the files, and screen readers still hear it.
+- Feature F0.22-32: A card's Notes bar has a smaller New right after its title, with the note's actions at the end of the bar.
+
+### Fixed
+- Feature F0.22-31: Closing the file browser without choosing a file, from Add attachments or Attach files, no longer closes the card too.
+
 ## 0.22.30 — 2026-11-06
 
 ### Added

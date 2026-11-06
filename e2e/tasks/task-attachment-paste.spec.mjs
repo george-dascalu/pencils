@@ -31,6 +31,10 @@ test("an image pasted into the description uploads as a pasted image of the card
   await expect.poll(async () => (await saved(card.id)).body).toMatch(/!\[Pasted image \d{14}\.png\]\(\.\.\/attachments\/a-/);
   expect((await saved(card.id)).body).toContain("Before");
   await expect(page.getByRole("button", { name: /^Preview Pasted image \d{14}\.png$/ })).toBeVisible();
+  // Done is told to screen readers only (F0.22-34); the list shows the file.
+  const status = page.locator("#task-form .task-description .task-attachment-status");
+  await expect(status).toHaveText("Files attached.");
+  expect(await status.evaluate((el) => el.getBoundingClientRect().height), "not shown").toBeLessThanOrEqual(1);
 });
 
 test("a paste that also holds text pastes the text and attaches nothing", async ({ page }) => {

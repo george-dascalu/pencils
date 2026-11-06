@@ -322,3 +322,19 @@ test("Attachments adds files with a + beside its title", async ({ page }) => {
   await add.click();
   expect((await chooser).isMultiple(), "several files at once").toBe(true);
 });
+
+// Owner report (F0.22-31): closing the file browser without choosing a file closed the card too.
+// Browsers report a dismissed file browser with a cancel event that bubbles up to the dialog.
+test("closing the file browser without choosing a file keeps the card open, and Escape still closes it", async ({ page }) => {
+  await page.goto(`${app.base}/#project/${app.project.id}/list`);
+  await open(page, app.other.id);
+  const stillOpen = await form(page).locator("input[type=file]").first().evaluate((input) => {
+    input.dispatchEvent(new Event("cancel", { bubbles: true }));
+    return !!document.querySelector("#task-form") && !document.querySelector("#dialogs > dialog[data-popup-closing]");
+  });
+  expect(stillOpen, "the card stays open").toBe(true);
+  await expect(form(page)).toBeVisible();
+  await form(page).locator("[data-action=dialog-close]").focus();
+  await page.keyboard.press("Escape");
+  await expect(form(page)).toHaveCount(0);
+});

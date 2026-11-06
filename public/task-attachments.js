@@ -1,5 +1,6 @@
-import { taskAttachmentContent } from "./task-attachment-model.js";
+import { taskAttachmentContent, removeTaskAttachment } from "./task-attachment-model.js";
 import { attachmentPreview } from "./attachment-preview.js";
+import { confirmAction } from "./confirm-popover.js";
 
 const IMAGE_TYPES = { "image/png": "png", "image/jpeg": "jpg", "image/gif": "gif", "image/webp": "webp" };
 const ALLOWED = /\.(png|jpe?g|gif|webp|pdf|txt|md|csv|zip)$/i;
@@ -21,7 +22,8 @@ export function taskAttachments(
   form,
   editor,
   { section = form.querySelector('.task-description'), sourceName = 'body', dropTarget = form.closest('dialog'),
-    heading = 'Attachments', addLabel = 'Add attachments', addButton = true, previewId = 'attachment-preview', onPending = () => {} } = {},
+    heading = 'Attachments', addLabel = 'Add attachments', addButton = true, previewId = 'attachment-preview', onPending = () => {},
+    emptyFocus = null } = {},
 ) {
   const dialog = form.closest("dialog"),
     project = state.project.id,
@@ -77,7 +79,7 @@ export function taskAttachments(
     const html = files
       .map(
         (file) =>
-          `<li><button type="button" class="task-attachment-open" data-attachment-file="${esc(file.file)}" aria-label="Preview ${esc(file.name)}" aria-haspopup="dialog" aria-expanded="false">${icon(/^(png|jpe?g|gif|webp)$/.test(file.extension) ? "image" : "file")}<span class="task-attachment-name">${esc(file.name)}</span><span class="task-attachment-type">${esc(file.extension.toUpperCase())}</span>${icon("external")}</button></li>`,
+          `<li><button type="button" class="task-attachment-open" data-attachment-file="${esc(file.file)}" aria-label="Preview ${esc(file.name)}" aria-haspopup="dialog" aria-expanded="false">${icon(/^(png|jpe?g|gif|webp)$/.test(file.extension) ? "image" : "file")}<span class="task-attachment-name">${esc(file.name)}</span><span class="task-attachment-type">${esc(file.extension.toUpperCase())}</span>${icon("external")}</button><button type="button" class="icon-button task-attachment-remove" data-attachment-remove="${esc(file.file)}" aria-label="Remove ${esc(file.name)}" title="Remove ${esc(file.name)}">${icon("trash")}</button></li>`,
       )
       .join("");
     if (html !== rendered) {
@@ -91,7 +93,26 @@ export function taskAttachments(
   function bodyChanged(event) {
     if (event.target === source) refresh();
   }
+  // Removing takes the file's links out of the text (F0.22-33); focus moves to the next file's button.
+  async function remove(button) {
+    // An upload can finish while this asks, so the file is read before, by name not position.
+    const at = files.findIndex((file) => file.file === button.dataset.attachmentRemove), file = files[at];
+    if (!file || !(await confirmAction({ anchor: button, title: "Remove attachment?", message: `Remove “${file.name}”. Earlier versions of the card keep it.`, confirmLabel: "Remove", danger: true })) || !active()) return;
+    editor.flush();
+    source.value = removeTaskAttachment(source.value, project, file.file);
+    editor.reload();
+    source.dispatchEvent(new Event("input", { bubbles: true }));
+    const rows = list.querySelectorAll("[data-attachment-remove]");
+    (rows[Math.min(at, rows.length - 1)] || emptyFocus?.() || choose).focus({ preventScroll: true });
+  }
   list.addEventListener("click", (event) => {
+    const removing = event.target.closest("[data-attachment-remove]");
+    if (removing) {
+      event.preventDefault();
+      event.stopPropagation();
+      void remove(removing);
+      return;
+    }
     const button = event.target.closest("[data-attachment-file]");
     if (!button) return;
     event.preventDefault();
@@ -113,6 +134,8 @@ export function taskAttachments(
     if (!active()) return;
     onPending(pending);
     status.classList.toggle("form-error", !!errors.length);
+    // Done is told to screen readers only; the list shows the files (F0.22-34).
+    status.classList.toggle("sr-only", !pending && !errors.length);
     status.textContent =
       [
         pending ? `Attaching ${pending} file${pending === 1 ? "" : "s"}…` : "",

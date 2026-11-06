@@ -22,7 +22,17 @@
 .task-attachment-list li + li {
   border-top: 1px solid var(--line);
 }
+.task-attachment-list li {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.task-attachment-remove {
+  color: var(--muted);
+}
 .task-attachment-open {
+  flex: 1;
+  min-width: 0;
   display: flex;
   align-items: center;
   gap: 9px;

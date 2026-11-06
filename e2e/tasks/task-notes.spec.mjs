@@ -57,19 +57,28 @@ test('paging keeps the note being edited, or read, as it was (F0.22-27)', async 
   await expect(notes.locator('.inline-preview')).toHaveText('Note A');
   await expect(rich(page)).toBeHidden();
 });
-onDevices(['desktop', 'small'], () => test('the notes bar centres New, and Attach files after Edit adds files to the note (F0.22-28)', async ({page, device}) => {
+onDevices(['desktop', 'small'], () => test('the notes bar puts a small New beside its title, and Attach files after Edit adds files to the note (F0.22-28, F0.22-32)', async ({page, device}) => {
   const card = await app.store.createTask(app.project.id, {title: 'Notes bar', notes: [{id: 'n-bar', body: 'Bar note'}]});
   await open(page, card); const notes = section(page), bar = notes.locator('.task-notes-heading');
   const add = notes.getByRole('button', {name: 'New note', exact: true});
   await expect(add).toHaveText('New');
   await expect(add).toHaveClass(/\bprimary\b/);
   const [b, a] = [await bar.boundingBox(), await add.boundingBox()];
-  // In the middle where there is room; on a phone the actions keep their width and New moves aside.
-  if (device === 'desktop') expect(Math.abs(a.x + a.width / 2 - (b.x + b.width / 2)), 'New sits in the middle of the bar').toBeLessThan(2);
   const [title, group] = [await notes.locator('.task-notes-heading h3').boundingBox(), await notes.locator('.task-notes-heading [role=group]').boundingBox()];
+  // Right after the title (F0.22-32), with the actions at the bar's end.
   expect(a.x, 'New clears the title').toBeGreaterThanOrEqual(title.x + title.width - 1);
+  const text = await notes.locator('.task-notes-heading h3').evaluate((el) => { const r = document.createRange(); r.selectNodeContents(el); return r.getBoundingClientRect().right; });
+  expect(a.x, 'New sits beside the title\'s text').toBeLessThanOrEqual(text + 12);
   expect(a.x + a.width, 'New clears the actions').toBeLessThanOrEqual(group.x + 1);
-  expect(group.x + group.width, 'the actions stay in the bar').toBeLessThanOrEqual(b.x + b.width + 1);
+  expect(Math.abs(group.x + group.width - (b.x + b.width)), 'the actions end the bar').toBeLessThan(2);
+  // Drawn at the list chip's height inside its full-height target, so touch keeps 44px.
+  const size = await add.evaluate((el) => ({ fill: parseFloat(getComputedStyle(el, '::before').height), chip: parseFloat(getComputedStyle(el).getPropertyValue('--list-field-height')),
+    target: el.getBoundingClientRect().height, own: getComputedStyle(el).backgroundColor, paint: getComputedStyle(el, '::before').backgroundColor }));
+  expect(size.fill, 'a list chip tall').toBe(size.chip);
+  expect(size.fill, 'smaller than its target').toBeLessThan(size.target);
+  expect(size.target, 'the full control height').toBeGreaterThanOrEqual(device === 'small' ? 44 : 32);
+  expect(size.own, 'only the chip is filled').toBe('rgba(0, 0, 0, 0)');
+  expect(size.paint, 'in the primary colour').not.toBe('rgba(0, 0, 0, 0)');
   expect(await notes.locator('.task-notes-heading [role=group] button:visible').evaluateAll(els => els.every(el => el.getBoundingClientRect().left >= el.parentElement.getBoundingClientRect().left - 1)), 'no action spills out of its group').toBe(true);
   expect(await notes.locator('.task-notes-heading [role=group] button:visible').evaluateAll(els => els.map(el => el.getAttribute('aria-label'))))
     .toEqual(['Edit note', 'Attach files to note', 'Delete note']);

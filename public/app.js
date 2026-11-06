@@ -1438,6 +1438,8 @@ function showDialog(html, kind, { boardPanel = false, nodeId = null } = {}) {
     });
   else dialog.showModal();
   dialog.addEventListener("cancel", (event) => {
+    // A file input's cancel (its file browser dismissed) bubbles here too; only the dialog's own is Escape.
+    if (event.target !== dialog) return;
     event.preventDefault();
     closeDialog();
   });

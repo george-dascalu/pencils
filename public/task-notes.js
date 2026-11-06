@@ -62,7 +62,7 @@ export function taskNotes(ctx, form) {
     if (!editing) editor.preview();
     article.querySelector('.task-rich-tools').hidden = !editing;
     files = taskAttachments(ctx, form, editor, {section: article, sourceName: 'note-body', dropTarget: article,
-      heading: 'Note attachments', addButton: false, previewId: 'task-note-attachment-preview', onPending: controls});
+      heading: 'Note attachments', addButton: false, previewId: 'task-note-attachment-preview', onPending: controls, emptyFocus: () => button('attach')});
     controls();
   }
   function move(to) {
