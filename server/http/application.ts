@@ -425,10 +425,11 @@ export function createServer(
   });
   ready = Promise.resolve(app.ready());
   ready.catch((error) => app.server.emit("error", error));
-  // Trash keeps deleted items for 30 days and the audit log its entries for 365 (T92, T93): a
-  // minute after starting, then hourly.
+  // Trash keeps deleted items for 30 days, the audit log its entries for 365 (T92, T93) and history
+  // thins earlier versions over 90 days (F0.22-38): a minute after starting, then hourly.
   const maintain = () => {
     store.purgeTrash().catch((error: Error) => console.error(`Trash: ${error.message}`));
+    store.pruneHistory().catch((error: Error) => console.error(`History: ${error.message}`));
     services.audit.purge();
   };
   const maintenance = [setTimeout(maintain, 60_000), setInterval(maintain, 3_600_000)];

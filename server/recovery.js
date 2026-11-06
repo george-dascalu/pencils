@@ -18,7 +18,9 @@ const summary = record => ({ revision: record.revision, updated: record.data.upd
 // Deleted cards, documents and boards stay in Trash for 30 days (owner request T92); those deleted
 // before Trash arrived get their 30 days from then.
 export const TRASH_DAYS = 30;
+export const HISTORY_DAYS = 90;
 const TRASH_KINDS = ["task", "document", "board"],
+  HOUR = 3_600_000,
   DAY = 86_400_000,
   TRASH_ARRIVED = Date.UTC(2026, 10, 1),
   expires = (item) => Math.max(item.deleted, TRASH_ARRIVED) + TRASH_DAYS * DAY;
@@ -120,6 +122,9 @@ export function installRecovery(Store) {
         await fs.writeFile(target, record.raw, { flag: "wx" });
       } catch (error) {
         if (error.code !== "EEXIST") throw error;
+        // Replaced again now: pruneHistory dates a version by its file's time.
+        const now = new Date();
+        await fs.utimes(target, now, now);
       }
       await fs.writeFile(
         path.join(folder, "file.json"),
@@ -535,6 +540,42 @@ export function installRecovery(Store) {
       });
       this.queue = run.catch(() => {});
       return run;
+    },
+    // Keeps every earlier version from the last day, then the newest of each hour for a week and of
+    // each day up to 90 days (F0.22-38). A version's time is when it was replaced (its file's mtime),
+    // so a copied vault keeps more, not less. Only versions over a day old go, so this needn't wait
+    // for the write queue.
+    async pruneHistory(now = Date.now()) {
+      const root = path.join(this.root, ".history");
+      let removed = 0;
+      const entries = await fs.readdir(root, { withFileTypes: true }).catch((error) => { if (error.code === "ENOENT") return []; throw error; });
+      for (const entry of entries) {
+        if (!entry.isDirectory()) continue;
+        const folder = path.join(root, entry.name);
+        // One unreadable folder is logged and skipped, so it can't hold up the rest every hour.
+        try {
+          await this.safe(folder);
+          const names = (await fs.readdir(folder)).filter((name) => /^[a-f0-9]{64}\.md$/.test(name));
+          const versions = await Promise.all(names.map(async (name) => ({ name, time: (await fs.stat(path.join(folder, name))).mtimeMs })));
+          const kept = new Set();
+          for (const { name, time } of versions.sort((a, b) => b.time - a.time)) {
+            const age = now - time,
+              slot = age < DAY ? name : age < 7 * DAY ? `h${Math.floor(time / HOUR)}` : age < HISTORY_DAYS * DAY ? `d${Math.floor(time / DAY)}` : null;
+            if (slot && !kept.has(slot)) { kept.add(slot); continue; }
+            await fs.rm(path.join(folder, name), { force: true });
+            await fs.rm(path.join(folder, name.replace(/\.md$/, ".json")), { force: true });
+            removed++;
+          }
+          // rmdir leaves the folder if a save added a version meanwhile.
+          if (names.length && !kept.size) {
+            await fs.rm(path.join(folder, "file.json"), { force: true });
+            await fs.rmdir(folder).catch(() => {});
+          }
+        } catch (error) {
+          console.error(`History: ${entry.name}: ${error.message}`);
+        }
+      }
+      return removed;
     },
     async removeRecord(project, kind, id, revision) {
       const file = this.file(project, kind, id),

@@ -178,6 +178,42 @@ test("history validates paths and cursors, and rebuilds old metadata without rea
   await fs.rm(metadata); await fs.symlink(path.join(dir, `${revision}.md`), metadata);
   await assert.rejects(store.historyPage(doc.file), /Symlinks/);
 });
+// F0.22-38: every save kept a full copy forever (one board's history reached 5.7 GB).
+test("history keeps every version for a day, then the newest of each hour for a week and of each day for 90 days", async t => {
+  const { root, store, project } = await fixture(t);
+  const HOUR = 3_600_000, DAY = 24 * HOUR, now = Date.UTC(2026, 10, 10, 12, 30);
+  const versions = async (title, ages) => {
+    let doc = await store.createDocument(project.id, { title, body: "0" });
+    const revisions = [];
+    for (const [i] of ages.entries()) {
+      revisions.push(doc.revision);
+      doc = await store.updateDocument(project.id, doc.id, { revision: doc.revision, body: String(i + 1) });
+    }
+    const folder = path.join(root, ".history", createHash("sha256").update(doc.file).digest("hex"));
+    for (const [i, age] of ages.entries()) await fs.utimes(path.join(folder, `${revisions[i]}.md`), new Date(now - age), new Date(now - age));
+    return { doc, revisions, folder };
+  };
+  // Two within the day; two in one hour a day ago; two hours apart three days ago; two on one day 20 days ago; one past 90 days.
+  const thinned = await versions("Thinned", [2 * HOUR, 3 * HOUR, 30 * HOUR, 30 * HOUR + 600_000, 3 * DAY + HOUR, 3 * DAY + 2 * HOUR, 20 * DAY + 2 * HOUR, 20 * DAY + 6 * HOUR, 100 * DAY]);
+  const lone = await versions("Untouched for months", [100 * DAY]);
+  assert.equal(await store.pruneHistory(now), 4);
+  const kept = [0, 1, 2, 4, 5, 6].map((i) => thinned.revisions[i]);
+  assert.deepEqual((await fs.readdir(thinned.folder)).sort(), [...kept.flatMap((r) => [`${r}.json`, `${r}.md`]), "file.json"].sort(), "a removed version takes its summary with it");
+  assert.deepEqual((await store.historyPage(thinned.doc.file)).versions.map((v) => v.revision).sort(), [...kept].sort());
+  await assert.rejects(fs.access(lone.folder), { code: "ENOENT" }, "a file with no versions left loses its history folder");
+  assert.equal(await store.pruneHistory(now), 0);
+  // A version saved again counts from then, and one unreadable folder doesn't stop the rest.
+  const again = await versions("Saved again", [10 * DAY, 10 * DAY + HOUR]), stale = await versions("Stale", [100 * DAY]);
+  await store.recordHistory(path.join(root, again.doc.file), await store.read(path.join(again.folder, `${again.revisions[1]}.md`)));
+  const broken = path.join(root, ".history", "0".repeat(64)), logged = [], log = console.error;
+  await fs.mkdir(broken);
+  await fs.symlink(path.join(broken, "missing"), path.join(broken, `${"1".repeat(64)}.md`));
+  console.error = (message) => logged.push(message);
+  try { assert.equal(await store.pruneHistory(now), 1); } finally { console.error = log; }
+  assert.match(logged.join("\n"), /History: 0{64}: ENOENT/);
+  assert.deepEqual((await fs.readdir(again.folder)).filter((n) => n.endsWith(".md")).sort(), again.revisions.map((r) => `${r}.md`).sort());
+  await assert.rejects(fs.access(stale.folder), { code: "ENOENT" });
+});
 test("directory backups omit private files and refuse invalid paths, symlinks and missing organisations", async t => {
   const { root, store, project } = await fixture(t), folder = store.projectDir(project.id);
   await fs.writeFile(path.join(folder, ".private"), "secret");

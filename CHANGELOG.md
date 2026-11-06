@@ -2,6 +2,11 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.22.38 — 2026-11-06
+
+### Changed
+- Feature F0.22-38: Earlier versions of cards, documents and boards no longer pile up forever. Every version from the last day stays, then the last of each hour for a week and the last of each day up to 90 days; older ones are removed. One board's history had grown to 5.7 GB.
+
 ## 0.22.37 — 2026-11-06
 
 ### Changed
