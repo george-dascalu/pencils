@@ -17,6 +17,7 @@ import { taskColorDot, taskFieldColor } from "./task-colors.js";
 import { taskDateEditor } from "./task-date-editor.js";
 import { rangeChoicesHTML, rangeLabelHTML } from "./range-menu.js";
 import { slideMoves } from "./slide-moves.js";
+import { backlogLayout, backlogMove } from "./calendar-backlog.js";
 
 export function calendarView(ctx) {
   const { state, esc, icon, storage, renderView, task, patchTask, toast } = ctx;
@@ -27,6 +28,12 @@ export function calendarView(ctx) {
   let mode = storage.get("calendar-mode", mainWidth() <= 780 ? "agenda" : "month");
   let quick = storage.get("agenda-range", { day: "today", week: "this-week", month: "this-month" }[storage.get("agenda-period", "week")] || "this-week"), picked = null, anchor = localDate();
   let weekends = storage.get("calendar-weekends", true) !== false, undated = [], shownTasks = [];
+  // The Week board's Unscheduled row (F0.22-53) places every card with no dates that isn't done,
+  // filtered out or not, so filters don't move the rest. Cards without a saved place take their turn
+  // by when they were made, so the view's sort doesn't move them either.
+  const backlogCards = () => state.tasks.filter(t => !calendarRange(t) && !t.archived && !state.config.done.includes(t.status)).sort((a, b) => String(a.created ?? "").localeCompare(String(b.created ?? "")) || a.id.localeCompare(b.id));
+  const backlogColumns = () => weekends ? 7 : 5;
+  const backlogKeys = 'aria-keyshortcuts="Alt+ArrowLeft Alt+ArrowRight Alt+ArrowUp Alt+ArrowDown"';
   // Week board rows: a card field or tag, or one row for every card (Group by, in Filters: F0.21-91).
   let boardRows = storage.get("week-board-rows", "assignee");
   const ROW_FIELDS = [["assignee", "Assignee"], ["status", "Status"], ["priority", "Priority"], ["type", "Card type"], ["tags", "Tag"], ["daypart", "Time of day"], ["none", "No grouping"]];
@@ -115,11 +122,19 @@ export function calendarView(ctx) {
     const rows = field === "none" ? [""] : orderGroups(field === "daypart" ? [...DAYPARTS.map(([key]) => key), ""] : field === "tags" ? naturalGroups(field, placed, state.config) : naturalGroups(field, placed.map(t => ({ [field]: value(t) })), state.config, projectPeople(state).map(p => p.name)), order, dir)
       .filter((row, _, all) => row || all.length === 1 || placed.some(t => inRow(t, row)));
     const name = value => field === "status" ? statusLabel(state.config, value) : field === "priority" ? priorityLabel(value) : field === "tags" ? value || "No tag" : field === "daypart" ? DAYPARTS.find(([key]) => key === value)?.[1] || "Any time" : value ? ctx.label(value) : field === "type" ? "No type" : "Unassigned";
-    const card = t => `<article class="week-board-card" data-calendar-card="${esc(t.id)}" data-task-color="status" style="--task-field-color:${taskFieldColor(state, "status", t.status)}"><button type="button" class="week-board-title" data-action="task-open" data-id="${esc(t.id)}" title="${esc(title(t))}">${esc(title(t))}</button>${ctx.inlineTaskFields(t, "week-board-fields", rangeLabel(t))}</article>`;
+    const card = (t, keys = "") => `<article class="week-board-card" data-calendar-card="${esc(t.id)}" data-task-color="status" style="--task-field-color:${taskFieldColor(state, "status", t.status)}"><button type="button" class="week-board-title" data-action="task-open" data-id="${esc(t.id)}" title="${esc(title(t))}" ${keys}>${esc(title(t))}</button>${ctx.inlineTaskFields(t, "week-board-fields", rangeLabel(t))}</article>`;
+    // The Unscheduled row (F0.22-53): the matching cards with no dates that aren't done, each in its place.
+    const shown = new Map(tasks.map(t => [t.id, t])), backlog = backlogLayout(backlogCards(), days.length);
+    const byPlace = new Map([...backlog.places].filter(([id]) => shown.has(id)).map(([id, p]) => [`${p.col},${p.row}`, shown.get(id)]));
+    const slots = Array.from({ length: backlog.rows * days.length }, (_, i) => {
+      const col = i % days.length, row = Math.floor(i / days.length), t = byPlace.get(`${col},${row}`);
+      return `<div class="week-board-backlog-slot" data-backlog-col="${col}" data-backlog-row="${row}">${t ? card(t, backlogKeys) : ""}</div>`;
+    }).join("");
+    const backlogRow = `<div class="week-board-row week-board-backlog" role="row"><div class="week-board-row-head" role="rowheader" aria-label="Unscheduled">${field === "none" ? '<span class="sr-only">Unscheduled</span>' : '<span class="tree-toggle-spacer" aria-hidden="true"></span><span>Unscheduled</span>'}</div><div class="week-board-backlog-grid" role="cell">${field === "none" ? '<p class="week-board-backlog-caption" aria-hidden="true">Unscheduled</p>' : ""}${slots}</div></div>`;
     // A table to assistive technology: days are column headers, rows' names row headers.
     return `${placed.length ? "" : '<p class="field-hint week-board-empty">No cards scheduled this week.</p>'}<div class="calendar-scroll week-board-scroll" role="region" aria-label="Week board" tabindex="0"><div class="week-board" role="table" aria-label="Week board" data-rows="${field}" style="--week-board-days:${days.length}"><div class="week-board-head-row" role="row"><div class="week-board-corner" role="columnheader"><span class="sr-only">${field === "none" ? "Cards" : esc(ROW_FIELDS.find(([key]) => key === field)[1])}</span></div>${days.map(day => `<div class="week-board-day-head${day === localDate() ? " today" : ""}${isWeekend(day) ? " weekend" : ""}" role="columnheader" data-calendar-date="${day}"><time datetime="${day}">${esc(format(day, { weekday: "short" }))}</time></div>`).join("")}</div>${rows.map(row => {
       return `<div class="week-board-row" role="row" data-week-board-value="${esc(row)}"><div class="week-board-row-head" role="rowheader"${field === "none" ? "" : ` aria-label="${esc(name(row))}"`}>${field === "none" ? '<span class="sr-only">All cards</span>' : `${groupReorderHandle(row, name(row), esc)}<span>${esc(name(row))}</span>`}</div>${days.map(day => `<div class="week-board-cell${isWeekend(day) ? " weekend" : ""}" role="cell" data-calendar-date="${day}" data-week-board-value="${esc(row)}">${(byDay.get(day) || []).filter(t => inRow(t, row)).map(card).join("")}</div>`).join("")}</div>`;
-    }).join("")}</div></div>`;
+    }).join("")}${backlogRow}</div></div>`;
   }
   const weekHTML = week => `<div class="calendar-week ${mode === "week" ? "calendar-all-day" : ""}" data-week="${week.days[0]}" style="--calendar-lanes:${week.lanes}">${mode === "month" ? `<span class="calendar-week-number" title="Week ${isoWeek(week.days[0])}" aria-label="Week ${isoWeek(week.days[0])}">${isoWeek(week.days[0])}</span>` : ""}${week.days.map((day, i) => `<div class="calendar-day ${isWeekend(day) ? "weekend" : ""} ${day === localDate() ? "today" : ""} ${mode === "month" && (Number(day.slice(0, 4)) * 12 + Number(day.slice(5, 7))) % 2 ? "month-alt" : ""}" data-calendar-date="${day}" style="grid-column:${i + 1};grid-row:1 / span ${week.lanes + 1}"><button type="button" data-feature="date-task" data-date="${day}" aria-label="Add card on ${day}">${Number(day.slice(-2))}${mode === "month" && day.endsWith("-01") ? ` ${esc(format(day, { day: undefined }))}` : ""}</button></div>`).join("")}${week.segments.map(s => {
       const t = s.task;
@@ -192,6 +207,9 @@ export function calendarView(ctx) {
       return d.timedDay ? calendarTimeMove(d.task, hours.dataset.calendarDate, minutes, d.offset, d.step)
         : calendarTimeSelection(hours.dataset.calendarDate, minutes, minutes);
     }
+    const place = mode === "board" && !d.handle && hit?.closest(".week-board-backlog-slot");
+    // Into the Unscheduled row: the card's dates and times go.
+    if (place) return { ...(calendarRange(d.task) ? { start: null, due: null, start_time: null, due_time: null } : {}), backlog: { col: Number(place.dataset.backlogCol), row: Number(place.dataset.backlogRow) } };
     const day = dayAt(x, y);
     if (!day) return null;
     const change = calendarDateChange(d.task, d.grabbed, day, d.handle), row = mode === "board" && !d.handle && hit?.closest(".week-board-cell");
@@ -225,8 +243,8 @@ export function calendarView(ctx) {
   // shown: hit-testing again once it's taken out would find the cell below and chase it there.
   function boardSlot(d, x, y) {
     if (mode !== "board") return;
-    const cell = d.next && document.elementFromPoint(x, y)?.closest(".week-board-cell");
-    if (cell) { d.cell = cell; d.slot = cellSlot(cell, y, d.task.id); }
+    const cell = d.next && document.elementFromPoint(x, y)?.closest(".week-board-cell, .week-board-backlog-slot");
+    if (cell) { d.cell = cell; d.slot = cell.matches(".week-board-cell") ? cellSlot(cell, y, d.task.id) : null; }
     else if (!d.next) d.cell = d.slot = null;
   }
   function cellOrder(d) {
@@ -310,12 +328,13 @@ export function calendarView(ctx) {
       d.card.querySelector('.calendar-event-time').textContent = d.originalTime;
     }
     placement(d, next);
-    d.ghost.querySelector("small").textContent = d.hours ? range ? `${range.start !== range.end ? `${range.start} ${next.start_time} → ${range.end} ${next.due_time}` : `${next.start_time} – ${next.due_time}`} · ${d.step} min steps` : 'Release to cancel' : cancel ? "Keep unscheduled" : range ? `${range.start}${d.next.start_time ? ` · ${d.next.start_time} – ${d.next.due_time}` : ` → ${range.end}`}` : "Move over a day to schedule";
-    d.ghost.firstElementChild.classList.toggle("invalid", !range && !cancel);
+    d.ghost.querySelector("small").textContent = d.hours ? range ? `${range.start !== range.end ? `${range.start} ${next.start_time} → ${range.end} ${next.due_time}` : `${next.start_time} – ${next.due_time}`} · ${d.step} min steps` : 'Release to cancel' : cancel ? "Keep unscheduled" : range ? `${range.start}${d.next.start_time ? ` · ${d.next.start_time} – ${d.next.due_time}` : ` → ${range.end}`}` : d.next?.backlog ? "Unscheduled" : "Move over a day to schedule";
+    d.ghost.firstElementChild.classList.toggle("invalid", !range && !cancel && !d.next?.backlog);
     d.ghost.style.left = `${Math.max(8, Math.min(innerWidth - d.ghost.offsetWidth - 8, d.x + 16))}px`;
     d.ghost.style.top = `${Math.max(8, Math.min(innerHeight - d.ghost.offsetHeight - 8, d.y + 18))}px`;
     d.frame = requestAnimationFrame(preview);
   }
+  // Whether the change was saved.
   async function save(id, changes, focusSelector = null) {
     try {
       await patchTask(id, changes);
@@ -327,8 +346,9 @@ export function calendarView(ctx) {
         document.querySelector("[data-calendar-announcement]").textContent = range ? `${t.title} moved to ${range.start === range.end ? range.start : `${range.start} – ${range.end}`}.` : "";
         document.querySelector(".calendar-scroll, .calendar-agenda")?.focus({ preventScroll: true });
       }
+      return true;
     }
-    catch (error) { toast(error.message, true); renderView(true); }
+    catch (error) { toast(error.message, true); renderView(true); return false; }
   }
   function finish(cancel = false) {
     const d = drag; if (!d) return;
@@ -364,7 +384,9 @@ export function calendarView(ctx) {
     for (const { id, order } of ranks)
       if (id === d.task.id) changes.order = order;
       else patchTask(id, { order }, false).catch((error) => toast(error.message, true));
-    if (changes && Object.entries(changes).some(([key, value]) => d.task[key] !== value)) void save(d.task.id, changes);
+    // The cards a move in the Unscheduled row swaps or keeps in place, before the save redraws the board.
+    for (const { id, backlog } of changes?.backlog ? backlogMove(backlogCards(), backlogColumns(), d.task.id, changes.backlog).slice(1) : []) patchTask(id, { backlog }, false).catch((error) => toast(error.message, true));
+    if (changes && Object.entries(changes).some(([key, value]) => JSON.stringify(d.task[key] ?? null) !== JSON.stringify(value ?? null))) void save(d.task.id, changes);
     else if (ranks.length || resort) renderView(true);
     else if (!cancel && d.active && d.reason) toast(d.reason, true);
   }
@@ -468,6 +490,19 @@ export function calendarView(ctx) {
     if (drag && e.key === "Escape") { e.preventDefault(); e.stopImmediatePropagation(); finish(true); return; }
     const card = e.target.closest("[data-calendar-card]"); if (!card || e.target.closest('.agenda-fields, .week-board-fields')) return;
     const t = task(card.dataset.calendarCard), range = t && calendarRange(t), handle = e.target.closest("[data-calendar-end]")?.dataset.calendarEnd;
+    // Alt and an arrow moves a card in the Unscheduled row one place, swapping with a card there.
+    if (card.closest(".week-board-backlog-slot") && t && !sourceReadOnly(t, "due") && e.altKey && ["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(e.key)) {
+      e.preventDefault(); e.stopImmediatePropagation();
+      // From the cards as they are now, not as last drawn: a second press can come before the redraw.
+      const cards = backlogCards(), columns = backlogColumns(), from = backlogLayout(cards, columns).places.get(t.id);
+      const col = from.col + (e.key === "ArrowRight") - (e.key === "ArrowLeft"), row = from.row + (e.key === "ArrowDown") - (e.key === "ArrowUp");
+      const moved = col >= 0 && row >= 0 && col < columns && row <= 999 ? backlogMove(cards, columns, t.id, { col, row }) : [];
+      for (const move of moved.slice(1)) patchTask(move.id, { backlog: move.backlog }, false).catch((error) => toast(error.message, true));
+      const place = moved[0]?.backlog ?? from, note = () => { const el = document.querySelector("[data-calendar-announcement]"); if (el) el.textContent = `${t.title} ${moved.length ? "moved to" : "is at"} column ${place.col + 1}, row ${place.row + 1} of Unscheduled.`; };
+      if (moved.length) void save(t.id, { backlog: place }, `[data-calendar-card="${CSS.escape(t.id)}"] .week-board-title`).then(ok => ok && note());
+      else note();
+      return;
+    }
     const timeEnd = e.target.closest('[data-calendar-time-end]')?.dataset.calendarTimeEnd;
     if (timeEnd) {
       if (!t || sourceReadOnly(t,"due") || !['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) return;

@@ -284,7 +284,12 @@
 .week-board-row.task-reorder-source > * { opacity: .35; }
 .week-board[data-rows="none"] { grid-template-columns: 0 repeat(var(--week-board-days), minmax(var(--week-board-column), 1fr)); min-width: calc(var(--week-board-days) * var(--week-board-column)); }
 .week-board[data-rows="none"] .week-board-row-head { padding: 0; }
-.week-board-cell { display: flex; flex-direction: column; gap: 6px; min-width: 0; min-height: 64px; padding: 6px; border-bottom: 1px solid var(--line); border-left: 1px solid var(--line); }
+.week-board-cell, .week-board-backlog-slot { display: flex; flex-direction: column; gap: 6px; min-width: 0; min-height: 64px; padding: 6px; border-bottom: 1px solid var(--line); border-left: 1px solid var(--line); }
+/* The Unscheduled row (F0.22-53): one card to a place, the places under the days, set apart by a
+   heavier rule. */
+.week-board-backlog-grid { grid-column: 2 / -1; display: grid; grid-template-columns: repeat(var(--week-board-days), minmax(0, 1fr)); border-top: 2px solid var(--line); }
+.week-board-backlog > .week-board-row-head { border-top: 2px solid var(--line); }
+.week-board-backlog-caption { grid-column: 1 / -1; margin: 0; padding: 8px 10px 2px; font-size: var(--type-body); font-weight: 600; }
 /* The field box sits 8px in from both sides and 6px above the bottom (F0.21-89). */
 .week-board-card { display: grid; grid-template-columns: minmax(0, 1fr); align-items: center; gap: 4px 2px; padding: 4px 8px 6px; -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; border: 1px solid var(--line); border-left: 3px solid var(--task-field-color, var(--line)); border-radius: var(--field-radius, 6px); background: var(--surface); box-shadow: var(--shadow-card, none); }
 .week-board-card { cursor: grab; }
@@ -298,11 +303,11 @@
 .week-board-fields .row-date-short { display: none; }
 .week-board-fields .field-chip-status { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 /* The row already names its value, so a card's box leaves that field out. */
-.week-board[data-rows="assignee"] .week-board-fields > .row-assignee,
-.week-board[data-rows="status"] .week-board-fields > .row-status,
-.week-board[data-rows="priority"] .week-board-fields > .row-priority { display: none; }
+.week-board[data-rows="assignee"] .week-board-cell .week-board-fields > .row-assignee,
+.week-board[data-rows="status"] .week-board-cell .week-board-fields > .row-status,
+.week-board[data-rows="priority"] .week-board-cell .week-board-fields > .row-priority { display: none; }
 .week-board-fields > .row-due { flex: none; min-width: var(--control-height); padding-inline: 6px; white-space: nowrap; }
-.week-board-cell > .calendar-placement { min-height: 40px; border: 1px dashed var(--green); border-radius: var(--field-radius, 6px); background: color-mix(in srgb, var(--green) 8%, var(--surface)); color: var(--muted); font-size: var(--type-small); padding: 6px; }
+.week-board-cell > .calendar-placement, .week-board-backlog-slot > .calendar-placement { min-height: 40px; border: 1px dashed var(--green); border-radius: var(--field-radius, 6px); background: color-mix(in srgb, var(--green) 8%, var(--surface)); color: var(--muted); font-size: var(--type-small); padding: 6px; }
 @media (pointer: coarse) { .week-board { --week-board-column: 232px; grid-template-columns: minmax(72px, 96px) repeat(var(--week-board-days), minmax(var(--week-board-column), 1fr)); } .week-board-row-head { flex-direction: column; } }
 /* Month scrolls through the months with no scroll bar (F0.21-96); the weekday row stays on top and
    each week's ISO number sits left of the grid. Alternate months are tinted, a month's first day names it. */

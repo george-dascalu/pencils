@@ -349,6 +349,7 @@ export const tasksMethods = {
       "comments",
       "order",
       "archived",
+      "backlog",
     ])
       if (key in input) data[key] = input[key];
     data.title = title(data.title);

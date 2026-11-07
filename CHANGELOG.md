@@ -2,6 +2,11 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.22.53 — 2026-11-07
+
+### Added
+- Feature F0.22-53: The Week board has an Unscheduled row at the bottom for the backlog: the cards with no dates that aren't done (and not archived), on a grid under the days, in the order they were made until you place them. Put a card anywhere there and it stays, for everyone; drop it on another card to swap them, or move it with Alt and the arrow keys. A card dropped in the row loses its dates, and one dragged to a day is scheduled and gets its place back if it's unscheduled again. Filters apply, and the toolbar's list of unscheduled cards stays.
+
 ## 0.22.52 — 2026-11-07
 
 ### Added

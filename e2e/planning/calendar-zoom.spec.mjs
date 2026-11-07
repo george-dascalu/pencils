@@ -20,6 +20,8 @@ async function open(page) {
   await (await reveal(page.locator("#calendar-mode"))).selectOption("week");
   await closeOptions(page);
   await expect(page.locator(".calendar-hour-slot").first()).toHaveCSS("height", "64px");
+  // The hours scroll to 7:00 in the frame after they're drawn; measuring before that reads midnight.
+  await expect.poll(() => scroll(page).evaluate(el => Math.round(el.scrollTop / (el.querySelector(".calendar-hours-day").getBoundingClientRect().height / 24)))).toBe(7);
 }
 
 onDevices(["desktop", "ipad", "phone"], () => test("zoom buttons fit all 24 hours, preserve cards, remember the scale and fit again after resize", { tag: "@gate" }, async ({ page, device }) => {

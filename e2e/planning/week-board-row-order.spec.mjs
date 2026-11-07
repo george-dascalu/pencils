@@ -9,7 +9,7 @@ const app = useApp(async store => {
   for (const name of ['Ann', 'Bob', 'Cy']) await store.createTask(project.id, { title: `${name}'s card`, assignee: name, due: '2026-11-05' });
   return { project };
 });
-const rows = (page) => page.locator('.week-board-row').evaluateAll(els => els.map(el => el.dataset.weekBoardValue));
+const rows = (page) => page.locator('.week-board-row[data-week-board-value]').evaluateAll(els => els.map(el => el.dataset.weekBoardValue));
 const head = (page, value) => page.locator(`.week-board-row[data-week-board-value="${value}"] > .week-board-row-head`);
 const handle = (page, value) => head(page, value).locator('[data-group-reorder]');
 async function open(page) {

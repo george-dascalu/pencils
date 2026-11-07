@@ -212,6 +212,10 @@ export function validateExtras(data, config) {
     fail("Estimate must be a non-negative number.");
   if (data.order != null && !Number.isFinite(data.order))
     fail("Order must be a number.");
+  // A place in the Week board's Unscheduled row (F0.22-53).
+  const backlog = data.backlog;
+  if (backlog != null && (typeof backlog !== "object" || Array.isArray(backlog) || Object.keys(backlog).sort().join() !== "col,row" || ![backlog.col, backlog.row].every((n) => Number.isInteger(n) && n >= 0 && n < 1000)))
+    fail("An Unscheduled row place is a column and a row from 0 to 999.");
   if (data.archived != null && typeof data.archived !== "boolean")
     fail("Archived must be true or false.");
   if (

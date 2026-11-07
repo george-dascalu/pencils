@@ -12,7 +12,7 @@ const app = useApp(async store => {
   const dateless = await store.createProject({ title: 'No start', key: 'NS', schema: { off: ['start'] } });
   return { project, dateless };
 });
-const rows = (page) => page.locator('.week-board-row').evaluateAll(els => els.map(el => el.querySelector('.week-board-row-head > span').textContent));
+const rows = (page) => page.locator('.week-board-row[data-week-board-value]').evaluateAll(els => els.map(el => el.querySelector('.week-board-row-head > span').textContent));
 const switcher = (page) => page.getByRole('group', { name: 'Rows' });
 const choice = (page, name) => switcher(page).getByRole('button', { name, exact: true });
 

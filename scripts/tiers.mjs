@@ -33,6 +33,7 @@ export const TIERS = [
     "test/board-session.test.js", // presence invitation before board loads
     "test/calendar-model.test.js", // move/resize calendar dates across DST
     "test/calendar-time.test.js", // hour selection and resize snapping
+    "test/calendar-backlog.test.js", // places in the Week board's Unscheduled row
     "test/canvas.test.js", // board persistence, drafts, validation
     "test/capture.test.js", // iOS shortcut capture to card via token (data safety)
     "test/comment-model.test.js", // replies stay with parents (data safety)
@@ -300,6 +301,7 @@ export const TIERS = [
     "e2e/planning/week-board-row-order.spec.mjs", // order Week board rows
     "e2e/planning/week-board-daypart.spec.mjs", // group the Week board by time of day
     "e2e/planning/week-board-row-toggle.spec.mjs", // switch Week board rows between tags and time of day
+    "e2e/planning/week-board-backlog.spec.mjs", // arrange the Week board's Unscheduled row
     "e2e/platform/audit-loading.spec.mjs", // open task views and document history
     "e2e/platform/backend-capacity.spec.mjs", // 100 members using the server at once
     "e2e/platform/canvas-large-board.spec.mjs", // import, edit, undo and keep an offline draft on a huge board

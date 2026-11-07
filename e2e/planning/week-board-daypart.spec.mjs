@@ -10,7 +10,7 @@ const app = useApp(async store => {
   const card = (title, start_time, due_time) => store.createTask(project.id, { title, start: day, due: day, ...(start_time ? { start_time, due_time } : {}) });
   return { project, standup: await card('Standup', '09:00', '09:30'), lunch: await card('Lunch', '12:30', '13:30'), gym: await card('Gym', '18:00', '19:00'), errand: await card('Errand') };
 });
-const rows = (page) => page.locator('.week-board-row').evaluateAll(els => els.map(el => [el.dataset.weekBoardValue, el.querySelector('.week-board-row-head > span').textContent, [...el.querySelectorAll('.week-board-title')].map(t => t.textContent.replace(/^DP-\d+ /, ''))]));
+const rows = (page) => page.locator('.week-board-row[data-week-board-value]').evaluateAll(els => els.map(el => [el.dataset.weekBoardValue, el.querySelector('.week-board-row-head > span').textContent, [...el.querySelectorAll('.week-board-title')].map(t => t.textContent.replace(/^DP-\d+ /, ''))]));
 const saved = async (id) => (await app.store.snapshot(app.project.id)).tasks.find(t => t.id === id);
 async function drag(page, title, part) {
   const from = await page.locator('.week-board-title', { hasText: title }).boundingBox();

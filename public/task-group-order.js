@@ -60,7 +60,7 @@ export const weekBoardGroups = field => `week-board:${field}`;
 // The groups a heading's handle moves: List's sections, or the Week board's rows.
 const KINDS = {
   list: { groups: "#view-content section[data-task-drop-field]", head: ".section-title", value: "taskDropValue", field: state => state.groupBy || "status" },
-  calendar: { groups: ".week-board-row", head: ".week-board-row-head", value: "weekBoardValue", field: () => weekBoardGroups(document.querySelector(".week-board")?.dataset.rows) },
+  calendar: { groups: ".week-board-row[data-week-board-value]", head: ".week-board-row-head", value: "weekBoardValue", field: () => weekBoardGroups(document.querySelector(".week-board")?.dataset.rows) },
 };
 
 // Dragging a group heading's handle (or Alt + Up/Down on it) saves the order shown, unreversed.

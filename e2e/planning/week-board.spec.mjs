@@ -71,8 +71,8 @@ test('a week where every card has an assignee shows no Unassigned row', async ({
   const loose = await saved(app.loose.id);
   await app.store.updateTask(app.project.id, loose.id, { revision: loose.revision, assignee: 'Ann' });
   await open(page);
-  await expect(page.locator('.week-board-row')).toHaveCount(2);
-  expect(await page.locator('.week-board-row').evaluateAll(els => els.map(el => el.dataset.weekBoardValue))).toEqual(['Ann', 'Bo']);
+  await expect(page.locator('.week-board-row[data-week-board-value]')).toHaveCount(2);
+  expect(await page.locator('.week-board-row[data-week-board-value]').evaluateAll(els => els.map(el => el.dataset.weekBoardValue))).toEqual(['Ann', 'Bo']);
 });
 
 onDevices(['desktop', 'ipad', 'phone'], () => {
@@ -80,7 +80,7 @@ onDevices(['desktop', 'ipad', 'phone'], () => {
     await open(page);
     await expect(page.locator('.calendar-hours-day')).toHaveCount(0);
     await expect(page.locator('.week-board-day-head')).toHaveCount(7);
-    const rows = () => page.locator('.week-board-row').evaluateAll(els => els.map(el => el.dataset.weekBoardValue));
+    const rows = () => page.locator('.week-board-row[data-week-board-value]').evaluateAll(els => els.map(el => el.dataset.weekBoardValue));
     // Assignee rows by default: people A to Z, then Unassigned.
     expect(await rows()).toEqual(['Ann', 'Bo', '']);
     await expect(cell(page, 'Ann', '2026-11-03').locator(`[data-calendar-card="${app.one.id}"]`)).toBeVisible();
