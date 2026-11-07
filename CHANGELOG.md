@@ -2,6 +2,11 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.22.63 — 2026-11-07
+
+### Changed
+- Feature F0.22-63: Dragging a card on the Week board's Unscheduled board moves the card itself, live as on boards: it follows the pointer and lines up with the cards nearby as it goes, instead of a small copy following the pointer above a dashed outline.
+
 ## 0.22.62 — 2026-11-07
 
 ### Changed

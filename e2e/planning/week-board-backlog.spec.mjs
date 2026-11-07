@@ -1,6 +1,6 @@
-// Owner requests (F0.22-53, F0.22-54, F0.22-62): the Week board's cards with no dates that aren't
+// Owner requests (F0.22-53, F0.22-54, F0.22-62, F0.22-63): the Week board's cards with no dates that aren't
 // done sit on one Unscheduled board docked at the bottom, not tied to the days, with no scroll bar. A
-// card goes where it's dropped, to the pixel, lining up with a card nearby, saved in the card so
+// card moves live where it's dragged, to the pixel, lining up with a card nearby, saved in the card so
 // everyone sees it; cards may overlap, the one moved last on top. A card dropped there loses its dates, and one dragged to a day is scheduled and keeps its
 // place for later. The board can be made taller or shorter.
 import { test, expect, useApp } from '../fixtures.mjs';
@@ -86,13 +86,24 @@ test('cards go exactly where they are dropped, line up with a card nearby, and m
   await page.mouse.move(start.x + 10, start.y + 10, { steps: 3 });
   await page.mouse.move(start.x + plan.x + 4 - draft.x, start.y + plan.y + 16 - draft.y, { steps: 8 });
   await expect(board(page).locator('.alignment-guides path').first()).toBeAttached();
-  // The landing place is as tall as the card, so the guides line up with what lands.
-  const [landing, card] = await board(page).evaluate(el => [el.querySelector('.calendar-placement').offsetHeight, [...el.querySelectorAll('.week-board-card:not(.calendar-placement)')].find(c => c.textContent.includes('Draft')).offsetHeight]);
+  // Live, as on boards (F0.22-63): the card itself moves there, lined up, with its title and fields
+  // and no dashed outline; it leaves its old place, and no copy follows the pointer.
+  const live = board(page).locator('.week-board-live');
+  await expect(live).toHaveCount(1);
+  await expect(live.locator('.week-board-title')).toHaveText('BL-3 Draft');
+  await expect(live.locator('.week-board-fields')).toHaveCount(1);
+  const planAt = await place(page, 'Plan');
+  expect(await live.evaluate(el => ({ x: el.offsetLeft, border: getComputedStyle(el).borderTopStyle, events: getComputedStyle(el).pointerEvents }))).toEqual({ x: planAt.x, border: 'solid', events: 'none' });
+  expect(await board(page).locator('.week-board-card[data-calendar-card]', { hasText: 'Draft' }).evaluate(el => getComputedStyle(el).opacity)).toBe('0');
+  expect(await page.locator('.calendar-drag-preview').evaluate(el => getComputedStyle(el).visibility)).toBe('hidden');
+  // As tall as the card, so the guides line up with what lands.
+  const [landing, card] = await board(page).evaluate(el => [el.querySelector('.week-board-live').offsetHeight, el.querySelector('.week-board-card[data-calendar-card]:not(.week-board-live)').offsetHeight]);
   expect(landing).toBe(card);
-  // Above the cards and the landing place.
-  expect(await board(page).locator('.alignment-guides').evaluate(el => Number(getComputedStyle(el).zIndex))).toBeGreaterThan(1000000001);
+  // Above the cards and the card moving.
+  expect(await board(page).locator('.alignment-guides').evaluate(el => Number(getComputedStyle(el).zIndex))).toBeGreaterThan(await live.evaluate(el => Number(getComputedStyle(el).zIndex)));
   await page.mouse.up();
   await expect(board(page).locator('.alignment-guides')).toHaveCount(0);
+  await expect(live).toHaveCount(0);
   await expect.poll(async () => (await saved(app.draft.id)).backlog).toMatchObject({ x: before.x + 563, z: 2 });
   await expect.poll(async () => { const [p, d] = [await place(page, 'Plan'), await place(page, 'Draft')]; return Number(d.z) > Number(p.z) && d.x === p.x && Math.abs(d.y - p.y) < 40; }).toBe(true);
   // From the keyboard: Alt and an arrow moves a card 1 px, with Shift 10 px; it comes to the top.
@@ -108,6 +119,25 @@ test('cards go exactly where they are dropped, line up with a card nearby, and m
   // Everyone sees the same places.
   await page.reload();
   await expect.poll(() => place(page, 'Plan')).toEqual({ x: at.x + 1, y: at.y + 10, z: '3' });
+});
+
+test('a card dragged from the toolbar list of unscheduled cards moves on the board as itself', async ({ page }) => {
+  await open(page);
+  await page.locator('[data-calendar-unscheduled]').click();
+  const grip = await page.locator('.calendar-unscheduled .agenda-row', { hasText: 'Draft' }).locator('[data-calendar-move]').boundingBox();
+  const canvas = await board(page).locator('.week-board-backlog-canvas').boundingBox();
+  await page.mouse.move(grip.x + grip.width / 2, grip.y + grip.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(grip.x + 20, grip.y + 20, { steps: 3 });
+  await page.mouse.move(canvas.x + 900, canvas.y + 40, { steps: 8 });
+  const live = board(page).locator('.week-board-live');
+  await expect(live.locator('.week-board-title')).toHaveText('BL-3 Draft');
+  expect(await live.evaluate(el => [getComputedStyle(el).position, el.offsetWidth === document.querySelector('.week-board-backlog .week-board-card[data-calendar-card]').offsetWidth])).toEqual(['absolute', true]);
+  // The card on the board is the one moving.
+  expect(await board(page).locator('.week-board-card[data-calendar-card]', { hasText: 'Draft' }).evaluate(el => getComputedStyle(el).opacity)).toBe('0');
+  await page.mouse.up();
+  await expect.poll(async () => (await saved(app.draft.id)).backlog?.z).toBe(1);
+  await expect(live).toHaveCount(0);
 });
 
 test('with Alt held a card lands to the pixel beside another, without lining up, as on boards', async ({ page }) => {

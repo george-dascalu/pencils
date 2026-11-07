@@ -218,7 +218,7 @@ export function calendarView(ctx) {
     // when one of its edges, its centre or an equal gap is within reach (F0.22-62): its dates and times go.
     if (board) {
       const r = board.getBoundingClientRect();
-      const raw = { id: d.task.id, x: x - r.left - d.grab.x, y: y - r.top - d.grab.y, w: parseFloat(getComputedStyle(board).getPropertyValue("--week-board-column")) || d.card.offsetWidth, h: d.card.offsetHeight };
+      const raw = { id: d.task.id, x: x - r.left - d.grab.x, y: y - r.top - d.grab.y, w: parseFloat(getComputedStyle(board).getPropertyValue("--week-board-column")) || d.card.offsetWidth, h: (d.placements?.find(el => el.classList.contains("week-board-live")) || d.card).offsetHeight };
       d.boardCards ??= [...board.querySelectorAll(".week-board-card[data-calendar-card]:not(.calendar-placement)")].filter(el => el.dataset.calendarCard !== d.task.id).map(el => ({ id: el.dataset.calendarCard, x: el.offsetLeft, y: el.offsetTop, w: el.offsetWidth, h: el.offsetHeight }));
       // Alt holds the lining up off, as on boards.
       const fit = snapTranslation([raw], d.boardCards, 0, 0, { previous: d.locks, align: !d.alt });
@@ -240,10 +240,18 @@ export function calendarView(ctx) {
   function landing(d, x, y) {
     return dropChange(d, x, y) || (mode === "board" && !d.reason && document.elementFromPoint(x, y)?.closest(".week-board-row-head, .week-board-day-head") ? d.next ?? null : null);
   }
+  // A copy of a card that nothing takes for the card: no ids or actions.
+  function cardCopy(card) {
+    const copy = card.cloneNode(true);
+    copy.classList.remove("calendar-dragging", "calendar-time-resizing");
+    for (const el of [copy, ...copy.querySelectorAll("[id], [data-calendar-card], [data-action]")]) for (const name of ["id", "data-id", "data-calendar-card", "data-action"]) el.removeAttribute(name);
+    return copy;
+  }
   function clearPlacement(d) {
     d.placements?.forEach(el => el.remove());
     d.weekLanes?.forEach(([el, lanes]) => el.style.setProperty('--calendar-lanes', lanes));
     d.placements = []; d.weekLanes = [];
+    d.lifted?.classList.remove("week-board-lifted");
     document.querySelector(".week-board-backlog-canvas > .alignment-guides")?.remove();
   }
   // Where a drop lands in a Week board cell (F0.22-45): before the first card whose middle is below
@@ -271,9 +279,12 @@ export function calendarView(ctx) {
     const key = JSON.stringify([d.next, d.slot?.before]);
     if (d.placementKey === key) return;
     d.placementKey = key;
+    // Moving on the Unscheduled board moves only the card there.
+    const live = d.next?.backlog && d.placements?.find(el => el.classList.contains("week-board-live"));
+    if (live) return Object.assign(live.style, { left: `${d.next.backlog.x}px`, top: `${d.next.backlog.y}px` });
     // The Week board rows the landing place pushes slide to their new places (F0.22-9).
     const board = mode === 'board' && document.querySelector('.week-board');
-    if (board) slideMoves([...board.querySelectorAll('.week-board-cell, .week-board-row-head, .week-board-card:not(.calendar-placement)')], () => place(d, next));
+    if (board) slideMoves([...board.querySelectorAll('.week-board-cell, .week-board-row-head, .week-board-card:not(.calendar-placement, .week-board-live)')], () => place(d, next));
     else place(d, next);
   }
   function place(d, next) {
@@ -301,8 +312,19 @@ export function calendarView(ctx) {
       });
     } else if (mode === 'board' && d.next.backlog) {
       const board = document.querySelector('.week-board-backlog-canvas'), { x, y } = d.next.backlog;
-      // As tall as the card, so the guides line up with what lands.
-      if (board) Object.assign(add(board, 'week-board-card').style, { left: `${x}px`, top: `${y}px`, height: `${d.card.offsetHeight}px` });
+      // The card itself moves there, live as on boards (F0.22-63), leaving its old place there; it
+      // shows no date, which the drop takes away.
+      // A card picked from the toolbar's list moves as its card on the board; a done one, not on the
+      // board, shows an outline instead.
+      const source = !board ? null : d.card.matches(".week-board-card") ? d.card : board.querySelector(`.week-board-card[data-calendar-card="${CSS.escape(d.task.id)}"]`);
+      if (source) {
+        const copy = cardCopy(source);
+        copy.classList.remove("week-board-dated"); copy.classList.add("week-board-live");
+        copy.inert = true; copy.setAttribute("aria-hidden", "true");
+        Object.assign(copy.style, { left: `${x}px`, top: `${y}px`, zIndex: "" });
+        board.append(copy); d.placements.push(copy);
+        if (source.closest(".week-board-backlog-canvas")) (d.lifted = source).classList.add("week-board-lifted");
+      } else if (board) Object.assign(add(board, 'week-board-card week-board-live').style, { left: `${x}px`, top: `${y}px` });
     } else if (mode === 'board') {
       const target = d.cell;
       const before = d.slot?.before && target?.querySelector(`.week-board-card[data-calendar-card="${CSS.escape(d.slot.before)}"]`);
@@ -358,6 +380,8 @@ export function calendarView(ctx) {
     if (backlog) paintAlignmentGuides(backlog, d.next?.backlog ? d.guides || [] : [], { x: 0, y: 0, z: 1 });
     d.ghost.querySelector("small").textContent = d.hours ? range ? `${range.start !== range.end ? `${range.start} ${next.start_time} → ${range.end} ${next.due_time}` : `${next.start_time} – ${next.due_time}`} · ${d.step} min steps` : 'Release to cancel' : cancel ? "Keep unscheduled" : range ? `${range.start}${d.next.start_time ? ` · ${d.next.start_time} – ${d.next.due_time}` : ` → ${range.end}`}` : d.next?.backlog ? "Unscheduled" : "Move over a day to schedule";
     d.ghost.firstElementChild.classList.toggle("invalid", !range && !cancel && !d.next?.backlog);
+    // Over the Unscheduled board the card itself shows where it goes.
+    d.ghost.style.visibility = d.next?.backlog ? "hidden" : "";
     d.ghost.style.left = `${Math.max(8, Math.min(innerWidth - d.ghost.offsetWidth - 8, d.x + 16))}px`;
     d.ghost.style.top = `${Math.max(8, Math.min(innerHeight - d.ghost.offsetHeight - 8, d.y + 18))}px`;
     d.frame = requestAnimationFrame(preview);
@@ -467,10 +491,8 @@ export function calendarView(ctx) {
         document.body.append(d.cancel);
       }
       // A copy of the card as it looks in this view, with the dates being chosen under it.
-      const r = d.card.getBoundingClientRect(), copy = d.card.cloneNode(true);
-      copy.classList.remove("calendar-dragging", "calendar-time-resizing");
+      const r = d.card.getBoundingClientRect(), copy = cardCopy(d.card);
       copy.classList.add("drag-ghost");
-      for (const el of [copy, ...copy.querySelectorAll("[id], [data-calendar-card], [data-action]")]) for (const name of ["id", "data-id", "data-calendar-card", "data-action"]) el.removeAttribute(name);
       copy.removeAttribute("style");
       Object.assign(copy.style, { position: "relative", inset: "auto", margin: "0", width: `${Math.min(r.width, 320)}px`, height: `${r.height}px` });
       d.ghost = document.createElement("div"); d.ghost.className = "calendar-drag-preview calendar";

@@ -303,7 +303,9 @@
 .week-board-backlog-canvas > .week-board-card { position: absolute; }
 .week-board-backlog-empty { margin: 0; padding: 8px 10px; }
 /* The landing place shows above every card's layer (at most 1,000,000,000). */
-.week-board-backlog-canvas > .calendar-placement { z-index: 1000000001; }
+.week-board-backlog-canvas > .week-board-live { z-index: 1000000001; pointer-events: none; }
+/* The card moving on the board leaves its old place (F0.22-63). */
+.week-board-lifted { opacity: 0; }
 .week-board-backlog-canvas > .alignment-guides { z-index: 1000000002; }
 /* The field box sits 8px in from both sides and 6px above the bottom (F0.21-89). */
 .week-board-card { display: grid; grid-template-columns: minmax(0, 1fr); align-items: center; gap: 4px 2px; padding: 4px 8px 6px; -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; border: 1px solid var(--line); border-left: 3px solid var(--task-field-color, var(--line)); border-radius: var(--field-radius, 6px); background: var(--surface); box-shadow: var(--shadow-card, none); }
