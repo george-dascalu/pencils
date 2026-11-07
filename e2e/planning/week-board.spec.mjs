@@ -114,10 +114,10 @@ onDevices(['desktop', 'ipad', 'phone'], () => {
     await expect.poll(rows).toEqual(['epic', 'milestone', 'story', 'task', 'activity', 'bug']);
     expect(await page.locator('.week-board-card .week-board-fields').evaluateAll(els => els.every(el => { const r = el.getBoundingClientRect(); return r.right <= el.closest('.week-board-card').getBoundingClientRect().right + 1 && [...el.children].every(c => !c.getClientRects().length || c.getBoundingClientRect().right <= r.right + 1); })), 'every field fits').toBe(true);
     if (device !== 'phone') {
-      // Group by sits in the bar (F0.22-59), before the Tags | Time of day switch (F0.22-52); a divider
+      // Group by sits in the bar (F0.22-59), with no Tags | Time of day switch (F0.22-60); a divider
       // then the shared controls follow, and the bar stays one row.
       const order = await page.locator('.planning-options').evaluate(el => [...el.children].filter(c => c.getClientRects().length).map(c => c.matches('.planning-separator') ? 'separator' : c.matches('[data-calendar-weekends]') ? 'weekends' : c.querySelector('#calendar-mode') ? 'layout' : c.querySelector('#week-board-rows') ? 'rows' : c.matches('.week-board-row-switch') ? 'row switch' : 'other'));
-      expect(order).toEqual(['rows', 'row switch', 'separator', 'weekends', 'layout']);
+      expect(order).toEqual(['rows', 'separator', 'weekends', 'layout']);
       await expect(page.locator('#view-toolbar [data-board-menu="filters"] #week-board-rows')).toHaveCount(0);
       const [search, rowsBox] = await Promise.all([page.locator('#view-toolbar #search'), page.locator('#week-board-rows')].map(l => l.boundingBox()));
       expect(Math.abs(search.y + search.height / 2 - (rowsBox.y + rowsBox.height / 2)), 'one row').toBeLessThan(4);

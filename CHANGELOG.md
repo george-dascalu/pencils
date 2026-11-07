@@ -2,6 +2,11 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.22.60 — 2026-11-07
+
+### Changed
+- Feature F0.22-60: The Week board's bar no longer has the Tags | Time of day switch: Group by, beside it, already offers both.
+
 ## 0.22.59 — 2026-11-07
 
 ### Changed
