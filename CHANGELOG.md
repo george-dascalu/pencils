@@ -2,6 +2,14 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.22.59 — 2026-11-07
+
+### Changed
+- Feature F0.22-59: The Week board's Group by is in the bar on desktop and iPad, before the Tags | Time of day switch, instead of in Filters.
+
+### Fixed
+- Feature F0.22-58: Week board row names such as Unassigned or Afternoon no longer break in the middle of the word: their column is a little wider, and a name wraps only between words.
+
 ## 0.22.57 — 2026-11-07
 
 ### Changed

@@ -263,7 +263,8 @@
 /* Week board: days as columns, a row per value of the chosen field, cards as on Kanban. */
 /* Columns share the width down to a card's width, then the board scrolls sideways. */
 .week-board, .week-board-backlog { --week-board-column: 184px; }
-.week-board { display: grid; grid-template-columns: minmax(80px, 128px) repeat(var(--week-board-days), minmax(var(--week-board-column), 1fr)); align-content: start; min-width: calc(80px + var(--week-board-days) * var(--week-board-column)); }
+/* The row names' column fits a name such as Unassigned or Afternoon whole (F0.22-58). */
+.week-board { --week-board-names: 112px; display: grid; grid-template-columns: minmax(var(--week-board-names), 128px) repeat(var(--week-board-days), minmax(var(--week-board-column), 1fr)); align-content: start; min-width: calc(var(--week-board-names) + var(--week-board-days) * var(--week-board-column)); }
 .week-board-row, .week-board-head-row { display: contents; }
 .week-board-corner, .week-board-day-head { position: sticky; top: 0; z-index: 2; background: var(--surface); border-bottom: 1px solid var(--line); }
 /* The row-name column and its corner take the soft fill, so the first day never reads as part of them; dividers run through the header between days. */
@@ -324,7 +325,7 @@
 .week-board-fields .row-date-short { display: none; }
 .week-board-card:not(.week-board-dated) .week-board-fields > .row-due { display: none; }
 .week-board-cell > .calendar-placement, .week-board-backlog-canvas > .calendar-placement { min-height: 40px; border: 1px dashed var(--green); border-radius: var(--field-radius, 6px); background: color-mix(in srgb, var(--green) 8%, var(--surface)); color: var(--muted); font-size: var(--type-small); padding: 6px; }
-@media (pointer: coarse) { .week-board, .week-board-backlog { --week-board-column: 232px; } .week-board { grid-template-columns: minmax(72px, 96px) repeat(var(--week-board-days), minmax(var(--week-board-column), 1fr)); } .week-board-row-head { flex-direction: column; } }
+@media (pointer: coarse) { .week-board, .week-board-backlog { --week-board-column: 232px; } .week-board { grid-template-columns: minmax(var(--week-board-names), 112px) repeat(var(--week-board-days), minmax(var(--week-board-column), 1fr)); } .week-board-row-head { flex-direction: column; } }
 /* Month scrolls through the months with no scroll bar (F0.21-96); the weekday row stays on top and
    each week's ISO number sits left of the grid. Alternate months are tinted, a month's first day names it. */
 .calendar-scroll:has(> .calendar[data-layout="month"]) { scrollbar-width: none; overflow-anchor: none; }

@@ -66,5 +66,6 @@ test('without times of day the switch stays away and Group by remains', async ({
   await expect(page.locator('.week-board')).toBeVisible();
   await expect(page.locator('#week-board-rows option')).not.toHaveCount(0);
   await expect(switcher(page)).toHaveCount(0);
-  await expect(page.locator('.planning-options > .planning-separator')).toHaveCount(0);
+  // Group by stays in the bar (F0.22-59), so the divider before the shared controls stays too.
+  await expect(page.locator('.planning-options > .planning-separator')).toHaveCount(1);
 });

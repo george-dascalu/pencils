@@ -113,12 +113,14 @@ onDevices(['desktop', 'ipad', 'phone'], () => {
     await closeOptions(page);
     await expect.poll(rows).toEqual(['epic', 'milestone', 'story', 'task', 'activity', 'bug']);
     expect(await page.locator('.week-board-card .week-board-fields').evaluateAll(els => els.every(el => { const r = el.getBoundingClientRect(); return r.right <= el.closest('.week-board-card').getBoundingClientRect().right + 1 && [...el.children].every(c => !c.getClientRects().length || c.getBoundingClientRect().right <= r.right + 1); })), 'every field fits').toBe(true);
-    if (device === 'desktop') {
-      // Shared controls keep their place after the Tags | Time of day switch (F0.22-52) and a divider;
-      // Group by waits in Filters, like List's.
+    if (device !== 'phone') {
+      // Group by sits in the bar (F0.22-59), before the Tags | Time of day switch (F0.22-52); a divider
+      // then the shared controls follow, and the bar stays one row.
       const order = await page.locator('.planning-options').evaluate(el => [...el.children].filter(c => c.getClientRects().length).map(c => c.matches('.planning-separator') ? 'separator' : c.matches('[data-calendar-weekends]') ? 'weekends' : c.querySelector('#calendar-mode') ? 'layout' : c.querySelector('#week-board-rows') ? 'rows' : c.matches('.week-board-row-switch') ? 'row switch' : 'other'));
-      expect(order).toEqual(['row switch', 'separator', 'weekends', 'layout']);
-      await expect(page.locator('#view-toolbar [data-board-menu="filters"] #week-board-rows')).toHaveCount(1);
+      expect(order).toEqual(['rows', 'row switch', 'separator', 'weekends', 'layout']);
+      await expect(page.locator('#view-toolbar [data-board-menu="filters"] #week-board-rows')).toHaveCount(0);
+      const [search, rowsBox] = await Promise.all([page.locator('#view-toolbar #search'), page.locator('#week-board-rows')].map(l => l.boundingBox()));
+      expect(Math.abs(search.y + search.height / 2 - (rowsBox.y + rowsBox.height / 2)), 'one row').toBeLessThan(4);
     }
     expect(await page.evaluate(() => document.documentElement.scrollWidth - innerWidth)).toBeLessThanOrEqual(1);
   });
@@ -175,6 +177,22 @@ onDevices(['desktop', 'ipad', 'phone'], () => {
     const title = card(page, app.one.id).locator('.week-board-title');
     expect(await title.evaluate(el => { const s = getComputedStyle(el); return [s.whiteSpace, s.textOverflow, s.overflowX]; })).toEqual(['nowrap', 'ellipsis', 'hidden']);
     await expect(title).toHaveAttribute('title', /Ann on Tuesday/);
+  });
+
+  // Owner request (F0.22-58): a row's name breaks only between words, never inside one.
+  test('Week board row names wrap only between words @gate', async ({ page, device }) => {
+    if (device === 'desktop') await page.setViewportSize({ width: 1000, height: 800 });
+    await open(page);
+    const split = () => page.locator('.week-board-row-head > span:not(.sr-only)').evaluateAll(els => els.flatMap(el => {
+      const text = el.firstChild, words = [...text.data.matchAll(/\S+/g)];
+      return words.filter(w => { const r = document.createRange(); r.setStart(text, w.index); r.setEnd(text, w.index + w[0].length); return r.getClientRects().length > 1; }).map(w => w[0]);
+    }));
+    await expect.poll(() => page.locator('.week-board-row-head > span:not(.sr-only)').allTextContents()).toContain('Unassigned');
+    expect(await split()).toEqual([]);
+    await (await reveal(page.locator('#week-board-rows'))).selectOption('daypart');
+    await closeOptions(page);
+    await expect.poll(() => page.locator('.week-board-row-head > span:not(.sr-only)').allTextContents()).toEqual(['Morning', 'Afternoon', 'Evening']);
+    expect(await split()).toEqual([]);
   });
 
   test('the period heading opens a date picker that shows the week holding the chosen day @gate', async ({ page }) => {

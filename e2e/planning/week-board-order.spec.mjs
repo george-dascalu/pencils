@@ -7,8 +7,10 @@ const app = useApp(async store => {
   const organisation = await store.createOrganisation({ title: 'Order team', people: [{ id: 'ann', name: 'Ann' }], teams: [{ id: 'team', name: 'Team', members: ['ann'] }] });
   const project = await store.createProject({ title: 'Week order', key: 'WO', organisation: organisation.id, teams: ['team'] });
   const cards = [];
-  for (const title of ['First', 'Second', 'Third']) cards.push(await store.createTask(project.id, { title, assignee: 'Ann', due: '2026-11-05' }));
-  const other = await store.createTask(project.id, { title: 'Wednesday', assignee: 'Ann', due: '2026-11-04' });
+  // Ranked in order: with tied ranks the cards would go by their random IDs, and a drop those
+  // already order would need no new ranks.
+  for (const [i, title] of ['First', 'Second', 'Third'].entries()) cards.push(await store.createTask(project.id, { title, order: 1024 * (i + 1), assignee: 'Ann', due: '2026-11-05' }));
+  const other = await store.createTask(project.id, { title: 'Wednesday', order: 4096, assignee: 'Ann', due: '2026-11-04' });
   // Ranked Bravo, Alpha, Charlie: sorted by title they show in another order.
   const sorted = await store.createProject({ title: 'Week sorted', key: 'WS', organisation: organisation.id, teams: ['team'] });
   for (const [title, order] of [['Alpha', 1024], ['Bravo', 0], ['Charlie', 2048]]) await store.createTask(sorted.id, { title, order, assignee: 'Ann', due: '2026-11-05' });
