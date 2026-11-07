@@ -89,9 +89,10 @@ onDevices(['desktop', 'ipad', 'phone'], () => {
     await expect(page.getByRole('columnheader', { name: 'Tue 3 Nov' })).toBeVisible();
     await expect(page.getByRole('rowheader', { name: /^Ann/ })).toBeVisible();
     await expect(page.getByRole('row').filter({ has: page.getByRole('rowheader', { name: /^Ann/ }) }).getByRole('cell').nth(1)).toContainText('Ann on Tuesday');
-    // A multi-day card shows once, on its first day, with its range.
+    // A multi-day card shows once, on its first day. The day names the date, so no card shows one (F0.22-55).
     await expect(card(page, app.span.id)).toHaveCount(1);
-    await expect(cell(page, 'Bo', '2026-11-04').locator(`[data-calendar-card="${app.span.id}"]`)).toContainText('4 Nov – 6 Nov');
+    await expect(cell(page, 'Bo', '2026-11-04').locator(`[data-calendar-card="${app.span.id}"]`)).toBeVisible();
+    expect(await page.locator('.week-board-card .row-due').evaluateAll(els => els.map(el => getComputedStyle(el).display))).toEqual(['none', 'none', 'none']);
     // Each card's field box fits inside the card and leaves out the row's own field.
     for (const box of await page.locator('.week-board-card .week-board-fields').evaluateAll(els => els.map(el => {
       const card = el.closest('.week-board-card').getBoundingClientRect(), r = el.getBoundingClientRect();
@@ -111,7 +112,7 @@ onDevices(['desktop', 'ipad', 'phone'], () => {
     await (await reveal(page.locator('#week-board-rows'))).selectOption('type');
     await closeOptions(page);
     await expect.poll(rows).toEqual(['epic', 'milestone', 'story', 'task', 'activity', 'bug']);
-    expect(await page.locator('.week-board-card .week-board-fields').evaluateAll(els => els.every(el => { const r = el.getBoundingClientRect(); return r.right <= el.closest('.week-board-card').getBoundingClientRect().right + 1 && [...el.children].every(c => !c.getClientRects().length || c.getBoundingClientRect().right <= r.right + 1); })), 'all four fields fit').toBe(true);
+    expect(await page.locator('.week-board-card .week-board-fields').evaluateAll(els => els.every(el => { const r = el.getBoundingClientRect(); return r.right <= el.closest('.week-board-card').getBoundingClientRect().right + 1 && [...el.children].every(c => !c.getClientRects().length || c.getBoundingClientRect().right <= r.right + 1); })), 'every field fits').toBe(true);
     if (device === 'desktop') {
       // Shared controls keep their place after the Tags | Time of day switch (F0.22-52) and a divider;
       // Group by waits in Filters, like List's.

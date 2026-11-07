@@ -2,6 +2,12 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.22.55 — 2026-11-07
+
+### Changed
+- Feature F0.22-55: Week board cards no longer show their date: the day they sit under names it, and the status has more room.
+- Feature F0.22-54: The Week board's Unscheduled cards sit on one board of their own, docked under the week instead of in a row tied to the days. A card goes where you drop it, to the nearest 8 px, and may overlap others, the one moved last on top; everyone sees the same places, and places from the old row carry over. Alt and an arrow key moves a card 8 px (with Shift, 64 px). Drag the board's head, or press Up and Down on it, to make it taller or shorter; the height is kept in this browser.
+
 ## 0.22.53 — 2026-11-07
 
 ### Added

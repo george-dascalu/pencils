@@ -1,64 +1,20 @@
-// The Week board's Unscheduled row (F0.22-53): a grid as wide as the days shown, one card to a
-// place. A card keeps the place saved in it (`backlog: { col, row }`) while that place is free and
-// shown; the others take the place of their turn in the order given, row by row, or the next free
-// one, so moving a card doesn't shift the rest.
-const key = ({ col, row }) => `${col},${row}`;
-const fits = (place, columns) => Number.isInteger(place?.col) && Number.isInteger(place?.row) && place.col >= 0 && place.row >= 0 && place.col < columns;
-// Hands out the free places in order; places only get taken, so the search never goes back.
-function freePlaces(taken, columns) {
-  let i = 0;
-  const slot = () => ({ col: i % columns, row: Math.floor(i / columns) });
-  return () => {
-    while (taken.has(key(slot()))) i++;
-    const place = slot();
-    taken.add(key(place));
-    return place;
-  };
+// The Week board's Unscheduled board (F0.22-54): one board docked under the week, where a card goes
+// where it's dropped, to the nearest 8 px, and may overlap others, the one moved last on top. A card
+// keeps its place in `backlog: { x, y, z }`; cards without one flow in order.
+const SNAP = 8;
+// 0.22.53 kept places as a column and row of card-sized cells.
+const CELL = { x: 192, y: 80 };
+const whole = (value) => Number.isInteger(value) && value >= 0;
+
+export function backlogPosition(backlog) {
+  if (!backlog || typeof backlog !== "object" || Array.isArray(backlog)) return null;
+  if (whole(backlog.x) && whole(backlog.y)) return { x: backlog.x, y: backlog.y, z: whole(backlog.z) ? backlog.z : 0 };
+  if (whole(backlog.col) && whole(backlog.row)) return { x: backlog.col * CELL.x, y: backlog.row * CELL.y, z: 0 };
+  return null;
 }
 
-export function backlogLayout(cards, columns) {
-  const places = new Map(), taken = new Set();
-  for (const card of cards)
-    if (fits(card.backlog, columns) && !taken.has(key(card.backlog))) {
-      places.set(card.id, { col: card.backlog.col, row: card.backlog.row });
-      taken.add(key(card.backlog));
-    }
-  // The places from a card's turn up to the one it takes are all taken, so the next card's search
-  // starts after it.
-  let i = 0;
-  cards.forEach((card, turn) => {
-    if (places.has(card.id)) return;
-    i = Math.max(i, turn);
-    while (taken.has(`${i % columns},${Math.floor(i / columns)}`)) i++;
-    places.set(card.id, { col: i % columns, row: Math.floor(i / columns) });
-    taken.add(`${i % columns},${Math.floor(i / columns)}`);
-    i++;
-  });
-  // One spare row below the last card to drop into.
-  const last = [...places.values()].reduce((row, place) => Math.max(row, place.row), -1);
-  return { places, rows: last + 2 };
-}
+// Within the 100,000 px the server keeps.
+export const snapToBoard = (value) => Math.min(100_000, Math.max(0, Math.round(value / SNAP) * SNAP));
 
-// The saves that move card `id` to `target` among `cards` (each with its saved place, if any): a card
-// already there takes the moving card's place, or the first free one when the moving card comes
-// from a day, and cards the move would shift are saved where they are, so nothing else moves.
-export function backlogMove(cards, columns, id, target) {
-  const list = cards.some((card) => card.id === id) ? cards : [...cards, { id }];
-  const before = backlogLayout(cards, columns).places, from = before.get(id);
-  if (from && key(from) === key(target)) return [];
-  const saved = new Map([[id, { col: target.col, row: target.row }]]);
-  const other = [...before].find(([card, place]) => card !== id && key(place) === key(target))?.[0];
-  if (other) {
-    const taken = new Set([...before].filter(([card]) => card !== id && card !== other).map(([, place]) => key(place)).concat(key(target)));
-    saved.set(other, from ? { ...from } : freePlaces(taken, columns)());
-  }
-  // Each pass saves at least one more card at its place, so this ends.
-  for (;;) {
-    const after = backlogLayout(list.map((card) => (saved.has(card.id) ? { ...card, backlog: saved.get(card.id) } : card)), columns).places;
-    // A card with a saved place keeps it, even one under a hidden weekend that shows again later.
-    const shifted = [...before].filter(([card, place]) => !saved.has(card) && list.find((c) => c.id === card)?.backlog == null && key(after.get(card)) !== key(place));
-    if (!shifted.length) break;
-    for (const [card, place] of shifted) saved.set(card, { ...place });
-  }
-  return [...saved].map(([card, backlog]) => ({ id: card, backlog }));
-}
+// The layer that puts a card above every card on the board.
+export const nextLayer = (cards) => cards.reduce((top, card) => Math.max(top, backlogPosition(card.backlog)?.z ?? 0), 0) + 1;

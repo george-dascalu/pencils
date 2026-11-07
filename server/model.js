@@ -212,10 +212,14 @@ export function validateExtras(data, config) {
     fail("Estimate must be a non-negative number.");
   if (data.order != null && !Number.isFinite(data.order))
     fail("Order must be a number.");
-  // A place in the Week board's Unscheduled row (F0.22-53).
-  const backlog = data.backlog;
-  if (backlog != null && (typeof backlog !== "object" || Array.isArray(backlog) || Object.keys(backlog).sort().join() !== "col,row" || ![backlog.col, backlog.row].every((n) => Number.isInteger(n) && n >= 0 && n < 1000)))
-    fail("An Unscheduled row place is a column and a row from 0 to 999.");
+  // A place on the Week board's Unscheduled board (F0.22-54): x and y in pixels and a layer, or a
+  // column and a row from the grid 0.22.53 kept.
+  const backlog = data.backlog, keys = backlog && typeof backlog === "object" ? Object.keys(backlog).sort().join() : "";
+  const within = (value, most) => Number.isInteger(value) && value >= 0 && value <= most;
+  if (backlog != null && (Array.isArray(backlog) || !(
+    (keys === "col,row" && within(backlog.col, 999) && within(backlog.row, 999)) ||
+    (["x,y", "x,y,z"].includes(keys) && within(backlog.x, 100_000) && within(backlog.y, 100_000) && (backlog.z === undefined || within(backlog.z, 1e9))))))
+    fail("An Unscheduled place is x and y from 0 to 100,000 with a layer, or a column and a row.");
   if (data.archived != null && typeof data.archived !== "boolean")
     fail("Archived must be true or false.");
   if (

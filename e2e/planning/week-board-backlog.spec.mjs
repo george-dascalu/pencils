@@ -1,7 +1,8 @@
-// Owner request (F0.22-53): a row at the bottom of the Week board, Unscheduled, holds the cards with
-// no dates that aren't done, on a grid as wide as the days. Each card stays where it's put (saved in
-// the card, so everyone sees it, and kept while the card is scheduled); dropping on another card swaps
-// them; a card dropped there loses its dates, and one dragged to a day is scheduled.
+// Owner requests (F0.22-53, F0.22-54): the Week board's cards with no dates that aren't done sit on
+// one Unscheduled board docked at the bottom, not tied to the days. A card goes where it's dropped,
+// to the nearest 8 px, saved in the card so everyone sees it; cards may overlap, the one moved last
+// on top. A card dropped there loses its dates, and one dragged to a day is scheduled and keeps its
+// place for later. The board can be made taller or shorter.
 import { test, expect, useApp } from '../fixtures.mjs';
 import { reveal } from '../helpers/menu-controls.mjs';
 
@@ -10,119 +11,129 @@ const app = useApp(async store => {
   const project = await store.createProject({ title: 'Backlog', key: 'BL' });
   const card = (title, fields = {}) => store.createTask(project.id, { title, ...fields });
   const plan = await card('Plan');
-  // Archived cards stay out of the row and take no place in it.
+  // Archived cards stay off the board.
   await card('Old', { archived: true });
-  return { project, plan, draft: await card('Draft'), shipped: await card('Shipped', { status: 'done' }), meeting: await card('Meeting', { due: day }) };
+  return { project, plan, draft: await card('Draft'), shipped: await card('Shipped', { status: 'done' }), meeting: await card('Meeting', { due: day }), legacy: await card('Legacy') };
 });
 const saved = async (id) => (await app.store.snapshot(app.project.id)).tasks.find(t => t.id === id);
 test.beforeEach(async () => {
-  for (const [t, fields] of [[app.plan, { due: null, backlog: null }], [app.draft, { due: null, backlog: null }], [app.meeting, { due: day, backlog: null }]]) {
+  for (const [t, fields] of [[app.plan, { due: null, backlog: null }], [app.draft, { due: null, backlog: null }], [app.meeting, { due: day, backlog: null }], [app.legacy, { due: null, backlog: { col: 1, row: 1 } }]]) {
     const current = await saved(t.id);
     await app.store.updateTask(app.project.id, t.id, { revision: current.revision, ...fields });
   }
 });
-// Each card in the Unscheduled row as "title@col,row".
-const backlog = (page) => page.locator('.week-board-backlog-slot').evaluateAll(els => els.filter(el => el.querySelector('.week-board-title')).map(el => `${el.querySelector('.week-board-title').textContent.replace(/^BL-\d+ /, '')}@${el.dataset.backlogCol},${el.dataset.backlogRow}`));
-const slot = (page, col, row) => page.locator(`.week-board-backlog-slot[data-backlog-col="${col}"][data-backlog-row="${row}"]`);
+const board = (page) => page.locator('.week-board-backlog');
+const onBoard = (page) => board(page).locator('.week-board-title').evaluateAll(els => els.map(el => el.textContent.replace(/^BL-\d+ /, '')).sort());
+// A card's place on the board, from its own box.
+const place = (page, title) => board(page).locator('.week-board-card', { hasText: title }).evaluate(el => ({ x: el.offsetLeft, y: el.offsetTop, z: getComputedStyle(el).zIndex }));
 async function open(page) {
   await page.clock.setFixedTime(new Date('2026-11-04T12:00:00'));
   await page.goto(`${app.base}/#project/${app.project.id}/calendar`);
   await (await reveal(page.locator('#calendar-mode'))).selectOption('board');
   await expect(page.locator('.week-board')).toBeVisible();
 }
-async function drag(page, title, target) {
+async function drag(page, title, to) {
   const from = await page.locator('.week-board-title', { hasText: title }).boundingBox();
-  await page.mouse.move(from.x + from.width / 2, from.y + from.height / 2);
+  const start = { x: from.x + from.width / 2, y: from.y + from.height / 2 };
+  await page.mouse.move(start.x, start.y);
   await page.mouse.down();
-  await page.mouse.move(from.x + from.width / 2 + 10, from.y + from.height / 2 + 10, { steps: 3 });
-  // The landing place can move what it passes, so aim again at where the target now is.
-  for (const steps of [8, 2]) {
-    const to = await target.boundingBox();
-    await page.mouse.move(to.x + to.width / 2, to.y + to.height / 2, { steps });
-    await page.evaluate(() => new Promise((done) => requestAnimationFrame(() => requestAnimationFrame(done))));
-  }
+  await page.mouse.move(start.x + 10, start.y + 10, { steps: 3 });
+  const target = typeof to === 'function' ? await to(start) : to;
+  await page.mouse.move(target.x, target.y, { steps: 8 });
+  await page.evaluate(() => new Promise((done) => requestAnimationFrame(() => requestAnimationFrame(done))));
   await page.mouse.up();
 }
+const snap = (value) => Math.max(0, Math.round(value / 8) * 8);
 
-test('the Unscheduled row holds the matching cards with no dates that aren’t done', async ({ page }) => {
+test('the Unscheduled board is docked under the week, apart from the days, with the matching cards that have no dates', async ({ page }) => {
   await open(page);
-  const row = page.locator('.week-board-backlog');
-  await expect(row.getByRole('rowheader')).toHaveAccessibleName('Unscheduled');
-  await expect.poll(() => backlog(page)).toEqual(['Plan@0,0', 'Draft@1,0']);
-  // It sits under the other rows, its places under the days.
-  const [last, days, places] = await page.evaluate(() => [
-    Math.max(...[...document.querySelectorAll('.week-board-row:not(.week-board-backlog) > .week-board-cell')].map(el => el.getBoundingClientRect().bottom)),
-    [...document.querySelectorAll('.week-board-day-head')].map(el => Math.round(el.getBoundingClientRect().left)),
-    [...document.querySelectorAll('.week-board-backlog-slot[data-backlog-row="0"]')].map(el => Math.round(el.getBoundingClientRect().left)),
-  ]);
-  expect(places).toEqual(days);
-  // Set apart from the rows above by a heavier rule.
-  expect(await row.locator('.week-board-backlog-grid').evaluate(el => getComputedStyle(el).borderTopWidth)).toBe('2px');
-  expect(await row.locator('.week-board-backlog-grid').evaluate(el => el.getBoundingClientRect().top)).toBeGreaterThanOrEqual(last - 1);
-  // Filters apply, as to the rest of the board; the cards they hide keep their places.
+  await expect(board(page).getByRole('heading', { name: 'Unscheduled' })).toBeVisible();
+  await expect.poll(() => onBoard(page)).toEqual(['Draft', 'Legacy', 'Plan']);
+  // Not part of the week's table, and at the bottom of the view.
+  await expect(page.locator('.week-board .week-board-backlog')).toHaveCount(0);
+  const [panel, view, week] = await Promise.all([board(page), page.locator('#view-content'), page.locator('.week-board-scroll')].map(l => l.boundingBox()));
+  expect(panel.y).toBeGreaterThanOrEqual(week.y + week.height - 1);
+  expect(view.y + view.height - (panel.y + panel.height)).toBeLessThanOrEqual(16);
+  // A place saved on the old grid of 0.22.53 becomes a place on the board.
+  expect(await place(page, 'Legacy')).toMatchObject({ x: 192, y: 80 });
+  // The cards' layers stay inside the board, under menus and popovers.
+  expect(await board(page).locator('.week-board-backlog-canvas').evaluate(el => getComputedStyle(el).isolation)).toBe('isolate');
+  // Like the cards under the days, these show no date (F0.22-55).
+  expect(await board(page).locator('.row-due').evaluateAll(els => els.map(el => getComputedStyle(el).display))).toEqual(['none', 'none', 'none']);
+  // Filters apply, as to the rest of the board.
   await page.locator('#search').fill('Draft');
-  await expect.poll(() => backlog(page)).toEqual(['Draft@1,0']);
+  await expect.poll(() => onBoard(page)).toEqual(['Draft']);
   // The toolbar's list of unscheduled cards stays.
   await expect(page.locator('[data-calendar-unscheduled]')).toBeVisible();
-  // Without grouping there is no column of row names, so the row's name heads its grid.
-  await page.locator('#search').fill('');
-  await (await reveal(page.locator('#week-board-rows'))).selectOption('none');
-  await expect(row.locator('.week-board-backlog-caption')).toBeVisible();
-  await expect(row.locator('.week-board-backlog-caption')).toHaveText('Unscheduled');
-  await expect(row.getByRole('rowheader')).toHaveAccessibleName('Unscheduled');
 });
 
-test('cards stay where they are put in the Unscheduled row, and swap when dropped on each other', async ({ page }) => {
+test('cards go where they are dropped, to the nearest 8 px, and may overlap, the one moved last on top', async ({ page }) => {
   await open(page);
-  await expect.poll(() => backlog(page)).toEqual(['Plan@0,0', 'Draft@1,0']);
-  await drag(page, 'Plan', slot(page, 3, 1));
-  await expect.poll(async () => (await saved(app.plan.id)).backlog).toEqual({ col: 3, row: 1 });
-  await expect.poll(() => backlog(page)).toEqual(['Draft@1,0', 'Plan@3,1']);
-  // Onto another card: they swap.
-  await drag(page, 'Draft', slot(page, 3, 1));
-  await expect.poll(async () => [(await saved(app.draft.id)).backlog, (await saved(app.plan.id)).backlog]).toEqual([{ col: 3, row: 1 }, { col: 1, row: 0 }]);
-  // From the keyboard: Alt and an arrow moves a card one place.
+  const before = await place(page, 'Plan');
+  await drag(page, 'Plan', (start) => ({ x: start.x + 203, y: start.y + 61 }));
+  await expect.poll(async () => (await saved(app.plan.id)).backlog).toEqual({ x: snap(before.x + 203), y: snap(before.y + 61), z: 1 });
+  await expect.poll(() => place(page, 'Plan')).toEqual({ x: snap(before.x + 203), y: snap(before.y + 61), z: '1' });
+  // Draft dropped half over Plan sits on top of it.
+  const plan = await board(page).locator('.week-board-card', { hasText: 'Plan' }).boundingBox();
+  const draft = await board(page).locator('.week-board-card', { hasText: 'Draft' }).boundingBox();
+  await drag(page, 'Draft', (start) => ({ x: start.x + (plan.x + 40 - draft.x), y: start.y + (plan.y + 16 - draft.y) }));
+  await expect.poll(async () => (await saved(app.draft.id)).backlog?.z).toBe(2);
+  await expect.poll(async () => { const [p, d] = [await place(page, 'Plan'), await place(page, 'Draft')]; return Number(d.z) > Number(p.z) && Math.abs(d.x - p.x) < 100 && Math.abs(d.y - p.y) < 40; }).toBe(true);
+  // From the keyboard: Alt and an arrow moves a card 8 px, with Shift 64 px; it comes to the top.
+  const at = (await saved(app.plan.id)).backlog;
   await page.locator('.week-board-title', { hasText: 'Plan' }).focus();
-  await page.keyboard.press('Alt+ArrowDown');
-  await expect.poll(async () => (await saved(app.plan.id)).backlog).toEqual({ col: 1, row: 1 });
+  await page.keyboard.press('Alt+ArrowRight');
+  await expect.poll(async () => (await saved(app.plan.id)).backlog).toEqual({ x: at.x + 8, y: at.y, z: 3 });
   await expect(page.locator('.week-board-title', { hasText: 'Plan' })).toBeFocused();
-  await expect(page.locator('[data-calendar-announcement]')).toHaveText('Plan moved to column 2, row 2 of Unscheduled.');
+  await page.keyboard.press('Alt+Shift+ArrowDown');
+  await expect.poll(async () => (await saved(app.plan.id)).backlog).toEqual({ x: at.x + 8, y: at.y + 64, z: 3 });
+  await expect(page.locator('[data-calendar-announcement]')).toHaveText('Plan moved down on Unscheduled.');
   await expect(page.locator('.week-board-title', { hasText: 'Plan' })).toHaveAttribute('aria-keyshortcuts', /Alt\+ArrowLeft/);
-  // At the grid's edge it stays.
-  await page.keyboard.press('Alt+ArrowLeft');
-  await expect.poll(async () => (await saved(app.plan.id)).backlog).toEqual({ col: 0, row: 1 });
-  await page.keyboard.press('Alt+ArrowLeft');
-  await expect(page.locator('[data-calendar-announcement]')).toHaveText('Plan is at column 1, row 2 of Unscheduled.');
-  expect((await saved(app.plan.id)).backlog).toEqual({ col: 0, row: 1 });
   // Everyone sees the same places.
   await page.reload();
-  await expect.poll(() => backlog(page)).toEqual(['Plan@0,1', 'Draft@3,1']);
+  await expect.poll(() => place(page, 'Plan')).toEqual({ x: at.x + 8, y: at.y + 64, z: '3' });
 });
 
-test('a card dropped in the Unscheduled row loses its dates; one dragged to a day keeps its place for later', async ({ page }) => {
+test('at the edge of the board, Alt and an arrow says so instead of saving', async ({ page }) => {
   await open(page);
-  await expect.poll(() => backlog(page)).toEqual(['Plan@0,0', 'Draft@1,0']);
-  await drag(page, 'Meeting', slot(page, 2, 0));
-  await expect.poll(async () => { const t = await saved(app.meeting.id); return [t.due, t.start, t.backlog]; }).toEqual([null, null, { col: 2, row: 0 }]);
-  await expect.poll(() => backlog(page)).toEqual(['Plan@0,0', 'Draft@1,0', 'Meeting@2,0']);
-  await drag(page, 'Meeting', page.locator(`.week-board-cell[data-calendar-date="${day}"]`).first());
-  await expect.poll(async () => { const t = await saved(app.meeting.id); return [t.due, t.backlog]; }).toEqual([day, { col: 2, row: 0 }]);
-  await expect.poll(() => backlog(page)).toEqual(['Plan@0,0', 'Draft@1,0']);
+  const title = page.locator('.week-board-title', { hasText: 'Plan' });
+  await title.focus();
+  await page.keyboard.press('Alt+ArrowLeft');
+  await expect.poll(async () => (await saved(app.plan.id)).backlog?.x).toBe(0);
+  const { revision } = await saved(app.plan.id);
+  await expect(title).toBeFocused();
+  await page.keyboard.press('Alt+ArrowLeft');
+  await expect(page.locator('[data-calendar-announcement]')).toHaveText('Plan is at the edge of Unscheduled.');
+  expect((await saved(app.plan.id)).revision).toBe(revision);
 });
 
-test('a drop let go over a row name still swaps the two cards', async ({ page }) => {
+test('a card dropped on the Unscheduled board loses its dates; one dragged to a day keeps its place for later', async ({ page }) => {
   await open(page);
-  await expect.poll(() => backlog(page)).toEqual(['Plan@0,0', 'Draft@1,0']);
-  const from = await page.locator('.week-board-title', { hasText: 'Draft' }).boundingBox();
-  await page.mouse.move(from.x + from.width / 2, from.y + from.height / 2);
+  const area = await board(page).locator('.week-board-backlog-board').boundingBox();
+  await drag(page, 'Meeting', { x: area.x + area.width - 120, y: area.y + 40 });
+  await expect.poll(async () => { const t = await saved(app.meeting.id); return [t.due, t.start, !!t.backlog]; }).toEqual([null, null, true]);
+  const kept = (await saved(app.meeting.id)).backlog;
+  await expect.poll(() => onBoard(page)).toEqual(['Draft', 'Legacy', 'Meeting', 'Plan']);
+  const cell = await page.locator(`.week-board-cell[data-calendar-date="${day}"]`).first().boundingBox();
+  await drag(page, 'Meeting', { x: cell.x + cell.width / 2, y: cell.y + cell.height / 2 });
+  await expect.poll(async () => { const t = await saved(app.meeting.id); return [t.due, t.backlog]; }).toEqual([day, kept]);
+  await expect.poll(() => onBoard(page)).toEqual(['Draft', 'Legacy', 'Plan']);
+});
+
+test('the Unscheduled board can be made taller or shorter, and keeps its height', async ({ page }) => {
+  await open(page);
+  const handle = board(page).getByRole('separator', { name: /Unscheduled/ });
+  const height = () => board(page).evaluate(el => Math.round(el.getBoundingClientRect().height));
+  const start = await height(), box = await handle.boundingBox();
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
   await page.mouse.down();
-  await page.mouse.move(from.x + from.width / 2 + 10, from.y + from.height / 2 + 10, { steps: 3 });
-  const to = await slot(page, 0, 0).boundingBox();
-  await page.mouse.move(to.x + to.width / 2, to.y + to.height / 2, { steps: 8 });
-  await expect(slot(page, 0, 0).locator('.calendar-placement')).toHaveCount(1);
-  // Over a row's name the landing place stays where it was.
-  const head = await page.locator('.week-board-backlog > .week-board-row-head').boundingBox();
-  await page.mouse.move(head.x + head.width / 2, head.y + head.height / 2, { steps: 4 });
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2 - 100, { steps: 6 });
   await page.mouse.up();
-  await expect.poll(async () => [(await saved(app.draft.id)).backlog, (await saved(app.plan.id)).backlog]).toEqual([{ col: 0, row: 0 }, { col: 1, row: 0 }]);
+  await expect.poll(height).toBe(start + 100);
+  await handle.focus();
+  await page.keyboard.press('ArrowUp');
+  await expect.poll(height).toBe(start + 116);
+  await expect(handle).toHaveAttribute('aria-valuenow', String(start + 116));
+  await page.reload();
+  await expect.poll(height).toBe(start + 116);
 });

@@ -82,7 +82,8 @@ test("a task's dates, numbers, links, recurrence, custom values and comments are
     ...[-1, Infinity, "3", 1e8 + 1].map((estimate) => [`estimate ${estimate}`, { estimate }, /Estimate/]),
     ["an order that isn't a number", { order: NaN }, /Order must be a number/],
     ["archived as text", { archived: "yes" }, /Archived must be true or false/],
-    ...[{ col: 1 }, { col: -1, row: 0 }, { col: 1.5, row: 0 }, { col: 0, row: 1000 }, [0, 0], "0,0", { col: 0, row: 0, x: 1 }, { col: "0", row: 0 }].map((backlog) => [`backlog place ${JSON.stringify(backlog)}`, { backlog }, /Unscheduled row place is a column and a row/]),
+    ...[{ col: 1 }, { col: -1, row: 0 }, { col: 1.5, row: 0 }, { col: 0, row: 1000 }, [0, 0], "0,0", { col: 0, row: 0, x: 1 }, { col: "0", row: 0 },
+      { x: 8 }, { x: -8, y: 0 }, { x: 1.5, y: 0 }, { x: 0, y: 100_001 }, { x: 0, y: 0, z: -1 }, { x: 0, y: 0, z: 1e9 + 1 }, { x: 0, y: 0, w: 1 }, { x: "0", y: 0 }].map((backlog) => [`backlog place ${JSON.stringify(backlog)}`, { backlog }, /An Unscheduled place is/]),
     ...[["dependencies", "t", /Dependencies/], ["related_records", "t", /Related records/], ["documents", "d", /Linked documents/]].flatMap(([key, prefix, message]) => [
       [`${key} that aren't a list`, { [key]: `${prefix}-1` }, message],
       [`201 ${key}`, { [key]: many(201, (i) => `${prefix}-${i}`) }, message],
@@ -100,8 +101,10 @@ test("a task's dates, numbers, links, recurrence, custom values and comments are
   accepts(check, [
     ["a start on the due date", { start: "2026-03-01", due: "2026-03-01" }],
     ["an estimate of 0", { estimate: 0 }],
-    ["a place in the Unscheduled row", { backlog: { col: 0, row: 0 } }],
-    ["the last place in the Unscheduled row", { backlog: { row: 999, col: 999 } }],
+    ["a place on the old Unscheduled grid", { backlog: { col: 0, row: 0 } }],
+    ["the last place on the old Unscheduled grid", { backlog: { row: 999, col: 999 } }],
+    ["a place on the Unscheduled board", { backlog: { x: 0, y: 0 } }],
+    ["the farthest place and top layer on the Unscheduled board", { backlog: { x: 100_000, y: 100_000, z: 1e9 } }],
     ["no place in the Unscheduled row", { backlog: null }],
     ["the largest estimate", { estimate: 1e8 }],
     ["200 links of each kind", { dependencies: many(200, (i) => `t-${i}`), related_records: many(200, (i) => `t-${i}`), documents: many(200, (i) => `d-${i}`) }],

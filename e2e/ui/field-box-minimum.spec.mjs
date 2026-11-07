@@ -1,5 +1,6 @@
 // Owner request (F0.22-3): every field in the field box keeps a minimum width; a long date gives way
-// before the status does, and the box stays inside its card (Week board, board and Calendar cards).
+// before the status does, and the box stays inside its card (Week board, Agenda, board and Calendar
+// cards). Week board cards show no date (F0.22-55).
 import { test, expect, useApp, onDevices } from '../fixtures.mjs';
 import { reveal } from '../helpers/menu-controls.mjs';
 
@@ -28,20 +29,28 @@ async function expectMinimums(box, card, nominalWidth) {
 }
 
 onDevices(['desktop', 'ipad', 'phone'], () => {
-  test('a long date does not squeeze the status in a Week board card, a board card or a Calendar card', async ({ page }) => {
+  test('a long date does not squeeze the status in an Agenda row, a Week board card, a board card or a Calendar card', async ({ page }) => {
     await page.clock.setFixedTime(new Date('2026-11-04T12:00:00'));
     await page.goto(`${app.base}/#project/${app.project.id}/calendar`);
-    await (await reveal(page.locator('#calendar-mode'))).selectOption('board');
-    const card = page.locator(`.week-board [data-calendar-card="${app.long.id}"]`);
-    const fields = card.locator('.field-box').first();
+    await (await reveal(page.locator('#calendar-mode'))).selectOption('agenda');
+    const row = page.locator(`.agenda-row[data-calendar-card="${app.long.id}"]`).first();
+    const fields = row.locator('.field-box').first();
     await expect(fields).toBeVisible();
-    await expectMinimums(fields, card);
-    // Text that does not fit is cut with an ellipsis, not mid-letter.
+    await expectMinimums(fields, row);
+    // Text that does not fit is cut with an ellipsis, not mid-letter (only the Week board's cards were
+    // narrow enough to cut a date, and they show none now).
     for (const sel of ['.field-chip-status', '.row-due .due']) {
       const cut = await fields.locator(sel).first().evaluate(e => ({ over: getComputedStyle(e).textOverflow, display: getComputedStyle(e).display }));
       expect(cut, sel).toEqual({ over: 'ellipsis', display: 'block' });
     }
-    expect(await fields.locator('.row-due .due').first().evaluate(e => e.scrollWidth > e.clientWidth), 'the long date is cut').toBe(true);
+    await (await reveal(page.locator('#calendar-mode'))).selectOption('board');
+    // Rows by card type, so the box keeps the assignee as well as the status and priority.
+    await (await reveal(page.locator('#week-board-rows'))).selectOption('type');
+    if (await page.locator('.mobile-view-options[open]').count()) await page.getByRole('button', { name: 'Close view options', exact: true }).click();
+    const card = page.locator(`.week-board [data-calendar-card="${app.long.id}"]`);
+    await expect(card.locator('.field-box')).toBeVisible();
+    await expectMinimums(card.locator('.field-box'), card);
+    await expect(card.locator('.row-due')).toHaveCSS('display', 'none');
     await page.goto(`${app.base}/#project/${app.project.id}/board`);
     const node = page.locator('#canvas .board-node.task').first();
     await expect(node.locator('.live-card-state > .field-box')).toBeVisible();
