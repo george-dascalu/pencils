@@ -2,6 +2,19 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.22.52 — 2026-11-07
+
+### Added
+- Feature F0.22-52: The Week board's bar has a Tags | Time of day switch, so its rows change between tags and parts of the day in one click instead of through Filters. Phones have it in View options; Group by in Filters still offers every field.
+
+### Changed
+- Feature F0.22-51: New cards are as quick to make in a big project as in a small one. In a project of 3,000 cards a new card took up to a fifth of a second, mostly spent rereading the list of card numbers and every card; it now takes under 10 ms, and making 1,000 cards one after another takes about 2 seconds instead of 30.
+
+### Fixed
+- Feature F0.22-51: Completing a recurring card made in the app now makes its next card. The card was taken for its own next one, so no new card appeared.
+- Feature F0.22-51: After a backup is put back, changes made in other apps (Obsidian, sync) show in Pencils again without a restart.
+- Feature F0.22-51: Putting a card back to an earlier version keeps its current ID. A version from before the project key changed used to bring back the old ID.
+
 ## 0.22.50 — 2026-11-07
 
 ### Changed

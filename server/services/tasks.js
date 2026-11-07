@@ -56,7 +56,7 @@ export const tasksMethods = {
   async validateParent(project, taskId, parent) {
     if (!parent) return;
     validId(parent);
-    const { items } = await this.children(project, "tasks");
+    const { items } = await this.children(project, "tasks", { shared: true });
     const map = new Map(items.map((t) => [t.id, t]));
     const seen = new Set([taskId]);
     let current = parent;
@@ -71,6 +71,22 @@ export const tasksMethods = {
       seen.add(current);
       current = map.get(current).parent;
     }
+  },
+  // A new card's parent, once its chain of ancestors is found to exist without a loop, read card by card
+  // as validateParent does from the whole list.
+  async newCardParent(project, taskId, parent, config) {
+    validId(parent);
+    const seen = new Set([taskId]);
+    let current = parent, first;
+    while (current) {
+      if (seen.has(current)) throw new Problem(400, "A card cannot be its own ancestor.");
+      const card = await this.listedTask(project, current, config);
+      if (!card) throw new Problem(400, "The parent card does not exist in this project.");
+      first ??= card;
+      seen.add(current);
+      current = card.parent;
+    }
+    return first;
   },
   async assignPerson(projectId, data, input, current = null) {
     const project = (await this.read(this.file(projectId, "project"))).data;
@@ -133,7 +149,7 @@ export const tasksMethods = {
     data.assignee_id = null;
   },
   async validateHierarchy(project, data, config, parentTask) {
-    const { items } = await this.children(project, "tasks");
+    const { items } = await this.children(project, "tasks", { shared: true });
     const error = hierarchyError(
       config,
       data,
@@ -174,7 +190,7 @@ export const tasksMethods = {
     try {
       for (const prepared of [parent, ...children]) {
         const data = prepared.data;
-        Object.assign(data, await this.ensureTaskIdentities(project, data.id));
+        Object.assign(data, await this.ensureTaskIdentities(project, data.id, { sweep: false }));
         data.aliases.unshift(data.key);
         written.push(
           await this.write(
@@ -200,9 +216,7 @@ export const tasksMethods = {
         !/^[\w-]{1,100}$/.test(input.creation_request)
       )
         throw new Problem(400, "Invalid creation request.");
-      const existing = (await this.children(project, "tasks")).items.find(
-        (t) => t.creation_request === input.creation_request,
-      );
+      const existing = await this.requestedTask(project, "creation_request", input.creation_request);
       if (existing) return existing;
     }
     if (input.canvas_source) {
@@ -212,9 +226,7 @@ export const tasksMethods = {
         input.canvas_source.length > 200
       )
         throw new Problem(400, "Invalid canvas source.");
-      const existing = (await this.children(project, "tasks")).items.find(
-        (t) => t.canvas_source === input.canvas_source,
-      );
+      const existing = await this.requestedTask(project, "canvas_source", input.canvas_source);
       if (existing) return existing;
     }
     if (!internal.prepare && input.subtasks !== undefined)
@@ -274,13 +286,14 @@ export const tasksMethods = {
     await this.assignPerson(project, data, input);
     this.validateTask(data, config);
     await validateTaskBoards(this, project, data.boards);
-    if (!internal.parentTask)
-      await this.validateParent(project, id, data.parent);
-    await this.validateHierarchy(project, data, config, internal.parentTask);
+    // A new card has no children yet, so its chain of parents is all these checks read (F0.22-51).
+    const parentTask = internal.parentTask || (data.parent ? await this.newCardParent(project, id, data.parent, config) : undefined);
+    const hierarchy = hierarchyError(config, data, parentTask);
+    if (hierarchy) throw new Problem(400, hierarchy);
     await this.validateDependencies(project, id, data.dependencies);
     const taskBody = body(input.body ?? "");
     if (internal.prepare) return { data, body: taskBody };
-    Object.assign(data, await this.ensureTaskIdentities(project, id));
+    Object.assign(data, await this.ensureTaskIdentities(project, id, { sweep: false }));
     data.aliases.unshift(data.key);
     return this.write(this.file(project, "tasks", id), data, taskBody);
   },
@@ -393,6 +406,9 @@ export const tasksMethods = {
           start: data.start ? nextDate(data.start, data.recurrence) : null,
           comments: [],
           body: current.body,
+          // The card's own request would return the card itself.
+          creation_request: undefined,
+          canvas_source: undefined,
         };
         successor = await this.createTask(project, next, {
           recurrenceSource: id,

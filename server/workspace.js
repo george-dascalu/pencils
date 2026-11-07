@@ -12,7 +12,7 @@ export function installWorkspace(Store) {
   Object.assign(Store.prototype, {
     async validateDependencies(project, id, dependencies = []) {
       if (!dependencies?.length) return;
-      const { items } = await this.children(project, "tasks"),
+      const { items } = await this.children(project, "tasks", { shared: true }),
         map = new Map(items.map((t) => [t.id, t]));
       map.set(id, { dependencies });
       const visiting = new Set(),
@@ -200,7 +200,7 @@ export function installWorkspace(Store) {
       await this.safe(file);
       await fs.mkdir(path.dirname(file), { recursive: true });
       await fs.writeFile(file, bytes, { flag: "wx" });
-      this.changed();
+      this.changed(file);
       return {
         name: input.name,
         path: `attachments/${name}`,
@@ -219,7 +219,7 @@ export function installWorkspace(Store) {
       await fs.mkdir(folder, { recursive: true });
       await fs.writeFile(path.join(folder, `${name}.json`), json, { flag: "wx" });
       await fs.writeFile(path.join(folder, `${name}.svg`), svg, { flag: "wx" });
-      this.changed();
+      this.changed(path.join(folder, `${name}.svg`));
       return { path: `attachments/${name}.svg`, strokes: `attachments/${name}.json` };
     },
     async attachment(project, name) {

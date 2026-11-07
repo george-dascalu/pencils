@@ -426,7 +426,7 @@ export function installCanvas(Store) {
         await fs.rename(temporary, file);
         this.cache.delete(file);
         this.auditRecord(current, { data: current.data, body });
-        this.changed();
+        this.changed(file);
       } finally {
         await fs.rm(temporary, { force: true });
       }

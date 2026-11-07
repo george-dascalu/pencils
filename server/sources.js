@@ -667,7 +667,7 @@ export class Sources {
             (await this.store.read(this.store.file(project, "project"))).data
               .schema,
           );
-          const identity = await this.store.ensureTaskIdentities(project, id);
+          const identity = await this.store.ensureTaskIdentities(project, id, { sweep: false });
           const value = {
             ...identity,
             ...remote.values,

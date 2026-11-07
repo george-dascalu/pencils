@@ -49,6 +49,9 @@ export const TIERS = [
     "test/home.test.js", // per-person Home layout validation
     "test/shared-types.test.js", // shared data rules stay type-checked
     "test/identity.test.js", // task keys sequential, immutable, reserved
+    "test/identity-ledger.test.js", // card number register read and written exactly
+    "test/identity-scale.test.js", // new cards stay quick in big projects
+    "test/task-create.test.js", // a new card's parent chain and repeated create requests
     "test/installation-recovery.test.js", // stopped installation recovers accounts and data (data safety)
     "test/journal.test.js", // related writes roll back together, crash recovery
     "test/kanban-model.test.js", // Kanban lanes and drop changes only destination
@@ -296,6 +299,7 @@ export const TIERS = [
     "e2e/planning/week-board-order.spec.mjs", // order cards in a Week board cell
     "e2e/planning/week-board-row-order.spec.mjs", // order Week board rows
     "e2e/planning/week-board-daypart.spec.mjs", // group the Week board by time of day
+    "e2e/planning/week-board-row-toggle.spec.mjs", // switch Week board rows between tags and time of day
     "e2e/platform/audit-loading.spec.mjs", // open task views and document history
     "e2e/platform/backend-capacity.spec.mjs", // 100 members using the server at once
     "e2e/platform/canvas-large-board.spec.mjs", // import, edit, undo and keep an offline draft on a huge board

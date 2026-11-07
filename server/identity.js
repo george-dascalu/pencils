@@ -59,8 +59,13 @@ export function installIdentity(Store) {
       while (used.has(key) && used.get(key) !== exclude) key = stem + n++;
       return key;
     },
-    async ensureTaskIdentities(project, reserveId) {
+    // `sweep: false` only reserves a number for a new card while the register and key are the ones
+    // this store last left and the watcher has seen nothing else change: reading every card to number
+    // the ones missing from it made each new card slower in a big project (F0.22-51). Otherwise, and
+    // when a project is opened (its snapshot), every card is numbered and repaired first.
+    async ensureTaskIdentities(project, reserveId, { sweep = true } = {}) {
       return this.identityLock(async () => {
+        const drift = this.drift;
         const file = this.file(project, "project");
         let p = await this.read(file);
         if (!p.data.key) {
@@ -109,7 +114,11 @@ export function installIdentity(Store) {
             422,
             "Card identity registry is invalid. Restore identity.md from history.",
           );
-        const { items } = await this.children(project, "tasks");
+        // An earlier restore gave the register an updated time, which keeps it off its quick form.
+        if ("updated" in data) data.updated = undefined;
+        const known = this.ledgers.get(project);
+        const skip = !sweep && this.watcher && ledger && known?.revision === ledger.revision && known.key === p.data.key;
+        const { items } = skip ? { items: [] } : await this.children(project, "tasks", { shared: true });
         const records = [...items].sort((a, b) => a.id < b.id ? -1 : a.id > b.id ? 1 : 0).map(task => ({
           r: { data: task }, file: this.file(project, "tasks", task.id),
         }));
@@ -132,14 +141,15 @@ export function installIdentity(Store) {
             409,
             "This project has exhausted its card number range.",
           );
+        let revision = ledger?.revision;
         if (!ledger || JSON.stringify(data) !== JSON.stringify(ledger.data)) {
           await this.autoBackup();
-          await this.write(
+          ({ revision } = await this.write(
             ledgerFile,
             data,
             "Task number registry. Keep this file with the project when moving or backing up the vault.\n",
             ledger,
-          );
+          ));
         }
         for (const { r, file: taskFile } of records) {
           const number = data.tasks[r.data.id],
@@ -163,6 +173,8 @@ export function installIdentity(Store) {
             current,
           );
         }
+        // Unless something else changed the cards while they were read.
+        if (drift === this.drift) this.ledgers.set(project, { revision, key: p.data.key });
         return reserveId
           ? {
               number: data.tasks[reserveId],

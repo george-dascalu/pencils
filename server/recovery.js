@@ -235,11 +235,19 @@ export function installRecovery(Store) {
           );
       }
       // Use the old document as the template so removed properties are restored exactly.
+      // The card number register has no updated time: one would keep it out of its quick-to-read
+      // form for good. A card keeps the number and key it has now, which an older version's could
+      // name another card by (F0.22-51).
+      const list = (value) => (Array.isArray(value) ? value : []);
+      const kept = current.data.kind === "task" ? { number: current.data.number, key: current.data.key, aliases: [...new Set([...list(current.data.aliases), ...list(old.data.aliases)])].slice(0, 20) } : {};
+      // Saving compares with the current card, so values it already has are set on the old text here.
+      const doc = old.doc?.clone();
+      for (const [key, value] of Object.entries(kept)) doc?.set(key, value);
       return this.write(
         file,
-        { ...old.data, updated: new Date().toISOString() },
+        { ...old.data, ...kept, ...(current.data.kind === "task-identities" ? {} : { updated: new Date().toISOString() }) },
         old.body,
-        { ...current, doc: old.doc, plain: old.plain },
+        { ...current, doc: doc ?? old.doc, plain: old.plain },
       );
     },
     async createBackup(reason = "manual") {
@@ -467,6 +475,12 @@ export function installRecovery(Store) {
           );
       }
       this.cache.clear();
+      // The watcher followed the folders it watched into the staging area: watch the restored ones.
+      if (this.watcher) {
+        this.watcher.close();
+        this.watcher = null;
+        this.watch();
+      }
       this.changed();
       return { ok: true, backup: backup.id };
     },

@@ -113,9 +113,10 @@ onDevices(['desktop', 'ipad', 'phone'], () => {
     await expect.poll(rows).toEqual(['epic', 'milestone', 'story', 'task', 'activity', 'bug']);
     expect(await page.locator('.week-board-card .week-board-fields').evaluateAll(els => els.every(el => { const r = el.getBoundingClientRect(); return r.right <= el.closest('.week-board-card').getBoundingClientRect().right + 1 && [...el.children].every(c => !c.getClientRects().length || c.getBoundingClientRect().right <= r.right + 1); })), 'all four fields fit').toBe(true);
     if (device === 'desktop') {
-      // Shared controls keep their place; Group by waits in Filters, like List's, so no divider is needed.
-      const order = await page.locator('.planning-options').evaluate(el => [...el.children].filter(c => c.getClientRects().length).map(c => c.matches('.planning-separator') ? 'separator' : c.matches('[data-calendar-weekends]') ? 'weekends' : c.querySelector('#calendar-mode') ? 'layout' : c.querySelector('#week-board-rows') ? 'rows' : 'other'));
-      expect(order).toEqual(['weekends', 'layout']);
+      // Shared controls keep their place after the Tags | Time of day switch (F0.22-52) and a divider;
+      // Group by waits in Filters, like List's.
+      const order = await page.locator('.planning-options').evaluate(el => [...el.children].filter(c => c.getClientRects().length).map(c => c.matches('.planning-separator') ? 'separator' : c.matches('[data-calendar-weekends]') ? 'weekends' : c.querySelector('#calendar-mode') ? 'layout' : c.querySelector('#week-board-rows') ? 'rows' : c.matches('.week-board-row-switch') ? 'row switch' : 'other'));
+      expect(order).toEqual(['row switch', 'separator', 'weekends', 'layout']);
       await expect(page.locator('#view-toolbar [data-board-menu="filters"] #week-board-rows')).toHaveCount(1);
     }
     expect(await page.evaluate(() => document.documentElement.scrollWidth - innerWidth)).toBeLessThanOrEqual(1);

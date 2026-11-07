@@ -2,6 +2,7 @@ import { boardsMethods } from "./services/boards.js";
 import { tasksMethods } from "./services/tasks.js";
 import { documentsMethods } from "./services/documents.js";
 import { WriteJournal } from "./journal.js";
+import { ledgerFrontmatter, parseLedger } from "./identity-ledger.js";
 import { changedFields } from "./audit.js";
 import { documentFolders, documentFolder } from "./document-folders.js";
 import { hierarchyError } from "../public/hierarchy-model.js";
@@ -77,6 +78,9 @@ function parse(text, file) {
       revision: hash(text),
     };
   }
+  // The card number register in its usual form skips the YAML parser (F0.22-51).
+  const ledger = path.basename(file) === "identity.md" && parseLedger(match[1]);
+  if (ledger) return { data: ledger, ledger: true, body: match[2], revision: hash(text), raw: text };
   const doc = YAML.parseDocument(match[1]);
   if (doc.errors.length)
     throw new Problem(
@@ -98,6 +102,11 @@ export class Store {
     this.snapshots = new Map();
     this.childrenCache = new Map();
     this.childrenReads = new Map();
+    // Per project, the cards each creation request or board object made (F0.22-51): from every full
+    // card list and this server's own saves since, so a repeated create needn't read every card.
+    this.requests = new Map();
+    this.ledgers = new Map();
+    this.drift = 0;
     this.events = new EventEmitter();
     this.events.setMaxListeners(0);
     this.version = 0;
@@ -177,7 +186,8 @@ export class Store {
       await this.journal.start({ scoped: true });
       this.auditPending = new Map(); this.auditUser = user; this.auditAction = action;
       const version=this.version;
-      try {const result=await this.journal.run(async()=>{await this.autoBackup();return fn();});await this.journal.finish(true);
+      let tx;
+      try {const result=await this.journal.run(async()=>{tx=this.journal.active;await this.autoBackup();return fn();});await this.journal.finish(true);
         const changes=this.changeLog.filter(c=>c.version>version);
         if(changes.length){const projects=new Set(changes.map(c=>c.record?.kind!=="project"?c.record?.project:null));if(projects.has(null)||projects.has(undefined))this.events.emit("change",this.version,{});else for(const project of projects)this.events.emit("change",this.version,{project});}
         if (this.audit) for (const entry of this.auditPending.values()) {
@@ -185,7 +195,7 @@ export class Store {
           await this.audit.record(project, { at: Date.now(), user: this.auditUser, ...record });
         }
         return result;}
-      catch(error){await this.journal.finish(false);this.changed();throw error;}
+      catch(error){const touched=!tx||tx.files.length||tx.moves.length;await this.journal.finish(false);if(touched)this.changed();throw error;}
       finally { this.auditPending = null; this.auditUser = null; this.auditAction = null; }
     });
     this.queue = next.catch(() => {});
@@ -204,10 +214,18 @@ export class Store {
   }
   changed(file=null, value=null) {
     this.version++;
+    if (value?.kind === "task") this.noteRequests(value.project, [value]);
     const relative=file?path.relative(this.root,file).split(path.sep).join('/'):"";
+    if (!value) {
+      // Not this store's own write (another app, a restore, a rollback): read the project's cards afresh.
+      const owner = file ? /^Projects\/([\w-]+)\/(?:tasks\/|identity\.md$)/.exec(relative)?.[1] : null;
+      if (!file || owner) this.distrust(owner);
+    }
     const match=/^Projects\/([\w-]+)\/(?:(tasks|boards|documents)\/([\w-]+)\.(md|canvas)|project\.md)$/.exec(relative);
     const identity=/^Projects\/([\w-]+)\/identity\.md$/.exec(relative);
     const record=match?{project:match[1],kind:match[2] || "project",id:match[3] || match[1]}:identity?{project:identity[1],kind:"identity",id:"identity"}:null;
+    // A changed workflow can turn files that weren't cards into cards.
+    if (record?.kind === "project") this.distrust(record.project);
     if (!record) this.childrenCache.clear();
     else if (record.kind === "project") {
       for (const key of this.childrenCache.keys())
@@ -224,6 +242,13 @@ export class Store {
     }
     this.changeLog.push({version:this.version,record});if(this.changeLog.length>1000)this.changeLog.shift();
     if(!this.journal.active)this.events.emit("change",this.version,{project:record?.kind!=="project"?record?.project:null});
+  }
+  // Card numbers and create requests are trusted from this store's own writes only while nothing
+  // else has changed the cards (F0.22-51); `drift` tells a listing begun before a change about it.
+  distrust(project = null) {
+    this.drift++;
+    for (const [id, entry] of this.requests) if (!project || id === project) entry.complete = false;
+    if (project) this.ledgers.delete(project); else this.ledgers.clear();
   }
   async delta(project,since,options = {}){
     const version=this.version;if(!Number.isInteger(since) || since<0 || since>version || (this.changeLog[0] && since<this.changeLog[0].version-1))return {full:true,version};
@@ -303,6 +328,8 @@ export class Store {
         close: () => handles.forEach((handle) => handle.close()),
         handles,
       };
+      // What changed before the watcher started went unseen.
+      this.distrust();
     } catch {
       fallback();
     }
@@ -390,14 +417,15 @@ export class Store {
   async write(file, data, markdown, existing) {
     await this.safe(file);
     await fs.mkdir(path.dirname(file), { recursive: true });
-    const doc = existing?.doc?.clone() ?? new YAML.Document();
-    for (const [key, value] of Object.entries(
-      file.endsWith(".canvas") ? {} : data,
-    )) {
-      // An undefined value removes the key (a document property taken away).
+    // The card number register in its usual form is written without the YAML library (F0.22-51).
+    const ledger = path.basename(file) === "identity.md" && (!existing || existing.ledger) ? ledgerFrontmatter(data) : null;
+    const doc = ledger || file.endsWith(".canvas") ? null : existing?.doc?.clone() ?? new YAML.Document();
+    if (doc) for (const [key, value] of Object.entries(data)) {
+      // An undefined value removes the key (a document property taken away). Without a document
+      // of its own (a register read in its usual form) every key is written.
       if (value === undefined) doc.delete(key);
       else if (
-        !existing ||
+        !existing?.doc ||
         JSON.stringify(existing.data[key]) !== JSON.stringify(value)
       )
         doc.set(key, value);
@@ -414,7 +442,7 @@ export class Store {
         ) + "\n"
       : existing?.plain
         ? markdown
-        : `---\n${doc.toString({ lineWidth: 0 })}---\n${markdown}`;
+        : `---\n${ledger ?? doc.toString({ lineWidth: 0 })}---\n${markdown}`;
     let written;
     const temporary = `${file}.${randomUUID()}.tmp`;
     try {
@@ -578,20 +606,54 @@ export class Store {
     const cached = this.childrenCache.get(key);
     // Watcher events invalidate external edits; the bounded TTL also covers
     // missed platform events. Revision checks always read/stat the actual file.
+    // `shared` hands read-only checks the cached list itself: copying thousands of cards for each
+    // check made every new card slower in a big project (F0.22-51). Callers must not change it.
+    const copy = (value) => (options.shared ? value : structuredClone(value));
     if (this.watcher && cached && Date.now() - cached.at < 1000)
-      return structuredClone(cached.value);
+      return copy(cached.value);
     const active = this.childrenReads.get(key);
-    if (active?.version === this.version) return structuredClone(await active.work);
-    const entry = { version: this.version, work: this.readChildren(project, kind) };
+    if (active?.version === this.version) return copy(await active.work);
+    const entry = { version: this.version, drift: this.drift, work: this.readChildren(project, kind) };
     this.childrenReads.set(key, entry);
     try {
       const value = await entry.work;
+      if (kind === "tasks") this.noteRequests(project, value.items, entry.drift === this.drift);
       if (entry.version === this.version && this.watcher) {
         this.childrenCache.set(key, { value, at: Date.now() });
         if (this.childrenCache.size > 100) this.childrenCache.delete(this.childrenCache.keys().next().value);
       }
-      return structuredClone(value);
+      return copy(value);
     } finally { if (this.childrenReads.get(key) === entry) this.childrenReads.delete(key); }
+  }
+  // Entries are only added: a list read before a save finishes mustn't drop that save's request.
+  // A stale entry (a card deleted since) is checked against the card's file when looked up.
+  noteRequests(project, items, complete = false) {
+    const entry = this.requests.get(project) ?? { complete: false, cards: new Map() };
+    for (const item of items)
+      for (const field of ["creation_request", "canvas_source"])
+        if (typeof item[field] === "string") entry.cards.set(`${field}:${item[field]}`, item.id);
+    entry.complete ||= complete;
+    this.requests.set(project, entry);
+  }
+  // The card a creation request (or board object) already made, as the card list would show it.
+  async requestedTask(project, field, value) {
+    if (!this.watcher || !this.requests.get(project)?.complete) await this.children(project, "tasks", { shared: true });
+    const id = this.requests.get(project)?.cards.get(`${field}:${value}`);
+    const card = id ? await this.listedTask(project, id) : null;
+    return card?.[field] === value ? card : null;
+  }
+  // One card read as the card list reads it, or null where the list would leave it out.
+  async listedTask(project, id, config = null) {
+    if (typeof id !== "string" || !idPattern.test(id)) return null;
+    const file = this.file(project, "tasks", id);
+    try {
+      const record = await this.read(file);
+      if (record.data.id !== id || record.data.project !== project) return null;
+      this.validateTask(record.data, config ?? schema((await this.read(this.file(project, "project"))).data.schema));
+      return structuredClone(this.public(record, file));
+    } catch {
+      return null;
+    }
   }
   async readChildren(project, kind, options = {}) {
     if (kind === "boards") await this.migrateBoards(project);

@@ -172,6 +172,8 @@
 .calendar-zoom { display: inline-flex; align-items: center; gap: 2px; }
 .calendar-zoom > [data-calendar-zoom-value] { min-width: 4ch; text-align: center; font-size: var(--type-small); font-variant-numeric: tabular-nums; }
 .calendar-zoom > .control-label { margin-right: auto; }
+.week-board-row-switch { display: inline-flex; align-items: center; gap: 8px; }
+.week-board-row-switch > .control-label { margin-right: auto; }
 .planning-options > [data-calendar-weekends] { border: 1px solid transparent; }
 .planning-options > [data-calendar-weekends][aria-pressed="true"] { background: var(--surface-soft); border-color: var(--green); color: var(--green); }
 @media (max-width: 600px) {

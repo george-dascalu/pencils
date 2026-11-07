@@ -50,12 +50,20 @@ onDevices(["ipad", "desktop"], () => {
     expect(await rail(page).evaluate((el) => el.scrollTop)).toBe(before);
     expect(await pane(page).evaluate((el) => el.scrollTop)).toBe(0);
     // A choice made before the rail's scroll is reported (scroll events wait for the next frame,
-    // longer on a busy device) keeps the rail where it was too.
-    const [chosen, name] = await rail(page).evaluate((el) => {
+    // longer on a busy device) keeps the rail where it was too. The rail is found inside the same
+    // step, as a late redraw (the save's change event) can replace it.
+    const [chosen, name] = await page.evaluate(async () => {
+      const rail = () => document.querySelector(".settings-navigation");
+      rail().scrollTop = 0;
+      // Scroll events are sent before the next frame's callbacks: the rail has reported the top.
+      await new Promise((resolve) => requestAnimationFrame(resolve));
+      const el = rail();
       el.scrollTop = el.scrollHeight;
-      const top = el.scrollTop, last = [...el.querySelectorAll("nav a")].at(-1);
-      last.click();
-      return [top, last.textContent];
+      const top = el.scrollTop, box = el.getBoundingClientRect();
+      // A link below the middle of the view, which the rebuilt rail needn't scroll to show.
+      const link = [...el.querySelectorAll("nav a:not([aria-current])")].find((a) => a.getBoundingClientRect().top > box.top + el.clientHeight / 2);
+      link.click();
+      return [top, link.textContent];
     });
     await expect(page.locator("#settings-page-title")).toHaveText(name);
     expect(await rail(page).evaluate((el) => el.scrollTop)).toBe(chosen);
