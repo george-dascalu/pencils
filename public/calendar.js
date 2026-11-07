@@ -413,7 +413,11 @@ export function calendarView(ctx) {
     if (d.card.hasPointerCapture(d.pointer)) d.card.releasePointerCapture(d.pointer);
     d.ghost?.remove();
     d.cancel?.remove();
-    clearPlacement(d);
+    // A card dropped on the Unscheduled board stays where it landed until the redraw after its save
+    // replaces it, rather than showing at its old place meanwhile (F0.22-69).
+    const landed = !cancel && d.active && !!d.next?.backlog;
+    if (landed) document.querySelector(".week-board-backlog-canvas > .alignment-guides")?.remove();
+    else clearPlacement(d);
     if (d.hours && (cancel || !d.next)) {
       d.card.setAttribute('style', d.originalStyle);
       d.card.querySelector('.calendar-event-time').textContent = d.originalTime;
@@ -441,8 +445,9 @@ export function calendarView(ctx) {
     for (const { id, order } of ranks)
       if (id === d.task.id) changes.order = order;
       else patchTask(id, { order }, false).catch((error) => toast(error.message, true));
-    if (changes && Object.entries(changes).some(([key, value]) => JSON.stringify(d.task[key] ?? null) !== JSON.stringify(value ?? null))) void save(d.task.id, changes);
-    else if (ranks.length || resort) renderView(true);
+    if (changes && Object.entries(changes).some(([key, value]) => JSON.stringify(d.task[key] ?? null) !== JSON.stringify(value ?? null))) return void save(d.task.id, changes);
+    if (landed) clearPlacement(d);
+    if (ranks.length || resort) renderView(true);
     else if (!cancel && d.active && d.reason) toast(d.reason, true);
   }
   document.addEventListener("pointerdown", e => {

@@ -1,7 +1,7 @@
 import { randomUUID } from "./uuid.js";
 import { focusOnOpen } from "./open-focus.js";
 import { workflowEditor } from "./workflow-editor.js";
-import { CARD_FIELDS, VIEW_GROUPS, fieldOn, viewOn } from "./card-fields.js";
+import { CARD_FIELDS, VIEW_GROUPS, VIEW_NEEDS, fieldOn, viewOn } from "./card-fields.js";
 import { projectPeopleControls, projectPeople } from "./teams.js";
 import { tagsSettingsHTML, tagsSettings, tagRows } from "./project-tags-settings.js";
 import { priorityOptions, priorityLabel } from "./task-priority.js";
@@ -184,6 +184,12 @@ if (typeof document !== "undefined") document.addEventListener("keydown", (event
 // editors that keep their value in a hidden field (statuses, people, teams). One save runs at a time;
 // a change made during it is saved after it (state.settingsEdits). A form that isn't valid waits as
 // "Not saved", and says why only on the field just changed, so focus never jumps to another field.
+// Turned off by the Views form: unticked, unless only because a card field that's off hides it and
+// the person left it so (F0.22-68).
+function viewTurnedOff(form, config, view) {
+  const box = form.querySelector(`[name="project-view"][value="${view}"]`), hidden = !!VIEW_NEEDS[view] && !viewOn({ off: config?.off }, view);
+  return !!box && !box.checked && (!hidden || "changed" in box.dataset || !!config?.views_off?.includes(view));
+}
 export function autosaveSettings(form, busy, state) {
   form.dataset.autosave = "";
   const save = (event, report) => {
@@ -325,7 +331,8 @@ export function projectSettings(ctx, { sources, automations, personal, organisat
   }
   // T39: the views and components this project offers; a component's box turns all its views on or off.
   function projectViews() {
-    const on = (view) => !state.config?.views_off?.includes(view), names = { list: "List", tree: "Tree", table: "Table", kanban: "Kanban", calendar: "Calendar", timeline: "Timeline", capacity: "Capacity" };
+    // Ticked while the view shows: a card field it needs being off hides it too (F0.22-68).
+    const on = (view) => viewOn(state.config, view), names = { list: "List", tree: "Tree", table: "Table", kanban: "Kanban", calendar: "Calendar", timeline: "Timeline", capacity: "Capacity" };
     return `<fieldset class="card-fields project-views"><legend>Views</legend><p class="field-hint">Overview is always on. Views you turn off leave the tabs and the New menu; nothing in the project is deleted.</p>${VIEW_GROUPS.map(([id, name, views]) => `<div class="project-view-group"><label><input type="checkbox" data-view-group="${id}" ${views.some(on) ? "checked" : ""} ${views.length === 1 ? `name="project-view" value="${views[0]}"` : ""}> ${name}</label>${views.length > 1 ? `<div class="card-field-list">${views.map((view) => `<label><input type="checkbox" name="project-view" value="${view}" data-group="${id}" ${on(view) ? "checked" : ""}> ${names[view]}</label>`).join("")}</div>` : ""}</div>`).join("")}</fieldset>`;
   }
   function teams() {
@@ -538,13 +545,15 @@ export function projectSettings(ctx, { sources, automations, personal, organisat
       if (section === "views") {
         // The default view offers only the views that are on, and moves to Overview when its view goes.
         const defaults = () => {
-          const on = new Set([...f.querySelectorAll('[name="project-view"]:checked')].map((box) => box.value)), select = f.elements.default_view;
-          for (const option of select.options) option.disabled = option.value !== "overview" && !on.has(option.value);
+          const select = f.elements.default_view;
+          for (const option of select.options) option.disabled = option.value !== "overview" && viewTurnedOff(f, state.config, option.value);
           if (select.selectedOptions[0]?.disabled) select.value = "overview";
         };
         f.addEventListener("change", (event) => {
           const { viewGroup, group } = event.target.dataset, boxes = (id) => [...f.querySelectorAll(`[data-group="${id}"]`)];
-          if (viewGroup) for (const box of boxes(viewGroup)) box.checked = event.target.checked;
+          // A box changed here, even through its component's, says what the person wants (F0.22-68).
+          event.target.dataset.changed = "";
+          if (viewGroup) for (const box of boxes(viewGroup)) Object.assign(box, { checked: event.target.checked }).dataset.changed = "";
           else if (group) f.querySelector(`[data-view-group="${group}"]`).checked = boxes(group).some((box) => box.checked);
           if (viewGroup || group) defaults();
         });
@@ -591,8 +600,13 @@ export function projectSettings(ctx, { sources, automations, personal, organisat
           if (section === "general") changes = Object.fromEntries(data);
           if (section === "views") {
             changes = { default_view: data.get("default_view") };
-            const on = data.getAll("project-view"), off = VIEW_GROUPS.flatMap(([, , views]) => views).filter((view) => !on.includes(view));
-            if (off.join() !== (config.views_off || []).join()) changes.schema = { ...config, views_off: off.length ? off : undefined };
+            // Ticking a view its card fields hide turns them on (F0.22-68); one left unticked only for
+            // that reason, not by the person, isn't turned off, so the fields coming back bring it back.
+            const on = data.getAll("project-view"), hidden = (view) => !!VIEW_NEEDS[view] && !viewOn({ off: config.off }, view);
+            const off = VIEW_GROUPS.flatMap(([, , views]) => views).filter((view) => viewTurnedOff(f, config, view));
+            const needed = on.filter(hidden).flatMap((view) => VIEW_NEEDS[view]), fields = (config.off || []).filter((field) => !needed.includes(field));
+            if (off.join() !== (config.views_off || []).join() || fields.length !== (config.off || []).length)
+              changes.schema = { ...config, views_off: off.length ? off : undefined, off: fields.length ? fields : undefined };
           }
           if (section === "teams") {
             changes = {

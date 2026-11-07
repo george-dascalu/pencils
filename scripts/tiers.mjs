@@ -305,6 +305,7 @@ export const TIERS = [
     "e2e/planning/week-board-row-toggle.spec.mjs", // choose Week board rows with Group by
     "e2e/planning/week-board-empty-box.spec.mjs", // no empty field box on Week board cards
     "e2e/planning/week-board-backlog.spec.mjs", // arrange the Week board's Unscheduled row
+    "e2e/planning/week-board-narrow.spec.mjs", // Week board on a narrow window
     "e2e/platform/audit-loading.spec.mjs", // open task views and document history
     "e2e/platform/backend-capacity.spec.mjs", // 100 members using the server at once
     "e2e/platform/canvas-large-board.spec.mjs", // import, edit, undo and keep an offline draft on a huge board

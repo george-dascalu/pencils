@@ -125,3 +125,37 @@ onDevices(["desktop", "ipad", "phone"], () => test("a single remaining layout op
     await expect(page).toHaveURL(url(project, choice.toLowerCase()));
   }
 }));
+
+// Owner request (F0.22-68): a view that needs a card field (Tree the Parent) shows unticked while
+// that field is off, and ticking it turns the field back on; leaving it unticked doesn't turn it off
+// for good.
+test("ticking a view whose card field is off turns the field on, and the view's box shows whether it shows", async ({ page }) => {
+  const project = await app.store.createProject({ title: "No parent", key: "NOPAR", schema: { off: ["parent"] } });
+  await app.store.createTask(project.id, { title: "Plan the week" });
+  await page.goto(url(project, "settings/views"));
+  const views = page.getByRole("group", { name: "Views", exact: true });
+  const tree = views.getByRole("checkbox", { name: "Tree", exact: true });
+  await expect(tree).not.toBeChecked();
+  // Another view's change keeps Tree out of the views turned off, so Parent coming back brings it.
+  await views.getByRole("checkbox", { name: "Boards", exact: true }).uncheck();
+  await settingsSaved(page);
+  expect((await app.store.snapshot(project.id)).project.schema.views_off).toEqual(["board"]);
+  await tree.check();
+  await settingsSaved(page);
+  const schema = (await app.store.snapshot(project.id)).project.schema;
+  expect(schema.off ?? []).not.toContain("parent");
+  expect(schema.views_off).toEqual(["board"]);
+  await page.goto(url(project, "tree"));
+  // Tree opens rather than sending the link to Overview.
+  await expect(page.locator(".task-row", { hasText: "Plan the week" })).toBeVisible();
+  await expect(page).toHaveURL(url(project, "tree"));
+});
+
+test("turning a component off turns off its view that a card field hides, so the field coming back doesn't bring it", async ({ page }) => {
+  const project = await app.store.createProject({ title: "No parent group", key: "NOPARG", schema: { off: ["parent"] } });
+  await page.goto(url(project, "settings/views"));
+  const views = page.getByRole("group", { name: "Views", exact: true });
+  await views.getByRole("checkbox", { name: "Tasks", exact: true }).uncheck();
+  await settingsSaved(page);
+  expect((await app.store.snapshot(project.id)).project.schema.views_off).toEqual(["list", "tree", "table", "kanban"]);
+});

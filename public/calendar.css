@@ -260,7 +260,10 @@
 }
 /* Week board: days as columns, a row per value of the chosen field, cards as on Kanban. */
 /* Columns share the width down to a card's width, then the board scrolls sideways. */
-.week-board, .week-board-backlog { --week-board-column: 184px; }
+/* The day columns narrow down to a card whose field box still fits (F0.22-71); the Unscheduled
+   board's cards, which can show a date too, keep their width. */
+.week-board { --week-board-column: 140px; }
+.week-board-backlog { --week-board-column: 184px; }
 /* The row names' column fits a name such as Unassigned or Afternoon whole (F0.22-58). */
 .week-board { --week-board-names: 112px; display: grid; grid-template-columns: minmax(var(--week-board-names), 128px) repeat(var(--week-board-days), minmax(var(--week-board-column), 1fr)); align-content: start; min-width: calc(var(--week-board-names) + var(--week-board-days) * var(--week-board-column)); }
 .week-board-row, .week-board-head-row { display: contents; }
@@ -276,9 +279,10 @@
 .week-board-day-head.weekend { background-image: linear-gradient(var(--weekend-shade), var(--weekend-shade)); }
 /* Sticky only in its row: a heading lifted to move its row (F0.22-47) keeps the look, not the place. */
 .week-board-row > .week-board-row-head { position: sticky; left: 0; z-index: 1; }
-.week-board-row-head { display: flex; flex-wrap: wrap; align-items: flex-start; gap: 0 2px; padding: 4px; background: var(--surface-soft); border-bottom: 1px solid var(--line); font-size: var(--type-body); font-weight: 600; }
-/* The row's handle goes before its name, as on a List group heading (F0.22-47); a name with no room
-   beside it goes under it. */
+.week-board-row-head { display: flex; align-items: flex-start; gap: 0 2px; padding: 4px; background: var(--surface-soft); border-bottom: 1px solid var(--line); font-size: var(--type-body); font-weight: 600; }
+/* The row's handle goes before its name, as on a List group heading (F0.22-47), and every name stays
+   beside it, breaking between words (F0.22-70); with a mouse the handle is as narrow as a List row's
+   (controls.css). */
 .week-board-row-head > span:not(.sr-only) { display: flex; align-items: center; min-width: 0; min-height: var(--control-height); padding-inline: 2px; overflow-wrap: anywhere; }
 .week-board-row-head:is(:hover, :focus-within) > .task-reorder-handle > .icon { opacity: 1; }
 .week-board-row.task-reorder-source > * { opacity: .35; }

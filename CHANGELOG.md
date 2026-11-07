@@ -2,6 +2,16 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.22.71 — 2026-11-07
+
+### Changed
+- Feature F0.22-71: The Week board's day columns narrow further (to 140px, from 184px) before the board scrolls sideways, so a whole week fits on a smaller window. Cards on the Unscheduled board keep their width.
+- Feature F0.22-68: In Settings → Views, a view that needs a card field that's turned off (such as Tree, which needs Parent) shows unticked, and ticking it turns that field back on. Before, Tree could show ticked while hidden. Turning off its component (such as Tasks) turns it off too, so it stays off when the field comes back.
+
+### Fixed
+- Feature F0.22-70: On a narrower window, every Week board row's name stays beside its drag handle, breaking between words, instead of a longer name such as In progress dropping under it.
+- Feature F0.22-69: A card dropped on the Week board's Unscheduled board stays where it lands, instead of flickering back to where it was while the move saves.
+
 ## 0.22.67 — 2026-11-07
 
 ### Added

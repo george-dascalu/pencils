@@ -11,7 +11,7 @@ export const CARD_FIELDS = [
 ];
 // A view stays while one of its fields is on (Calendar and Timeline place cards by start or due).
 /** @type {Record<string, string[]>} */
-const NEEDS = { kanban: ["status"], tree: ["parent"], calendar: ["start", "due"], timeline: ["start", "due"], capacity: ["assignee"] };
+export const VIEW_NEEDS = { kanban: ["status"], tree: ["parent"], calendar: ["start", "due"], timeline: ["start", "due"], capacity: ["assignee"] };
 /** @type {[string, string, string[]][]} */
 export const VIEW_GROUPS = [
   ["tasks", "Tasks", ["list", "tree", "table", "kanban"]], ["planning", "Planning", ["calendar", "timeline", "capacity"]],
@@ -20,7 +20,7 @@ export const VIEW_GROUPS = [
 /** @param {Partial<ProjectConfig> | null | undefined} config @param {string} field */
 export const fieldOn = (config, field) => !config?.off?.includes(field);
 /** @param {Partial<ProjectConfig> | null | undefined} config @param {string} view */
-export const viewOn = (config, view) => !config?.views_off?.includes(view) && (!NEEDS[view] || NEEDS[view].some((field) => fieldOn(config, field)));
+export const viewOn = (config, view) => !config?.views_off?.includes(view) && (!VIEW_NEEDS[view] || VIEW_NEEDS[view].some((field) => fieldOn(config, field)));
 // New cards need a Tasks or Planning view to show in.
 /** @param {Partial<ProjectConfig> | null | undefined} config */
 export const cardsOn = (config) => VIEW_GROUPS.slice(0, 2).some(([, , views]) => views.some((view) => viewOn(config, view)));

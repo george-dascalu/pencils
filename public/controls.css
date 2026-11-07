@@ -433,7 +433,7 @@ textarea,
 /* Mouse rows keep the drag handle and tree toggle narrow so the card starts
    near the edge; touch keeps 44px targets. */
 @media not (pointer: coarse) {
-  .main .task-row > .task-reorder-handle { width: 16px !important; min-width: 16px !important; flex: 0 0 16px !important; }
+  .main :is(.task-row, .week-board-row-head) > .task-reorder-handle { width: 16px !important; min-width: 16px !important; flex: 0 0 16px !important; }
   .main .task-row > .tree-toggle { width: 24px !important; min-width: 24px !important; flex: 0 0 24px !important; }
 }
 

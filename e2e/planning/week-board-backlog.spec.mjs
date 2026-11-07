@@ -197,3 +197,35 @@ test('the Unscheduled board can be made taller or shorter, and keeps its height'
   await page.reload();
   await expect.poll(height).toBe(start + 116);
 });
+
+// Owner report (F0.22-69): a card dropped on the board flickered back to where it was until the save
+// came back. It stays where it landed in every frame.
+test('a dropped card stays where it lands while its save is under way', async ({ page }) => {
+  await open(page);
+  await page.route('**/tasks/**', async (route) => {
+    if (route.request().method() !== 'GET') await new Promise((done) => setTimeout(done, 400));
+    await route.continue();
+  });
+  const grip = await page.locator('.week-board-title', { hasText: 'Plan' }).boundingBox();
+  const start = { x: grip.x + grip.width / 2, y: grip.y + grip.height / 2 };
+  await page.mouse.move(start.x, start.y);
+  await page.mouse.down();
+  await page.mouse.move(start.x + 10, start.y + 10, { steps: 3 });
+  await page.mouse.move(start.x + 563, start.y + 25, { steps: 8 });
+  // The live card follows the pointer on the next frame.
+  await page.evaluate(() => new Promise((done) => requestAnimationFrame(() => requestAnimationFrame(done))));
+  const landed = await board(page).locator('.week-board-live').evaluate((el) => Math.round(el.getBoundingClientRect().left));
+  await page.evaluate(() => {
+    window.planFrames = [];
+    const tick = () => {
+      const shown = [...document.querySelectorAll('.week-board-backlog-canvas .week-board-card')].filter((el) => el.textContent.includes('Plan') && getComputedStyle(el).opacity !== '0');
+      window.planFrames.push(shown.map((el) => Math.round(el.getBoundingClientRect().left)));
+      if (window.planFrames.length < 45) requestAnimationFrame(tick);
+    };
+    requestAnimationFrame(tick);
+  });
+  await page.mouse.up();
+  await expect.poll(async () => (await saved(app.plan.id)).backlog?.z).toBe(1);
+  await expect.poll(() => page.evaluate(() => window.planFrames.length)).toBe(45);
+  for (const frame of await page.evaluate(() => window.planFrames)) expect(frame).toEqual([landed]);
+});
