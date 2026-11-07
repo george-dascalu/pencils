@@ -1,9 +1,13 @@
+// @ts-check
+/** @typedef {import("./model-types.js").ProjectConfig} ProjectConfig */
+/** @param {ProjectConfig} config */
 export function initialStatus(config) {
   return (
     config.initial_status ||
     (config.statuses.includes("todo") ? "todo" : config.statuses[0])
   );
 }
+/** @param {ProjectConfig} config @param {string} from @param {string} to */
 export function canTransition(config, from, to) {
   return (
     config.statuses.includes(to) &&
@@ -12,13 +16,15 @@ export function canTransition(config, from, to) {
       (config.transitions[from] || []).includes(to))
   );
 }
+/** @param {ProjectConfig} config @param {string} current */
 export function nextStatuses(config, current) {
   return config.statuses.filter((to) => canTransition(config, current, to));
 }
+/** @param {ProjectConfig} config @param {string} status */
 export function statusLabel(config, status) {
   return (
     config.status_labels?.[status] ||
-    { todo: "To do", "in-progress": "In progress", review: "In review" }[
+    /** @type {Record<string, string>} */ ({ todo: "To do", "in-progress": "In progress", review: "In review" })[
       status
     ] ||
     String(status)
@@ -26,6 +32,7 @@ export function statusLabel(config, status) {
       .replace(/^./, (c) => c.toUpperCase())
   );
 }
+/** @param {ProjectConfig} config @param {string} from @param {string} to */
 export function transitionError(config, from, to) {
   return `Workflow does not allow ${statusLabel(config, from)} → ${statusLabel(config, to)}. Allowed next statuses: ${
     nextStatuses(config, from)
@@ -36,8 +43,10 @@ export function transitionError(config, from, to) {
 }
 
 // Consistent hues for built-in statuses and a stable palette for custom workflows.
+/** @param {ProjectConfig} config @param {string} status */
 export function statusColor(config, status) {
   if (config.done.includes(status)) return "#648b50";
+  /** @type {Record<string, string>} */
   const known = {
     backlog: "#89928b",
     todo: "#508fb6",

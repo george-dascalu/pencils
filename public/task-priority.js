@@ -1,3 +1,4 @@
+// @ts-check
 // Keep the stored "none" value compatible with existing tasks and saved views.
 export const priorityOptions = ["urgent", "high", "medium", "low", "none"];
 export const defaultPriority = "medium";

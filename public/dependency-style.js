@@ -1,3 +1,4 @@
+// @ts-check
 // Each board owns its dependency appearance; old project styles remain a fallback.
 export const defaultDependencyStyle = Object.freeze({
   color: "#8863b2",

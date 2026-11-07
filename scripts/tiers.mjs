@@ -47,6 +47,7 @@ export const TIERS = [
     "test/folder-tree-moves.test.js", // move docs/boards between folders atomically (data safety)
     "test/frame-limit-recovery.test.js", // draft rejected by old frame cap retries (data safety)
     "test/home.test.js", // per-person Home layout validation
+    "test/shared-types.test.js", // shared data rules stay type-checked
     "test/identity.test.js", // task keys sequential, immutable, reserved
     "test/installation-recovery.test.js", // stopped installation recovers accounts and data (data safety)
     "test/journal.test.js", // related writes roll back together, crash recovery
@@ -111,6 +112,8 @@ export const TIERS = [
     "e2e/lists/field-order.spec.mjs", // read task fields in consistent order
     "e2e/lists/ipad-top-bar-tools.spec.mjs", // use search/filters/sort on iPad
     "e2e/lists/kanban-cards.spec.mjs", // view Kanban cards and add a card
+    "e2e/lists/live-redraw.spec.mjs", // see others' changes without losing your place
+    "e2e/lists/table-parent-options.spec.mjs", // choose a parent in Table
     "e2e/lists/kanban-drag-steady.spec.mjs", // drag a Kanban card between columns
     "e2e/lists/kanban-inline-fields.spec.mjs", // edit card fields in Kanban
     "e2e/lists/kanban-touch-drag.spec.mjs", // drag a Kanban card by touch on phone/iPad
@@ -288,6 +291,7 @@ export const TIERS = [
     "e2e/planning/timeline-selection.spec.mjs", // schedule a row on Timeline by two clicks
     "e2e/planning/timeline-viewport.spec.mjs", // use Timeline
     "e2e/planning/week-board.spec.mjs", // use Week board
+    "e2e/planning/week-board-order.spec.mjs", // order cards in a Week board cell
     "e2e/platform/audit-loading.spec.mjs", // open task views and document history
     "e2e/platform/backend-capacity.spec.mjs", // 100 members using the server at once
     "e2e/platform/canvas-large-board.spec.mjs", // import, edit, undo and keep an offline draft on a huge board

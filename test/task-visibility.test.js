@@ -41,3 +41,17 @@ test("malformed cycles and missing parents remain reachable", () => {
 test("dates use local calendar components", () => {
   assert.equal(localDate(new Date(2026, 9, 17, 0, 1)), "2026-10-17");
 });
+test("tree pages hold whole hierarchies up to a page of rows, a bigger one on a page of its own (F0.22-44)", () => {
+  // 30 roots with 9 children each: 300 rows.
+  const tasks = Array.from({ length: 30 }, (_, r) => [{ id: `r${r}` }, ...Array.from({ length: 9 }, (_, c) => ({ id: `r${r}c${c}`, parent: `r${r}` }))]).flat();
+  const first = treePage(tasks, tasks, 0, 100);
+  assert.equal(first.items.length, 100, "ten whole hierarchies of ten rows");
+  assert.equal(first.pages, 3);
+  assert.equal(first.total, 30, "the count still names root groups");
+  assert.equal(treePage(tasks, tasks, 2, 100).items.at(-1).id, "r29c8");
+  // A hierarchy bigger than a page has a page to itself; the next starts a new page.
+  const big = [{ id: "big" }, ...Array.from({ length: 150 }, (_, i) => ({ id: `b${i}`, parent: "big" })), { id: "small" }, { id: "small2" }];
+  assert.deepEqual([0, 1].map((page) => treePage(big, big, page, 100).items.length), [151, 2]);
+  assert.equal(treePage(big, big, 0, 100).pages, 2);
+  assert.equal(treePage(big, big, 5, 100).page, 1, "a stale page clamps to the last");
+});

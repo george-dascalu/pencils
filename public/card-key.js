@@ -58,10 +58,12 @@ export function installCardKeys() {
     for (const record of records) {
       record.removedNodes.forEach((node) => each(node, remove));
       record.addedNodes.forEach((node) => each(node, add));
-      // A key whose text was rewritten is measured again (observing again reports its size).
-      if (keys.has(record.target)) { resize.unobserve(record.target); resize.observe(record.target); }
+      // A key whose text was rewritten is measured again (observing again reports its size); a
+      // redraw that patches the page rewrites the text node itself (F0.22-41).
+      const key = record.type === "characterData" ? record.target.parentElement : record.target;
+      if (keys.has(key)) { resize.unobserve(key); resize.observe(key); }
     }
-  }).observe(document.body, { childList: true, subtree: true });
+  }).observe(document.body, { childList: true, subtree: true, characterData: true });
   each(document.body, add);
   // A shortened key sized by its text (with a max-width) keeps its short width when its room grows,
   // so a resize, theme or density change tries its full ID again, once a frame; observing again

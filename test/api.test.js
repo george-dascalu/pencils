@@ -246,3 +246,11 @@ test("API JSON over 1 KB is compressed for clients that accept it (F0.22-39)", a
   assert.equal((await get("/api/health", "br")).headers["content-encoding"], undefined);
   assert.equal((await get(`/api/projects/${project.id}`, "br;q=0, gzip;q=0")).headers["content-encoding"], undefined);
 });
+
+test("the project list names the data version it was read at, for pages without a project (F0.22-41)", async (t) => {
+  const { request, store } = await serverFixture(t);
+  await (await request("/api/projects", "POST", { title: "Versioned" })).json();
+  const before = store.version, list = await (await request("/api/projects")).json();
+  assert.ok(Number.isInteger(list.version));
+  assert.equal(list.version, before);
+});

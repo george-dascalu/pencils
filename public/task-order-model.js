@@ -39,11 +39,16 @@ export function reorderTasks(tasks, visibleIds, id, target, after = false) {
   const moved = visible.filter(key => key !== id);
   moved.splice(moved.indexOf(target) + Number(after), 0, id);
   if (moved.every((key, i) => key === visible[i])) return [];
+  return orderTasks(tasks, moved);
+}
 
-  // Replace only the participating slots. Filtered, archived and other branches'
-  // tasks retain their positions relative to each other.
+// The rank changes that put `ordered` in that order (F0.22-45). Only the participating slots
+// change: filtered, archived and other branches' tasks retain their positions relative to each other.
+export function orderTasks(tasks, ordered) {
+  const byId = new Map(tasks.map(t => [t.id, t]));
+  const moved = [...new Set(ordered)].filter(key => byId.has(key));
   const base = [...tasks].sort(compareTaskOrder);
-  const participating = new Set(visible);
+  const participating = new Set(moved);
   let index = 0;
   const result = base.map(t => participating.has(t.id) ? byId.get(moved[index++]) : t);
   let first = result.findIndex((t, i) => t !== base[i]);

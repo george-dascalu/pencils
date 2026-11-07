@@ -23,8 +23,12 @@ export async function projectsRoutes(ctx: RequestContext): Promise<unknown> {
     if (method === "GET") {
       if (url.searchParams.has("organisation"))
         auth.require(user, url.searchParams.get("organisation"));
+      // Read first: the list is at least this new, so a page without a project knows which changes
+      // it hasn't seen (F0.22-41).
+      const version = store.version;
       const data = await store.list(url.searchParams.get("organisation"));
       return json(200, {
+        version,
         projects: data.projects.filter(
           (p: Input) =>
             auth.allow(user, p.organisation) && sourceAccess(user, p),

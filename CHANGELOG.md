@@ -2,6 +2,20 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.22.46 — 2026-11-07
+
+### Added
+- Feature F0.22-45: Put the cards in each Week board cell in your own order: drag a card up or down within its cell, or to a place in another cell. As in Kanban, the board then shows the manual order.
+
+### Changed
+- Feature F0.22-41: Changes made elsewhere show sooner, in about a third of a second instead of one to four seconds in big projects, and List, Tree and Kanban update in place: the rows that didn't change stay as they were, so the scroll position and focus stay put. Home no longer redraws itself just after opening.
+- Feature F0.22-42: Changes from elsewhere wait while a tab is hidden and show when it's back, and wait for the same things (an edit, a drag, an open menu) whether they arrive at once or with the 30-second check.
+- Feature F0.22-43: The rules for workflows, card fields, hierarchies, sources, recurrence and document properties are now type-checked with the server, so a mistake in them is caught before release.
+- Feature F0.22-44: Tree and Table open quickly in big projects. A Tree page holds whole hierarchies up to 100 rows rather than 100 of them (a project of epics drew every card on one page), and a Table row's Parent menu lists the cards when it's opened rather than in every row. In a 1,000-card project, Tree opens in 0.1 s instead of 1.5 s and Table in 0.25 s instead of 2 s.
+
+### Fixed
+- Feature F0.22-46: Choosing a Settings section right after scrolling the list of sections keeps the list where you scrolled it, instead of jumping back to where it was before.
+
 ## 0.22.40 — 2026-11-07
 
 ### Fixed

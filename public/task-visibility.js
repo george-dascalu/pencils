@@ -43,7 +43,7 @@ export function treePage(matches, allTasks, page = 0, size = PAGE_SIZE, compare 
       const t = pending.pop();
       if (seen.has(t.id)) continue;
       seen.add(t.id);
-      output?.push({ ...t, contextOnly: !matching.has(t.id) });
+      output?.push(t);
       pending.push(...(children.get(t.id) || []).slice().reverse());
     }
   }
@@ -53,13 +53,23 @@ export function treePage(matches, allTasks, page = 0, size = PAGE_SIZE, compare 
       roots.push(task);
       visit(task, null, reachable);
     }
-  const result = pageOf(roots, page, size);
-  const items = [],
+  // A page holds whole hierarchies up to `size` rows; one bigger than that has a page of its own
+  // (F0.22-44: pages of 100 roots drew every card of a project of epics).
+  const pages = [[]],
     seen = new Set();
-  for (const root of result.items) visit(root, items, seen);
+  for (const root of roots) {
+    const tree = [];
+    visit(root, tree, seen);
+    if (pages.at(-1).length && pages.at(-1).length + tree.length > size) pages.push([]);
+    for (const t of tree) pages.at(-1).push(t);
+  }
+  page = Math.max(0, Math.min(Math.floor(Number(page) || 0), pages.length - 1));
+  const items = pages[page].map((t) => ({ ...t, contextOnly: !matching.has(t.id) }));
   return {
-    ...result,
     items,
+    page,
+    pages: pages.length,
+    total: roots.length,
     matching: matching.size,
     context: items.filter((t) => t.contextOnly).length,
   };

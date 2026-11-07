@@ -1,3 +1,4 @@
+// @ts-check
 import {
   noteStyles,
   noteStyleControls,

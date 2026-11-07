@@ -1,3 +1,5 @@
+// @ts-check
+/** @param {string | null | undefined} value @param {import("./model-types.js").Recurrence} rule */
 export function nextDate(value, rule) {
   const date = new Date(
     `${value || new Date().toISOString().slice(0, 10)}T12:00:00Z`,

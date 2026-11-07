@@ -116,6 +116,7 @@ try {
     "/recovery-ui.js",
     "/vendor/marked.js",
     "/vendor/purify.js",
+    "/vendor/idiomorph.js",
   ])
     assert.equal((await fetch(base + file)).status, 200);
   if (process.argv[2] === "write") {

@@ -1,3 +1,4 @@
+// @ts-check
 import { smoothInk } from "./ink-smoothing.js";
 // Shared by live preview, board objects and SVG/PNG export.
 export function penStyle(n = {}) {

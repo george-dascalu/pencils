@@ -49,6 +49,16 @@ onDevices(["ipad", "desktop"], () => {
     await expect(page.locator("#settings-page-title")).toHaveText("Automation");
     expect(await rail(page).evaluate((el) => el.scrollTop)).toBe(before);
     expect(await pane(page).evaluate((el) => el.scrollTop)).toBe(0);
+    // A choice made before the rail's scroll is reported (scroll events wait for the next frame,
+    // longer on a busy device) keeps the rail where it was too.
+    const [chosen, name] = await rail(page).evaluate((el) => {
+      el.scrollTop = el.scrollHeight;
+      const top = el.scrollTop, last = [...el.querySelectorAll("nav a")].at(-1);
+      last.click();
+      return [top, last.textContent];
+    });
+    await expect(page.locator("#settings-page-title")).toHaveText(name);
+    expect(await rail(page).evaluate((el) => el.scrollTop)).toBe(chosen);
   });
 
   test("without a project, the organisation settings scroll the same way", async ({ page }) => {

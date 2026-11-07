@@ -209,10 +209,11 @@ export function installFeatures(ctx) {
     }
     layout.projectHeader();
   }
-  function pagination(total) {
+  // Tree pages hold whole hierarchies, so their count comes with them (F0.22-44).
+  function pagination(total, pages = Math.ceil(total / 100)) {
     $("#pagination")?.remove();
     if (
-      total <= 100 ||
+      pages <= 1 ||
       [
         "calendar",
         "timeline",
@@ -225,7 +226,7 @@ export function installFeatures(ctx) {
       return;
     $("#view-content")?.insertAdjacentHTML(
       "beforeend",
-      `<div id="pagination" class="pagination">${button("page-prev", `${icon("chevron-left")}<span>Previous</span>`, state.page ? "" : "disabled")}<span>Page ${(state.page || 0) + 1} of ${Math.ceil(total / 100)} · ${total} ${state.view === "tree" ? "root groups" : "cards"}</span>${button("page-next", `<span>Next</span>${icon("chevron-right")}`, (state.page || 0) + 1 >= Math.ceil(total / 100) ? "disabled" : "")}</div>`,
+      `<div id="pagination" class="pagination">${button("page-prev", `${icon("chevron-left")}<span>Previous</span>`, state.page ? "" : "disabled")}<span>Page ${(state.page || 0) + 1} of ${pages} · ${total} ${state.view === "tree" ? "root groups" : "cards"}</span>${button("page-next", `<span>Next</span>${icon("chevron-right")}`, (state.page || 0) + 1 >= pages ? "disabled" : "")}</div>`,
     );
   }
   document.addEventListener("click", (event) => {
@@ -565,6 +566,8 @@ export function installFeatures(ctx) {
     };
     events.onerror = () => {};
   }
+  // What a background redraw waits for, the event stream's and the 30-second check's alike
+  // (F0.22-42): a redraw would drop an edit, a press, a drag or an open menu. Add new ones here.
   function refreshBlocked() {
     return (
       state.loading ||
@@ -580,6 +583,11 @@ export function installFeatures(ctx) {
       state.timelineSelecting ||
       state.taskReordering ||
       state.toolDragging ||
+      state.cameraAnimating ||
+      state.boardSaves ||
+      state.boardConflict ||
+      ctx.boardDragging() ||
+      document.hidden ||
       sync.entries.size ||
       document.activeElement?.matches(
         "input,textarea,select,[contenteditable=true]",
@@ -590,14 +598,19 @@ export function installFeatures(ctx) {
       (["board", "drawing"].includes(state.view) && !["cursor", "hand"].includes(state.tool))
     );
   }
-  function scheduleRefresh() {
+  // A burst of events waits for the first one's deadline, not the last's, so a steady stream of
+  // changes still shows; `again` re-arms while something holds redraws back.
+  function scheduleRefresh(wait = 100, again = false) {
+    if (refreshTimer && !again) return;
     clearTimeout(refreshTimer);
     refreshTimer = setTimeout(async () => {
+      refreshTimer = null;
       // A save response may already have applied the event's version while
       // this timer waited. Do not replace focused controls with identical DOM.
       if (lastVersion === state.snapshotVersion) return;
+      // While something holds redraws back, look again less often.
       if (refreshing || refreshBlocked()) {
-        scheduleRefresh();
+        scheduleRefresh(700, true);
         return;
       }
       refreshing = true;
@@ -605,7 +618,7 @@ export function installFeatures(ctx) {
       try {
         await refresh(true, () => {
           if (refreshBlocked() || interaction !== refreshInteraction) {
-            scheduleRefresh();
+            scheduleRefresh(700, true);
             return false;
           }
           return true;
@@ -614,7 +627,8 @@ export function installFeatures(ctx) {
       } finally {
         refreshing = false;
       }
-    }, 700);
+      // A short wait gathers a burst of changes into one redraw (F0.22-41; it was 700 ms).
+    }, wait);
   }
   let searchViewport;
   // Search is for typing, so its field takes focus at once, on touch screens too: opened within the
@@ -1195,6 +1209,7 @@ export function installFeatures(ctx) {
   });
   return {
     bottomBar,
+    refreshBlocked,
     viewReady: () => state.view === "documents" ? documentFeature.ready()
       : ["board", "drawing"].includes(state.view) ? (state.boardGallery || !state.boards.find(b => b.id === state.selectedBoard)?.summary) && canvasFeature.ready() && drawingFeature.ready() : true,
     prepareView: () => state.view === "documents" ? documentFeature.load()

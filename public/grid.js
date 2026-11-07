@@ -161,6 +161,22 @@ export function grid(ctx) {
     const target = action && row.querySelector(`[data-feature="${action}"]:not(:disabled)`);
     (target || row.querySelector("input")).focus({ preventScroll: true });
   }
+  // Every card is a Parent choice, so a row holds only its own parent until its menu is used
+  // (F0.22-44): a page of 100 rows of a 3,000-card project drew 300,000 options.
+  function parentOptions(id, value, all) {
+    const choices = all ? state.tasks.filter((x) => x.id !== id) : state.tasks.filter((x) => x.id === value);
+    return `<option value="">No parent</option>${choices.map((x) => `<option value="${esc(x.id)}" ${x.id === value ? "selected" : ""}>${esc(x.title)}</option>`).join("")}`;
+  }
+  function fillParents(event) {
+    const select = event.target;
+    if (!(select instanceof HTMLSelectElement) || !select.hasAttribute("data-parent-options")) return;
+    select.removeAttribute("data-parent-options");
+    select.innerHTML = parentOptions(select.dataset.id, select.value, true);
+  }
+  // The shared menu announces itself before it reads the options; a typed letter or an arrow key
+  // picks from them all. Not on focus: options changing under a press stop it opening the menu.
+  document.addEventListener("selectopen", fillParents, true);
+  document.addEventListener("keydown", (event) => { if (!["Tab", "Escape", "Shift", "Control", "Alt", "Meta"].includes(event.key) && !event.ctrlKey && !event.metaKey) fillParents(event); }, true);
   function render(input) {
     const preferences = tools.preferences();
     const parents=new Map(state.tasks.map(t=>[t.id,t]));
@@ -192,7 +208,7 @@ export function grid(ctx) {
       const field = custom(key),
         value = fieldValue(t, key),
         attrs = `tabindex="-1" data-task-field="${esc(key)}" data-id="${esc(t.id)}" aria-label="${esc(fieldName(key))} for ${esc(t.title)}"`;
-      const select = (choices, text) => `<span class="table-cell-select" ${taskColorAttributes(state, key, value)} title="${esc(text)}"><select ${attrs} ${taskColorAttributes(state, key, value)}>${choices}</select><span class="table-cell-value" aria-hidden="true">${selectValue(key, value, text)}</span><span class="table-cell-chevron" aria-hidden="true">${ctx.icon("chevron")}</span></span>`;
+      const select = (choices, text, extra = "") => `<span class="table-cell-select" ${taskColorAttributes(state, key, value)} title="${esc(text)}"><select ${attrs} ${extra} ${taskColorAttributes(state, key, value)}>${choices}</select><span class="table-cell-value" aria-hidden="true">${selectValue(key, value, text)}</span><span class="table-cell-chevron" aria-hidden="true">${ctx.icon("chevron")}</span></span>`;
       const values =
         key === "type"
           ? state.config.types
@@ -223,13 +239,7 @@ export function grid(ctx) {
       if (values)
         return select(options(values, value, key === "status" ? ctx.statusNames : key === "priority" ? priorityLabels : undefined), key === "status" ? ctx.statusNames[value] || label(value) : key === "priority" ? priorityLabel(value) : label(value || values[0] || ""));
       if (key === "parent")
-        return select(`<option value="">No parent</option>${state.tasks
-          .filter((x) => x.id !== t.id)
-          .map(
-            (x) =>
-              `<option value="${x.id}" ${x.id === value ? "selected" : ""}>${esc(x.title)}</option>`,
-          )
-          .join("")}`, parents.get(value)?.title || "No parent");
+        return select(parentOptions(t.id, value, false), parents.get(value)?.title || "No parent", "data-parent-options");
       if (field?.type === "checkbox")
         return select(options(["false", "true"], String(value || false)), label(String(value || false)));
       return `<input ${attrs} type="${["start", "due"].includes(key) || field?.type === "date" ? "date" : key === "estimate" || field?.type === "number" ? "number" : "text"}" value="${esc(Array.isArray(value) ? value.join(", ") : (value ?? ""))}" ${key === "title" ? 'maxlength="300" required' : key === "start" && t.due ? `max="${esc(t.due)}"` : key === "due" && t.start ? `min="${esc(t.start)}"` : ""}>`;

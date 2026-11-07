@@ -1,3 +1,7 @@
+// @ts-check
+/** @typedef {import("./model-types.js").ProjectConfig} ProjectConfig */
+/** @typedef {import("./model-types.js").SourcedCard} SourcedCard */
+/** @typedef {import("./model-types.js").SourceRecord} SourceRecord */
 // Source-owned fields and local annotations are deliberately separate.
 export const sourceFields = [
   "title",
@@ -9,6 +13,7 @@ export const sourceFields = [
 ];
 // Planning edits belong to Pencils; only explicit publication writes to a provider.
 export const localSourceFields = ["assignee", "status", "priority", "due"];
+/** @param {SourcedCard | null | undefined} task @param {string} field */
 export const sourceReadOnly = (task, field) => !!task?.source && sourceFields.includes(field) && !localSourceFields.includes(field);
 export const sourceCapabilities = {
   obsidian: {
@@ -36,8 +41,11 @@ export const sourceCapabilities = {
     comment: false,
   },
 };
+/** @param {SourcedCard | null | undefined} base @param {SourcedCard | null | undefined} local @param {SourcedCard | null | undefined} remote */
 export function mergeSource(base, local, remote) {
+  /** @type {Record<string, unknown>} */
   const values = {},
+    /** @type {{ field: string, base: unknown, local: unknown, remote: unknown }[]} */
     conflicts = [];
   for (const field of sourceFields) {
     const b = base?.[field] ?? null,
@@ -52,8 +60,11 @@ export function mergeSource(base, local, remote) {
   }
   return { values, conflicts };
 }
+/** @param {SourceRecord} record @param {any} mapping the project's field mapping, from its settings @param {ProjectConfig} config */
 export function mapSource(record, mapping, config) {
+  /** @param {string} key */
   const from = (key) => record.fields?.[mapping?.[key] || key];
+  /** @param {string} key @param {string[]} allowed @param {string} fallback @returns {string} */
   const choice = (key, allowed, fallback) => {
     const value = String(from(key) ?? "");
     return (
@@ -103,6 +114,7 @@ export function mapSource(record, mapping, config) {
     );
   return values;
 }
+/** @param {SourcedCard} task */
 export const sourceLabel = (task) =>
   task.source
     ? `${task.source.provider === "jira" ? "Jira" : task.source.provider === "excel" ? "Excel" : "Obsidian"} · ${task.source.key || task.source.external_id}`

@@ -168,7 +168,10 @@ test.describe("phone help", () => {
     await page.keyboard.press("Escape");
     await expect(list).toBeHidden();
     await page.locator(".help-navigation > summary").click();
-    await page.locator("#help-title").click();
+    // The list covers the top of the article on a phone: press the article below it (a stray redraw
+    // used to close the list before this press).
+    const below = await list.boundingBox();
+    await page.mouse.click(below.x + below.width / 2, below.y + below.height + 60);
     await expect(list).toBeHidden();
     // A search with no match shows its message, not an empty list over it.
     await page.locator("#help-search").fill("zznomatch");

@@ -1,3 +1,4 @@
+// @ts-check
 import { BOARD_LIMITS } from "./board-limits.js";
 // Shared geometry for board rendering, editing and exports.
 export function throughPoints(points, curved = false) {

@@ -1,3 +1,4 @@
+// @ts-check
 import { boardDifference, applyBoardDelta } from "./board-delta.js";
 import { BOARD_LIMITS } from "./board-limits.js";
 // Equal whatever the order of their keys: the server lists a record's fields in its own order, and the

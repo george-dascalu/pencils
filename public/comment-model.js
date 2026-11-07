@@ -1,3 +1,4 @@
+// @ts-check
 export const commentReactions = [
   ["👍", "Thumbs up"],
   ["❤️", "Heart"],

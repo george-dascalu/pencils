@@ -1,6 +1,6 @@
 {
   "name": "pencils",
-  "version": "0.22.40",
+  "version": "0.22.46",
   "private": true,
   "type": "module",
   "description": "A Markdown-backed workspace for documents, cards and boards",
@@ -49,6 +49,7 @@
     "fast-xml-parser": "5.11.2",
     "fastify": "^5.12.7",
     "fflate": "^0.8.3",
+    "idiomorph": "0.8.0",
     "katex": "^0.19.0",
     "marked": "^18.1.1",
     "marked-footnote": "^1.4.0",

@@ -1,3 +1,4 @@
+// @ts-check
 import {validTaskNotes} from './task-note-model.js';
 // Drafts live in the canvas document. They become project tasks only on conversion.
 export const draftTaskData = (node) => ({

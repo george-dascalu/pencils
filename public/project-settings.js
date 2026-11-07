@@ -754,6 +754,12 @@ export function projectSettings(ctx, { sources, automations, personal, organisat
     if (event.target.classList?.contains("settings-navigation")) railScroll = event.target.scrollTop;
     if (event.target.matches?.(".settings-content, .project-settings-layout")) pageScroll = event.target.scrollTop;
   }, true);
+  // Scroll events wait for the next frame, so a section chosen first would rebuild the rail where
+  // it last reported being.
+  document.addEventListener("click", (event) => {
+    const rail = event.target.closest?.(".settings-navigation");
+    if (rail) railScroll = rail.scrollTop;
+  }, true);
   document.addEventListener("input", (event) => {
     if (!event.target.closest(".project-settings-layout")) return;
     if (event.target.name === "key")

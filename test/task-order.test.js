@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { compareTaskOrder, reorderTasks } from "../public/task-order-model.js";
+import { compareTaskOrder, reorderTasks, orderTasks } from "../public/task-order-model.js";
 import { treePage } from "../public/task-visibility.js";
 
 const apply = (tasks, changes) => tasks.map(t => ({ ...t, ...changes.find(c => c.id === t.id) })).sort(compareTaskOrder);
@@ -53,4 +53,12 @@ test('normal moves leave hidden ranks untouched; tiny or imprecise intervals reb
   const values=['a','b','c','d','z'].map((id,i)=>({id,order:[edge-1,edge-1,edge,edge+2,edge+2][i]}));
   const moved=apply(values,reorderTasks(values,['b','c','d'],'d','b'));
   assert.ok(moved.every((t,i)=>!i||t.order>moved[i-1].order));
+});
+test("orderTasks puts the named tasks in the given order in their own slots, the rest staying put (F0.22-45)", () => {
+  const tasks = ["a", "b", "c", "d"].map((id, i) => ({ id, order: i * 1024 }));
+  const apply = (list, changes) => list.map(t => ({ ...t, ...(changes.find(c => c.id === t.id) || {}) })).sort(compareTaskOrder);
+  assert.deepEqual(apply(tasks, orderTasks(tasks, ["d", "a"])).map(t => t.id), ["d", "b", "c", "a"]);
+  assert.deepEqual(apply(tasks, orderTasks(tasks, ["c", "a", "b"])).map(t => t.id), ["c", "a", "b", "d"]);
+  assert.deepEqual(orderTasks(tasks, ["a", "c"]), [], "already in that order");
+  assert.deepEqual(orderTasks(tasks, ["a", "missing"]), []);
 });

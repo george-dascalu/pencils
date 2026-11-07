@@ -1,3 +1,4 @@
+// @ts-check
 // Comments on document text. A thread's first comment keeps an anchor: the quoted text with a few
 // words either side, so the Markdown itself never changes and the quote is found again after edits.
 const CONTEXT = 32;

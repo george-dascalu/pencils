@@ -1,3 +1,4 @@
+// @ts-check
 import { selectedCells, gridCell } from "./board-grid.js";
 import { nodeFill, readableText, visualNodeType } from "./node-layout.js";
 export const objectFonts = [

@@ -1,3 +1,4 @@
+// @ts-check
 import { fieldOn } from './card-fields.js';
 
 // A board's display choices never alter the card or the project's field schema.

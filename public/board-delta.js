@@ -1,3 +1,4 @@
+// @ts-check
 // Field-level, reversible patches keep a single-card edit small, with the same
 // conflict semantics online, offline, and when another participant edits first.
 export function equalValue(a, b) {

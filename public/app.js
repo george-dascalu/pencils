@@ -64,6 +64,7 @@ import { taskReorderHandle } from "./task-reorder.js";
 import { groupReorderHandle, groupHeadingLabel } from "./task-group-order.js";
 import { compareTaskOrder } from "./task-order-model.js";
 import { SaveQueue } from "./sync.js";
+import { setHTML } from "./morph.js";
 import { createMarkdown } from "./markdown.js";
 import { installFeatures } from "./features.js";
 import { settingsSaveState } from "./project-settings.js";
@@ -282,6 +283,13 @@ const statusNames = {
 let types = [...DEFAULT_TASK_TYPES];
 const taskViews = ["list", "tree", "table", "kanban"];
 const planningViews = ["calendar", "timeline", "capacity"];
+// Views whose redraws patch the page rather than replace it (F0.22-41): the toolbar, which scripts
+// rearrange after drawing, is still replaced. Table draws every row, which takes longer to compare
+// than to replace; Calendar and Timeline place their items from scripts.
+const morphViews = ["list", "tree", "kanban"];
+// One listener for every card, so cards kept across redraws don't collect more.
+const safariTap = () => {};
+const morphPage = () => (state.project && !state.helpArticle && !state.directoryPage && morphViews.includes(state.view) ? `${state.project.id}/${state.view}` : "");
 const views = [
   "overview",
   "documents",
@@ -543,12 +551,17 @@ async function fetchWorkspace() {
     api("/organisations"),
   ]);
   return {
+    version: projects.version,
     projects: projects.projects,
     organisations: organisations.organisations,
     warnings: [...new Set([...projects.warnings, ...organisations.warnings])],
   };
 }
+// What the workspace lists, without the data version that changes with every edit.
+const workspaceSignature = ({ version, ...data }) => JSON.stringify(data);
 function applyWorkspace(data) {
+  // Home and other pages without a project are drawn from this version of the data (F0.22-41).
+  if (!state.project && Number.isInteger(data.version)) state.snapshotVersion = data.version;
   state.projects = data.projects;
   // Personal spaces open from the sidebar's Personal section, not the organisation switcher.
   state.organisations = data.organisations.filter((o) => !o.personal);
@@ -557,7 +570,7 @@ function applyWorkspace(data) {
     state.organisations.find((o) => o.id === state.organisation?.id) ||
     state.organisations[0] ||
     null;
-  state.workspaceSignature = JSON.stringify(data);
+  state.workspaceSignature = workspaceSignature(data);
 }
 function clearProject() {
   features.documentsReset();
@@ -889,7 +902,7 @@ function renderAppNow() {
   const p = state.project;
   settleFields();
   document.title = `${state.helpArticle ? helpArticle(state.helpArticle).title + " · Help" : state.directoryPage ? label(state.directoryPage) + " · " + state.organisation?.title : p ? `${viewLabel(state.view)} · ${p.title}` : state.organisation?.title || "Workspace"} · Pencils`;
-  app.innerHTML = `<div class="shell">
+  const shell = `<div class="shell">
     <button class="sidebar-overlay ${state.menu ? "visible" : ""}" data-action="menu" aria-label="Close sidebar"></button>
     <aside id="workspace-sidebar" class="sidebar ${state.menu ? "open" : ""}">
       <button class="brand" data-action="home" aria-label="Pencils home"><img src="/icon.svg" alt=""><span class="wordmark">pencils<span style="color:#b9d18c">.</span></span></button>
@@ -906,6 +919,8 @@ function renderAppNow() {
       ${!state.online ? '<div class="connection-banner">Local server unavailable. Reconnect to its network to save changes.</div>' : ""}
       ${state.helpArticle ? helpPageHTML(state.helpArticle, { esc, icon }) : state.directoryPage === "settings" ? '<div id="view-toolbar"></div><section id="view-content" class="content"></section>' : p ? projectPage() : features.homeHTML()}
     </main></div>`;
+  // Redrawing the same task view patches the page (F0.22-41); the view fills its own parts after.
+  setHTML(app, shell, morphPage(), ["#view-content", "#view-toolbar"]);
   updateViewLayout(state);
   lists.sync();
   if (p) renderView();
@@ -1205,14 +1220,14 @@ function renderViewNow(onlyContent) {
     !["kanban", "overview", "capacity", "table", "timeline", "calendar"].includes(state.view)
       ? `<div class="empty">${icon("leaf")}<h2>${state.tasks.length ? "No matching cards" : "Create your first card"}</h2><p>${state.tasks.length ? "No cards match the current filters. Archived cards are hidden unless Include archived is selected." : ["list", "tree"].includes(state.view) ? "Choose New → Card to add your first card." : "Add your first card, then make the plan your own."}</p>${state.tasks.length ? '<button class="button soft" data-action="filters-reset">Clear filters</button>' : ["list", "tree"].includes(state.view) ? "" : '<button class="button soft" data-action="task-new">${icon("plus")}Add a card</button>'}</div>`
       : renderers[state.view](tasks);
-  content.innerHTML = view.html ?? view;
+  setHTML(content, view.html ?? view, morphPage());
   const controls = $(".view-controls");
   if (controls) controls.innerHTML = view.controls || "";
   // Safari needs a local listener on non-button cards to send taps to the
   // shared click handler, including taps on their padding and metadata.
   if (state.view === "kanban")
     content.querySelectorAll(".kanban-card").forEach((card) => {
-      card.addEventListener("click", () => {});
+      card.addEventListener("click", safariTap);
     });
   if (state.view === "tree") {
     let tree = content.querySelector(".tree-wrapper");
@@ -1230,7 +1245,7 @@ function renderViewNow(onlyContent) {
   features.timelineRender();
   features.adaptToolbar();
   if (["overview", "table", "timeline"].includes(state.view)) return;
-  features.pagination(state.view === "tree" ? page.total : allTasks.length);
+  features.pagination(state.view === "tree" ? page.total : allTasks.length, page.pages);
   if (treeScroll) content.querySelector(".tree-wrapper").scrollTo(treeScroll);
   const currentKanban = content.querySelector(".kanban");
   observeKanbanLayout(currentKanban);
@@ -1679,6 +1694,7 @@ const navigation = browserNavigation({
 });
 const features = installFeatures({ welcomePage,
   ensureBoard,
+  boardDragging: () => !!dragging,
   closeList: () => lists.close(false),
   state,
   taskViews,
@@ -3101,24 +3117,8 @@ window.addEventListener("beforeunload", (event) => {
 setInterval(async () => {
   if (
     pollBusy ||
-    sync.entries.size ||
-    state.loading ||
-    state.dialog ||
-    state.boardTaskEditor ||
-    state.canvasEditing ||
-    state.headerMenu ||
-    state.selectionToolbarOpen ||
-    document.querySelector("#shared-select-menu") ||
-    state.kanbanDragging ||
-    state.timelineSelecting ||
-    state.taskReordering ||
-    state.toolDragging ||
-    state.cameraAnimating ||
-    state.boardSaves ||
-    state.boardConflict ||
-    dragging ||
-    document.hidden ||
-    document.activeElement?.matches("input,textarea,select,[contenteditable=true]")
+    // One list of what a background redraw waits for (F0.22-42), shared with the event stream's.
+    features.refreshBlocked()
   )
     return;
   pollBusy = true;
@@ -3126,29 +3126,10 @@ setInterval(async () => {
     const navigation = state.navigation,
       wasOnline = state.online,
       data = await fetchWorkspace();
-    if (
-      navigation !== state.navigation ||
-      state.loading ||
-      state.dialog ||
-      state.boardTaskEditor ||
-      state.canvasEditing ||
-      state.headerMenu ||
-      state.selectionToolbarOpen ||
-      document.querySelector("#shared-select-menu") ||
-      state.settingsDirty ||
-      state.settingsSaving ||
-      document.activeElement?.closest(".documents-workspace") ||
-      state.kanbanDragging ||
-      state.timelineSelecting ||
-      state.taskReordering ||
-      state.toolDragging ||
-      state.cameraAnimating ||
-      state.boardSaves ||
-      state.boardConflict ||
-      dragging
-    )
+    // Something may have started while the lists loaded; a document being worked in also waits.
+    if (navigation !== state.navigation || features.refreshBlocked() || document.activeElement?.closest(".documents-workspace"))
       return;
-    const listChanged = JSON.stringify(data) !== state.workspaceSignature;
+    const listChanged = workspaceSignature(data) !== state.workspaceSignature;
     applyWorkspace(data);
     if (
       state.project &&

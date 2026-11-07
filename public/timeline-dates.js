@@ -1,3 +1,4 @@
+// @ts-check
 // Date-only calculations use UTC so daylight-saving changes never move a column.
 export const DAY = 86400000;
 const MONDAY = Date.UTC(1970, 0, 5);

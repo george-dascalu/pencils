@@ -13,6 +13,7 @@ const vendor = {
   "/vendor/sheets/deps.js": "public/document-sheet-deps.js",
   "/vendor/marked.js": "node_modules/marked/lib/marked.esm.js",
   "/vendor/purify.js": "node_modules/dompurify/dist/purify.es.mjs",
+  "/vendor/idiomorph.js": "node_modules/idiomorph/dist/idiomorph.esm.js",
   "/vendor/turndown.js": "node_modules/turndown/lib/turndown.browser.es.js",
   "/vendor/turndown-gfm.js": "node_modules/turndown-plugin-gfm/lib/turndown-plugin-gfm.es.js",
 };

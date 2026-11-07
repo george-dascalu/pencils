@@ -6,7 +6,7 @@ import { anchoredPanel } from "./anchored-panel.js";
 import { mainWidth } from "./layout-width.js";
 import { calendarRange, calendarDateChange, calendarWeeks, isoWeek, agendaGroups, AGENDA_RANGES, agendaRange, shiftAgendaRange } from "./calendar-model.js";
 import { naturalGroups, inGroup } from "./task-group-order.js";
-import { groupedTaskPatch } from "./task-order-model.js";
+import { groupedTaskPatch, orderTasks } from "./task-order-model.js";
 import { projectPeople } from "./teams.js";
 import { fieldOn } from "./card-fields.js";
 import { priorityLabel } from "./task-priority.js";
@@ -202,8 +202,29 @@ export function calendarView(ctx) {
     d.weekLanes?.forEach(([el, lanes]) => el.style.setProperty('--calendar-lanes', lanes));
     d.placements = []; d.weekLanes = [];
   }
+  // Where a drop lands in a Week board cell (F0.22-45): before the first card whose middle is below
+  // the pointer, among the cell's cards other than the one moving.
+  function cellSlot(cell, y, id) {
+    const cards = [...cell.querySelectorAll(".week-board-card[data-calendar-card]")].filter((el) => el.dataset.calendarCard !== id);
+    const before = cards.find((el) => { const r = el.getBoundingClientRect(); return y < r.top + r.height / 2; });
+    return { ids: cards.map((el) => el.dataset.calendarCard), before: before?.dataset.calendarCard ?? null };
+  }
+  // A card dropped in a Week board cell keeps the place it was dropped at, as in Kanban: the rank
+  // changes that put the cell's cards in that order.
+  // The Week board cell a drop lands in and its place there, read with the landing place where it is
+  // shown: hit-testing again once it's taken out would find the cell below and chase it there.
+  function boardSlot(d, x, y) {
+    if (mode !== "board") return;
+    const cell = d.next && document.elementFromPoint(x, y)?.closest(".week-board-cell");
+    if (cell) { d.cell = cell; d.slot = cellSlot(cell, y, d.task.id); }
+    else if (!d.next) d.cell = d.slot = null;
+  }
+  function cellOrder(d) {
+    const { ids, before } = d.slot, at = before ? ids.indexOf(before) : ids.length;
+    return orderTasks(state.tasks, [...ids.slice(0, at), d.task.id, ...ids.slice(at)]);
+  }
   function placement(d, next) {
-    const key = JSON.stringify(d.next);
+    const key = JSON.stringify([d.next, d.slot?.before]);
     if (d.placementKey === key) return;
     d.placementKey = key;
     // The Week board rows the landing place pushes slide to their new places (F0.22-9).
@@ -235,8 +256,9 @@ export function calendarView(ctx) {
         const bar = add(el, 'calendar-task'); bar.style.gridColumn = `${s.from + 1} / ${s.to + 2}`; bar.style.gridRow = s.lane + 2;
       });
     } else if (mode === 'board') {
-      const target = document.elementFromPoint(d.x, d.y)?.closest('.week-board-cell');
-      if (target) add(target, 'week-board-card');
+      const target = d.cell;
+      const before = d.slot?.before && target?.querySelector(`.week-board-card[data-calendar-card="${CSS.escape(d.slot.before)}"]`);
+      if (target) target.insertBefore(add(target, 'week-board-card'), before || null);
     } else {
       const day = dayAt(d.x, d.y), target = document.querySelector(`.agenda-day[data-calendar-date="${day}"]`);
       if (target) add(target, 'agenda-row');
@@ -265,6 +287,7 @@ export function calendarView(ctx) {
       }
     }
     d.next = landing(d, d.x, d.y);
+    boardSlot(d, d.x, d.y);
     const next = { ...d.task, ...d.next }, range = d.next && calendarRange(next);
     if (d.hours && d.next) {
       const segment = hourlySegments([next], [d.hours.dataset.calendarDate])[0] || { start: 0, end: 0 };
@@ -319,7 +342,20 @@ export function calendarView(ctx) {
     document.querySelectorAll(".calendar-dragging,.calendar-drop-target,.calendar-armed").forEach(el => el.classList.remove("calendar-dragging", "calendar-drop-target", "calendar-armed"));
     if (d.active || d.handle || d.armed) { suppressUntil = performance.now() + 500; suppressId = d.task.id; }
     if (!cancel && !d.active && d.handle) editDates(d.task.id, d.card.querySelector("[data-calendar-end], [data-calendar-time-end]"));
-    if (!cancel && d.active && d.next && Object.entries(d.next).some(([key, value]) => d.task[key] !== value)) void save(d.task.id, d.next);
+    const changes = !cancel && d.active && d.next ? { ...d.next } : null;
+    const ranks = changes && d.slot ? cellOrder(d) : [];
+    // The board shows the manual order from now on, as Kanban does after a move, even when the
+    // ranks already give the order the card was dropped in.
+    const resort = !!(changes && d.slot) && (state.sort !== "order" || state.sortDir !== 1);
+    if (changes && d.slot) {
+      state.sort = "order"; state.sortDir = 1;
+      storage.set(`sort:${state.project.id}`, "order");
+    }
+    for (const { id, order } of ranks)
+      if (id === d.task.id) changes.order = order;
+      else patchTask(id, { order }, false).catch((error) => toast(error.message, true));
+    if (changes && Object.entries(changes).some(([key, value]) => d.task[key] !== value)) void save(d.task.id, changes);
+    else if (ranks.length || resort) renderView(true);
     else if (!cancel && d.active && d.reason) toast(d.reason, true);
   }
   document.addEventListener("pointerdown", e => {
@@ -388,6 +424,7 @@ export function calendarView(ctx) {
     if (drag?.pointer !== e.pointerId) return;
     if (drag.active) {
       drag.next = landing(drag, e.clientX, e.clientY);
+      boardSlot(drag, e.clientX, e.clientY);
     }
     finish();
   }, true);

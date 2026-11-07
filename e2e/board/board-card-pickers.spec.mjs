@@ -49,12 +49,17 @@ test("a board card's dates keep keyboard focus, say why a rejected date wasn't s
   await expect.poll(async () => (await saved()).due).toBe("2026-10-31");
   await expect(card(page).locator(".canvas-task-dates")).toHaveText(/31 Oct/);
   await expect(trigger("Due"), "focus returns to the date").toBeFocused();
-  // Another writer moves the due date earlier; a start after it is refused, with the reason.
+  // Another writer moves the due date earlier; a start after it, chosen before the page hears of the
+  // change, is refused with the reason. (Once the page has it, the picker doesn't offer that start.)
+  const held = [];
+  await page.route("**/delta?*", (route) => held.push(route));
   const latest = await saved();
   await app.store.updateTask(app.project.id, app.task.id, { revision: latest.revision, due: "2026-10-27" });
   await trigger("Start").click();
   await calendar.locator('table [data-date-value="2026-10-29"]').click();
   await expect(page.locator(".toast.error")).toBeVisible();
+  await page.unroute("**/delta?*");
+  await Promise.all(held.map((route) => route.continue()));
   // A narrow card keeps the due date, inside its box, and leaves the status room.
   const node = (await app.store.snapshot(app.project.id)).boards.find((b) => b.id === app.board.id);
   await app.store.updateBoard(app.project.id, app.board.id, { revision: node.revision, nodes: [{ ...node.nodes[0], w: 220 }] });

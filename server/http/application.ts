@@ -93,6 +93,7 @@ export function createServer(
         "turndown-plugin-gfm/lib/turndown-plugin-gfm.browser.es.js",
       "/vendor/marked.js": "marked/lib/marked.esm.js",
       "/vendor/purify.js": "dompurify/dist/purify.es.mjs",
+      "/vendor/idiomorph.js": "idiomorph/dist/idiomorph.esm.js",
     }).map(([key, file]) => [
       key,
       new URL(`../../node_modules/${file}`, import.meta.url),
