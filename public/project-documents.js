@@ -1,4 +1,5 @@
 import { documentPaneChoices } from "./document-pane-picker.js";
+import { typeIcon } from "./task-types.js";
 import { DOCUMENT_CHARACTERS, documentStatsCache } from './document-performance.js';
 import { releaseCodeHighlights } from './document-code.js';
 import { createDocumentSheet, sheetFormatting, sheetContent } from "./document-sheet.js";
@@ -438,7 +439,7 @@ export function projectDocuments(ctx) {
   });
   // A card mention's chip: type, key, title (or the link's label) and status, in the shared field order.
   function cardHTML(task, label) {
-    return `${icon(task.type || "task")}<span class="document-card-key">${esc(task.key || task.id)}</span><span class="document-card-title">${esc(label || task.title)}</span><span class="field-chip field-chip-status" ${task.archived ? "" : taskColorAttributes(state, "status", task.status)}>${esc(task.archived ? "Archived" : statusLabel(state.config, task.status))}</span>`;
+    return `${typeIcon(icon, state.config, task.type)}<span class="document-card-key">${esc(task.key || task.id)}</span><span class="document-card-title">${esc(label || task.title)}</span><span class="field-chip field-chip-status" ${task.archived ? "" : taskColorAttributes(state, "status", task.status)}>${esc(task.archived ? "Archived" : statusLabel(state.config, task.status))}</span>`;
   }
   // "Card from text": the selection, or the current line without its list or heading marker,
   // becomes a card linked to this document, and the text becomes a mention of it.
@@ -639,7 +640,7 @@ export function projectDocuments(ctx) {
   function taskRow(t) {
     const config = queryConfig(t), colors = { ...state, config };
     const done = (config.done || []).includes(t.status);
-    return `<div class="document-task-row"><label class="document-checkbox-target"><input type="checkbox" class="document-checkbox" ${done ? "checked" : ""} data-task-query-done="${esc(t.id)}" data-task-query-project="${esc(t.project || "")}" aria-label="Done: ${esc(t.title)}"></label><button type="button" class="document-task-open" data-task-query-open="${esc(t.id)}" data-task-query-project="${esc(t.project || "")}" aria-label="Open ${esc(t.key || t.id)}: ${esc(t.title)}">${icon(t.type || "task")}<span class="document-card-key">${esc(t.key || t.id)}</span><span class="document-task-title">${esc(t.title)}</span></button><span class="document-task-fields field-box" ${fieldBoxStyle(colors, t.priority)}>${ctx.assigneeHTML(t)}<span class="field-chip field-chip-status" ${taskColorAttributes(colors, "status", t.status)}>${esc(statusLabel(config, t.status))}</span><span class="field-chip field-chip-priority" role="img" aria-label="Priority: ${esc(priorityLabel(t.priority || "none"))}" ${taskColorAttributes(colors, "priority", t.priority)}>${icon(`priority-${t.priority || "none"}`)}</span></span></div>`;
+    return `<div class="document-task-row"><label class="document-checkbox-target"><input type="checkbox" class="document-checkbox" ${done ? "checked" : ""} data-task-query-done="${esc(t.id)}" data-task-query-project="${esc(t.project || "")}" aria-label="Done: ${esc(t.title)}"></label><button type="button" class="document-task-open" data-task-query-open="${esc(t.id)}" data-task-query-project="${esc(t.project || "")}" aria-label="Open ${esc(t.key || t.id)}: ${esc(t.title)}">${typeIcon(icon, state.config, t.type)}<span class="document-card-key">${esc(t.key || t.id)}</span><span class="document-task-title">${esc(t.title)}</span></button><span class="document-task-fields field-box" ${fieldBoxStyle(colors, t.priority)}>${ctx.assigneeHTML(t)}<span class="field-chip field-chip-status" ${taskColorAttributes(colors, "status", t.status)}>${esc(statusLabel(config, t.status))}</span><span class="field-chip field-chip-priority" role="img" aria-label="Priority: ${esc(priorityLabel(t.priority || "none"))}" ${taskColorAttributes(colors, "priority", t.priority)}>${icon(`priority-${t.priority || "none"}`)}</span></span></div>`;
   }
   const queryTasks = () => state.project?.personal ? everywhere?.tasks || [] : state.tasks || [];
   function renderTaskQueries(root) {
@@ -1099,7 +1100,7 @@ export function projectDocuments(ctx) {
             <button type="button" class="icon-button" data-document-action="focus" aria-label="Focus mode" title="Focus mode" aria-pressed="false" aria-controls="document-form">${icon("fullscreen")}</button>
             <button type="button" class="icon-button document-tools-button" data-document-action="tools" ${doc.document_type === "table" ? 'data-sheet-action="tools"' : ""} aria-label="Document tools" title="Document tools"><span class="document-mode-indicator" aria-hidden="true"></span><span class="document-tools-more" aria-hidden="true">${icon("more")}</span></button>
           </header>
-          ${(() => { const cards = (state.tasks || []).filter((t) => (t.documents || []).includes(doc.id)); return cards.length ? `<div class="document-linked-cards"><span class="caption">Linked cards</span>${cards.map((t) => `<button type="button" class="button soft" data-action="task-open" data-id="${esc(t.id)}" title="Open ${esc(t.title)}">${icon(t.type || "task")}<span class="task-relationship-key">${esc(t.key || t.id)}</span><span class="task-relationship-title">${esc(t.title)}</span></button>`).join("")}</div>` : ""; })()}
+          ${(() => { const cards = (state.tasks || []).filter((t) => (t.documents || []).includes(doc.id)); return cards.length ? `<div class="document-linked-cards"><span class="caption">Linked cards</span>${cards.map((t) => `<button type="button" class="button soft" data-action="task-open" data-id="${esc(t.id)}" title="Open ${esc(t.title)}">${typeIcon(icon, state.config, t.type)}<span class="task-relationship-key">${esc(t.key || t.id)}</span><span class="task-relationship-title">${esc(t.title)}</span></button>`).join("")}</div>` : ""; })()}
           <input type="hidden" name="title" value="${esc(doc.title)}">
           <div class="document-save-problem" data-document-save-problem hidden><span data-document-save role="status" aria-live="polite"></span><button type="button" class="button small" data-feature="recovery" data-document-recovery hidden>Review pending save</button></div>
           <div class="document-writing">${doc.document_type === "table" ? sheetContent(icon) : '<div class="document-codemirror"></div><article class="document-reading" tabindex="0" aria-label="Document reading view" hidden></article>'}<textarea name="body" hidden>${esc(doc.body || "")}</textarea></div>

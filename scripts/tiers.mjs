@@ -81,6 +81,7 @@ export const TIERS = [
     "test/vault-roundtrip.test.js", // saves keep outside edits and frontmatter
     "test/workflow.test.js", // workflow transitions and statuses
     "e2e/board/board-bar-menus.spec.mjs", // use Board tools menu, rename, delete board
+    "e2e/board/board-context-menu.spec.mjs", // copy, paste, duplicate, delete from the right-click menu
     "e2e/board/board-bottom-bar.spec.mjs", // reach menus above bottom bar on phone/iPad
     "e2e/board/board-editor.spec.mjs", // format text in board cards
     "e2e/board/board-interactions.spec.mjs", // convert note/task, connect cards
@@ -293,6 +294,7 @@ export const TIERS = [
     "e2e/planning/calendar-week.spec.mjs", // use Week layout
     "e2e/planning/project-people-assignees.spec.mjs", // add people and teams, make them assignable (split by tier)
     "e2e/settings/auto-assign.spec.mjs", // choose who new cards are auto-assigned to
+    "e2e/settings/type-looks.spec.mjs", // choose each card type's icon and colour
     "e2e/planning/timeline-date-editor.spec.mjs", // set dates from Timeline
     "e2e/planning/timeline-selection.spec.mjs", // schedule a row on Timeline by two clicks
     "e2e/planning/timeline-viewport.spec.mjs", // use Timeline
@@ -376,6 +378,7 @@ export const TIERS = [
     "test/orthogonal-route.test.js", // elbow arrow routing
     "test/pen-model.test.js", // ink thickness and pressure
     "test/priority-colors.test.js", // project priority colours validated
+    "test/type-styles.test.js", // card type icons and colours validated
     "test/roadmap.test.js", // Roadmap times and durations
     "test/schedule-model.test.js", // schedule proposals cascade
     "test/search-items.test.js", // Search bookmark and command order

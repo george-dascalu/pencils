@@ -7,7 +7,7 @@ import { closePopup, finishPopupExits } from "./popup-motion.js";
 import { projectCreateHTML } from "./project-create.js";
 import { taskTimeFields } from "./task-time-fields.js";
 import { APP_VERSION, watchAppVersion } from "./app-version.js";
-import { DEFAULT_TASK_TYPES } from "./task-types.js";
+import { DEFAULT_TASK_TYPES, typeIcon, typeIconName } from "./task-types.js";
 import { updateViewLayout } from "./view-layout.js";
 import { installEditableControlGuard } from "./editable-controls.js";
 import { installQuietScrollbars } from "./quiet-scrollbars.js";
@@ -130,6 +130,8 @@ const paths = {
   comment: "M4 4h16v12H9l-5 4V4ZM8 8h8M8 12h5",
   send: "M22 2 11 13M22 2l-7 20-4-9-9-4z",
   duplicate: "M8 8h13v13H8zM16 8V3H3v13h5",
+  copy: "M9 9h11v11H9zM5 15H4V4h11v1",
+  paste: "M9 3h6v3H9zM9 4H5v17h14V4h-4",
   unlock: "M8 10V7a4 4 0 0 1 8 0M5 10h14v11H5zM12 14v3",
   rotate: "M3 10a9 9 0 1 1 2 8M3 4v6h6",
   frame: "M7 2v20M17 2v20M2 7h20M2 17h20",
@@ -1211,7 +1213,7 @@ function renderViewNow(onlyContent) {
   }
 }
 function typeHTML(t) {
-  return `<span class="task-type ${esc(t.type)}" title="${esc(label(t.type))}">${icon(t.type)}<span>${esc(label(t.type))}</span></span>${t.source?`<small class="source-badge" title="${esc(sourceLabel(t))}">${esc(t.source.provider)} · ${esc(t.source.key)}</small>`:""}`;
+  return `<span class="task-type ${esc(t.type)}" title="${esc(label(t.type))}">${typeIcon(icon, state.config, t.type)}<span>${esc(label(t.type))}</span></span>${t.source?`<small class="source-badge" title="${esc(sourceLabel(t))}">${esc(t.source.provider)} · ${esc(t.source.key)}</small>`:""}`;
 }
 function tagsHTML(t) {
   return `<span class="tags">${(t.tags || [])
@@ -1260,11 +1262,11 @@ function taskRow(t, depth = null, hasChildren = false, flat = false, group = nul
   return `<div data-task-order-row="${esc(t.id)}" data-task-order-group="${esc(group ?? (depth !== null || state.groupBy === "none" ? "" : t[state.groupBy || "status"] || ""))}" class="task-row ${depth !== null ? "tree-row" : ""}${flat ? " tree-flat" : ""} ${t.contextOnly ? "tree-context" : ""}" ${depth !== null ? `style="--depth:${Math.min(depth, 12)}"` : ""}>
     ${depth !== null ? `<button class="tree-toggle ${state.collapsed.has(t.id) ? "collapsed" : ""}" data-action="collapse" data-id="${esc(t.id)}" aria-label="${state.collapsed.has(t.id) ? "Expand" : "Collapse"} subtasks" ${hasChildren ? `aria-expanded="${!state.collapsed.has(t.id)}" title="${state.tasks.filter(c => c.parent === t.id).length} subtasks"` : "disabled"}>${hasChildren ? icon("chevron") : ""}</button>` : ""}
     ${taskReorderHandle(t, esc)}
-    <button type="button" class="task-type row-task-link ${esc(t.type)}" data-action="task-open" data-id="${esc(t.id)}" aria-label="Open ${esc(t.title)} (${esc(label(t.type))})" title="${esc(label(t.type))} · Open card details">${icon(t.type)}</button>
+    <button type="button" class="task-type row-task-link ${esc(t.type)}" data-action="task-open" data-id="${esc(t.id)}" aria-label="Open ${esc(t.title)} (${esc(label(t.type))})" title="${esc(label(t.type))} · Open card details">${typeIcon(icon, state.config, t.type)}</button>
     <button type="button" class="task-id row-task-link" data-action="task-open" data-id="${esc(t.id)}" aria-label="Open ${esc(t.key || t.id)}: ${esc(t.title)}" title="${esc(t.source ? sourceLabel(t) : t.key || t.id)}">${esc(t.key || t.id)}</button>
     <div class="row-title"><input class="task-title ${done ? "done" : ""}" data-row-field="title" data-id="${esc(t.id)}" aria-label="Title for ${esc(t.title)}" title="${esc(t.title)}" value="${esc(t.title)}" maxlength="300" required ${t.source ? 'readonly aria-description="Managed by the connected source"' : 'aria-description="Enter to save. Escape to cancel."'}>${t.contextOnly ? '<span class="context-badge">Ancestor context</span>' : ""}</div>
     ${inlineTaskFields(t)}
-    <div class="phone-task"><button type="button" class="phone-task-open" data-action="task-open" data-id="${esc(t.id)}" aria-label="Open ${esc(t.key || t.id)}: ${esc(t.title)}"><span class="phone-task-title ${done ? "done" : ""}">${esc(t.title)}</span></button><span class="phone-task-meta">${icon(t.type)}<span>${esc(t.key || t.id)}</span><span class="field-box phone-task-fields" ${fieldBoxStyle(state, priority)}>${phoneField("assignee", "Assignee", assignee, assigneeHTML(t))}${phoneField("status", "Status", statusNames[t.status] || t.status, `<span class="field-chip field-chip-status phone-task-status" ${taskColorAttributes(state, "status", t.status)}>${esc(statusNames[t.status] || t.status)}</span>`)}${phoneField("priority", "Priority", priorityLabel(priority), `<span class="field-chip field-chip-priority phone-task-priority" ${taskColorAttributes(state, "priority", priority)}>${icon(`priority-${priority}`)}</span>`)}${taskDateButton(t,"phone-field phone-due")}</span></span></div></div>`;
+    <div class="phone-task"><button type="button" class="phone-task-open" data-action="task-open" data-id="${esc(t.id)}" aria-label="Open ${esc(t.key || t.id)}: ${esc(t.title)}"><span class="phone-task-title ${done ? "done" : ""}">${esc(t.title)}</span></button><span class="phone-task-meta">${typeIcon(icon, state.config, t.type)}<span>${esc(t.key || t.id)}</span><span class="field-box phone-task-fields" ${fieldBoxStyle(state, priority)}>${phoneField("assignee", "Assignee", assignee, assigneeHTML(t))}${phoneField("status", "Status", statusNames[t.status] || t.status, `<span class="field-chip field-chip-status phone-task-status" ${taskColorAttributes(state, "status", t.status)}>${esc(statusNames[t.status] || t.status)}</span>`)}${phoneField("priority", "Priority", priorityLabel(priority), `<span class="field-chip field-chip-priority phone-task-priority" ${taskColorAttributes(state, "priority", priority)}>${icon(`priority-${priority}`)}</span>`)}${taskDateButton(t,"phone-field phone-due")}</span></span></div></div>`;
 }
 function listView(tasks, order = statuses) {
   return order
@@ -1338,7 +1340,7 @@ function tableView(tasks) {
   return `<div class="table-scroll"><table class="task-table"><thead><tr><th>#</th>${["title", "type", "status", "priority", "parent", "assignee", "due", "tags"].map((field) => `<th><button data-action="sort-column" data-field="${field}">${field === "due" ? "Due date" : label(field)}${state.sort === field ? (state.sortDir === 1 ? " ↑" : " ↓") : ""}</button></th>`).join("")}</tr></thead><tbody>${tasks.map((t, index) => `<tr><td>${index + 1}</td><td class="title-cell"><button class="table-open" data-action="task-open" data-id="${esc(t.id)}" aria-label="Open ${esc(t.title)}">${icon("external")}</button>${input(t, "title")}</td><td>${select(t, "type", types)}</td><td>${select(t, "status", statuses, statusNames)}</td><td>${select(t, "priority", priorities, priorityLabels)}</td><td><select data-task-field="parent" data-id="${esc(t.id)}" aria-label="Parent for ${esc(t.title)}">${parentOptions(t.parent, t.id)}</select></td><td>${input(t, "assignee")}</td><td>${input(t, "due", "date")}</td><td>${input(t, "tags")}</td></tr>`).join("")}</tbody></table></div><button class="add-row" data-action="task-new">${icon("plus")}New row</button>`;
 }
 function kanbanCard(t) {
-  return `<article class="kanban-card${state.config.done.includes(t.status) ? " card-done" : ""}" draggable="true" data-drag-task="${esc(t.id)}"><div class="card-top"><span class="task-type ${esc(t.type)}" role="img" aria-label="${esc(label(t.type))}" title="${esc(label(t.type))}">${icon(t.type)}</span><span class="task-id" title="${esc(t.source ? sourceLabel(t) : t.key || t.id)}">${esc(t.key || t.id)}</span><button class="task-title" aria-keyshortcuts="Alt+ArrowUp Alt+ArrowDown" aria-description="Alt + Up or Down reorders this card within its column." data-action="task-open" data-id="${esc(t.id)}">${esc(t.title)}</button></div><div class="card-bottom">${inlineTaskFields(t,"kanban-fields")}</div></article>`;
+  return `<article class="kanban-card${state.config.done.includes(t.status) ? " card-done" : ""}" draggable="true" data-drag-task="${esc(t.id)}"><div class="card-top"><span class="task-type ${esc(t.type)}" role="img" aria-label="${esc(label(t.type))}" title="${esc(label(t.type))}">${typeIcon(icon, state.config, t.type)}</span><span class="task-id" title="${esc(t.source ? sourceLabel(t) : t.key || t.id)}">${esc(t.key || t.id)}</span><button class="task-title" aria-keyshortcuts="Alt+ArrowUp Alt+ArrowDown" aria-description="Alt + Up or Down reorders this card within its column." data-action="task-open" data-id="${esc(t.id)}">${esc(t.title)}</button></div><div class="card-bottom">${inlineTaskFields(t,"kanban-fields")}</div></article>`;
 }
 function kanbanView(tasks) {
   const field = kanbanGroup(state.kanbanGroupBy);
@@ -1794,7 +1796,7 @@ function taskDialog(id = null, defaults = {}, replace = false) {
         "type",
         "Card type",
         t.type,
-        types.map((value) => ({ value, label: label(value), icon: value })),
+        types.map((value) => ({ value, label: label(value), icon: typeIconName(state.config, value) })),
         true,
       )}
     </div>${t.key || id ? `<span class="task-id task-key" title="${esc(t.key || id)}">${esc(t.key || id)}</span>` : isDraft ? '<span class="task-id task-key">Draft</span>' : ""}${id ? bookmarks.button("card", state.project.id, id) : ""}<input class="title-input" name="title" aria-label="Card title" value="${esc(t.title)}" placeholder="Card title" required maxlength="300" autofocus>${id || isDraft ? "" : closeButton}</div></div>
@@ -2150,7 +2152,7 @@ function boardTaskResultsHTML() {
           : t.assignee === f.assignee)) &&
       (!f.placement || current.has(t.id) === (f.placement === "on")),
   );
-  return `<p class="field-hint">${tasks.length} ${tasks.length === 1 ? "card" : "cards"}</p><div class="task-picker-list">${tasks.map((t) => `<button type="button" class="board-pick" data-action="board-pick" data-id="${esc(t.id)}" aria-label="Add ${esc(t.key || "")} ${esc(t.title)} to board">${icon(t.type)}<span><small>${esc(t.key || t.id)} · ${esc(statusNames[t.status] || t.status)}</small><strong>${esc(t.title)}</strong><small>${current.has(t.id) ? "On board · Add another card" : esc(t.assignee || "Unassigned")}</small></span>${icon("plus")}</button>`).join("") || '<p id="task-picker-empty">No matching cards.</p>'}</div>`;
+  return `<p class="field-hint">${tasks.length} ${tasks.length === 1 ? "card" : "cards"}</p><div class="task-picker-list">${tasks.map((t) => `<button type="button" class="board-pick" data-action="board-pick" data-id="${esc(t.id)}" aria-label="Add ${esc(t.key || "")} ${esc(t.title)} to board">${typeIcon(icon, state.config, t.type)}<span><small>${esc(t.key || t.id)} · ${esc(statusNames[t.status] || t.status)}</small><strong>${esc(t.title)}</strong><small>${current.has(t.id) ? "On board · Add another card" : esc(t.assignee || "Unassigned")}</small></span>${icon("plus")}</button>`).join("") || '<p id="task-picker-empty">No matching cards.</p>'}</div>`;
 }
 function toggleBoardTasks() {
   if (!board()) return;

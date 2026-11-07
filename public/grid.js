@@ -1,4 +1,5 @@
 import { confirmAction } from "./confirm-popover.js";
+import { typeIcon, typeIconName } from "./task-types.js";
 import { fieldOn } from "./card-fields.js";
 import { priorityOptions, priorityLabels, priorityLabel } from "./task-priority.js";
 import {sourceReadOnly,sourceLabel} from "./source-model.js";
@@ -90,7 +91,7 @@ export function grid(ctx) {
             : label(key);
   const selectValue = (key, value, text) =>
     key === "type"
-      ? `<span class="task-type ${esc(value)}">${ctx.icon(value)}</span>`
+      ? `<span class="task-type ${esc(value)}">${typeIcon(ctx.icon, state.config, value)}</span>`
       : key === "assignee"
         ? ctx.assigneeHTML({ assignee: value })
         : key === "priority"
@@ -235,7 +236,7 @@ export function grid(ctx) {
       if (key === "assignee")
         return select(assigneeOptions(state, value, esc), value || "Unassigned");
       if (key === "type")
-        return select(values.map(type => `<option value="${esc(type)}" data-icon="${esc(type)}" ${type === value ? "selected" : ""}>${esc(label(type))}</option>`).join(""), label(value));
+        return select(values.map(type => `<option value="${esc(type)}" data-icon="${esc(typeIconName(state.config, type))}" ${type === value ? "selected" : ""}>${esc(label(type))}</option>`).join(""), label(value));
       if (values)
         return select(options(values, value, key === "status" ? ctx.statusNames : key === "priority" ? priorityLabels : undefined), key === "status" ? ctx.statusNames[value] || label(value) : key === "priority" ? priorityLabel(value) : label(value || values[0] || ""));
       if (key === "parent")

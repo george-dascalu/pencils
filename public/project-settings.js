@@ -6,6 +6,7 @@ import { projectPeopleControls, projectPeople } from "./teams.js";
 import { tagsSettingsHTML, tagsSettings, tagRows } from "./project-tags-settings.js";
 import { priorityOptions, priorityLabel } from "./task-priority.js";
 import { taskFieldColor, priorityColors } from "./task-colors.js";
+import { installTypeLooks, typeLookChanges } from "./type-look-settings.js";
 import { projectRecords } from "./project-records.js";
 import { debugEntries, clearDebugLog } from "./debug-log.js";
 import { formatDateTime } from "./format-date.js";
@@ -563,6 +564,7 @@ export function projectSettings(ctx, { sources, automations, personal, organisat
       if (section === "tags") tagsSettings(f, ctx, settingsSaveState);
       if (["workflow", "hierarchy"].includes(section))
         workflowEditor(f, schema, state.tasks, ctx, { section });
+      if (section === "hierarchy") installTypeLooks(f, state.config, { esc, colorPicker });
       // Assignee, status and priority share one box whose border takes the priority's colour.
       if (section === "workflow")
         f.querySelector(".dialog-body").insertAdjacentHTML("beforeend", `<fieldset class="card-fields"><legend>Card fields</legend><p class="field-hint">Cards always show their ID and title. Turn off the fields this project doesn't use: their values stay in the files, and views that need a field that's off leave the tabs.</p><div class="card-field-list">${CARD_FIELDS.map(([key, name]) => `<label><input type="checkbox" name="card-field" value="${key}" ${fieldOn(schema, key) ? "checked" : ""}> ${name}</label>`).join("")}</div></fieldset><fieldset class="priority-colors"><legend>Priority colours</legend><p class="field-hint">A card's assignee, status and priority share one box with a border in its priority's colour.</p><div class="priority-color-list">${priorityOptions.map((priority) => `<div class="field">${esc(priorityLabel(priority))}${colorPicker({ label: `${priorityLabel(priority)} priority colour`, value: taskFieldColor(state, "priority", priority), name: `priority-color-${priority}` })}</div>`).join("")}</div></fieldset>`);
@@ -604,6 +606,7 @@ export function projectSettings(ctx, { sources, automations, personal, organisat
           }
           if (["workflow", "hierarchy"].includes(section))
             changes = { schema: JSON.parse(data.get("workflowSchema")) };
+          if (section === "hierarchy") Object.assign(changes.schema, typeLookChanges(data, changes.schema.types));
           if (section === "tags") changes = { schema: { ...config, tags: tagRows(f) } };
           if (section === "workflow") {
             // Only colours that differ from the defaults are kept, so the defaults can change later.

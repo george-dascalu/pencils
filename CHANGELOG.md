@@ -2,6 +2,15 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.22.67 — 2026-11-07
+
+### Added
+- Feature F0.22-67: Settings → Card types gives each card type an icon and a colour, chosen from the app's icons and the shared colour picker. Cards of that type show them everywhere: List, Tree, Table, Kanban, boards, documents, relationships and the card editor.
+- Feature F0.22-65: A right click on a card or any other object on a board opens a menu beside the pointer with Copy, Paste, Duplicate and Delete, for that object or the selection it is part of. A right click on an empty part of the board pastes the copied objects where you clicked. Inside a frame it acts on the board, and on the frame from its title. The menu key or Shift+F10 opens the menu for the selection; locked objects can't be deleted from it. Dragging with the right button still pans the board, and drawing and connecting tools keep their own right click.
+
+### Fixed
+- Feature F0.22-66: Board menus, such as Board tools, are placed as they open, so they no longer show past the edge of the page for a moment first.
+
 ## 0.22.64 — 2026-11-07
 
 ### Fixed

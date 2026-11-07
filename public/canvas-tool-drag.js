@@ -1,4 +1,5 @@
 import { newGrid, GRID_DEFAULT_SIZE } from "./grid-model.js";
+import { typeIcon } from "./task-types.js";
 
 // Drag a tool onto the canvas without creating anything until a valid drop.
 export function canvasToolDrag(ctx, place, placeTask) {
@@ -54,7 +55,7 @@ export function canvasToolDrag(ctx, place, placeTask) {
           cancel();
           return;
         }
-        drag.preview.innerHTML = `<div class="task-drop-heading">${icon(t.type)} ${esc(label(t.type))}<span>${esc(t.key || "")}</span></div><strong>${esc(t.title)}</strong><div class="task-drop-meta">${esc(statusNames[t.status] || t.status)}${t.assignee ? ` · ${esc(t.assignee)}` : ""}</div><small>Drop to place card</small>`;
+        drag.preview.innerHTML = `<div class="task-drop-heading">${typeIcon(icon, state.config, t.type)} ${esc(label(t.type))}<span>${esc(t.key || "")}</span></div><strong>${esc(t.title)}</strong><div class="task-drop-meta">${esc(statusNames[t.status] || t.status)}${t.assignee ? ` · ${esc(t.assignee)}` : ""}</div><small>Drop to place card</small>`;
       } else if (drag.tool === "grid") {
         const grid = newGrid();
         drag.preview.innerHTML = `<div class="grid-grip">${icon("table")}<span>Drop to add a grid</span></div><div class="grid-cells" style="grid-template-columns:${grid.columns.map((v) => `${v}fr`).join(" ")};grid-template-rows:${grid.rows.map((v) => `${v}fr`).join(" ")}">${grid.cells.map((row, r) => row.map(() => `<div class="grid-cell ${grid.header && r === 0 ? "grid-header" : ""}"></div>`).join("")).join("")}</div>`;

@@ -1,7 +1,7 @@
 export { nextDate } from "../public/recurrence-model.js";
 import { validTablePreferences } from "../public/table-model.js";
 import { Problem } from "./problem.js";
-import { DEFAULT_TASK_TYPES } from "../public/task-types.js";
+import { DEFAULT_TASK_TYPES, TYPE_ICONS } from "../public/task-types.js";
 import { PRIORITIES } from "./values.js";
 import { CARD_FIELDS, VIEW_GROUPS } from "../public/card-fields.js";
 import {validTaskBoards} from './task-board-links.js';
@@ -121,6 +121,16 @@ export function schema(value = DEFAULT_SCHEMA) {
       Object.entries(colors).some(([priority, color]) => !PRIORITIES.includes(priority) || typeof color !== "string" || !/^#[0-9a-f]{6}$/i.test(color))
     )
       fail("Priority colours must be #rrggbb colours for known priorities.");
+  }
+  // Each card type's colour and icon (F0.22-67); a type taken out of the project leaves its own behind.
+  for (const [key, valid, name] of [
+    ["type_colors", (v) => typeof v === "string" && /^#[0-9a-f]{6}$/i.test(v), "Card type colours must be #rrggbb colours."],
+    ["type_icons", (v) => TYPE_ICONS.includes(v), "Card type icons must be ones the app offers."],
+  ]) {
+    if (result[key] == null) continue;
+    if (typeof result[key] !== "object" || Array.isArray(result[key]) || Object.values(result[key]).some((v) => !valid(v))) fail(name);
+    const kept = Object.entries(result[key]).filter(([type]) => result.types.includes(type));
+    result[key] = kept.length ? Object.fromEntries(kept) : undefined;
   }
   if (result.hierarchy != null) {
     const h = result.hierarchy;

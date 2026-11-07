@@ -62,6 +62,8 @@ import {
 } from "./node-layout.js";
 import { fieldOn, viewOn } from "./card-fields.js";
 import { canvasRichText, richToolbar } from "./canvas-rich-text.js";
+import { boardContextMenu } from "./board-context-menu.js";
+import { typeIcon } from "./task-types.js";
 import { encodeCanvas, markdownSlice, palette } from "./canvas-format.js";
 import {
   sides,
@@ -580,7 +582,7 @@ export function canvasPro(ctx, basic) {
       if (n.type === "draft") {
         const d = draftTaskData(n),
           count = n.comments?.filter((c) => !c.deleted).length || 0;
-        el.innerHTML = `<div class="live-card-heading"><span class="canvas-task-type" role="img" aria-label="${esc(ctx.label(d.type))}" title="Draft · ${esc(ctx.label(d.type))}">${icon(d.type)}</span><strong class="task-title" title="${esc(d.title)}">${esc(d.title)}</strong><div class="live-card-actions">${btn("convert", icon("task"), `data-id="${esc(n.id)}" aria-label="Finalise card" title="Finalise card" ${n.locked ? "disabled" : ""}`)}${btn("comments", icon("comment") + (count ? `<span class="task-comment-count">${count}</span>` : ""), `data-id="${esc(n.id)}" aria-label="Comments on ${esc(d.title)}"`)}${btn("draft-edit", "↗", `data-id="${esc(n.id)}" aria-label="Edit draft card" title="Edit draft card"`)}</div></div><div class="draft-task-meta"><span class="draft-task-badge">${icon("pencil")}Draft</span>${cardAssignee(d, `data-draft-node="${esc(n.id)}" ${n.locked ? "disabled" : ""}`)}${cardPriority(d, `data-draft-node="${esc(n.id)}" ${n.locked ? "disabled" : ""}`)}</div><div class="canvas-markdown task-card-description" ${n.taskCollapsed ? "hidden" : ""}>${d.body ? markdown(d.body) : '<span class="is-placeholder">Add card notes…</span>'}</div>${disclosure(n)}`;
+        el.innerHTML = `<div class="live-card-heading"><span class="canvas-task-type" role="img" aria-label="${esc(ctx.label(d.type))}" title="Draft · ${esc(ctx.label(d.type))}">${typeIcon(icon, state.config, d.type)}</span><strong class="task-title" title="${esc(d.title)}">${esc(d.title)}</strong><div class="live-card-actions">${btn("convert", icon("task"), `data-id="${esc(n.id)}" aria-label="Finalise card" title="Finalise card" ${n.locked ? "disabled" : ""}`)}${btn("comments", icon("comment") + (count ? `<span class="task-comment-count">${count}</span>` : ""), `data-id="${esc(n.id)}" aria-label="Comments on ${esc(d.title)}"`)}${btn("draft-edit", "↗", `data-id="${esc(n.id)}" aria-label="Edit draft card" title="Edit draft card"`)}</div></div><div class="draft-task-meta"><span class="draft-task-badge">${icon("pencil")}Draft</span>${cardAssignee(d, `data-draft-node="${esc(n.id)}" ${n.locked ? "disabled" : ""}`)}${cardPriority(d, `data-draft-node="${esc(n.id)}" ${n.locked ? "disabled" : ""}`)}</div><div class="canvas-markdown task-card-description" ${n.taskCollapsed ? "hidden" : ""}>${d.body ? markdown(d.body) : '<span class="is-placeholder">Add card notes…</span>'}</div>${disclosure(n)}`;
         displayCardFields(el, n, d);
       } else if (n.type === "task" && !byTask.has(n.task)) {
         el.classList.remove("overdue", "blocked-task", "dimmed");
@@ -614,7 +616,7 @@ export function canvasPro(ctx, basic) {
         if (asNote) {
           el.innerHTML = `<div class="note-content ${section?.text ? "has-body" : ""}"><div class="note-title canvas-markdown" data-inline-title>${esc(t.title)}</div><div class="note-body node-text canvas-markdown">${section ? (section.text ? markdown(section.text) : "") : "<p>Heading or block not found.</p>"}</div></div>`;
         } else {
-          el.innerHTML = `<div class="live-card-heading"><span class="canvas-task-identity"><span class="canvas-task-type" role="img" aria-label="${esc(ctx.label(t.type))}" title="${esc(ctx.label(t.type))}">${icon(t.type)}</span><span class="canvas-task-key" title="${esc(t.key || t.id)}">${esc(t.key || t.id)}</span></span><strong class="task-title" title="${esc(t.title)}" data-inline-title>${esc(t.title)}</strong><div class="live-card-actions">${btn("comments", icon("comment") + (commentCount ? `<span class="task-comment-count" aria-hidden="true">${commentCount}</span>` : ""), `data-id="${esc(n.id)}" aria-label="Comments on ${esc(t.title)}${commentCount ? ` (${commentCount})` : ""}" title="Comments${commentCount ? ` (${commentCount})` : ""}"`)}${btn("task-details", "↗", `data-task="${esc(t.id)}" aria-label="Open card details" title="Open card details"`)}</div></div><div class="live-card-state"><span class="field-box" ${fieldBoxStyle(state, t.priority)}>${cardAssignee(t, `data-task="${esc(t.id)}"`)}<select class="canvas-task-status" ${taskColorAttributes(state, "status", t.status)} data-canvas-status="${esc(t.id)}" ${sourceReadOnly(t,"status")?"disabled":""} aria-label="Card status" title="${esc(statusLabel(state.config, t.status))}">${nextStatuses(
+          el.innerHTML = `<div class="live-card-heading"><span class="canvas-task-identity"><span class="canvas-task-type" role="img" aria-label="${esc(ctx.label(t.type))}" title="${esc(ctx.label(t.type))}">${typeIcon(icon, state.config, t.type)}</span><span class="canvas-task-key" title="${esc(t.key || t.id)}">${esc(t.key || t.id)}</span></span><strong class="task-title" title="${esc(t.title)}" data-inline-title>${esc(t.title)}</strong><div class="live-card-actions">${btn("comments", icon("comment") + (commentCount ? `<span class="task-comment-count" aria-hidden="true">${commentCount}</span>` : ""), `data-id="${esc(n.id)}" aria-label="Comments on ${esc(t.title)}${commentCount ? ` (${commentCount})` : ""}" title="Comments${commentCount ? ` (${commentCount})` : ""}"`)}${btn("task-details", "↗", `data-task="${esc(t.id)}" aria-label="Open card details" title="Open card details"`)}</div></div><div class="live-card-state"><span class="field-box" ${fieldBoxStyle(state, t.priority)}>${cardAssignee(t, `data-task="${esc(t.id)}"`)}<select class="canvas-task-status" ${taskColorAttributes(state, "status", t.status)} data-canvas-status="${esc(t.id)}" ${sourceReadOnly(t,"status")?"disabled":""} aria-label="Card status" title="${esc(statusLabel(state.config, t.status))}">${nextStatuses(
             state.config,
             t.status,
           )
@@ -1915,7 +1917,8 @@ export function canvasPro(ctx, basic) {
       "canvas-templates",
     );
   }
-  function insertTemplate(id, supplied = null) {
+  // `at`, a board point, places a paste there (a right click's point, F0.22-65).
+  function insertTemplate(id, supplied = null, at = null) {
     const saved = supplied || board().templates?.find((t) => t.id === id);
     let nodes = [],
       edges = [];
@@ -1976,7 +1979,7 @@ export function canvasPro(ctx, basic) {
           : null,
       p = destination
         ? { x: destination.x + 32, y: destination.y + 56 }
-        : addPosition(),
+        : at || addPosition(),
       ids = new Map(nodes.map((n) => [n.id, uid("n")])),
       groups = new Map(
         nodes.filter((n) => n.group).map((n) => [n.group, uid("g")]),
@@ -2037,6 +2040,98 @@ export function canvasPro(ctx, basic) {
     }
     basic.focusSelection();
   }
+  function copySelection() {
+    const nodes = structuredClone(basic.selectionContents()),
+      ids = new Set(nodes.map((n) => n.id));
+    clipboard = {
+      source: `${state.project.id}/${board().id}`,
+      nodes,
+      edges: structuredClone(
+        board().edges.filter(
+          (e) =>
+            (ids.has(e.from) && ids.has(e.to)) ||
+            basic.selectedEdges.has(e.id),
+        ),
+      ),
+    };
+    toast(`${nodes.length + clipboard.edges.length} objects copied.`);
+  }
+  // Right click (F0.22-65): the board's menu for the object under the pointer, which it selects unless
+  // it is already part of the selection; on an empty part of the board, a paste there. The menu key
+  // or Shift+F10 opens it for the selection. Touch keeps its long press; text keeps the browser's menu.
+  const contextMenu = boardContextMenu(ctx);
+  function openContextMenu(canvas, at, where) {
+    if (!canvas.isConnected || state.view !== "board") return;
+    const nodes = pick(), edges = basic.pickEdges();
+    contextMenu.open(canvas, at, {
+      copy: nodes.length > 0 || edges.length > 0,
+      paste: !!clipboard,
+      duplicate: nodes.length > 0 || edges.length > 0,
+      delete: nodes.some((n) => !n.locked) || edges.length > 0,
+    }, (action) => {
+      // Not on a board left meanwhile.
+      if (!canvas.isConnected || state.view !== "board") return;
+      if (action === "copy") copySelection();
+      else if (action === "paste") insertTemplate("clipboard", clipboard, where);
+      else basic.click(action === "delete" ? "selection-delete" : "duplicate");
+    });
+  }
+  const boardTarget = (target) => {
+    const canvas = $("#canvas");
+    return state.view === "board" && board() && canvas?.contains(target) && !canvas.classList.contains("presenting") && !target.closest("input,textarea,[contenteditable]:not([contenteditable=false]),.inline-editing") && canvas;
+  };
+  // From the keyboard, for the selection.
+  const selectionCorner = (canvas) => {
+    const r = ($(".board-node.selected") || canvas).getBoundingClientRect();
+    return { x: r.left + Math.min(24, r.width / 2), y: r.top + Math.min(24, r.height / 2) };
+  };
+  let keyOpened = 0;
+  document.addEventListener("contextmenu", (event) => {
+    const canvas = boardTarget(event.target), el = event.target.closest("[data-node]");
+    // The pen's barrel button, touch and the drawing and connecting tools keep their own.
+    if (!canvas || ["touch", "pen"].includes(event.pointerType) || !["cursor", "hand"].includes(state.tool) || (!el && event.target.closest(".board-tools,.board-controls,#pen-tools,.inline-floating-tools,#selection-tools,.canvas-panel,.canvas-find,.canvas-filters,#presentation-controls,button,a"))) return;
+    event.preventDefault();
+    // The browser's own event after the menu key, which already opened the menu.
+    if (Date.now() - keyOpened < 1000) return;
+    let id = el?.dataset.node;
+    // A card drawn over a frame or grid is the one clicked, as with a left click; a frame's inside is
+    // the board.
+    if (!el || el.matches(".frame,.grid")) {
+      id = overviewNode(point(event))?.id || id;
+      const n = id && board().nodes.find((node) => node.id === id);
+      const title = n?.type === "frame" && $(`[data-node="${CSS.escape(id)}"] .frame-title`)?.getBoundingClientRect();
+      if (n?.type === "frame" && !n.collapsed && !(title && event.clientX >= title.left && event.clientX <= title.right && event.clientY >= title.top && event.clientY <= title.bottom)) id = null;
+    }
+    const at = { x: event.clientX, y: event.clientY }, where = point(event);
+    const act = (x, y) => {
+      // A right drag pans the board instead (canvas-controls.js).
+      if (pressedAt && Math.hypot(x - pressedAt.x, y - pressedAt.y) > 4) return;
+      if (!id) basic.clearSelection();
+      else if (!selected.has(id) && state.selectedNode !== id) {
+        selected.clear();
+        selected.add(id);
+        basic.selectedEdges.clear();
+        state.selectedNode = id;
+        state.selectedEdge = null;
+        basic.selection();
+      }
+      openContextMenu(canvas, at, where);
+    };
+    // Linux and macOS (also for Ctrl+click) send the event while the button is down: releasing it
+    // would dismiss the menu, so it opens on that release.
+    if (!event.buttons) return act(event.clientX, event.clientY);
+    const button = event.button;
+    window.addEventListener("pointerup", (up) => { if (up.button === button) setTimeout(() => act(up.clientX, up.clientY)); }, { once: true, capture: true });
+  });
+  let pressedAt = null;
+  window.addEventListener("pointerdown", (event) => { pressedAt = { x: event.clientX, y: event.clientY }; }, true);
+  document.addEventListener("keydown", (event) => {
+    const canvas = (event.key === "ContextMenu" || (event.shiftKey && event.key === "F10")) && !state.dialog && !state.menu && !state.canvasEditing && boardTarget(event.target);
+    if (!canvas) return;
+    event.preventDefault();
+    keyOpened = Date.now();
+    openContextMenu(canvas, selectionCorner(canvas), null);
+  });
   function connections() {
     const b=board(),nodes=b.nodes.filter(n=>!["frame","grid","draw"].includes(n.type)),name=n=>task(n.task)?.title || n.draft?.title || n.text || n.type;
     const options=selected=>nodes.map(n=>`<option value="${esc(n.id)}" ${n.id===selected?"selected":""}>${esc(name(n).slice(0,100))}</option>`).join("");
@@ -2784,20 +2879,7 @@ export function canvasPro(ctx, basic) {
         (pick().length || basic.pickEdges().length)
       ) {
         event.preventDefault();
-        const nodes = structuredClone(basic.selectionContents()),
-          ids = new Set(nodes.map((n) => n.id));
-        clipboard = {
-          source: `${state.project.id}/${board().id}`,
-          nodes,
-          edges: structuredClone(
-            board().edges.filter(
-              (e) =>
-                (ids.has(e.from) && ids.has(e.to)) ||
-                basic.selectedEdges.has(e.id),
-            ),
-          ),
-        };
-        toast(`${nodes.length + clipboard.edges.length} objects copied.`);
+        copySelection();
       }
       if (command && event.key.toLowerCase() === "v" && clipboard) {
         event.preventDefault();

@@ -474,6 +474,11 @@ export function projectLayout(ctx) {
     },
     true,
   );
+  // Placed as soon as a menu opens, before it is drawn: the toggle event comes a task later, after a
+  // frame may already show the menu where it would overflow the page.
+  new MutationObserver((records) => {
+    if (records.some((r) => r.target.matches(".board-menu[open]"))) positionMenus();
+  }).observe(document.documentElement, { subtree: true, attributes: true, attributeFilter: ["open"] });
   window.addEventListener("resize", positionMenus);
   window.addEventListener("scroll", positionMenus, true);
   window.visualViewport?.addEventListener("resize", positionMenus);

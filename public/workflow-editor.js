@@ -1,4 +1,5 @@
 import { ruleDiagram } from "./rule-diagram.js";
+import { typeIcon, typeIconName } from "./task-types.js";
 import { hierarchyRules } from "./hierarchy-model.js";
 import { initialStatus, statusLabel } from "./workflow-model.js";
 import { focusOnOpen } from "./open-focus.js";
@@ -56,7 +57,7 @@ export function workflowEditor(form, config, tasks, { esc, icon }, { section = "
       ui: diagramUI.hierarchy,
       nodes: [
         { id: "@root", label: "No parent", icon: "folder" },
-        ...model.types.map((id) => ({ id, label: id, icon: id })),
+        ...model.types.map((id) => ({ id, label: id, icon: typeIconName(model, id) })),
       ],
       links: [
         ...h.roots.map((to) => ({ from: "@root", to })),
@@ -118,7 +119,7 @@ export function workflowEditor(form, config, tasks, { esc, icon }, { section = "
     const h = hierarchyRules(model);
     host.insertAdjacentHTML(
       "beforeend",
-      `<section class="hierarchy-editor" aria-label="Cards Hierarchies" ${section === "workflow" ? "hidden" : ""}><h3>Card hierarchy</h3><label class="field">Hierarchy mode<select data-hierarchy-mode><option value="free" ${h.mode === "free" ? "selected" : ""}>Freeflow</option><option value="enforced" ${h.mode === "enforced" ? "selected" : ""}>Enforce rules</option></select></label><p class="field-hint">${h.mode === "free" ? "Any card type can parent any other type. Your rules below are kept for later." : "Only connected relationships are allowed. Existing cards must match before these rules can be saved."} Cycles are never allowed.</p><div data-hierarchy-diagram></div><details class="hierarchy-matrix"><summary>Edit rules as a table</summary><div class="hierarchy-table-wrap"><table class="hierarchy-table"><caption>Rows are parents; columns are allowed child types.</caption><thead><tr><th>Parent / child</th>${model.types.map((t) => `<th>${icon(t)} ${esc(t)}</th>`).join("")}</tr></thead><tbody>${[null, ...model.types].map((parent) => `<tr><th>${parent === null ? "No parent (top level)" : esc(parent)}</th>${model.types.map((child) => `<td><input type="checkbox" data-hierarchy-parent="${parent ?? ""}" data-hierarchy-child="${esc(child)}" aria-label="${esc(parent ?? "No parent")} allows ${esc(child)}" ${(parent === null ? h.roots : h.children[parent] || []).includes(child) ? "checked" : ""}></td>`).join("")}</tr>`).join("")}</tbody></table></div></details><p class="field-hint">Uncheck a type in “No parent” to require a parent. Uncheck an entire parent row to prevent that type having children.</p></section>`,
+      `<section class="hierarchy-editor" aria-label="Cards Hierarchies" ${section === "workflow" ? "hidden" : ""}><h3>Card hierarchy</h3><label class="field">Hierarchy mode<select data-hierarchy-mode><option value="free" ${h.mode === "free" ? "selected" : ""}>Freeflow</option><option value="enforced" ${h.mode === "enforced" ? "selected" : ""}>Enforce rules</option></select></label><p class="field-hint">${h.mode === "free" ? "Any card type can parent any other type. Your rules below are kept for later." : "Only connected relationships are allowed. Existing cards must match before these rules can be saved."} Cycles are never allowed.</p><div data-hierarchy-diagram></div><details class="hierarchy-matrix"><summary>Edit rules as a table</summary><div class="hierarchy-table-wrap"><table class="hierarchy-table"><caption>Rows are parents; columns are allowed child types.</caption><thead><tr><th>Parent / child</th>${model.types.map((t) => `<th>${typeIcon(icon, model, t)} ${esc(t)}</th>`).join("")}</tr></thead><tbody>${[null, ...model.types].map((parent) => `<tr><th>${parent === null ? "No parent (top level)" : esc(parent)}</th>${model.types.map((child) => `<td><input type="checkbox" data-hierarchy-parent="${parent ?? ""}" data-hierarchy-child="${esc(child)}" aria-label="${esc(parent ?? "No parent")} allows ${esc(child)}" ${(parent === null ? h.roots : h.children[parent] || []).includes(child) ? "checked" : ""}></td>`).join("")}</tr>`).join("")}</tbody></table></div></details><p class="field-hint">Uncheck a type in “No parent” to require a parent. Uncheck an entire parent row to prevent that type having children.</p></section>`,
     );
     diagrams();
     sync();

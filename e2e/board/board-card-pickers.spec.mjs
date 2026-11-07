@@ -59,7 +59,8 @@ test("a board card's dates keep keyboard focus, say why a rejected date wasn't s
   await calendar.locator('table [data-date-value="2026-10-29"]').click();
   await expect(page.locator(".toast.error")).toBeVisible();
   await page.unroute("**/delta?*");
-  await Promise.all(held.map((route) => route.continue()));
+  // A poll the page gave up on meanwhile, under load, is already over.
+  await Promise.all(held.map((route) => route.continue().catch((error) => { if (!/already handled/.test(error.message)) throw error; })));
   // A narrow card keeps the due date, inside its box, and leaves the status room.
   const node = (await app.store.snapshot(app.project.id)).boards.find((b) => b.id === app.board.id);
   await app.store.updateBoard(app.project.id, app.board.id, { revision: node.revision, nodes: [{ ...node.nodes[0], w: 220 }] });
