@@ -2,6 +2,11 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.22.61 — 2026-11-07
+
+### Added
+- Feature F0.22-61: A Card IDs button in the bar of every view (List, Tree, Kanban, Calendar, Timeline and Capacity; in View options on phones) shows or hides the card IDs, such as BL-6, on every card and row, boards included. IDs show unless you hide them, and the choice is the same in every view and kept in this browser. Kanban's own Show card IDs checkbox is gone, so Kanban cards now show their IDs too unless hidden.
+
 ## 0.22.60 — 2026-11-07
 
 ### Changed

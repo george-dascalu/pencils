@@ -203,9 +203,8 @@ export function installFeatures(ctx) {
       $(".toolbar-right")?.setAttribute("hidden", "");
     }
     $(".kanban-group-control")?.remove();
-    $(".kanban-id-control")?.remove();
     if (state.view === "kanban") {
-      $(".toolbar-right")?.insertAdjacentHTML("afterbegin", `<label class="kanban-group-control">Swimlanes<select id="kanban-group" class="filter" aria-label="Kanban swimlanes">${options(kanbanGroups.filter((field) => fieldOn(state.config, field)), kanbanGroup(state.kanbanGroupBy), { none: "None", assignee: "Assignee", priority: "Priority", type: "Card type", tags: "Tag" })}</select></label><label class="kanban-group-control kanban-id-control check-control"><input type="checkbox" id="kanban-show-ids" ${storage.get(`kanban-show-ids:${state.project.id}`, false) === true ? "checked" : ""}>Show card IDs</label>`);
+      $(".toolbar-right")?.insertAdjacentHTML("afterbegin", `<label class="kanban-group-control">Swimlanes<select id="kanban-group" class="filter" aria-label="Kanban swimlanes">${options(kanbanGroups.filter((field) => fieldOn(state.config, field)), kanbanGroup(state.kanbanGroupBy), { none: "None", assignee: "Assignee", priority: "Priority", type: "Card type", tags: "Tag" })}</select></label>`);
     }
     layout.projectHeader();
   }
@@ -1122,11 +1121,6 @@ export function installFeatures(ctx) {
       } else state.extraFilters[el.id.slice(7)] = el.type === "checkbox" ? el.checked : el.value;
       state.page = 0;
       renderView(true);
-    }
-    if (el.id === "kanban-show-ids") {
-      storage.set(`kanban-show-ids:${state.project.id}`, el.checked);
-      renderView(true);
-      $("#kanban-show-ids")?.focus({ preventScroll: true });
     }
     if (el.id === "kanban-group") {
       state.kanbanGroupBy = kanbanGroup(el.value);

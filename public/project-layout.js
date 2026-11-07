@@ -109,6 +109,9 @@ export function projectLayout(ctx) {
       // Sort sits right after Filters, looking like it (F0.21-92): the task views' button, or Table's Sort menu.
       const filtersMenu = toolbar.querySelector(':scope > details.board-menu[data-board-menu="filters"]');
       if (sortButton) (filtersMenu || sort).after(sortButton);
+      // Card IDs follows Sort, or Filters where there's no sort (F0.22-61).
+      const ids = toolbar.querySelector(":scope > .card-ids-control");
+      if (ids && (sortButton || filtersMenu)) (sortButton || filtersMenu).after(ids);
       if (filtersMenu && state.view === "table") moveTo($('.table-view-tools > [data-board-menu="table-sorts"]'), (el) => filtersMenu.after(el));
       // A view's less-used options (Capacity's Measure, Scope and Team) wait in Filters, keeping the
       // toolbar to one row; phones list them in View options.
@@ -134,7 +137,7 @@ export function projectLayout(ctx) {
     const name = `View options${count ? ` (${count} ${count === 1 ? "filter" : "filters"} active)` : ""}`;
     compact.innerHTML = `<summary class="icon-button${count ? " filter-active" : ""}" aria-label="${name}" title="${name}">${icon("filter")}${count ? `<span class="filter-count" aria-hidden="true">${count}</span>` : ""}</summary><div class="mobile-view-options-panel" aria-label="View options"><header><strong>View options</strong><button type="button" class="icon-button" aria-label="Close view options">${icon("close")}</button></header></div>`;
     const panel = compact.lastElementChild;
-    const selectors = ".toolbar-left > .filter:not(#sort), .toolbar-left > .board-menu, .toolbar-left > .bookmark-button, .toolbar-right, .table-view-tools, .grid-tools, #view-toolbar [data-phone-options], #view-content [data-phone-options]";
+    const selectors = ".toolbar-left > .filter:not(#sort), .toolbar-left > .board-menu, .toolbar-left > .card-ids-control, .toolbar-left > .bookmark-button, .toolbar-right, .table-view-tools, .grid-tools, #view-toolbar [data-phone-options], #view-content [data-phone-options]";
     for (const element of document.querySelectorAll(selectors)) {
       const slot = document.createComment("view control position");
       element.before(slot);
@@ -181,8 +184,9 @@ export function projectLayout(ctx) {
     }
     moveTo(toolbar.querySelector(":scope > .search"), (el) => tools.append(el));
     moveTo(toolbar.querySelector(':scope > details.board-menu[data-board-menu="filters"]'), (el) => tools.append(el));
-    // Sort follows Filters here too; Table's menu already left its slot, so it just moves along.
+    // Sort follows Filters here too, then Card IDs; Table's menu already left its slot, so it just moves along.
     if (sortButton) tools.append(sortButton);
+    moveTo(toolbar.querySelector(":scope > .card-ids-control"), (el) => tools.append(el));
     const tableSort = toolbar.querySelector(':scope > [data-board-menu="table-sorts"]');
     if (tableSort) tools.append(tableSort);
     moveTo(toolbar.querySelector(":scope > .active-filters"), (el) => tools.append(el));

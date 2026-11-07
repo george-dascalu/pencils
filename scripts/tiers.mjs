@@ -510,6 +510,7 @@ export const TIERS = [
     "e2e/tasks/task-field-alignment.spec.mjs", // new card with optional fields off
     "e2e/tasks/task-notes.spec.mjs", // add notes to a card
     "e2e/tasks/untouched-draft.spec.mjs", // close an untouched new card
+    "e2e/ui/card-ids.spec.mjs", // show or hide card IDs
     "e2e/ui/card-wording.spec.mjs", // read labels
     "e2e/ui/color-picker.spec.mjs", // choose a colour
     "e2e/ui/cut-off-titles.spec.mjs", // read long titles

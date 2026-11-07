@@ -93,18 +93,19 @@ test("Alt+Arrow moves a card past its own copy in the next tag group, and focus 
   await expect(page.locator(`#view-content [data-task-drop-value="zebra"] [data-task-reorder="${s.both.id}"]`)).toBeFocused();
 });
 
-onDevices(["desktop", "phone"], () => test("Week board's Group by sits in Filters (View options on phones) and groups by tag", async ({ page, device }) => {
+onDevices(["desktop", "phone"], () => test("Week board's Group by sits in the bar (View options on phones) and groups by tag", async ({ page, device }) => {
   const s = device === "phone" ? app.weekPhone : app.week;
   await page.goto(`${app.base}/#project/${s.project.id}/calendar`);
   await choose(page, "#calendar-mode", "board");
   await expect(page.locator(".week-board")).toBeVisible();
   const select = page.locator("#week-board-rows");
   if (device === "desktop") {
-    await expect(page.locator('#view-toolbar [data-board-menu="filters"] #week-board-rows'), "in Filters").toHaveCount(1);
-    await expect(page.locator("#view-toolbar .planning-options #week-board-rows")).toHaveCount(0);
+    // In the bar since F0.22-59, not in Filters.
+    await expect(page.locator("#view-toolbar .planning-options #week-board-rows"), "in the bar").toHaveCount(1);
+    await expect(page.locator('#view-toolbar [data-board-menu="filters"] #week-board-rows')).toHaveCount(0);
   } else await expect(page.locator(".mobile-view-options #week-board-rows")).toHaveCount(1);
   await expect(select.locator("option")).toHaveText(["Assignee", "Status", "Priority", "Card type", "Tag", "Time of day", "No grouping"]);
-  await expect(select, "named while Filters is closed too").toHaveAttribute("aria-label", "Group by");
+  await expect(select, "named by its label").toHaveAttribute("aria-label", "Group by");
   await choose(page, "#week-board-rows", "tags");
   await expect.poll(() => groups(page, ".week-board-row", ".week-board-row-head > span:not(.count)", "[data-calendar-card]", "data-calendar-card")).toEqual(expected(s));
   // Dragging a card from one tag's row to another's swaps that tag.

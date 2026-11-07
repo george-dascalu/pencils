@@ -34,3 +34,8 @@
 :root[data-fields-off~="status"] { --box-status: 0; }
 :root[data-fields-off~="priority"] { --box-priority: 0; }
 :root[data-fields-off~="start"][data-fields-off~="due"] { --box-date: 0; }
+
+/* Card IDs, shown or hidden by the bar's Card IDs button (F0.22-61): every card tile and row leaves
+   out the key; a Timeline listing only numbers keeps them, and a board's tile for a deleted or
+   unavailable card keeps the ID that names it. */
+:root[data-ids-hidden] :is(.task-row > .task-id, .phone-task-meta > span:not([class]), .kanban-card .task-id, .live-card-heading .canvas-task-key, .timeline-key-full, .card-key) { display: none !important; }

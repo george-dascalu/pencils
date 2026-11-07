@@ -120,7 +120,7 @@ export function capacityView(ctx) {
       list
         .map(
           (t) =>
-            `<button type="button" class="capacity-task" data-feature="global-open" data-project="${esc(t.project || state.project.id)}" data-id="${esc(t.id)}"><span>${esc(t.key || "")} ${esc(t.title)}</span><small>${esc(t.project_title || "")} <span class="task-color-badge" ${taskColorAttributes(state, "assignee", t.assignee)}>${esc(t.assignee || "Unassigned")}</span></small></button>`,
+            `<button type="button" class="capacity-task" data-feature="global-open" data-project="${esc(t.project || state.project.id)}" data-id="${esc(t.id)}"><span>${t.key ? `<span class="card-key">${esc(t.key)}</span> ` : ""}${esc(t.title)}</span><small>${esc(t.project_title || "")} <span class="task-color-badge" ${taskColorAttributes(state, "assignee", t.assignee)}>${esc(t.assignee || "Unassigned")}</span></small></button>`,
         )
         .join("");
     const detail = (list, title) =>

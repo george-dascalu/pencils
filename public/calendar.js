@@ -72,13 +72,15 @@ export function calendarView(ctx) {
   const format = (day, options = {}) => new Date(`${day}T12:00:00`).toLocaleDateString(undefined, { day: "numeric", month: "short", ...options });
   const rangeLabel = t => { const r = calendarRange(t); return r ? `${r.start === r.end ? format(r.start) : `${format(r.start)} – ${format(r.end)}`}${timedCard(t) ? ` · ${t.start_time} – ${t.due_time}` : ""}` : "Set dates"; };
   const title = t => `${t.key ? `${t.key} ` : ""}${t.title}`;
+  // The key apart, so the Card IDs button can hide it (F0.22-61).
+  const titleHTML = t => `${t.key ? `<span class="card-key">${esc(t.key)}</span> ` : ""}${esc(t.title)}`;
   const isDone = t => state.config.done.includes(t.status);
   function dateButton(t) {
     return `<button type="button" class="button small calendar-dates" data-calendar-dates="${esc(t.id)}" aria-label="Edit dates for ${esc(t.title)}" aria-haspopup="dialog" aria-expanded="false">${icon("calendar")}<span>${esc(rangeLabel(t))}</span></button>`;
   }
   function row(t, unscheduled = false) {
     const grip = unscheduled && !sourceReadOnly(t,"due") ? `<button type="button" class="icon-button calendar-move" data-calendar-move aria-label="Schedule ${esc(t.title)}" title="Drag onto a day, or tap to set dates">${icon("drag")}</button>` : "";
-    return `<div class="agenda-row ${grip ? "calendar-draggable-row" : ""}${isDone(t) ? " card-done" : ""}" data-calendar-card="${esc(t.id)}">${grip}<button type="button" class="agenda-task" data-action="task-open" data-id="${esc(t.id)}" title="${esc(title(t))}">${taskColorDot(state, "status", t.status)}<span>${esc(title(t))}</span></button>${unscheduled ? dateButton(t) : ctx.inlineTaskFields(t, "agenda-fields", rangeLabel(t))}</div>`;
+    return `<div class="agenda-row ${grip ? "calendar-draggable-row" : ""}${isDone(t) ? " card-done" : ""}" data-calendar-card="${esc(t.id)}">${grip}<button type="button" class="agenda-task" data-action="task-open" data-id="${esc(t.id)}" title="${esc(title(t))}">${taskColorDot(state, "status", t.status)}<span>${titleHTML(t)}</span></button>${unscheduled ? dateButton(t) : ctx.inlineTaskFields(t, "agenda-fields", rangeLabel(t))}</div>`;
   }
   // A quick range on one side and dates on the other, like a dashboard's time picker.
   function rangePicker(agenda, heading) {
@@ -123,7 +125,7 @@ export function calendarView(ctx) {
     const rows = field === "none" ? [""] : orderGroups(field === "daypart" ? DAYPARTS.map(([key]) => key) : field === "tags" ? naturalGroups(field, placed, state.config) : naturalGroups(field, placed.map(t => ({ [field]: value(t) })), state.config, projectPeople(state).map(p => p.name)), order, dir)
       .filter((row, _, all) => row || all.length === 1 || placed.some(t => inRow(t, row)));
     const name = value => field === "status" ? statusLabel(state.config, value) : field === "priority" ? priorityLabel(value) : field === "tags" ? value || "No tag" : field === "daypart" ? DAYPARTS.find(([key]) => key === value)?.[1] : value ? ctx.label(value) : field === "type" ? "No type" : "Unassigned";
-    const card = (t, { keys = "", place = "", dated = false } = {}) => `<article class="week-board-card${dated ? " week-board-dated" : ""}${isDone(t) ? " card-done" : ""}" data-calendar-card="${esc(t.id)}" data-task-color="status" style="--task-field-color:${taskFieldColor(state, "status", t.status)}${place}"><button type="button" class="week-board-title" data-action="task-open" data-id="${esc(t.id)}" title="${esc(title(t))}" ${keys}>${esc(title(t))}</button>${ctx.inlineTaskFields(t, "week-board-fields", rangeLabel(t))}</article>`;
+    const card = (t, { keys = "", place = "", dated = false } = {}) => `<article class="week-board-card${dated ? " week-board-dated" : ""}${isDone(t) ? " card-done" : ""}" data-calendar-card="${esc(t.id)}" data-task-color="status" style="--task-field-color:${taskFieldColor(state, "status", t.status)}${place}"><button type="button" class="week-board-title" data-action="task-open" data-id="${esc(t.id)}" title="${esc(title(t))}" ${keys}>${titleHTML(t)}</button>${ctx.inlineTaskFields(t, "week-board-fields", rangeLabel(t))}</article>`;
     // The Unscheduled board (F0.22-54), docked under the week: the matching cards with no dates that
     // aren't done, each where it was put (in reading order for the keyboard), the rest flowing in turn.
     // By time of day, the week's cards without times wait there first, by day, with their dates (F0.22-56).

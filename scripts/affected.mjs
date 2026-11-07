@@ -36,7 +36,7 @@ const AREAS = {
   settings: /^(hotkey|history-pages|project-create|project-settings|project-tags|project-records|debug-log|personal-settings|capture-settings|style-settings|project-sources|source-model|project-automations|workflow-|teams|recovery-ui|backup-limits)/,
   navigation: /^(hotkey|boot-progress|help|topbar-title|bookmarks|bottom-bar|roadmap|search-items)/,
   home: /^home/,
-  ui: /^(quiet-scrollbars|toolbar-scroll|assignee-name|card-key|color-|select-menu|date-picker|confirm-popover|format-date|in-place-editing)/,
+  ui: /^(quiet-scrollbars|toolbar-scroll|assignee-name|card-key|card-ids|color-|select-menu|date-picker|confirm-popover|format-date|in-place-editing)/,
 };
 const shared = (file) => SHARED.some((rule) => rule.test(file));
 // Touch and phone code, by name or by the words around a changed line (10 lines either side).

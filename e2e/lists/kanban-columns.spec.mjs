@@ -115,7 +115,12 @@ for (const group of ["none", "assignee"]) {
     await page.setViewportSize({ width: 834, height: 1000 });
     await board(page).evaluate((el) => (el.scrollLeft = el.scrollWidth));
     const before = await wholeColumns(page);
-    await page.locator("#kanban-show-ids").check();
+    // Card IDs redraws the board (F0.22-61): off and on again, so the cards end as they were.
+    const ids = page.getByRole("button", { name: "Card IDs", exact: true, includeHidden: true });
+    await (await reveal(ids)).click();
+    await expect(ids).toHaveAttribute("aria-pressed", "false");
+    await (await reveal(ids)).click();
+    await expect(ids).toHaveAttribute("aria-pressed", "true");
     expect((await wholeColumns(page)).first, "Rerender preserves the leading column").toBe(before.first);
     await page.waitForFunction(() => history.state?.scroll?.kanbanX > 0);
     await selectProjectView(page, "overview");

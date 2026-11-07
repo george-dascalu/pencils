@@ -2,6 +2,7 @@ import { installAssigneeNames } from "./assignee-name.js";
 import { esc } from "./escape.js";
 import { filterTasks, sortGroups, sortNames } from "./task-filter.js";
 import { installCardKeys } from "./card-key.js";
+import { cardIdsButton, installCardIds } from "./card-ids.js";
 import { closePopup, finishPopupExits } from "./popup-motion.js";
 import { projectCreateHTML } from "./project-create.js";
 import { taskTimeFields } from "./task-time-fields.js";
@@ -155,6 +156,7 @@ const paths = {
   calendar: "M4 5h16v16H4zM8 3v4M16 3v4M4 10h16M8 14h2M14 14h2M8 18h2",
   sun: "M16 12a4 4 0 1 1-8 0 4 4 0 0 1 8 0ZM12 2v2M12 20v2M2 12h2M20 12h2M5 5l1.5 1.5M17.5 17.5 19 19M5 19l1.5-1.5M17.5 6.5 19 5",
   "calendar-weekends": "M4 5h16v16H4zM8 3v4M16 3v4M4 10h16M14 13h3v5h-3z",
+  hash: "M10 3 8 21M16 3l-2 18M4 8h17M3 16h17",
   drag: "M9 5h.01M15 5h.01M9 12h.01M15 12h.01M9 19h.01M15 19h.01",
   table: "M3 4h18v16H3zM3 9h18M3 14h18M9 4v16M15 4v16",
   kanban: "M3 4h5v10H3zM10 4h5v16h-5zM17 4h5v7h-5z",
@@ -317,6 +319,7 @@ const storage = {
     }
   },
 };
+installCardIds({ storage, renderView });
 const state = {
   organisations: [],
   organisation: null,
@@ -1122,7 +1125,7 @@ function renderViewNow(onlyContent) {
         ? boardToolbar()
         : state.view === "overview"
           ? ""
-          : `<div class="toolbar"><div class="toolbar-left"><label class="search">${icon("search")}<input id="search" type="search" aria-label="Search cards" placeholder="Find a card…" value="${esc(state.search)}"></label><select id="filter-status" class="filter" aria-label="Filter by status"><option value="all">All statuses</option>${options(statuses, state.status, statusNames)}</select><select id="filter-type" class="filter" aria-label="Filter by card type"><option value="all">All types</option>${options(types, state.type)}</select>${bookmarks.button("view", state.project.id, state.view)}</div><div class="toolbar-right"><select id="sort" class="filter" aria-label="Sort cards">${sortGroups.map(([group, values]) => [group, values.filter((value) => fieldOn(state.config, value))]).filter(([, values]) => values.length).map(([group, values]) => (group ? `<optgroup label="${group}">${options(values, state.sort, sortNames)}</optgroup>` : options(values, state.sort, sortNames))).join("")}</select></div><div class="view-controls"></div></div>`;
+          : `<div class="toolbar"><div class="toolbar-left"><label class="search">${icon("search")}<input id="search" type="search" aria-label="Search cards" placeholder="Find a card…" value="${esc(state.search)}"></label><select id="filter-status" class="filter" aria-label="Filter by status"><option value="all">All statuses</option>${options(statuses, state.status, statusNames)}</select><select id="filter-type" class="filter" aria-label="Filter by card type"><option value="all">All types</option>${options(types, state.type)}</select>${state.view === "table" ? "" : cardIdsButton(storage, icon)}${bookmarks.button("view", state.project.id, state.view)}</div><div class="toolbar-right"><select id="sort" class="filter" aria-label="Sort cards">${sortGroups.map(([group, values]) => [group, values.filter((value) => fieldOn(state.config, value))]).filter(([, values]) => values.length).map(([group, values]) => (group ? `<optgroup label="${group}">${options(values, state.sort, sortNames)}</optgroup>` : options(values, state.sort, sortNames))).join("")}</select></div><div class="view-controls"></div></div>`;
   }
   const content = $("#view-content");
   const previousKanban = onlyContent && state.view === "kanban" ? content.querySelector(".kanban") : null;
@@ -1334,11 +1337,10 @@ function tableView(tasks) {
     `<input type="${type}" data-task-field="${key}" data-id="${esc(t.id)}" value="${esc(key === "tags" ? (t.tags || []).join(", ") : t[key] || "")}" aria-label="${label(key)} for ${esc(t.title)}" ${key === "title" ? 'maxlength="300" required' : ""}>`;
   return `<div class="table-scroll"><table class="task-table"><thead><tr><th>#</th>${["title", "type", "status", "priority", "parent", "assignee", "due", "tags"].map((field) => `<th><button data-action="sort-column" data-field="${field}">${field === "due" ? "Due date" : label(field)}${state.sort === field ? (state.sortDir === 1 ? " ↑" : " ↓") : ""}</button></th>`).join("")}</tr></thead><tbody>${tasks.map((t, index) => `<tr><td>${index + 1}</td><td class="title-cell"><button class="table-open" data-action="task-open" data-id="${esc(t.id)}" aria-label="Open ${esc(t.title)}">${icon("external")}</button>${input(t, "title")}</td><td>${select(t, "type", types)}</td><td>${select(t, "status", statuses, statusNames)}</td><td>${select(t, "priority", priorities, priorityLabels)}</td><td><select data-task-field="parent" data-id="${esc(t.id)}" aria-label="Parent for ${esc(t.title)}">${parentOptions(t.parent, t.id)}</select></td><td>${input(t, "assignee")}</td><td>${input(t, "due", "date")}</td><td>${input(t, "tags")}</td></tr>`).join("")}</tbody></table></div><button class="add-row" data-action="task-new">${icon("plus")}New row</button>`;
 }
-function kanbanCard(t, showIds = false) {
-  return `<article class="kanban-card${state.config.done.includes(t.status) ? " card-done" : ""}" draggable="true" data-drag-task="${esc(t.id)}"><div class="card-top"><span class="task-type ${esc(t.type)}" role="img" aria-label="${esc(label(t.type))}" title="${esc(label(t.type))}">${icon(t.type)}</span>${showIds ? `<span class="task-id" title="${esc(t.source ? sourceLabel(t) : t.key || t.id)}">${esc(t.key || t.id)}</span>` : ""}<button class="task-title" aria-keyshortcuts="Alt+ArrowUp Alt+ArrowDown" aria-description="Alt + Up or Down reorders this card within its column." data-action="task-open" data-id="${esc(t.id)}">${esc(t.title)}</button></div><div class="card-bottom">${inlineTaskFields(t,"kanban-fields")}</div></article>`;
+function kanbanCard(t) {
+  return `<article class="kanban-card${state.config.done.includes(t.status) ? " card-done" : ""}" draggable="true" data-drag-task="${esc(t.id)}"><div class="card-top"><span class="task-type ${esc(t.type)}" role="img" aria-label="${esc(label(t.type))}" title="${esc(label(t.type))}">${icon(t.type)}</span><span class="task-id" title="${esc(t.source ? sourceLabel(t) : t.key || t.id)}">${esc(t.key || t.id)}</span><button class="task-title" aria-keyshortcuts="Alt+ArrowUp Alt+ArrowDown" aria-description="Alt + Up or Down reorders this card within its column." data-action="task-open" data-id="${esc(t.id)}">${esc(t.title)}</button></div><div class="card-bottom">${inlineTaskFields(t,"kanban-fields")}</div></article>`;
 }
 function kanbanView(tasks) {
-  const showIds = storage.get(`kanban-show-ids:${state.project.id}`, false) === true;
   const field = kanbanGroup(state.kanbanGroupBy);
   const header = (status, items, defaults = "") => `<div class="column-header"><span class="status-dot ${esc(status)}" ${taskColorAttributes(state, "status", status)}></span>${esc(statusNames[status])}<span class="count">${items.length}</span><button type="button" class="icon-button" data-action="task-new" data-status="${esc(status)}" ${defaults} aria-label="Add card to ${esc(statusNames[status])}" title="Add card">${icon("plus")}</button></div>`;
   const column = (status, items, value = "") => {
@@ -1346,7 +1348,7 @@ function kanbanView(tasks) {
     const key = grouped ? JSON.stringify([field, value, status]) : status;
     const limit = state.kanbanLimits?.[`${state.project.id}/${key}`] || 100;
     const defaults = grouped ? `data-kanban-field="${field}" data-kanban-value="${esc(value)}"` : "";
-    return `<section class="kanban-column" data-drop-status="${esc(status)}" ${defaults} aria-label="${esc(statusNames[status])}">${grouped ? "" : header(status, items)}${items.slice(0, limit).map(t => kanbanCard(t, showIds)).join("")}${items.length > limit ? `<button class="button small" data-kanban-more="${esc(key)}">Show 100 more (${Math.min(limit, items.length)} shown)</button>` : ""}${grouped ? `<button class="add-row" data-action="task-new" data-status="${esc(status)}" ${defaults}>${icon("plus")}Add card</button>` : ""}</section>`;
+    return `<section class="kanban-column" data-drop-status="${esc(status)}" ${defaults} aria-label="${esc(statusNames[status])}">${grouped ? "" : header(status, items)}${items.slice(0, limit).map(t => kanbanCard(t)).join("")}${items.length > limit ? `<button class="button small" data-kanban-more="${esc(key)}">Show 100 more (${Math.min(limit, items.length)} shown)</button>` : ""}${grouped ? `<button class="add-row" data-action="task-new" data-status="${esc(status)}" ${defaults}>${icon("plus")}Add card</button>` : ""}</section>`;
   };
   if (field === "none") return `<div class="kanban" role="region" aria-label="Kanban board" tabindex="0" data-group="none">${statuses.map(status => column(status, tasks.filter(t => t.status === status))).join("")}</div>`;
   const lanes = kanbanLanes(tasks, field, state.config);
