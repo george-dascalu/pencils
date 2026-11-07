@@ -1,16 +1,9 @@
 import { randomUUID } from "./uuid.js";
+import { esc } from "./escape.js";
 import { localDrawings, drawingCheckpoint } from "./drawing-store.js";
 import { strokeMarkup } from "./pen-model.js";
 import { inkCapture } from "./ink-capture.js";
 import { installColorPickers } from "./color-picker.js";
-const esc = (value) =>
-  String(value ?? "").replace(
-    /[&<>"']/g,
-    (c) =>
-      ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[
-        c
-      ],
-  );
 const picker = installColorPickers({
     esc,
     icon: (name) => (name === "chevron" ? "⌄" : name === "close" ? "×" : "●"),

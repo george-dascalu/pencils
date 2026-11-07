@@ -2,6 +2,11 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.22.49 — 2026-11-07
+
+### Changed
+- Feature F0.22-49: The app starts with less to load: Help's guides and the Roadmap, an eighth of its code, now load when you first open them.
+
 ## 0.22.48 — 2026-11-07
 
 ### Added

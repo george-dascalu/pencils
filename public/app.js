@@ -1,4 +1,5 @@
 import { installAssigneeNames } from "./assignee-name.js";
+import { esc } from "./escape.js";
 import { installCardKeys } from "./card-key.js";
 import { closePopup, finishPopupExits } from "./popup-motion.js";
 import { projectCreateHTML } from "./project-create.js";
@@ -18,8 +19,6 @@ import { confirmAction } from "./confirm-popover.js";
 import { priorityOptions as priorities, priorityLabels, priorityLabel, defaultPriority } from "./task-priority.js";
 import { browserNavigation } from "./navigation.js";
 import { installEdgeSwipeGuard, installPageZoomGuard, installAxisLockedScroll } from "./scroll-gestures.js";
-import { helpPageHTML } from "./help.js";
-import { helpArticle } from "./help-content.js";
 import { saveState, saveIssue } from "./save-state.js";
 import { appStatus } from "./app-status.js";
 import {sourceLabel, sourceReadOnly} from "./source-model.js";
@@ -81,14 +80,6 @@ installEditableControlGuard();
 installOverflowTitles();
 installQuietScrollbars();
 const $$ = (selector, root = document) => [...root.querySelectorAll(selector)];
-const esc = (value) =>
-  String(value ?? "").replace(
-    /[&<>"']/g,
-    (c) =>
-      ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[
-        c
-      ],
-  );
 const paths = {
   underline: "M6 3v7a6 6 0 0 0 12 0V3M4 21h16",
   merge: "M3 3h18v18H3zM3 8h4M3 16h4M17 8h4M17 16h4M7 12h10m-3-3 3 3-3 3",
@@ -287,6 +278,10 @@ const planningViews = ["calendar", "timeline", "capacity"];
 // rearrange after drawing, is still replaced. Table draws every row, which takes longer to compare
 // than to replace; Calendar and Timeline place their items from scripts.
 const morphViews = ["list", "tree", "kanban"];
+// The guides and the roadmap load when Help is first opened (an eighth of the app's code); every
+// path that sets state.helpArticle awaits it first.
+let help = null, helpLoading = null;
+const loadHelp = () => (helpLoading ||= import("./help.js").then((module) => (help = module), (error) => { helpLoading = null; throw error; }));
 // One listener for every card, so cards kept across redraws don't collect more.
 const safariTap = () => {};
 const morphPage = () => (state.project && !state.helpArticle && !state.directoryPage && morphViews.includes(state.view) ? `${state.project.id}/${state.view}` : "");
@@ -901,7 +896,7 @@ function renderAppNow() {
     closeDialog(false, { confirmDirty: false });
   const p = state.project;
   settleFields();
-  document.title = `${state.helpArticle ? helpArticle(state.helpArticle).title + " · Help" : state.directoryPage ? label(state.directoryPage) + " · " + state.organisation?.title : p ? `${viewLabel(state.view)} · ${p.title}` : state.organisation?.title || "Workspace"} · Pencils`;
+  document.title = `${state.helpArticle ? help.helpArticle(state.helpArticle).title + " · Help" : state.directoryPage ? label(state.directoryPage) + " · " + state.organisation?.title : p ? `${viewLabel(state.view)} · ${p.title}` : state.organisation?.title || "Workspace"} · Pencils`;
   const shell = `<div class="shell">
     <button class="sidebar-overlay ${state.menu ? "visible" : ""}" data-action="menu" aria-label="Close sidebar"></button>
     <aside id="workspace-sidebar" class="sidebar ${state.menu ? "open" : ""}">
@@ -917,7 +912,7 @@ function renderAppNow() {
     <main class="main">
       <header class="topbar"><div class="breadcrumb"><button class="icon-button mobile-menu" data-action="menu" aria-label="Toggle sidebar" aria-controls="workspace-sidebar" aria-expanded="${state.menu}">${icon("menu")}</button>${(p ? state.view === "settings" : state.directoryPage === "settings") ? `<button type="button" class="icon-button settings-back" data-action="settings-close" aria-label="${p ? "Back to project" : "Back"}" title="${p ? "Back to project" : "Back"}">${icon("arrow-left")}</button>` : ""}<strong ${p ? 'role="heading" aria-level="1"' : ""}>${esc(p?.title || (state.helpArticle ? "Help" : state.directoryPage ? label(state.directoryPage) : "Home"))}</strong></div>${p || (!state.helpArticle && !state.directoryPage && homeProject()) ? projectNavigationHTML() : ""}<div class="top-actions">${p ? newMenuHTML("icon") : ""}<div class="save-state" id="save-state">${appStatusHTML()}</div></div></header>
       ${!state.online ? '<div class="connection-banner">Local server unavailable. Reconnect to its network to save changes.</div>' : ""}
-      ${state.helpArticle ? helpPageHTML(state.helpArticle, { esc, icon }) : state.directoryPage === "settings" ? '<div id="view-toolbar"></div><section id="view-content" class="content"></section>' : p ? projectPage() : features.homeHTML()}
+      ${state.helpArticle ? help.helpPageHTML(state.helpArticle, { esc, icon }) : state.directoryPage === "settings" ? '<div id="view-toolbar"></div><section id="view-content" class="content"></section>' : p ? projectPage() : features.homeHTML()}
     </main></div>`;
   // Redrawing the same task view patches the page (F0.22-41); the view fills its own parts after.
   setHTML(app, shell, morphPage(), ["#view-content", "#view-toolbar"]);
@@ -1592,6 +1587,7 @@ async function restoreNavigation(entry, stillCurrent = () => true) {
     }
     if (!stillCurrent()) return false;
     const destination = entry.route;
+    if (destination.page === "help") await loadHelp();
     const snapshot =
       destination.project && destination.project !== state.project?.id
         ? await api(`/projects/${destination.project}`)
@@ -1625,7 +1621,7 @@ async function restoreNavigation(entry, stillCurrent = () => true) {
       state.tableCollapsed = new Set(entry.preferences?.tableCollapsed || []);
       state.tableFilterSearch = {};
       state.headerMenu = null;
-      state.helpArticle = destination.page === "help" ? helpArticle(destination.article).id : null;
+      state.helpArticle = destination.page === "help" ? help.helpArticle(destination.article).id : null;
       state.view = state.helpArticle ? "help" : destination.view;
       state.selectedDocument = destination.document || null;
       state.settingsSection = destination.settingsSection || "general";
@@ -1655,7 +1651,7 @@ async function restoreNavigation(entry, stillCurrent = () => true) {
         state.settingsSection = directory ? "organisation" : destination.settingsSection || "personal";
         state.settingsDetail = "";
       }
-      state.helpArticle = destination.page === "help" ? helpArticle(destination.article).id : null;
+      state.helpArticle = destination.page === "help" ? help.helpArticle(destination.article).id : null;
       if (state.organisation)
         storage.set("organisation", state.organisation.id);
     }
@@ -1881,7 +1877,7 @@ function taskDialog(id = null, defaults = {}, replace = false) {
 }
 
 async function openHelp(article = "start") {
-  const id = helpArticle(article).id;
+  const id = (await loadHelp()).helpArticle(article).id;
   if (state.helpArticle === id) return;
   const opened = await restoreNavigation({ route: {
     page: "help", article: id, project: state.project?.id || null, view: "help", organisation: state.organisation?.id || null,

@@ -1,11 +1,11 @@
 import { positionPopover } from "./popover-position.js";
+import { esc } from "./escape.js";
 import { closePopup, finishPopupExits } from "./popup-motion.js";
 
 // One anchored confirmation for destructive or irreversible actions, replacing
 // window.confirm. It opens beside the control that triggered it (or centred
 // when there is none), closes with Escape, Cancel or a tap outside, and returns
 // focus to the trigger. Synchronous navigation guards keep window.confirm.
-const esc = (value) => String(value).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
 let active = null;
 
 export function confirmAction({ anchor = null, title = "", message = "", confirmLabel = "Confirm", cancelLabel = "Cancel", danger = false } = {}) {

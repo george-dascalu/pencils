@@ -1,4 +1,5 @@
 import { helpArticles, helpArticle } from "./help-content.js";
+export { helpArticle };
 import { mainWidth } from "./layout-width.js";
 
 export function helpPageHTML(id, { esc, icon }) {

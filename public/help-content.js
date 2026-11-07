@@ -1,8 +1,8 @@
 // Bundled guides work locally. External links are references, not loaded resources.
 import { roadmap, shortWhen, fullWhen, took } from "./roadmap.js";
+import { esc as escapeHtml } from "./escape.js";
 
 // The Roadmap page: the requests under each status, done ones newest first, in reference tables.
-const escapeHtml = (value) => String(value ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
 const byId = (a, b) => a.id.localeCompare(b.id, undefined, { numeric: true });
 const roadmapWhen = (item, field) => {
   const value = item[field], basis = item[`${field}Basis`];

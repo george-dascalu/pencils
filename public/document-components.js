@@ -1,6 +1,7 @@
 import TurndownService from "/vendor/turndown.js";
 import { gfm } from "/vendor/turndown-gfm.js";
 import { codeLanguages, codeLanguageName, codeLanguageEntry, highlightCode } from "./document-code.js";
+import { esc } from "./escape.js";
 import { editableDocumentTable } from "./document-inline-table.js";
 import { focusOnOpen } from "./open-focus.js";
 import { installTextColorRule, textColor } from './document-text-color.js';
@@ -351,7 +352,7 @@ export function editableDocumentComponent({ element, raw, from, kind, editor, re
       const head = document.createElement("div");
       head.className = "document-code-head";
       head.contentEditable = "false";
-      head.innerHTML = `<select class="document-code-language" aria-label="Code language" title="Code language">${options.map(([name, label]) => `<option value="${name.replace(/"/g, "&quot;")}" ${name === current ? "selected" : ""}>${label.replace(/</g, "&lt;")}</option>`).join("")}</select>`;
+      head.innerHTML = `<select class="document-code-language" aria-label="Code language" title="Code language">${options.map(([name, label]) => `<option value="${esc(name)}" ${name === current ? "selected" : ""}>${esc(label)}</option>`).join("")}</select>`;
       element.prepend(head);
       const picker = head.querySelector("select");
       picker.addEventListener("change", () => {

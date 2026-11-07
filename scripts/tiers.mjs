@@ -184,6 +184,7 @@ export const TIERS = [
     "test/document-sheet-model.test.js", // sheet and CSV model validation
     "test/document-table-format.test.js", // table Markdown serialisation
     "test/document-table-model.test.js", // table row/column edits
+    "test/drawing-worker.test.js", // offline drawing page has every module it needs
     "test/folder-order.test.js", // folder and item ordering
     "test/frame-model.test.js", // frame selection and nesting
     "test/hierarchy.test.js", // card types and subtask validation
@@ -460,6 +461,8 @@ export const TIERS = [
     "e2e/navigation/bottom-bar-buttons.spec.mjs", // add own buttons to the phone bottom bar
     "e2e/navigation/desktop-tray-motion.spec.mjs", // open the layout tray on desktop
     "e2e/navigation/help.spec.mjs", // read Help articles and search them
+    "e2e/navigation/help-lazy.spec.mjs", // Help loads when first opened
+    "e2e/navigation/help-lazy-production.spec.mjs", // the built app opens Help
     "e2e/navigation/loading-bar.spec.mjs", // switch project and watch loading bar
     "e2e/navigation/roadmap.spec.mjs", // open the in-app Roadmap
     "e2e/navigation/search-items.spec.mjs", // reorder or remove Search bookmarks/commands
