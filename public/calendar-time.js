@@ -55,3 +55,23 @@ export function hourlySegments(tasks, days) {
     return segments;
   });
 }
+
+// The Week board can group cards by the part of the day they start in (F0.22-48): Morning before
+// 12:00, Afternoon until 17:00, then Evening; a card without times is Any time (""). Each part's
+// hour is where a card moved into it starts.
+export const DAYPARTS = [['morning', 'Morning', 540], ['afternoon', 'Afternoon', 780], ['evening', 'Evening', 1080]];
+export function daypart(task) {
+  if (!timedCard(task)) return '';
+  const start = timeMinutes(task.start_time);
+  return start < 720 ? 'morning' : start < 1020 ? 'afternoon' : 'evening';
+}
+// A card moved into a part of the day starts at its hour and keeps its length (a card without times
+// gets an hour on its last day); Any time takes the times away.
+export function daypartChange(task, part) {
+  if (!part) return task.start_time || task.due_time ? { start_time: null, due_time: null } : {};
+  const at = DAYPARTS.find(([key]) => key === part)?.[2];
+  if (at === undefined) throw new Error('Choose a part of the day.');
+  const start = task.start || task.due, days = (stamp(task.due || start) - stamp(start)) / DAY * 1440;
+  const end = at + days + (timedCard(task) ? timeMinutes(task.due_time) - timeMinutes(task.start_time) : 60);
+  return { start, due: shiftDate(start, Math.floor(end / 1440)), start_time: minuteTime(at), due_time: minuteTime(end % 1440) };
+}

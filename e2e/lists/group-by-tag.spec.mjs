@@ -103,7 +103,7 @@ onDevices(["desktop", "phone"], () => test("Week board's Group by sits in Filter
     await expect(page.locator('#view-toolbar [data-board-menu="filters"] #week-board-rows'), "in Filters").toHaveCount(1);
     await expect(page.locator("#view-toolbar .planning-options #week-board-rows")).toHaveCount(0);
   } else await expect(page.locator(".mobile-view-options #week-board-rows")).toHaveCount(1);
-  await expect(select.locator("option")).toHaveText(["Assignee", "Status", "Priority", "Card type", "Tag", "No grouping"]);
+  await expect(select.locator("option")).toHaveText(["Assignee", "Status", "Priority", "Card type", "Tag", "Time of day", "No grouping"]);
   await expect(select, "named while Filters is closed too").toHaveAttribute("aria-label", "Group by");
   await choose(page, "#week-board-rows", "tags");
   await expect.poll(() => groups(page, ".week-board-row", ".week-board-row-head > span:not(.count)", "[data-calendar-card]", "data-calendar-card")).toEqual(expected(s));

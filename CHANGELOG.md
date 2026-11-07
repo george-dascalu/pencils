@@ -2,6 +2,11 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.22.48 — 2026-11-07
+
+### Added
+- Feature F0.22-48: Split the Week board into the morning, afternoon and evening: choose Time of day in its Group by. Morning is before 12:00, afternoon until 17:00, and cards without times show under Any time. Dragging a card into another part of the day starts it at 9:00, 13:00 or 18:00 and keeps its length (an hour for a card without times); dragging it into Any time removes its times.
+
 ## 0.22.47 — 2026-11-07
 
 ### Added

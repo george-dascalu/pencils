@@ -79,3 +79,32 @@ test('time handles extend and shorten across days without crossing the fixed end
   assert.deepEqual(calendarTimeResize(multiple, '2026-11-04', 720, 'due', 15), { due: '2026-11-04', due_time: '12:00' });
   assert.deepEqual(calendarTimeResize(t, '2026-12-31', 1440, 'due', 15), { due: '2027-01-01', due_time: '00:00' });
 });
+
+// Owner request (F0.22-48): the Week board groups cards by the part of the day they start in, and a
+// card dropped in another part starts at that part's hour, keeping its length.
+test('a card is in the part of the day it starts in, and moving it there keeps its length', async () => {
+  const { daypart, daypartChange } = await import('../public/calendar-time.js');
+  const at = (start_time, due_time = '23:59') => ({ start: '2026-11-02', due: '2026-11-02', start_time, due_time });
+  assert.deepEqual(['00:00', '11:59', '12:00', '16:59', '17:00', '23:30'].map(time => daypart(at(time))), ['morning', 'morning', 'afternoon', 'afternoon', 'evening', 'evening']);
+  assert.equal(daypart({ start: '2026-11-02', due: '2026-11-02' }), '', 'no times: any time');
+  assert.equal(daypart({ due: '2026-11-02', start_time: '09:00' }), '', 'times need both dates');
+  // Timed: the start moves to the part's hour and the length stays, across midnight too.
+  assert.deepEqual(daypartChange(at('09:30', '11:00'), 'afternoon'), { start: '2026-11-02', due: '2026-11-02', start_time: '13:00', due_time: '14:30' });
+  assert.deepEqual(daypartChange({ start: '2026-11-02', due: '2026-11-03', start_time: '20:00', due_time: '02:00' }, 'evening'), { start: '2026-11-02', due: '2026-11-03', start_time: '18:00', due_time: '00:00' });
+  assert.deepEqual(daypartChange(at('13:00', '23:30'), 'evening'), { start: '2026-11-02', due: '2026-11-03', start_time: '18:00', due_time: '04:30' });
+  // Without times: an hour from the part's start, on a card's own days; a due date alone becomes its start.
+  assert.deepEqual(daypartChange({ start: '2026-11-02', due: '2026-11-02' }, 'morning'), { start: '2026-11-02', due: '2026-11-02', start_time: '09:00', due_time: '10:00' });
+  assert.deepEqual(daypartChange({ start: '2026-11-02', due: '2026-11-04' }, 'morning'), { start: '2026-11-02', due: '2026-11-04', start_time: '09:00', due_time: '10:00' });
+  assert.deepEqual(daypartChange({ due: '2026-11-04' }, 'evening'), { start: '2026-11-04', due: '2026-11-04', start_time: '18:00', due_time: '19:00' });
+  assert.deepEqual(daypartChange({ start: '2026-11-04' }, 'morning'), { start: '2026-11-04', due: '2026-11-04', start_time: '09:00', due_time: '10:00' }, 'a start date alone');
+  // Any time takes the times away; a card without them has nothing to change.
+  assert.deepEqual(daypartChange(at('09:00', '10:00'), ''), { start_time: null, due_time: null });
+  assert.deepEqual(daypartChange({ start: '2026-11-02', due: '2026-11-02' }, ''), {});
+  assert.deepEqual(daypartChange({ start: '2026-11-02', due: '2026-11-02', start_time: '09:00' }, ''), { start_time: null, due_time: null }, 'a stray time goes too');
+  assert.throws(() => daypartChange(at('09:00', '10:00'), 'night'), /part of the day/);
+  // What a move writes is a valid card.
+  for (const part of ['morning', 'afternoon', 'evening']) {
+    const card = { start: '2026-11-02', due: '2026-11-04', ...daypartChange({ start: '2026-11-02', due: '2026-11-04' }, part) };
+    assert.doesNotThrow(() => validateExtras(card, schema({})), part);
+  }
+});
