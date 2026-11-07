@@ -17,7 +17,8 @@ import { taskColorDot, taskFieldColor } from "./task-colors.js";
 import { taskDateEditor } from "./task-date-editor.js";
 import { rangeChoicesHTML, rangeLabelHTML } from "./range-menu.js";
 import { slideMoves } from "./slide-moves.js";
-import { backlogPosition, snapToBoard, nextLayer } from "./calendar-backlog.js";
+import { backlogPosition, placeOnBoard, nextLayer } from "./calendar-backlog.js";
+import { snapTranslation, paintAlignmentGuides } from "./alignment-guides.js";
 
 export function calendarView(ctx) {
   const { state, esc, icon, storage, renderView, task, patchTask, toast } = ctx;
@@ -193,7 +194,7 @@ export function calendarView(ctx) {
     return el?.closest(".agenda-day, .calendar-hours-day, .week-board-cell")?.dataset.calendarDate;
   }
   function dropChange(d, x, y) {
-    d.reason = "";
+    d.reason = ""; d.guides = [];
     if (d.hours) {
       const bounds = d.hours.closest('.calendar-hours-scroll').getBoundingClientRect();
       if (x < bounds.left || x > bounds.right || y < bounds.top || y > bounds.bottom) return null;
@@ -213,10 +214,16 @@ export function calendarView(ctx) {
         : calendarTimeSelection(hours.dataset.calendarDate, minutes, minutes);
     }
     const board = mode === "board" && !d.handle && hit?.closest(".week-board-backlog")?.querySelector(".week-board-backlog-canvas");
-    // Onto the Unscheduled board, where the card was let go, to the nearest 8 px: its dates and times go.
+    // Onto the Unscheduled board, to the pixel where the card was let go, lined up with a card nearby
+    // when one of its edges, its centre or an equal gap is within reach (F0.22-62): its dates and times go.
     if (board) {
       const r = board.getBoundingClientRect();
-      return { ...(calendarRange(d.task) ? { start: null, due: null, start_time: null, due_time: null } : {}), backlog: { x: snapToBoard(x - r.left - d.grab.x), y: snapToBoard(y - r.top - d.grab.y) } };
+      const raw = { id: d.task.id, x: x - r.left - d.grab.x, y: y - r.top - d.grab.y, w: parseFloat(getComputedStyle(board).getPropertyValue("--week-board-column")) || d.card.offsetWidth, h: d.card.offsetHeight };
+      d.boardCards ??= [...board.querySelectorAll(".week-board-card[data-calendar-card]:not(.calendar-placement)")].filter(el => el.dataset.calendarCard !== d.task.id).map(el => ({ id: el.dataset.calendarCard, x: el.offsetLeft, y: el.offsetTop, w: el.offsetWidth, h: el.offsetHeight }));
+      // Alt holds the lining up off, as on boards.
+      const fit = snapTranslation([raw], d.boardCards, 0, 0, { previous: d.locks, align: !d.alt });
+      d.locks = fit.locks; d.guides = fit.guides;
+      return { ...(calendarRange(d.task) ? { start: null, due: null, start_time: null, due_time: null } : {}), backlog: { x: placeOnBoard(raw.x + fit.dx), y: placeOnBoard(raw.y + fit.dy) } };
     }
     const day = dayAt(x, y);
     if (!day) return null;
@@ -237,6 +244,7 @@ export function calendarView(ctx) {
     d.placements?.forEach(el => el.remove());
     d.weekLanes?.forEach(([el, lanes]) => el.style.setProperty('--calendar-lanes', lanes));
     d.placements = []; d.weekLanes = [];
+    document.querySelector(".week-board-backlog-canvas > .alignment-guides")?.remove();
   }
   // Where a drop lands in a Week board cell (F0.22-45): before the first card whose middle is below
   // the pointer, among the cell's cards other than the one moving.
@@ -293,7 +301,8 @@ export function calendarView(ctx) {
       });
     } else if (mode === 'board' && d.next.backlog) {
       const board = document.querySelector('.week-board-backlog-canvas'), { x, y } = d.next.backlog;
-      if (board) Object.assign(add(board, 'week-board-card').style, { left: `${x}px`, top: `${y}px` });
+      // As tall as the card, so the guides line up with what lands.
+      if (board) Object.assign(add(board, 'week-board-card').style, { left: `${x}px`, top: `${y}px`, height: `${d.card.offsetHeight}px` });
     } else if (mode === 'board') {
       const target = d.cell;
       const before = d.slot?.before && target?.querySelector(`.week-board-card[data-calendar-card="${CSS.escape(d.slot.before)}"]`);
@@ -345,6 +354,8 @@ export function calendarView(ctx) {
       d.card.querySelector('.calendar-event-time').textContent = d.originalTime;
     }
     placement(d, next);
+    const backlog = document.querySelector(".week-board-backlog-canvas");
+    if (backlog) paintAlignmentGuides(backlog, d.next?.backlog ? d.guides || [] : [], { x: 0, y: 0, z: 1 });
     d.ghost.querySelector("small").textContent = d.hours ? range ? `${range.start !== range.end ? `${range.start} ${next.start_time} → ${range.end} ${next.due_time}` : `${next.start_time} – ${next.due_time}`} · ${d.step} min steps` : 'Release to cancel' : cancel ? "Keep unscheduled" : range ? `${range.start}${d.next.start_time ? ` · ${d.next.start_time} – ${d.next.due_time}` : ` → ${range.end}`}` : d.next?.backlog ? "Unscheduled" : "Move over a day to schedule";
     d.ghost.firstElementChild.classList.toggle("invalid", !range && !cancel && !d.next?.backlog);
     d.ghost.style.left = `${Math.max(8, Math.min(innerWidth - d.ghost.offsetWidth - 8, d.x + 16))}px`;
@@ -431,7 +442,7 @@ export function calendarView(ctx) {
   const holdScroll = e => { if (e.cancelable) e.preventDefault(); };
   document.addEventListener("pointermove", e => {
     const d = drag; if (!d || d.pointer !== e.pointerId) return;
-    d.x = e.clientX; d.y = e.clientY;
+    d.x = e.clientX; d.y = e.clientY; d.alt = e.altKey;
     if (d.hold && !d.armed) { // moving before the press is long enough scrolls
       if (Math.hypot(d.x - d.originX, d.y - d.originY) > 8) { clearTimeout(d.hold); drag = null; }
       return;
@@ -472,6 +483,7 @@ export function calendarView(ctx) {
   document.addEventListener("pointerup", e => {
     if (drag?.pointer !== e.pointerId) return;
     if (drag.active) {
+      drag.alt = e.altKey;
       drag.next = landing(drag, e.clientX, e.clientY);
       boardSlot(drag, e.clientX, e.clientY);
     }
@@ -505,15 +517,15 @@ export function calendarView(ctx) {
     if (drag && e.key === "Escape") { e.preventDefault(); e.stopImmediatePropagation(); finish(true); return; }
     const card = e.target.closest("[data-calendar-card]"); if (!card || e.target.closest('.agenda-fields, .week-board-fields')) return;
     const t = task(card.dataset.calendarCard), range = t && calendarRange(t), handle = e.target.closest("[data-calendar-end]")?.dataset.calendarEnd;
-    // Alt and an arrow moves a card on the Unscheduled board 8 px, with Shift 64 px, and brings it to the top.
+    // Alt and an arrow moves a card on the Unscheduled board 1 px, with Shift 10 px, and brings it to the top.
     if (card.closest(".week-board-backlog") && t && !sourceReadOnly(t, "due") && e.altKey && ["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(e.key)) {
       e.preventDefault(); e.stopImmediatePropagation();
       // From the card as it is now, not as last drawn: a second press can come before the redraw.
       // A card with dates flows there whatever place it keeps for later; moving it takes the dates away, as a drop does.
-      const from = (!range && backlogPosition(t.backlog)) || { x: card.offsetLeft, y: card.offsetTop }, step = e.shiftKey ? 64 : 8;
-      const place = { x: snapToBoard(from.x + step * ((e.key === "ArrowRight") - (e.key === "ArrowLeft"))), y: snapToBoard(from.y + step * ((e.key === "ArrowDown") - (e.key === "ArrowUp"))), z: topLayer(t.id) };
+      const from = (!range && backlogPosition(t.backlog)) || { x: card.offsetLeft, y: card.offsetTop }, step = e.shiftKey ? 10 : 1;
+      const place = { x: placeOnBoard(from.x + step * ((e.key === "ArrowRight") - (e.key === "ArrowLeft"))), y: placeOnBoard(from.y + step * ((e.key === "ArrowDown") - (e.key === "ArrowUp"))), z: topLayer(t.id) };
       const direction = { ArrowUp: "up", ArrowDown: "down", ArrowLeft: "left", ArrowRight: "right" }[e.key];
-      if (place.x === snapToBoard(from.x) && place.y === snapToBoard(from.y)) {
+      if (place.x === placeOnBoard(from.x) && place.y === placeOnBoard(from.y)) {
         document.querySelector("[data-calendar-announcement]").textContent = `${t.title} is at the edge of Unscheduled.`;
         return;
       }

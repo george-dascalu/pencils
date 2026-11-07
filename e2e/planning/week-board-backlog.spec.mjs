@@ -1,7 +1,7 @@
-// Owner requests (F0.22-53, F0.22-54): the Week board's cards with no dates that aren't done sit on
-// one Unscheduled board docked at the bottom, not tied to the days. A card goes where it's dropped,
-// to the nearest 8 px, saved in the card so everyone sees it; cards may overlap, the one moved last
-// on top. A card dropped there loses its dates, and one dragged to a day is scheduled and keeps its
+// Owner requests (F0.22-53, F0.22-54, F0.22-62): the Week board's cards with no dates that aren't
+// done sit on one Unscheduled board docked at the bottom, not tied to the days, with no scroll bar. A
+// card goes where it's dropped, to the pixel, lining up with a card nearby, saved in the card so
+// everyone sees it; cards may overlap, the one moved last on top. A card dropped there loses its dates, and one dragged to a day is scheduled and keeps its
 // place for later. The board can be made taller or shorter.
 import { test, expect, useApp } from '../fixtures.mjs';
 import { reveal } from '../helpers/menu-controls.mjs';
@@ -43,9 +43,8 @@ async function drag(page, title, to) {
   await page.evaluate(() => new Promise((done) => requestAnimationFrame(() => requestAnimationFrame(done))));
   await page.mouse.up();
 }
-const snap = (value) => Math.max(0, Math.round(value / 8) * 8);
 
-test('the Unscheduled board is docked under the week, apart from the days, with the matching cards that have no dates', async ({ page }) => {
+test('the Unscheduled board is docked under the week, apart from the days, with the matching cards that have no dates', { tag: '@gate' }, async ({ page }) => {
   await open(page);
   await expect(board(page).getByRole('heading', { name: 'Unscheduled' })).toBeVisible();
   await expect.poll(() => onBoard(page)).toEqual(['Draft', 'Legacy', 'Plan']);
@@ -56,6 +55,8 @@ test('the Unscheduled board is docked under the week, apart from the days, with 
   expect(view.y + view.height - (panel.y + panel.height)).toBeLessThanOrEqual(16);
   // A place saved on the old grid of 0.22.53 becomes a place on the board.
   expect(await place(page, 'Legacy')).toMatchObject({ x: 192, y: 80 });
+  // No scroll bar (F0.22-62): it still scrolls by wheel, trackpad or touch.
+  expect(await board(page).locator('.week-board-backlog-board').evaluate(el => getComputedStyle(el).scrollbarWidth)).toBe('none');
   // The cards' layers stay inside the board, under menus and popovers.
   expect(await board(page).locator('.week-board-backlog-canvas').evaluate(el => getComputedStyle(el).isolation)).toBe('isolate');
   // Like the cards under the days, these show no date (F0.22-55).
@@ -67,38 +68,67 @@ test('the Unscheduled board is docked under the week, apart from the days, with 
   await expect(page.locator('[data-calendar-unscheduled]')).toBeVisible();
 });
 
-test('cards go where they are dropped, to the nearest 8 px, and may overlap, the one moved last on top', async ({ page }) => {
+test('cards go exactly where they are dropped, line up with a card nearby, and may overlap, the one moved last on top', async ({ page }) => {
   await open(page);
   const before = await place(page, 'Plan');
-  await drag(page, 'Plan', (start) => ({ x: start.x + 203, y: start.y + 61 }));
-  await expect.poll(async () => (await saved(app.plan.id)).backlog).toEqual({ x: snap(before.x + 203), y: snap(before.y + 61), z: 1 });
-  await expect.poll(() => place(page, 'Plan')).toEqual({ x: snap(before.x + 203), y: snap(before.y + 61), z: '1' });
-  // Draft dropped half over Plan sits on top of it.
+  // Away from the other cards' edges nothing pulls it: it lands to the pixel (F0.22-62).
+  await drag(page, 'Plan', (start) => ({ x: start.x + 563, y: start.y + 25 }));
+  await expect.poll(async () => (await saved(app.plan.id)).backlog).toEqual({ x: before.x + 563, y: before.y + 25, z: 1 });
+  await expect.poll(() => place(page, 'Plan')).toEqual({ x: before.x + 563, y: before.y + 25, z: '1' });
+  // Dropped 4 px from Plan's left edge, half over it, Draft lines up with it, a guide showing the line
+  // while it moves, and sits on top.
   const plan = await board(page).locator('.week-board-card', { hasText: 'Plan' }).boundingBox();
   const draft = await board(page).locator('.week-board-card', { hasText: 'Draft' }).boundingBox();
-  await drag(page, 'Draft', (start) => ({ x: start.x + (plan.x + 40 - draft.x), y: start.y + (plan.y + 16 - draft.y) }));
-  await expect.poll(async () => (await saved(app.draft.id)).backlog?.z).toBe(2);
-  await expect.poll(async () => { const [p, d] = [await place(page, 'Plan'), await place(page, 'Draft')]; return Number(d.z) > Number(p.z) && Math.abs(d.x - p.x) < 100 && Math.abs(d.y - p.y) < 40; }).toBe(true);
-  // From the keyboard: Alt and an arrow moves a card 8 px, with Shift 64 px; it comes to the top.
+  const grip = await page.locator('.week-board-title', { hasText: 'Draft' }).boundingBox();
+  const start = { x: grip.x + grip.width / 2, y: grip.y + grip.height / 2 };
+  await page.mouse.move(start.x, start.y);
+  await page.mouse.down();
+  await page.mouse.move(start.x + 10, start.y + 10, { steps: 3 });
+  await page.mouse.move(start.x + plan.x + 4 - draft.x, start.y + plan.y + 16 - draft.y, { steps: 8 });
+  await expect(board(page).locator('.alignment-guides path').first()).toBeAttached();
+  // The landing place is as tall as the card, so the guides line up with what lands.
+  const [landing, card] = await board(page).evaluate(el => [el.querySelector('.calendar-placement').offsetHeight, [...el.querySelectorAll('.week-board-card:not(.calendar-placement)')].find(c => c.textContent.includes('Draft')).offsetHeight]);
+  expect(landing).toBe(card);
+  // Above the cards and the landing place.
+  expect(await board(page).locator('.alignment-guides').evaluate(el => Number(getComputedStyle(el).zIndex))).toBeGreaterThan(1000000001);
+  await page.mouse.up();
+  await expect(board(page).locator('.alignment-guides')).toHaveCount(0);
+  await expect.poll(async () => (await saved(app.draft.id)).backlog).toMatchObject({ x: before.x + 563, z: 2 });
+  await expect.poll(async () => { const [p, d] = [await place(page, 'Plan'), await place(page, 'Draft')]; return Number(d.z) > Number(p.z) && d.x === p.x && Math.abs(d.y - p.y) < 40; }).toBe(true);
+  // From the keyboard: Alt and an arrow moves a card 1 px, with Shift 10 px; it comes to the top.
   const at = (await saved(app.plan.id)).backlog;
   await page.locator('.week-board-title', { hasText: 'Plan' }).focus();
   await page.keyboard.press('Alt+ArrowRight');
-  await expect.poll(async () => (await saved(app.plan.id)).backlog).toEqual({ x: at.x + 8, y: at.y, z: 3 });
+  await expect.poll(async () => (await saved(app.plan.id)).backlog).toEqual({ x: at.x + 1, y: at.y, z: 3 });
   await expect(page.locator('.week-board-title', { hasText: 'Plan' })).toBeFocused();
   await page.keyboard.press('Alt+Shift+ArrowDown');
-  await expect.poll(async () => (await saved(app.plan.id)).backlog).toEqual({ x: at.x + 8, y: at.y + 64, z: 3 });
+  await expect.poll(async () => (await saved(app.plan.id)).backlog).toEqual({ x: at.x + 1, y: at.y + 10, z: 3 });
   await expect(page.locator('[data-calendar-announcement]')).toHaveText('Plan moved down on Unscheduled.');
   await expect(page.locator('.week-board-title', { hasText: 'Plan' })).toHaveAttribute('aria-keyshortcuts', /Alt\+ArrowLeft/);
   // Everyone sees the same places.
   await page.reload();
-  await expect.poll(() => place(page, 'Plan')).toEqual({ x: at.x + 8, y: at.y + 64, z: '3' });
+  await expect.poll(() => place(page, 'Plan')).toEqual({ x: at.x + 1, y: at.y + 10, z: '3' });
+});
+
+test('with Alt held a card lands to the pixel beside another, without lining up, as on boards', async ({ page }) => {
+  await open(page);
+  await drag(page, 'Plan', (start) => ({ x: start.x + 563, y: start.y + 25 }));
+  await expect.poll(async () => (await saved(app.plan.id)).backlog?.z).toBe(1);
+  const at = await place(page, 'Plan');
+  const plan = await board(page).locator('.week-board-card', { hasText: 'Plan' }).boundingBox();
+  const draft = await board(page).locator('.week-board-card', { hasText: 'Draft' }).boundingBox();
+  await page.keyboard.down('Alt');
+  await drag(page, 'Draft', (start) => ({ x: start.x + plan.x + 4 - draft.x, y: start.y + plan.y + 16 - draft.y }));
+  await page.keyboard.up('Alt');
+  await expect.poll(async () => (await saved(app.draft.id)).backlog).toEqual({ x: at.x + 4, y: at.y + 16, z: 2 });
+  await expect(board(page).locator('.alignment-guides')).toHaveCount(0);
 });
 
 test('at the edge of the board, Alt and an arrow says so instead of saving', async ({ page }) => {
   await open(page);
   const title = page.locator('.week-board-title', { hasText: 'Plan' });
   await title.focus();
-  await page.keyboard.press('Alt+ArrowLeft');
+  await page.keyboard.press('Alt+Shift+ArrowLeft');
   await expect.poll(async () => (await saved(app.plan.id)).backlog?.x).toBe(0);
   const { revision } = await saved(app.plan.id);
   await expect(title).toBeFocused();

@@ -68,6 +68,6 @@ test('Alt and an arrow on a dated card on the Unscheduled board takes its date a
   const at = await title.evaluate(el => { const card = el.closest('.week-board-card'); return { x: card.offsetLeft, y: card.offsetTop }; });
   await title.focus();
   await page.keyboard.press('Alt+ArrowDown');
-  await expect.poll(async () => { const t = await saved(app.note.id); return [t.start ?? null, t.due ?? null, t.backlog?.x, t.backlog?.y]; }).toEqual([null, null, at.x, at.y + 8]);
+  await expect.poll(async () => { const t = await saved(app.note.id); return [t.start ?? null, t.due ?? null, t.backlog?.x, t.backlog?.y]; }).toEqual([null, null, at.x, at.y + 1]);
   await expect(title).toBeFocused();
 });

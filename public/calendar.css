@@ -294,7 +294,9 @@
 .week-board-backlog-resize { flex: 1; display: flex; align-items: center; justify-content: center; min-height: var(--control-height); border-radius: var(--field-radius, 6px); }
 .week-board-backlog-resize > span { width: 40px; height: 4px; border-radius: 2px; background: var(--line-strong, var(--muted)); opacity: .6; }
 .week-board-backlog-head:hover .week-board-backlog-resize > span, .week-board-backlog-resize:focus-visible > span { background: var(--accent, var(--muted)); opacity: 1; }
-.week-board-backlog-board { flex: 1; min-height: 0; overflow: auto; }
+/* No scroll bar (F0.22-62): the board still scrolls by wheel, trackpad, touch or a drag to its edge. */
+.week-board-backlog-board { flex: 1; min-height: 0; overflow: auto; scrollbar-width: none; }
+.week-board-backlog-board::-webkit-scrollbar { display: none; }
 .week-board-backlog-canvas { position: relative; isolation: isolate; min-width: max(100%, calc(var(--backlog-right) + var(--week-board-column) * 2)); min-height: max(100%, calc(var(--backlog-bottom) + 160px)); }
 .week-board-backlog-flow { display: flex; flex-wrap: wrap; align-items: flex-start; gap: 8px; padding: 8px; }
 .week-board-backlog .week-board-card { width: var(--week-board-column); }
@@ -302,6 +304,7 @@
 .week-board-backlog-empty { margin: 0; padding: 8px 10px; }
 /* The landing place shows above every card's layer (at most 1,000,000,000). */
 .week-board-backlog-canvas > .calendar-placement { z-index: 1000000001; }
+.week-board-backlog-canvas > .alignment-guides { z-index: 1000000002; }
 /* The field box sits 8px in from both sides and 6px above the bottom (F0.21-89). */
 .week-board-card { display: grid; grid-template-columns: minmax(0, 1fr); align-items: center; gap: 4px 2px; padding: 4px 8px 6px; -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; border: 1px solid var(--line); border-left: 3px solid var(--task-field-color, var(--line)); border-radius: var(--field-radius, 6px); background: var(--surface); box-shadow: var(--shadow-card, none); }
 .week-board-card { cursor: grab; }

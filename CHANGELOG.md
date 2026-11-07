@@ -2,6 +2,11 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.22.62 — 2026-11-07
+
+### Changed
+- Feature F0.22-62: The Week board's Unscheduled board has no scroll bar (it still scrolls by wheel, trackpad or touch) and no longer snaps cards to an 8 px grid: a card lands exactly where you drop it, and lines up with a card nearby when one of its edges, its centre or an equal gap comes within reach, with a guide showing the line while you drag; hold Alt to place it freely, as on boards. The landing place is as tall as the card. Alt and an arrow moves a card 1 px, with Shift 10 px.
+
 ## 0.22.61 — 2026-11-07
 
 ### Added
