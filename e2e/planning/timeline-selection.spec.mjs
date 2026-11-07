@@ -81,6 +81,9 @@ async function custom(page, start, end) {
   await rangePanel(page).waitFor({ state: "detached" });
   await expect(page.locator("[data-timeline]").first()).toHaveAttribute("data-range-start", start);
   await expect(page.locator("[data-timeline]").first()).toHaveAttribute("data-range-end", end);
+  // A range's bars are fitted to the ruler on the next frame (the ResizeObserver in task-timeline.js),
+  // before it is painted: measure them after it.
+  await page.evaluate(() => new Promise((done) => requestAnimationFrame(() => requestAnimationFrame(done))));
 }
 // Five weeks of cards show weeks (F0.21-89); taps find dates from the timeline's own unit.
 async function openDays(page, { project }) {

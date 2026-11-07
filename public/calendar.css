@@ -264,8 +264,8 @@
    board's cards, which can show a date too, keep their width. */
 .week-board { --week-board-column: 140px; }
 .week-board-backlog { --week-board-column: 184px; }
-/* The row names' column fits a name such as Unassigned or Afternoon whole (F0.22-58). */
-.week-board { --week-board-names: 112px; display: grid; grid-template-columns: minmax(var(--week-board-names), 128px) repeat(var(--week-board-days), minmax(var(--week-board-column), 1fr)); align-content: start; min-width: calc(var(--week-board-names) + var(--week-board-days) * var(--week-board-column)); }
+/* The row names run up the side (F0.22-73), so their column is as narrow as the row's handle. */
+.week-board { --week-board-names: 40px; display: grid; grid-template-columns: var(--week-board-names) repeat(var(--week-board-days), minmax(var(--week-board-column), 1fr)); align-content: start; min-width: calc(var(--week-board-names) + var(--week-board-days) * var(--week-board-column)); }
 .week-board-row, .week-board-head-row { display: contents; }
 .week-board-corner, .week-board-day-head { position: sticky; top: 0; z-index: 2; background: var(--surface); border-bottom: 1px solid var(--line); }
 /* The row-name column and its corner take the soft fill, so the first day never reads as part of them; dividers run through the header between days. */
@@ -279,11 +279,11 @@
 .week-board-day-head.weekend { background-image: linear-gradient(var(--weekend-shade), var(--weekend-shade)); }
 /* Sticky only in its row: a heading lifted to move its row (F0.22-47) keeps the look, not the place. */
 .week-board-row > .week-board-row-head { position: sticky; left: 0; z-index: 1; }
-.week-board-row-head { display: flex; align-items: flex-start; gap: 0 2px; padding: 4px; background: var(--surface-soft); border-bottom: 1px solid var(--line); font-size: var(--type-body); font-weight: 600; }
-/* The row's handle goes before its name, as on a List group heading (F0.22-47), and every name stays
-   beside it, breaking between words (F0.22-70); with a mouse the handle is as narrow as a List row's
-   (controls.css). */
-.week-board-row-head > span:not(.sr-only) { display: flex; align-items: center; min-width: 0; min-height: var(--control-height); padding-inline: 2px; overflow-wrap: anywhere; }
+.week-board-row-head { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 4px; background: var(--surface-soft); border-bottom: 1px solid var(--line); font-size: var(--type-body); font-weight: 600; }
+/* The row's handle goes first (F0.22-47), its name under it reading upwards, like a chart's side
+   label, on one line, never broken inside a word (F0.22-58); the row grows to fit it. With a mouse the
+   handle is as narrow as a List row's (controls.css). */
+.week-board-row-head > span:not(.sr-only) { white-space: nowrap; writing-mode: vertical-rl; transform: rotate(180deg); }
 .week-board-row-head:is(:hover, :focus-within) > .task-reorder-handle > .icon { opacity: 1; }
 .week-board-row.task-reorder-source > * { opacity: .35; }
 .week-board[data-rows="none"] { grid-template-columns: 0 repeat(var(--week-board-days), minmax(var(--week-board-column), 1fr)); min-width: calc(var(--week-board-days) * var(--week-board-column)); }
@@ -332,7 +332,7 @@
 .week-board-fields .row-date-short { display: none; }
 .week-board-card:not(.week-board-dated) .week-board-fields > .row-due { display: none; }
 .week-board-cell > .calendar-placement, .week-board-backlog-canvas > .calendar-placement { min-height: 40px; border: 1px dashed var(--green); border-radius: var(--field-radius, 6px); background: color-mix(in srgb, var(--green) 8%, var(--surface)); color: var(--muted); font-size: var(--type-small); padding: 6px; }
-@media (pointer: coarse) { .week-board, .week-board-backlog { --week-board-column: 232px; } .week-board { grid-template-columns: minmax(var(--week-board-names), 112px) repeat(var(--week-board-days), minmax(var(--week-board-column), 1fr)); } .week-board-row-head { flex-direction: column; } }
+@media (pointer: coarse) { .week-board, .week-board-backlog { --week-board-column: 232px; } .week-board { --week-board-names: calc(var(--control-height) + 8px); } }
 /* Month scrolls through the months with no scroll bar (F0.21-96); the weekday row stays on top and
    each week's ISO number sits left of the grid. Alternate months are tinted, a month's first day names it. */
 .calendar-scroll:has(> .calendar[data-layout="month"]) { scrollbar-width: none; overflow-anchor: none; }

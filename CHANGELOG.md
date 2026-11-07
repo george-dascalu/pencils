@@ -2,6 +2,11 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.22.73 — 2026-11-07
+
+### Changed
+- Feature F0.22-73: The Week board's row names run up the side, under their drag handles, so the column of names takes far less room (40px, or 52px on touch screens) and the days get the rest. A long name makes its row taller.
+
 ## 0.22.72 — 2026-11-07
 
 ### Changed

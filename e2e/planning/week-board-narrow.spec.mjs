@@ -1,6 +1,7 @@
-// Owner requests (F0.22-70, F0.22-71): on a narrower window a Week board row's name stays beside its
-// handle, like the other rows' names, and the day columns can be narrower before the board scrolls.
-import { test, expect, useApp } from '../fixtures.mjs';
+// Owner requests (F0.22-70, F0.22-71, F0.22-73): Week board row names keep one layout on a narrower
+// window, running up the side in a narrow column, and the day columns can be narrower before the board
+// scrolls.
+import { test, expect, useApp, onDevices } from '../fixtures.mjs';
 import { reveal } from '../helpers/menu-controls.mjs';
 
 const app = useApp(async store => {
@@ -19,16 +20,31 @@ async function open(page, width, rows) {
   await expect(page.locator(`.week-board[data-rows="${rows}"]`)).toBeVisible();
 }
 
-test('on a narrow window every row name stays beside its handle @gate', async ({ page }) => {
+// F0.22-73: the names run up the side, under their handles, in a narrow column (F0.22-70 had them beside).
+const heads = (page) => page.locator('.week-board-row-head').evaluateAll(els => els.map(head => {
+  const handle = head.querySelector('.task-reorder-handle').getBoundingClientRect(), span = head.querySelector('span:not(.sr-only)'), name = span.getBoundingClientRect(), box = head.getBoundingClientRect();
+  const char = (i) => { const r = document.createRange(); r.setStart(span.firstChild, i); r.setEnd(span.firstChild, i + 1); return r.getBoundingClientRect(); };
+  return { name: span.textContent, upwards: char(0).top > char(span.textContent.length - 1).top, under: name.top >= handle.bottom - 0.5, inside: name.left >= box.left - 0.5 && name.right <= box.right + 0.5 && name.bottom <= box.bottom + 0.5 };
+}));
+const namesColumn = (page) => page.locator('.week-board').evaluate(el => getComputedStyle(el).gridTemplateColumns.split(' ')[0]);
+
+test('row names run up the side under their handles, in a narrow column @gate', async ({ page }) => {
   await open(page, 1000, 'status');
-  // The names' column is at its narrowest.
-  await expect.poll(() => page.locator('.week-board').evaluate(el => getComputedStyle(el).gridTemplateColumns.split(' ')[0])).toBe('112px');
-  const heads = await page.locator('.week-board-row-head').evaluateAll(els => els.map(head => {
-    const handle = head.querySelector('.task-reorder-handle').getBoundingClientRect(), name = head.querySelector('span:not(.sr-only)').getBoundingClientRect();
-    return { name: head.textContent.trim(), beside: name.left >= handle.right - 0.5 && Math.abs(name.top - handle.top) < 1 };
-  }));
-  expect(heads.map(h => h.name)).toContain('In progress');
-  for (const head of heads) expect(head.beside, head.name).toBe(true);
+  await expect.poll(() => namesColumn(page)).toBe('40px');
+  const all = await heads(page);
+  expect(all.map(h => h.name)).toContain('In progress');
+  for (const head of all) expect(head, head.name).toEqual({ name: head.name, upwards: true, under: true, inside: true });
+});
+
+onDevices(['phone'], () => {
+  test('on a phone the names column fits the 44px handle @gate', async ({ page }) => {
+    await page.clock.setFixedTime(new Date('2026-11-04T12:00:00'));
+    await page.goto(`${app.base}/#project/${app.project.id}/calendar`);
+    await (await reveal(page.locator('#calendar-mode'))).selectOption('board');
+    await (await reveal(page.locator('#week-board-rows'))).selectOption('status');
+    await expect.poll(() => namesColumn(page)).toBe('52px');
+    for (const head of await heads(page)) expect(head, head.name).toEqual({ name: head.name, upwards: true, under: true, inside: true });
+  });
 });
 
 test('the day columns narrow to fit the window before the board scrolls, keeping each card whole @gate', async ({ page }) => {

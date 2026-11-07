@@ -180,7 +180,7 @@ onDevices(['desktop', 'ipad', 'phone'], () => {
   });
 
   // Owner request (F0.22-58): a row's name breaks only between words, never inside one.
-  test('Week board row names wrap only between words @gate', async ({ page, device }) => {
+  test('Week board row names never split a word @gate', async ({ page, device }) => {
     if (device === 'desktop') await page.setViewportSize({ width: 1000, height: 800 });
     await open(page);
     const split = () => page.locator('.week-board-row-head > span:not(.sr-only)').evaluateAll(els => els.flatMap(el => {
