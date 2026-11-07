@@ -2,6 +2,11 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.22.47 — 2026-11-07
+
+### Added
+- Feature F0.22-47: Put the Week board's rows in your own order: drag a row by the handle before its name, or press Alt + Up or Down on it, as with List groups. Each Group by field keeps its own order.
+
 ## 0.22.46 — 2026-11-07
 
 ### Added

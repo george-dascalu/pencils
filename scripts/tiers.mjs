@@ -292,6 +292,7 @@ export const TIERS = [
     "e2e/planning/timeline-viewport.spec.mjs", // use Timeline
     "e2e/planning/week-board.spec.mjs", // use Week board
     "e2e/planning/week-board-order.spec.mjs", // order cards in a Week board cell
+    "e2e/planning/week-board-row-order.spec.mjs", // order Week board rows
     "e2e/platform/audit-loading.spec.mjs", // open task views and document history
     "e2e/platform/backend-capacity.spec.mjs", // 100 members using the server at once
     "e2e/platform/canvas-large-board.spec.mjs", // import, edit, undo and keep an offline draft on a huge board

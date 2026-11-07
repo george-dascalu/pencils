@@ -55,12 +55,24 @@ export function groupReorderHandle(value, name, esc) {
 // The heading's name leaves out its handle's label.
 export const groupHeadingLabel = (name, count, esc) => `aria-label="${esc(name)}, ${count} ${count === 1 ? "card" : "cards"}"`;
 
+// The Week board's rows keep an order of their own per Group by field (F0.22-47).
+export const weekBoardGroups = field => `week-board:${field}`;
+// The groups a heading's handle moves: List's sections, or the Week board's rows.
+const KINDS = {
+  list: { groups: "#view-content section[data-task-drop-field]", head: ".section-title", value: "taskDropValue", field: state => state.groupBy || "status" },
+  calendar: { groups: ".week-board-row", head: ".week-board-row-head", value: "weekBoardValue", field: () => weekBoardGroups(document.querySelector(".week-board")?.dataset.rows) },
+};
+
 // Dragging a group heading's handle (or Alt + Up/Down on it) saves the order shown, unreversed.
 export function taskGroupDrag({ state, storage, renderView }) {
   let drag = null, suppressClick = false;
-  const sections = () => [...document.querySelectorAll("#view-content section[data-task-drop-field]")];
+  const kind = () => KINDS[state.view];
+  const sections = () => (kind() ? [...document.querySelectorAll(kind().groups)] : []);
   const shown = () => sections().filter(s => !s.hidden);
-  const field = () => state.groupBy || "status";
+  const valueOf = s => s.dataset[kind().value];
+  // A Week board row lays its cells out in the board's grid, with no box of its own: its heading
+  // spans it.
+  const box = s => (s.getClientRects().length ? s : s.querySelector(kind().head)).getBoundingClientRect();
   function announce(message) {
     let live = document.querySelector("#task-reorder-status");
     if (!live) {
@@ -72,15 +84,15 @@ export function taskGroupDrag({ state, storage, renderView }) {
     }
     live.textContent = message;
   }
-  function move(value, before) {
-    const order = sections().map(s => s.dataset.taskDropValue), next = moveGroup(order, value, before);
-    saveGroupPreference(storage, state.project.id, field(), { order: next, dir: 1 });
+  function move(value, before, field = kind().field(state)) {
+    const order = sections().map(valueOf), next = moveGroup(order, value, before);
+    saveGroupPreference(storage, state.project.id, field, { order: next, dir: 1 });
     renderView(true);
-    const moved = shown().find(s => s.dataset.taskDropValue === value);
+    const moved = shown().find(s => valueOf(s) === value);
     const grip = moved?.querySelector("[data-group-reorder]");
     grip?.focus({ preventScroll: true });
     grip?.scrollIntoView({ block: "nearest" });
-    moved?.querySelector(".section-title")?.classList.add("task-reorder-moved");
+    moved?.querySelector(kind().head)?.classList.add("task-reorder-moved");
     announce(`${grip?.getAttribute("aria-label").replace(/^Move group /, "") || "Group"} moved to position ${shown().indexOf(moved) + 1} of ${shown().length}.`);
   }
   function paint() {
@@ -90,11 +102,11 @@ export function taskGroupDrag({ state, storage, renderView }) {
     d.valid = d.y >= top && d.y <= bottom;
     const others = shown().filter(s => s !== d.section);
     // Before the first group whose heading is still below the pointer.
-    const before = others.find(s => { const r = s.querySelector(".section-title").getBoundingClientRect(); return d.y < r.top + r.height / 2; });
-    d.before = before?.dataset.taskDropValue ?? null;
-    const current = shown().map(s => s.dataset.taskDropValue);
+    const before = others.find(s => { const r = s.querySelector(kind().head).getBoundingClientRect(); return d.y < r.top + r.height / 2; });
+    d.before = before ? valueOf(before) : null;
+    const current = shown().map(valueOf);
     d.changed = moveGroup(current, d.value, d.before).some((v, i) => v !== current[i]);
-    const y = before ? before.getBoundingClientRect().top : others.at(-1)?.getBoundingClientRect().bottom;
+    const y = before ? box(before).top : others.length ? box(others.at(-1)).bottom : null;
     d.marker.hidden = !d.valid || y == null;
     Object.assign(d.marker.style, { left: `${Math.max(0, bounds.left)}px`, top: `${y}px`, width: `${Math.min(innerWidth, bounds.right) - Math.max(0, bounds.left)}px` });
     d.ghost.style.top = `${Math.max(8, Math.min(innerHeight - d.ghost.offsetHeight - 8, d.y - d.grab))}px`;
@@ -103,7 +115,7 @@ export function taskGroupDrag({ state, storage, renderView }) {
   function tick(time) {
     const d = drag;
     if (!d?.active) return;
-    if (!d.section.isConnected || state.project?.id !== d.project || state.view !== "list") return finish(false);
+    if (!d.section.isConnected || state.project?.id !== d.project || state.view !== d.view) return finish(false);
     const b = d.scroll.getBoundingClientRect(), top = Math.max(0, b.top), bottom = Math.min(innerHeight, b.bottom);
     const elapsed = Math.min(32, time - (d.time ?? time));
     d.time = time;
@@ -113,7 +125,7 @@ export function taskGroupDrag({ state, storage, renderView }) {
     d.frame = requestAnimationFrame(tick);
   }
   function start() {
-    const d = drag, heading = d.section.querySelector(".section-title"), r = heading.getBoundingClientRect();
+    const d = drag, heading = d.section.querySelector(kind().head), r = heading.getBoundingClientRect();
     d.active = suppressClick = true;
     d.ghost = heading.cloneNode(true);
     for (const el of [d.ghost, ...d.ghost.querySelectorAll("[id], [data-group-reorder]")]) el.removeAttribute("id"), el.removeAttribute("data-group-reorder");
@@ -143,7 +155,7 @@ export function taskGroupDrag({ state, storage, renderView }) {
     document.body.classList.remove("task-group-reordering");
     d.ghost?.remove();
     d.marker?.remove();
-    if (d.active && commit && d.valid && d.changed) move(d.value, d.before);
+    if (d.active && commit && d.valid && d.changed) move(d.value, d.before, d.field);
     else if (d.active) announce("Group move cancelled.");
     setTimeout(() => { suppressClick = false; }, 0);
   }
@@ -152,11 +164,11 @@ export function taskGroupDrag({ state, storage, renderView }) {
   window.addEventListener("pointerdown", e => {
     if (drag && drag.pointer !== e.pointerId) return finish(false);
     const button = e.target.closest("[data-group-reorder]");
-    if (!button || e.button !== 0 || state.view !== "list" || state.taskReordering) return;
+    if (!button || e.button !== 0 || !kind() || state.taskReordering) return;
     e.preventDefault(); e.stopImmediatePropagation();
     button.focus({ preventScroll: true });
-    drag = { button, section: button.closest("section"), value: button.dataset.groupReorder, pointer: e.pointerId, project: state.project.id,
-      scroll: document.querySelector("#view-content"), x: e.clientX, y: e.clientY, startX: e.clientX, startY: e.clientY };
+    drag = { button, section: button.closest(kind().groups), value: button.dataset.groupReorder, pointer: e.pointerId, project: state.project.id, view: state.view, field: kind().field(state),
+      scroll: button.closest(".week-board-scroll") || document.querySelector("#view-content"), x: e.clientX, y: e.clientY, startX: e.clientX, startY: e.clientY };
     state.taskReordering = true; // Holds background repaints that would replace the heading.
     button.setPointerCapture(e.pointerId);
   }, true);
@@ -174,10 +186,10 @@ export function taskGroupDrag({ state, storage, renderView }) {
   document.addEventListener("keydown", e => {
     if (drag && e.key === "Escape") { e.preventDefault(); e.stopImmediatePropagation(); return finish(false); }
     const button = e.target.closest("[data-group-reorder]");
-    if (!button || !e.altKey || !["ArrowUp", "ArrowDown"].includes(e.key) || state.view !== "list" || state.taskReordering) return;
+    if (!button || !e.altKey || !["ArrowUp", "ArrowDown"].includes(e.key) || !kind() || state.taskReordering) return;
     e.preventDefault(); e.stopImmediatePropagation();
-    const list = shown(), at = list.indexOf(button.closest("section")), up = e.key === "ArrowUp";
-    if (up ? at > 0 : at < list.length - 1) move(button.dataset.groupReorder, up ? list[at - 1].dataset.taskDropValue : list[at + 2]?.dataset.taskDropValue ?? null);
+    const list = shown(), at = list.indexOf(button.closest(kind().groups)), up = e.key === "ArrowUp";
+    if (up ? at > 0 : at < list.length - 1) move(button.dataset.groupReorder, up ? valueOf(list[at - 1]) : list[at + 2] ? valueOf(list[at + 2]) : null);
     else announce(`This group is already ${up ? "first" : "last"}.`);
   }, true);
   window.addEventListener("blur", () => finish(false));
