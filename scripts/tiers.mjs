@@ -68,6 +68,7 @@ export const TIERS = [
     "test/task-autosave.test.js", // card edits autosave and keep revision
     "test/task-group-drop.test.js", // drop on group changes field, respects workflow
     "test/task-notes.test.js", // card notes persist in Markdown (data safety)
+    "test/task-filter.test.js", // search, filters and sorts of the card lists
     "test/task-order.test.js", // manual reorder keeps hidden slots
     "test/task-visibility.test.js", // paging and filtered hierarchy
     "test/trash-audit.test.js", // deleted items wait in Trash, audit log

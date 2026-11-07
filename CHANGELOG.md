@@ -2,6 +2,11 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.22.50 — 2026-11-07
+
+### Changed
+- Feature F0.22-50: The search, filters and sorts of List, Tree, Table and Kanban have their own tests, so a mistake in them is caught before release.
+
 ## 0.22.49 — 2026-11-07
 
 ### Changed

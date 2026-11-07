@@ -1,5 +1,6 @@
 import { installAssigneeNames } from "./assignee-name.js";
 import { esc } from "./escape.js";
+import { filterTasks, sortGroups, sortNames } from "./task-filter.js";
 import { installCardKeys } from "./card-key.js";
 import { closePopup, finishPopupExits } from "./popup-motion.js";
 import { projectCreateHTML } from "./project-create.js";
@@ -1066,51 +1067,8 @@ function projectPage() {
 
     ${lists.html()}<div id="view-toolbar"></div><section id="view-content"></section>`;
 }
-// The Sort menu: Manual order, then the sorts grouped by what they compare.
-const sortGroups = [["", ["order"]], ["Card", ["key", "title", "parent", "assignee"]], ["Progress", ["status", "priority"]], ["Dates", ["due", "created"]]];
-const sortNames = { order: "Manual order", key: "Card ID", title: "Title A–Z", parent: "Parent", assignee: "Assignee", status: "Status", priority: "Priority", due: "Due date", created: "Date created" };
-// Text in natural order (PEN-9 before PEN-10), with empty values last.
-const byText = (a, b) => !a - !b || String(a || "").localeCompare(String(b || ""), undefined, { numeric: true });
 function filteredTasks() {
-  const query = state.search.toLowerCase().trim();
-  const list = state.tasks.filter(
-    (t) =>
-      features.filter(t) &&
-      (state.status === "all" || t.status === state.status) &&
-      (state.type === "all" || t.type === state.type) &&
-      (!query ||
-        [
-          t.title,
-          t.body,
-          fieldOn(state.config, "assignee") ? t.assignee : "",
-          t.id,
-          t.key,
-          ...(t.aliases || []),
-          ...(fieldOn(state.config, "tags") ? t.tags || [] : []),
-        ].some((v) =>
-          String(v || "")
-            .toLowerCase()
-            .includes(query),
-        )),
-  );
-  const parentKeys = state.sort === "parent" && new Map(state.tasks.map((t) => [t.id, t.key]));
-  return list.sort((a, b) => {
-    let result;
-    if (state.sort === "order") result = (a.order || 0) - (b.order || 0);
-    else if (state.sort === "parent") result = byText(parentKeys.get(a.parent), parentKeys.get(b.parent));
-    else if (state.sort === "key" || state.sort === "assignee") result = byText(a[state.sort], b[state.sort]);
-    else if (state.sort === "priority")
-      result = priorities.indexOf(a.priority) - priorities.indexOf(b.priority);
-    else if (state.sort === "status")
-      result = statuses.indexOf(a.status) - statuses.indexOf(b.status);
-    else if (state.sort === "due")
-      result = String(a.due || "9999").localeCompare(String(b.due || "9999"));
-    else
-      result = String(a[state.sort] || "").localeCompare(
-        String(b[state.sort] || ""),
-      );
-    return result * state.sortDir || a.id.localeCompare(b.id);
-  });
+  return filterTasks(state.tasks, { search: state.search, status: state.status, type: state.type, sort: state.sort, sortDir: state.sortDir, config: state.config, statuses, keep: (t) => features.filter(t) });
 }
 function renderView(onlyContent = false) {
   return keepFocus(() => renderViewNow(onlyContent));
