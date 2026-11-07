@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { schema } from "../server/model.js";
-import { CARD_FIELDS, VIEW_GROUPS, fieldOn, viewOn, cardsOn } from "../public/card-fields.js";
+import { CARD_FIELDS, VIEW_GROUPS, NEW_CARD_PARTS, fieldOn, viewOn, cardsOn } from "../public/card-fields.js";
 import { tablePreferences } from "../public/table-model.js";
 import { canParent } from "../public/hierarchy-model.js";
 
@@ -62,4 +62,13 @@ test("a project can turn off views, and Overview stays", () => {
   assert.equal(viewOn(config, "calendar"), true);
   assert.equal(cardsOn(config), true, "Planning still shows cards");
   assert.equal(cardsOn({ views_off: ["list", "tree", "table", "kanban", "calendar", "timeline", "capacity"] }), false);
+});
+
+// Owner request (F0.22-75): a project chooses what the New card form shows; the title always shows.
+test("a project can leave components out of the New card form, and only known ones", () => {
+  assert.deepEqual(NEW_CARD_PARTS.map(([key]) => key), ["type", "assignee", "status", "priority", "dates", "tags", "description", "attachments", "notes", "relationships", "documents", "boards"]);
+  assert.deepEqual(schema({ create_off: ["notes", "boards"] }).create_off, ["notes", "boards"]);
+  assert.equal(schema({}).create_off, undefined, "the form shows everything by default");
+  for (const create_off of [["title"], ["notes", "notes"], "notes", [1]])
+    assert.throws(() => schema({ create_off }), /New card form/, JSON.stringify(create_off));
 });

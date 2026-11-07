@@ -2,6 +2,11 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.22.75 — 2026-11-07
+
+### Added
+- Feature F0.22-75: Settings → Statuses & workflow → New card form chooses what the New card form shows besides the title: card type, assignee, status, priority, dates, tags, description, attachments, notes, relationships, documents and boards. A part left out keeps its default (such as the first status or the auto-assignee), and the card editor still shows it once the card is created.
+
 ## 0.22.74 — 2026-11-07
 
 ### Changed

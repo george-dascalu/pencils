@@ -26,3 +26,17 @@ export const viewOn = (config, view) => !config?.views_off?.includes(view) && (!
 export const cardsOn = (config) => VIEW_GROUPS.slice(0, 2).some(([, , views]) => views.some((view) => viewOn(config, view)));
 /** @param {Partial<ProjectConfig> | null | undefined} config */
 export const markFieldsOff = (config) => document.documentElement.setAttribute("data-fields-off", (config?.off || []).join(" "));
+// What the New card form shows (F0.22-75, Settings → Statuses & workflow → New card form): the title
+// always; a project leaves the rest out through schema.create_off, which the form carries in
+// data-create-off (card-fields.css). Left out, a part keeps its default and the card editor still has it.
+export const NEW_CARD_PARTS = [
+  ["type", "Card type"], ["assignee", "Assignee"], ["status", "Status"], ["priority", "Priority"], ["dates", "Dates"], ["tags", "Tags"],
+  ["description", "Description"], ["attachments", "Attachments"], ["notes", "Notes"], ["relationships", "Relationships"], ["documents", "Documents"], ["boards", "Boards"],
+];
+// The card fields a part needs one of; a part whose fields are all off, or whose view is (Documents,
+// Boards), isn't offered.
+/** @type {Record<string, string[]>} */
+const PART_NEEDS = { type: ["type"], assignee: ["assignee"], status: ["status"], priority: ["priority"], dates: ["start", "due"], tags: ["tags"], notes: ["notes"] };
+/** @param {Partial<ProjectConfig> | null | undefined} config @param {string} part */
+export const newCardPartOffered = (config, part) =>
+  (!PART_NEEDS[part] || PART_NEEDS[part].some((field) => fieldOn(config, field))) && (part !== "documents" || viewOn(config, "documents")) && (part !== "boards" || viewOn(config, "board"));

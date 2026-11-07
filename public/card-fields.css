@@ -21,6 +21,29 @@
 :root[data-fields-off~="assignee"][data-fields-off~="status"][data-fields-off~="priority"] :is(#task-form .task-fields, .task-relationship-metadata, .calendar-event-fields) {
   display: none !important;
 }
+/* The parts a project leaves out of the New card form (F0.22-75, card-fields.js); the card editor keeps them. */
+.task-create-form[data-create-off~="type"] [data-task-picker="type"],
+.task-create-form[data-create-off~="assignee"] .task-assignee-field,
+.task-create-form[data-create-off~="status"] .field:has(> select[name="status"]),
+.task-create-form[data-create-off~="priority"] .field:has(> [data-task-picker="priority"]),
+.task-create-form[data-create-off~="assignee"][data-create-off~="status"][data-create-off~="priority"] .task-fields,
+.task-create-form[data-create-off~="dates"] .task-dates,
+.task-create-form[data-create-off~="assignee"][data-create-off~="status"][data-create-off~="priority"][data-create-off~="dates"] .task-metadata-main,
+.task-create-form[data-create-off~="assignee"][data-create-off~="status"][data-create-off~="priority"][data-create-off~="dates"][data-create-off~="tags"] .task-metadata,
+:root[data-fields-off~="tags"] .task-create-form[data-create-off~="assignee"][data-create-off~="status"][data-create-off~="priority"][data-create-off~="dates"] .task-metadata,
+.task-create-form[data-create-off~="tags"] .task-tags,
+.task-create-form[data-create-off~="description"] .task-description > :not(.task-attachments, .task-attachment-status),
+.task-create-form[data-create-off~="description"][data-create-off~="attachments"] .task-description,
+.task-create-form[data-create-off~="attachments"] .task-description > .task-attachments,
+.task-create-form[data-create-off~="notes"] .task-notes,
+.task-create-form[data-create-off~="relationships"] .task-relationships,
+.task-create-form[data-create-off~="documents"] .task-documents,
+.task-create-form[data-create-off~="boards"] .task-boards {
+  display: none !important;
+}
+.task-create-form[data-create-off~="assignee"][data-create-off~="status"][data-create-off~="priority"] .task-metadata-main > .task-dates { grid-column: 1 / -1; }
+/* With no section under the fields, no divider under them either. */
+.task-create-form:is([data-create-off~="description"][data-create-off~="attachments"][data-create-off~="notes"][data-create-off~="relationships"][data-create-off~="documents"][data-create-off~="boards"]) .task-metadata { border-bottom: 0; }
 /* With its field box gone, the card editor's dates take the whole row and fit one line (F0.21-93). */
 :root[data-fields-off~="assignee"][data-fields-off~="status"][data-fields-off~="priority"] .task-dialog .task-metadata-main > .task-dates { grid-column: 1 / -1; }
 /* Field boxes count only the fields they show: 1 while a field is on, 0 once it is off. On phones a

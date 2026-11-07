@@ -295,6 +295,7 @@ export const TIERS = [
     "e2e/planning/project-people-assignees.spec.mjs", // add people and teams, make them assignable (split by tier)
     "e2e/settings/auto-assign.spec.mjs", // choose who new cards are auto-assigned to
     "e2e/settings/type-looks.spec.mjs", // choose each card type's icon and colour
+    "e2e/settings/new-card-form.spec.mjs", // choose what the New card form shows
     "e2e/planning/timeline-date-editor.spec.mjs", // set dates from Timeline
     "e2e/planning/timeline-selection.spec.mjs", // schedule a row on Timeline by two clicks
     "e2e/planning/timeline-viewport.spec.mjs", // use Timeline

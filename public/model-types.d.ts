@@ -26,6 +26,7 @@ export interface ProjectConfig {
   hierarchy?: Hierarchy;
   off?: string[];
   views_off?: string[];
+  create_off?: string[];
   [setting: string]: unknown;
 }
 

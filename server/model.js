@@ -3,7 +3,7 @@ import { validTablePreferences } from "../public/table-model.js";
 import { Problem } from "./problem.js";
 import { DEFAULT_TASK_TYPES, TYPE_ICONS } from "../public/task-types.js";
 import { PRIORITIES } from "./values.js";
-import { CARD_FIELDS, VIEW_GROUPS } from "../public/card-fields.js";
+import { CARD_FIELDS, VIEW_GROUPS, NEW_CARD_PARTS } from "../public/card-fields.js";
 import {validTaskBoards} from './task-board-links.js';
 import {validTaskNotes} from '../public/task-note-model.js';
 
@@ -168,6 +168,13 @@ export function schema(value = DEFAULT_SCHEMA) {
       new Set(result.views_off).size !== result.views_off.length)
   )
     fail("Only the project's views can be turned off, each once; Overview stays.");
+  if (
+    result.create_off != null &&
+    (!Array.isArray(result.create_off) ||
+      result.create_off.some((part) => !NEW_CARD_PARTS.some(([key]) => key === part)) ||
+      new Set(result.create_off).size !== result.create_off.length)
+  )
+    fail("Only the New card form's own parts can be left out of it, each once; the title stays.");
   if (!Array.isArray(result.fields) || result.fields.length > 40)
     fail("A project supports up to 40 custom fields.");
   const ids = new Set();

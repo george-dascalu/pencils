@@ -1,7 +1,7 @@
 import { randomUUID } from "./uuid.js";
 import { focusOnOpen } from "./open-focus.js";
 import { workflowEditor } from "./workflow-editor.js";
-import { CARD_FIELDS, VIEW_GROUPS, VIEW_NEEDS, fieldOn, viewOn } from "./card-fields.js";
+import { CARD_FIELDS, VIEW_GROUPS, VIEW_NEEDS, NEW_CARD_PARTS, newCardPartOffered, fieldOn, viewOn } from "./card-fields.js";
 import { projectPeopleControls, projectPeople } from "./teams.js";
 import { tagsSettingsHTML, tagsSettings, tagRows } from "./project-tags-settings.js";
 import { priorityOptions, priorityLabel } from "./task-priority.js";
@@ -576,7 +576,7 @@ export function projectSettings(ctx, { sources, automations, personal, organisat
       if (section === "hierarchy") installTypeLooks(f, state.config, { esc, colorPicker });
       // Assignee, status and priority share one box whose border takes the priority's colour.
       if (section === "workflow")
-        f.querySelector(".dialog-body").insertAdjacentHTML("beforeend", `<fieldset class="card-fields"><legend>Card fields</legend><p class="field-hint">Cards always show their ID and title. Turn off the fields this project doesn't use: their values stay in the files, and views that need a field that's off leave the tabs.</p><div class="card-field-list">${CARD_FIELDS.map(([key, name]) => `<label><input type="checkbox" name="card-field" value="${key}" ${fieldOn(schema, key) ? "checked" : ""}> ${name}</label>`).join("")}</div></fieldset><fieldset class="priority-colors"><legend>Priority colours</legend><p class="field-hint">A card's assignee, status and priority share one box with a border in its priority's colour.</p><div class="priority-color-list">${priorityOptions.map((priority) => `<div class="field">${esc(priorityLabel(priority))}${colorPicker({ label: `${priorityLabel(priority)} priority colour`, value: taskFieldColor(state, "priority", priority), name: `priority-color-${priority}` })}</div>`).join("")}</div></fieldset>`);
+        f.querySelector(".dialog-body").insertAdjacentHTML("beforeend", `<fieldset class="card-fields"><legend>Card fields</legend><p class="field-hint">Cards always show their ID and title. Turn off the fields this project doesn't use: their values stay in the files, and views that need a field that's off leave the tabs.</p><div class="card-field-list">${CARD_FIELDS.map(([key, name]) => `<label><input type="checkbox" name="card-field" value="${key}" ${fieldOn(schema, key) ? "checked" : ""}> ${name}</label>`).join("")}</div></fieldset><fieldset class="card-fields new-card-parts"><legend>New card form</legend><p class="field-hint">What the New card form shows, besides the title. A part left out keeps its default, and the card can still be edited once it's created.</p><div class="card-field-list">${NEW_CARD_PARTS.filter(([key]) => newCardPartOffered(schema, key)).map(([key, name]) => `<label><input type="checkbox" name="new-card-part" value="${key}" ${schema.create_off?.includes(key) ? "" : "checked"}> ${name}</label>`).join("")}</div></fieldset><fieldset class="priority-colors"><legend>Priority colours</legend><p class="field-hint">A card's assignee, status and priority share one box with a border in its priority's colour.</p><div class="priority-color-list">${priorityOptions.map((priority) => `<div class="field">${esc(priorityLabel(priority))}${colorPicker({ label: `${priorityLabel(priority)} priority colour`, value: taskFieldColor(state, "priority", priority), name: `priority-color-${priority}` })}</div>`).join("")}</div></fieldset>`);
       if (section !== "import") autosaveSettings(f, () => state.settingsSaving, state);
       f.addEventListener("submit", async (event) => {
         event.preventDefault();
@@ -628,6 +628,10 @@ export function projectSettings(ctx, { sources, automations, personal, organisat
             changes.schema.priority_colors = Object.keys(colors).length ? colors : undefined;
             const on = data.getAll("card-field"), off = CARD_FIELDS.map(([key]) => key).filter((key) => !on.includes(key));
             changes.schema.off = off.length ? off : undefined;
+            // A part not offered (its card fields are off) keeps its choice for when they're back (F0.22-75).
+            const shown = data.getAll("new-card-part"), offered = (key) => !!f.querySelector(`[name="new-card-part"][value="${key}"]`);
+            const left = NEW_CARD_PARTS.map(([key]) => key).filter((key) => (offered(key) ? !shown.includes(key) : config.create_off?.includes(key)));
+            changes.schema.create_off = left.length ? left : undefined;
           }
           if (section === "fields")
             changes = {

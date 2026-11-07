@@ -235,6 +235,8 @@ export function taskAttachments(
     if (event.target.closest('[data-feature="draft-finalise"]')) submit(event);
   }
   function ownsDrop(event) {
+    // A New card form that leaves the card's attachments out takes no dropped files (F0.22-75).
+    if (section.matches('.task-create-form[data-create-off~="attachments"] .task-description')) return false;
     const scope = event.target.closest('[data-attachment-scope]');
     return !scope || scope === section;
   }
