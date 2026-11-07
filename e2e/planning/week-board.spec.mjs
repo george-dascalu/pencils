@@ -15,7 +15,7 @@ const app = useApp(async store => {
 });
 // Drags change the shared seed; each test starts from it.
 test.beforeEach(async () => {
-  for (const [t, fields] of [[app.one, { assignee: 'Ann', status: 'todo', due: '2026-11-03' }], [app.span, { assignee: 'Bo', status: 'in-progress', start: '2026-11-04', due: '2026-11-06' }], [app.loose, { assignee: '', status: 'todo', due: '2026-11-06' }]]) {
+  for (const [t, fields] of [[app.one, { assignee: 'Ann', status: 'todo', due: '2026-11-03' }], [app.span, { assignee: 'Bo', status: 'in-progress', start: '2026-11-04', due: '2026-11-06' }], [app.loose, { assignee: '', status: 'todo', priority: 'medium', due: '2026-11-06' }]]) {
     const current = (await app.store.snapshot(app.project.id)).tasks.find(x => x.id === t.id);
     await app.store.updateTask(app.project.id, t.id, { revision: current.revision, ...fields });
   }
@@ -221,4 +221,21 @@ onDevices(['phone'], () => {
     await client.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
     await expect.poll(async () => { const t = await saved(app.span.id); return [t.start, t.due]; }).toEqual(['2026-11-05', '2026-11-07']);
   });
+});
+
+// Owner report (F0.22-40): a card's status and priority on the Week board save like Kanban's, and
+// the box shows them; they didn't save at all. (Assignee names the rows, so the box leaves it out.)
+test('the Week board saves a card\'s status and priority from its field box', async ({ page }) => {
+  await open(page);
+  const fields = card(page, app.loose.id).locator('.week-board-fields');
+  const choose = async (name, value) => {
+    await fields.getByRole('combobox', { name: `${name} for Nobody on Friday`, exact: true }).click();
+    await page.locator('#shared-select-menu').getByRole('option', { name: value, exact: true }).click();
+  };
+  await choose('Status', 'Done');
+  await expect.poll(async () => (await saved(app.loose.id)).status).toBe('done');
+  await expect(card(page, app.loose.id).locator('.field-chip-status')).toHaveText('Done');
+  await choose('Priority', 'High');
+  await expect.poll(async () => (await saved(app.loose.id)).priority).toBe('high');
+  await expect(card(page, app.loose.id).locator('.field-chip-priority')).toHaveClass(/\bhigh\b/);
 });

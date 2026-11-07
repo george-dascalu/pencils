@@ -2,6 +2,11 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.22.40 — 2026-11-07
+
+### Fixed
+- Feature F0.22-40: Changing a card's status or priority on the Calendar's Week board saves it and shows it. The choice used to show in the menu only and was never saved.
+
 ## 0.22.39 — 2026-11-07
 
 ### Changed
