@@ -574,6 +574,8 @@ export function canvasPro(ctx, basic) {
         availability?.status === "unavailable",
       );
       el.classList.toggle("draft-task", n.type === "draft");
+      // Cleared too when the element is reused for a card that's gone or a draft.
+      el.classList.toggle("card-done", n.type === "task" && !isTaskNote(n) && state.config.done.includes(byTask.get(n.task)?.status));
       el.classList.toggle("task-card-expanded", n.taskCollapsed === false);
       if (n.type === "draft") {
         const d = draftTaskData(n),

@@ -513,6 +513,7 @@ export const TIERS = [
     "e2e/ui/card-wording.spec.mjs", // read labels
     "e2e/ui/color-picker.spec.mjs", // choose a colour
     "e2e/ui/cut-off-titles.spec.mjs", // read long titles
+    "e2e/ui/done-cards.spec.mjs", // tell done cards apart
     "e2e/ui/drag-ghost.spec.mjs", // drag items in views
     "e2e/ui/field-box-fit.spec.mjs", // view field boxes
     "e2e/ui/field-box-minimum.spec.mjs", // view long dates in field box

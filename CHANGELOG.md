@@ -2,6 +2,12 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.22.57 — 2026-11-07
+
+### Changed
+- Feature F0.22-57: Done cards are greyed out wherever cards show as tiles: Kanban, the Week board, Calendar's Month, Week and Agenda, Timeline bars and task cards on boards. The card fades and its title is struck through in grey, as in List rows; point at or focus a card to see it at full strength.
+- Feature F0.22-56: The Week board's Time of day rows are Morning, Afternoon and Evening, with no Any time row: the week's cards without times wait on the Unscheduled board, first and by day, showing their dates. Drag one into a part of the day to give it a time; one dropped or moved on the Unscheduled board loses its date and times.
+
 ## 0.22.55 — 2026-11-07
 
 ### Changed

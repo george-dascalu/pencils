@@ -719,6 +719,11 @@ button svg {
   text-decoration: line-through;
   text-decoration-color: #b6bfaa;
 }
+/* Done cards fade on every card tile, which greys their titles, struck through as in List rows
+   (F0.22-57); pointing at or focusing one brings it back. The fade alone keeps a title at 4.5:1 in
+   both themes, and has no weight, so a view's own fades win. */
+:where(.card-done:not(:hover, :focus-within)) { opacity: .7; }
+.card-done :is(.kanban-card .task-title, .live-card-heading .task-title, .calendar-task > .calendar-card-title, .calendar-card-title > strong, .week-board-title, .agenda-task > span:last-child, .timeline-bar-text) { text-decoration: line-through; }
 .task-type {
   display: inline-flex;
   align-items: center;
