@@ -43,7 +43,8 @@ test("Home opens in the organisation in use, with direct project links and bookm
   await page.goto(`${app.base}/#home`);
   const projects = page.locator('.home-panel[data-type="projects"]');
   await expect(projects.locator(`.project-card[data-id="${app.project.id}"]`), "the organisation in use, not the first").toBeVisible();
-  await expect.poll(() => held.length).toBeGreaterThanOrEqual(2);
+  // Home loads it once per version of the data (F0.22-39).
+  await expect.poll(() => held.length).toBe(1);
   await Promise.all(held.map((route) => route.continue()));
   await page.unroute("**/api/overview");
   await expect.poll(() => answered).toBe(held.length);

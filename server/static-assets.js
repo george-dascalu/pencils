@@ -3,6 +3,14 @@ import path from "node:path";
 import { createHash } from "node:crypto";
 import { gzipSync, brotliCompressSync, constants } from "node:zlib";
 
+// The client's preferred encoding of br and gzip, if it accepts either.
+export function acceptedEncoding(header) {
+  return String(header || "").split(",").map(value => {
+    const [name, q] = value.trim().split(/;\s*q=/);
+    return { name, q: q === undefined ? 1 : Number(q) };
+  }).filter(value => value.q > 0 && ["br", "gzip"].includes(value.name)).sort((a, b) => b.q - a.q)[0]?.name;
+}
+
 export function staticAssets({ publicDir, builtDir, vendor, mime, production }) {
   const cache = new Map();
   return async (req, res, pathname, headers) => {
@@ -36,11 +44,7 @@ export function staticAssets({ publicDir, builtDir, vendor, mime, production }) 
     if (req.headers["if-none-match"] === entry.etag) {
       res.writeHead(304, common); res.end(); return true;
     }
-    const accepted = String(req.headers["accept-encoding"] || "").split(",").map(value => {
-      const [name, q] = value.trim().split(/;\s*q=/);
-      return { name, q: q === undefined ? 1 : Number(q) };
-    }).filter(value => value.q > 0).sort((a, b) => b.q - a.q);
-    const encoding = accepted.find(({ name }) => ["br", "gzip"].includes(name) && entry[name])?.name;
+    const encoding = entry.br ? acceptedEncoding(req.headers["accept-encoding"]) : undefined;
     const body = encoding ? entry[encoding] : entry.body;
     res.writeHead(200, { ...common, ...(encoding ? { "Content-Encoding": encoding } : {}), "Content-Length": body.length });
     res.end(req.method === "HEAD" ? undefined : body);

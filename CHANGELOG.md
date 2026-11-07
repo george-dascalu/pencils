@@ -2,6 +2,11 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.22.39 — 2026-11-07
+
+### Changed
+- Feature F0.22-39: Pages load faster over slow connections. The server compresses its answers, so a big project's cards download at about an eighth of their size, and Home loads every project's cards once and again only after a change, instead of on every redraw (three times on opening).
+
 ## 0.22.38 — 2026-11-06
 
 ### Changed

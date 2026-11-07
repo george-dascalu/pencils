@@ -218,3 +218,31 @@ test("compact board acknowledgements preserve canonical data, retries and concur
     changes: [{ key: 'title', before: final.title, after: 'Updated title' }] })).json();
   assert.equal(folderReply.folder, null, 'include canonical metadata outside the delta fields');
 });
+
+test("API JSON over 1 KB is compressed for clients that accept it (F0.22-39)", async (t) => {
+  const { request, base } = await serverFixture(t);
+  const project = await (await request("/api/projects", "POST", { title: "Compressed" })).json();
+  const http = await import("node:http"), zlib = await import("node:zlib");
+  const get = (route, encoding) => new Promise((resolve, reject) => {
+    http.get(`${base}${route}`, { headers: encoding ? { "accept-encoding": encoding } : {} }, (res) => {
+      const chunks = [];
+      res.on("data", (chunk) => chunks.push(chunk));
+      res.on("end", () => resolve({ headers: res.headers, body: Buffer.concat(chunks) }));
+    }).on("error", reject);
+  });
+  const plain = await get(`/api/projects/${project.id}`);
+  assert.equal(plain.headers["content-encoding"], undefined);
+  const expected = JSON.parse(plain.body);
+  assert.ok(plain.body.length > 1024, "the project snapshot is big enough to compress");
+  for (const [encoding, decode] of [["br", zlib.brotliDecompressSync], ["gzip", zlib.gunzipSync]]) {
+    const packed = await get(`/api/projects/${project.id}`, `${encoding}, deflate`);
+    assert.equal(packed.headers["content-encoding"], encoding);
+    assert.match(packed.headers.vary, /Accept-Encoding/i);
+    assert.equal(packed.headers["cache-control"], "no-store");
+    assert.ok(packed.body.length < plain.body.length);
+    assert.deepEqual(JSON.parse(decode(packed.body)), expected);
+  }
+  // Small answers aren't worth it, and a refused encoding is respected.
+  assert.equal((await get("/api/health", "br")).headers["content-encoding"], undefined);
+  assert.equal((await get(`/api/projects/${project.id}`, "br;q=0, gzip;q=0")).headers["content-encoding"], undefined);
+});

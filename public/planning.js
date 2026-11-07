@@ -45,9 +45,20 @@ export function planning(ctx) {
     );
     return `<div class="project-overview"><p class="field-hint">${tasks.length} active cards${state.tasks.length-tasks.length ? ` · ${state.tasks.length-tasks.length} archived` : ""}. List filters do not apply here.</p><div class="dashboard-metrics"><button class="dashboard-metric" data-feature="overview-open" data-query="done"><strong>${metric.percent}%</strong>Complete</button><button class="dashboard-metric" data-feature="overview-open" data-query="open"><strong>${open.length}</strong>Open cards</button><button class="dashboard-metric" data-feature="overview-open" data-query="blocked"><strong>${blocked.length}</strong>Blocked</button><button class="dashboard-metric" data-feature="overview-open" data-query="overdue"><strong>${open.filter((t) => t.due && t.due < today()).length}</strong>Overdue</button></div><div class="project-overview-columns"><section class="dashboard-deadlines"><h2>Upcoming and overdue</h2>${due.map((t) => `<button data-action="task-open" data-id="${esc(t.id)}"><span>${esc(t.title)}<small class="task-color-badge" ${taskColorAttributes(state, "assignee", t.assignee)}>${esc(t.assignee || "Unassigned")}</small></span><time datetime="${esc(t.due)}">${esc(formatDay(t.due))}</time></button>`).join("") || "<p>No open cards have deadlines.</p>"}</section><section class="overview-summary"><h2>About this project</h2><div class="canvas-markdown">${ctx.markdown(state.project.body || "Add a description in Project settings.")}</div><h2>Work by status</h2>${state.config.statuses.map((status) => `<div class="overview-status"><span>${taskColorDot(state, "status", status)}${esc(ctx.statusNames[status] || status)}</span><strong>${tasks.filter((t) => t.status === status).length}</strong></div>`).join("")}</section></div></div>`;
   }
-  async function dashboard() {
-    // Cross-project Markdown references still use the shared overview data.
-    state.overview = await api("/overview");
+  // Cross-project Markdown references on Home use every project's cards. They load once per
+  // version of the data, not on every redraw (F0.22-39).
+  let overviewFor = null, overviewLoad = null;
+  function dashboard(version) {
+    // A load made before the first event counts for the version that event names.
+    if (overviewFor === -1 && version !== -1) overviewFor = version;
+    // A change while loading loads again after, so the cards are never older than the version.
+    if (overviewLoad) return overviewFor === version ? overviewLoad : overviewLoad.catch(() => {}).then(() => dashboard(version));
+    if (overviewFor === version) return Promise.resolve();
+    overviewFor = version;
+    return (overviewLoad = api("/overview").then(
+      (data) => { state.overview = data; },
+      (error) => { overviewFor = null; throw error; },
+    ).finally(() => { overviewLoad = null; }));
   }
   function click(action, el) {
     if (action === "overview-open") {

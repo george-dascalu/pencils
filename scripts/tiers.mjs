@@ -249,6 +249,7 @@ export const TIERS = [
     "e2e/documents/table-editing.spec.mjs", // edit spreadsheet cells, formulas, sort
     "e2e/documents/table-structure.spec.mjs", // rename/hide/drag rows and columns
     "e2e/home/home-panels.spec.mjs", // see Home panels
+    "e2e/home/home-overview.spec.mjs", // Home loads every project's cards once
     "e2e/home/home-toolbar.spec.mjs", // edit Home layout
     "e2e/lists/active-filters.spec.mjs", // see and remove active filters in List/Calendar
     "e2e/lists/assignee-label.spec.mjs", // read assignee short name in a row

@@ -260,7 +260,7 @@ export function installFeatures(ctx) {
     connectEvents();
     personal.render();
     if (!state.project && !state.directoryPage && !state.helpArticle)
-      plan.dashboard().catch((e) => toast(e.message, true));
+      plan.dashboard(lastVersion).catch((e) => toast(e.message, true));
     const metric = $(".stats-strip");
     if (metric)
       metric.title =

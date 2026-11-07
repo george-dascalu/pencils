@@ -25,7 +25,9 @@ import { hotkeysRoutes } from "./routes/hotkeys.js";
 import { Bar } from "../bar.js";
 import { SearchItems } from "../search-items.js";
 import { Problem } from "../problem.js";
-import { staticAssets } from "../static-assets.js";
+import { staticAssets, acceptedEncoding } from "../static-assets.js";
+import { promisify } from "node:util";
+import { brotliCompress, gzip, constants } from "node:zlib";
 import { BACKUP_BYTES } from "../../public/backup-limits.js";
 import { authorizeWrite } from "./access.js";
 import { displayName } from "./helpers.js";
@@ -209,6 +211,18 @@ export function createServer(
           throw new Problem(403, "Cross-origin writes are not allowed.");
       }
     }
+  });
+  // API JSON over 1 KB goes out compressed (F0.22-39): a big project's cards are megabytes of text.
+  const compress = { br: promisify(brotliCompress), gzip: promisify(gzip) };
+  app.addHook("onSend", async (request, reply, payload) => {
+    if (typeof payload !== "string" || payload.length < 1024 || !String(reply.getHeader("content-type")).startsWith("application/json"))
+      return payload;
+    const encoding = acceptedEncoding(request.headers["accept-encoding"]) as "br" | "gzip" | undefined;
+    if (!encoding) return payload;
+    reply.header("Content-Encoding", encoding).header("Vary", [reply.getHeader("vary"), "Accept-Encoding"].filter(Boolean).join(", "));
+    return encoding === "br"
+      ? compress.br(payload, { params: { [constants.BROTLI_PARAM_QUALITY]: 4 } })
+      : compress.gzip(payload);
   });
   app.setErrorHandler((error: any, request, reply) => {
     const status = error.status || error.statusCode || 500;
