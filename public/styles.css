@@ -722,7 +722,11 @@ button svg {
 /* Done cards fade on every card tile, which greys their titles, struck through as in List rows
    (F0.22-57); pointing at or focusing one brings it back. The fade alone keeps a title at 4.5:1 in
    both themes, and has no weight, so a view's own fades win. */
-:where(.card-done:not(:hover, :focus-within)) { opacity: .7; }
+/* Full strength under the pointer, or with focus in it unless the last input was a pointer: a card
+   marked done from its menu with the mouse fades at once, though the menu keeps focus, while focus
+   moved by the keyboard or a screen reader brings it back (F0.22-76, app.js sets data-input). */
+:where(.card-done:not(:hover)) { opacity: .7; }
+:where(:root:not([data-input="pointer"]) .card-done:focus-within) { opacity: 1; }
 .card-done :is(.kanban-card .task-title, .live-card-heading .task-title, .calendar-task > .calendar-card-title, .calendar-card-title > strong, .week-board-title, .agenda-task > span:last-child, .timeline-bar-text) { text-decoration: line-through; }
 .task-type {
   display: inline-flex;

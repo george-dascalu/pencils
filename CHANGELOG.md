@@ -2,6 +2,11 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.22.76 — 2026-11-07
+
+### Fixed
+- Feature F0.22-76: A card marked done from its own status menu with the mouse fades at once, instead of staying at full strength until you click elsewhere. Done cards still come back to full strength under the pointer, or when you reach them with the keyboard.
+
 ## 0.22.75 — 2026-11-07
 
 ### Added

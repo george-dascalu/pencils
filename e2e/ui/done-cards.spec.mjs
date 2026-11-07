@@ -83,3 +83,31 @@ test('a done card deleted while its board is open is no longer greyed out', asyn
   await expect(node).not.toHaveClass(/\bcard-done\b/);
   await expect(node).toHaveCSS('opacity', '1');
 });
+
+// F0.22-76: a card marked done from its own field box fades at once, though its menu keeps focus; a
+// card reached with the keyboard still comes back to full strength.
+test('a card marked done from its field box fades at once, and keyboard focus brings it back', { tag: '@gate' }, async ({ page }) => {
+  const task = await app.store.createTask(app.project.id, { title: 'Cook soup', status: 'todo', start: day, due: day });
+  await calendar(page, 'board');
+  const tile = page.locator(`.week-board-card[data-calendar-card="${task.id}"]`);
+  await tile.getByRole('combobox', { name: 'Status for Cook soup', exact: true }).click();
+  await page.locator('#shared-select-menu').getByRole('option', { name: 'Done', exact: true }).click();
+  await expect.poll(async () => (await app.store.snapshot(app.project.id)).tasks.find(t => t.id === task.id).status).toBe('done');
+  await page.mouse.move(1, 1);
+  const opacity = () => page.locator(`.week-board-card[data-calendar-card="${task.id}"]`).evaluate(el => getComputedStyle(el).opacity);
+  await expect(page.locator(`.week-board-card[data-calendar-card="${task.id}"]`)).toHaveClass(/\bcard-done\b/);
+  await expect.poll(opacity).toBe('0.7');
+  // A modifier key alone isn't the keyboard taking over.
+  await page.keyboard.press('Shift');
+  expect(await opacity()).toBe('0.7');
+  // Tabbed to, it's at full strength.
+  await page.locator(`.week-board-card[data-calendar-card="${task.id}"]`).getByRole('combobox', { name: 'Status for Cook soup', exact: true }).focus();
+  await page.keyboard.press('Shift+Tab');
+  await page.keyboard.press('Tab');
+  await expect.poll(opacity).toBe('1');
+  // Focus moved with no key or pointer (a screen reader's cursor, on a fresh page) brings it back too.
+  await page.reload();
+  await page.locator(`.week-board-card[data-calendar-card="${task.id}"]`).getByRole('combobox', { name: 'Status for Cook soup', exact: true }).focus();
+  await expect.poll(opacity).toBe('1');
+  await app.store.updateTask(app.project.id, task.id, { revision: (await app.store.snapshot(app.project.id)).tasks.find(t => t.id === task.id).revision, status: 'todo' });
+});

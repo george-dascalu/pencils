@@ -56,6 +56,10 @@ import { boardFloor } from "./layout-tray.js";
 import { recordFailure, installDebugLog } from "./debug-log.js";
 import { bootProgress } from "./boot-progress.js";
 installDebugLog();
+// The last input, pointer or keyboard (a modifier alone isn't), for styles :focus-visible can't tell
+// apart: the shared select menu gives focus back to its control after a mouse choice too (F0.22-76).
+document.addEventListener("pointerdown", () => { document.documentElement.dataset.input = "pointer"; }, true);
+document.addEventListener("keydown", (event) => { if (!["Shift", "Control", "Alt", "Meta"].includes(event.key)) document.documentElement.dataset.input = "keyboard"; }, true);
 import { listPanel } from "./list-panel.js";
 import { fieldOn, viewOn, cardsOn, markFieldsOff } from "./card-fields.js";
 import { kanbanDrag } from "./kanban-drag.js";
