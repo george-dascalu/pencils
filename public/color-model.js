@@ -61,3 +61,28 @@ export function recentColors(values, next) {
     ),
   ].slice(0, 6);
 }
+const luminance = (hex) =>
+  hex
+    .slice(1)
+    .match(/../g)
+    .map((v) => parseInt(v, 16) / 255)
+    .map((c) => (c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4))
+    .reduce((sum, c, i) => sum + c * [0.2126, 0.7152, 0.0722][i], 0);
+const contrast = (a, b) => {
+  const [x, y] = [luminance(a), luminance(b)].sort((p, q) => q - p);
+  return (x + 0.05) / (y + 0.05);
+};
+// The colour matching `hex` in the other theme (F0.22-72): its hue and saturation, lighter for dark
+// mode and darker for light mode, and at least 3:1 against that theme's surface (appearance.css).
+export function themeMatch(hex, dark) {
+  const { h, s, v } = hexToHSV(hex),
+    l = v * (1 - s / 2),
+    sl = l > 0 && l < 1 ? (v - l) / Math.min(l, 1 - l) : 0;
+  const at = (to) => {
+    const tv = to + sl * Math.min(to, 1 - to);
+    return hsvToHex({ h, s: tv ? 2 * (1 - to / tv) : 0, v: tv });
+  };
+  let to = clamp(l + (dark ? 0.2 : -0.2), 0.05, 0.95);
+  while (contrast(at(to), dark ? "#202c25" : "#ffffff") < 3 && to > 0.05 && to < 0.95) to += dark ? 0.02 : -0.02;
+  return at(clamp(to, 0, 1));
+}

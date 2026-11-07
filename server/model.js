@@ -125,6 +125,7 @@ export function schema(value = DEFAULT_SCHEMA) {
   // Each card type's colour and icon (F0.22-67); a type taken out of the project leaves its own behind.
   for (const [key, valid, name] of [
     ["type_colors", (v) => typeof v === "string" && /^#[0-9a-f]{6}$/i.test(v), "Card type colours must be #rrggbb colours."],
+    ["type_colors_dark", (v) => typeof v === "string" && /^#[0-9a-f]{6}$/i.test(v), "Card type colours must be #rrggbb colours."],
     ["type_icons", (v) => TYPE_ICONS.includes(v), "Card type icons must be ones the app offers."],
   ]) {
     if (result[key] == null) continue;

@@ -2,6 +2,11 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.22.72 — 2026-11-07
+
+### Changed
+- Feature F0.22-72: Each card type has a colour for light mode and one for dark mode in Settings → Card types, so a colour that suits one mode no longer fades into the other. A type's first colour picks a matching one for the other mode, lighter for dark mode or darker for light mode; either can then be changed on its own. Types given a colour before now show a matching lighter one in dark mode.
+
 ## 0.22.71 — 2026-11-07
 
 ### Changed
