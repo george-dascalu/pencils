@@ -2,6 +2,11 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.22.64 — 2026-11-07
+
+### Fixed
+- Feature F0.22-64: On the Week board, cards no longer show an empty field box over their titles when the rows name the only field the project shows (such as Status rows with Assignee and Priority turned off): the box is left out.
+
 ## 0.22.63 — 2026-11-07
 
 ### Changed

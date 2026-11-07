@@ -301,6 +301,7 @@ export const TIERS = [
     "e2e/planning/week-board-row-order.spec.mjs", // order Week board rows
     "e2e/planning/week-board-daypart.spec.mjs", // group the Week board by time of day
     "e2e/planning/week-board-row-toggle.spec.mjs", // choose Week board rows with Group by
+    "e2e/planning/week-board-empty-box.spec.mjs", // no empty field box on Week board cards
     "e2e/planning/week-board-backlog.spec.mjs", // arrange the Week board's Unscheduled row
     "e2e/platform/audit-loading.spec.mjs", // open task views and document history
     "e2e/platform/backend-capacity.spec.mjs", // 100 members using the server at once
