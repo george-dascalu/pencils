@@ -2,6 +2,11 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.22.74 — 2026-11-07
+
+### Changed
+- Feature F0.22-74: In the Calendar, today's date is underlined in every layout: Month, Week, Week board and Agenda.
+
 ## 0.22.73 — 2026-11-07
 
 ### Changed

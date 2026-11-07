@@ -274,6 +274,8 @@
 .week-board-empty { margin: 0; padding: 4px 10px 8px; }
 .week-board-day-head { padding: 8px 10px; font-size: var(--type-body); font-weight: 600; color: var(--muted); text-align: start; }
 .week-board-day-head.today { color: var(--green); }
+/* Today's date is underlined in every layout (F0.22-74). */
+:is(.calendar-day.today > button:first-child, .week-board-day-head.today, .agenda-day.today > h3) { text-decoration: underline 2px; text-underline-offset: 3px; }
 /* Weekends stand out a little (F0.21-89); the sticky heading keeps its own fill under the shade. */
 .week-board-cell.weekend, .calendar-hours-day.weekend { background-color: var(--weekend-shade); }
 .week-board-day-head.weekend { background-image: linear-gradient(var(--weekend-shade), var(--weekend-shade)); }

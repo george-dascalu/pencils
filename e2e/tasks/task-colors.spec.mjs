@@ -25,6 +25,8 @@ test.describe.configure({ mode: "serial" });
 const colors = {};
 
 const color = (locator) => locator.evaluate((el) => getComputedStyle(el).getPropertyValue("--task-field-color").trim());
+// A menu option's colour, once the menu has given it one.
+const optionColor = async (locator) => { await expect.poll(() => color(locator)).not.toBe(""); return color(locator); };
 const saved = async () => (await app.store.snapshot(app.project.id)).tasks.find((t) => t.id === app.task.id);
 const openEditor = async (page) => {
   await page.goto(`${app.base}/#project/${app.project.id}/list`);
@@ -63,10 +65,10 @@ test("choosing an assignee, priority or status colours the editor field with the
   expect(new Set(initial).size).toBe(3);
   await assignee.click();
   const choice = page.locator("#shared-select-menu").getByRole("option", { name: "Alex", exact: true });
-  colors.alex = await color(choice);
+  colors.alex = await optionColor(choice);
   await expect(choice.locator(".task-color-dot")).toBeVisible();
   await choice.click();
-  expect(await color(assignee)).toBe(colors.alex);
+  await expect.poll(() => color(assignee)).toBe(colors.alex);
   expect(colors.alex).not.toBe(initial[0]);
   await priority.locator(".task-picker-trigger").click();
   await expect(priority.locator("[data-picker-value]")).toHaveText(["Urgent", "High", "Medium", "Low", "Lowest"]);
@@ -74,14 +76,14 @@ test("choosing an assignee, priority or status colours the editor field with the
   await expect.poll(async () => (await saved()).priority).toBe("none");
   await priority.locator(".task-picker-trigger").click();
   const urgent = priority.getByRole("option", { name: "Urgent", exact: true });
-  colors.urgent = await color(urgent);
+  colors.urgent = await optionColor(urgent);
   await urgent.click();
-  expect(await color(priority)).toBe(colors.urgent);
+  await expect.poll(() => color(priority)).toBe(colors.urgent);
   await status.click();
   const review = page.locator("#shared-select-menu").getByRole("option", { name: "In review", exact: true });
-  colors.review = await color(review);
+  colors.review = await optionColor(review);
   await review.click();
-  expect(await color(status)).toBe(colors.review);
+  await expect.poll(() => color(status)).toBe(colors.review);
   await expect.poll(async () => {
     const t = await saved();
     return [t.assignee, t.priority, t.status];

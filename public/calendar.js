@@ -171,7 +171,7 @@ export function calendarView(ctx) {
     const clear = '<button type="button" class="button soft" data-action="filters-reset">Clear filters</button>';
     const empty = noMatches ? `<div class="calendar-empty"><p>No matching cards. Clear the filters to see the schedule.</p>${clear}</div>` : "";
     const agendaEmpty = filtered ? `<div class="calendar-empty"><p>No matching cards scheduled in this period.</p>${clear}</div>` : '<p class="field-hint">No cards scheduled in this period.</p>';
-    const agenda = `<div class="calendar-agenda">${groups.map(([day, items]) => `<section class="agenda-day" data-calendar-date="${day}"><h3><time datetime="${day}">${esc(format(day, { weekday: "long" }))}</time></h3>${items.map(t => row(t)).join("")}</section>`).join("") || (noMatches ? "" : agendaEmpty)}</div>`;
+    const agenda = `<div class="calendar-agenda">${groups.map(([day, items]) => `<section class="agenda-day${day === localDate() ? " today" : ""}" data-calendar-date="${day}"><h3><time datetime="${day}">${esc(format(day, { weekday: "long" }))}</time></h3>${items.map(t => row(t)).join("")}</section>`).join("") || (noMatches ? "" : agendaEmpty)}</div>`;
     // Week keeps date-only cards above the hourly schedule.
     const keep = mode === "month" && !recenter && monthPosition();
     if (mode === "month" && (recenter || !span)) span = monthSpan(anchor);

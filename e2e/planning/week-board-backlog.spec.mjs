@@ -93,6 +93,8 @@ test('cards go exactly where they are dropped, line up with a card nearby, and m
   await expect(live.locator('.week-board-title')).toHaveText('BL-3 Draft');
   await expect(live.locator('.week-board-fields')).toHaveCount(1);
   const planAt = await place(page, 'Plan');
+  // The live card follows the pointer on the next frame.
+  await expect.poll(() => live.evaluate(el => el.offsetLeft)).toBe(planAt.x);
   expect(await live.evaluate(el => ({ x: el.offsetLeft, border: getComputedStyle(el).borderTopStyle, events: getComputedStyle(el).pointerEvents }))).toEqual({ x: planAt.x, border: 'solid', events: 'none' });
   expect(await board(page).locator('.week-board-card[data-calendar-card]', { hasText: 'Draft' }).evaluate(el => getComputedStyle(el).opacity)).toBe('0');
   expect(await page.locator('.calendar-drag-preview').evaluate(el => getComputedStyle(el).visibility)).toBe('hidden');
