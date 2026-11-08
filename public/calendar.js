@@ -40,6 +40,9 @@ export function calendarView(ctx) {
   const BACKLOG_MIN = 96, BACKLOG_MAX = 1200;
   const backlogFit = value => Math.round(Math.max(BACKLOG_MIN, Math.min(BACKLOG_MAX, Number(value) || 200)));
   let backlogHeight = backlogFit(storage.get("week-board-backlog-height", 200)), drawnFor = null;
+  // Shown, or hidden down to its head with the button there (F0.22-80), kept in this browser.
+  let backlogOpen = storage.get("week-board-backlog-open", true) !== false;
+  const backlogToggle = () => `<button type="button" class="icon-button week-board-backlog-toggle" data-backlog-toggle aria-controls="week-board-backlog-board" aria-expanded="${backlogOpen}" aria-label="${backlogOpen ? "Hide" : "Show"} Unscheduled" title="${backlogOpen ? "Hide" : "Show"} Unscheduled">${icon("chevron")}</button>`;
   // Week board rows: a card field or tag, or one row for every card (Group by: F0.21-91).
   let boardRows = storage.get("week-board-rows", "assignee");
   const ROW_FIELDS = [["assignee", "Assignee"], ["status", "Status"], ["priority", "Priority"], ["type", "Card type"], ["tags", "Tag"], ["daypart", "Time of day"], ["none", "No grouping"]];
@@ -136,7 +139,7 @@ export function calendarView(ctx) {
     const shown = new Set(tasks.map(t => t.id)), loose = backlogCards().filter(t => shown.has(t.id)), untimed = field === "daypart" ? placed.filter(t => !daypart(t)) : [];
     const at = new Map(loose.map(t => [t.id, backlogPosition(t.backlog)])), kept = loose.filter(t => at.get(t.id)).sort((a, b) => at.get(a.id).y - at.get(b.id).y || at.get(a.id).x - at.get(b.id).x);
     const far = axis => Math.max(0, ...kept.map(t => at.get(t.id)[axis])), flow = [...untimed, ...loose.filter(t => !at.get(t.id))];
-    const backlog = `<section class="week-board-backlog" aria-labelledby="week-board-backlog-title" style="height:${backlogHeight}px"><div class="week-board-backlog-head"><h3 id="week-board-backlog-title">Unscheduled</h3><div class="week-board-backlog-resize" role="separator" tabindex="0" aria-orientation="horizontal" aria-label="Resize Unscheduled" aria-valuemin="${BACKLOG_MIN}" aria-valuemax="${BACKLOG_MAX}" aria-valuenow="${backlogHeight}" title="Drag, or press Up and Down, to resize"><span></span></div></div><div class="week-board-backlog-board"><div class="week-board-backlog-canvas" style="--backlog-right:${far("x")}px;--backlog-bottom:${far("y")}px">${flow.length ? `<div class="week-board-backlog-flow">${flow.map(t => card(t, { keys: backlogKeys, dated: !!calendarRange(t) })).join("")}</div>` : ""}${kept.map(t => { const p = at.get(t.id); return card(t, { keys: backlogKeys, place: `;left:${p.x}px;top:${p.y}px;z-index:${p.z}` }); }).join("")}${flow.length || kept.length ? "" : '<p class="field-hint week-board-backlog-empty">Drop a card here to take it off the calendar.</p>'}</div></div></section>`;
+    const backlog = `<section class="week-board-backlog" aria-labelledby="week-board-backlog-title" style="height:${backlogHeight}px"${backlogOpen ? "" : " data-closed"}><div class="week-board-backlog-head"><h3 id="week-board-backlog-title">Unscheduled</h3><div class="week-board-backlog-resize" role="separator" tabindex="0" aria-orientation="horizontal" aria-label="Resize Unscheduled" aria-valuemin="${BACKLOG_MIN}" aria-valuemax="${BACKLOG_MAX}" aria-valuenow="${backlogHeight}" title="Drag, or press Up and Down, to resize"><span></span></div>${backlogToggle()}</div><div class="week-board-backlog-board" id="week-board-backlog-board"><div class="week-board-backlog-canvas" style="--backlog-right:${far("x")}px;--backlog-bottom:${far("y")}px">${flow.length ? `<div class="week-board-backlog-flow">${flow.map(t => card(t, { keys: backlogKeys, dated: !!calendarRange(t) })).join("")}</div>` : ""}${kept.map(t => { const p = at.get(t.id); return card(t, { keys: backlogKeys, place: `;left:${p.x}px;top:${p.y}px;z-index:${p.z}` }); }).join("")}${flow.length || kept.length ? "" : '<p class="field-hint week-board-backlog-empty">Drop a card here to take it off the calendar.</p>'}</div></div></section>`;
     // A table to assistive technology: days are column headers, rows' names row headers.
     return `${placed.length ? "" : '<p class="field-hint week-board-empty">No cards scheduled this week.</p>'}<div class="calendar-scroll week-board-scroll" role="region" aria-label="Week board" tabindex="0"><div class="week-board" role="table" aria-label="Week board" data-rows="${field}" style="--week-board-days:${days.length}"><div class="week-board-head-row" role="row"><div class="week-board-corner" role="columnheader"><span class="sr-only">${field === "none" ? "Cards" : esc(ROW_FIELDS.find(([key]) => key === field)[1])}</span></div>${days.map(day => `<div class="week-board-day-head${day === localDate() ? " today" : ""}${isWeekend(day) ? " weekend" : ""}" role="columnheader" data-calendar-date="${day}"><time datetime="${day}">${esc(format(day, { weekday: "short" }))}</time></div>`).join("")}</div>${rows.map(row => {
       return `<div class="week-board-row" role="row" data-week-board-value="${esc(row)}"><div class="week-board-row-head" role="rowheader"${field === "none" ? "" : ` aria-label="${esc(name(row))}"`}>${field === "none" ? '<span class="sr-only">All cards</span>' : `${groupReorderHandle(row, name(row), esc)}<span>${esc(name(row))}</span>`}</div>${days.map(day => `<div class="week-board-cell${isWeekend(day) ? " weekend" : ""}" role="cell" data-calendar-date="${day}" data-week-board-value="${esc(row)}">${(byDay.get(day) || []).filter(t => inRow(t, row)).map(t => card(t, { cell: true })).join("")}</div>`).join("")}</div>`;
@@ -341,6 +344,17 @@ export function calendarView(ctx) {
     const d = drag;
     if (!d?.active) return;
     if (!d.card.isConnected || state.view !== "calendar" || state.project?.id !== d.project) { finish(true); return; }
+    // The dock tucks away to its head under a dragged card, showing the week, and opens while the card
+    // is over it (F0.22-80). Before the scrolling below: the board doesn't snap during a drag.
+    const dock = mode === "board" ? document.querySelector(".week-board-backlog") : null, r = dock?.getBoundingClientRect();
+    const over = r && d.x >= r.left && d.x <= r.right && d.y >= r.top && d.y <= r.bottom ? "over" : "away";
+    if (dock && dock.dataset.drag !== over) {
+      // The week keeps room for what the dock gave it, so a board scrolled to its end doesn't jump.
+      const week = document.querySelector(".week-board");
+      if (over === "away") week.style.marginBottom = `${r.height - dock.querySelector(".week-board-backlog-head").offsetHeight - dock.clientTop}px`;
+      else week.style.removeProperty("margin-bottom");
+      dock.dataset.drag = over;
+    }
     const scroll = document.querySelector(".calendar-scroll");
     if (scroll) {
       const rect = scroll.getBoundingClientRect();
@@ -413,6 +427,8 @@ export function calendarView(ctx) {
     if (d.card.hasPointerCapture(d.pointer)) d.card.releasePointerCapture(d.pointer);
     d.ghost?.remove();
     d.cancel?.remove();
+    document.querySelector(".week-board-backlog")?.removeAttribute("data-drag");
+    document.querySelector(".week-board")?.style.removeProperty("margin-bottom");
     // A card dropped on the Unscheduled board stays where it landed until the redraw after its save
     // replaces it, rather than showing at its old place meanwhile (F0.22-69).
     const landed = !cancel && d.active && !!d.next?.backlog;
@@ -532,6 +548,14 @@ export function calendarView(ctx) {
     if (e.target.closest('[data-calendar-weekends]')) {
       weekends = !weekends; storage.set('calendar-weekends', weekends); renderView(true); return;
     }
+    const toggle = e.target.closest("[data-backlog-toggle]");
+    if (toggle) {
+      backlogOpen = !backlogOpen; storage.set("week-board-backlog-open", backlogOpen);
+      toggle.closest(".week-board-backlog").toggleAttribute("data-closed", !backlogOpen);
+      toggle.outerHTML = backlogToggle();
+      document.querySelector("[data-backlog-toggle]").focus();
+      return;
+    }
     const button = e.target.closest("[data-calendar-unscheduled]");
     if (button) {
       const panel = unscheduled.show(button, `Unscheduled (${undated.length})`, `<div class="calendar-unscheduled-list">${undated.map(t => row(t, true)).join("") || '<p class="field-hint">All matching cards are scheduled.</p>'}</div>`);
@@ -601,7 +625,7 @@ export function calendarView(ctx) {
   let resize = null;
   document.addEventListener("pointerdown", e => {
     const head = e.button === 0 && state.view === "calendar" && e.target.closest(".week-board-backlog-head");
-    if (!head) return;
+    if (!head || e.target.closest("[data-backlog-toggle], .week-board-backlog[data-closed]")) return;
     e.preventDefault();
     resize = { pointer: e.pointerId, y: e.clientY, height: backlogShown() };
     head.setPointerCapture(e.pointerId);

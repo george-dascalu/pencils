@@ -492,6 +492,7 @@ html.table-viewport-view body {
   overflow: auto;
   scrollbar-color: var(--muted) var(--surface-soft);
   background: var(--surface);
+  overscroll-behavior: none;
 }
 .table-viewport-view #view-content > .table-scroll {
   min-height: 0;
@@ -522,7 +523,6 @@ html.table-viewport-view body {
   grid-template-columns: minmax(min-content, 1fr);
   grid-auto-rows: max-content;
   align-content: start;
-  overscroll-behavior: contain;
 }
 .tree-wrapper .tree-toggle {
   flex-shrink: 0;
@@ -535,7 +535,7 @@ html.table-viewport-view body {
   overflow-x: auto;
   overflow-y: hidden;
   scroll-snap-type: x mandatory;
-  overscroll-behavior-x: contain;
+  overscroll-behavior-x: none;
 }
 #view-content > .kanban > .kanban-column {
   flex: 0 0 var(--kanban-column-width, var(--kanban-min-column-width));
@@ -544,7 +544,7 @@ html.table-viewport-view body {
   min-height: 0;
   overflow-x: hidden;
   overflow-y: auto;
-  overscroll-behavior-y: contain;
+  overscroll-behavior-y: none;
 }
 #view-content > .kanban .column-header {
   position: sticky;
@@ -564,7 +564,7 @@ html.table-viewport-view body {
 #view-content > .kanban.kanban-swimlanes {
   display: block;
   overflow: auto;
-  overscroll-behavior: contain;
+  overscroll-behavior: none;
 }
 .kanban-lanes-content {
   width: calc(var(--kanban-columns) * var(--kanban-column-width, var(--kanban-min-column-width)) + (var(--kanban-columns) - 1) * var(--kanban-gap));

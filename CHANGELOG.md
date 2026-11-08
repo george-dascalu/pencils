@@ -2,6 +2,15 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.22.80 — 2026-11-08
+
+### Added
+- Feature F0.22-80: The Week board's Unscheduled board works as a dock. The button at the right of its head hides it down to its head or shows it again, and this browser remembers the choice. While you drag a card, the dock tucks away to its head so you can see the whole week, and opens again when the card is over it, so you can still drop a card there; a hidden dock opens the same way and hides again after the drop.
+
+### Changed
+- Feature F0.22-79: Scrolled sideways or up and down, the Week board settles on a day and a row, each starting just clear of the day and row names that stay in place. A card dragged to its edge still scrolls it a little at a time.
+- Feature F0.22-78: On iPad and phones, lists and views no longer stretch past their edges as you scroll (the rubber-band bounce): List, Tree, Table, Kanban, every Calendar layout (the Week board and its Unscheduled board included), Timeline, Capacity and Overview stop at their edges.
+
 ## 0.22.77 — 2026-11-08
 
 ### Fixed

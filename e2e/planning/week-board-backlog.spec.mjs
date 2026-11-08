@@ -32,6 +32,12 @@ async function open(page) {
   await (await reveal(page.locator('#calendar-mode'))).selectOption('board');
   await expect(page.locator('.week-board')).toBeVisible();
 }
+// A dragged card tucks the Unscheduled board away to its head until the card is over it (F0.22-80).
+async function overHead(page) {
+  const head = await board(page).locator('.week-board-backlog-head').boundingBox();
+  await page.mouse.move(head.x + 40, head.y + head.height / 2, { steps: 4 });
+  await expect(board(page).locator('.week-board-backlog-board')).toBeVisible();
+}
 async function drag(page, title, to) {
   const from = await page.locator('.week-board-title', { hasText: title }).boundingBox();
   const start = { x: from.x + from.width / 2, y: from.y + from.height / 2 };
@@ -131,6 +137,7 @@ test('a card dragged from the toolbar list of unscheduled cards moves on the boa
   await page.mouse.move(grip.x + grip.width / 2, grip.y + grip.height / 2);
   await page.mouse.down();
   await page.mouse.move(grip.x + 20, grip.y + 20, { steps: 3 });
+  await overHead(page);
   await page.mouse.move(canvas.x + 900, canvas.y + 40, { steps: 8 });
   const live = board(page).locator('.week-board-live');
   await expect(live.locator('.week-board-title')).toHaveText('BL-3 Draft');
@@ -171,8 +178,11 @@ test('at the edge of the board, Alt and an arrow says so instead of saving', asy
 
 test('a card dropped on the Unscheduled board loses its dates; one dragged to a day keeps its place for later', async ({ page }) => {
   await open(page);
-  const area = await board(page).locator('.week-board-backlog-board').boundingBox();
-  await drag(page, 'Meeting', { x: area.x + area.width - 120, y: area.y + 40 });
+  await drag(page, 'Meeting', async () => {
+    await overHead(page);
+    const area = await board(page).locator('.week-board-backlog-board').boundingBox();
+    return { x: area.x + area.width - 120, y: area.y + 40 };
+  });
   await expect.poll(async () => { const t = await saved(app.meeting.id); return [t.due, t.start, !!t.backlog]; }).toEqual([null, null, true]);
   const kept = (await saved(app.meeting.id)).backlog;
   await expect.poll(() => onBoard(page)).toEqual(['Draft', 'Legacy', 'Meeting', 'Plan']);

@@ -307,6 +307,8 @@ export const TIERS = [
     "e2e/planning/week-board-empty-box.spec.mjs", // no empty field box on Week board cards
     "e2e/planning/week-board-backlog.spec.mjs", // arrange the Week board's Unscheduled row
     "e2e/planning/week-board-narrow.spec.mjs", // Week board on a narrow window
+    "e2e/planning/week-board-snap.spec.mjs", // Week board settles on a day and a row
+    "e2e/planning/week-board-dock.spec.mjs", // hide the Week board's Unscheduled dock; it tucks away while dragging
     "e2e/planning/calendar-today.spec.mjs", // today underlined in the Calendar
     "e2e/platform/audit-loading.spec.mjs", // open task views and document history
     "e2e/platform/backend-capacity.spec.mjs", // 100 members using the server at once
@@ -341,6 +343,7 @@ export const TIERS = [
     "e2e/tasks/task-children.spec.mjs", // create a new child card from a card
     "e2e/ui/button-sweep.spec.mjs", // click through screens and buttons
     "e2e/ui/control-sizing.spec.mjs", // tap and click controls
+    "e2e/ui/no-overscroll.spec.mjs", // no view scrolls past its edges on iPad and phones
     "e2e/ui/font-scale.spec.mjs", // read card popup and Table
     "e2e/ui/layout-priorities.spec.mjs", // view layout of navigation vs context
     "e2e/ui/ui-controls-polish.spec.mjs", // focus rings, states, icons, sliders, toasts and empty states look right (split by tier)
