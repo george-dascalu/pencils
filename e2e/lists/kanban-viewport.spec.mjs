@@ -128,7 +128,13 @@ test("a drag held near a long column's bottom scrolls that column, not the page"
   await page.mouse.down();
   await page.mouse.move(card.x + 40, card.y + 30, { steps: 4 });
   await page.mouse.move(target.x + target.width / 2, target.y + target.height - 15, { steps: 12 });
-  await page.waitForFunction(() => document.querySelector('[data-drop-status="todo"]').scrollTop > 400);
+  // The column scrolls from the last place a dragover reported. Under load, WebKit's drag emulation can
+  // drop the moves that bring the pointer to the edge (and sends no dragover while it rests), so move again.
+  let nudge = 0;
+  await expect(async () => {
+    await page.mouse.move(target.x + target.width / 2, target.y + target.height - 15 - (nudge++ % 2));
+    expect(await column(page, "todo").evaluate((el) => el.scrollTop)).toBeGreaterThan(400);
+  }).toPass({ timeout: 12000 });
   expect(await page.evaluate(() => scrollY), "Drag scrolling leaves the page in place").toBe(0);
   await saved(page, () => page.mouse.up(), app.done.id);
   await page.waitForFunction((id) => document.querySelector(`[data-drop-status="todo"] [data-drag-task="${id}"]`), app.done.id);

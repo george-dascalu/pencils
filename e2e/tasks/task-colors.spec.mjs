@@ -26,7 +26,8 @@ const colors = {};
 
 const color = (locator) => locator.evaluate((el) => getComputedStyle(el).getPropertyValue("--task-field-color").trim());
 // A menu option's colour, once the menu has given it one.
-const optionColor = async (locator) => { await expect.poll(() => color(locator)).not.toBe(""); return color(locator); };
+// The value read when it was set: the menu may repaint its options after.
+const optionColor = async (locator) => { let value = ""; await expect.poll(async () => (value = await color(locator))).not.toBe(""); return value; };
 const saved = async () => (await app.store.snapshot(app.project.id)).tasks.find((t) => t.id === app.task.id);
 const openEditor = async (page) => {
   await page.goto(`${app.base}/#project/${app.project.id}/list`);
@@ -146,7 +147,7 @@ const views = {
     ])
       expect(await color(root.locator(selector)), selector).toBe(expected);
     await root.locator(".canvas-task-status").click();
-    expect(await color(page.locator("#shared-select-menu").getByRole("option", { name: "In review", exact: true }))).toBe(colors.review);
+    await expect.poll(() => color(page.locator("#shared-select-menu").getByRole("option", { name: "In review", exact: true }))).toBe(colors.review);
     await page.keyboard.press("Escape");
   },
   async overview(page) {

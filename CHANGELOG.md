@@ -2,6 +2,11 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.22.77 — 2026-11-08
+
+### Fixed
+- Feature F0.22-77: Two browser tests no longer fail now and then under load: the Kanban test that drags a card to a column's edge keeps moving the pointer until the column scrolls (Safari's engine, WebKit, could drop the moves), and the card colour test keeps the colour it checked instead of reading it again as the menu redraws.
+
 ## 0.22.76 — 2026-11-07
 
 ### Fixed
