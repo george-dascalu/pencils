@@ -358,27 +358,21 @@ export function calendarView(ctx) {
     if (!d.card.isConnected || state.view !== "calendar" || state.project?.id !== d.project) { finish(true); return; }
     // The dock tucks away to its floating button under a dragged card and opens while the card
     // is over it (F0.22-80). Before the scrolling below: the board doesn't snap during a drag.
+    const cancel = !!document.elementFromPoint(d.x, d.y)?.closest(".calendar-drag-cancel");
     const dock = mode === "board" ? document.querySelector(".week-board-backlog") : null, r = dock?.getBoundingClientRect();
-    const over = r && d.x >= r.left && d.x <= r.right && d.y >= r.top && d.y <= r.bottom ? "over" : "away";
-    if (dock && dock.dataset.drag !== over) {
-      // The week keeps room for what the dock gave it, so a board scrolled to its end doesn't jump.
-      const week = document.querySelector(".week-board");
-      if (over === "away") week.style.setProperty("--week-board-dock-space", `${getComputedStyle(dock).position === "absolute" ? 0 : r.height}px`);
-      else week.style.removeProperty("--week-board-dock-space");
-      dock.dataset.drag = over;
-    }
+    const over = !cancel && r && d.x >= r.left && d.x <= r.right && d.y >= r.top && d.y <= r.bottom ? "over" : "away";
+    if (dock && dock.dataset.drag !== over) dock.dataset.drag = over;
+    d.cancel?.classList.toggle("calendar-drop-target", cancel);
     const scroll = document.querySelector(".calendar-scroll");
-    if (scroll) {
+    if (scroll && !cancel && over !== "over") {
       const rect = scroll.getBoundingClientRect();
       if (d.y >= rect.top && d.y <= rect.bottom) {
         if (d.x > rect.right - 30) scroll.scrollLeft += 10;
         else if (d.x < rect.left + 30) scroll.scrollLeft -= 10;
       }
     }
-    const cancel = !!document.elementFromPoint(d.x, d.y)?.closest(".calendar-drag-cancel");
-    d.cancel?.classList.toggle("calendar-drop-target", cancel);
     const scroller = document.querySelector(".calendar-hours-scroll") || document.querySelector(".calendar-scroll, .calendar-agenda");
-    if (scroller && !cancel) {
+    if (scroller && !cancel && over !== "over") {
       const r = scroller.getBoundingClientRect();
       if (d.x >= r.left && d.x <= r.right && d.y >= r.top && d.y <= r.bottom) {
         if (d.y > r.bottom - 24) scroller.scrollTop += 12;
@@ -387,7 +381,7 @@ export function calendarView(ctx) {
     }
     // The Unscheduled board scrolls both ways near its edges.
     const backlogBoard = mode === "board" ? document.querySelector(".week-board-backlog-board") : null, b = backlogBoard?.getBoundingClientRect();
-    if (b && d.x >= b.left && d.x <= b.right && d.y >= b.top && d.y <= b.bottom) {
+    if (b && !cancel && over === "over" && d.x >= b.left && d.x <= b.right && d.y >= b.top && d.y <= b.bottom) {
       backlogBoard.scrollLeft += d.x > b.right - 30 ? 10 : d.x < b.left + 30 ? -10 : 0;
       backlogBoard.scrollTop += d.y > b.bottom - 24 ? 12 : d.y < b.top + 24 ? -12 : 0;
     }
@@ -407,7 +401,7 @@ export function calendarView(ctx) {
     placement(d, next);
     const backlog = document.querySelector(".week-board-backlog-canvas");
     if (backlog) paintAlignmentGuides(backlog, d.next?.backlog ? d.guides || [] : [], { x: 0, y: 0, z: 1 });
-    d.ghost.querySelector("small").textContent = d.hours ? range ? `${range.start !== range.end ? `${range.start} ${next.start_time} → ${range.end} ${next.due_time}` : `${next.start_time} – ${next.due_time}`} · ${d.step} min steps` : 'Release to cancel' : cancel ? "Keep unscheduled" : range ? `${range.start}${d.next.start_time ? ` · ${d.next.start_time} – ${d.next.due_time}` : ` → ${range.end}`}` : d.next?.backlog ? "Unscheduled" : "Move over a day to schedule";
+    d.ghost.querySelector("small").textContent = d.hours ? range ? `${range.start !== range.end ? `${range.start} ${next.start_time} → ${range.end} ${next.due_time}` : `${next.start_time} – ${next.due_time}`} · ${d.step} min steps` : 'Release to cancel' : cancel ? "Release to cancel" : range ? `${range.start}${d.next.start_time ? ` · ${d.next.start_time} – ${d.next.due_time}` : ` → ${range.end}`}` : d.next?.backlog ? "Unscheduled" : "Move over a day to schedule";
     d.ghost.firstElementChild.classList.toggle("invalid", !range && !cancel && !d.next?.backlog);
     // Over the Unscheduled board the card itself shows where it goes.
     d.ghost.style.visibility = d.next?.backlog ? "hidden" : "";
@@ -440,7 +434,6 @@ export function calendarView(ctx) {
     d.ghost?.remove();
     d.cancel?.remove();
     document.querySelector(".week-board-backlog")?.removeAttribute("data-drag");
-    document.querySelector(".week-board")?.style.removeProperty("--week-board-dock-space");
     // A card dropped on the Unscheduled board stays where it landed until the redraw after its save
     // replaces it, rather than showing at its old place meanwhile (F0.22-69).
     const landed = !cancel && d.active && !!d.next?.backlog;
@@ -519,10 +512,13 @@ export function calendarView(ctx) {
       if (d.panel) {
         d.panel.style.visibility = "hidden";
         d.panel.style.pointerEvents = "none";
+      }
+      if (d.panel || mode === "board") {
         d.cancel = document.createElement("button");
         d.cancel.type = "button"; d.cancel.className = "button calendar-drag-cancel";
-        d.cancel.innerHTML = `${icon("close")}<span>Cancel drag</span>`;
-        d.cancel.title = "Drop here to keep this card unscheduled";
+        if (mode === "board") { d.cancel.classList.add("icon-button"); d.cancel.dataset.weekBoard = ""; }
+        d.cancel.innerHTML = `${icon("close")}<span${mode === "board" ? ' class="sr-only"' : ""}>Cancel drag</span>`;
+        d.cancel.title = "Release here to cancel the drag";
         d.cancel.addEventListener("click", () => finish(true));
         document.body.append(d.cancel);
       }

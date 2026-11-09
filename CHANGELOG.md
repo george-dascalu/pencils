@@ -2,6 +2,14 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.22.84 — 2026-11-09
+
+### Changed
+- Feature F0.22-84: The Unscheduled dock floats above the full-height Week board without resizing or shifting the grid. Dragging near the overlay's edges scrolls only its cards.
+
+### Added
+- Feature F0.22-84: A small Cancel target appears at the bottom left while dragging a Week board card, beside the dock's reopen button. Release on it to keep the card's original dates, fields and position.
+
 ## 0.22.83 — 2026-11-09
 
 ### Fixed

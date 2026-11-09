@@ -127,6 +127,8 @@ onDevices(['desktop', 'ipad', 'phone'], () => {
 
   test('dragging on the Week board moves dates and changes the row’s field @gate', async ({ page }) => {
     await open(page);
+    // Expose the bottom row before dragging its cards; the dock now floats over the grid.
+    await page.getByRole('button', { name: 'Hide Unscheduled', exact: true }).click();
     // Alt + arrows on a card's own fields leave its dates alone.
     await card(page, app.one.id).locator('[data-row-field="status"]').focus();
     await page.keyboard.press('Alt+ArrowRight');

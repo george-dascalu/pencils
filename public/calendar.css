@@ -139,6 +139,7 @@
 .calendar-unscheduled-list .calendar-dates > span { display: none; }
 .calendar-drag-cancel { position: fixed; z-index: 221; left: 50%; bottom: calc(var(--tabbar-clearance, 0px) + 12px); transform: translateX(-50%); box-shadow: var(--shadow-popover); }
 .calendar-drag-cancel > span { white-space: nowrap; }
+.calendar-drag-cancel[data-week-board] { left: 12px; transform: none; border-radius: 50%; }
 .calendar-unscheduled-list > .field-hint { padding: 8px 12px; }
 .planning-options { display: flex; align-items: center; flex-wrap: wrap; gap: var(--control-bar-gap); }
 .planning-options > .date-field { flex: 0 1 160px; width: 160px; }
@@ -274,7 +275,7 @@
 .week-board { --week-board-column: 140px; }
 .week-board-backlog { --week-board-column: 184px; }
 /* The row names run up the side (F0.22-73), so their column is as narrow as the row's handle. */
-.week-board { display: grid; grid-template-columns: var(--week-board-names) repeat(var(--week-board-days), minmax(var(--week-board-column), 1fr)); grid-template-rows: var(--week-board-head) repeat(var(--week-board-rows), auto); min-height: calc(100% - var(--week-board-dock-space, 0px)); margin-bottom: var(--week-board-dock-space, 0px); min-width: calc(var(--week-board-names) + var(--week-board-days) * var(--week-board-column)); }
+.week-board { display: grid; grid-template-columns: var(--week-board-names) repeat(var(--week-board-days), minmax(var(--week-board-column), 1fr)); grid-template-rows: var(--week-board-head) repeat(var(--week-board-rows), auto); min-height: 100%; min-width: calc(var(--week-board-names) + var(--week-board-days) * var(--week-board-column)); }
 .week-board-row, .week-board-head-row { display: contents; }
 .week-board-corner, .week-board-day-head { position: sticky; top: 0; z-index: 2; height: var(--week-board-head); background: var(--surface); border-bottom: 1px solid var(--line); }
 /* Scrolled either way, the board settles on a day and a row (F0.22-79), just clear of the sticky day and
@@ -308,10 +309,10 @@
 .week-board[data-rows="none"] { grid-template-columns: 0 repeat(var(--week-board-days), minmax(var(--week-board-column), 1fr)); min-width: calc(var(--week-board-days) * var(--week-board-column)); }
 .week-board[data-rows="none"] .week-board-row-head { padding: 0; }
 .week-board-cell { display: flex; flex-direction: column; gap: 6px; min-width: 0; min-height: 64px; padding: 6px; border-bottom: 1px solid var(--line); border-left: 1px solid var(--line); }
-/* The Unscheduled board (F0.22-54): docked under the week, apart from the days, its height dragged
+/* The Unscheduled board floats above the week, apart from the days, its height dragged
    from its head. A card sits where it was put, over others if need be; the board reaches a card past
    the farthest one, so there's always room to drop beyond it. */
-.week-board-backlog { flex: none; display: flex; flex-direction: column; min-height: 96px; max-height: 70%; border-top: 1px solid var(--line); background: var(--surface-soft); }
+.week-board-backlog { position: absolute; z-index: 4; left: 12px; right: 12px; bottom: calc(12px + var(--tabbar-clearance, 0px)); display: flex; flex-direction: column; min-height: 96px; max-height: min(70%, calc(100% - var(--tabbar-clearance, 0px) - 24px)); border: 1px solid var(--line); border-radius: var(--field-radius); background: var(--surface-soft); box-shadow: var(--shadow-popover); overflow: hidden; }
 .week-board-backlog-head { display: flex; align-items: center; gap: 8px; padding-inline: 10px 4px; cursor: ns-resize; touch-action: none; -webkit-user-select: none; user-select: none; }
 .week-board-backlog-head > h3 { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; margin: 0; font-size: var(--type-body); font-weight: 600; }
 .week-board-backlog-resize { flex: 1; min-width: 16px; display: flex; align-items: center; justify-content: center; min-height: var(--control-height); border-radius: var(--field-radius, 6px); }
@@ -323,7 +324,9 @@
 /* No scroll bar (F0.22-62): the board still scrolls by wheel, trackpad, touch or a drag to its edge. */
 .week-board-backlog-board { flex: 1; min-height: 0; overflow: auto; overscroll-behavior: none; scrollbar-width: none; }
 /* Closed, only a floating button remains above the bottom navigation. A dragged card opens it. */
-.week-board-backlog:is([data-closed]:not([data-drag="over"]), [data-drag="away"]) { position: absolute; z-index: 4; left: 12px; bottom: calc(12px + var(--tabbar-clearance, 0px)); width: var(--control-height); height: var(--control-height) !important; min-height: 0; border: 0; background: transparent; }
+.week-board-backlog:is([data-closed]:not([data-drag="over"]), [data-drag="away"]) { right: auto; width: var(--control-height); height: var(--control-height) !important; min-height: 0; border: 0; background: transparent; box-shadow: none; overflow: visible; }
+/* Leave the bottom-left cancel target clear while the dock waits for a dragged card. */
+.week-board-backlog[data-drag="away"] { left: calc(20px + var(--control-height)); }
 .week-board-backlog:is([data-closed]:not([data-drag="over"]), [data-drag="away"]) > .week-board-backlog-board { display: none; }
 .week-board-backlog:is([data-closed]:not([data-drag="over"]), [data-drag="away"]) > .week-board-backlog-head { padding: 0; cursor: default; }
 .week-board-backlog:is([data-closed]:not([data-drag="over"]), [data-drag="away"]) .week-board-backlog-head > :not(button) { display: none; }

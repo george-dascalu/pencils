@@ -50,14 +50,15 @@ async function drag(page, title, to) {
   await page.mouse.up();
 }
 
-test('the Unscheduled board is docked under the week, apart from the days, with the matching cards that have no dates', { tag: '@gate' }, async ({ page }) => {
+test('the Unscheduled board floats over the week, apart from the days, with the matching cards that have no dates', { tag: '@gate' }, async ({ page }) => {
   await open(page);
   await expect(board(page).getByRole('heading', { name: 'Unscheduled' })).toBeVisible();
   await expect.poll(() => onBoard(page)).toEqual(['Draft', 'Legacy', 'Plan']);
   // Not part of the week's table, and at the bottom of the view.
   await expect(page.locator('.week-board .week-board-backlog')).toHaveCount(0);
   const [panel, view, week] = await Promise.all([board(page), page.locator('#view-content'), page.locator('.week-board-scroll')].map(l => l.boundingBox()));
-  expect(panel.y).toBeGreaterThanOrEqual(week.y + week.height - 1);
+  await expect(board(page)).toHaveCSS('position', 'absolute');
+  expect(panel.y).toBeLessThan(week.y + week.height - 96);
   expect(view.y + view.height - (panel.y + panel.height)).toBeLessThanOrEqual(16);
   // A place saved on the old grid of 0.22.53 becomes a place on the board.
   expect(await place(page, 'Legacy')).toMatchObject({ x: 192, y: 80 });

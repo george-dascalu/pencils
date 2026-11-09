@@ -7,7 +7,7 @@ import { reveal } from '../helpers/menu-controls.mjs';
 const app = useApp(async store => {
   const project = await store.createProject({ title: 'Snap', key: 'SN' });
   // A row per person, each shorter than the board, more than it shows at once.
-  for (const name of ['Ann', 'Bo', 'Cy', 'Di', 'Ed', 'Flo', 'Gus', 'Hal']) await store.createTask(project.id, { title: `${name}'s card`, assignee: name, due: '2026-11-04' });
+  for (const name of ['Ann', 'Bo', 'Cy', 'Di', 'Ed', 'Flo', 'Gus', 'Hal', 'Ivy', 'Jo', 'Kay', 'Lou']) await store.createTask(project.id, { title: `${name}'s card`, assignee: name, due: '2026-11-04' });
   return { project };
 });
 async function open(page) {
@@ -15,7 +15,7 @@ async function open(page) {
   await page.goto(`${app.base}/#project/${app.project.id}/calendar`);
   await (await reveal(page.locator('#calendar-mode'))).selectOption('board');
   await (await reveal(page.locator('#week-board-rows'))).selectOption('assignee');
-  await expect(page.locator('.week-board-row')).toHaveCount(8);
+  await expect(page.locator('.week-board-row')).toHaveCount(12);
 }
 const scroller = (page) => page.locator('.week-board-scroll');
 // Where the board rests: whether a day starts right after the row names and a row right under the

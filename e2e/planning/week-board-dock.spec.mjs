@@ -1,5 +1,5 @@
 // Owner request: the Week board fills the page; its dock closes to one floating button, kept per
-// browser. A dragged card tucks it away and opens it over that button, preserving scroll position.
+// browser. The dock floats over the grid; a bottom-left target cancels a card drag without saving.
 import { test, expect, useApp, onDevices } from '../fixtures.mjs';
 import { reveal } from '../helpers/menu-controls.mjs';
 
@@ -7,8 +7,8 @@ const day = '2026-11-05';
 const app = useApp(async store => {
   const project = await store.createProject({ title: 'Dock', key: 'DK' });
   // A row each, more than the week shows at once.
-  for (const name of ['Ann', 'Bo', 'Cy', 'Di', 'Ed', 'Flo', 'Gus', 'Hal']) await store.createTask(project.id, { title: `${name}'s card`, assignee: name, due: day });
-  return { project, plan: await store.createTask(project.id, { title: 'Plan' }), meeting: await store.createTask(project.id, { title: 'Meeting', due: day }) };
+  for (const name of ['Ann', 'Bo', 'Cy', 'Di', 'Ed', 'Flo', 'Gus', 'Hal', 'Ivy', 'Jo', 'Kay', 'Lou']) await store.createTask(project.id, { title: `${name}'s card`, assignee: name, due: day });
+  return { project, plan: await store.createTask(project.id, { title: 'Plan' }), meeting: await store.createTask(project.id, { title: 'Meeting', assignee: 'Ann', due: day }) };
 });
 const saved = async (id) => (await app.store.snapshot(app.project.id)).tasks.find(t => t.id === id);
 test.beforeEach(async () => {
@@ -41,13 +41,33 @@ async function overHead(page) {
   await page.mouse.move(head.x + head.width / 2, head.y + head.height / 2, { steps: 4 });
 }
 
+onDevices(['phone'], () => test('a touch drag can be dropped on Cancel without moving the card', async ({ page }) => {
+  const cdp = await page.context().newCDPSession(page);
+  await open(page);
+  if (await page.locator('.mobile-view-options[open]').count()) await page.getByRole('button', { name: 'Close view options', exact: true }).click();
+  const before = await saved(app.plan.id), card = cards(page).locator(`[data-calendar-card="${app.plan.id}"]`);
+  const r = await card.locator('.week-board-title').boundingBox(), x = r.x + r.width / 2, y = r.y + r.height / 2;
+  await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x, y }] });
+  await expect(card).toHaveClass(/calendar-armed/);
+  await cdp.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [{ x: x + 12, y }] });
+  const cancel = page.getByRole('button', { name: 'Cancel drag', exact: true });
+  await expect(cancel).toBeVisible();
+  const target = await cancel.boundingBox();
+  await cdp.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [{ x: target.x + target.width / 2, y: target.y + target.height / 2 }] });
+  await expect(cancel).toHaveClass(/calendar-drop-target/);
+  await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+  await expect(cancel).toHaveCount(0);
+  await expect(card).toBeVisible();
+  expect(await saved(app.plan.id)).toEqual(before);
+}));
+
 onDevices(['desktop', 'ipad', 'phone'], () => {
   test('a closed dock leaves only a floating button at the bottom left, kept per browser', { tag: '@gate' }, async ({ page }) => {
     await open(page);
     if (await page.locator('.mobile-view-options[open]').count()) await page.getByRole('button', { name: 'Close view options', exact: true }).click();
     const hide = dock(page).getByRole('button', { name: 'Hide Unscheduled', exact: true });
     await expect(hide).toHaveAttribute('aria-expanded', 'true');
-    const shown = await box(dock(page));
+    const shown = await box(dock(page)), before = await box(page.locator('.week-board-scroll'));
     await hide.click();
     const show = dock(page).getByRole('button', { name: 'Show Unscheduled', exact: true });
     await expect(show).toHaveAttribute('aria-expanded', 'false');
@@ -57,7 +77,7 @@ onDevices(['desktop', 'ipad', 'phone'], () => {
     await expect(dock(page)).toHaveCSS('position', 'absolute');
     const [button, tucked, week] = await Promise.all([box(show), box(dock(page)), box(page.locator('.week-board-scroll'))]);
     expect(tucked.height).toBe(button.height);
-    expect(week.bottom).toBe(shown.bottom);
+    expect(week).toEqual(before);
     const r = await show.boundingBox();
     expect(r.x).toBeLessThan(32);
     expect(r.width).toBe(r.height);
@@ -72,6 +92,69 @@ onDevices(['desktop', 'ipad', 'phone'], () => {
     await expect(cards(page)).toBeVisible();
     await expect(hide).toBeFocused();
     expect((await box(dock(page))).height).toBe(shown.height);
+  });
+});
+
+onDevices(['desktop', 'ipad', 'phone'], () => {
+  test('the open dock floats above the full-height grid without moving or resizing it', { tag: '@gate' }, async ({ page }) => {
+    await open(page);
+    if (await page.locator('.mobile-view-options[open]').count()) await page.getByRole('button', { name: 'Close view options', exact: true }).click();
+    await expect(dock(page)).toHaveCSS('position', 'absolute');
+    await expect(dock(page)).not.toHaveCSS('box-shadow', 'none');
+    const week = page.locator('.week-board-scroll'), before = await box(week), panel = await box(dock(page));
+    expect(panel.top).toBeLessThan(before.bottom - 96);
+    expect(panel.bottom).toBeLessThanOrEqual(before.bottom);
+    expect(await dock(page).evaluate(el => {
+      const r = el.getBoundingClientRect();
+      return el.contains(document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2));
+    })).toBe(true);
+    const grid = await box(page.locator('.week-board'));
+    await dock(page).getByRole('button', { name: 'Hide Unscheduled', exact: true }).click();
+    expect(await box(week)).toEqual(before);
+    expect(await box(page.locator('.week-board'))).toEqual(grid);
+    await dock(page).getByRole('button', { name: 'Show Unscheduled', exact: true }).click();
+    expect(await box(week)).toEqual(before);
+    expect(await box(page.locator('.week-board'))).toEqual(grid);
+  });
+
+  test('the bottom-left cancel target restores dock and scheduled cards without saving a drag', { tag: '@gate' }, async ({ page }) => {
+    const current = await saved(app.plan.id);
+    await app.store.updateTask(app.project.id, app.plan.id, { revision: current.revision, backlog: { x: 8, y: 24, z: 3 } });
+    await open(page);
+    if (await page.locator('.mobile-view-options[open]').count()) await page.getByRole('button', { name: 'Close view options', exact: true }).click();
+    let writes = 0;
+    page.on('request', r => { if (r.method() === 'PATCH' && r.url().includes('/tasks/')) writes++; });
+    for (const task of [app.plan, app.meeting]) {
+      const before = await saved(task.id);
+      if (task === app.meeting) await dock(page).getByRole('button', { name: 'Hide Unscheduled', exact: true }).click();
+      await lift(page, task.title);
+      const cancel = page.getByRole('button', { name: 'Cancel drag', exact: true });
+      await expect(cancel).toBeVisible();
+      await expect(cancel).toHaveCSS('position', 'fixed');
+      const r = await cancel.boundingBox();
+      expect(r.x).toBe(12);
+      expect(r.width).toBe(r.height);
+      const height = await cancel.evaluate(el => parseFloat(getComputedStyle(el).getPropertyValue('--control-height')));
+      expect(r.height).toBe(height);
+      expect(r.y + r.height).toBeLessThanOrEqual(await page.locator('#view-content').evaluate(el => el.getBoundingClientRect().bottom - parseFloat(getComputedStyle(el).paddingBottom) + 6));
+      await page.mouse.move(r.x + r.width / 2, r.y + r.height / 2, { steps: 6 });
+      await expect(cancel).toHaveClass(/calendar-drop-target/);
+      await expect(page.locator('.calendar-drag-preview')).toContainText('Release to cancel');
+      await expect(cards(page)).toBeHidden();
+      const toggle = await dock(page).locator('[data-backlog-toggle]').boundingBox();
+      expect(toggle.x).toBeGreaterThanOrEqual(r.x + r.width + 4);
+      await expect(page.locator('.calendar-placement')).toHaveCount(0);
+      await page.mouse.up();
+      await expect(cancel).toHaveCount(0);
+      await expect(dock(page)).not.toHaveAttribute('data-drag');
+      expect(await saved(task.id)).toEqual(before);
+    }
+    expect(writes).toBe(0);
+    await expect(cards(page)).toBeHidden();
+    await page.reload();
+    await expect(page.locator(`.week-board [data-calendar-card="${app.meeting.id}"]`)).toBeVisible();
+    await dock(page).getByRole('button', { name: 'Show Unscheduled', exact: true }).click();
+    await expect(cards(page).locator(`[data-calendar-card="${app.plan.id}"]`)).toBeVisible();
   });
 });
 
@@ -95,6 +178,28 @@ onDevices(['desktop', 'ipad', 'phone'], () => test('the week grid fills its avai
 
 // With the mouse on iPad too: in WebKit, a card lifted from the dock keeps its drag while the dock is tucked.
 onDevices(['desktop', 'ipad'], () => {
+  test('dragging at an overlay edge scrolls only the dock and cancelling stops it', { tag: '@gate' }, async ({ page }) => {
+    const current = await saved(app.plan.id);
+    await app.store.updateTask(app.project.id, app.plan.id, { revision: current.revision, backlog: { x: 8, y: 240, z: 1 } });
+    await open(page);
+    const week = page.locator('.week-board-scroll');
+    const before = await week.evaluate(el => [el.scrollLeft, el.scrollTop]);
+    await lift(page, 'Plan');
+    const initial = await cards(page).evaluate(el => el.scrollTop);
+    const area = await cards(page).boundingBox();
+    await page.mouse.move(area.x + area.width - 12, area.y + area.height - 12, { steps: 4 });
+    await expect.poll(() => cards(page).evaluate(el => el.scrollTop)).toBeGreaterThan(initial);
+    expect(await week.evaluate(el => [el.scrollLeft, el.scrollTop])).toEqual(before);
+    const target = await page.getByRole('button', { name: 'Cancel drag', exact: true }).boundingBox();
+    await page.mouse.move(target.x + target.width / 2, target.y + target.height / 2);
+    await expect(page.locator('.calendar-drag-cancel')).toHaveClass(/calendar-drop-target/);
+    const scrolled = await cards(page).evaluate(el => [el.scrollLeft, el.scrollTop]);
+    await frames(page);
+    expect(await cards(page).evaluate(el => [el.scrollLeft, el.scrollTop])).toEqual(scrolled);
+    expect(await week.evaluate(el => [el.scrollLeft, el.scrollTop])).toEqual(before);
+    await page.mouse.up();
+  });
+
   test('a dragged card tucks the dock away until the card is over it, where a drop takes its dates away', async ({ page }) => {
     await open(page);
     await lift(page, 'Meeting');
@@ -146,7 +251,12 @@ onDevices(['desktop', 'ipad'], () => {
     const week = page.locator('.week-board-scroll');
     const end = await week.evaluate((el) => { el.scrollTop = el.scrollHeight; return el.scrollTop; });
     expect(end).toBeGreaterThan(0);
-    const title = page.locator('.week-board-row').last().locator('.week-board-title').first(), at = await title.boundingBox();
+    const id = await week.locator('.week-board-title').evaluateAll((els, top) => els.find(el => {
+      const r = el.getBoundingClientRect(), view = el.closest('.week-board-scroll').getBoundingClientRect();
+      return r.top > view.top + 60 && r.bottom < top - 20;
+    })?.closest('[data-calendar-card]').dataset.calendarCard, (await dock(page).boundingBox()).y);
+    expect(id).toBeTruthy();
+    const title = week.locator(`[data-calendar-card="${id}"] .week-board-title`), at = await title.boundingBox();
     await lift(page, title);
     await expect(cards(page)).toBeHidden();
     await frames(page);
