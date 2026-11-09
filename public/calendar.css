@@ -139,7 +139,7 @@
 .calendar-unscheduled-list .calendar-dates > span { display: none; }
 .calendar-drag-cancel { position: fixed; z-index: 221; left: 50%; bottom: calc(var(--tabbar-clearance, 0px) + 12px); transform: translateX(-50%); box-shadow: var(--shadow-popover); }
 .calendar-drag-cancel > span { white-space: nowrap; }
-.calendar-drag-cancel[data-week-board] { left: 12px; transform: none; border-radius: 50%; }
+.calendar-drag-cancel.icon-button[data-week-board] { left: 0; bottom: var(--tabbar-clearance, 0px); width: calc(var(--control-height) * 2.5) !important; height: calc(var(--control-height) * 2.5) !important; transform: none; border-radius: 0 100% 0 0; }
 .calendar-unscheduled-list > .field-hint { padding: 8px 12px; }
 .planning-options { display: flex; align-items: center; flex-wrap: wrap; gap: var(--control-bar-gap); }
 .planning-options > .date-field { flex: 0 1 160px; width: 160px; }
@@ -326,7 +326,7 @@
 /* Closed, only a floating button remains above the bottom navigation. A dragged card opens it. */
 .week-board-backlog:is([data-closed]:not([data-drag="over"]), [data-drag="away"]) { right: auto; width: var(--control-height); height: var(--control-height) !important; min-height: 0; border: 0; background: transparent; box-shadow: none; overflow: visible; }
 /* Leave the bottom-left cancel target clear while the dock waits for a dragged card. */
-.week-board-backlog[data-drag="away"] { left: calc(20px + var(--control-height)); }
+.week-board-backlog[data-drag="away"] { left: calc(12px + var(--control-height) * 2.5); }
 .week-board-backlog:is([data-closed]:not([data-drag="over"]), [data-drag="away"]) > .week-board-backlog-board { display: none; }
 .week-board-backlog:is([data-closed]:not([data-drag="over"]), [data-drag="away"]) > .week-board-backlog-head { padding: 0; cursor: default; }
 .week-board-backlog:is([data-closed]:not([data-drag="over"]), [data-drag="away"]) .week-board-backlog-head > :not(button) { display: none; }

@@ -117,7 +117,7 @@ onDevices(['desktop', 'ipad', 'phone'], () => {
     expect(await box(page.locator('.week-board'))).toEqual(grid);
   });
 
-  test('the bottom-left cancel target restores dock and scheduled cards without saving a drag', { tag: '@gate' }, async ({ page }) => {
+  test('the quarter-circle cancel target restores dock and scheduled cards without saving a drag', { tag: '@gate' }, async ({ page, device }) => {
     const current = await saved(app.plan.id);
     await app.store.updateTask(app.project.id, app.plan.id, { revision: current.revision, backlog: { x: 8, y: 24, z: 3 } });
     await open(page);
@@ -127,16 +127,26 @@ onDevices(['desktop', 'ipad', 'phone'], () => {
     for (const task of [app.plan, app.meeting]) {
       const before = await saved(task.id);
       if (task === app.meeting) await dock(page).getByRole('button', { name: 'Hide Unscheduled', exact: true }).click();
+      if (task === app.meeting && device === 'desktop') await page.evaluate(() => document.documentElement.dataset.density = 'compact');
       await lift(page, task.title);
       const cancel = page.getByRole('button', { name: 'Cancel drag', exact: true });
       await expect(cancel).toBeVisible();
       await expect(cancel).toHaveCSS('position', 'fixed');
       const r = await cancel.boundingBox();
-      expect(r.x).toBe(12);
+      expect(r.x).toBe(0);
       expect(r.width).toBe(r.height);
       const height = await cancel.evaluate(el => parseFloat(getComputedStyle(el).getPropertyValue('--control-height')));
-      expect(r.height).toBe(height);
-      expect(r.y + r.height).toBeLessThanOrEqual(await page.locator('#view-content').evaluate(el => el.getBoundingClientRect().bottom - parseFloat(getComputedStyle(el).paddingBottom) + 6));
+      expect(r.height).toBe(height * 2.5);
+      await expect(cancel).toHaveCSS('border-top-right-radius', '100%');
+      for (const corner of ['top-left', 'bottom-right', 'bottom-left']) await expect(cancel).toHaveCSS(`border-${corner}-radius`, '0px');
+      expect(r.y + r.height).toBeCloseTo(await page.locator('#view-content').evaluate(el => el.getBoundingClientRect().bottom - parseFloat(getComputedStyle(el).paddingBottom) + 6), 0);
+      expect(await cancel.evaluate(el => {
+        const r = el.getBoundingClientRect(), icon = el.querySelector('svg').getBoundingClientRect();
+        return icon.left >= r.left && icon.top >= r.top && icon.right <= r.right && icon.bottom <= r.bottom && el.contains(document.elementFromPoint(icon.x + icon.width / 2, icon.y + icon.height / 2));
+      })).toBe(true);
+      // The cut-away upper-right corner must pass through; the curved area is the drop target.
+      expect(await cancel.evaluate(el => { const r = el.getBoundingClientRect(); return el.contains(document.elementFromPoint(r.left + r.width * .9, r.top + r.height * .1)); })).toBe(false);
+      expect(await cancel.evaluate(el => { const r = el.getBoundingClientRect(); return el.contains(document.elementFromPoint(r.left + r.width * .6, r.top + r.height * .25)); })).toBe(true);
       await page.mouse.move(r.x + r.width / 2, r.y + r.height / 2, { steps: 6 });
       await expect(cancel).toHaveClass(/calendar-drop-target/);
       await expect(page.locator('.calendar-drag-preview')).toContainText('Release to cancel');

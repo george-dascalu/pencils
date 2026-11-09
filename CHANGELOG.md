@@ -2,6 +2,11 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.22.85 — 2026-11-09
+
+### Changed
+- Feature F0.22-85: Drag cancellation uses a larger quarter-circle target anchored in the Week board's bottom-left corner. It scales with Compact and touch controls, keeps the dock's reopen button clear, and accepts drops only inside the curved area.
+
 ## 0.22.84 — 2026-11-09
 
 ### Changed
