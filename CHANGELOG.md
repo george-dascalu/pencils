@@ -2,6 +2,11 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.22.83 — 2026-11-09
+
+### Fixed
+- Feature F0.22-83: Settings save corrections made while an earlier save is being rejected, including choosing a new completed workflow status. An unchanged invalid setting still stops with an error. The sidebar position check also waits for navigation to finish drawing the page.
+
 ## 0.22.82 — 2026-11-09
 
 ### Added

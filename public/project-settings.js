@@ -691,11 +691,6 @@ export function projectSettings(ctx, { sources, automations, personal, organisat
             } else if (state.settingsEdits !== edits) {
               // A change made during the save is saved next instead of being redrawn away.
               settingsSaveState(state, "Saved");
-              queueMicrotask(() => {
-                if (!f.isConnected) return;
-                if (f.checkValidity()) f.requestSubmit();
-                else settingsSaveState(state, "Not saved");
-              });
             } else if (state.settingsTyped !== typed) {
               // Keep an in-progress field attached until its native change commits it.
               settingsSaveState(state, "Editing…");
@@ -721,6 +716,13 @@ export function projectSettings(ctx, { sources, automations, personal, organisat
         } finally {
           state.settingsSaving = false;
           if (submit) submit.disabled = !f.elements.notes.files.length;
+          // A correction made during a rejected save also needs its turn. Only new committed
+          // edits trigger another attempt; an unchanged invalid value or failed request stops.
+          else if (f.isConnected && state.settingsEdits !== edits) queueMicrotask(() => {
+            if (!f.isConnected) return;
+            if (f.checkValidity()) f.requestSubmit();
+            else settingsSaveState(state, "Not saved");
+          });
         }
       });
     } catch (e) {

@@ -49,6 +49,28 @@ test("a change made while a save is under way is kept and saved after it", async
   await expect.poll(async () => { const p = await saved(app.project.id); return [p.title, p.key]; }).toEqual(["Typed during the save", "ASYNC"]);
 });
 
+test("a correction made while an invalid workflow is saving is saved after the rejection @gate", async ({ page }) => {
+  await page.goto(url("workflow"));
+  if (!(await page.locator("[data-status-details]").evaluate(el => el.open))) await page.locator("[data-status-details] > summary").click();
+  let release, requests = 0;
+  const held = new Promise((resolve) => (release = resolve));
+  await page.route(url => url.pathname === `/api/projects/${app.project.id}`, async (route) => {
+    if (route.request().method() === "PATCH" && ++requests === 1) await held;
+    await route.continue();
+  });
+  await page.locator('[data-workflow-status="done"] [data-status-completed]').uncheck();
+  await expect.poll(() => requests).toBe(1);
+  await page.locator('[data-workflow-status="review"] [data-status-completed]').check();
+  release();
+  await expect(status(page)).toHaveText("Saved");
+  await expect.poll(async () => (await saved(app.project.id)).schema.done).toEqual(["review"]);
+  await expect(page.locator("#project-form .form-error").first()).toBeHidden();
+  expect(requests, "the latest correction is saved once after the failed request").toBe(2);
+  await page.reload();
+  if (!(await page.locator("[data-status-details]").evaluate(el => el.open))) await page.locator("[data-status-details] > summary").click();
+  await expect(page.locator('[data-workflow-status="review"] [data-status-completed]')).toBeChecked();
+});
+
 test("leaving Settings saves the field being typed in", async ({ page }) => {
   await page.goto(url("general"));
   const name = page.locator('#project-form [name="title"]');

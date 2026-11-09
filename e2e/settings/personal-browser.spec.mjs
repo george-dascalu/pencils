@@ -53,11 +53,11 @@ test("the closed sidebar is hidden from assistive technology, and opening it lea
   await expect(page.locator(".sidebar")).toBeHidden();
   expect(await page.locator(".sidebar").evaluate((el) => el.inert)).toBe(true);
   await expect(page.locator(".main")).toBeVisible();
-  expect((await page.locator(".main").boundingBox()).x).toBe(0);
+  await expect.poll(async () => (await page.locator(".main").boundingBox())?.x).toBe(0);
   await openSidebar(page);
   expect(await page.locator(".sidebar").evaluate((el) => el.inert)).toBe(false);
   expect(await page.locator(".main").evaluate((el) => el.inert), "the page behind waits").toBe(true);
-  expect((await page.locator(".main").boundingBox()).x, "the page doesn't move").toBe(0);
+  await expect.poll(async () => (await page.locator(".main").boundingBox())?.x, "the page doesn't move").toBe(0);
   await page.reload();
   await expect(page.locator(".sidebar"), "it starts closed after a reload").toBeHidden();
 });
