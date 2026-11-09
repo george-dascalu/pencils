@@ -22,8 +22,8 @@ async function drag(page, title, part) {
   await page.mouse.move(from.x + from.width / 2 + 10, from.y + from.height / 2 + 10, { steps: 3 });
   // A dragged card tucks the Unscheduled board away to its head until the card is over it (F0.22-80).
   if (part === null) {
-    const head = await page.locator('.week-board-backlog-head').boundingBox();
-    await page.mouse.move(head.x + 40, head.y + head.height / 2, { steps: 4 });
+    const head = await page.locator('[data-backlog-toggle]').boundingBox();
+    await page.mouse.move(head.x + head.width / 2, head.y + head.height / 2, { steps: 4 });
     await expect(page.locator('.week-board-backlog-board')).toBeVisible();
   }
   // The landing place moves the rows it passes, so aim again at where the cell now is.

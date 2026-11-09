@@ -21,7 +21,7 @@ onDevices(["ipad"], () => {
   test("choosing an option by touch leaves the select unfocused so iOS shows no native picker", async ({ page }) => {
     await open(page, "calendar", ".calendar, .calendar-agenda");
     const select = page.locator("#calendar-mode");
-    await page.locator("label:has(> #calendar-mode)").tap({ position: { x: 6, y: 8 } });
+    await page.locator("#calendar-mode-button").tap({ position: { x: 6, y: 8 } });
     await menu(page).waitFor({ timeout: 3000 });
     const option = menu(page).locator('[role="option"][aria-selected="false"]').first();
     const value = await option.innerText();
@@ -43,9 +43,9 @@ onDevices(["ipad"], () => {
   });
 });
 
-test("clicking a label around a select opens the app menu on desktop", async ({ page }) => {
+test("clicking the calendar layout icon opens the app menu on desktop", async ({ page }) => {
   await open(page, "calendar", ".calendar, .calendar-agenda");
-  await page.locator("label:has(> #calendar-mode)").click({ position: { x: 6, y: 8 } });
+  await page.locator("#calendar-mode-button").click({ position: { x: 6, y: 8 } });
   await menu(page).waitFor({ timeout: 3000 });
   await expect(page.locator("#calendar-mode")).toHaveAttribute("aria-expanded", "true");
 });
@@ -54,9 +54,9 @@ test("every visible select on planning and settings pages opens the app menu", a
   const misses = [];
   for (const [view, wait] of [["calendar", ".calendar, .calendar-agenda"], ["capacity", ".capacity-view"], ["settings/general", "#project-form"], ["kanban", ".kanban-column"]]) {
     await open(page, view, wait);
-    const count = await page.locator("select:visible").count();
+    const count = await page.locator("select:visible:not([aria-hidden=true])").count();
     for (let i = 0; i < count; i++) {
-      const select = page.locator("select:visible").nth(i);
+      const select = page.locator("select:visible:not([aria-hidden=true])").nth(i);
       const id = (await select.getAttribute("id")) || (await select.getAttribute("name")) || `#${i}`;
       await select.click();
       const opened = await menu(page).waitFor({ timeout: 3000 }).then(() => true, () => false);

@@ -286,7 +286,7 @@ onDevices(["phone"], () => test("phone card page: compact section picker aligned
 
 onDevices(["ipad"], () => test("double-tapping a dropdown never focuses the select or lets a double-click through", async ({ page }) => {
   await open(page, "calendar", ".calendar, .calendar-agenda");
-  const label = page.locator("label:has(> #calendar-mode)");
+  const label = page.locator("#calendar-mode-button");
   const box = await label.boundingBox();
   await page.evaluate(() => { window.__selectFocus = 0; document.addEventListener("focusin", (e) => { if (e.target.tagName === "SELECT") window.__selectFocus++; }, true); });
   await page.touchscreen.tap(box.x + 6, box.y + 8);

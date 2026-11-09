@@ -2,6 +2,17 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.22.82 — 2026-11-09
+
+### Added
+- Feature F0.22-82: Unscheduled has four arrangement buttons: priority, parent, tags and status. Each arranges the matching cards once into labelled groups, saving their positions while leaving dates and fields unchanged. Cards remain freely movable; cards with multiple tags stay together under their combined tag names.
+
+### Changed
+- Feature F0.22-81: The Week board fills the available page height and scrolls without visible scrollbars. Closing Unscheduled leaves only a floating button at the bottom left; dragging a card over it still opens the dock. The duplicate Unscheduled control is removed from the top bar. Calendar groups Card IDs with Show weekends, and Group by and Layout are compact icon buttons whose menus show icons and names.
+
+### Fixed
+- Feature F0.22-81: Hovering over the calendar's date heading keeps its text readable.
+
 ## 0.22.80 — 2026-11-08
 
 ### Added

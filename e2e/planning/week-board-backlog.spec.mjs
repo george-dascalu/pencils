@@ -34,8 +34,8 @@ async function open(page) {
 }
 // A dragged card tucks the Unscheduled board away to its head until the card is over it (F0.22-80).
 async function overHead(page) {
-  const head = await board(page).locator('.week-board-backlog-head').boundingBox();
-  await page.mouse.move(head.x + 40, head.y + head.height / 2, { steps: 4 });
+  const head = await board(page).locator('[data-backlog-toggle]').boundingBox();
+  await page.mouse.move(head.x + head.width / 2, head.y + head.height / 2, { steps: 4 });
   await expect(board(page).locator('.week-board-backlog-board')).toBeVisible();
 }
 async function drag(page, title, to) {
@@ -70,8 +70,8 @@ test('the Unscheduled board is docked under the week, apart from the days, with 
   // Filters apply, as to the rest of the board.
   await page.locator('#search').fill('Draft');
   await expect.poll(() => onBoard(page)).toEqual(['Draft']);
-  // The toolbar's list of unscheduled cards stays.
-  await expect(page.locator('[data-calendar-unscheduled]')).toBeVisible();
+  // The dock is the only home for unscheduled cards in Week board.
+  await expect(page.locator('[data-calendar-unscheduled]')).toHaveCount(0);
 });
 
 test('cards go exactly where they are dropped, line up with a card nearby, and may overlap, the one moved last on top', async ({ page }) => {
@@ -129,10 +129,9 @@ test('cards go exactly where they are dropped, line up with a card nearby, and m
   await expect.poll(() => place(page, 'Plan')).toEqual({ x: at.x + 1, y: at.y + 10, z: '3' });
 });
 
-test('a card dragged from the toolbar list of unscheduled cards moves on the board as itself', async ({ page }) => {
+test('a card dragged within the unscheduled dock moves on the board as itself', async ({ page }) => {
   await open(page);
-  await page.locator('[data-calendar-unscheduled]').click();
-  const grip = await page.locator('.calendar-unscheduled .agenda-row', { hasText: 'Draft' }).locator('[data-calendar-move]').boundingBox();
+  const grip = await board(page).locator('.week-board-title', { hasText: 'Draft' }).boundingBox();
   const canvas = await board(page).locator('.week-board-backlog-canvas').boundingBox();
   await page.mouse.move(grip.x + grip.width / 2, grip.y + grip.height / 2);
   await page.mouse.down();

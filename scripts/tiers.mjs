@@ -145,6 +145,7 @@ export const TIERS = [
     "e2e/planning/calendar-move.spec.mjs", // move a timed card on the calendar
     "e2e/planning/calendar-resize.spec.mjs", // resize timed card endpoints
     "e2e/planning/calendar-scheduling.spec.mjs", // move, resize and schedule cards in Month
+    "e2e/planning/week-board-arrange.spec.mjs", // arrange dock cards without altering dates or fields
     "e2e/planning/calendar-workspace.spec.mjs", // use calendar viewport and drop unscheduled cards
     "e2e/platform/tls.spec.mjs", // serve over HTTPS (data safety)
     "e2e/platform/upgrade-browser.spec.mjs", // edit table rows, paste, recover drafts

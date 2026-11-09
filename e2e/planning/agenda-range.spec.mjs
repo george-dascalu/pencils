@@ -77,20 +77,21 @@ onDevices(['desktop', 'ipad'], () => {
   test('shared calendar controls stay on the right in every layout, after the layout’s own @gate', async ({ page }) => {
     await page.goto(`${app.base}/#project/${app.project.id}/calendar`);
     const spots = {};
-    for (const mode of ['month', 'week', 'agenda']) {
+    for (const mode of ['month', 'week', 'board', 'agenda']) {
       await layout(page, mode);
       const options = page.locator('.planning-options');
-      const order = await options.evaluate(el => [...el.children].filter(c => c.getClientRects().length).map(c => c.matches('.planning-separator') ? 'separator' : c.matches('[data-calendar-weekends]') ? 'weekends' : c.querySelector('#calendar-mode') ? 'layout' : 'own'));
-      expect(order.slice(-2), `${mode}: shared controls last`).toEqual(['weekends', 'layout']);
+      const order = await options.evaluate(el => [...el.children].filter(c => c.getClientRects().length).map(c => c.matches('.planning-separator') ? 'separator' : c.matches('.calendar-display-options') ? 'display' : c.querySelector('#calendar-mode') ? 'layout' : 'own'));
+      expect(order.slice(-2), `${mode}: shared controls last`).toEqual(['display', 'layout']);
       expect(order.slice(0, -2), `${mode}: own controls, then a divider`).toEqual(mode === 'month' ? [] : [...order.slice(0, -3).map(() => 'own'), 'separator']);
       if (mode !== 'month') {
         const line = await options.locator('.planning-separator').evaluate(el => { const s = getComputedStyle(el); return { width: s.width, color: s.backgroundColor }; });
         expect(line.width).toBe('1px');
         expect(line.color).not.toBe('rgba(0, 0, 0, 0)');
       }
-      spots[mode] = await Promise.all(['[data-calendar-weekends]', '#calendar-mode'].map(async s => Math.round((await page.locator(s).boundingBox()).x)));
+      spots[mode] = await Promise.all(['[data-card-ids]', '[data-calendar-weekends]', '#calendar-mode-button'].map(async s => Math.round((await page.locator(s).boundingBox()).x)));
     }
     expect(spots.week, 'Week keeps the shared controls where Month has them').toEqual(spots.month);
+    expect(spots.board, 'Week board keeps the shared controls where Month has them').toEqual(spots.month);
     expect(spots.agenda, 'Agenda keeps the shared controls where Month has them').toEqual(spots.month);
   });
 });

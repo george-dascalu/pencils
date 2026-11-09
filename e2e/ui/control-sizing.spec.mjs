@@ -17,7 +17,9 @@ const app = useApp(async (store) => {
 const controls = ".button,.icon-button,.tab,.avatar,.directory-link,.side-label button,.settings-navigation nav a,.task-picker-trigger,.board-menu>summary,.view-layout-switcher,.view-layout-switcher button,.search:has(> input),.selection-action,.board-tools button,.select-menu [role=option],.task-picker-popover [role=option],input:not([type=checkbox],[type=radio],[type=range],[type=color],[type=file],[type=hidden],.tag-combo-input),.tag-combo,select:not([multiple])";
 async function check(page, scope, name, height) {
   const result = await page.locator(scope).locator(controls).evaluateAll((els, expected) =>
-    els.filter((el) => el.getClientRects().length && getComputedStyle(el).visibility !== "hidden")
+    // Native values behind icon menu buttons are clipped and removed from the accessibility tree;
+    // their visible buttons, rather than those backing selects, must meet the sizing contract.
+    els.filter((el) => !el.matches('select[aria-hidden="true"]') && el.getClientRects().length && getComputedStyle(el).visibility !== "hidden")
       .map((el) => ({
         name: el.getAttribute("aria-label") || el.id || el.textContent.trim().slice(0, 55),
         height: el.getBoundingClientRect().height,

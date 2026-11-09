@@ -1,6 +1,5 @@
-// Owner request (F0.22-80): the Week board's Unscheduled board acts as a dock. A button at its head hides
-// it down to its head and shows it again, kept per browser; while a card is dragged the dock tucks away to
-// its head, showing the week, until the card is over it.
+// Owner request: the Week board fills the page; its dock closes to one floating button, kept per
+// browser. A dragged card tucks it away and opens it over that button, preserving scroll position.
 import { test, expect, useApp, onDevices } from '../fixtures.mjs';
 import { reveal } from '../helpers/menu-controls.mjs';
 
@@ -38,13 +37,14 @@ async function lift(page, title) {
 }
 const frames = (page) => page.evaluate(() => new Promise((done) => requestAnimationFrame(() => requestAnimationFrame(done))));
 async function overHead(page) {
-  const head = await dock(page).locator('.week-board-backlog-head').boundingBox();
-  await page.mouse.move(head.x + 40, head.y + head.height / 2, { steps: 4 });
+  const head = await dock(page).locator('[data-backlog-toggle]').boundingBox();
+  await page.mouse.move(head.x + head.width / 2, head.y + head.height / 2, { steps: 4 });
 }
 
-onDevices(['desktop', 'ipad'], () => {
-  test('a button at the dock\'s head hides it down to its head and shows it again, kept per browser', async ({ page }) => {
+onDevices(['desktop', 'ipad', 'phone'], () => {
+  test('a closed dock leaves only a floating button at the bottom left, kept per browser', { tag: '@gate' }, async ({ page }) => {
     await open(page);
+    if (await page.locator('.mobile-view-options[open]').count()) await page.getByRole('button', { name: 'Close view options', exact: true }).click();
     const hide = dock(page).getByRole('button', { name: 'Hide Unscheduled', exact: true });
     await expect(hide).toHaveAttribute('aria-expanded', 'true');
     const shown = await box(dock(page));
@@ -52,11 +52,16 @@ onDevices(['desktop', 'ipad'], () => {
     const show = dock(page).getByRole('button', { name: 'Show Unscheduled', exact: true });
     await expect(show).toHaveAttribute('aria-expanded', 'false');
     await expect(cards(page)).toBeHidden();
-    // Only its head is left, and the week takes the room.
-    const [head, tucked, week] = await Promise.all([box(dock(page).locator('.week-board-backlog-head')), box(dock(page)), box(page.locator('.week-board-scroll'))]);
-    expect(tucked.height).toBe(head.height + 1);
-    expect(week.bottom).toBe(tucked.top);
-    expect(tucked.bottom).toBe(shown.bottom);
+    // Only the floating button remains. No bar takes space from the week.
+    await expect(dock(page).locator('h3')).toBeHidden();
+    await expect(dock(page)).toHaveCSS('position', 'absolute');
+    const [button, tucked, week] = await Promise.all([box(show), box(dock(page)), box(page.locator('.week-board-scroll'))]);
+    expect(tucked.height).toBe(button.height);
+    expect(week.bottom).toBe(shown.bottom);
+    const r = await show.boundingBox();
+    expect(r.x).toBeLessThan(32);
+    expect(r.width).toBe(r.height);
+    expect(r.y + r.height).toBeLessThanOrEqual(shown.bottom);
     // A whole control (a touch target on iPad), not resized while hidden.
     expect(await show.evaluate(el => el.getBoundingClientRect().height >= parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--control-height')))).toBe(true);
     await expect(dock(page).getByRole('separator', { name: /Unscheduled/ })).toBeHidden();
@@ -69,6 +74,24 @@ onDevices(['desktop', 'ipad'], () => {
     expect((await box(dock(page))).height).toBe(shown.height);
   });
 });
+
+onDevices(['desktop', 'ipad', 'phone'], () => test('the week grid fills its available height without visible scrollbars', { tag: '@gate' }, async ({ page, device }) => {
+  await open(page);
+  await (await reveal(page.locator('#week-board-rows'))).selectOption('daypart');
+  if (await page.locator('.mobile-view-options[open]').count()) await page.getByRole('button', { name: 'Close view options', exact: true }).click();
+  if (device === 'desktop') await page.setViewportSize({ width: 860, height: 1400 });
+  const scroll = page.locator('.week-board-scroll');
+  for (const closed of [false, true]) {
+    if (closed) await page.getByRole('button', { name: 'Hide Unscheduled', exact: true }).click();
+    await expect(scroll).toHaveCSS('scrollbar-width', 'none');
+    await expect.poll(() => page.locator('.week-board').evaluate(el => {
+      const r = el.getBoundingClientRect(), viewport = el.parentElement;
+      return r.height + 1 >= viewport.clientHeight && el.scrollHeight <= el.clientHeight + 1;
+    })).toBe(true);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth - innerWidth)).toBeLessThanOrEqual(1);
+    await expect(page.locator('.week-board-backlog-board')).toHaveCSS('scrollbar-width', 'none');
+  }
+}));
 
 // With the mouse on iPad too: in WebKit, a card lifted from the dock keeps its drag while the dock is tucked.
 onDevices(['desktop', 'ipad'], () => {

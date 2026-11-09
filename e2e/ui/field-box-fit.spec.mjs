@@ -20,6 +20,7 @@ const measure = locator => locator.evaluateAll(boxes => boxes.map(box => {
 
 onDevices(['desktop', 'ipad', 'phone'], () => {
   test('field boxes shrink to the fields a project shows, and line up across rows @gate', async ({ page, device }) => {
+    await page.clock.setFixedTime(new Date('2026-11-04T12:00:00'));
     const full = await seed([]), dateOnly = await seed(['assignee', 'status', 'priority']), twoFields = await seed(['assignee', 'priority']);
     const widths = {};
     for (const [name, project] of [['full', full], ['date', dateOnly], ['two', twoFields]]) {

@@ -1,6 +1,6 @@
 /* Month cards and agenda rows share the same dates and task actions. */
 .main.project-main[data-layout-view="calendar"] { height: 100dvh; overflow: hidden; }
-.main.project-main > #view-content[data-layout-view="calendar"] { display: flex; flex-direction: column; min-height: 0; overflow: hidden; padding-bottom: calc(6px + var(--tabbar-clearance, 0px)); }
+.main.project-main > #view-content[data-layout-view="calendar"] { position: relative; display: flex; flex-direction: column; min-height: 0; overflow: hidden; padding-bottom: calc(6px + var(--tabbar-clearance, 0px)); }
 #view-content[data-layout-view="calendar"] > :is(.calendar-scroll, .calendar-agenda) { flex: 1; min-height: 0; overflow: auto; overscroll-behavior: none; }
 #view-content[data-layout-view="calendar"] > .calendar-scroll:has(.calendar-hourly) { overflow-y: hidden; }
 .calendar-agenda { align-content: start; }
@@ -172,8 +172,17 @@
 .calendar-zoom { display: inline-flex; align-items: center; gap: 2px; }
 .calendar-zoom > [data-calendar-zoom-value] { min-width: 4ch; text-align: center; font-size: var(--type-small); font-variant-numeric: tabular-nums; }
 .calendar-zoom > .control-label { margin-right: auto; }
-.planning-options > [data-calendar-weekends] { border: 1px solid transparent; }
-.planning-options > [data-calendar-weekends][aria-pressed="true"] { background: var(--surface-soft); border-color: var(--green); color: var(--green); }
+.calendar-display-options, .calendar-icon-select { display: flex; align-items: center; gap: 4px; }
+.calendar-icon-select { position: relative; }
+.calendar-icon-select > select.sr-only { width: 1px !important; min-width: 0 !important; height: 1px !important; min-height: 0 !important; padding: 0 !important; }
+.calendar-display-options > label { display: contents; }
+.calendar-display-options [data-calendar-weekends], .calendar-icon-select > button { border: 1px solid var(--line); background: var(--surface); }
+.calendar-display-options [data-calendar-weekends][aria-pressed="true"] { background: var(--surface-soft); border-color: var(--green); color: var(--green); }
+@media (min-width: 601px) { .calendar-display-options .control-label { display: none; } }
+@media (max-width: 600px) {
+  .calendar-display-options { display: contents; }
+  .mobile-view-options-panel .calendar-display-options > label, .mobile-view-options-panel .calendar-icon-select { display: flex; align-items: center; justify-content: space-between; gap: 8px; width: 100%; padding-inline-start: 8px; }
+}
 @media (max-width: 600px) {
   .main[data-layout-view="calendar"] #view-toolbar .view-controls { width: 100%; margin-inline: 0; justify-content: center; }
   .main[data-layout-view="calendar"] #view-toolbar .planning-head { width: 100%; }
@@ -265,12 +274,13 @@
 .week-board { --week-board-column: 140px; }
 .week-board-backlog { --week-board-column: 184px; }
 /* The row names run up the side (F0.22-73), so their column is as narrow as the row's handle. */
-.week-board { display: grid; grid-template-columns: var(--week-board-names) repeat(var(--week-board-days), minmax(var(--week-board-column), 1fr)); align-content: start; min-width: calc(var(--week-board-names) + var(--week-board-days) * var(--week-board-column)); }
+.week-board { display: grid; grid-template-columns: var(--week-board-names) repeat(var(--week-board-days), minmax(var(--week-board-column), 1fr)); grid-template-rows: var(--week-board-head) repeat(var(--week-board-rows), auto); min-height: calc(100% - var(--week-board-dock-space, 0px)); margin-bottom: var(--week-board-dock-space, 0px); min-width: calc(var(--week-board-names) + var(--week-board-days) * var(--week-board-column)); }
 .week-board-row, .week-board-head-row { display: contents; }
 .week-board-corner, .week-board-day-head { position: sticky; top: 0; z-index: 2; height: var(--week-board-head); background: var(--surface); border-bottom: 1px solid var(--line); }
 /* Scrolled either way, the board settles on a day and a row (F0.22-79), just clear of the sticky day and
    row names; not while a card or row is dragged, which scrolls it a little at a time. */
-.week-board-scroll { --week-board-names: 40px; --week-board-head: 36px; scroll-snap-type: both mandatory; scroll-padding: var(--week-board-head) 0 0 var(--week-board-names); }
+.week-board-scroll { --week-board-names: 40px; --week-board-head: 36px; scrollbar-width: none; scroll-snap-type: both mandatory; scroll-padding: var(--week-board-head) 0 0 var(--week-board-names); }
+.week-board-scroll::-webkit-scrollbar { display: none; }
 .week-board-scroll:has(> [data-rows="none"]) { scroll-padding-left: 0; }
 .week-board-scroll:is(:has(.task-reorder-source), :has(+ .week-board-backlog[data-drag])) { scroll-snap-type: none; }
 /* The cells, not the sticky names, which Chromium takes as out of view once scrolled past. */
@@ -303,16 +313,24 @@
    the farthest one, so there's always room to drop beyond it. */
 .week-board-backlog { flex: none; display: flex; flex-direction: column; min-height: 96px; max-height: 70%; border-top: 1px solid var(--line); background: var(--surface-soft); }
 .week-board-backlog-head { display: flex; align-items: center; gap: 8px; padding-inline: 10px 4px; cursor: ns-resize; touch-action: none; -webkit-user-select: none; user-select: none; }
-.week-board-backlog-head > h3 { margin: 0; font-size: var(--type-body); font-weight: 600; }
-.week-board-backlog-resize { flex: 1; display: flex; align-items: center; justify-content: center; min-height: var(--control-height); border-radius: var(--field-radius, 6px); }
+.week-board-backlog-head > h3 { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; margin: 0; font-size: var(--type-body); font-weight: 600; }
+.week-board-backlog-resize { flex: 1; min-width: 16px; display: flex; align-items: center; justify-content: center; min-height: var(--control-height); border-radius: var(--field-radius, 6px); }
+.week-board-backlog-arrange { display: flex; flex: none; cursor: default; }
+.week-board-backlog-resize > span { max-width: 100%; }
+.week-board-backlog-group { position: absolute; margin: 0; max-width: calc(100% - 16px); font-size: var(--type-body); line-height: 1.4; font-weight: 600; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; pointer-events: none; }
 .week-board-backlog-resize > span { width: 40px; height: 4px; border-radius: 2px; background: var(--line-strong, var(--muted)); opacity: .6; }
 .week-board-backlog-head:hover .week-board-backlog-resize > span, .week-board-backlog-resize:focus-visible > span { background: var(--accent, var(--muted)); opacity: 1; }
 /* No scroll bar (F0.22-62): the board still scrolls by wheel, trackpad, touch or a drag to its edge. */
 .week-board-backlog-board { flex: 1; min-height: 0; overflow: auto; overscroll-behavior: none; scrollbar-width: none; }
-/* A dock (F0.22-80): its button hides it down to its head, and a dragged card tucks it away there,
-   showing the week, until the card is over it. */
-.week-board-backlog:is([data-closed]:not([data-drag="over"]), [data-drag="away"]) { height: auto !important; min-height: 0; }
+/* Closed, only a floating button remains above the bottom navigation. A dragged card opens it. */
+.week-board-backlog:is([data-closed]:not([data-drag="over"]), [data-drag="away"]) { position: absolute; z-index: 4; left: 12px; bottom: calc(12px + var(--tabbar-clearance, 0px)); width: var(--control-height); height: var(--control-height) !important; min-height: 0; border: 0; background: transparent; }
 .week-board-backlog:is([data-closed]:not([data-drag="over"]), [data-drag="away"]) > .week-board-backlog-board { display: none; }
+.week-board-backlog:is([data-closed]:not([data-drag="over"]), [data-drag="away"]) > .week-board-backlog-head { padding: 0; cursor: default; }
+.week-board-backlog:is([data-closed]:not([data-drag="over"]), [data-drag="away"]) .week-board-backlog-head > :not(button) { display: none; }
+.week-board-backlog:is([data-closed]:not([data-drag="over"]), [data-drag="away"]) .week-board-backlog-toggle { border-radius: 50%; border: 1px solid var(--line); background: var(--surface); box-shadow: var(--shadow-popover); }
+.week-board-dock-icon { display: none; }
+.week-board-backlog:is([data-closed]:not([data-drag="over"]), [data-drag="away"]) .week-board-backlog-toggle > .icon { display: none; }
+.week-board-backlog:is([data-closed]:not([data-drag="over"]), [data-drag="away"]) .week-board-dock-icon { display: flex; }
 .week-board-backlog[data-closed] .week-board-backlog-head { cursor: default; }
 .week-board-backlog[data-closed] .week-board-backlog-resize { visibility: hidden; }
 .week-board-backlog[data-closed] .week-board-backlog-toggle > .icon { rotate: 180deg; }
@@ -361,5 +379,6 @@
 /* The heading is the picker's button (F0.21-97): it covers the title, with no icon. */
 .planning-period > h2.period-field { position: relative; display: block; width: auto; padding-inline: 8px; border-radius: var(--field-radius, 6px); }
 .period-field > .date-picker-trigger { inset: 0; width: auto; }
-.period-field > .date-picker-trigger:hover { background: var(--surface-soft); }
+.period-field:hover { background: var(--surface-soft); }
+.period-field > .date-picker-trigger:hover { background: transparent; }
 @media (pointer: coarse), (max-width: 600px) { .planning-period > h2.period-field { display: grid; align-items: center; min-height: 44px; min-width: 44px; } }
