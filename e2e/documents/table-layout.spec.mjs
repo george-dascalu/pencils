@@ -1,7 +1,10 @@
 import{test,expect,useApp,onDevices}from'../fixtures.mjs';
 const app=useApp(async store=>{const project=await store.createProject({title:'Table layout'}),record=await store.mutate(()=>store.createDocument(project.id,{title:'Table layout',document_type:'table'}));return{project,record};});
 onDevices(['desktop','ipad','phone'],()=>test('Tables keep compact shared controls and a full-height grid in light and dark @gate',async({page,device})=>{
- await page.goto(`${app.base}/#project/${app.project.id}/documents/${app.record.id}`);await expect(page.locator('.document-sheet')).toHaveAttribute('data-ready','true');if(device==='phone')await page.setViewportSize({width:320,height:700});
+ // This checks the narrow layout, not resizing: give WebKit its viewport before loading so the
+ // first measurement cannot mix the previous 390px layout with Playwright's new 320px width.
+ if(device==='phone')await page.setViewportSize({width:320,height:700});
+ await page.goto(`${app.base}/#project/${app.project.id}/documents/${app.record.id}`);await expect(page.locator('.document-sheet')).toHaveAttribute('data-ready','true');
  for(const theme of ['light','dark']){
   await page.evaluate(theme=>window.PencilsAppearance.write({theme,density:'compact'}),theme);
   await expect.poll(()=>page.locator('.document-sheet-scroll').evaluate(el=>Math.round(el.clientHeight))).toBeGreaterThan(220);

@@ -2,6 +2,11 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.22.89 — 2026-11-10
+
+### Fixed
+- Feature F0.22-89: The narrow-phone spreadsheet layout check sets its viewport before loading, avoiding a WebKit resize race when measuring control bounds.
+
 ## 0.22.88 — 2026-11-10
 
 ### Fixed
