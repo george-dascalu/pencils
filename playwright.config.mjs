@@ -37,9 +37,12 @@ export default defineConfig({
   // records one, so a failure still comes with its trace.
   use: { trace: "on-first-retry", screenshot: "only-on-failure" },
   projects: [
-    // The @heavy scale tests (100,000-object boards, 100 members) run in the batch check
-    // (RELEASE=1) or with HEAVY=1, which scripts/affected.mjs sets when board data or storage changes.
-    { name: "chromium", use: chromium, grepInvert: process.env.RELEASE === "1" || process.env.HEAVY === "1" ? /@audit/ : /@audit|@heavy/, testIgnore: "**/offline.spec.mjs" },
+    // The @heavy scale tests (100,000-object boards, 100 members) run with HEAVY=1, which
+    // scripts/affected.mjs sets when board data or storage changes, and in the batch check (RELEASE=1)
+    // after the other Chromium tests, two at a time: several at once beside 12 workers stalled the host
+    // long enough to time out page loads elsewhere (F0.23-6).
+    { name: "chromium", use: chromium, grepInvert: process.env.HEAVY === "1" && process.env.RELEASE !== "1" ? /@audit/ : /@audit|@heavy/, testIgnore: "**/offline.spec.mjs" },
+    ...(process.env.RELEASE === "1" ? [{ name: "heavy", use: chromium, grep: /@heavy/, grepInvert: /@audit/, testIgnore: "**/offline.spec.mjs", dependencies: ["chromium"], workers: 2 }] : []),
     ...(process.env.RELEASE ? [] : [
       { name: "docker", use: chromium, testMatch: "**/offline.spec.mjs" },
       { name: "audit", use: chromium, grep: /@audit/ },

@@ -2,6 +2,11 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.23.6 — 2026-11-10
+
+### Fixed
+- Feature F0.23-6: The full test run no longer fails now and then: its 100,000-object and 100-member scale tests run two at a time after the other Chromium tests instead of stalling them, and the board image drop and Week hours tests wait for what they measure.
+
 ## 0.23.5 — 2026-11-10
 
 ### Fixed

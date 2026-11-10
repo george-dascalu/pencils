@@ -83,12 +83,18 @@ onDevices(['ipad'],()=>test('a swipe scrolls hours; holding then dragging select
 onDevices(['ipad'],()=>test('a time range held just above the bottom bar scrolls the hours',async({page})=>{
   await open(page);
   const cdp=await page.context().newCDPSession(page), scroll=page.locator('.calendar-hours-scroll');
-  await scroll.evaluate(el=>el.scrollTop=0);
-  const r=await page.locator('.calendar-hours-day').first().locator('[data-hour="1"]').boundingBox();
+  // A redraw can still move the hours after they show, so aim once the point is on the 01:00 slot.
+  const slot=page.locator('.calendar-hours-day').first().locator('[data-hour="1"]');
+  let at;
+  await expect.poll(async()=>{
+    await scroll.evaluate(el=>el.scrollTop=0);
+    const r=await slot.boundingBox(); at={x:r.x+r.width/2,y:r.y+r.height/2};
+    return slot.evaluate((el,p)=>document.elementFromPoint(p.x,p.y)===el,at);
+  }).toBe(true);
   const barTop=await page.evaluate(()=>document.querySelector('.topbar .tabs').getBoundingClientRect().top);
-  await cdp.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[{x:r.x+r.width/2,y:r.y+1}]});
+  await cdp.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[at]});
   await expect(page.locator('.calendar-time-selection')).toBeVisible();
-  await cdp.send('Input.dispatchTouchEvent',{type:'touchMove',touchPoints:[{x:r.x+r.width/2,y:barTop-10}]});
+  await cdp.send('Input.dispatchTouchEvent',{type:'touchMove',touchPoints:[{x:at.x,y:barTop-10}]});
   await expect.poll(()=>scroll.evaluate(el=>el.scrollTop)).toBeGreaterThan(100);
   await cdp.send('Input.dispatchTouchEvent',{type:'touchCancel',touchPoints:[]});
 }));
