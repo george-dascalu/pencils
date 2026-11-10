@@ -21,6 +21,8 @@
   overflow-y: auto;
   overscroll-behavior: none;
   padding-block: var(--settings-pad);
+  /* Each column runs under the bottom bar on touch screens and scrolls its end clear of it. */
+  padding-bottom: calc(var(--settings-pad) + var(--tabbar-clearance, 0px));
 }
 .settings-navigation {
   min-width: 0;

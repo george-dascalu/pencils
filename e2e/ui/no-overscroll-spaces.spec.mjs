@@ -62,6 +62,8 @@ onDevices(["ipad", "phone"], () => {
 
   test("every settings section stays inside its edges", async ({ page }) => {
     await page.goto(`${app.base}/#project/${app.project.id}/settings/general`);
+    // The loader may not be there yet, so wait for the section links themselves.
+    await page.locator(".settings-navigation [data-settings-section]").first().waitFor({ state: "attached" });
     await page.locator(".settings-loading").waitFor({ state: "detached" });
     const sections = await page.locator(".settings-navigation [data-settings-section]").evaluateAll((links) => links.map((a) => a.dataset.settingsSection));
     expect(sections.length).toBeGreaterThan(5);

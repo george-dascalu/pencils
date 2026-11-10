@@ -1,6 +1,8 @@
 /* Month cards and agenda rows share the same dates and task actions. */
 .main.project-main[data-layout-view="calendar"] { height: 100dvh; overflow: hidden; }
-.main.project-main > #view-content[data-layout-view="calendar"] { position: relative; display: flex; flex-direction: column; min-height: 0; overflow: hidden; padding-bottom: 6px; }
+.main.project-main > #view-content[data-layout-view="calendar"] { position: relative; display: flex; flex-direction: column; min-height: 0; overflow: hidden; }
+/* Touch screens run the layouts under the bottom bar (project-layout.css); elsewhere a small margin. */
+@media (min-width: 601px) and (pointer: fine) { .main.project-main > #view-content[data-layout-view="calendar"] { padding-bottom: 6px; } }
 #view-content[data-layout-view="calendar"] > :is(.calendar-scroll, .calendar-agenda) { flex: 1; min-height: 0; overflow: auto; overscroll-behavior: none; }
 #view-content[data-layout-view="calendar"] > .calendar-scroll:has(.calendar-hourly) { overflow-y: hidden; }
 .calendar-agenda { align-content: start; }

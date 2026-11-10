@@ -158,12 +158,12 @@
   :root { --tabbar-space: calc(var(--control-height) + 26px); --tabbar-clearance: calc(var(--tabbar-space) + env(safe-area-inset-bottom)); }
   /* Content runs behind the bar, and each page's scroller ends with room to lift its last item
      clear of it. Views that scroll inside a component (table, kanban, timeline, tree) pad that
-     scroller instead. Sticky footers, such as the settings Save bar, stop at the padding, so they
+     scroller instead, and their page ends at the screen's bottom so that scroller reaches it. Sticky footers, such as the settings Save bar, stop at the padding, so they
      stay above the bar too. Boards and documents run to the bottom of the screen; their controls at
      the bottom (the phone board dock, the minimap, the word count) sit above the bar, except on the
      expanded board, which covers it. */
   .main.project-main:not([data-layout-view="board"], [data-layout-view="drawing"], [data-layout-view="documents"], [data-layout-view="table"], [data-layout-view="kanban"], [data-layout-view="timeline"], [data-layout-view="tree"], [data-layout-view="calendar"]) > :is(#view-content, .help-page) { padding-bottom: calc(var(--tabbar-clearance) + 6px); }
-  .main.project-main:is([data-layout-view="board"], [data-layout-view="drawing"], [data-layout-view="documents"]) > #view-content { padding-bottom: 0; }
+  .main.project-main:is([data-layout-view="board"], [data-layout-view="drawing"], [data-layout-view="documents"], [data-layout-view="table"], [data-layout-view="kanban"], [data-layout-view="timeline"], [data-layout-view="tree"], [data-layout-view="calendar"]) > #view-content { padding-bottom: 0; }
   .main.project-main .canvas:not(.board-expanded), .main.project-main .documents-workspace { border-bottom: 0; border-end-start-radius: 0; border-end-end-radius: 0; }
   .canvas:not(.board-expanded) { --board-bottom-clear: var(--tabbar-clearance); }
   /* iPhone keeps Safari's bar in full screen, so the dock stays where it was (T94). */

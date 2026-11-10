@@ -288,6 +288,7 @@ export const TIERS = [
     "e2e/lists/tree-viewport.spec.mjs", // scroll Tree
     "e2e/navigation/bookmarks.spec.mjs", // bookmark a card/view and find it in search
     "e2e/navigation/bottom-bar.spec.mjs", // scroll to the end of a view on phone
+    "e2e/navigation/under-bar.spec.mjs", // every view and page runs under the bottom bar and scrolls clear of it
     "e2e/navigation/compact-navigation.spec.mjs", // use header navigation at all widths
     "e2e/navigation/desktop-tray.spec.mjs", // switch Tasks/Planning layouts on desktop
     "e2e/navigation/mobile-workspaces.spec.mjs", // use Table/Calendar/Timeline/Board on phone

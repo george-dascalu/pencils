@@ -2,6 +2,14 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.23.4 — 2026-11-10
+
+### Changed
+- Feature F0.23-3: Every view and page runs under the floating bottom bar on iPad and phones: Tree, Table, Kanban, Timeline and Calendar reach the bottom of the screen, and Settings' columns scroll their last row clear of the bar.
+
+### Fixed
+- Feature F0.23-4: The settings-section edge check waits for the section links before reading them, so it no longer fails now and then.
+
 ## 0.23.2 — 2026-11-10
 
 ### Added
