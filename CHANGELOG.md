@@ -2,6 +2,11 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.23.7 — 2026-11-10
+
+### Fixed
+- Feature F0.23-7: The board image drop check measures the dropped image once its redraw settles, so it no longer fails now and then.
+
 ## 0.23.6 — 2026-11-10
 
 ### Fixed

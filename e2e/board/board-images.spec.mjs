@@ -80,12 +80,13 @@ test("a dropped image lands at the pointer in board coordinates", async ({ page 
   await expect.poll(() => count()).toBe(1);
   await expect(page.locator("#canvas.image-drop-active")).toHaveCount(0);
   const dropped = (await current()).nodes.find((n) => n.text === "Dropped.gif");
-  // Saved can come before drawn: wait for the node itself.
+  // Saved can come before drawn, and a redraw can swap the node's element while it's measured
+  // (boundingBox gives null for the old one), so measure until the drawn node holds still.
   const node = page.locator(`[data-node="${dropped.id}"]`);
-  await expect(node).toBeVisible();
-  const dropBox = await node.boundingBox();
-  expect(Math.abs(dropBox.x + dropBox.width / 2 - x)).toBeLessThan(2);
-  expect(Math.abs(dropBox.y + dropBox.height / 2 - y)).toBeLessThan(2);
+  await expect.poll(async () => {
+    const box = await node.boundingBox();
+    return box && [box.x + box.width / 2 - x, box.y + box.height / 2 - y].map((d) => Math.abs(d) < 2);
+  }).toEqual([true, true]);
 });
 
 test.describe(() => {
