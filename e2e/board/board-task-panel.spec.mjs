@@ -71,7 +71,8 @@ test("a new card opens as a compact panel, the board stays usable, and the recov
   await page.locator("[data-task-picker=type] [data-picker-value=story]").click();
   await page.locator("[data-task-picker=priority] .task-picker-trigger").click();
   await page.locator("[data-task-picker=priority] [data-picker-value=high]").click();
-  await page.locator(".date-field:has([name=due]) [data-date-picker]").click();
+  await page.locator("[data-date-range] [data-date-picker]:visible").click();
+  await page.locator("[data-date-phase=due]").click();
   await page.locator("[data-date-clear]").click();
   await page.getByRole("button", { name: "Close new card", exact: true }).click();
   await expect(editor(page)).toHaveCount(0);

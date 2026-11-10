@@ -1,6 +1,6 @@
 /* Month cards and agenda rows share the same dates and task actions. */
 .main.project-main[data-layout-view="calendar"] { height: 100dvh; overflow: hidden; }
-.main.project-main > #view-content[data-layout-view="calendar"] { position: relative; display: flex; flex-direction: column; min-height: 0; overflow: hidden; padding-bottom: calc(6px + var(--tabbar-clearance, 0px)); }
+.main.project-main > #view-content[data-layout-view="calendar"] { position: relative; display: flex; flex-direction: column; min-height: 0; overflow: hidden; padding-bottom: 6px; }
 #view-content[data-layout-view="calendar"] > :is(.calendar-scroll, .calendar-agenda) { flex: 1; min-height: 0; overflow: auto; overscroll-behavior: none; }
 #view-content[data-layout-view="calendar"] > .calendar-scroll:has(.calendar-hourly) { overflow-y: hidden; }
 .calendar-agenda { align-content: start; }
@@ -133,13 +133,16 @@
 .agenda-fields .row-date-short { display: none; }
 .calendar-unscheduled:popover-open { display: flex; flex-direction: column; overflow: hidden; }
 .calendar-unscheduled > header { flex: none; }
-.calendar-unscheduled-list { min-height: 0; overflow: auto; overscroll-behavior: contain; }
+.calendar-unscheduled-list { min-height: 0; overflow: auto; overscroll-behavior: none; }
 .calendar-unscheduled-list .agenda-row { gap: 4px; padding: 0; }
 .calendar-unscheduled-list .calendar-dates { width: var(--control-height); padding-inline: 0 !important; justify-content: center; }
 .calendar-unscheduled-list .calendar-dates > span { display: none; }
 .calendar-drag-cancel { position: fixed; z-index: 221; left: 50%; bottom: calc(var(--tabbar-clearance, 0px) + 12px); transform: translateX(-50%); box-shadow: var(--shadow-popover); }
 .calendar-drag-cancel > span { white-space: nowrap; }
-.calendar-drag-cancel.icon-button[data-week-board] { left: 0; bottom: var(--tabbar-clearance, 0px); width: calc(var(--control-height) * 2.5) !important; height: calc(var(--control-height) * 2.5) !important; transform: none; border-radius: 0 100% 0 0; }
+.calendar-drag-cancel.icon-button[data-week-board] { left: 0; bottom: var(--tabbar-clearance, 0px); width: calc(var(--control-height) * 2.5) !important; height: calc(var(--control-height) * 2.5) !important; transform: none; border-radius: 0 100% 0 0; border: 0; background: color-mix(in srgb, var(--surface) 55%, transparent) !important; -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px); }
+.calendar-drag-cancel.icon-button[data-week-board].calendar-drop-target { background: color-mix(in srgb, var(--green) 35%, transparent) !important; }
+/* Wide screens (the bottom bar is centred and at most 480px) leave the corner free; phones' bar spans it. */
+@media (min-width: 601px) { .calendar-drag-cancel.icon-button[data-week-board] { bottom: 0; } }
 .calendar-unscheduled-list > .field-hint { padding: 8px 12px; }
 .planning-options { display: flex; align-items: center; flex-wrap: wrap; gap: var(--control-bar-gap); }
 .planning-options > .date-field { flex: 0 1 160px; width: 160px; }
@@ -255,7 +258,7 @@
 .range-quick > button[aria-pressed="true"] { background: var(--surface-soft); color: var(--green); font-weight: 600; }
 @media (pointer: coarse) { .range-quick > button { min-height: 44px; } }
 /* Timeline's opens as a popover, so it also works inside a board (timeline-range.js). */
-.range-popover.range-panel { position: fixed; inset: auto; margin: 0; padding: var(--menu-panel-padding); overflow: auto; }
+.range-popover.range-panel { position: fixed; inset: auto; margin: 0; padding: var(--menu-panel-padding); overflow: auto; overscroll-behavior: none; }
 .range-popover .range-dates > strong { color: var(--ink); }
 .range-popover:not(:popover-open) { display: none; }
 .range-popover::backdrop { background: transparent; pointer-events: none; }

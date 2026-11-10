@@ -70,7 +70,7 @@
   background: var(--surface);
   box-shadow: var(--shadow-popover);
   overflow: auto;
-  overscroll-behavior: contain;
+  overscroll-behavior: none;
 }
 .attachment-preview:popover-open {
   display: flex;
@@ -111,6 +111,7 @@
 .attachment-preview-content {
   padding: 12px;
   overflow: auto;
+  overscroll-behavior: none;
   min-height: 0;
 }
 .attachment-preview-content > img {

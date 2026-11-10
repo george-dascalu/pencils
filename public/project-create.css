@@ -6,9 +6,23 @@
 }
 .project-create-dialog form { display: flex; flex-direction: column; height: 100%; min-height: 0; }
 .project-create-dialog :is(.dialog-head, .dialog-foot, .project-steps) { flex: none; }
-.project-create-dialog .dialog-body { flex: 1; min-height: 0; overflow: auto; overscroll-behavior: contain; padding: var(--dialog-pad); }
+.project-create-dialog .dialog-body { flex: 1; min-height: 0; overflow: auto; overscroll-behavior: none; padding: var(--dialog-pad); }
 .project-create-dialog .dialog-foot > [data-action="dialog-close"] { margin-right: auto; }
-.project-create-dialog .project-create-details { max-width: 760px; margin-inline: auto; }
+.project-create-dialog .project-create-details { max-width: 760px; margin-inline: auto; --field-margin: 10px; --field-gap: 4px; }
+/* Details is compact (F0.22-94): the people listed down the right of the name, key, organisation and
+   description, scrolling inside that height (size containment keeps a long list from stretching the rows). */
+.project-create-dialog .project-people-settings { margin: 0 0 var(--field-margin); padding: 4px 12px 8px; }
+.project-create-dialog .project-people-settings > .field-hint { display: none; }
+.project-create-dialog .project-people-settings .team-members { flex-direction: column; flex-wrap: nowrap; gap: 0; margin: 0 0 4px; overflow-y: auto; overscroll-behavior-y: none; }
+.project-create-dialog .project-people-settings > .field { margin: 0; }
+.project-create-dialog .project-key-status:empty { display: none; }
+.project-create-dialog .project-key-status { color: var(--danger); font-size: 11px; }
+@media (min-width: 601px) {
+  .project-create-dialog .project-create-details { display: grid; grid-template-columns: minmax(0, 1fr) minmax(200px, 36%); column-gap: 20px; align-items: start; }
+  .project-create-dialog .project-create-details > * { grid-column: 1; }
+  .project-create-dialog .project-create-details > .project-people-settings { grid-column: 2; grid-row: 1 / span 4; align-self: stretch; contain: size; display: flex; flex-direction: column; min-height: 0; }
+  .project-create-dialog .project-people-settings .team-members { flex: 1; min-height: 0; }
+}
 .project-create-dialog h3 { margin: 0 0 16px; font-size: var(--type-section); }
 .project-steps { padding: 8px var(--dialog-pad); border-bottom: 1px solid var(--line); }
 .project-steps ol { display: flex; gap: 8px; padding: 0; margin: 0; list-style: none; }

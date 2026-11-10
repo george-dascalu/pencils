@@ -1807,7 +1807,7 @@ function taskDialog(id = null, defaults = {}, replace = false) {
       )}
     </div>${t.key || id ? `<span class="task-id task-key" title="${esc(t.key || id)}">${esc(t.key || id)}</span>` : isDraft ? '<span class="task-id task-key">Draft</span>' : ""}${id ? bookmarks.button("card", state.project.id, id) : ""}<input class="title-input" name="title" aria-label="Card title" value="${esc(t.title)}" placeholder="Card title" required maxlength="300" autofocus>${id || isDraft ? "" : closeButton}</div></div>
     <div class="task-editor-content"><div class="dialog-body"><div class="form-error hidden" role="alert"></div>
-      <div class="task-metadata"><div class="task-metadata-main"><div class="task-fields field-box" ${fieldBoxStyle(state, t.priority)}>${metadata.assignee}${metadata.status}${metadata.priority}</div><div class="field task-dates"><span class="sr-only">Dates</span><div class="task-date-range" role="group" aria-label="Start and due dates"><input type="date" name="start" aria-label="Start date" title="Start date" value="${esc(t.start || "")}"><span aria-hidden="true">→</span><input type="date" name="due" aria-label="Due date" title="Due date" value="${esc(t.due || "")}"></div>${taskTimeFields(t, esc, icon)}</div></div>${taskTagsHTML(state, t.tags || [], esc, icon)}</div>
+      <div class="task-metadata"><div class="task-metadata-main"><div class="task-fields field-box" ${fieldBoxStyle(state, t.priority)}>${metadata.assignee}${metadata.status}${metadata.priority}</div><div class="field task-dates"><span class="sr-only">Dates</span><div class="task-date-range" data-date-range role="group" aria-label="Start and due dates"><input type="date" name="start" aria-label="Start date" title="Start date" value="${esc(t.start || "")}"><span aria-hidden="true">→</span><input type="date" name="due" aria-label="Due date" title="Due date" value="${esc(t.due || "")}"></div>${taskTimeFields(t, esc, icon)}</div></div>${taskTagsHTML(state, t.tags || [], esc, icon)}</div>
       ${assigneeHint(state) ? `<p id="task-assignee-help" class="sr-only">${esc(assigneeHint(state))}</p>` : ""}
       ${taskDescriptionHTML(t.body, { esc, icon })}
       <input type="hidden" name="parent" value="${esc(t.parent || "")}">
@@ -2420,17 +2420,6 @@ document.addEventListener("click", async (event) => {
           state.sortDir = 1;
         }
         renderView();
-        break;
-      case "md-preview":
-        $("#markdown-preview").innerHTML = markdown(
-          $('[name="body"]', $("#task-form")).value,
-        );
-        $("#markdown-preview").classList.remove("hidden");
-        $(".markdown-source").classList.add("hidden");
-        break;
-      case "md-edit":
-        $("#markdown-preview").classList.add("hidden");
-        $(".markdown-source").classList.remove("hidden");
         break;
       case "board-new":
         boardNameDialog();

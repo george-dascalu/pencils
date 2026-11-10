@@ -7,10 +7,11 @@ export function projectCreateHTML({ state, esc, icon, colorPicker, dialogHead })
     ${dialogHead("New project")}
     <nav class="project-steps" aria-label="Project setup"><ol>${["Details", "Card types", "Workflow"].map((name, i) => `<li><button type="button" class="button" data-project-goto="${i + 1}" ${i ? "disabled" : 'aria-current="step"'}><span>${i + 1}</span> ${name}</button></li>`).join("")}</ol></nav>
     <div class="dialog-body"><div class="form-error hidden" role="alert"></div>
-      <section data-project-step="1" class="project-create-details" aria-labelledby="project-step-1"><h3 id="project-step-1" tabindex="-1">Project details</h3>
-        <div class="field-row"><label class="field">Project name<input name="title" placeholder="What are we working on?" maxlength="300" required autofocus></label><label class="field">Project key<input name="key" placeholder="e.g. WEB" pattern="[A-Za-z][A-Za-z0-9]{1,11}" maxlength="12"><span class="field-hint">Leave blank to generate a key, such as WEB in WEB-1.</span></label></div>
+      <section data-project-step="1" class="project-create-details" aria-labelledby="project-step-1"><h3 id="project-step-1" class="sr-only" tabindex="-1">Project details</h3>
+        <label class="field">Project name<input name="title" placeholder="What are we working on?" maxlength="300" required autofocus></label>
+        <label class="field">Project key<input name="key" aria-label="Project key" placeholder="Automatic, e.g. WEB" pattern="[A-Za-z][A-Za-z0-9]{1,11}" maxlength="12" aria-describedby="project-key-status" autocapitalize="characters" spellcheck="false"><span id="project-key-status" class="field-hint project-key-status" data-key-status aria-live="polite"></span></label>
         <label class="field">Organisation<select name="organisation" required>${state.organisations.map(o => `<option value="${esc(o.id)}" ${o.id === state.organisation.id ? "selected" : ""}>${esc(o.title)}</option>`).join("")}</select></label>
-        <label class="field">Description<textarea name="body" rows="3" placeholder="What is this project for?"></textarea></label>
+        <label class="field">Description<textarea name="body" rows="2" placeholder="What is this project for?"></textarea></label>
         <div class="field">Project colour${colorPicker({ label: "Project colour", value: "#66856f" })}</div>
       </section>
       <section data-project-step="2" aria-labelledby="project-step-2" hidden><h3 id="project-step-2" tabindex="-1">Card types & hierarchy</h3>${typeFieldHTML(DEFAULT_TASK_TYPES, { esc, icon }, "Choose the kinds of cards this project uses. You can change these later in Settings.")}</section>
@@ -20,9 +21,35 @@ export function projectCreateHTML({ state, esc, icon, colorPicker, dialogHead })
   </form></dialog>`;
 }
 
-export function projectCreateSteps(form, { icon }) {
+// The key is checked as it's typed (F0.22-93): its format here, whether it's taken on the server, which
+// names the project using it. A taken key holds the step like any invalid field.
+function keyCheck(input, status, api) {
+  let timer, asked = "";
+  const show = (message) => {
+    input.setCustomValidity(message);
+    status.textContent = message;
+    if (message) input.setAttribute("aria-invalid", "true");
+    else input.removeAttribute("aria-invalid");
+  };
+  input.addEventListener("input", () => {
+    clearTimeout(timer);
+    const key = input.value.trim().toUpperCase();
+    asked = key;
+    if (!key) return show("");
+    if (!/^[A-Z][A-Z0-9]{1,11}$/.test(key)) return show("Use 2–12 letters or digits, starting with a letter.");
+    show("");
+    timer = setTimeout(async () => {
+      const result = await api(`/project-key?key=${encodeURIComponent(key)}`).catch(() => null);
+      // A reply for a key since changed, or a failed check (the server checks again on create), is ignored.
+      if (result && asked === key) show(result.available ? "" : result.error);
+    }, 250);
+  });
+}
+
+export function projectCreateSteps(form, { icon, api }) {
   let step = 1, visited = 1;
   const body = form.querySelector(".dialog-body"), error = form.querySelector(".form-error"), submit = form.querySelector('[type="submit"]');
+  keyCheck(form.elements.key, form.querySelector("[data-key-status]"), api);
   const fieldStep = el => Number(el.closest("[data-project-step]")?.dataset.projectStep || (el.closest(".hierarchy-editor") ? 2 : 3));
   function show(next, focus = true) {
     step = next;

@@ -26,7 +26,7 @@
 .sheet-row-resize { position: absolute; bottom: -3px; left: 0; right: 0; height: 8px; cursor: row-resize; touch-action: none; }
 .document-sheet-grid [data-sheet-editor] { position: absolute; inset: 0; z-index: 7; width: 100%; height: 100%; resize: none; border: 2px solid var(--green); border-radius: 0; margin: 0; padding: 2px 6px; background: var(--surface); font: inherit; color: var(--ink); }
 .sheet-footer { display: flex; flex: none; align-items: center; gap: 4px; min-width: 0; padding: 4px; padding-bottom: calc(4px + var(--tabbar-clearance, 0px)); background: var(--surface-soft); border-top: 1px solid var(--line); }
-.sheet-tabs { display: flex; min-width: 0; flex: 1; overflow-x: auto; scrollbar-width: thin; }
+.sheet-tabs { display: flex; min-width: 0; flex: 1; overflow-x: auto; overscroll-behavior-x: none; scrollbar-width: thin; }
 .sheet-tabs [role="tab"] { min-height: var(--control-height); padding-inline: 12px; border: 0; border-radius: var(--field-radius); background: transparent; color: var(--muted); font-size: var(--type-small); white-space: nowrap; }
 .sheet-tabs [aria-selected="true"] { background: var(--surface); color: var(--green); box-shadow: inset 0 -2px var(--green); }
 .sheet-selection-summary { flex: 0 1 auto; font-size: var(--type-small); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -38,7 +38,7 @@
 .sheet-setting.check-control { justify-content: flex-start; }
 .sheet-inline-actions { display: flex; gap: 4px; }
 .sheet-inline-actions > .document-panel-item { flex: 1; width: auto; }
-.sheet-import-preview { max-height: 200px; overflow: auto; font-size: var(--type-small); border: 1px solid var(--line); }
+.sheet-import-preview { max-height: 200px; overflow: auto; overscroll-behavior: none; font-size: var(--type-small); border: 1px solid var(--line); }
 .sheet-import-preview td { padding: 4px 8px; border: 1px solid var(--line); white-space: pre-wrap; }
 .sheet-import-status { font-size: var(--type-small); margin: 0; color: var(--muted); }
 .sheet-touch-tools { display: none; }
@@ -68,12 +68,12 @@
 .document-panel-item[data-axis-danger] { color: var(--red, #bd443c); }
 
 /* Formatting remains one compact, horizontally scrollable row in narrow panes. */
-.sheet-format-tools { overflow-x: auto; max-width: 100%; scrollbar-width: none; }
+.sheet-format-tools { overflow-x: auto; overscroll-behavior-x: none; max-width: 100%; scrollbar-width: none; }
 .sheet-format-tools > * { flex-shrink: 0; }
 .sheet-format-tools .sheet-font { width: 128px; }
 .sheet-format-tools .sheet-size { width: 64px; }
 .sheet-format-tools::-webkit-scrollbar { display: none; }
-.document-sheet-grid [data-sheet-editor], .sheet-merged [data-sheet-editor] { white-space: pre-wrap; overflow: auto; }
+.document-sheet-grid [data-sheet-editor], .sheet-merged [data-sheet-editor] { white-space: pre-wrap; overflow: auto; overscroll-behavior: none; }
 .sheet-merged { position: absolute; box-sizing: border-box; padding: 4px 8px; border-right: 1px solid var(--line); border-bottom: 1px solid var(--line); background: var(--surface); color: var(--ink); font-size: var(--type-body); line-height: 18px; white-space: pre; overflow: hidden; }
 .sheet-merged[aria-selected="true"] { background: color-mix(in srgb, var(--green) 10%, var(--surface)); }
 .sheet-merged.sheet-active { outline: 2px solid var(--green); outline-offset: -2px; }

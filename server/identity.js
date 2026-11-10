@@ -3,6 +3,13 @@ import path from "node:path";
 import { Problem } from "./problem.js";
 export const validProjectKey = (value) =>
   typeof value === "string" && /^[A-Z][A-Z0-9]{1,11}$/.test(value);
+export const KEY_FORMAT = "Use 2–12 letters or digits, starting with a letter.";
+// What a person is told about a taken key (F0.22-93): the project holding it, unless they can't open it.
+export function keyTaken(key, owner, visible) {
+  if (!visible) return `${key} is used by a project you can’t open.`;
+  if (owner.previous) return `${key} was ${owner.title}’s earlier key, so its old card IDs still lead there.`;
+  return `${key} is used by ${owner.title}${owner.trashed ? ", in Trash" : ""}.`;
+}
 export function installIdentity(Store) {
   Object.assign(Store.prototype, {
     identityLock(fn) {
@@ -10,7 +17,8 @@ export function installIdentity(Store) {
       this.identityQueue = next.catch(() => {});
       return next;
     },
-    async projectKey(input, title, exclude) {
+    // Every key a project holds, its own or an earlier one kept for old card IDs, in Trash too.
+    async keyOwners() {
       const used = new Map();
       for (const base of ["Projects", ".trash"]) {
         const dir = path.join(this.root, base);
@@ -28,24 +36,22 @@ export function installIdentity(Store) {
               path.join(dir, entry.name, "project.md"),
             );
             for (const key of [data.key, ...(data.previous_keys || [])])
-              if (key) used.set(key, data.id);
+              if (key) used.set(key, { id: data.id, title: data.title, organisation: data.organisation, source_owner: data.source_owner, trashed: base === ".trash", previous: key !== data.key });
           } catch (e) {
             if (e.status !== 404 && e.code !== "ENOENT") continue;
           }
         }
       }
+      return used;
+    },
+    async projectKey(input, title, exclude) {
+      const used = await this.keyOwners();
       if (input) {
         const key = String(input).trim().toUpperCase();
-        if (!validProjectKey(key))
-          throw new Problem(
-            400,
-            "Project key must be 2–12 uppercase letters or digits, starting with a letter.",
-          );
-        if (used.has(key) && used.get(key) !== exclude)
-          throw new Problem(
-            409,
-            "That project key is already in use or reserved by another project.",
-          );
+        if (!validProjectKey(key)) throw new Problem(400, KEY_FORMAT);
+        if (used.has(key) && used.get(key).id !== exclude)
+          // The route names the project for the person asking (keyTaken).
+          throw Object.assign(new Problem(409, "That project key is already in use or reserved by another project."), { key, owner: used.get(key) });
         return key;
       }
       let stem = String(title)
@@ -56,7 +62,7 @@ export function installIdentity(Store) {
       if (stem.length < 2) stem += "P";
       let key = stem,
         n = 2;
-      while (used.has(key) && used.get(key) !== exclude) key = stem + n++;
+      while (used.has(key) && used.get(key).id !== exclude) key = stem + n++;
       return key;
     },
     // `sweep: false` only reserves a number for a new card while the register and key are the ones

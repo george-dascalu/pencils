@@ -43,6 +43,7 @@
   color: var(--ink);
   box-shadow: var(--shadow-popover);
   overflow: auto;
+  overscroll-behavior: none;
   font: 13px var(--app-font, sans-serif);
 }
 .date-picker-head {
@@ -153,3 +154,19 @@
 .calendar .calendar-day.today {
   box-shadow: inset 0 0 0 2px var(--green);
 }
+
+/* A start/due calendar: two buttons choose the date being set; days between them are tinted. */
+.date-range-phases { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; margin-bottom: 8px; }
+.date-range-phases button {
+  display: flex; align-items: baseline; justify-content: space-between; gap: 6px; min-width: 0;
+  padding: 0 8px; border: 1px solid var(--line); border-radius: 5px; font: inherit; white-space: nowrap;
+}
+.date-range-phases button span { color: var(--muted); font-size: var(--type-meta); }
+.date-range-phases button strong { overflow: hidden; text-overflow: ellipsis; font-weight: 600; }
+.date-range-phases button[aria-pressed="true"] { border-color: var(--green); box-shadow: inset 0 0 0 1px var(--green); }
+.date-picker-popover td.in-range:not([aria-selected="true"]) { background: color-mix(in srgb, var(--green) 16%, var(--surface)); }
+/* The due field's own button (and room for it) shows only when Start is turned off. */
+[data-date-range] .date-field:has(> [name="due"]) > input { padding-right: 5px !important; }
+[data-date-range] .date-field:has(> [name="due"]) > .date-picker-trigger { display: none; }
+:root[data-fields-off~="start"] [data-date-range] .date-field:has(> [name="due"]) > input { padding-right: calc(var(--control-height) + 4px) !important; }
+:root[data-fields-off~="start"] [data-date-range] .date-field:has(> [name="due"]:not(:disabled)) > .date-picker-trigger { display: grid; }

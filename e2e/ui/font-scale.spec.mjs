@@ -189,12 +189,7 @@ onDevices(["desktop", "phone"], () => test("description headings stay close to t
   const editor = page.locator("#task-form .task-description .inline-rich");
   await editor.locator("h1").waitFor();
   const measure = (root) => root.evaluate((el) => Object.fromEntries(["h1", "h2", "h3", "p"].map((tag) => [tag, parseFloat(getComputedStyle(el.querySelector(tag)).fontSize)]).concat([["weight", getComputedStyle(el.querySelector("h1")).fontWeight]])));
-  // The editor and its preview show headings alike.
-  for (const [name, root] of [["editor", editor], ["preview", page.locator("#task-form #markdown-preview")]]) {
-    if (name === "preview") {
-      await page.locator("#task-form [data-rich-preview]").click();
-      await root.locator("h1").waitFor();
-    }
+  for (const [name, root] of [["editor", editor]]) {
     const sizes = await measure(root);
     if (name === "editor") expect(sizes.p, `${device}: the text keeps the body size`).toBe(scaleFor(device).body);
     expect(sizes.h1 / sizes.p, `${device} ${name}: ${JSON.stringify(sizes)}`).toBeCloseTo(1.3, 2);

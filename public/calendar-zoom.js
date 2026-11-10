@@ -4,7 +4,8 @@ export function calendarZoom({ state, storage, icon }) {
   let frame = 0;
   const scroll = () => document.querySelector(".calendar-hours-scroll");
   const height = el => el.querySelector(".calendar-hours-day").getBoundingClientRect().height / 24;
-  const fit = el => Math.max(8, Math.min(256, Math.floor(el.clientHeight / 24)));
+  // The hours fit above the bottom bar's clearance, which pads the scroller's end.
+  const fit = el => Math.max(8, Math.min(256, Math.floor((el.clientHeight - parseFloat(getComputedStyle(el).paddingBottom || 0)) / 24)));
   const observer = new ResizeObserver(() => {
     const el = scroll();
     if (!el || state.view !== "calendar") return;

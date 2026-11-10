@@ -9,6 +9,7 @@
   flex-wrap: nowrap;
   overflow-x: auto;
   overflow-y: hidden;
+  overscroll-behavior-x: none;
   scrollbar-width: none;
   gap: var(--control-bar-gap);
   max-width: calc(100% - 92px);
@@ -108,7 +109,7 @@
   border: 1px solid var(--line);
   border-radius: 10px;
   box-shadow: var(--shadow-popover);
-  overscroll-behavior: contain;
+  overscroll-behavior: none;
   font-size: var(--control-font-size);
 }
 .pen-preferences-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }

@@ -170,6 +170,7 @@
   min-height: 1.5em;
   max-height: 100%;
   overflow: auto;
+  overscroll-behavior: none;
   background: transparent;
   color: inherit;
   box-shadow: none;
@@ -243,6 +244,7 @@
   display: block;
   max-height: 4.5em;
   overflow: auto;
+  overscroll-behavior: none;
 }
 #canvas-inline-form .frame-title {
   align-self: flex-start;
@@ -327,6 +329,7 @@
 }
 .task-as-note.inline-editing .note-content {
   overflow: auto;
+  overscroll-behavior: none;
 }
 
 /* Alignment belongs to each board object; metadata and controls keep their layout. */

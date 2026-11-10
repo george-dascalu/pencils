@@ -9,7 +9,7 @@
   color: var(--ink);
   box-shadow: var(--shadow-popover);
   overflow-y: auto;
-  overscroll-behavior: contain;
+  overscroll-behavior: none;
 }
 .select-menu {
   position: fixed;
@@ -32,7 +32,7 @@
 .select-search-header > [hidden] { display: none !important; }
 .select-search-filters { display: flex; flex: none; gap: 0; border-bottom: 1px solid var(--line); padding-bottom: 4px; }
 .select-search-filters [aria-pressed="true"] { color: var(--green); background: var(--surface-soft); }
-.select-search-options { flex: 1 1 auto; min-height: 0; overflow-y: auto; overscroll-behavior: contain; }
+.select-search-options { flex: 1 1 auto; min-height: 0; overflow-y: auto; overscroll-behavior: none; }
 .select-search-count { flex: none; padding: 4px; color: var(--muted); font-size: var(--type-meta); }
 .select-menu .select-option-copy { display: grid; gap: 1px; min-width: 0; line-height: 1; }
 .select-option-copy > :is(.select-option-label,.select-option-description) { display: block; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }

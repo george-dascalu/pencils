@@ -50,9 +50,10 @@ onDevices(["phone", "ipad", "desktop"], device => {
     await expect(page.locator('.task-dialog')).toHaveClass(/with-task-comments/);
     await chooseCardPane(page, 'details');
     await form.getByLabel('Status', { exact: true }).selectOption('review');
-    await form.getByRole('button', { name: 'Choose Due date', exact: true }).click();
+    await form.getByRole('button', { name: 'Choose start and due dates', exact: true }).click();
     const calendar = page.locator('.date-picker-popover');
     await expect(calendar).toBeVisible();
+    await calendar.locator('[data-date-phase="due"]').click();
     await calendar.locator('table [data-date-value="2026-11-09"]').click();
     await expect.poll(async () => (await app.store.snapshot(app.project.id)).tasks.find(t => t.id === card.id)?.due).toBe('2026-11-09');
     await form.getByLabel('Assignee', { exact: true }).selectOption('');

@@ -80,6 +80,7 @@
   line-height: calc(var(--grid-hit-size, 8px) * 2.5) !important;
   white-space: nowrap;
   overflow: auto;
+  overscroll-behavior: none;
 }
 .grid-cells {
   position: absolute;
@@ -161,6 +162,7 @@
   min-height: 100%;
   height: 100%;
   overflow: auto;
+  overscroll-behavior: none;
   outline: none;
   border: 0;
   background: transparent;
@@ -173,6 +175,7 @@
   min-height: 0;
   padding: 16px;
   overflow: auto;
+  overscroll-behavior: none;
 }
 
 .board-node.grid .board-node-content {

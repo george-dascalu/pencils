@@ -115,6 +115,7 @@
 }
 .query-rows {
   overflow: auto;
+  overscroll-behavior: none;
   font:
     13px/1.5 system-ui,
     sans-serif;
@@ -279,6 +280,7 @@
   border-radius: 6px;
   max-height: 260px;
   overflow: auto;
+  overscroll-behavior: none;
   box-shadow: 0 6px 15px #263c3420;
 }
 .canvas-find #canvas-find-results:empty {
@@ -351,6 +353,7 @@
   bottom: 120px;
   width: 300px;
   overflow: auto;
+  overscroll-behavior: none;
   border: 1px solid #d7dfca;
   background: #fffffff5;
   box-shadow: 0 5px 20px #263c3415;
@@ -463,6 +466,7 @@
 .inline-preview {
   flex: 1;
   overflow: auto;
+  overscroll-behavior: none;
   font-size: 13px;
 }
 .operation-list article {
@@ -550,6 +554,7 @@
   .canvas-extra-tools {
     max-height: 95px;
     overflow: auto;
+    overscroll-behavior: none;
   }
 }
 @media (pointer: coarse) {
@@ -642,6 +647,7 @@
   height: auto;
   max-height: none;
   overflow: auto;
+  overscroll-behavior: none;
   width: 100%;
   box-sizing: border-box;
   margin: 0;
@@ -786,6 +792,7 @@ html.board-expanded-view .shell {
   width: min(300px, calc(100% - 90px));
   max-height: calc(100% - 36px);
   overflow: auto;
+  overscroll-behavior: none;
   padding: 10px;
   background: var(--surface);
   border: 1px solid var(--line);
@@ -864,7 +871,7 @@ html.board-expanded-view .shell {
 .capacity-track { stroke: var(--line); }
 .capacity-progress { stroke: var(--green); transform: rotate(-90deg); transform-origin: 18px 18px; }
 .board-controls .capacity-percent { position: relative; min-width: 0; font-size: 9px; font-weight: 600; font-variant-numeric: tabular-nums; line-height: 1; }
-.board-controls .board-capacity-info { position: fixed; inset: auto; margin: 0; padding: 12px; width: 220px; max-width: calc(100vw - 32px); height: auto; overflow: auto; border: 1px solid var(--line); border-radius: 7px; background: var(--surface); color: var(--ink); box-shadow: 0 6px 20px #0002; text-align: left; white-space: normal; font-size: 12px; line-height: 1.5; }
+.board-controls .board-capacity-info { position: fixed; inset: auto; margin: 0; padding: 12px; width: 220px; max-width: calc(100vw - 32px); height: auto; overflow: auto; overscroll-behavior: none; border: 1px solid var(--line); border-radius: 7px; background: var(--surface); color: var(--ink); box-shadow: 0 6px 20px #0002; text-align: left; white-space: normal; font-size: 12px; line-height: 1.5; }
 .board-capacity-info > strong { display: block; font-variant-numeric: tabular-nums; }
 .board-capacity-info > strong + strong { margin-top: 4px; }
 @media (max-width: 600px) {
@@ -892,7 +899,7 @@ html.board-expanded-view .shell {
   .phone-board-row {
     position: absolute; bottom: calc(100% + 8px); left: 50%; translate: -50% 0;
     display: flex; gap: 4px; width: max-content; max-width: calc(100vw - 16px);
-    padding: 4px; overflow-x: auto; overscroll-behavior: contain; touch-action: pan-x; scrollbar-width: none;
+    padding: 4px; overflow-x: auto; overscroll-behavior: none; touch-action: pan-x; scrollbar-width: none;
     border: 1px solid var(--line); border-radius: 8px; background: var(--surface); box-shadow: var(--shadow-popover);
   }
   .phone-board-row .board-tool-group { flex-direction: row; gap: 2px; }

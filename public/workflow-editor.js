@@ -96,6 +96,10 @@ export function workflowEditor(form, config, tasks, { esc, icon }, { section = "
     const again = had && host.querySelectorAll(had).length === 1 && had;
     detailsOpen =
       host.querySelector("[data-status-details]")?.open ?? detailsOpen;
+    // WebKit lays the emptied editor out mid-rebuild (its diagrams come after), clamping the page or
+    // dialog around it to the top: keep where each scroller was (F0.22-92).
+    const scrollers = [];
+    for (let el = host.parentElement; el; el = el.parentElement) if (el.scrollTop) scrollers.push([el, el.scrollTop]);
     host.innerHTML = `<legend>${section === "hierarchy" ? "Card hierarchy" : "Statuses & workflow"}</legend><input type="hidden" name="workflowSchema"><div data-workflow-section ${section === "hierarchy" ? "hidden" : ""}><p class="field-hint">Set the column order and names for this project. A completed status counts towards progress. Names can change without changing card data.</p><div class="workflow-mode"><label><input type="checkbox" data-workflow-rules ${model.transitions ? "checked" : ""}> Restrict status changes</label><span class="field-hint">${model.transitions ? "Cards can only follow the allowed moves below." : "Cards can move freely between any statuses."}</span></div><div data-workflow-diagram></div><details data-status-details ${detailsOpen ? "open" : ""}><summary>Statuses</summary><div class="workflow-statuses"><div class="workflow-status-head" aria-hidden="true"><span>Status</span><span>Completed</span><span>Default</span><span></span></div><ul class="workflow-status-list">${model.statuses
       .map(
         (id, i) =>
@@ -123,6 +127,7 @@ export function workflowEditor(form, config, tasks, { esc, icon }, { section = "
     );
     diagrams();
     sync();
+    for (const [el, top] of scrollers) el.scrollTop = top;
     if (again) host.querySelector(again)?.focus({ preventScroll: true });
   }
   function changed() {

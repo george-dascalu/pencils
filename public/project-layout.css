@@ -6,6 +6,7 @@
   flex-direction: column;
   gap: 12px;
   overflow: auto;
+  overscroll-behavior: none;
   padding: var(--popover-padding, 8px);
   background: var(--surface);
   border: 1px solid var(--line);
@@ -68,7 +69,7 @@
 /* Search follows the view tabs after a divider at every width (also Ctrl/⌘ K). */
 .topbar .tabs .tabs-divider { flex: none; align-self: center; width: 1px; height: 20px; margin: 0 4px; background: var(--line); }
 /* The bar's scroller only acts as one in the bottom bar; your own buttons (bottom-bar.js) show only there. */
-.topbar .tabs > .tabs-scroll { display: flex; min-width: 0; overflow-x: auto; overflow-y: hidden; scrollbar-width: none; }
+.topbar .tabs > .tabs-scroll { display: flex; min-width: 0; overflow-x: auto; overflow-y: hidden; overscroll-behavior-x: none; scrollbar-width: none; }
 .topbar .tabs > .tabs-scroll::-webkit-scrollbar { display: none; }
 .layout-tray .view-layout-switcher { flex-wrap: nowrap; }
 .layout-tray:not([data-open]):not([data-closing]) { display: none; }
@@ -161,7 +162,7 @@
      stay above the bar too. Boards and documents run to the bottom of the screen; their controls at
      the bottom (the phone board dock, the minimap, the word count) sit above the bar, except on the
      expanded board, which covers it. */
-  .main.project-main:not([data-layout-view="board"], [data-layout-view="drawing"], [data-layout-view="documents"], [data-layout-view="table"], [data-layout-view="kanban"], [data-layout-view="timeline"], [data-layout-view="tree"]) > :is(#view-content, .help-page) { padding-bottom: calc(var(--tabbar-clearance) + 6px); }
+  .main.project-main:not([data-layout-view="board"], [data-layout-view="drawing"], [data-layout-view="documents"], [data-layout-view="table"], [data-layout-view="kanban"], [data-layout-view="timeline"], [data-layout-view="tree"], [data-layout-view="calendar"]) > :is(#view-content, .help-page) { padding-bottom: calc(var(--tabbar-clearance) + 6px); }
   .main.project-main:is([data-layout-view="board"], [data-layout-view="drawing"], [data-layout-view="documents"]) > #view-content { padding-bottom: 0; }
   .main.project-main .canvas:not(.board-expanded), .main.project-main .documents-workspace { border-bottom: 0; border-end-start-radius: 0; border-end-end-radius: 0; }
   .canvas:not(.board-expanded) { --board-bottom-clear: var(--tabbar-clearance); }
@@ -174,6 +175,10 @@
   .main.project-main > #view-content > :is(.table-scroll, .tree-wrapper, .kanban-swimlanes),
   .main.project-main > #view-content > .task-timeline > .timeline-scroll,
   .main.project-main > #view-content > .kanban > .kanban-column { padding-bottom: var(--tabbar-clearance); }
+  /* Calendar's layouts run under the bar the same way: the scroller ends with room to lift the last week, row or hour clear of it. */
+  .main.project-main > #view-content[data-layout-view="calendar"] > :is(.calendar-agenda, .calendar-scroll:not(:has(.calendar-hourly, .week-board))),
+  .main.project-main > #view-content[data-layout-view="calendar"] .calendar-hours-scroll,
+  .main.project-main > #view-content[data-layout-view="calendar"] .week-board { padding-bottom: var(--tabbar-clearance); box-sizing: border-box; }
   .topbar .tabs { position: fixed; inset: auto 12px calc(8px + env(safe-area-inset-bottom)); z-index: 10; display: flex; gap: 2px; padding: 4px; border: 1px solid var(--line); border-radius: 16px; background: var(--surface); box-shadow: 0 6px 20px rgb(0 0 0 / 0.12); }
   .topbar .tabs .view-tab-group { flex: 1 1 0; min-width: 0; padding: 0; margin: 0; }
   .topbar .tabs .view-tab-group::after { display: none; }
@@ -186,7 +191,7 @@
      outside the scroller, so it doesn't clip them. */
   /* Search is as wide as a tab: the scroller grows by its number of tabs and buttons, Search by one,
      and the scroller's own 2px gaps come on top. */
-  .topbar .tabs > .tabs-scroll { display: flex; flex: var(--bar-items, 5) 1 calc((var(--bar-items, 5) - 1) * 2px); min-width: 0; gap: 2px; overflow-x: auto; scrollbar-width: none; overscroll-behavior-x: contain; }
+  .topbar .tabs > .tabs-scroll { display: flex; flex: var(--bar-items, 5) 1 calc((var(--bar-items, 5) - 1) * 2px); min-width: 0; gap: 2px; overflow-x: auto; scrollbar-width: none; overscroll-behavior-x: none; }
   .topbar .tabs > .tabs-scroll::-webkit-scrollbar { display: none; }
   .topbar .tabs .bar-buttons { display: contents; }
   .topbar .tabs :is(.view-tab-group, .bar-button) { flex: 1 0 var(--control-height); }
@@ -202,7 +207,7 @@
     transform-origin: 50% 100%; opacity: 0; transform: translateY(8px) scale(0.97); visibility: hidden;
     transition: opacity 160ms ease, transform 160ms ease, visibility 0s 160ms;
   }
-  .bar-tray { max-height: min(60dvh, 480px); padding: 8px 12px; overflow-y: auto; overscroll-behavior: contain; }
+  .bar-tray { max-height: min(60dvh, 480px); padding: 8px 12px; overflow-y: auto; overscroll-behavior: none; }
   .bar-tray-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 8px; }
   .bar-tray[data-open] { opacity: 1; transform: none; visibility: visible; transition: opacity 160ms ease, transform 220ms cubic-bezier(0.2, 0.9, 0.3, 1.15); }
   .layout-tray[data-open] { opacity: 1; transform: none; visibility: visible; transition: opacity 160ms ease, transform 220ms cubic-bezier(0.2, 0.9, 0.3, 1.15); }
@@ -306,6 +311,7 @@
   max-width: calc(100vw - 32px);
   max-height: min(540px, calc(100dvh - 160px));
   overflow: auto;
+  overscroll-behavior: none;
   display: flex;
   flex-direction: column;
   gap: 0;
@@ -856,6 +862,7 @@ html.table-viewport-view body {
 .task-picker-list {
   max-height: 50dvh;
   overflow: auto;
+  overscroll-behavior: none;
 }
 .task-picker-list .board-pick {
   display: flex;
@@ -922,7 +929,7 @@ html.table-viewport-view body {
 .sidebar .phone-drawer-utilities .button > span { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .sidebar .phone-drawer-utilities .button > .icon { flex-shrink: 0; }
 @media (max-width: 780px) {
-  .sidebar { overflow-y: auto; overscroll-behavior: contain; padding: 8px 12px 16px; }
+  .sidebar { overflow-y: auto; overscroll-behavior: none; padding: 8px 12px 16px; }
   .sidebar .brand { padding: 4px 8px 8px; }
 }
 @media (max-width: 600px) {
@@ -1052,7 +1059,7 @@ html.table-viewport-view body {
   width: max-content;
   overflow-x: auto;
   overflow-y: hidden;
-  overscroll-behavior-x: contain;
+  overscroll-behavior-x: none;
   scrollbar-width: none;
 }
 .active-filters::-webkit-scrollbar { display: none; }

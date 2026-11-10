@@ -42,6 +42,7 @@ summary:focus-visible,
 }
 .sidebar {
   overflow: auto;
+  overscroll-behavior: none;
 }
 .advanced-filters,
 .canvas-extra-tools {
@@ -87,6 +88,7 @@ summary:focus-visible,
 }
 .tabs {
   overflow-x: auto;
+  overscroll-behavior-x: none;
   flex-shrink: 0;
 }
 .tab {
@@ -251,6 +253,7 @@ summary:focus-visible,
   font-size: 12px;
   max-height: 280px;
   overflow: auto;
+  overscroll-behavior: none;
   background: #f4f6ef;
   padding: 10px;
 }
@@ -393,7 +396,7 @@ summary:focus-visible,
   }
   .search-dialog > .dialog-body { display: flex; flex-direction: column; flex: 1; min-height: 0; overflow: hidden; }
   .search-dialog-field { flex: none; margin-bottom: 12px; }
-  .search-dialog-results { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; }
+  .search-dialog-results { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: none; }
 }
 /* Phones search from a compact sheet at the bottom, like Obsidian: the results above and the field
    last, kept above the on-screen keyboard (features.js sets --search-bottom and --search-height
@@ -408,7 +411,7 @@ summary:focus-visible,
   }
   .search-dialog > .dialog-foot { display: none; }
   .search-dialog > .dialog-body { display: flex; flex-direction: column-reverse; gap: 4px; min-height: 0; padding: 6px; overflow: hidden; }
-  .search-dialog-results { min-height: 0; overflow-y: auto; overscroll-behavior: contain; }
+  .search-dialog-results { min-height: 0; overflow-y: auto; overscroll-behavior: none; }
   .search-dialog-field { flex: none; }
   .search-dialog-field input { border-radius: 999px; padding-inline: 16px 48px; }
   .search-dialog .field-hint { margin: 8px 12px 2px; font-size: var(--type-meta); }
@@ -542,6 +545,7 @@ summary:focus-visible,
 }
 .markdown-preview pre {
   overflow: auto;
+  overscroll-behavior: none;
 }
 .unresolved-link {
   color: #6a617a;
@@ -690,6 +694,7 @@ summary:focus-visible,
 .content:has(.calendar),
 .content:has(.timeline) {
   overflow-x: auto;
+  overscroll-behavior-x: none;
 }
 .dialog-foot {
   flex-wrap: wrap;
@@ -743,6 +748,7 @@ summary:focus-visible,
   .canvas-extra-tools {
     max-height: 150px;
     overflow: auto;
+    overscroll-behavior: none;
   }
   .hero-right .button {
     white-space: nowrap;

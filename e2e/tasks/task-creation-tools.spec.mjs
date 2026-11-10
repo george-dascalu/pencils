@@ -50,7 +50,7 @@ test("the date picker is Monday-first with distinct weekends, stays on screen an
   await openList(page);
   await newCard(page);
   await page.locator("#task-form [name=due]").fill("2026-10-16");
-  await page.locator(".date-field:has([name=due]) [data-date-picker]").click();
+  await page.locator("[data-date-range] [data-date-picker]:visible").click();
   await expect(page.locator(".date-picker-popover thead th").first()).toHaveText("Mon");
   await expect(page.locator(".date-picker-popover th.weekend")).toHaveCount(2);
   await expect(page.locator(".date-picker-popover td.weekend")).toHaveCount(12);
@@ -65,9 +65,10 @@ test("the date picker is Monday-first with distinct weekends, stays on screen an
     expect(box.x >= 0 && box.x + box.width <= width + 1, `${width}px`).toBe(true);
   }
   await page.setViewportSize({ width: 1440, height: 1000 });
+  await page.locator("[data-date-phase=due]").click();
   await page.locator('td [data-date-value="2026-10-19"]').click();
   await expect(page.locator("[name=due]")).toHaveValue("2026-10-19");
-  await page.locator(".date-field:has([name=due]) [data-date-picker]").click();
+  await page.locator("[data-date-range] [data-date-picker]:visible").click();
   await page.locator(".date-picker-popover").waitFor();
   await page.keyboard.press("Escape");
   await expect(page.locator(".date-picker-popover")).toHaveCount(0);

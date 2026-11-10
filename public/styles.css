@@ -938,6 +938,7 @@ button svg {
 }
 .table-scroll {
   overflow: auto;
+  overscroll-behavior: none;
   border: 1px solid var(--line);
   border-radius: calc(8px * var(--style-roundness, 1));
   background: white;
@@ -1018,6 +1019,7 @@ button svg {
   display: flex;
   gap: var(--kanban-gap);
   overflow-x: auto;
+  overscroll-behavior-x: none;
   /* Holds its cards' absolutely placed parts (screen-reader labels), which would otherwise
      widen the page past the columns it scrolls and let a phone pan sideways. */
   position: relative;
@@ -1217,7 +1219,7 @@ button svg {
   width: min(540px, calc(100vw - 32px));
   max-height: 90dvh;
   /* Scrolling a dialog never carries on into the page behind it (phones). */
-  overscroll-behavior: contain;
+  overscroll-behavior: none;
   background: #fcfcf8;
   color: var(--ink);
   box-shadow: 0 25px 100px #1e382730;
@@ -1289,6 +1291,7 @@ button svg {
 .task-dialog .dialog-body {
   max-height: calc(90dvh - 150px);
   overflow-y: auto;
+  overscroll-behavior-y: none;
 }
 .title-input {
   font-family: Georgia, serif !important;
@@ -1452,6 +1455,7 @@ input[type="search"]:not(.search input) {
   border-radius: calc(7px * var(--style-roundness, 1));
   padding: 15px;
   overflow: auto;
+  overscroll-behavior: none;
   font-size: 11px;
 }
 .settings-copy kbd {
@@ -1648,7 +1652,7 @@ input[type="search"]:not(.search input) {
   margin: -6px -6px 0;
   padding: 6px 6px 0;
   overflow-y: auto;
-  overscroll-behavior: contain;
+  overscroll-behavior: none;
   touch-action: pan-y;
   scrollbar-width: thin;
 }
@@ -1920,6 +1924,7 @@ input[type="search"]:not(.search input) {
     padding: 0 18px;
     gap: 23px;
     overflow: auto;
+    overscroll-behavior: none;
   }
   .tab {
     font-size: 11px;
@@ -2259,6 +2264,7 @@ input[type="search"]:not(.search input) {
   min-height: 150px;
   max-height: 330px;
   overflow: auto;
+  overscroll-behavior: none;
   padding: 12px;
   border: 1px solid var(--line);
   border-radius: calc(7px * var(--style-roundness, 1));
@@ -2533,6 +2539,7 @@ input[type="search"]:not(.search input) {
   padding: 16px;
   max-height: calc(90dvh - 120px);
   overflow: auto;
+  overscroll-behavior: none;
   background: var(--surface, #fff);
   font-size: var(--type-small);
 }
@@ -2554,6 +2561,7 @@ input[type="search"]:not(.search input) {
   overflow-wrap: anywhere;
   max-height: 260px;
   overflow: auto;
+  overscroll-behavior: none;
   font-size: 11px;
 }
 @media (max-width: 780px) {
@@ -2727,6 +2735,7 @@ input[type="search"]:not(.search input) {
   min-height: 0;
   max-height: none;
   overflow-y: auto;
+  overscroll-behavior-y: none;
 }
 
 .workflow-editor {
@@ -2788,7 +2797,7 @@ input[type="search"]:not(.search input) {
 .workflow-status-main,
 .workflow-status-head {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 80px 64px 96px;
+  grid-template-columns: minmax(0, 1fr) 80px 64px calc(3 * var(--control-height) + 6px);
   align-items: center;
   gap: 8px;
 }
@@ -2834,10 +2843,6 @@ input[type="search"]:not(.search input) {
   display: flex;
   gap: 3px;
   margin-left: auto;
-}
-.workflow-row-actions .icon-button {
-  width: 30px;
-  height: 30px;
 }
 .workflow-moves {
   margin: 4px 8px;

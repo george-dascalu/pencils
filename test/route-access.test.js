@@ -15,7 +15,7 @@ const PUBLIC = new Set(["/api/health", "/api/session", "/api/miro-callback", "/a
 const ADMIN = new Set(["/api/accounts", "/api/backups", "/api/backups/:backup", "/api/backups/:backup/:action", "/api/backups/upload", "/api/trash"]);
 // Signed-in routes that serve each person's own data or filter by access, so a member of no
 // organisation still gets an answer (checked for private content below).
-const OWN = new Set(["/api/bar", "/api/hotkeys", "/api/search-items", "/api/bookmarks", "/api/home", "/api/home/embed", "/api/visits", "/api/personal", "/api/overview", "/api/search", "/api/changes", "/api/events", "/api/organisations", "/api/projects", "/api/capture-tokens", "/api/capture-tokens/:project", "/api/diagnostics", "/api/demo", "/api/history"]);
+const OWN = new Set(["/api/bar", "/api/hotkeys", "/api/search-items", "/api/bookmarks", "/api/home", "/api/home/embed", "/api/visits", "/api/personal", "/api/overview", "/api/search", "/api/changes", "/api/events", "/api/organisations", "/api/projects", "/api/capture-tokens", "/api/capture-tokens/:project", "/api/diagnostics", "/api/demo", "/api/history", "/api/project-key"]);
 
 async function registered() {
   const source = await fs.readFile(new URL("../server/http/application.ts", import.meta.url), "utf8");
@@ -61,7 +61,8 @@ test("every route refuses people without access, and the route list has no unche
     headers: { ...(who ? { Cookie: cookies[who] } : {}), ...(method === "GET" ? {} : { "Content-Type": "application/json" }) },
     body: method === "GET" ? undefined : JSON.stringify(body),
   });
-  const fill = (route, project) => route.replace(":project", project).replace(":organisation", hidden.id).replace(":provider", "jira").replace(/:(id|action|backup)/g, "x");
+  // The key check asks about the hidden project's key, which mustn't name it (F0.22-93).
+  const fill = (route, project) => route.replace(/^\/api\/project-key$/, `/api/project-key?key=${secret.key}`).replace(":project", project).replace(":organisation", hidden.id).replace(":provider", "jira").replace(/:(id|action|backup)/g, "x");
 
   const { routes, methods } = await registered();
   assert.deepEqual(methods, ["GET", "POST", "PATCH", "DELETE"]);

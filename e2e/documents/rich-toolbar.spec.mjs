@@ -33,10 +33,14 @@ test("the description, comments and documents share one formatting control set",
   const description = await names(page, ".task-description");
   expect(description.slice(0, FORMATTING.length), `description toolbar: ${description.join(", ")}`).toEqual(FORMATTING);
   expect(await styleItems(page, ".task-description")).toEqual(STYLES);
-  expect(description.includes("Markdown") && description.includes("Preview"), "rich surfaces keep the Markdown and Preview modes").toBe(true);
+  // The description keeps Markdown but has no Preview (F0.22-96); comments keep both modes.
+  expect(description, "the description keeps its Markdown mode").toContain("Markdown");
+  expect(description, "the description has no Preview").not.toContain("Preview");
   await page.locator('[data-feature="task-comments"]').click();
   await page.locator(".comment-rich-tools").waitFor();
-  expect((await names(page, ".comment-rich-tools")).slice(0, FORMATTING.length), "comment composer").toEqual(FORMATTING);
+  const comment = await names(page, ".comment-rich-tools");
+  expect(comment.slice(0, FORMATTING.length), "comment composer").toEqual(FORMATTING);
+  expect(comment.includes("Markdown") && comment.includes("Preview"), "comments keep the Markdown and Preview modes").toBe(true);
   await page.keyboard.press("Escape"); await page.keyboard.press("Escape");
   await open(page, "documents", ".documents-workspace");
   await openList(page);

@@ -94,6 +94,7 @@
 }
 .table-columns-panel #column-list {
   overflow: auto;
+  overscroll-behavior: none;
   min-height: 0;
   max-height: 320px;
 }
@@ -146,6 +147,7 @@
   max-width: calc(100vw - 32px);
   max-height: min(65dvh, 620px);
   overflow: auto;
+  overscroll-behavior: none;
   z-index: 40;
 }
 .table-menu-panel p,
@@ -194,6 +196,7 @@
 .table-filter-values {
   max-height: 170px;
   overflow: auto;
+  overscroll-behavior: none;
   display: grid;
   gap: 4px;
 }

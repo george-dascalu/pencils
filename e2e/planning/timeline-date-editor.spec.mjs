@@ -87,12 +87,13 @@ test("Set dates opens a compact nonmodal popup that autosaves, uses the shared c
   await expect(panel(page).locator("strong,.task-dates-title,[type=submit],footer")).toHaveCount(0);
   expect(await panel(page).locator("header button").evaluateAll((buttons) => buttons.map((b) => b.textContent.trim() || b.getAttribute("aria-label")))).toEqual(["All day", "Clear dates", "Close date editor"]);
   await start(page).fill("2026-10-19");
-  await panel(page).getByRole("button", { name: "Choose Start date", exact: true }).click();
-  await page.locator('#shared-date-picker table [data-date-value="2026-10-20"]').click();
-  await expect(start(page)).toHaveValue("2026-10-20");
   await due(page).fill("2026-10-23");
-  await panel(page).getByRole("button", { name: "Choose Due date", exact: true }).click();
+  // One calendar chooses both: the first day is the start, the second the due date.
+  await panel(page).getByRole("button", { name: "Choose start and due dates", exact: true }).click();
+  await page.locator('#shared-date-picker table [data-date-value="2026-10-20"]').click();
   await page.locator('#shared-date-picker table [data-date-value="2026-10-26"]').click();
+  await expect(start(page)).toHaveValue("2026-10-20");
+  await expect(due(page)).toHaveValue("2026-10-26");
   await savedDates(seed, work.id, { start: "2026-10-20", due: "2026-10-26" });
   await expect(panel(page), "Autosave keeps the popup open").toHaveCount(1);
   await start(page).fill("2026-10-27");
@@ -184,7 +185,7 @@ for (const width of [1500, 390]) {
         await trigger(page, seed.work).tap();
         await panel(page).waitFor();
         await within(page, panel(page));
-        await panel(page).getByRole("button", { name: "Choose Due date", exact: true }).tap();
+        await panel(page).getByRole("button", { name: "Choose start and due dates", exact: true }).tap();
         await page.locator("#shared-date-picker").waitFor();
         await within(page, page.locator("#shared-date-picker"));
         await page.keyboard.press("Escape");

@@ -97,3 +97,72 @@ test('a failed inline save keeps its title and retries without duplicating a cre
   await expect(target.locator('form')).toHaveCount(0);
   expect(await saved('Retry inline')).toHaveLength(1);
 });
+
+onDevices(['ipad', 'phone'], () => {
+  test('tapping a cell plus opens the editor and a tap on Create saves', async ({ page, device }) => {
+    await open(page);
+    const target = cell(page, 'afternoon');
+    await target.getByRole('button', { name: /Add card/ }).tap();
+    const form = target.locator('form'), input = form.getByRole('textbox', { name: 'Card title', exact: true });
+    await expect(form).toBeVisible();
+    // Proving the editor doesn't close by itself once the board settles: nothing observable changes.
+    await page.waitForTimeout(1500);
+    await expect(form).toBeVisible();
+    await input.tap();
+    await expect(input).toBeFocused();
+    const title = `Tapped ${device}`;
+    await input.fill(title);
+    await form.getByRole('button', { name: 'Create card', exact: true }).tap();
+    await expect(target.locator('.week-board-title', { hasText: title })).toBeVisible();
+    expect((await saved(title)).length).toBe(1);
+    await target.getByRole('button', { name: /Add card/ }).tap();
+    await expect(form).toBeVisible();
+    await form.getByRole('button', { name: 'Cancel new card', exact: true }).tap();
+    await expect(form).toHaveCount(0);
+  });
+});
+
+onDevices(['ipad', 'phone'], () => {
+  test('opening the editor keeps a scrolled Week board where it was', async ({ page }) => {
+    await open(page);
+    const scroller = page.locator('.week-board-scroll');
+    const target = page.locator('.week-board-cell[data-week-board-value="evening"]').nth(3);
+    await target.scrollIntoViewIfNeeded();
+    await page.locator('.week-board-day-head').nth(2).evaluate(el => el.scrollIntoView({ inline: 'start', block: 'nearest' }));
+    await expect.poll(() => scroller.evaluate(el => el.scrollLeft)).toBeGreaterThan(0);
+    // Scroll snap settles with no event to wait on.
+    await page.waitForTimeout(500);
+    const before = await scroller.evaluate(el => [el.scrollLeft, el.scrollTop]);
+    await target.getByRole('button', { name: /Add card/ }).tap();
+    const form = target.locator('form');
+    await expect(form).toBeVisible();
+    // Proving the redraw doesn't move the board afterwards: nothing observable changes.
+    await page.waitForTimeout(500);
+    expect(await scroller.evaluate(el => el.scrollLeft)).toBe(before[0]);
+    await expect(form).toBeInViewport();
+    const field = form.getByRole('textbox', { name: 'Card title', exact: true });
+    await field.fill('Scrolled create');
+    await field.press('Enter');
+    await expect(target.locator('.week-board-title', { hasText: 'Scrolled create' })).toBeVisible();
+    // A new card changes its row's height, so only the sideways position is exact.
+    await expect.poll(() => scroller.evaluate(el => el.scrollLeft)).toBe(before[0]);
+  });
+});
+
+// Review finding (F0.22-100): a week, layout or project that was never scrolled starts at its left
+// edge, and a later redraw of it mustn't bring back the last week's position.
+onDevices(['ipad', 'phone'], () => {
+  test('another week starts at its left edge and stays there across redraws', async ({ page }) => {
+    await open(page);
+    const scroller = page.locator('.week-board-scroll');
+    await page.locator('.week-board-day-head').nth(3).evaluate(el => el.scrollIntoView({ inline: 'start', block: 'nearest' }));
+    await expect.poll(() => scroller.evaluate(el => el.scrollLeft)).toBeGreaterThan(0);
+    await page.locator('[data-feature="month-next"]').click();
+    await expect.poll(() => scroller.evaluate(el => el.scrollLeft)).toBe(0);
+    // Opening a cell's editor redraws the board.
+    const target = page.locator('.week-board-cell[data-week-board-value="morning"]').first();
+    await target.getByRole('button', { name: /Add card/ }).tap();
+    await expect(target.locator('form')).toBeVisible();
+    await expect.poll(() => scroller.evaluate(el => el.scrollLeft), 'no position from the last week').toBe(0);
+  });
+});

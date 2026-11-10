@@ -45,7 +45,7 @@ export function calendarView(ctx) {
   // stylesheet keeps it to 70% of the view.
   const BACKLOG_MIN = 96, BACKLOG_MAX = 1200;
   const backlogFit = value => Math.round(Math.max(BACKLOG_MIN, Math.min(BACKLOG_MAX, Number(value) || 200)));
-  let backlogHeight = backlogFit(storage.get("week-board-backlog-height", 200)), drawnFor = null;
+  let backlogHeight = backlogFit(storage.get("week-board-backlog-height", 200)), drawnFor = null, gridScroll = { key: "", x: 0, y: 0 };
   // Shown, or closed to a floating button at the bottom left, kept in this browser.
   let backlogOpen = storage.get("week-board-backlog-open", true) !== false;
   const backlogToggle = () => `<button type="button" class="icon-button week-board-backlog-toggle" data-backlog-toggle aria-controls="week-board-backlog-board" aria-expanded="${backlogOpen}" aria-label="${backlogOpen ? "Hide" : "Show"} Unscheduled" title="${backlogOpen ? "Hide" : "Show"} Unscheduled">${icon("chevron")}<span class="week-board-dock-icon" aria-hidden="true">${icon("clock")}</span></button>`;
@@ -179,6 +179,14 @@ export function calendarView(ctx) {
     shownTasks = tasks;
     // The Unscheduled board stays scrolled where it was when the project's board is drawn again.
     const board = drawnFor === state.project?.id && document.querySelector(".week-board-backlog-board"), scrolled = board && [board.scrollLeft, board.scrollTop];
+    // The Week board's grid stays scrolled where it was across redraws of the same week (drops, inline creation, saves).
+    const gridKey = `${state.project?.id}|${mode}|${anchor}`, gridAt = gridKey === gridScroll.key ? [gridScroll.x, gridScroll.y] : null;
+    // Another week, layout or project starts at its edge, so a later redraw keeps that, not the last one's place.
+    gridScroll = gridAt ? { ...gridScroll, key: gridKey } : { key: mode === "board" ? gridKey : "", x: 0, y: 0 };
+    if (gridAt) {
+      const restore = () => { const el = document.querySelector(".week-board-scroll"); if (el) [el.scrollLeft, el.scrollTop] = gridAt; };
+      queueMicrotask(restore); requestAnimationFrame(restore); // the second catches a grid inserted after the first
+    }
     drawnFor = state.project?.id;
     if (scrolled) queueMicrotask(() => { const el = document.querySelector(".week-board-backlog-board"); if (el) [el.scrollLeft, el.scrollTop] = scrolled; });
     // The Agenda shows its own range; Week and Month follow the anchor date.
@@ -202,7 +210,8 @@ export function calendarView(ctx) {
     if (mode === "month" && (recenter || !span)) span = monthSpan(anchor);
     recenter = false;
     const weeks = calendarWeeks(mode === "week" ? tasks.filter(t => !timedCard(t)) : tasks, anchor, weekends, mode === "week" ? { week: true } : mode === "month" ? span : undefined);
-    if (mode === "month") queueMicrotask(() => { if (!(keep && scrollToWeek(keep))) scrollToWeek({ week: pinned || monthStartWeek() }); });
+    // The opening scroll is no fling, so weeks it needs load at once.
+    if (mode === "month") queueMicrotask(() => { if (!(keep && scrollToWeek(keep))) scrollToWeek({ week: pinned || monthStartWeek() }); const sc = monthScroll(); if (sc) monthExtend(sc); });
     const month = `<div class="calendar-scroll" role="region" aria-label="Calendar ${mode === "week" ? "week" : "month"}" tabindex="0"><div class="calendar ${mode === "week" ? "calendar-hourly" : ""}" data-layout="${mode}" data-weekends="${weekends}" style="--calendar-columns:${weekends ? 7 : 5}"><div class="calendar-weekdays">${["Mon", "Tue", "Wed", "Thu", "Fri", ...(weekends ? ["Sat", "Sun"] : [])].map(day => `<strong>${day}</strong>`).join("")}</div>${mode === "week" ? '<div class="calendar-all-day-scroll">' : ""}${weeks.map(weekHTML).join("")}${mode === "week" ? "</div>" : ""}${mode === "week" ? calendarHoursHTML(tasks, weeks[0].days, ctx) : ""}</div></div>`;
     zoom.restore();
     const extra = mode === "week" ? zoom.controls() : mode === "agenda" ? rangePicker(range, heading) : mode === "board" ? iconSelect("week-board-rows", "Group by", rowField(), ROW_FIELDS.filter(([key]) => rowOn(key))) : "";
@@ -516,6 +525,8 @@ export function calendarView(ctx) {
     }, 350);
   }, true);
   // Only while a card is lifted, so every other touch scroll stays passive.
+  // The grid is rebuilt by every redraw and sometimes cleared first, so its position is tracked as it scrolls.
+  document.addEventListener("scroll", e => { if (e.target.matches?.(".week-board-scroll")) Object.assign(gridScroll, { key: `${state.project?.id}|${mode}|${anchor}`, x: e.target.scrollLeft, y: e.target.scrollTop }); }, true);
   const holdScroll = e => { if (e.cancelable) e.preventDefault(); };
   document.addEventListener("pointermove", e => {
     const d = drag; if (!d || d.pointer !== e.pointerId) return;
@@ -704,10 +715,14 @@ export function calendarView(ctx) {
         heading.querySelector("input").setAttribute("aria-label", text);
       }
     }
-    if (drag?.active) return;
+  }
+  // Weeks are added once a scroll settles: iOS ignores a scroll position set while a fling runs, so
+  // weeks added mid-fling moved the view by months, again and again (F0.22-99).
+  function monthExtend(sc) {
+    if (mode !== "month" || state.view !== "calendar" || !sc.isConnected || drag?.active || touching) return;
     const room = sc.clientHeight * .75, before = sc.scrollTop < room, after = sc.scrollHeight - sc.scrollTop - sc.clientHeight < room;
     if (!before && !after) return;
-    // Only the new weeks are added (the far end is dropped past 60 weeks), so focus and momentum stay.
+    // Only the new weeks are added (the far end is dropped past 60 weeks), so focus stays.
     const keep = monthPosition(), more = 13, cap = 60, old = span, oldFirst = dateKey(weekStart(old.from)), oldLast = shiftDate(oldFirst, (old.count - 1) * 7);
     span = before ? { from: shiftDate(oldFirst, -more * 7), count: old.count + more } : { ...old, count: old.count + more };
     if (span.count > cap) span = before ? { ...span, count: cap } : { from: shiftDate(dateKey(weekStart(span.from)), (span.count - cap) * 7), count: cap };
@@ -728,9 +743,22 @@ export function calendarView(ctx) {
     if (!day || mode === "agenda" || state.view !== "calendar" || !document.querySelector('.period-field [data-date-picker][aria-expanded="true"]')) return;
     setTimeout(() => { setAnchor(day, mode === "month" ? dateKey(weekStart(day)) : null); renderView(true); });
   }, true);
+  // A finger resting mid-scroll is no settled scroll either: weeks wait for it to lift.
+  let settled = 0, touching = false;
+  const settle = sc => { clearTimeout(settled); settled = setTimeout(() => monthExtend(sc), 150); };
   document.addEventListener("scroll", e => {
-    if (e.target instanceof Element && e.target.matches(".calendar-scroll") && !scrollFrame) scrollFrame = requestAnimationFrame(() => monthScrolled(e.target));
+    if (!(e.target instanceof Element && e.target.matches(".calendar-scroll"))) return;
+    if (!scrollFrame) scrollFrame = requestAnimationFrame(() => monthScrolled(e.target));
+    settle(e.target);
   }, true);
+  document.addEventListener("touchstart", e => { if (e.target instanceof Element && e.target.closest(".calendar-scroll")) touching = true; }, { capture: true, passive: true });
+  for (const type of ["touchend", "touchcancel"])
+    document.addEventListener(type, e => {
+      if (!touching || e.touches?.length) return;
+      touching = false;
+      const sc = monthScroll();
+      if (sc) settle(sc);
+    }, { capture: true, passive: true });
   function click(action, el) {
     if (action === "month-prev" || action === "month-next") {
       const direction = action === "month-prev" ? -1 : 1;

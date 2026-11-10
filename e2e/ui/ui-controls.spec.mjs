@@ -109,6 +109,9 @@ onDevices(["desktop", "phone"], (device) => test("a tap or click on a date field
   const value = `${String(prior.getFullYear()).padStart(4, "0")}-${String(prior.getMonth() + 1).padStart(2, "0")}-${String(prior.getDate()).padStart(2, "0")}`;
   const day = page.locator(`#shared-date-picker table [data-date-value="${value}"]`);
   await day.click();
+  // The start and due pair shares one calendar: after the start it waits for the due date.
+  await expect(page.locator('#shared-date-picker [data-date-phase="due"]')).toHaveAttribute("aria-pressed", "true");
+  await page.mouse.click(2, 2); // a click outside keeps the staged start
   await expect(page.locator("#shared-date-picker")).toHaveCount(0);
   await expect(date).toHaveValue(value);
   if (device === "desktop") {

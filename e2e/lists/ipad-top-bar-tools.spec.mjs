@@ -106,3 +106,16 @@ onDevices(["phone"], () => test("phones keep Planning's star out of the top bar,
   await expect(page.locator(".bookmark-button"), device).toHaveCount(1);
   await expect(page.locator(".topbar .breadcrumb .bookmark-button"), device).toHaveCount(0);
 }));
+
+// Owner request, 10 November 2026: no empty band above the tree. Its Subtasks row holds one
+// button, so it is only as tall as that control, not a 73px heading band.
+onDevices(["ipad", "ipad-portrait"], () => test("the Subtasks row above the tree is only as tall as its button", async ({ page, device }) => {
+  const parent = await app.store.createTask(app.project.id, { title: "Parent card" });
+  await app.store.createTask(app.project.id, { title: "Child card", parent: parent.id });
+  await page.goto(`${app.base}/#project/${app.project.id}/tree`);
+  const row = page.locator('#view-content[data-layout-view="tree"] > .section-title');
+  await expect(row.locator('[data-action="tree-cycle"]')).toBeVisible();
+  const [box, button] = [await row.boundingBox(), await row.locator("button").boundingBox()];
+  const margin = await row.evaluate((el) => parseFloat(getComputedStyle(el).marginBottom));
+  expect(box.height + margin, `${device}: row height`).toBeLessThanOrEqual(button.height + 8);
+}));

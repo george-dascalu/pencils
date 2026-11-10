@@ -119,7 +119,7 @@
 .document-explorer h2 .count { margin-left: 5px; }
 .document-explorer .document-search { margin: 0 12px 10px; min-width: 0; }
 .document-search input { width: 100%; min-width: 0; }
-.document-explorer > nav { flex: 1; min-height: 0; overflow: auto; padding: 0 6px; }
+.document-explorer > nav { flex: 1; min-height: 0; overflow: auto; overscroll-behavior: none; padding: 0 6px; }
 :is(#document-list, #board-list) { margin: 0; padding: 0; list-style: none; }
 .document-link {
   display: flex;
@@ -156,7 +156,7 @@
   .documents-workspace[data-split="rows"] { grid-template-rows: repeat(2, minmax(0, 1fr)); }
   .documents-workspace[data-split="rows"] > .document-pane { border-left: 0; border-top: 1px solid var(--line); }
 }
-.main.project-main .topbar .breadcrumb > .document-tabs { display: flex; flex-shrink: 1; gap: 2px; min-width: 0; max-width: 50vw; overflow-x: auto; scrollbar-width: thin; }
+.main.project-main .topbar .breadcrumb > .document-tabs { display: flex; flex-shrink: 1; gap: 2px; min-width: 0; max-width: 50vw; overflow-x: auto; overscroll-behavior-x: none; scrollbar-width: thin; }
 @media (max-width: 600px), (max-height: 500px) {
   .main.project-main .topbar .breadcrumb > .document-tabs, .document-pane { display: none; }
 }
@@ -236,7 +236,7 @@
   flex-shrink: 0;
 }
 .document-rich-tools .inline-error:empty { display: none; }
-.document-writing { flex: 1; min-height: 0; overflow: auto; padding: 24px clamp(16px, 4vw, 64px); }
+.document-writing { flex: 1; min-height: 0; overflow: auto; overscroll-behavior: none; padding: 24px clamp(16px, 4vw, 64px); }
 .document-writing > :is(.inline-rich, .markdown-source, .inline-preview) {
   width: 100%;
   max-width: 900px;
@@ -282,7 +282,7 @@
 .document-codemirror { height: 100%; min-width: 0; }
 .document-codemirror[hidden], .document-reading[hidden] { display: none; }
 .document-codemirror .cm-editor { height: 100%; color: var(--ink); background: var(--surface); font-size: var(--document-font-size); }
-.document-codemirror .cm-scroller { overflow: auto; font-family: inherit; line-height: var(--document-line-height); }
+.document-codemirror .cm-scroller { overflow: auto; overscroll-behavior: none; font-family: inherit; line-height: var(--document-line-height); }
 .document-codemirror .cm-content, .document-page {
   padding: var(--document-page-top) var(--document-page-padding) 100px;
   min-width: 0;
@@ -406,7 +406,7 @@
 @media (pointer: coarse) {
   .document-checkbox-target { width: var(--control-height); min-height: var(--control-height); }
 }
-.document-reading { display: flex; flex-direction: column; height: 100%; overflow: auto; padding: 0 0 0 var(--document-gutter-width); }
+.document-reading { display: flex; flex-direction: column; height: 100%; overflow: auto; overscroll-behavior: none; padding: 0 0 0 var(--document-gutter-width); }
 .document-reading .document-page { flex: 1 0 auto; }
 .document-prose {
   --document-block-gap: calc(var(--document-font-size, 15px) * var(--document-line-height, 1.75));
@@ -420,7 +420,7 @@
 .document-prose hr { border: 0; border-top: 1px solid var(--line); margin-block: var(--document-block-gap); }
 .document-prose ul, .document-prose ol { padding-inline-start: 24px; }
 .document-prose a { color: var(--green); text-decoration: underline; cursor: pointer; }
-.document-prose pre { padding: 12px 16px; background: var(--surface-soft); border: 1px solid var(--line); border-radius: calc(6px * var(--style-roundness, 1)); overflow-x: auto; white-space: pre; }
+.document-prose pre { padding: 12px 16px; background: var(--surface-soft); border: 1px solid var(--line); border-radius: calc(6px * var(--style-roundness, 1)); overflow-x: auto; overscroll-behavior-x: none; white-space: pre; }
 .document-prose code { font-family: var(--font-mono, monospace); font-size: .9em; }
 .document-prose :not(pre) > code { background: var(--surface-soft); padding: 2px 4px; border-radius: 3px; }
 .document-prose table { border-collapse: collapse; width: 100%; margin: 12px 0; }
@@ -485,11 +485,11 @@ span.document-list-callout { display: block; }
 .document-embed-picker .field { margin-bottom: var(--popover-padding); }
 .document-embed-reference { display: block; color: var(--muted); font-size: var(--type-small); overflow-wrap: anywhere; }
 .document-table-embed { max-width: 100%; }
-.document-embed-tabs { display: flex; overflow-x: auto; gap: 0; border-bottom: 1px solid var(--line); }
+.document-embed-tabs { display: flex; overflow-x: auto; overscroll-behavior-x: none; gap: 0; border-bottom: 1px solid var(--line); }
 .document-embed-tabs[hidden] { display: none; }
 .document-embed-tabs > button { flex: none; min-height: var(--control-height); padding-inline: 10px; border: 0; border-radius: 0; background: transparent; color: var(--muted); }
 .document-embed-tabs > button[aria-selected="true"] { color: var(--ink); background: var(--surface-soft); }
-.document-embed-grid-scroll { max-height: 320px; overflow: auto; overscroll-behavior: contain; max-width: 100%; border: 1px solid var(--line); border-radius: var(--field-radius); }
+.document-embed-grid-scroll { max-height: 320px; overflow: auto; overscroll-behavior: none; max-width: 100%; border: 1px solid var(--line); border-radius: var(--field-radius); }
 .document-embed-grid-scroll:focus-visible { outline: 1px solid var(--muted); outline-offset: 1px; }
 .document-prose .document-embed-grid { margin: 0; table-layout: fixed; border-collapse: separate; border-spacing: 0; font-size: var(--type-body); line-height: 1.4; }
 .document-embed-grid :is(td,th) { box-sizing: border-box; padding: 4px 8px; border: 0; border-inline-end: 1px solid var(--line); border-bottom: 1px solid var(--line); }
@@ -497,11 +497,11 @@ span.document-list-callout { display: block; }
 .document-embed-grid th { font-size: var(--type-small); font-weight: 500; color: var(--muted); background: var(--surface-soft); overflow: hidden; }
 .document-embed-cell-text { display: block; overflow: hidden; white-space: pre-wrap; overflow-wrap: anywhere; }
 .document-embed-grid .document-embed-spacer { padding: 0; border: 0; line-height: 0; }
-.document-math { overflow-x: auto; padding: 12px 0; }
+.document-math { overflow-x: auto; overscroll-behavior-x: none; padding: 12px 0; }
 .document-prose [data-document-diagram] { background: #fff; color: #263c34; padding: 12px; }
 .document-prose [data-document-diagram][data-rendered="error"] { background: var(--surface-soft); color: var(--ink); }
 .document-prose [data-document-diagram] svg { max-width: 100%; height: auto; }
-.document-panel { padding: 12px; color: var(--ink); overflow: auto; }
+.document-panel { padding: 12px; color: var(--ink); overflow: auto; overscroll-behavior: none; }
 .document-panel > header { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 8px; }
 .document-panel h2 { font-size: 15px; margin: 0; }
 .document-panel h3 { font-size: 13px; margin: 16px 8px 4px; }
@@ -536,12 +536,12 @@ span.document-list-callout { display: block; }
 .document-empty h2 { font-size: 20px; margin-bottom: 0; }
 .document-empty p { color: var(--muted); }
 .document-empty > .button { margin-top: 20px; }
-.document-version-list { max-height: 220px; overflow: auto; }
+.document-version-list { max-height: 220px; overflow: auto; overscroll-behavior: none; }
 .document-version-list .document-panel-item { justify-content: space-between; gap: 12px; }
 .document-version-list time { color: var(--muted); font-size: 12px; }
 .document-version-list [aria-pressed="true"] { background: var(--surface-soft); }
 .document-version-detail { border-top: 1px solid var(--line); margin-top: 12px; }
-.document-version-detail article { max-height: 260px; overflow: auto; padding: 12px 4px; }
+.document-version-detail article { max-height: 260px; overflow: auto; overscroll-behavior: none; padding: 12px 4px; }
 @media (max-width: 780px) {
   .document-heading { gap: 4px; padding: 8px; }
   #document-form .document-rich-tools { padding: 4px; }
@@ -607,10 +607,10 @@ span.document-list-callout { display: block; }
 
 /* Tables fit the page width by default. "Scroll" keeps whole words, gives each
    column room and scrolls the table sideways inside its block. */
-.document-table-scroll { overflow-x: auto; max-width: 100%; overscroll-behavior-x: contain; }
+.document-table-scroll { overflow-x: auto; max-width: 100%; overscroll-behavior-x: none; }
 .document-prose .document-table-scroll > table { width: auto; min-width: 100%; }
 .document-prose .document-table-scroll :is(th, td) { min-width: 6em; overflow-wrap: normal; word-break: normal; white-space: nowrap; }
-.document-table-viewport { max-width: 100%; overflow-x: auto; overscroll-behavior-x: contain; }
+.document-table-viewport { max-width: 100%; overflow-x: auto; overscroll-behavior-x: none; }
 .document-table-find-current { background: var(--highlight, #f5dc77) !important; box-shadow: inset 0 0 0 1px var(--green); }
 .document-table-surface { position: relative; box-sizing: border-box; width: 100%; padding: var(--control-height); }
 .document-table-surface[data-table-layout="scroll"] { width: max-content; min-width: 100%; }

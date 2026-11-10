@@ -60,6 +60,7 @@ export const TIERS = [
     "test/local-auth.test.js", // local admin only for local socket peers
     "test/model.test.js", // server validation of settings, task fields
     "test/organisations.test.js", // org init, migration preserves files
+    "test/project-key.test.js", // a taken project key names its project only to people who can open it
     "test/personal-space.test.js", // personal space opens only for owner
     "test/record-index.test.js", // search index per project and deltas
     "test/release.test.js", // release versions, rollover, changelog checks
@@ -342,12 +343,14 @@ export const TIERS = [
     "e2e/tasks/task-colors.spec.mjs", // see field colours on cards
     "e2e/tasks/task-creation-tools.spec.mjs", // create cards with subtasks and set dates
     "e2e/tasks/task-editor-adapt.spec.mjs", // open card editor at narrow widths
+    "e2e/tasks/date-range-picker.spec.mjs", // one calendar sets start and due dates
     "e2e/tasks/task-pane-info.spec.mjs", // dock comments/history panes
     "e2e/tasks/task-relationships.spec.mjs", // add and remove parent/child/blocks links
     "e2e/tasks/task-children.spec.mjs", // create a new child card from a card
     "e2e/ui/button-sweep.spec.mjs", // click through screens and buttons
     "e2e/ui/control-sizing.spec.mjs", // tap and click controls
     "e2e/ui/no-overscroll.spec.mjs", // no view scrolls past its edges on iPad and phones
+    "e2e/ui/no-overscroll-spaces.spec.mjs", // no dialog, panel or settings page scrolls past its edges or sideways
     "e2e/ui/font-scale.spec.mjs", // read card popup and Table
     "e2e/ui/layout-priorities.spec.mjs", // view layout of navigation vs context
     "e2e/ui/ui-controls-polish.spec.mjs", // focus rings, states, icons, sliders, toasts and empty states look right (split by tier)
@@ -356,6 +359,7 @@ export const TIERS = [
   // Tier 3: peripheral
   [
     "test/agenda-range.test.js", // Agenda quick ranges and paging
+    "test/date-range.test.js", // start/due picks in the shared calendar
     "test/automations.test.js", // automation previews and rules
     "test/board-scale.test.js", // 10,000-object board validation and marquee
     "test/browser-coverage.test.js", // coverage report maths
@@ -401,6 +405,7 @@ export const TIERS = [
     "test/task-boards.test.js", // card board links persist
     "test/task-types.test.js", // Activity type migration
     "test/teams-capacity.test.js", // team members, short names
+    "test/overscroll.test.js", // every scrolling rule stops at its edges (no rubber band)
     "test/themes.test.js", // theme colour tokens readable
     "test/tiers.test.js", // every test file has one tier
     "test/ui-audit-model.test.js", // contrast and static asset caching

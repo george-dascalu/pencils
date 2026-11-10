@@ -676,6 +676,6 @@ body {
 .drawing-gallery header > button {margin:4px;}
 .canvas-gallery-actions {display:flex;flex-wrap:wrap;gap:8px;}
 
-.board-menu-panel {overflow:auto;z-index:140}
+.board-menu-panel {overflow:auto; overscroll-behavior: none;z-index:140}
 
 .agenda-row button,.timeline-row button {color:var(--ink)}

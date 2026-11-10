@@ -98,9 +98,8 @@ test("the rich description edits bullets and Markdown, previews, fits every widt
   await source(page).fill("## Description\n\n**Rich text** with [[Reference]]\n\n- One\n- Two");
   await page.locator('#task-form [data-rich-mode="rich"]').click();
   await expect(rich(page).locator("strong")).toBeVisible();
-  await page.locator("#task-form [data-rich-preview]").click();
-  await expect(page.locator("#markdown-preview h2")).toBeVisible();
-  await page.locator("#task-form [data-rich-preview]").click();
+  await expect(page.locator("#task-form .task-description").getByRole("button", { name: "Preview" }), "no reading-mode toggle").toHaveCount(0);
+  await expect(page.locator("#task-form [data-rich-preview]")).toHaveCount(0);
   // The open editor is resized through desktop, tablet and phone widths.
   for (const width of [1400, 768, 390]) {
     await page.setViewportSize({ width, height: 1000 });

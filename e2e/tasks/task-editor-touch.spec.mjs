@@ -94,9 +94,7 @@ const reviewTests = (device, phone) => {
       await expect(form(page).locator('[name="body"]')).toBeVisible();
       await expect(form(page).locator('[name="body"]')).not.toBeFocused();
       await tools.getByRole("button", { name: "Rich text", exact: true }).tap();
-      await tools.getByRole("button", { name: "Preview", exact: true }).tap();
-      await form(page).locator(".inline-preview:not(.hidden)").waitFor();
-      await tools.getByRole("button", { name: "Back to edit", exact: true }).tap();
+      await expect(tools.getByRole("button", { name: "Preview", exact: true })).toHaveCount(0);
       // Phones keep card-sized fields on a second line instead of shrinking them (0.19.10).
       for (const row of await relationships(page).locator(".task-relationship-row").all()) expect((await row.boundingBox()).height, "Relationship uses at most a title line and a field line").toBeLessThanOrEqual(110);
     });

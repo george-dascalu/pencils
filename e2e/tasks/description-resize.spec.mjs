@@ -1,6 +1,7 @@
 // Owner request (F0.21-99, 4 November 2026): the card editor's description can be resized by
 // dragging a grip at its bottom edge or with Arrow Up/Down; the height is kept for the next card.
-import { test, expect, useApp } from "../fixtures.mjs";
+import { test, expect, onDevices, useApp } from "../fixtures.mjs";
+import { newCard } from "../helpers/new-card.mjs";
 
 const app = useApp(async (store) => {
   const project = await store.createProject({ title: "Resize", key: "RS" });
@@ -71,4 +72,48 @@ test("a large stored height still leaves the grip on screen on a phone", async (
   const g = await grip(page).boundingBox();
   expect(g.y + g.height).toBeLessThanOrEqual(844);
   expect(await height(page)).toBeLessThanOrEqual(844 * 0.7 + 1);
+});
+
+// Owner request (F0.22-95): a toolbar button expands the description to the editor's full height.
+onDevices(["desktop", "phone"], () => {
+  test("the Expand description button fills the editor, keeps typed text and Escape restores it first", async ({ page }) => {
+    await page.goto(`${app.base}/#project/${app.project.id}/list`);
+    await open(page, app.b);
+    const button = page.getByRole("button", { name: "Expand description" });
+    await expect(button).toHaveAttribute("aria-pressed", "false");
+    const box = await button.boundingBox();
+    expect(box.height).toBeGreaterThanOrEqual(await page.evaluate(() => parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--control-height"))));
+    await editor(page).click();
+    await page.keyboard.type(" typed");
+    await button.click();
+    await expect(button).toHaveAttribute("aria-pressed", "true");
+    await expect(page.locator("#task-form [name=title]")).toBeHidden();
+    const viewport = page.viewportSize().height;
+    await expect.poll(async () => (await editor(page).boundingBox()).height).toBeGreaterThan(viewport * 0.6);
+    expect(await editor(page).evaluate((el) => getComputedStyle(el).overscrollBehaviorY)).toBe("none");
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+    await expect(editor(page)).toContainText("Short typed");
+    await page.keyboard.press("Escape");
+    await expect(page.locator("#task-form")).toHaveCount(1);
+    await expect(button).toHaveAttribute("aria-pressed", "false");
+    await expect(page.locator("#task-form [name=title]")).toBeVisible();
+    await expect(editor(page)).toContainText("Short typed");
+    await page.keyboard.press("Escape");
+    await expect(page.locator("#task-form")).toHaveCount(0);
+  });
+
+  test("while expanded the way back and Create card stay in view, with one accessible name", async ({ page }) => {
+    await page.goto(`${app.base}/#project/${app.project.id}/list`);
+    await newCard(page);
+    const button = page.locator("#task-form [data-description-expand]");
+    await button.click();
+    await expect(button).toHaveAttribute("aria-pressed", "true");
+    await expect(page.getByRole("button", { name: "Restore description" }), "one name, not a name and a state").toHaveCount(0);
+    await expect(button).toHaveAttribute("title", "Restore description");
+    // Scroll the toolbar to its start: the toggle must still be on screen.
+    await page.locator("#task-form .rich-toolbar").evaluate((el) => (el.scrollLeft = 0));
+    const inView = async (locator) => { const b = await locator.boundingBox(); const v = page.viewportSize(); return b && b.x >= 0 && b.y >= 0 && b.x + b.width <= v.width && b.y + b.height <= v.height; };
+    await expect.poll(() => inView(button)).toBe(true);
+    await expect.poll(() => inView(page.locator("#task-form button[type=submit]"))).toBe(true);
+  });
 });

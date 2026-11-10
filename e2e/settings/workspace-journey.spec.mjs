@@ -72,8 +72,6 @@ test("a new card saves its type, priority and parent, and its Markdown preview d
 
   await page.locator('#task-form [data-rich-mode="source"]').click();
   await page.locator('#task-form [name="body"]').fill("# Browser notes\n\n- [ ] Persist this task\n\n<script>window.__pwned=true</script>");
-  await page.locator("#task-form [data-rich-preview]").click();
-  await expect(page.locator("#markdown-preview h1")).toHaveText("Browser notes");
   expect(await page.evaluate(() => window.__pwned)).toBeUndefined();
   await page.locator('#task-form [type="submit"]').click();
   await page.locator("dialog").waitFor({ state: "detached" });
@@ -82,6 +80,12 @@ test("a new card saves its type, priority and parent, and its Markdown preview d
   expect(created.priority).toBe("urgent");
   expect(created.parent).toBe(epic.id);
   expect(created.tags).toEqual([]);
+  // Reopened, the saved description is rendered as HTML by the rich editor: nothing from the script reaches the page.
+  await page.locator(`[data-action="task-open"][data-id="${created.id}"]:visible`).first().click();
+  const rich = page.locator("#task-form .task-description .inline-rich");
+  await expect(rich.locator("h1")).toHaveText("Browser notes");
+  await expect(rich.locator("script, [onerror], [onload], [onclick]")).toHaveCount(0);
+  expect(await page.evaluate(() => window.__pwned)).toBeUndefined();
 });
 
 test("Table edits to a title and a status persist", async ({ page }) => {

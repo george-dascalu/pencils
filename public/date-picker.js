@@ -1,4 +1,5 @@
 import { positionPopover } from "./popover-position.js";
+import { pickRange, inRange } from "./date-range.js";
 // One Monday-first calendar for all date fields; retain native ISO values and validation.
 const key = (d) =>
   `${String(d.getFullYear()).padStart(4, "0")}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
@@ -11,39 +12,77 @@ const parse = (value) => {
   return key(date) === value ? date : null;
 };
 export function installDatePickers({ icon, esc }) {
-  let popup, input, trigger, month, focused;
-  const allowed = (value) =>
-    (!input.min || value >= input.min) && (!input.max || value <= input.max);
-  function close(focus = false) {
+  let popup, input, trigger, month, focused, pair; // pair: a start/due calendar, staged until it closes
+  // In a pair each phase honours its own input's limits; the editor's start.max = due and
+  // due.min = start links are left to the range rules, and a locked due caps the start.
+  function bounds() {
+    if (!pair) return { min: input.min, max: input.max };
+    const el = pair[pair.phase], other = pair[pair.phase === "start" ? "due" : "start"];
+    const max = [el.max !== other.value && el.max, pair.dueLocked && pair.phase === "start" && pair.due.value].filter(Boolean).sort()[0] || "";
+    return { min: el.min !== other.value ? el.min : "", max };
+  }
+  const allowed = (value) => {
+    const { min, max } = bounds();
+    return (!min || value >= min) && (!max || value <= max);
+  };
+  // The nearest day the active field accepts, so focus lands on an enabled one.
+  function clamp(date) {
+    const { min, max } = bounds();
+    if (min && key(date) < min) return parse(min) || date;
+    if (max && key(date) > max) return parse(max) || date;
+    return date;
+  }
+  function setPhase(phase) {
+    pair.phase = phase;
+    const date = clamp(parse(pair.sv[phase] || pair.sv.start || pair.sv.due) || new Date());
+    focused = key(date);
+    month = new Date(date);
+    month.setDate(1);
+  }
+  // Escape and a re-render discard staged picks (commit = false); a click outside keeps them.
+  function close(focus = false, commit = true) {
     if (!popup) return;
-    const button = trigger;
+    const button = trigger, done = pair;
+    pair = null;
     popup.remove();
     popup = null;
     button?.setAttribute("aria-expanded", "false");
     if (focus && button?.isConnected) button.focus({ preventScroll: true });
+    if (done && commit) commitPair(done);
+  }
+  // Both values land before the one event, so a form saves the range once.
+  function commitPair({ start, due, sv }) {
+    const changed = [start, due].filter((el) => el.value !== sv[el.name]);
+    for (const el of changed) el.value = sv[el.name];
+    for (const el of changed) {
+      el.dispatchEvent(new Event("input", { bubbles: true }));
+      el.dispatchEvent(new Event("change", { bubbles: true }));
+    }
   }
   function position() {
     if (!popup) return;
-    if (!input.isConnected) return close();
-    const r = input.closest(".date-field").getBoundingClientRect();
+    if (!input.isConnected) return close(false, false);
+    const r = (pair?.range || input.closest(".date-field")).getBoundingClientRect();
     positionPopover(popup, r, { width: popup.getBoundingClientRect().width || 320, maxHeight: innerHeight - 16, gap: 6 });
   }
   function paint(focus = true) {
     const start = new Date(month);
     start.setDate(1 - ((start.getDay() + 6) % 7));
     const today = key(new Date());
-    popup.innerHTML = `<div class="date-picker-head"><button type="button" class="icon-button" data-date-month="-1" aria-label="Previous month" title="Previous month"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg></button><label class="sr-only" for="date-picker-month">Calendar month</label><select id="date-picker-month">${Array.from({ length: 12 }, (_, i) => `<option value="${i}" ${i === month.getMonth() ? "selected" : ""}>${new Date(2026, i, 1).toLocaleDateString(undefined, { month: "long" })}</option>`).join("")}</select><input aria-label="Calendar year" type="number" min="1" max="9999" value="${month.getFullYear()}"><button type="button" class="icon-button" data-date-month="1" aria-label="Next month" title="Next month"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 18l6-6-6-6"/></svg></button></div><table role="grid" aria-label="${esc(month.toLocaleDateString(undefined, { month: "long", year: "numeric" }))}"><thead><tr>${["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map((d, i) => `<th scope="col" class="${i > 4 ? "weekend" : ""}">${d}</th>`).join("")}</tr></thead><tbody>${Array.from(
+    const phases = pair ? `<div class="date-range-phases" role="group" aria-label="Date to choose">${["start", "due"].map((n) => `<button type="button" data-date-phase="${n}" aria-pressed="${pair.phase === n}" ${n === "due" && pair.dueLocked ? "disabled" : ""}><span>${n === "start" ? "Start" : "Due"}</span><strong>${pair.sv[n] ? esc(parse(pair.sv[n]).toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" })) : "No date"}</strong></button>`).join("")}</div>` : "";
+    const picked = (value) => (pair ? value === pair.sv.start || value === pair.sv.due : input.value === value);
+    popup.innerHTML = `${phases}<div class="date-picker-head"><button type="button" class="icon-button" data-date-month="-1" aria-label="Previous month" title="Previous month"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg></button><label class="sr-only" for="date-picker-month">Calendar month</label><select id="date-picker-month">${Array.from({ length: 12 }, (_, i) => `<option value="${i}" ${i === month.getMonth() ? "selected" : ""}>${new Date(2026, i, 1).toLocaleDateString(undefined, { month: "long" })}</option>`).join("")}</select><input aria-label="Calendar year" type="number" min="1" max="9999" value="${month.getFullYear()}"><button type="button" class="icon-button" data-date-month="1" aria-label="Next month" title="Next month"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 18l6-6-6-6"/></svg></button></div><table role="grid" aria-label="${esc(month.toLocaleDateString(undefined, { month: "long", year: "numeric" }))}"><thead><tr>${["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map((d, i) => `<th scope="col" class="${i > 4 ? "weekend" : ""}">${d}</th>`).join("")}</tr></thead><tbody>${Array.from(
       { length: 6 },
       (_, row) =>
         `<tr>${Array.from({ length: 7 }, (_, col) => {
           const d = new Date(start);
           d.setDate(d.getDate() + row * 7 + col);
           const value = key(d);
-          return `<td class="${col > 4 ? "weekend" : ""} ${d.getMonth() !== month.getMonth() ? "outside-month" : ""}" aria-selected="${input.value === value}"><button type="button" data-date-value="${value}" ${allowed(value) && d.getFullYear() > 0 && d.getFullYear() <= 9999 ? "" : "disabled"} tabindex="${value === focused ? 0 : -1}" ${today === value ? 'aria-current="date"' : ""} aria-label="${esc(d.toLocaleDateString(undefined, { weekday: "long", day: "numeric", month: "long", year: "numeric" }))}">${d.getDate()}</button></td>`;
+          return `<td class="${col > 4 ? "weekend" : ""} ${d.getMonth() !== month.getMonth() ? "outside-month" : ""} ${pair && inRange(value, pair.sv.start, pair.sv.due) ? "in-range" : ""}" aria-selected="${picked(value)}"><button type="button" data-date-value="${value}" ${allowed(value) && d.getFullYear() > 0 && d.getFullYear() <= 9999 ? "" : "disabled"} tabindex="${value === focused ? 0 : -1}" ${today === value ? 'aria-current="date"' : ""} aria-label="${esc(d.toLocaleDateString(undefined, { weekday: "long", day: "numeric", month: "long", year: "numeric" }))}">${d.getDate()}</button></td>`;
         }).join("")}</tr>`,
     ).join(
       "",
-    )}</tbody></table><div class="date-picker-foot"><button type="button" data-date-clear ${input.required ? "disabled" : ""}>Clear</button><button type="button" data-date-value="${today}" ${allowed(today) ? "" : "disabled"}>Today</button></div>`;
+    )}</tbody></table><div class="date-picker-foot"><button type="button" data-date-clear ${(pair ? pair[pair.phase] : input).required ? "disabled" : ""}>Clear</button><button type="button" data-date-value="${today}" ${allowed(today) ? "" : "disabled"}>Today</button></div>`;
     position();
     if (focus)
       popup
@@ -60,6 +99,17 @@ export function installDatePickers({ icon, esc }) {
   }
   function choose(value) {
     if (value && !allowed(value)) return;
+    if (pair) {
+      if (!value) pair.sv[pair.phase] = "";
+      else {
+        const r = pickRange(pair.sv, pair.phase, value, pair.dueLocked);
+        Object.assign(pair.sv, { start: r.start, due: r.due });
+        pair.phase = r.phase;
+        if (r.done) return close(true);
+      }
+      focused = value || focused;
+      return paint();
+    }
     const target = input;
     close(true);
     if (target.value === value) return;
@@ -68,15 +118,29 @@ export function installDatePickers({ icon, esc }) {
     target.dispatchEvent(new Event("change", { bubbles: true }));
   }
   // A pointer opens the calendar without taking focus: a mouse leaves it in the field to type.
-  function open(target, focus = true) {
+  function open(target, focus = true, viaTrigger = false) {
+    const range = target.closest("[data-date-range]");
+    const [start, due] = range ? ["start", "due"].map((n) => range.querySelector(`input[name="${n}"]`)) : [];
+    // A card field that is turned off hides its input: the visible one then has its own calendar.
+    const shown = (el) => el.getClientRects().length > 0;
+    const ends = start && due && shown(start) && shown(due) ? { range, start, due, dueLocked: due.disabled || due.readOnly } : null;
     if (target.disabled || target.readOnly) return;
+    if (popup && pair && pair.range === range && ends) {
+      const phase = viaTrigger ? "" : target === due ? "due" : "start";
+      if (!phase || phase === pair.phase) return close(true);
+      setPhase(phase);
+      return paint(focus);
+    }
     if (popup && input === target) return close(true);
     close();
     input = target;
-    trigger = input.parentElement.querySelector("[data-date-picker]");
-    let date = parse(input.value) || new Date();
-    if (input.min && key(date) < input.min) date = parse(input.min) || date;
-    if (input.max && key(date) > input.max) date = parse(input.max) || date;
+    if (ends) {
+      pair = { ...ends, phase: viaTrigger || target === start ? "start" : "due", sv: { start: start.value, due: due.value } };
+      if (pair.dueLocked) pair.phase = "start";
+    }
+    trigger = (pair ? range : input.parentElement).querySelector("[data-date-picker]");
+    let date = parse(pair ? pair.sv[pair.phase] || pair.sv.start || pair.sv.due : input.value) || new Date();
+    date = clamp(date);
     focused = key(date);
     month = new Date(date);
     month.setDate(1);
@@ -85,7 +149,7 @@ export function installDatePickers({ icon, esc }) {
     popup.id = "shared-date-picker";
     popup.setAttribute("popover", "manual");
     popup.setAttribute("role", "dialog");
-    popup.setAttribute("aria-label", "Choose date");
+    popup.setAttribute("aria-label", pair ? "Choose start and due dates" : "Choose date");
     (input.closest("dialog,[popover]") || document.body).append(popup);
     trigger.setAttribute("aria-expanded", "true");
     trigger.setAttribute("aria-controls", popup.id);
@@ -94,7 +158,11 @@ export function installDatePickers({ icon, esc }) {
     popup.addEventListener("click", (e) => {
       const b = e.target.closest("button");
       if (!b) return;
-      if (b.hasAttribute("data-date-clear")) choose("");
+      if (b.dataset.datePhase) {
+        setPhase(b.dataset.datePhase);
+        paint(false);
+        popup.querySelector(`[data-date-phase="${pair.phase}"]`).focus({ preventScroll: true });
+      } else if (b.hasAttribute("data-date-clear")) choose("");
       else if (b.dataset.dateValue) choose(b.dataset.dateValue);
       else if (b.dataset.dateMonth) moveMonth(+b.dataset.dateMonth);
     });
@@ -121,13 +189,15 @@ export function installDatePickers({ icon, esc }) {
       date.before(wrap);
       wrap.append(date);
       if (focused) date.focus({ preventScroll: true });
+      // A start/due pair shares one calendar button, on its start field; the due field's own
+      // button shows only when Start is turned off (date-picker.css).
       const b = document.createElement("button");
       b.type = "button";
       b.dataset.datePicker = "";
       b.className = "date-picker-trigger";
       b.setAttribute(
         "aria-label",
-        `Choose ${date.getAttribute("aria-label") || date.closest("label")?.textContent.trim() || "date"}`,
+        date.closest("[data-date-range]") && date.name === "start" ? "Choose start and due dates" : `Choose ${date.getAttribute("aria-label") || date.closest("label")?.textContent.trim() || "date"}`,
       );
       b.setAttribute("aria-haspopup", "dialog");
       b.setAttribute("aria-expanded", "false");
@@ -142,7 +212,7 @@ export function installDatePickers({ icon, esc }) {
       if (b) {
         e.preventDefault();
         e.stopPropagation();
-        open(b.parentElement.querySelector("input"));
+        open(b.parentElement.querySelector("input"), true, true);
       }
     },
     true,
@@ -233,7 +303,7 @@ export function installDatePickers({ icon, esc }) {
       if (e.key === "Escape") {
         e.preventDefault();
         e.stopImmediatePropagation();
-        close(true);
+        close(true, false);
         return;
       }
       if (
@@ -279,7 +349,7 @@ export function installDatePickers({ icon, esc }) {
     for (const record of records)
       for (const node of record.addedNodes)
         if (node.nodeType === 1) enhance(node);
-    if (popup && !input.isConnected) close();
+    if (popup && !input.isConnected) close(false, false);
   }).observe(document.body, { childList: true, subtree: true });
   enhance();
 }

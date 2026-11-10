@@ -6,6 +6,7 @@ const app = useApp(async store => {
   const organisation = await store.createOrganisation({ title: "Studio", people: [{ id: "alice", name: "Alice" }, { id: "bob", name: "Bob" }], teams: [{ id: "design", name: "Design", members: ["alice"] }] });
   const other = await store.createOrganisation({ title: "Other studio" });
   const project = await store.createProject({ title: "Existing project", organisation: organisation.id });
+  await store.createProject({ title: "Recipes", key: "REC", organisation: organisation.id });
   return { organisation, other, project };
 });
 async function open(page) {
@@ -136,4 +137,65 @@ onDevices(["desktop", "phone"], () => test("a project draft restores every step 
   await expect(form.locator("[data-workflow-rules]")).toBeChecked();
   expect((await app.store.list(app.organisation.id)).projects).toHaveLength(before);
   if (page.viewportSize().width < 600) expect(await page.evaluate(() => document.activeElement.matches("input, textarea"))).toBe(false);
+}));
+
+// Owner report (F0.22-92): on iPad the Workflow step's status rows ran past the dialog, cutting off
+// Remove, and removing a status jumped the step back to its top.
+onDevices(["ipad", "desktop"], () => test("the Workflow step's status rows fit the dialog and removing one keeps your place", async ({ page }) => {
+  const form = await open(page);
+  await form.locator('[name="title"]').fill("Fitting project");
+  await next(form); await next(form);
+  await expect(form).toHaveAttribute("data-step", "3");
+  await form.locator("[data-status-details] > summary").click();
+  const body = form.locator(".dialog-body");
+  expect(await body.evaluate((el) => el.scrollWidth - el.clientWidth), "no sideways scroll").toBeLessThanOrEqual(1);
+  const edge = await body.evaluate((el) => el.getBoundingClientRect().right);
+  for (const remove of await form.locator("[data-status-remove]").all()) expect((await remove.boundingBox()).x + (await remove.boundingBox()).width).toBeLessThanOrEqual(edge);
+  await form.locator('[data-workflow-status="review"] [data-status-remove]').scrollIntoViewIfNeeded();
+  const before = await body.evaluate((el) => el.scrollTop);
+  expect(before, "the status list is scrolled into view").toBeGreaterThan(100);
+  await form.locator('[data-workflow-status="review"] [data-status-remove]').click();
+  await expect(form.locator('[data-workflow-status="review"]')).toHaveCount(0);
+  expect(Math.abs((await body.evaluate((el) => el.scrollTop)) - before), "the step stays where it was").toBeLessThan(60);
+}));
+
+// Owner requests (F0.22-93, F0.22-94): the key is checked as you type, a taken key names the project using it,
+// and Details is compact, with the people listed down the right of the name, key and organisation.
+onDevices(["desktop", "ipad"], () => test("the project key is checked as you type and names the project using it", async ({ page }) => {
+  const form = await open(page), key = form.locator('[name="key"]'), status = form.locator("[data-key-status]");
+  await form.locator('[name="title"]').fill("Cooking");
+  await key.fill("rec");
+  await expect(status).toHaveText("REC is used by Recipes.");
+  await expect(key).toHaveAttribute("aria-invalid", "true");
+  await next(form);
+  await expect(form).toHaveAttribute("data-step", "1");
+  await expect(form.locator(".form-error[role=alert]")).toHaveText("REC is used by Recipes.");
+  await key.fill("1x");
+  await expect(status).toHaveText("Use 2–12 letters or digits, starting with a letter.");
+  await key.fill("CKG");
+  await expect(status).toBeEmpty();
+  await expect(key).not.toHaveAttribute("aria-invalid", "true");
+  await next(form);
+  await expect(form).toHaveAttribute("data-step", "2");
+}));
+
+onDevices(["desktop", "ipad", "phone"], () => test("Details is compact, with the people listed beside the name, key and organisation", async ({ page, device }) => {
+  const form = await open(page);
+  const box = (selector) => form.locator(selector).boundingBox();
+  const [name, key, organisation, people] = await Promise.all(['[name="title"]', '[name="key"]', '[name="organisation"]', ".project-people-settings"].map(box));
+  const names = await form.locator(".project-people-settings .team-members label").evaluateAll((labels) => labels.map((l) => l.getBoundingClientRect()).map((r) => ({ x: Math.round(r.x), y: Math.round(r.y) })));
+  expect(names.length).toBe(2);
+  expect(names[1].x, "one person per line").toBe(names[0].x);
+  expect(names[1].y).toBeGreaterThan(names[0].y);
+  expect(key.y, "key under the name").toBeGreaterThan(name.y);
+  expect(organisation.y, "organisation under the key").toBeGreaterThan(key.y);
+  if (device === "phone") expect(people.y, "people under the organisation on phones").toBeGreaterThan(organisation.y);
+  else {
+    expect(people.x, "people to the right").toBeGreaterThanOrEqual(Math.max(name.x + name.width, organisation.x + organisation.width));
+    expect(Math.abs(people.y - name.y), "people start level with the name").toBeLessThan(40);
+  }
+  expect((await box("#project-step-1")).width, "the step's heading is for screen readers only").toBeLessThanOrEqual(1);
+  await expect(form.getByText("Leave blank to generate", { exact: false })).toBeHidden();
+  await expect(form.getByText("The people who can be assigned", { exact: false })).toBeHidden();
+  if (device !== "phone") expect(await form.locator(".dialog-body").evaluate((el) => el.scrollHeight - el.clientHeight), "Details fits without scrolling").toBeLessThanOrEqual(1);
 }));

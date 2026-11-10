@@ -135,7 +135,13 @@ onDevices(['desktop', 'ipad', 'phone'], () => {
       expect(r.height).toBe(height * 2.5);
       await expect(cancel).toHaveCSS('border-top-right-radius', '100%');
       for (const corner of ['top-left', 'bottom-right', 'bottom-left']) await expect(cancel).toHaveCSS(`border-${corner}-radius`, '0px');
-      expect(r.y + r.height).toBeCloseTo(await page.locator('#view-content').evaluate(el => el.getBoundingClientRect().bottom - parseFloat(getComputedStyle(el).paddingBottom) + 6), 0);
+      // Wide screens put it in the real corner; phones keep it above their full-width bottom bar.
+      if (device === 'phone') expect(r.y + r.height).toBeCloseTo(await page.evaluate(() => document.querySelector('.topbar .tabs').getBoundingClientRect().top - 8), 0);
+      else expect(r.y + r.height).toBe(await page.evaluate(() => innerHeight));
+      // Translucent glass: a partly transparent fill with a blur behind it, and the × still readable.
+      const glass = await cancel.evaluate(el => { const s = getComputedStyle(el); return { bg: s.backgroundColor, blur: s.backdropFilter || s.webkitBackdropFilter, ink: s.color }; });
+      expect(Number(glass.bg.match(/[\d.]+/g)[3] ?? 1)).toBeLessThan(.9);
+      expect(glass.blur).toContain('blur');
       expect(await cancel.evaluate(el => {
         const r = el.getBoundingClientRect(), icon = el.querySelector('svg').getBoundingClientRect();
         return icon.left >= r.left && icon.top >= r.top && icon.right <= r.right && icon.bottom <= r.bottom && el.contains(document.elementFromPoint(icon.x + icon.width / 2, icon.y + icon.height / 2));
@@ -145,6 +151,7 @@ onDevices(['desktop', 'ipad', 'phone'], () => {
       expect(await cancel.evaluate(el => { const r = el.getBoundingClientRect(); return el.contains(document.elementFromPoint(r.left + r.width * .6, r.top + r.height * .25)); })).toBe(true);
       await page.mouse.move(r.x + r.width / 2, r.y + r.height / 2, { steps: 6 });
       await expect(cancel).toHaveClass(/calendar-drop-target/);
+      expect(await cancel.evaluate(el => getComputedStyle(el).backgroundColor)).not.toBe(glass.bg);
       await expect(page.locator('.calendar-drag-preview')).toContainText('Release to cancel');
       await expect(cards(page)).toBeHidden();
       await expect(dock(page).locator('[data-backlog-toggle]')).toBeHidden();
@@ -302,4 +309,24 @@ test('the dock animates opening and closing and respects reduced motion', { tag:
   await expect(cards(page)).toBeHidden();
   await dock(page).getByRole('button', { name: 'Show Unscheduled', exact: true }).click();
   await expect(dock(page)).toHaveCSS('animation-name', 'none');
+});
+
+// Owner request: every Calendar layout runs under the floating bottom bar, like List and Tree.
+onDevices(['ipad', 'phone'], () => {
+  for (const [mode, scroller] of [['month', '.calendar-scroll'], ['week', '.calendar-hours-scroll'], ['agenda', '.calendar-agenda'], ['board', '.week-board']]) {
+    test(`the ${mode} layout runs to the bottom of the screen under the bar and scrolls clear of it`, { tag: '@gate' }, async ({ page }) => {
+      await page.clock.setFixedTime(new Date('2026-11-04T12:00:00'));
+      await page.goto(`${app.base}/#project/${app.project.id}/calendar`);
+      await (await reveal(page.locator('#calendar-mode'))).selectOption(mode);
+      if (await page.locator('.mobile-view-options[open]').count()) await page.getByRole('button', { name: 'Close view options', exact: true }).click();
+      const area = page.locator(scroller).first();
+      await expect(area).toBeVisible();
+      const m = await page.evaluate(sel => {
+        const el = document.querySelector(sel), bar = document.querySelector('.topbar .tabs').getBoundingClientRect(), r = el.getBoundingClientRect();
+        return { bottom: Math.round(r.bottom), height: innerHeight, pad: parseFloat(getComputedStyle(el).paddingBottom), barTop: bar.top, overscroll: getComputedStyle(el).overscrollBehaviorY };
+      }, scroller);
+      expect(m.bottom).toBeGreaterThanOrEqual(m.height - 6);
+      expect(m.pad).toBeGreaterThanOrEqual(m.height - m.barTop);
+    });
+  }
 });

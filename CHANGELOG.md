@@ -2,6 +2,26 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.23.2 — 2026-11-10
+
+### Added
+- Feature F0.22-95: A button in the card description's toolbar expands the description to the editor's full height as a document-style page; the same button, or Escape, returns to the normal layout.
+
+### Changed
+- Feature F0.23-2: Calendar's Month, Week, Week board and Agenda layouts run under the floating bottom bar on iPad and phones, like List and Tree.
+- Feature F0.23-1: The Week board's drag Cancel target sits in the screen's bottom-left corner on iPad and is translucent glass.
+- Feature F0.22-92: No dialog, panel, menu, settings page or view can be dragged past its edges on iPad and phones any more, and the New project dialog's Workflow step and Settings → Workflow no longer scroll sideways: the status rows fit, with Remove in view.
+- Feature F0.22-93: The project key is checked as you type, in the New project dialog. A key that's taken names the project using it (or its earlier key, or that it's in Trash), here and when creating or renaming; a project you can't open stays unnamed.
+- Feature F0.22-94: The New project dialog's Details step is compact: the people are listed down the right of the name, key, organisation and description, with the step heading and long hints gone.
+- Feature F0.22-96: The card description's toolbar no longer has a Preview (reading-mode) button; the Markdown button stays.
+- Feature F0.22-98: Start and due dates share one calendar: pick the start, then the due date, in a single open, in the card editor and the List and Tree row date editor.
+
+### Fixed
+- Feature F0.22-100: The Week board keeps its scroll position when you create, drop or save cards, so the plus in a cell opens its editor in view on iPad and phones instead of seeming to do nothing.
+- Feature F0.22-92: Removing a status in the New project dialog or Settings → Workflow keeps your place instead of jumping to the top (iPad and Safari).
+- Feature F0.22-97: The tall empty band above the Tree and nested List on iPad is gone: the Subtasks row is only as tall as its button.
+- Feature F0.22-99: Scrolling Month with a finger on iPad and phones no longer skips months and years: more weeks load once the scroll settles.
+
 ## 0.22.91 — 2026-11-10
 
 ### Changed

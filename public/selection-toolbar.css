@@ -31,7 +31,7 @@
   min-width: 0;
   max-width: 100%;
   overflow-x: auto;
-  overscroll-behavior-x: contain;
+  overscroll-behavior-x: none;
   /* A thin bar shows mouse users the row scrolls; touch screens hide it like the phone board dock. */
   scrollbar-width: thin;
   touch-action: pan-x;
@@ -144,6 +144,7 @@
   color: var(--ink);
   box-shadow: var(--shadow-popover);
   overflow-y: auto;
+  overscroll-behavior-y: none;
   z-index: 2;
 }
 .selection-menu:not([open]) > .selection-popover {
@@ -492,7 +493,7 @@
 .rich-toolbar-shell { position: relative; display: flex; align-items: stretch; flex: 1 1 auto; min-width: 0; max-width: 100%; }
 .rich-toolbar {
   display: flex; align-items: center; flex-wrap: nowrap; gap: 0; flex: 1 1 auto; min-width: 0;
-  overflow-x: auto; overflow-y: hidden; overscroll-behavior-x: contain;
+  overflow-x: auto; overflow-y: hidden; overscroll-behavior-x: none;
   scroll-snap-type: x mandatory; scrollbar-width: none; -webkit-overflow-scrolling: touch;
 }
 .rich-toolbar::-webkit-scrollbar { display: none; }

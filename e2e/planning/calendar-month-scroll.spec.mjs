@@ -81,6 +81,52 @@ test.describe('tall window', () => {
   });
 });
 
+onDevices(['desktop', 'ipad', 'phone'], () => {
+  // Owner report (F0.22-99): on iPad a fling through Month skipped months and years: weeks added above
+  // mid-fling moved the view, as iOS ignores a scroll position set while a fling runs. Weeks are added
+  // once the scroll settles, with the week in view kept where it was.
+  test('weeks are added only once a scroll settles, keeping the week in view', async ({ page }) => {
+    await open(page);
+    const scroll = page.locator('.calendar-scroll'), count = () => page.locator('.calendar-week').count();
+    const initial = await count();
+    // A fling towards the top: a scroll every frame, ending near the first week.
+    const during = await scroll.evaluate(async el => {
+      const counts = [];
+      for (let i = 0; i < 12; i++) {
+        el.scrollTop = Math.max(0, el.scrollTop - Math.max(40, el.scrollTop / 4));
+        await new Promise(r => requestAnimationFrame(r));
+        counts.push(el.querySelectorAll('.calendar-week').length);
+      }
+      return counts;
+    });
+    expect(during.every(n => n === initial), 'no weeks added mid-fling').toBe(true);
+    const top = await scroll.evaluate(el => [...el.querySelectorAll('.calendar-week')].find(w => w.getBoundingClientRect().bottom > el.querySelector('.calendar-weekdays').getBoundingClientRect().bottom + 1).dataset.week);
+    const before = await weekTop(page, top);
+    await expect.poll(count, 'more weeks once it settles').toBeGreaterThan(initial);
+    await expect.poll(async () => Math.abs((await weekTop(page, top)) - before), 'the week in view stays put').toBeLessThanOrEqual(1);
+  });
+});
+
+onDevices(['ipad', 'phone'], () => {
+  // A finger resting mid-scroll is no settled scroll: iOS ignores a scroll position set under it.
+  test('weeks wait for a resting finger to lift', async ({ page }) => {
+    await open(page);
+    const scroll = page.locator('.calendar-scroll'), count = () => page.locator('.calendar-week').count();
+    const initial = await count();
+    // A touch event with its lists, as other touch handlers read them.
+    const touch = (el, type, down) => {
+      const r = el.getBoundingClientRect(), point = { identifier: 1, target: el, clientX: r.x + 40, clientY: r.y + 80, pageX: r.x + 40, pageY: r.y + 80 };
+      el.dispatchEvent(Object.defineProperties(new Event(type, { bubbles: true, cancelable: true }), { touches: { value: down ? [point] : [] }, targetTouches: { value: down ? [point] : [] }, changedTouches: { value: [point] } }));
+    };
+    await scroll.evaluate((el, touch) => { new Function('el', `(${touch})(el, 'touchstart', true)`)(el); el.scrollTop = 20; }, touch.toString());
+    // Nothing observable happens while the finger rests: wait past the settle time to show it.
+    await page.waitForTimeout(400);
+    expect(await count(), 'no weeks under the finger').toBe(initial);
+    await scroll.evaluate((el, touch) => new Function('el', `(${touch})(el, 'touchend', false)`)(el), touch.toString());
+    await expect.poll(count, 'more weeks once it lifts').toBeGreaterThan(initial);
+  });
+});
+
 onDevices(['desktop', 'phone'], () => {
   test('more weeks load without losing focus and the run of weeks stays capped @gate', async ({ page }) => {
     await open(page);

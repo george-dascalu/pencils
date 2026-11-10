@@ -14,7 +14,7 @@
 .miro-import .dialog-body {
   min-height: 0;
   overflow: auto;
-  overscroll-behavior: contain;
+  overscroll-behavior: none;
   padding: 16px;
 }
 .miro-import form,
@@ -68,6 +68,7 @@
 .miro-frame-list {
   max-height: 180px;
   overflow: auto;
+  overscroll-behavior: none;
 }
 .miro-check {
   display: flex;
@@ -103,6 +104,7 @@
 .miro-import-issues ul {
   max-height: 180px;
   overflow: auto;
+  overscroll-behavior: none;
   padding-left: 20px;
 }
 .miro-import li {

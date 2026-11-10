@@ -19,7 +19,7 @@
 }
 .project-settings-layout > :is(.settings-navigation, .settings-content) {
   overflow-y: auto;
-  overscroll-behavior: contain;
+  overscroll-behavior: none;
   padding-block: var(--settings-pad);
 }
 .settings-navigation {
@@ -360,6 +360,7 @@
     display: block;
     padding: 16px 16px calc(16px + var(--tabbar-clearance, 0px));
     overflow: auto;
+    overscroll-behavior: none;
   }
   .project-settings-layout > :is(.settings-navigation, .settings-content) {
     overflow: visible;

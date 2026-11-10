@@ -124,7 +124,7 @@ textarea,
   .board-tools button,
   .board-menu-panel > :is(button, a), .selection-popover > button,
   .select-menu [role="option"], .task-picker-popover [role="option"],
-  .date-picker-head button, .date-picker-foot button, .date-picker-popover td button,
+  .date-picker-head button, .date-picker-foot button, .date-picker-popover td button, .date-range-phases button,
   .document-link, .document-panel-item, .cm-search .cm-button, .row-choice, .row-due, .row-task-link,
   .task-reorder-handle, .tree-toggle, .tree-toggle-spacer,
   .table-description, .table-open

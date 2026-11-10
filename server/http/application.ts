@@ -356,7 +356,7 @@ export function createServer(
   route(["/api/search-items"], searchItemsRoutes);
   route(["/api/hotkeys"], hotkeysRoutes);
   route(
-    ["/api/projects", "/api/projects/:project", "/api/demo", "/api/projects/:project/trash", "/api/projects/:project/audit"],
+    ["/api/projects", "/api/projects/:project", "/api/demo", "/api/projects/:project/trash", "/api/projects/:project/audit", "/api/project-key"],
     projectsRoutes,
   );
   route(

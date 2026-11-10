@@ -524,6 +524,7 @@ export function richToolbar(
     modes = true,
     extra = "",
     inlineOnly = false,
+    preview = true,
   } = {},
 ) {
   // One control set for every surface. The rich editor runs execCommand names
@@ -575,7 +576,7 @@ export function richToolbar(
         ${group("Insert", `${link}${inlineOnly ? '' : control("codeblock", "Code block", "codeblock") + control("divider", "Divider", "divider", false)}`)}
       </div>
       ${rich && alignment !== null ? group("Text alignment", menu("rich-align-menu", "Text alignment", icon(`text-${alignment || "left"}`), alignmentButtons(icon, alignment))) : ""}
-      ${rich && modes ? `${group("Text editing mode", action("Markdown", "markdown", 'data-rich-mode="source" aria-pressed="false"'), "rich-modes")}${group("Text preview", action("Preview", "preview", `${previewAction} aria-pressed="false"`))}` : ""}
+      ${rich && modes ? `${group("Text editing mode", action("Markdown", "markdown", 'data-rich-mode="source" aria-pressed="false"'), "rich-modes")}${preview ? group("Text preview", action("Preview", "preview", `${previewAction} aria-pressed="false"`)) : ""}` : ""}
       ${extra}
     </div>
     <button type="button" class="rich-scroll" data-rich-scroll="end" aria-label="Scroll formatting tools forward" title="More tools" hidden>${icon("chevron-right")}</button>

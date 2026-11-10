@@ -455,6 +455,7 @@
   display: flex;
   gap: 10px;
   overflow: auto;
+  overscroll-behavior: none;
   min-height: 0;
   height: 100%;
 }
@@ -474,6 +475,7 @@
 }
 .embedded-table {
   overflow: auto;
+  overscroll-behavior: none;
   max-height: 100%;
 }
 .embedded-table th,
@@ -484,6 +486,7 @@
 }
 .board-node.query .task-timeline {
   overflow: auto;
+  overscroll-behavior: none;
   font-size: 12px;
 }
 .board-node.flow-shape {
