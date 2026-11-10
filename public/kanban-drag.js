@@ -2,6 +2,7 @@ import { kanbanDropChanges, kanbanDropError, inLane } from "./kanban-model.js";
 import { reorderTasks } from "./task-order-model.js";
 import { snapKanbanColumns } from "./kanban-layout.js";
 import { slideMoves } from "./slide-moves.js";
+import { bottomBarTop } from "./popover-position.js";
 // A light tick: Android vibrates; Safari on iOS 18 ticks when a switch toggles, here a hidden one.
 function haptic() {
   if (navigator.vibrate) {
@@ -115,7 +116,7 @@ export function kanbanDrag(ctx) {
     const bounds = scroller?.getBoundingClientRect();
     const headerHeight = grouped ? board.querySelector(".kanban-lanes-header").offsetHeight : column?.querySelector(".column-header")?.offsetHeight || 0;
     const vertical = bounds && drag.x >= bounds.left && drag.x <= bounds.right && drag.y >= bounds.top && drag.y <= bounds.bottom
-      ? speed(drag.y, bounds.top + headerHeight, Math.min(innerHeight, bounds.bottom)) : 0;
+      ? speed(drag.y, bounds.top + headerHeight, Math.min(innerHeight, bounds.bottom, bottomBarTop())) : 0;
     if (vertical) scroller.scrollTop += vertical;
     if (horizontal || vertical) update(drag.x, drag.y);
     frame = requestAnimationFrame(scroll);

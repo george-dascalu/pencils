@@ -1,4 +1,5 @@
 import { sourceReadOnly } from "./source-model.js";
+import { bottomBarTop } from "./popover-position.js";
 import { calendarTimeSelection, hourlySegments, minuteTime } from './calendar-time.js';
 import { shiftDate, isWeekend } from './timeline-dates.js';
 import { taskFieldColor, taskColorAttributes, fieldBoxStyle } from './task-colors.js';
@@ -32,7 +33,7 @@ export function calendarHourSelection(ctx) {
     if (!d.day.isConnected) return finish(true);
     const scroll = d.day.closest('.calendar-hours-scroll'), r = scroll.getBoundingClientRect(), before = scroll.scrollTop;
     if (d.y < r.top + 24) scroll.scrollTop -= 8;
-    else if (d.y > r.bottom - 24) scroll.scrollTop += 8;
+    else if (d.y > Math.min(r.bottom, bottomBarTop()) - 24) scroll.scrollTop += 8;
     if (scroll.scrollTop !== before) { d.to = minutes(d.day, d.y); paint(); }
     d.frame = requestAnimationFrame(autoScroll);
   }

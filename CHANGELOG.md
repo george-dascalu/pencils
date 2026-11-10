@@ -2,6 +2,11 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.23.5 — 2026-11-10
+
+### Fixed
+- Feature F0.23-5: On iPad and phones, holding a dragged card or row just above the floating bottom bar scrolls Kanban columns, List and Tree rows and groups, and the Calendar, instead of only when the finger reaches the bar.
+
 ## 0.23.4 — 2026-11-10
 
 ### Changed

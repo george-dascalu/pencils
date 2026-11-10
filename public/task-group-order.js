@@ -1,5 +1,6 @@
 import { priorityOptions } from "./task-priority.js";
 import { projectTags, listableTag } from "./project-tags.js";
+import { bottomBarTop } from "./popover-position.js";
 
 // Tag groups (F0.21-91): a card is in each of its tags' groups, or in No tag ("") without one.
 export const tagGroups = (task) => (task.tags?.length ? [...new Set(task.tags)] : [""]);
@@ -116,7 +117,7 @@ export function taskGroupDrag({ state, storage, renderView }) {
     const d = drag;
     if (!d?.active) return;
     if (!d.section.isConnected || state.project?.id !== d.project || state.view !== d.view) return finish(false);
-    const b = d.scroll.getBoundingClientRect(), top = Math.max(0, b.top), bottom = Math.min(innerHeight, b.bottom);
+    const b = d.scroll.getBoundingClientRect(), top = Math.max(0, b.top), bottom = Math.min(innerHeight, b.bottom, bottomBarTop());
     const elapsed = Math.min(32, time - (d.time ?? time));
     d.time = time;
     const speed = d.y < top + 40 ? -Math.min(1, (top + 40 - d.y) / 40) : d.y > bottom - 40 ? Math.min(1, (d.y - bottom + 40) / 40) : 0;

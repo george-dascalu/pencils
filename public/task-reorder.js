@@ -3,6 +3,7 @@ import { tableResult } from "./table-model.js";
 import { statusLabel } from './workflow-model.js';
 import { priorityLabel } from './task-priority.js';
 import { inGroup } from './task-group-order.js';
+import { bottomBarTop } from './popover-position.js';
 
 export function taskReorderHandle(t, esc) {
   return `<button type="button" class="task-reorder-handle" data-task-reorder="${esc(t.id)}" aria-label="Reorder ${esc(t.title)}" aria-keyshortcuts="Alt+ArrowUp Alt+ArrowDown" title="Drag to reorder. Alt + Up/Down moves this card." ><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 5h.01M15 5h.01M9 12h.01M15 12h.01M9 19h.01M15 19h.01"/></svg></button>`;
@@ -196,11 +197,11 @@ export function taskReorder(ctx, tableTools) {
     if (!d?.active) return;
     if (!d.row.isConnected || state.project?.id !== d.project || state.view !== d.view) return finish(false);
     const b = d.scroll.getBoundingClientRect();
-    const top = Math.max(0, d.scroll.querySelector("thead")?.getBoundingClientRect().bottom ?? b.top), bottom = Math.min(innerHeight, b.bottom);
+    const top = Math.max(0, d.scroll.querySelector("thead")?.getBoundingClientRect().bottom ?? b.top), bottom = Math.min(innerHeight, b.bottom), edge = Math.min(bottom, bottomBarTop());
     const elapsed = Math.min(32, time - (d.time ?? time));
     d.time = time;
     if (d.x >= b.left && d.x <= Math.min(innerWidth, b.right) && d.y >= top && d.y <= bottom) {
-      const speed = d.y < top + 40 ? -Math.min(1, (top + 40 - d.y) / 40) : d.y > bottom - 40 ? Math.min(1, (d.y - bottom + 40) / 40) : 0;
+      const speed = d.y < top + 40 ? -Math.min(1, (top + 40 - d.y) / 40) : d.y > edge - 40 ? Math.min(1, (d.y - edge + 40) / 40) : 0;
       d.scroll.scrollTop += speed * elapsed * 0.65;
     }
     paint();

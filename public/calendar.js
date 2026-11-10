@@ -23,6 +23,7 @@ import { backlogArrangement } from "./calendar-arrange.js";
 import { calendarCreate } from "./calendar-create.js";
 import { closePopup } from "./popup-motion.js";
 import { snapTranslation, paintAlignmentGuides } from "./alignment-guides.js";
+import { bottomBarTop } from "./popover-position.js";
 
 export function calendarView(ctx) {
   const { state, esc, icon, storage, renderView, task, patchTask, toast } = ctx;
@@ -400,7 +401,7 @@ export function calendarView(ctx) {
     if (scroller && !cancel && over !== "over") {
       const r = scroller.getBoundingClientRect();
       if (d.x >= r.left && d.x <= r.right && d.y >= r.top && d.y <= r.bottom) {
-        if (d.y > r.bottom - 24) scroller.scrollTop += 12;
+        if (d.y > Math.min(r.bottom, bottomBarTop()) - 24) scroller.scrollTop += 12;
         else if (d.y < r.top + 24) scroller.scrollTop -= 12;
       }
     }

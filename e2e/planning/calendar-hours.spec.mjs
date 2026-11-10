@@ -79,6 +79,20 @@ onDevices(['ipad'],()=>test('a swipe scrolls hours; holding then dragging select
   await expect(page.locator('#task-form [name="due_time"]')).toHaveValue('10:30');
 }));
 
+// The hours run under the floating bottom bar, so the edge that scrolls them while selecting is the bar's top.
+onDevices(['ipad'],()=>test('a time range held just above the bottom bar scrolls the hours',async({page})=>{
+  await open(page);
+  const cdp=await page.context().newCDPSession(page), scroll=page.locator('.calendar-hours-scroll');
+  await scroll.evaluate(el=>el.scrollTop=0);
+  const r=await page.locator('.calendar-hours-day').first().locator('[data-hour="1"]').boundingBox();
+  const barTop=await page.evaluate(()=>document.querySelector('.topbar .tabs').getBoundingClientRect().top);
+  await cdp.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[{x:r.x+r.width/2,y:r.y+1}]});
+  await expect(page.locator('.calendar-time-selection')).toBeVisible();
+  await cdp.send('Input.dispatchTouchEvent',{type:'touchMove',touchPoints:[{x:r.x+r.width/2,y:barTop-10}]});
+  await expect.poll(()=>scroll.evaluate(el=>el.scrollTop)).toBeGreaterThan(100);
+  await cdp.send('Input.dispatchTouchEvent',{type:'touchCancel',touchPoints:[]});
+}));
+
 test('times can be edited and cleared without losing the dates',async({page})=>{
   const project=await app.store.createProject({title:'Edit hours'});
   const card=await app.store.createTask(project.id,{title:'Review',start:'2026-11-02',due:'2026-11-02',start_time:'09:00',due_time:'10:00'});

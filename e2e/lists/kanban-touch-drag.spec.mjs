@@ -12,7 +12,11 @@ const app = useApp(async (store) => {
   // The phone test reorders its own pair, as the iPad test moves the first card.
   const third = await store.createTask(project.id, { title: "Third card", status: "backlog" });
   const fourth = await store.createTask(project.id, { title: "Fourth card", status: "backlog" });
-  return { project, first, third, fourth };
+  // A To do column long enough to scroll, for holding a drag above the bottom bar.
+  const long = await store.createProject({ title: "Touch long", key: "TL" });
+  const lifted = await store.createTask(long.id, { title: "Lifted card", status: "done" });
+  for (let i = 0; i < 30; i++) await store.createTask(long.id, { title: `Long ${i}`, status: "todo" });
+  return { project, first, third, fourth, long, lifted };
 });
 const card = (page, t) => page.locator(`[data-drag-task="${t.id}"]`);
 const saved = async (t) => (await app.store.snapshot(app.project.id)).tasks.find((x) => x.id === t.id);
@@ -98,4 +102,18 @@ onDevices(["phone"], () => test("a touch drag selects no text: the board is unse
   expect(await page.evaluate(() => getSelection().toString()), "lifting the card clears it").toBe("");
   await touch.send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] });
   await expect(page.locator(".kanban-drag-image")).toHaveCount(0);
+}));
+
+// Columns run under the floating bottom bar, so the edge that scrolls them while dragging is the bar's top.
+onDevices(["ipad"], () => test("a card held just above the bottom bar scrolls the column", async ({ page }) => {
+  await page.goto(`${app.base}/#project/${app.long.id}/kanban`);
+  const column = page.locator('.kanban-column[data-drop-status="todo"]');
+  await column.locator(".kanban-card").nth(29).waitFor();
+  const touch = await page.context().newCDPSession(page);
+  await touch.send("Input.dispatchTouchEvent", { type: "touchStart", touchPoints: [centre(await card(page, app.lifted).locator(".card-top").boundingBox())] });
+  await expect(page.locator(".kanban-drag-image")).toBeVisible();
+  const barTop = await page.evaluate(() => document.querySelector(".topbar .tabs").getBoundingClientRect().top);
+  await touch.send("Input.dispatchTouchEvent", { type: "touchMove", touchPoints: [{ x: centre(await column.boundingBox()).x, y: barTop - 10 }] });
+  await expect.poll(() => column.evaluate((el) => el.scrollTop)).toBeGreaterThan(200);
+  await touch.send("Input.dispatchTouchEvent", { type: "touchCancel", touchPoints: [] });
 }));

@@ -250,3 +250,18 @@ onDevices(["phone"], () => {
     });
   }
 });
+
+// Lists run under the floating bottom bar, so the edge that scrolls them while dragging is the bar's top.
+onDevices(["ipad"], () => test("a row held just above the bottom bar scrolls the list", async ({ page }) => {
+  await open(page, "list", app.longProject);
+  const fromBox = await handle(page, app.many[0].id).boundingBox(), from = { x: fromBox.x + fromBox.width / 2, y: fromBox.y + fromBox.height / 2 };
+  const barTop = await page.evaluate(() => document.querySelector(".topbar .tabs").getBoundingClientRect().top);
+  const cdp = await page.context().newCDPSession(page);
+  const touch = (type, p) => cdp.send("Input.dispatchTouchEvent", { type, touchPoints: p ? [{ ...p, id: 1, radiusX: 4, radiusY: 4 }] : [] });
+  await touch("touchStart", from);
+  for (let i = 1; i <= 10; i++) await touch("touchMove", { x: from.x, y: from.y + ((barTop - 10 - from.y) * i) / 10 });
+  await page.locator(".task-reorder-ghost").waitFor();
+  await expect.poll(() => page.evaluate(() => Math.max(...[...document.querySelectorAll("#view-content, #view-content *")].map((el) => el.scrollTop)))).toBeGreaterThan(200);
+  await touch("touchCancel");
+}));
+
