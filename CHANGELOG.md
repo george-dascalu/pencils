@@ -2,6 +2,11 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.22.88 — 2026-11-10
+
+### Fixed
+- Feature F0.22-88: The Week board tag-drag regression check closes the floating Unscheduled overlay before dropping onto covered phone rows, matching the dock's current behavior.
+
 ## 0.22.87 — 2026-11-10
 
 ### Added
