@@ -1224,8 +1224,9 @@ html.table-viewport-view body {
   #sort-button, [data-card-ids] { border: 1px solid var(--line); border-radius: 6px; background: var(--surface, #fff); color: var(--ink); }
   #sort-button:hover, #sort-button[aria-expanded="true"], [data-card-ids]:hover { background: var(--surface-soft, #edf1e7); border-color: var(--green); }
 }
-/* Card IDs, like Sort, is tinted while on: while the IDs show (F0.22-61). */
-[data-card-ids][aria-pressed="true"] { color: var(--green); }
+/* Card IDs stays visibly on even under the pointer, using the shared selected-tool fill. */
+button.icon-button[data-card-ids][aria-pressed="true"],
+button.icon-button[data-card-ids][aria-pressed="true"]:hover { background: var(--green); border-color: var(--green); color: var(--surface); }
 #sort-button.sort-active { color: var(--green); }
 #sort-button.sort-active > .icon { translate: -3px -2px; }
 #sort-button > .sort-direction { position: absolute; right: 2px; bottom: 2px; display: flex; }

@@ -37,16 +37,16 @@ onDevices(['desktop', 'ipad', 'phone'], () => {
     expect(await button(page).evaluate((el, home) => !!el.closest(home), { desktop: '#view-toolbar .toolbar-left', ipad: '.topbar-view-tools', phone: '.mobile-view-options' }[device])).toBe(true);
     await expect(button(page)).toHaveAttribute('aria-pressed', 'true');
     expect(await shown(key)).toBe(true);
-    // Bordered like the Sort button beside it, and tinted while the IDs show.
-    const tinted = () => button(page).evaluate(el => { const probe = document.body.appendChild(Object.assign(document.createElement('span'), { style: 'color: var(--green)' })); const green = getComputedStyle(probe).color; probe.remove(); return getComputedStyle(el).color === green; });
+    // Bordered like Sort; a filled accent background clearly marks IDs as on.
+    const filled = () => button(page).evaluate(el => { const probe = document.body.appendChild(Object.assign(document.createElement('span'), { style: 'color: var(--green)' })); const green = getComputedStyle(probe).color; probe.remove(); return getComputedStyle(el).backgroundColor === green; });
     if (device !== 'phone') {
       const look = (l) => l.evaluate(el => { const s = getComputedStyle(el); return [s.borderTopWidth, s.borderTopStyle, s.height]; });
       expect(await look(button(page))).toEqual(await look(page.locator('#sort-button')));
     }
-    expect(await tinted()).toBe(true);
+    expect(await filled()).toBe(true);
     await (await reveal(button(page))).click();
     await expect(button(page)).toHaveAttribute('aria-pressed', 'false');
-    expect(await tinted()).toBe(false);
+    expect(await filled()).toBe(false);
     await expect.poll(() => shown(key)).toBe(false);
     // Kept, and the same in another view.
     await page.reload();
@@ -56,6 +56,36 @@ onDevices(['desktop', 'ipad', 'phone'], () => {
     await expect.poll(() => shown(page.locator('.kanban-card .task-id'))).toBe(false);
     await (await reveal(button(page))).click();
     await expect.poll(() => shown(page.locator('.kanban-card .task-id'))).toBe(true);
+  });
+});
+
+onDevices(['desktop', 'ipad', 'phone'], () => {
+  for (const theme of ['light', 'dark']) test(`Card IDs has distinct on and off states even while hovered (${theme})`, { tag: '@gate' }, async ({ page }) => {
+    await go(page, 'list');
+    await page.evaluate(theme => window.PencilsAppearance.write({ theme, density: 'compact' }), theme);
+    for (const view of ['list', 'calendar']) {
+      if (view === 'calendar') await calendar(page, 'board');
+      const control = await reveal(button(page));
+      const colours = await control.evaluate(el => {
+        const probe = document.body.appendChild(document.createElement('span'));
+        probe.style.color = 'var(--green)'; const accent = getComputedStyle(probe).color;
+        probe.style.color = 'var(--surface)'; const surface = getComputedStyle(probe).color;
+        probe.remove(); return { accent, surface };
+      });
+      await control.hover();
+      await expect(control).toHaveAttribute('aria-pressed', 'true');
+      await expect(control).toHaveCSS('background-color', colours.accent);
+      await expect(control).toHaveCSS('color', colours.surface);
+      await expect(control).toHaveAttribute('title', 'Hide card IDs');
+      const size = await control.evaluate(el => [el.offsetWidth, el.offsetHeight]);
+      await control.click();
+      await expect(control).toHaveAttribute('aria-pressed', 'false');
+      await expect(control).not.toHaveCSS('background-color', colours.accent);
+      await expect(control).toHaveAttribute('title', 'Show card IDs');
+      expect(await control.evaluate(el => [el.offsetWidth, el.offsetHeight])).toEqual(size);
+      await control.click();
+      await expect(control).toHaveCSS('background-color', colours.accent);
+    }
   });
 });
 

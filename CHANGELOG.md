@@ -2,6 +2,11 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.22.90 — 2026-11-10
+
+### Changed
+- Feature F0.22-90: Card IDs has a filled accent background when on and a neutral appearance when off, including while hovered. The shared toggle stays clear in light and dark mode, Compact mode and phone View options.
+
 ## 0.22.89 — 2026-11-10
 
 ### Fixed
