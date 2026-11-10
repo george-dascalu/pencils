@@ -20,6 +20,8 @@ import { rangeChoicesHTML, rangeLabelHTML } from "./range-menu.js";
 import { slideMoves } from "./slide-moves.js";
 import { backlogPosition, placeOnBoard, nextLayer } from "./calendar-backlog.js";
 import { backlogArrangement } from "./calendar-arrange.js";
+import { calendarCreate } from "./calendar-create.js";
+import { closePopup } from "./popup-motion.js";
 import { snapTranslation, paintAlignmentGuides } from "./alignment-guides.js";
 
 export function calendarView(ctx) {
@@ -27,6 +29,7 @@ export function calendarView(ctx) {
   const dateEditor = taskDateEditor(ctx);
   const unscheduled = anchoredPanel(ctx);
   const arrangement = backlogArrangement(ctx);
+  const create = calendarCreate(ctx);
   calendarHourSelection(ctx);
   const zoom = calendarZoom(ctx);
   let mode = storage.get("calendar-mode", mainWidth() <= 780 ? "agenda" : "month");
@@ -46,6 +49,15 @@ export function calendarView(ctx) {
   // Shown, or closed to a floating button at the bottom left, kept in this browser.
   let backlogOpen = storage.get("week-board-backlog-open", true) !== false;
   const backlogToggle = () => `<button type="button" class="icon-button week-board-backlog-toggle" data-backlog-toggle aria-controls="week-board-backlog-board" aria-expanded="${backlogOpen}" aria-label="${backlogOpen ? "Hide" : "Show"} Unscheduled" title="${backlogOpen ? "Hide" : "Show"} Unscheduled">${icon("chevron")}<span class="week-board-dock-icon" aria-hidden="true">${icon("clock")}</span></button>`;
+  document.addEventListener("animationend", e => { if (e.animationName === "week-board-dock-in") e.target.removeAttribute("data-opening"); });
+  function setBacklogOpen(open) {
+    backlogOpen = open; storage.set("week-board-backlog-open", open);
+    const dock = document.querySelector(".week-board-backlog");
+    dock?.toggleAttribute("data-closed", !open);
+    dock?.removeAttribute("data-opening");
+    const toggle = dock?.querySelector("[data-backlog-toggle]");
+    if (toggle) toggle.outerHTML = backlogToggle();
+  }
   // Week board rows: a card field or tag, or one row for every card (Group by: F0.21-91).
   let boardRows = storage.get("week-board-rows", "assignee");
   const ROW_FIELDS = [["assignee", "Assignee", "person"], ["status", "Status", "status"], ["priority", "Priority", "flag"], ["type", "Card type", "task"], ["tags", "Tag", "tag"], ["daypart", "Time of day", "clock"], ["none", "No grouping", "list"]];
@@ -152,7 +164,7 @@ export function calendarView(ctx) {
     const backlog = `<section class="week-board-backlog" aria-labelledby="week-board-backlog-title" style="height:${backlogHeight}px"${backlogOpen ? "" : " data-closed"}><div class="week-board-backlog-head"><h3 id="week-board-backlog-title">Unscheduled</h3><div class="week-board-backlog-resize" role="separator" tabindex="0" aria-orientation="horizontal" aria-label="Resize Unscheduled" aria-valuemin="${BACKLOG_MIN}" aria-valuemax="${BACKLOG_MAX}" aria-valuenow="${backlogHeight}" title="Drag, or press Up and Down, to resize"><span></span></div>${arrangement.buttons(dockCards.length)}${backlogToggle()}</div><div class="week-board-backlog-board" id="week-board-backlog-board"><div class="week-board-backlog-canvas" style="--backlog-right:${far("x")}px;--backlog-bottom:${far("y")}px">${arrangement.headings(dockCards)}${flow.length ? `<div class="week-board-backlog-flow">${flow.map(t => card(t, { keys: backlogKeys, dated: !!calendarRange(t) })).join("")}</div>` : ""}${kept.map(t => { const p = at.get(t.id); return card(t, { keys: backlogKeys, dated: !!calendarRange(t), place: `;left:${p.x}px;top:${p.y}px;z-index:${p.z}` }); }).join("")}${flow.length || kept.length ? "" : '<p class="field-hint week-board-backlog-empty">Drop a card here to take it off the calendar.</p>'}</div></div></section>`;
     // A table to assistive technology: days are column headers, rows' names row headers.
     return `${placed.length ? "" : '<p class="field-hint week-board-empty">No cards scheduled this week.</p>'}<div class="calendar-scroll week-board-scroll" role="region" aria-label="Week board" tabindex="0"><div class="week-board" role="table" aria-label="Week board" data-rows="${field}" style="--week-board-days:${days.length};--week-board-rows:${rows.length}"><div class="week-board-head-row" role="row"><div class="week-board-corner" role="columnheader"><span class="sr-only">${field === "none" ? "Cards" : esc(ROW_FIELDS.find(([key]) => key === field)[1])}</span></div>${days.map(day => `<div class="week-board-day-head${day === localDate() ? " today" : ""}${isWeekend(day) ? " weekend" : ""}" role="columnheader" data-calendar-date="${day}"><time datetime="${day}">${esc(format(day, { weekday: "short" }))}</time></div>`).join("")}</div>${rows.map(row => {
-      return `<div class="week-board-row" role="row" data-week-board-value="${esc(row)}"><div class="week-board-row-head" role="rowheader"${field === "none" ? "" : ` aria-label="${esc(name(row))}"`}>${field === "none" ? '<span class="sr-only">All cards</span>' : `${groupReorderHandle(row, name(row), esc)}<span>${esc(name(row))}</span>`}</div>${days.map(day => `<div class="week-board-cell${isWeekend(day) ? " weekend" : ""}" role="cell" data-calendar-date="${day}" data-week-board-value="${esc(row)}">${(byDay.get(day) || []).filter(t => inRow(t, row)).map(t => card(t, { cell: true })).join("")}</div>`).join("")}</div>`;
+      return `<div class="week-board-row" role="row" data-week-board-value="${esc(row)}"><div class="week-board-row-head" role="rowheader"${field === "none" ? "" : ` aria-label="${esc(name(row))}"`}>${field === "none" ? '<span class="sr-only">All cards</span>' : `${groupReorderHandle(row, name(row), esc)}<span>${esc(name(row))}</span>`}</div>${days.map(day => `<div class="week-board-cell${isWeekend(day) ? " weekend" : ""}" role="cell" data-calendar-date="${day}" data-week-board-value="${esc(row)}">${(byDay.get(day) || []).filter(t => inRow(t, row)).map(t => card(t, { cell: true })).join("")}${create.html(day, field, row, field === "none" ? "" : name(row))}</div>`).join("")}</div>`;
     }).join("")}</div></div>${backlog}`;
   }
   const weekHTML = week => `<div class="calendar-week ${mode === "week" ? "calendar-all-day" : ""}" data-week="${week.days[0]}" style="--calendar-lanes:${week.lanes}">${mode === "month" ? `<span class="calendar-week-number" title="Week ${isoWeek(week.days[0])}" aria-label="Week ${isoWeek(week.days[0])}">${isoWeek(week.days[0])}</span>` : ""}${week.days.map((day, i) => `<div class="calendar-day ${isWeekend(day) ? "weekend" : ""} ${day === localDate() ? "today" : ""} ${mode === "month" && (Number(day.slice(0, 4)) * 12 + Number(day.slice(5, 7))) % 2 ? "month-alt" : ""}" data-calendar-date="${day}" style="grid-column:${i + 1};grid-row:1 / span ${week.lanes + 1}"><button type="button" data-feature="date-task" data-date="${day}" aria-label="Add card on ${day}">${Number(day.slice(-2))}${mode === "month" && day.endsWith("-01") ? ` ${esc(format(day, { day: undefined }))}` : ""}</button></div>`).join("")}${week.segments.map(s => {
@@ -346,7 +358,7 @@ export function calendarView(ctx) {
     } else if (mode === 'board') {
       const target = d.cell;
       const before = d.slot?.before && target?.querySelector(`.week-board-card[data-calendar-card="${CSS.escape(d.slot.before)}"]`);
-      if (target) target.insertBefore(add(target, 'week-board-card'), before || null);
+      if (target) target.insertBefore(add(target, 'week-board-card'), before || target.querySelector('[data-week-board-add], [data-week-board-create]'));
     } else {
       const day = dayAt(d.x, d.y), target = document.querySelector(`.agenda-day[data-calendar-date="${day}"]`);
       if (target) add(target, 'agenda-row');
@@ -356,12 +368,16 @@ export function calendarView(ctx) {
     const d = drag;
     if (!d?.active) return;
     if (!d.card.isConnected || state.view !== "calendar" || state.project?.id !== d.project) { finish(true); return; }
-    // The dock tucks away to its floating button under a dragged card and opens while the card
-    // is over it (F0.22-80). Before the scrolling below: the board doesn't snap during a drag.
-    const cancel = !!document.elementFromPoint(d.x, d.y)?.closest(".calendar-drag-cancel");
-    const dock = mode === "board" ? document.querySelector(".week-board-backlog") : null, r = dock?.getBoundingClientRect();
-    const over = !cancel && r && d.x >= r.left && d.x <= r.right && d.y >= r.top && d.y <= r.bottom ? "over" : "away";
-    if (dock && dock.dataset.drag !== over) dock.dataset.drag = over;
+    // A closed dock has no drag target. A card leaving the dock tucks the whole overlay away;
+    // an already-open dock stays available for cards dragged from the week.
+    const hit = document.elementFromPoint(d.x, d.y), cancel = !!hit?.closest(".calendar-drag-cancel");
+    const dock = mode === "board" ? document.querySelector(".week-board-backlog") : null;
+    const over = !cancel && dock && hit?.closest(".week-board-backlog") === dock ? "over" : "away";
+    if (dock) {
+      d.tucked ||= !backlogOpen || (d.card.closest(".week-board-backlog") && over === "away");
+      const show = d.tucked ? "away" : "over";
+      if (dock.dataset.drag !== show) dock.dataset.drag = show;
+    }
     d.cancel?.classList.toggle("calendar-drop-target", cancel);
     const scroll = document.querySelector(".calendar-scroll");
     if (scroll && !cancel && over !== "over") {
@@ -433,7 +449,13 @@ export function calendarView(ctx) {
     if (d.card.hasPointerCapture(d.pointer)) d.card.releasePointerCapture(d.pointer);
     d.ghost?.remove();
     d.cancel?.remove();
-    document.querySelector(".week-board-backlog")?.removeAttribute("data-drag");
+    const dock = document.querySelector(".week-board-backlog");
+    // Decide before restoring visibility, so the last card never flashes an empty overlay.
+    const emptied = mode === "board" && dock && !cancel && d.active && d.next && !d.next.backlog &&
+      calendarRange({ ...d.task, ...d.next }) && (rowField() !== "daypart" || daypart({ ...d.task, ...d.next })) &&
+      ![...dock.querySelectorAll("[data-calendar-card]")].some(el => el.dataset.calendarCard !== d.task.id);
+    if (emptied) setBacklogOpen(false);
+    dock?.removeAttribute("data-drag");
     // A card dropped on the Unscheduled board stays where it landed until the redraw after its save
     // replaces it, rather than showing at its old place meanwhile (F0.22-69).
     const landed = !cancel && d.active && !!d.next?.backlog;
@@ -466,7 +488,9 @@ export function calendarView(ctx) {
     for (const { id, order } of ranks)
       if (id === d.task.id) changes.order = order;
       else patchTask(id, { order }, false).catch((error) => toast(error.message, true));
-    if (changes && Object.entries(changes).some(([key, value]) => JSON.stringify(d.task[key] ?? null) !== JSON.stringify(value ?? null))) return void save(d.task.id, changes);
+    if (changes && Object.entries(changes).some(([key, value]) => JSON.stringify(d.task[key] ?? null) !== JSON.stringify(value ?? null))) return void save(d.task.id, changes).then(ok => {
+      if (!ok && emptied && state.project?.id === d.project) setBacklogOpen(true);
+    });
     if (landed) clearPlacement(d);
     if (ranks.length || resort) renderView(true);
     else if (!cancel && d.active && d.reason) toast(d.reason, true);
@@ -562,11 +586,14 @@ export function calendarView(ctx) {
       return;
     }
     const toggle = e.target.closest("[data-backlog-toggle]");
-    if (toggle) {
-      backlogOpen = !backlogOpen; storage.set("week-board-backlog-open", backlogOpen);
-      toggle.closest(".week-board-backlog").toggleAttribute("data-closed", !backlogOpen);
-      toggle.outerHTML = backlogToggle();
-      document.querySelector("[data-backlog-toggle]").focus();
+    if (toggle && !drag?.active) {
+      const dock = toggle.closest(".week-board-backlog");
+      if (backlogOpen) closePopup(dock, () => { setBacklogOpen(false); document.querySelector("[data-backlog-toggle]")?.focus(); });
+      else {
+        setBacklogOpen(true);
+        dock.dataset.opening = "";
+        document.querySelector("[data-backlog-toggle]")?.focus();
+      }
       return;
     }
     const button = e.target.closest("[data-calendar-unscheduled]");

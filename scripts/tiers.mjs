@@ -141,6 +141,7 @@ export const TIERS = [
     "e2e/navigation/project-layout.spec.mjs", // switch Tasks and Planning layouts, filters and selection
     "e2e/navigation/search.spec.mjs", // find cards, documents and boards
     "e2e/planning/calendar-cross-day-resize.spec.mjs", // resize a calendar card across days
+    "e2e/planning/week-board-create.spec.mjs", // inline creation saves date and row defaults
     "e2e/planning/calendar-hours.spec.mjs", // create a timed card by dragging hours
     "e2e/planning/calendar-move.spec.mjs", // move a timed card on the calendar
     "e2e/planning/calendar-resize.spec.mjs", // resize timed card endpoints

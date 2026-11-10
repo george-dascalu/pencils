@@ -249,6 +249,7 @@ onDevices(['phone'], () => {
 // the box shows them; they didn't save at all. (Assignee names the rows, so the box leaves it out.)
 test('the Week board saves a card\'s status and priority from its field box', async ({ page }) => {
   await open(page);
+  await page.getByRole('button', { name: 'Hide Unscheduled', exact: true }).click();
   const fields = card(page, app.loose.id).locator('.week-board-fields');
   const choose = async (name, value) => {
     await fields.getByRole('combobox', { name: `${name} for Nobody on Friday`, exact: true }).click();

@@ -323,20 +323,26 @@
 .week-board-backlog-head:hover .week-board-backlog-resize > span, .week-board-backlog-resize:focus-visible > span { background: var(--accent, var(--muted)); opacity: 1; }
 /* No scroll bar (F0.22-62): the board still scrolls by wheel, trackpad, touch or a drag to its edge. */
 .week-board-backlog-board { flex: 1; min-height: 0; overflow: auto; overscroll-behavior: none; scrollbar-width: none; }
-/* Closed, only a floating button remains above the bottom navigation. A dragged card opens it. */
-.week-board-backlog:is([data-closed]:not([data-drag="over"]), [data-drag="away"]) { right: auto; width: var(--control-height); height: var(--control-height) !important; min-height: 0; border: 0; background: transparent; box-shadow: none; overflow: visible; }
-/* Leave the bottom-left cancel target clear while the dock waits for a dragged card. */
-.week-board-backlog[data-drag="away"] { left: calc(12px + var(--control-height) * 2.5); }
-.week-board-backlog:is([data-closed]:not([data-drag="over"]), [data-drag="away"]) > .week-board-backlog-board { display: none; }
-.week-board-backlog:is([data-closed]:not([data-drag="over"]), [data-drag="away"]) > .week-board-backlog-head { padding: 0; cursor: default; }
-.week-board-backlog:is([data-closed]:not([data-drag="over"]), [data-drag="away"]) .week-board-backlog-head > :not(button) { display: none; }
-.week-board-backlog:is([data-closed]:not([data-drag="over"]), [data-drag="away"]) .week-board-backlog-toggle { border-radius: 50%; border: 1px solid var(--line); background: var(--surface); box-shadow: var(--shadow-popover); }
+/* Closed, only a floating button remains above the bottom navigation. It vanishes during drags. */
+.week-board-backlog[data-closed] { right: auto; width: var(--control-height); height: var(--control-height) !important; min-height: 0; border: 0; background: transparent; box-shadow: none; overflow: visible; }
+.week-board-backlog[data-closed] > .week-board-backlog-board { display: none; }
+.week-board-backlog[data-closed] > .week-board-backlog-head { padding: 0; cursor: default; }
+.week-board-backlog[data-closed] .week-board-backlog-head > :not(button) { display: none; }
+.week-board-backlog[data-closed] .week-board-backlog-toggle { border-radius: 50%; border: 1px solid var(--line); background: var(--surface); box-shadow: var(--shadow-popover); }
 .week-board-dock-icon { display: none; }
-.week-board-backlog:is([data-closed]:not([data-drag="over"]), [data-drag="away"]) .week-board-backlog-toggle > .icon { display: none; }
-.week-board-backlog:is([data-closed]:not([data-drag="over"]), [data-drag="away"]) .week-board-dock-icon { display: flex; }
-.week-board-backlog[data-closed] .week-board-backlog-head { cursor: default; }
-.week-board-backlog[data-closed] .week-board-backlog-resize { visibility: hidden; }
-.week-board-backlog[data-closed] .week-board-backlog-toggle > .icon { rotate: 180deg; }
+.week-board-backlog[data-closed] .week-board-backlog-toggle > .icon { display: none; }
+.week-board-backlog[data-closed] .week-board-dock-icon { display: flex; }
+.week-board-backlog { transform-origin: bottom left; transition: opacity var(--menu-motion), transform var(--menu-motion), visibility 0s; }
+.week-board-backlog[data-opening]:not([data-closed], [data-drag], [data-popup-closing]) { animation: week-board-dock-in var(--menu-motion) both; }
+.week-board-backlog[data-drag="away"], .week-board-backlog[data-popup-closing] { opacity: 0; transform: translateY(12px) scale(.98); pointer-events: none; }
+.week-board-backlog[data-drag="away"] { visibility: hidden; transition-delay: 0s, 0s, 160ms; }
+.week-board-backlog[data-closed][data-drag] { visibility: hidden; transition: none; }
+@keyframes week-board-dock-in { from { opacity: 0; transform: translateY(12px) scale(.98); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) {
+  .week-board-backlog { transition: none; }
+  .week-board-backlog[data-opening]:not([data-closed], [data-drag], [data-popup-closing]) { animation: none; }
+  .week-board-backlog[data-drag="away"] { transition-delay: 0s; }
+}
 .week-board-backlog-board::-webkit-scrollbar { display: none; }
 .week-board-backlog-canvas { position: relative; isolation: isolate; min-width: max(100%, calc(var(--backlog-right) + var(--week-board-column) * 2)); min-height: max(100%, calc(var(--backlog-bottom) + 160px)); }
 .week-board-backlog-flow { display: flex; flex-wrap: wrap; align-items: flex-start; gap: 8px; padding: 8px; }
@@ -385,3 +391,9 @@
 .period-field:hover { background: var(--surface-soft); }
 .period-field > .date-picker-trigger:hover { background: transparent; }
 @media (pointer: coarse), (max-width: 600px) { .planning-period > h2.period-field { display: grid; align-items: center; min-height: 44px; min-width: 44px; } }
+
+.week-board-cell > .week-board-add { align-self: flex-start; color: var(--muted); }
+.week-board-create { display: flex; flex-direction: column; gap: 4px; padding: var(--popover-padding, 8px); border: 1px solid var(--line); border-radius: var(--field-radius); background: var(--surface); }
+.week-board-create > input { width: 100%; min-width: 0; }
+.week-board-create-actions { display: flex; gap: 4px; }
+.week-board-create > [role="alert"] { margin: 0; overflow-wrap: anywhere; }

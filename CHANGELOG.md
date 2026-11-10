@@ -2,6 +2,14 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.22.87 — 2026-11-10
+
+### Added
+- Feature F0.22-87: Every Week board cell has a plus button for creating a card inline. Enter or the check button saves its title with the cell's day and group, including time of day. Escape or Cancel dismisses the editor; failed saves retain the title and retries avoid duplicate cards.
+
+### Changed
+- Feature F0.22-86: The Unscheduled overlay animates when opening, closing and tucking away, respecting reduced motion. Its floating button disappears during card drags, leaving the quarter-circle Cancel target. An open dock still accepts cards from the week, and a drop that empties it keeps it closed.
+
 ## 0.22.85 — 2026-11-09
 
 ### Changed

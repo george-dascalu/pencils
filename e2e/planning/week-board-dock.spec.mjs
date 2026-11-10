@@ -36,10 +36,6 @@ async function lift(page, title) {
   await page.mouse.move(from.x + from.width / 2 + 10, from.y + from.height / 2 - 10, { steps: 3 });
 }
 const frames = (page) => page.evaluate(() => new Promise((done) => requestAnimationFrame(() => requestAnimationFrame(done))));
-async function overHead(page) {
-  const head = await dock(page).locator('[data-backlog-toggle]').boundingBox();
-  await page.mouse.move(head.x + head.width / 2, head.y + head.height / 2, { steps: 4 });
-}
 
 onDevices(['phone'], () => test('a touch drag can be dropped on Cancel without moving the card', async ({ page }) => {
   const cdp = await page.context().newCDPSession(page);
@@ -151,8 +147,8 @@ onDevices(['desktop', 'ipad', 'phone'], () => {
       await expect(cancel).toHaveClass(/calendar-drop-target/);
       await expect(page.locator('.calendar-drag-preview')).toContainText('Release to cancel');
       await expect(cards(page)).toBeHidden();
-      const toggle = await dock(page).locator('[data-backlog-toggle]').boundingBox();
-      expect(toggle.x).toBeGreaterThanOrEqual(r.x + r.width + 4);
+      await expect(dock(page).locator('[data-backlog-toggle]')).toBeHidden();
+      await expect(dock(page)).toHaveCSS('pointer-events', 'none');
       await expect(page.locator('.calendar-placement')).toHaveCount(0);
       await page.mouse.up();
       await expect(cancel).toHaveCount(0);
@@ -210,12 +206,10 @@ onDevices(['desktop', 'ipad'], () => {
     await page.mouse.up();
   });
 
-  test('a dragged card tucks the dock away until the card is over it, where a drop takes its dates away', async ({ page }) => {
+  test('an open dock remains available to unschedule a card dragged from the week', async ({ page }) => {
     await open(page);
     await lift(page, 'Meeting');
-    await expect(cards(page)).toBeHidden();
-    // Over its head it opens, to drop on.
-    await overHead(page);
+
     await expect(cards(page)).toBeVisible();
     const area = await cards(page).boundingBox();
     await page.mouse.move(area.x + area.width - 160, area.y + 40, { steps: 4 });
@@ -226,7 +220,7 @@ onDevices(['desktop', 'ipad'], () => {
     await expect(cards(page).locator('.week-board-card')).toHaveCount(2);
   });
 
-  test('a card dragged up out of the dock tucks it away as it leaves, and the dock comes back after the drop', async ({ page }) => {
+  test('scheduling the last dock card keeps the empty overlay closed after the drop', async ({ page }) => {
     await open(page);
     const cell = await page.locator(`.week-board-cell[data-calendar-date="${day}"]`).first().boundingBox();
     await lift(page, 'Plan');
@@ -238,25 +232,28 @@ onDevices(['desktop', 'ipad'], () => {
     await frames(page);
     await page.mouse.up();
     await expect.poll(async () => (await saved(app.plan.id)).due).toBe(day);
-    await expect(cards(page)).toBeVisible();
-  });
-
-  test('a dock hidden with its button opens under a dragged card, and hides again after the drop', async ({ page }) => {
-    await open(page);
-    await dock(page).getByRole('button', { name: 'Hide Unscheduled', exact: true }).click();
-    await lift(page, 'Meeting');
-    await overHead(page);
-    await expect(cards(page)).toBeVisible();
-    const area = await cards(page).boundingBox();
-    await page.mouse.move(area.x + 200, area.y + 40, { steps: 4 });
-    await frames(page);
-    await page.mouse.up();
-    await expect.poll(async () => (await saved(app.meeting.id)).due ?? null).toBe(null);
     await expect(cards(page)).toBeHidden();
     await expect(dock(page).getByRole('button', { name: 'Show Unscheduled', exact: true })).toBeVisible();
+    await page.reload();
+    await expect(cards(page)).toBeHidden();
   });
 
-  test('a week scrolled to its end stays put as the dock tucks away under a dragged card', async ({ page }) => {
+  test('a closed dock has no button or invisible reopen target during a drag', async ({ page }) => {
+    await open(page);
+    await dock(page).getByRole('button', { name: 'Hide Unscheduled', exact: true }).click();
+    const at = await dock(page).boundingBox();
+    await lift(page, 'Meeting');
+    await expect(dock(page).locator('[data-backlog-toggle]')).toBeHidden();
+    await page.mouse.move(at.x + at.width / 2, at.y + at.height / 2);
+    await frames(page);
+    await expect(cards(page)).toBeHidden();
+    expect(await dock(page).evaluate(el => { const r = el.getBoundingClientRect(); return el.contains(document.elementFromPoint(r.x + r.width / 2, r.y + r.height / 2)); })).toBe(false);
+    await page.keyboard.press('Escape');
+    await expect(dock(page).getByRole('button', { name: 'Show Unscheduled', exact: true })).toBeVisible();
+    expect((await saved(app.meeting.id)).due).toBe(day);
+  });
+
+  test('a week scrolled to its end stays put during a scheduled card drag', async ({ page }) => {
     await open(page);
     const week = page.locator('.week-board-scroll');
     const end = await week.evaluate((el) => { el.scrollTop = el.scrollHeight; return el.scrollTop; });
@@ -268,7 +265,7 @@ onDevices(['desktop', 'ipad'], () => {
     expect(id).toBeTruthy();
     const title = week.locator(`[data-calendar-card="${id}"] .week-board-title`), at = await title.boundingBox();
     await lift(page, title);
-    await expect(cards(page)).toBeHidden();
+    await expect(cards(page)).toBeVisible();
     await frames(page);
     expect(await week.evaluate((el) => el.scrollTop)).toBe(end);
     expect((await title.boundingBox()).y).toBe(at.y);
@@ -276,4 +273,33 @@ onDevices(['desktop', 'ipad'], () => {
     await expect(cards(page)).toBeVisible();
     expect(await week.evaluate((el) => el.scrollTop)).toBe(end);
   });
+});
+
+// Run the actual opening, closing and drag flows with motion allowed, not just reduced-motion fixtures.
+test('the dock animates opening and closing and respects reduced motion', { tag: '@gate' }, async ({ page }) => {
+  await open(page);
+  await page.emulateMedia({ reducedMotion: 'no-preference' });
+  await dock(page).getByRole('button', { name: 'Hide Unscheduled', exact: true }).click();
+  await expect(cards(page)).toBeHidden();
+  await dock(page).getByRole('button', { name: 'Show Unscheduled', exact: true }).click();
+  await expect(dock(page)).toHaveCSS('animation-name', 'week-board-dock-in');
+  await expect(cards(page)).toBeVisible();
+  await expect.poll(() => dock(page).evaluate(el => el.getAnimations().length)).toBe(0);
+  await lift(page, 'Plan');
+  const cell = await page.locator('.week-board-cell').first().boundingBox();
+  await page.mouse.move(cell.x + cell.width / 2, cell.y + 20, { steps: 5 });
+  await expect(dock(page)).toHaveCSS('transition-duration', '0.16s, 0.16s, 0s');
+  await expect(dock(page)).toHaveCSS('opacity', '0');
+  await expect(cards(page)).toBeHidden();
+  await expect(dock(page).locator('[data-backlog-toggle]')).toBeHidden();
+  await page.keyboard.press('Escape');
+  await page.mouse.up();
+  await expect(cards(page)).toBeVisible();
+  await expect(dock(page)).toHaveCSS('opacity', '1');
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await expect(dock(page)).toHaveCSS('transition-duration', '0s');
+  await dock(page).getByRole('button', { name: 'Hide Unscheduled', exact: true }).click();
+  await expect(cards(page)).toBeHidden();
+  await dock(page).getByRole('button', { name: 'Show Unscheduled', exact: true }).click();
+  await expect(dock(page)).toHaveCSS('animation-name', 'none');
 });
