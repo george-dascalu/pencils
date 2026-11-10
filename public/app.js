@@ -3,6 +3,7 @@ import { esc } from "./escape.js";
 import { filterTasks, sortGroups, sortNames } from "./task-filter.js";
 import { installCardKeys } from "./card-key.js";
 import { cardIdsButton, installCardIds } from "./card-ids.js";
+import { calendarFilterDefaults } from "./calendar-create-model.js";
 import { closePopup, finishPopupExits } from "./popup-motion.js";
 import { projectCreateHTML } from "./project-create.js";
 import { taskTimeFields } from "./task-time-fields.js";
@@ -1769,6 +1770,7 @@ function taskDialog(id = null, defaults = {}, replace = false) {
         assignee: (fieldOn(state.config, "assignee") && projectPeople(state).find((p) => p.id === state.config.default_assignee)?.name) || "",
         due: "",
         tags: [],
+        ...(state.view === "calendar" && storage.get("calendar-mode") === "board" ? calendarFilterDefaults(state) : {}),
         ...defaults,
       };
   if (!t) return;
@@ -2294,7 +2296,7 @@ document.addEventListener("click", async (event) => {
       }
       case "task-new":
         taskDialog(null, {
-          status: el.dataset.status || initialStatus(state.config),
+          ...(el.dataset.status ? { status: el.dataset.status } : {}),
           ...(kanbanGroup(el.dataset.kanbanField) !== "none" ? { [el.dataset.kanbanField]: el.dataset.kanbanField === "tags" ? (el.dataset.kanbanValue ? [el.dataset.kanbanValue] : []) : el.dataset.kanbanValue } : {}),
         });
         break;

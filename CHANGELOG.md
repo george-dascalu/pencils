@@ -2,6 +2,11 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.22.91 — 2026-11-10
+
+### Changed
+- Feature F0.22-91: New cards in Calendar's Week board inherit active status, type, assignee, priority, tags and custom-field filters, both inline and through New → Card. The chosen cell supplies its day and row, and the full form lets you change the defaults. Clearing filters restores normal project defaults; Unassigned overrides an automatic assignee.
+
 ## 0.22.90 — 2026-11-10
 
 ### Changed

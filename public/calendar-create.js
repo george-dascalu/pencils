@@ -1,9 +1,8 @@
-import { fieldOn } from './card-fields.js';
-import { daypartChange } from './calendar-time.js';
+import { weekBoardCellDefaults } from './calendar-create-model.js';
 import { focusOnOpen } from './open-focus.js';
 
 // A title editor in the chosen cell. Keep its draft across live redraws and rejected saves;
-// the server supplies the project's defaults for fields the cell doesn't name.
+// active filters and the chosen cell supply defaults; the server fills the remaining fields.
 export function calendarCreate(ctx) {
   const { state, esc, icon, renderView } = ctx;
   let draft = null;
@@ -25,6 +24,7 @@ export function calendarCreate(ctx) {
       if (draft?.busy) return;
       const cell = button.closest('.week-board-cell'), field = cell.closest('.week-board').dataset.rows;
       draft = { project: state.project.id, day: cell.dataset.calendarDate, field, value: cell.dataset.weekBoardValue, title: '', request: crypto.randomUUID() };
+      draft.defaults = weekBoardCellDefaults(state, draft.day, field, draft.value);
       renderView(true);
       focusOnOpen(host()?.querySelector('input'), host()?.querySelector('[data-week-board-create-cancel]'));
     } else if (e.target.closest('[data-week-board-create-cancel]') && !draft?.busy) close();
@@ -42,11 +42,7 @@ export function calendarCreate(ctx) {
     const title = form.elements.title.value.trim();
     if (!title) { focusOnOpen(form.elements.title, form.querySelector('[type="submit"]')); return; }
     d.title = title; d.busy = true; d.error = '';
-    const fields = { title, creation_request: d.request };
-    for (const key of ['start', 'due']) if (fieldOn(state.config, key)) fields[key] = d.day;
-    if (d.field === 'daypart') Object.assign(fields, daypartChange(fields, d.value));
-    else if (d.field === 'tags') fields.tags = d.value ? [d.value] : [];
-    else if (d.field !== 'none') fields[d.field] = d.value;
+    const fields = { ...d.defaults, title, creation_request: d.request };
     const route = ctx.route('tasks');
     renderView(true);
     try {

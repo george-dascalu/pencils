@@ -31,6 +31,7 @@ export const TIERS = [
     "test/backend-concurrency.test.js", // saves not blocked, external edits detected
     "test/backup-upload.test.js", // large backup upload, verify, restore (data safety)
     "test/board-session.test.js", // presence invitation before board loads
+    "test/calendar-create-model.test.js", // new Week board cards inherit filters and cell context
     "test/calendar-model.test.js", // move/resize calendar dates across DST
     "test/calendar-time.test.js", // hour selection and resize snapping
     "test/calendar-backlog.test.js", // places in the Week board's Unscheduled row
@@ -141,6 +142,7 @@ export const TIERS = [
     "e2e/navigation/project-layout.spec.mjs", // switch Tasks and Planning layouts, filters and selection
     "e2e/navigation/search.spec.mjs", // find cards, documents and boards
     "e2e/planning/calendar-cross-day-resize.spec.mjs", // resize a calendar card across days
+    "e2e/planning/week-board-create-filters.spec.mjs", // filtered creation persists field defaults
     "e2e/planning/week-board-create.spec.mjs", // inline creation saves date and row defaults
     "e2e/planning/calendar-hours.spec.mjs", // create a timed card by dragging hours
     "e2e/planning/calendar-move.spec.mjs", // move a timed card on the calendar
