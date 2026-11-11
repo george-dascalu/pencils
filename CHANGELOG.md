@@ -2,6 +2,11 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.23.16 — 2026-11-11
+
+### Fixed
+- Feature F0.23-16: The card pane and phone search motion checks wait for what they measure, so they no longer fail now and then.
+
 ## 0.23.15 — 2026-11-11
 
 ### Changed

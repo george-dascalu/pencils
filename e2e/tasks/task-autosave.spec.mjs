@@ -23,6 +23,17 @@ const saved = async (id) => (await snap()).tasks.find((t) => t.id === id);
 const title = (page) => page.locator("#task-form [name=title]");
 const status = (page) => page.locator("[data-autosave-status]");
 const comments = (page) => page.locator(".board-comments");
+// A box once the layout a resize or a pane switch brings has settled: two readings in a row agree.
+async function settledBox(locator) {
+  let last = null;
+  await expect.poll(async () => {
+    const box = JSON.stringify(await locator.boundingBox());
+    const same = box === last;
+    last = box;
+    return same;
+  }).toBe(true);
+  return JSON.parse(last);
+}
 const open = (page, id) => page.locator(`[data-action=task-open][data-id="${id}"]`).first().click();
 const visit = async (page, id) => {
   await page.goto(`${app.base}/#project/${app.project.id}/list`);
@@ -83,7 +94,7 @@ test("comments open beside the right-docked editor with replies and reactions, i
   await chooseCardPane(page, 'comments');
   await comments(page).waitFor();
   await expect(comments(page)).not.toHaveAttribute("popover");
-  const commentsBox = await comments(page).boundingBox();
+  const commentsBox = await settledBox(comments(page));
   const dialogBox = await page.locator(".task-dialog").boundingBox();
   expect(commentsBox.x + commentsBox.width, "Comments open to the left of the details").toBeLessThanOrEqual((await page.locator(".task-editor-content > .dialog-body").boundingBox()).x);
   expect(commentsBox.x).toBeGreaterThanOrEqual(dialogBox.x);
@@ -103,7 +114,7 @@ test("comments open beside the right-docked editor with replies and reactions, i
   await chooseCardPane(page, 'history');
   await expect(comments(page)).toHaveCount(0);
   await page.locator(".task-history-panel .recovery-item").first().waitFor();
-  const historyBox = await page.locator(".task-history-panel").boundingBox();
+  const historyBox = await settledBox(page.locator(".task-history-panel"));
   for (const key of ["x", "y", "width", "height"]) expect(Math.abs(historyBox[key] - commentsBox[key]), `${key}: comments match history`).toBeLessThan(2);
 });
 
@@ -117,7 +128,7 @@ test("comments and history share one pane clear of the sidebar at desktop, lapto
     await page.setViewportSize({ width, height: 1000 });
     await chooseCardPane(page, 'comments');
     await comments(page).waitFor();
-    const box = await comments(page).boundingBox();
+    const box = await settledBox(comments(page));
     expect(box.x >= 0 && box.x + box.width <= width, `comments fit at ${width}px`).toBe(true);
     if (width >= 1100) {
       const editor = await page.locator(".task-dialog").boundingBox();
@@ -136,7 +147,7 @@ test("comments and history share one pane clear of the sidebar at desktop, lapto
     }
     await chooseCardPane(page, 'history');
     await page.locator(".task-history-panel .recovery-item").first().waitFor();
-    const history = await page.locator(".task-history-panel").boundingBox();
+    const history = await settledBox(page.locator(".task-history-panel"));
     // Phone panes use the page scroller and grow with their own content.
     for (const key of width < 600 ? ["x", "y", "width"] : ["x", "y", "width", "height"]) expect(Math.abs(history[key] - box[key]), `Modal ${width}: matching ${key}`).toBeLessThan(2);
   }

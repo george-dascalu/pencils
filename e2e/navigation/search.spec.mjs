@@ -83,8 +83,13 @@ onDevices(["phone"], () => test("on phones the search sheet moves smoothly, unle
     await page.locator(".topbar .tabs").getByRole("button", { name: "Search", exact: true }).click();
     await expect(dialog(page)).toBeVisible();
   };
+  // A short rise can be over before it's looked at, so count the transitions that start instead.
+  await page.evaluate(() => {
+    window.rises = 0;
+    document.addEventListener("transitionrun", (event) => { if (event.target.matches?.("dialog.search-dialog")) window.rises++; }, true);
+  });
   await open();
-  expect(await dialog(page).evaluate((el) => el.getAnimations().length), "it rises in").toBeGreaterThan(0);
+  await expect.poll(() => page.evaluate(() => window.rises), { message: "it rises in" }).toBeGreaterThan(0);
   const moves = await dialog(page).evaluate((el) => getComputedStyle(el).transitionProperty);
   expect(moves, "it follows the keyboard").toMatch(/bottom/);
   expect(moves, "and the room above it").toMatch(/max-height/);
