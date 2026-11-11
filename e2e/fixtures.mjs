@@ -141,7 +141,11 @@ export function useApp(seed = async () => ({})) {
     Object.assign(app, await startApp(path.basename(testInfo.file, ".spec.mjs")));
     Object.assign(app, await seed(app.store, app));
   });
-  test.afterAll(async () => app.close?.());
+  test.afterAll(async () => {
+    await app.close?.();
+    // A worker keeps every spec module it loaded, so a finished file's store and seed data would stay in its heap (F0.23-19).
+    for (const key of Object.keys(app)) delete app[key];
+  });
   return app;
 }
 

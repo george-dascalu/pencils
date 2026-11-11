@@ -2,6 +2,11 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.23.19 — 2026-11-11
+
+### Fixed
+- Feature F0.23-19: Browser test workers let go of each finished test file's data, so a long test run no longer runs out of memory.
+
 ## 0.23.18 — 2026-11-11
 
 ### Fixed

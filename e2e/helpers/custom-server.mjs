@@ -51,6 +51,10 @@ export function useCustomApp(settings = {}) {
   test.beforeAll(async ({}, testInfo) => {
     Object.assign(app, await startCustomApp(path.basename(testInfo.file, ".spec.mjs"), typeof settings === "function" ? await settings() : settings));
   });
-  test.afterAll(async () => app.close?.());
+  test.afterAll(async () => {
+    await app.close?.();
+    // Free the finished file's store, as useApp does (F0.23-19).
+    for (const key of Object.keys(app)) delete app[key];
+  });
   return app;
 }
