@@ -1,0 +1,16 @@
+{
+  "name": "Pencils",
+  "short_name": "Pencils",
+  "description": "A little space for your next big thing. A Markdown-powered workspace for documents, cards and boards.",
+  "id": "/",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#f9f9f5",
+  "theme_color": "#263c34",
+  "icons": [
+    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

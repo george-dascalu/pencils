@@ -1,4 +1,4 @@
-import {chooseCardPane} from '../helpers/card-panes.mjs';
+import {chooseCardPane, chooseCardSection} from '../helpers/card-panes.mjs';
 // The card editor on phones and touch screens (merged from task-editor-phone and
 // task-editor-touch). Phones show Details, Comments and History as panes with a compact
 // header, a one-row toolbar that scrolls sideways and 44px controls; relationships sort,
@@ -43,7 +43,7 @@ const reviewTests = (device, phone) => {
   // The card's board (F0.21-76) is the fourth section.
   test("Details, Board, Comments and History are the editor's sections", async ({ page }) => {
     await openCard(page, device, app.review);
-    await relationships(page).waitFor();
+    await chooseCardSection(page, "Relationships");
     await expect(page.locator(".task-mobile-panes")).toHaveCount(0);
     await expect(form(page).locator("[data-editor-pane]")).toHaveCount(3);
     const dialog = page.locator(".task-dialog");
@@ -62,7 +62,7 @@ const reviewTests = (device, phone) => {
   if (phone)
     test("the phone header, toolbar and relationships stay compact with 44px controls", async ({ page }) => {
       await openCard(page, device, app.review);
-      await relationships(page).waitFor();
+      await chooseCardSection(page, "Relationships");
       const tools = form(page).locator(".task-rich-tools");
       const identity = await form(page).locator(".task-identity-row").boundingBox();
       const title = await form(page).locator('[name="title"]').boundingBox();
@@ -102,7 +102,7 @@ const reviewTests = (device, phone) => {
   test("relationships sort, add and remove, and the editor has no horizontal overflow in either theme", async ({ page }) => {
     const { link } = app.review;
     await openCard(page, device, app.review);
-    await relationships(page).waitFor();
+    await chooseCardSection(page, "Relationships");
     await tapOrClick(device, relationships(page).locator(".task-relationship-sort > summary"));
     await tapOrClick(device, relationships(page).locator(".task-relationship-sort").getByRole("option", { name: "Assignee", exact: true }));
     await tapOrClick(device, relationships(page).getByRole("button", { name: "Reverse relationship sort" }));
@@ -127,6 +127,7 @@ const reviewTests = (device, phone) => {
   test("a compact relationship row opens the linked card with its full title", async ({ page }) => {
     const { child } = app.review;
     await openCard(page, device, app.review);
+    await chooseCardSection(page, "Relationships");
     await tapOrClick(device, relationships(page).locator(`[data-relationship-open="${child.id}"]`));
     await expect(form(page)).toHaveAttribute("data-id", child.id);
     await expect(form(page).locator('[name="title"]')).toHaveValue(child.title);
@@ -161,6 +162,7 @@ const touchTests = (device) => {
     const { target } = app.touch;
     const { width } = page.viewportSize();
     await openCard(page, device, app.touch);
+    await chooseCardSection(page, "Relationships");
     const add = form(page).getByRole("button", { name: "Add relationship", exact: true });
     const picker = form(page).locator("[data-relationship-picker]");
     await tapOrClick(device, add);

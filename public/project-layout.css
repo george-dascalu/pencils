@@ -153,6 +153,9 @@
    as icons in a floating, rounded bar at the bottom, at the shared control height. It steps aside
    while typing, when the keyboard covers the bottom of the screen; its space stays so nothing moves
    under a tap that ends typing. layout-tray.js's tabBar matches the same query. */
+/* Install (F0.23-14), after Search, shows only while the browser can install Pencils (app-install.js),
+   never inside the installed app. */
+:root:not([data-installable]) .topbar .tabs > .tab-install { display: none; }
 @media (max-width: 600px), (pointer: coarse) {
   /* The bar (control height, 4px padding, 1px border) floats 8px above the bottom, with 8px above it. */
   :root { --tabbar-space: calc(var(--control-height) + 26px); --tabbar-clearance: calc(var(--tabbar-space) + env(safe-area-inset-bottom)); }
@@ -195,7 +198,7 @@
   .topbar .tabs > .tabs-scroll::-webkit-scrollbar { display: none; }
   .topbar .tabs .bar-buttons { display: contents; }
   .topbar .tabs :is(.view-tab-group, .bar-button) { flex: 1 0 var(--control-height); }
-  .topbar .tabs > .tab-search { flex: 1 1 0; min-width: var(--control-height); }
+  .topbar .tabs > :is(.tab-search, .tab-install) { flex: 1 1 0; min-width: var(--control-height); }
   .topbar .tabs .bar-button { -webkit-touch-callout: none; user-select: none; }
   .main:has(:is(input:not([type="checkbox"], [type="radio"], [type="range"], [type="color"], [type="button"], [type="submit"]), textarea, [contenteditable]:not([contenteditable="false"])):focus) .topbar .tabs { display: none; }
   :root:has(.main.project-main) #toasts { bottom: calc(var(--tabbar-space) + env(safe-area-inset-bottom) + 8px); }
@@ -1189,6 +1192,7 @@ html.table-viewport-view body {
 /* Segmented controls share the layout switcher's active look. */
 .document-modes .icon-button[aria-pressed="true"],
 .task-pane-switcher [aria-pressed="true"],
+.task-section-tabs [aria-selected="true"],
 .pen-presets .pen-preset.active {
   background: var(--surface-soft);
   border-color: var(--green);

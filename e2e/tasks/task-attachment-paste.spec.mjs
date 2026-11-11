@@ -4,6 +4,7 @@
 // cells) pastes the text only, while a copied file whose text is only its name attaches; and an image dragged from a web page without a file extension takes
 // one from its type.
 import { test, expect, useApp } from "../fixtures.mjs";
+import { chooseCardSection } from "../helpers/card-panes.mjs";
 
 const app = useApp(async (store) => ({ project: await store.createProject({ title: "Pasting" }) }));
 const saved = async (id) => (await app.store.snapshot(app.project.id)).tasks.find((t) => t.id === id);
@@ -58,7 +59,7 @@ test("a file copied in a file manager, whose text is just its name, attaches und
 test("an image pasted on a note being read uploads to that note, not the description", async ({ page }) => {
   const card = await app.store.createTask(app.project.id, { title: "Paste into note", body: "Card text", notes: [{ id: "n-read", body: "Reading this note" }] });
   await open(page, card);
-  const notes = page.getByRole("region", { name: "Notes", exact: true });
+  const notes = await chooseCardSection(page, "Notes");
   await paste(notes.locator(".inline-preview"));
   await expect.poll(async () => (await saved(card.id)).notes?.[0]?.body).toMatch(/Pasted image \d{14}\.png/);
   expect((await saved(card.id)).body).toBe("Card text");

@@ -6,7 +6,7 @@ import { cardIdsButton, installCardIds } from "./card-ids.js";
 import { calendarFilterDefaults } from "./calendar-create-model.js";
 import { closePopup, finishPopupExits } from "./popup-motion.js";
 import { projectCreateHTML } from "./project-create.js";
-import { taskTimeFields } from "./task-time-fields.js";
+import { taskDateRangeHTML } from "./task-time-fields.js";
 import { APP_VERSION, watchAppVersion } from "./app-version.js";
 import { DEFAULT_TASK_TYPES, typeIcon, typeIconName } from "./task-types.js";
 import { updateViewLayout } from "./view-layout.js";
@@ -56,6 +56,7 @@ import { installBookmarks } from "./bookmarks.js";
 import { boardFloor } from "./layout-tray.js";
 import { recordFailure, installDebugLog } from "./debug-log.js";
 import { bootProgress } from "./boot-progress.js";
+import { installApp } from "./app-install.js";
 installDebugLog();
 // The last input, pointer or keyboard (a modifier alone isn't), for styles :focus-visible can't tell
 // apart: the shared select menu gives focus back to its control after a mouse choice too (F0.22-76).
@@ -1055,12 +1056,13 @@ function projectNavigationHTML() {
             return `<button class="tab ${active ? "active" : ""}" data-action="view" data-view="${view}" aria-label="${viewLabel(view)}" title="${viewLabel(view)}${view === "tasks" && !home ? ` · ${total} cards` : ""}" ${active ? 'aria-current="page"' : ""}>${icon(view === "tasks" ? "list" : view === "planning" ? "calendar" : view)}</button>`;
           }).join("")}</div>`,
       )
-      .join("")}${features.bottomBar.html()}</div><span class="tabs-divider" aria-hidden="true"></span><button type="button" class="tab tab-search" data-feature="global-search" aria-label="Search" title="Search cards, documents and boards">${icon("search")}</button></nav>
+      .join("")}${features.bottomBar.html()}</div><span class="tabs-divider" aria-hidden="true"></span><button type="button" class="tab tab-search" data-feature="global-search" aria-label="Search" title="Search cards, documents and boards">${icon("search")}</button><button type="button" class="tab tab-install" data-feature="install-app" aria-label="Install Pencils as an app" title="Install Pencils as an app">${icon("download")}</button></nav>
     ${home ? "" : `<label class="mobile-view-switcher">View <select id="project-view-switcher" aria-label="Project view">${["settings", "help"].includes(area) ? `<option value="${area}" selected disabled>${label(area)}</option>` : ""}${(state.project.personal ? ["documents"] : ["overview", "documents", "planning", "tasks", "board"]).filter(areaOn).map((view) => `<option value="${view}" ${view === area ? "selected" : ""}>${viewLabel(view)}</option>`).join("")}</select></label>`}
     ${home ? "" : newMenuHTML()}
   </div>`;
 }
 const lists = listPanel(state);
+installApp({ state, esc, icon });
 function projectPage() {
   if (taskViews.includes(state.view))
     storage.set(`task-view:${state.project.id}`, state.view);
@@ -1807,7 +1809,7 @@ function taskDialog(id = null, defaults = {}, replace = false) {
       )}
     </div>${t.key || id ? `<span class="task-id task-key" title="${esc(t.key || id)}">${esc(t.key || id)}</span>` : isDraft ? '<span class="task-id task-key">Draft</span>' : ""}${id ? bookmarks.button("card", state.project.id, id) : ""}<input class="title-input" name="title" aria-label="Card title" value="${esc(t.title)}" placeholder="Card title" required maxlength="300" autofocus>${id || isDraft ? "" : closeButton}</div></div>
     <div class="task-editor-content"><div class="dialog-body"><div class="form-error hidden" role="alert"></div>
-      <div class="task-metadata"><div class="task-metadata-main"><div class="task-fields field-box" ${fieldBoxStyle(state, t.priority)}>${metadata.assignee}${metadata.status}${metadata.priority}</div><div class="field task-dates"><span class="sr-only">Dates</span><div class="task-date-range" data-date-range role="group" aria-label="Start and due dates"><input type="date" name="start" aria-label="Start date" title="Start date" value="${esc(t.start || "")}"><span aria-hidden="true">→</span><input type="date" name="due" aria-label="Due date" title="Due date" value="${esc(t.due || "")}"></div>${taskTimeFields(t, esc, icon)}</div></div>${taskTagsHTML(state, t.tags || [], esc, icon)}</div>
+      <div class="task-metadata"><div class="task-metadata-main"><div class="task-fields field-box" ${fieldBoxStyle(state, t.priority)}>${metadata.assignee}${metadata.status}${metadata.priority}</div><div class="field task-dates"><span class="sr-only">Dates</span>${taskDateRangeHTML(t, esc, icon)}</div></div>${taskTagsHTML(state, t.tags || [], esc, icon)}</div>
       ${assigneeHint(state) ? `<p id="task-assignee-help" class="sr-only">${esc(assigneeHint(state))}</p>` : ""}
       ${taskDescriptionHTML(t.body, { esc, icon })}
       <input type="hidden" name="parent" value="${esc(t.parent || "")}">

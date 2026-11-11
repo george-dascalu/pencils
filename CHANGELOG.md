@@ -2,6 +2,20 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.23.15 — 2026-11-11
+
+### Changed
+- Feature F0.23-11: Dates and times are more compact: each time sits beside its date in one range, on one line where there is room, in the card editor and the date popover of List and Agenda rows.
+- Feature F0.23-12: With Comments or Versions open beside a card, its title stays above the details and the column has its own Comments or Versions heading.
+- Feature F0.23-13: The card side panel is 30% wider.
+
+### Fixed
+- Feature F0.23-15: The board's capacity explanation opens beside its gauge without first flashing at the corner of the screen.
+
+### Added
+- Feature F0.23-10: On desktop and iPad the card's Attachments, Notes, Relationships, Documents and Boards sit in one row of tabs below the description, each with its count; one shows at a time, and the last one chosen stays chosen.
+- Feature F0.23-14: Pencils installs as an app of its own, opening in its own window with its own icon: an Install button after Search in the tab bar offers it while the browser can install it (Chromium browsers, such as Vivaldi, Chrome and Edge, over HTTPS or on this computer), and on iPhone and iPad it shows the Add to Home Screen steps.
+
 ## 0.23.9 — 2026-11-11
 
 ### Added

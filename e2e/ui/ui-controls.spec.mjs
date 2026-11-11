@@ -131,14 +131,15 @@ onDevices(["desktop", "phone"], (device) => test("a tap or click on a date field
     await expect(page.locator("#shared-date-picker")).toHaveCount(1);
     return;
   }
-  // A tap on a date field's label text opens the calendar too, and focuses nothing.
+  // A tap on the date popover's field opens the calendar too, and focuses nothing. Its fields have no
+  // visible labels since F0.23-11 (compact-dates.spec.mjs).
   await open(page, "timeline", "[data-task-dates]");
   await page.locator("[data-task-dates]:visible").first().tap();
-  const label = page.locator("#task-dates-popover label", { hasText: "Start date" });
-  await label.waitFor();
+  const field = page.locator("#task-dates-popover").getByLabel("Start date", { exact: true });
+  await field.waitFor();
   await page.evaluate(() => (window.__dateFocus = 0));
-  await label.tap({ position: { x: 4, y: 4 } });
+  await field.tap({ position: { x: 4, y: 4 } });
   await page.locator("#shared-date-picker").waitFor();
-  expect(await page.evaluate(() => window.__dateFocus), "a label tap leaves the field unfocused").toBe(0);
+  expect(await page.evaluate(() => window.__dateFocus), "a tap leaves the field unfocused").toBe(0);
 }));
 

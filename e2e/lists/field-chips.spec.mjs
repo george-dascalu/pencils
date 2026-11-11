@@ -3,6 +3,7 @@
 // border, tint). Relationship statuses share one width; List and Tree put the
 // title right after the ID.
 import { test, expect, onDevices, useApp } from "../fixtures.mjs";
+import { chooseCardSection } from "../helpers/card-panes.mjs";
 
 const app = useApp(async (store) => {
   const project = await store.createProject({ title: "Field chips", key: "FC" });
@@ -34,6 +35,7 @@ async function reference(page) {
   await openView(page, "list", ".task-row");
   await page.locator(`[data-action="task-open"][data-id="${app.parent.id}"]:visible`).first().click();
   await page.locator("#task-form").waitFor();
+  await chooseCardSection(page, "Relationships");
   await expect(page.locator("#task-form .task-relationship-row")).toHaveCount(4);
   return {
     assignee: await look(page, "#task-form .task-assignee-choice .task-assignee"),
@@ -261,6 +263,7 @@ onDevices(["phone"], () => test("on phones relationship rows match the List rows
   await openView(page, "list", row);
   const list = { title: await part(`${row} .phone-task-title`), key: await part(`${row} .phone-task-meta > span:not(.field-box, .due)`), box: await part(`${row} .phone-task-fields`), due: await part(`${row} .phone-task-fields .due`) };
   await page.locator(`[data-action="task-open"][data-id="${app.parent.id}"]:visible`).first().click();
+  await chooseCardSection(page, "Relationships");
   const rel = `#task-form .task-relationship-row:has([data-relationship-open="${child.id}"])`;
   await expect(page.locator(rel)).toBeVisible();
   const relation = { title: await part(`${rel} .task-relationship-title`), key: await part(`${rel} .task-relationship-key`), box: await part(`${rel} .task-relationship-metadata`), due: await part(`${rel} .task-relationship-metadata > .due`) };

@@ -161,6 +161,7 @@ export const TIERS = [
     "e2e/settings/workspace-journey.spec.mjs", // new card, Table, Kanban, Tree, canvas end to end
     "e2e/tasks/create-another.spec.mjs", // create cards, failed create, Create another
     "e2e/tasks/task-all-day.spec.mjs", // toggle All day on a card
+    "e2e/tasks/compact-dates.spec.mjs", // set a card's dates and times on one compact line
     "e2e/tasks/task-autosave.spec.mjs", // edit a card and let it autosave
     "e2e/tasks/task-editor-page.spec.mjs", // open card editor on phone/iPad/desktop
     "e2e/tasks/task-editor-touch.spec.mjs", // edit a card on phone/iPad
@@ -289,6 +290,7 @@ export const TIERS = [
     "e2e/navigation/bookmarks.spec.mjs", // bookmark a card/view and find it in search
     "e2e/navigation/bottom-bar.spec.mjs", // scroll to the end of a view on phone
     "e2e/navigation/under-bar.spec.mjs", // every view and page runs under the bottom bar and scrolls clear of it
+    "e2e/navigation/install-app.spec.mjs", // install Pencils as an app from the tab bar
     "e2e/navigation/compact-navigation.spec.mjs", // use header navigation at all widths
     "e2e/navigation/desktop-tray.spec.mjs", // switch Tasks/Planning layouts on desktop
     "e2e/navigation/mobile-workspaces.spec.mjs", // use Table/Calendar/Timeline/Board on phone
@@ -332,6 +334,7 @@ export const TIERS = [
     "e2e/settings/settings-page.spec.mjs", // open and navigate the Settings page
     "e2e/settings/workflow.spec.mjs", // edit statuses and transitions
     "e2e/tasks/card-header-fields.spec.mjs", // view card editor header
+    "e2e/tasks/card-section-tabs.spec.mjs", // switch the card's Attachments, Notes, Relationships, Documents and Boards tabs
     "e2e/tasks/card-tags.spec.mjs", // add and create tags on a card
     "e2e/tasks/draft-tasks.spec.mjs", // use draft cards on a board
     "e2e/tasks/editor-compact-controls.spec.mjs", // use date popover and writing areas

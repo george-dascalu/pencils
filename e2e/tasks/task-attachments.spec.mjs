@@ -8,6 +8,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { test as base, expect, useApp } from "../fixtures.mjs";
 import { newCard } from "../helpers/new-card.mjs";
+import { cardSection } from "../helpers/card-panes.mjs";
 
 // Content Security Policy violations fail the test, like page errors.
 const test = base.extend({
@@ -285,8 +286,8 @@ test("the editor layout and the attachment preview fit desktop, tablet and phone
           description: rect(el.querySelector(".task-description")),
         };
       });
-      // Field order is assignee, status, priority (0.19.9).
-      expect(geometry.names).toEqual(["assignee", "status", "priority", "start", "due"]);
+      // Field order is assignee, status, priority (0.19.9); each time follows its date (F0.23-11).
+      expect(geometry.names).toEqual(["assignee", "status", "priority", "start", "start_time", "due", "due_time"]);
       // The type and key precede the bookmark and title in one row on every device.
       expect(geometry.identity[1].x >= geometry.identity[0].right - 1 && geometry.identity[2].x >= geometry.identity[1].right - 1, where).toBe(true);
       expect(geometry.description.y, `description below the fields: ${where}`).toBeGreaterThan(geometry.fields[4].y);
@@ -309,11 +310,20 @@ test("the editor layout and the attachment preview fit desktop, tablet and phone
 test("Attachments adds files with a + beside its title", async ({ page }) => {
   await page.goto(`${app.base}/#project/${app.project.id}/list`);
   await open(page, app.other.id);
-  const heading = page.locator("#task-form .task-attachments-heading");
+  const heading = cardSection(page, "Attachments").locator(".task-attachments-heading");
   await expect(heading.locator("h3")).toHaveText("Attachments");
   const add = heading.getByRole("button", { name: "Add attachments", exact: true });
   await expect(add, "an icon, no text").toHaveText("");
   await expect(add.locator("svg")).toHaveCount(1);
+  // In the card's tabs (F0.23-10) the Attachments tab names the list: the heading is left to screen
+  // readers and the + ends the list's row.
+  await expect(page.locator("#task-form").getByRole("tab", { name: "Attachments", exact: true })).toHaveAttribute("aria-selected", "true");
+  expect((await heading.locator("h3").boundingBox()).width).toBeLessThanOrEqual(1);
+  const [row, plus] = [await heading.boundingBox(), await add.boundingBox()];
+  expect(Math.abs(row.x + row.width - plus.x - plus.width), "at the row's end").toBeLessThanOrEqual(1);
+  // The phone's card page stacks the sections, each under its title.
+  await page.setViewportSize({ width: 390, height: 844 });
+  await expect(page.locator(".task-dialog")).toHaveClass(/\btask-editor-page\b/);
   const [title, button] = [await heading.locator("h3").boundingBox(), await add.boundingBox()];
   expect(button.x, "to the right of the title").toBeGreaterThan(title.x + title.width);
   expect(Math.abs(button.y + button.height / 2 - (title.y + title.height / 2)), "on the title's row").toBeLessThanOrEqual(2);

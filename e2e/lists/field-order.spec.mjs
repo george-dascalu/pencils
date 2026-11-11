@@ -3,6 +3,7 @@
 // as an avatar only, and the Add relationship panel keeps its type menu, search
 // and close button on one row without a caption.
 import { test, expect, onDevices, useApp } from "../fixtures.mjs";
+import { chooseCardSection } from "../helpers/card-panes.mjs";
 
 const app = useApp(async (store) => {
   const project = await store.createProject({ title: "Field order", key: "FO" });
@@ -47,6 +48,7 @@ async function openCard(page, id = app.tasks[0].id) {
   await page.locator(".task-row").first().waitFor();
   await page.locator(`[data-action="task-open"][data-id="${id}"]:visible`).first().click();
   await page.locator("#task-form").waitFor();
+  await chooseCardSection(page, "Relationships");
   await page.locator("#task-form .task-relationship-row").first().waitFor();
   await page.evaluate(() => document.fonts.ready);
 }
@@ -84,8 +86,16 @@ onDevices(["desktop", "ipad", "phone"], () => {
     const row = page.locator(".task-relationship-row .task-relationship-link").first();
     await row.waitFor();
     await assertRelationshipOrder(row, [".task-relationship-identity > .icon", ".task-relationship-key", ".task-relationship-title", ".task-relationship-assignee", ".task-relationship-status", ".task-relationship-priority"], "relationship row");
-    await expect(row.locator(".task-relationship-assignee .task-assignee"), "assignee fits its available track").toHaveText("Geo");
+    // The desktop card panel, 936px wide since F0.23-13, has room for the whole name; touch's larger text does not.
+    await expect(row.locator(".task-relationship-assignee .task-assignee"), "assignee fits its available track").toHaveText(device === "desktop" ? "George Dascalu" : "Geo");
     await expect(row.locator(".task-relationship-assignee .task-assignee"), "assignee name stays available to assistive tech").toHaveAttribute("aria-label", /George Dascalu/);
+    if (device !== "desktop") return;
+    // A narrower panel leaves room for the short name only.
+    const grip = page.getByRole("separator", { name: "Resize card panel", exact: true });
+    await grip.focus();
+    for (let i = 0; i < 11; i++) await page.keyboard.press("ArrowRight");
+    await expect(grip).toHaveAttribute("aria-valuenow", "716");
+    await expect(row.locator(".task-relationship-assignee .task-assignee"), "assignee fits a narrower track").toHaveText("Geo");
   });
 
   test("the Add relationship panel keeps one row without a caption and lists results in field order", async ({ page, device }) => {

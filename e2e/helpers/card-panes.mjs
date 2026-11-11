@@ -18,3 +18,13 @@ export async function chooseCardPane(page, pane) {
     await expect(form.locator('.task-editor-content > .dialog-body')).toBeVisible();
   }else await expect(form.locator(pane==='history'?'.task-history-panel':'.task-comments-panel')).toBeVisible();
 }
+// On desktop and iPad a card's Attachments, Notes, Relationships, Documents and Boards are tabs (F0.23-10);
+// phones and the card's board show them all. cardSection finds one whichever way it shows, and
+// chooseCardSection picks its tab first where there is one.
+export const cardSection=(page,name)=>page.locator(`#task-form section[aria-label="${name}"]`);
+export async function chooseCardSection(page,name){
+  const tab=page.locator('#task-form').getByRole('tablist',{name:'Card sections',exact:true}).getByRole('tab',{name:new RegExp(`^${name}( \\d+)?$`)});
+  if(await tab.isVisible()){await tab.click();await expect(tab).toHaveAttribute('aria-selected','true');}
+  await expect(cardSection(page,name)).toBeVisible();
+  return cardSection(page,name);
+}

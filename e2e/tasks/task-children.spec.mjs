@@ -5,6 +5,7 @@
 // Parent has its own + that opens the add menu on its kind (F0.22-26).
 import { test, expect, useApp } from "../fixtures.mjs";
 import { newCard } from "../helpers/new-card.mjs";
+import { cardSection, chooseCardSection } from "../helpers/card-panes.mjs";
 
 const app = useApp(async (store) => {
   const project = await store.createProject({ title: "Children", key: "KID" });
@@ -15,10 +16,11 @@ const app = useApp(async (store) => {
   return { project, epic, strict, leaf };
 });
 
-const section = (page) => page.getByRole("region", { name: "Relationships", exact: true });
+const section = (page) => cardSection(page, "Relationships");
 const search = (page) => section(page).getByLabel("Find a card to link", { exact: true });
 const create = (page) => section(page).locator("[data-relationship-create]");
 async function childPicker(page) {
+  await chooseCardSection(page, "Relationships");
   await section(page).locator("[data-relationship-toggle]").click();
   await section(page).getByLabel("Relationship type", { exact: true }).click();
   await page.locator("#shared-select-menu").getByRole("option", { name: "Child", exact: true }).click();

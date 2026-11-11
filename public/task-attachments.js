@@ -38,7 +38,7 @@ export function taskAttachments(
   list.className = "task-attachments";
   list.setAttribute("aria-label", heading);
   // The + beside the title adds files, as Relationships' controls and the sidebar's lists do.
-  list.innerHTML = `<div class="task-attachments-heading"><h3>${esc(heading)}</h3></div><ul class="task-attachment-list"></ul>`;
+  list.innerHTML = `<div class="task-attachments-heading"><h3>${esc(heading)}</h3></div><ul class="task-attachment-list"></ul><p class="field-hint task-attachment-empty">No attachments.</p>`;
   section.append(list);
   status.className = "field-hint task-attachment-status";
   status.setAttribute("role", "status");
@@ -218,6 +218,8 @@ export function taskAttachments(
   }
   function enqueue(files) {
     if (!files.length) return;
+    // In tabs (task-section-tabs.js) the list may be out of sight: show it.
+    list.dispatchEvent(new Event("task-section-reveal", { bubbles: true }));
     if (!pending) errors.length = 0;
     pending += files.length;
     report();

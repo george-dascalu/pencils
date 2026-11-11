@@ -1,23 +1,29 @@
 import { localDate } from './task-visibility.js';
 import { minuteTime, timeMinutes } from './calendar-time.js';
 
-export function taskTimeFields(task, esc, icon, { showAllDayTimes = false } = {}) {
+// One date range for the card editor and the List row's date popover (F0.23-11): each time beside its
+// date, start → due on one line where there is room, the fields as wide as their values and their names
+// for screen readers. A due date a source manages has no times.
+export function taskDateRangeHTML(task, esc, icon, { showAllDayTimes = false, sourceDue = false } = {}) {
   const timed = !!(task.start_time || task.due_time);
-  return `<button type="button" class="icon-button task-allday-toggle" data-task-allday aria-label="All day" title="${timed ? 'Timed — switch to all day' : 'All day — switch to timed'}" aria-pressed="${!timed}"><span data-task-time-icon="all-day" aria-hidden="true">${icon('sun')}</span><span data-task-time-icon="timed" aria-hidden="true">${icon('clock')}</span></button><div class="task-time-range" ${showAllDayTimes ? 'data-all-day-hours' : ''} ${timed || showAllDayTimes ? '' : 'hidden'}><label class="field">Start time<input type="time" name="start_time" value="${esc(task.start_time || '')}" aria-label="Start time" ></label><label class="field">End time<input type="time" name="due_time" value="${esc(task.due_time || '')}" aria-label="End time" ></label></div>`;
+  const field = (type, name, label, extra = '') => `<input type="${type}" name="${name}" aria-label="${label}" title="${label}" value="${esc(task[name] || '')}" ${extra}>`;
+  const time = (name, label) => sourceDue ? '' : field('time', name, label, timed || showAllDayTimes ? '' : 'hidden');
+  const toggle = sourceDue ? '' : `<button type="button" class="icon-button task-allday-toggle" data-task-allday aria-label="All day" title="${timed ? 'Timed — switch to all day' : 'All day — switch to timed'}" aria-pressed="${!timed}"><span data-task-time-icon="all-day" aria-hidden="true">${icon('sun')}</span><span data-task-time-icon="timed" aria-hidden="true">${icon('clock')}</span></button>`;
+  return `<div class="task-date-range" data-date-range role="group" aria-label="Start and due dates" ${showAllDayTimes ? 'data-all-day-hours' : ''}><span class="task-date-time">${field('date', 'start', 'Start date')}${time('start_time', 'Start time')}</span><span aria-hidden="true">→</span><span class="task-date-time">${field('date', 'due', 'Due date', sourceDue ? 'disabled aria-describedby="task-dates-source"' : '')}${time('due_time', 'End time')}</span></div>${toggle}`;
 }
 
 export function installTaskTimes(form) {
   const { start, due, start_time: from, due_time: to } = form.elements;
   const allDay = form.querySelector('[data-task-allday]');
   if (!allDay) return;
-  const timeRange = form.querySelector('.task-time-range'), preview = timeRange.hasAttribute('data-all-day-hours');
+  const preview = !!form.querySelector('[data-all-day-hours]');
   let remembered = allDay.getAttribute('aria-pressed') !== 'true' ? { from: from.value, to: to.value } : {};
   const sync = () => {
     const timed = allDay.getAttribute('aria-pressed') !== 'true';
     allDay.title = timed ? 'Timed — switch to all day' : 'All day — switch to timed';
     const mode = form.querySelector('[data-task-time-mode]');
     if (mode) mode.textContent = timed ? 'Timed' : 'All day';
-    timeRange.hidden = !timed && !preview;
+    from.hidden = to.hidden = !timed && !preview;
     if (preview) {
       from.disabled = to.disabled = !timed;
       if (timed) remembered = { from: from.value, to: to.value };

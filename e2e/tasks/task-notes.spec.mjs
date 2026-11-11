@@ -1,15 +1,16 @@
 import {test, expect, useApp, onDevices} from '../fixtures.mjs';
 import {newCard} from '../helpers/new-card.mjs';
-import {chooseCardPane} from '../helpers/card-panes.mjs';
+import {chooseCardPane, cardSection, chooseCardSection} from '../helpers/card-panes.mjs';
 import {axeViolations} from '../helpers/documents.mjs';
 const app = useApp(async store => ({project: await store.createProject({title: 'Card note deck'})}));
-const section = page => page.getByRole('region', {name: 'Notes', exact: true});
+const section = page => cardSection(page, 'Notes');
 const rich = page => section(page).getByRole('textbox', {name: 'Note text', exact: true});
 const saved = async id => (await app.store.snapshot(app.project.id)).tasks.find(t => t.id === id);
 async function open(page, card) {
   await page.goto(`${app.base}/#project/${app.project.id}/list`);
   await page.locator(`[data-action="task-open"][data-id="${card.id}"]:visible`).first().click();
   await expect(page.locator('#task-form')).toBeVisible();
+  await chooseCardSection(page, 'Notes');
 }
 onDevices(['desktop', 'ipad', 'phone'], () => {
   test('notes add, format, page, save, reopen and delete without changing the description @gate', async ({page, device}) => {
@@ -65,10 +66,16 @@ onDevices(['desktop', 'small'], () => test('the notes bar puts a small New besid
   await expect(add).toHaveClass(/\bprimary\b/);
   const [b, a] = [await bar.boundingBox(), await add.boundingBox()];
   const [title, group] = [await notes.locator('.task-notes-heading h3').boundingBox(), await notes.locator('.task-notes-heading [role=group]').boundingBox()];
-  // Right after the title (F0.22-32), with the actions at the bar's end.
-  expect(a.x, 'New clears the title').toBeGreaterThanOrEqual(title.x + title.width - 1);
-  const text = await notes.locator('.task-notes-heading h3').evaluate((el) => { const r = document.createRange(); r.selectNodeContents(el); return r.getBoundingClientRect().right; });
-  expect(a.x, 'New sits beside the title\'s text').toBeLessThanOrEqual(text + 12);
+  if (device === 'desktop') {
+    // In the card's tabs (F0.23-10) the Notes tab names the section: its heading is left to screen readers and New starts the bar.
+    expect(title.width, 'heading out of sight').toBeLessThanOrEqual(1);
+    expect(Math.abs(a.x - b.x), 'New starts the bar').toBeLessThan(2);
+  } else {
+    // Right after the title (F0.22-32), with the actions at the bar's end.
+    expect(a.x, 'New clears the title').toBeGreaterThanOrEqual(title.x + title.width - 1);
+    const text = await notes.locator('.task-notes-heading h3').evaluate((el) => { const r = document.createRange(); r.selectNodeContents(el); return r.getBoundingClientRect().right; });
+    expect(a.x, 'New sits beside the title\'s text').toBeLessThanOrEqual(text + 12);
+  }
   expect(a.x + a.width, 'New clears the actions').toBeLessThanOrEqual(group.x + 1);
   expect(Math.abs(group.x + group.width - (b.x + b.width)), 'the actions end the bar').toBeLessThan(2);
   // Drawn at the list chip's height inside its full-height target, so touch keeps 44px.
@@ -109,7 +116,7 @@ test('note attachments use the shared uploader and preview, stay with their note
   expect((await saved(card.id)).body).toBe('');
 });
 test('new card browser drafts retain the whole deck and history records note changes', async ({page}) => {
-  await page.goto(`${app.base}/#project/${app.project.id}/list`); await newCard(page);
+  await page.goto(`${app.base}/#project/${app.project.id}/list`); await newCard(page); await chooseCardSection(page, 'Notes');
   for (const text of ['Draft one', 'Draft two']) { await section(page).getByRole('button', {name: 'New note', exact: true}).click(); await rich(page).fill(text); }
   page.once('dialog', d => d.accept()); await page.locator('.task-dialog [data-action="dialog-close"]').click();
   await newCard(page); await page.getByRole('button', {name: 'Restore draft', exact: true}).click();
@@ -172,7 +179,7 @@ test('dropping a file on a note uploads once and leaves the card description att
 test('a board draft keeps notes through reload and finalising it into a project card', async ({page}) => {
   await page.goto(`${app.base}/#project/${app.project.id}/board`);
   await page.locator('[data-action="board-task"]').click(); await page.locator('[data-action="board-create-draft"]').click();
-  await page.locator('#task-form [name=title]').fill('Draft with notes');
+  await page.locator('#task-form [name=title]').fill('Draft with notes'); await chooseCardSection(page, 'Notes');
   await section(page).getByRole('button', {name: 'New note', exact: true}).click(); await rich(page).fill('Board draft note');
   await page.locator('.task-dialog [data-action="dialog-close"]').click();
   await expect.poll(async () => (await app.store.snapshot(app.project.id)).boards[0].nodes.find(n => n.draft?.title === 'Draft with notes')?.draft?.notes?.[0]?.body).toBe('Board draft note');

@@ -1,4 +1,4 @@
-import {chooseCardPane} from '../helpers/card-panes.mjs';
+import {chooseCardPane, chooseCardSection} from '../helpers/card-panes.mjs';
 // Regression checks for the Pencils project cards PEN-1, PEN-4 to PEN-10
 // (owner-reported mobile and workflow issues, 27 October 2026), plus the owner's
 // follow-up feedback on the phone card page, history and comments. Each test
@@ -110,6 +110,7 @@ test("PEN-4 a new card can be given relationships before it is saved", async ({ 
   const host = page.locator("#task-form .task-relationships");
   await expect(host, "new card editor has a Relationships section").toHaveCount(1);
   await page.locator("#task-form [name=title]").fill("Needs a parent");
+  await chooseCardSection(page, "Relationships");
   await host.locator("[data-relationship-toggle]").click();
   const picker = page.locator("#task-relationship-picker");
   await picker.locator("select").selectOption("blocked-by");
@@ -224,6 +225,7 @@ test("PEN-7 a card links to documents and the document lists its cards", async (
   await openTask(page, tasks[1].id);
   const section = page.locator("#task-form .task-documents");
   await expect(section, "task editor has a Documents section").toHaveCount(1);
+  await chooseCardSection(page, "Documents");
   await section.locator("[data-document-link-toggle]").click();
   const picker = page.locator("#task-document-picker");
   await picker.locator("input[type=search]").fill("Spec");

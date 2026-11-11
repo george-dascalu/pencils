@@ -43,8 +43,9 @@ onDevices(["phone", "small", "ipad", "ipad-portrait"], () => test("five icon tab
     await page.setViewportSize({ width, height });
   }
   expect(parseFloat(await bar(page).evaluate((el) => getComputedStyle(el).borderTopLeftRadius))).toBeGreaterThan(8);
-  expect(await bar(page).locator(".tab").evaluateAll((els) => els.map((el) => el.getAttribute("aria-label")))).toEqual(["Home", "Overview", "Documents", "Planning", "Tasks", "Boards", "Search"]);
-  for (const t of await bar(page).locator(".tab").all()) {
+  // Install (F0.23-14) joins them only while the browser can install Pencils.
+  expect(await bar(page).locator(".tab:visible").evaluateAll((els) => els.map((el) => el.getAttribute("aria-label")))).toEqual(["Home", "Overview", "Documents", "Planning", "Tasks", "Boards", "Search"]);
+  for (const t of await bar(page).locator(".tab:visible").all()) {
     expect((await t.boundingBox()).height).toBeGreaterThanOrEqual(44);
     await expect(t.locator(".icon"), "icons only").toBeVisible();
     expect((await t.textContent()).trim(), "no text labels").toBe("");

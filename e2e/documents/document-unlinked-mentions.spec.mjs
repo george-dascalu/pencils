@@ -3,6 +3,7 @@
 // a card's Documents section lists the documents that mention its key.
 import { test, expect, onDevices, useApp } from "../fixtures.mjs";
 import { documentTool } from "../helpers/documents.mjs";
+import { chooseCardSection } from "../helpers/card-panes.mjs";
 
 const app = useApp(async (store) => {
   const project = await store.createProject({ title: "Unlinked", key: "UM" });
@@ -33,6 +34,7 @@ onDevices(["desktop", "phone"], () => test("document tools list unlinked mention
 onDevices(["desktop", "phone"], () => test("the card editor lists documents that mention its key, linked or not", async ({ page }) => {
   await page.goto(`${app.base}/#project/${app.project.id}/list`);
   await page.locator('.task-row [data-action="task-open"]:visible').first().click();
+  await chooseCardSection(page, "Documents");
   const mentions = page.locator("#task-form [data-document-mentions]");
   await expect(mentions.getByRole("button")).toHaveText([/Plan/, /Release log.*Not linked/]);
   await mentions.getByRole("button", { name: /Release log/ }).click();

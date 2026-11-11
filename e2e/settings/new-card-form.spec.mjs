@@ -3,6 +3,7 @@
 import { test, expect, useApp } from "../fixtures.mjs";
 import { settingsSaved } from "../helpers/menu-controls.mjs";
 import { newCard } from "../helpers/new-card.mjs";
+import { chooseCardSection } from "../helpers/card-panes.mjs";
 
 const app = useApp(async (store) => ({ project: await store.createProject({ title: "Quick cards", key: "QC", schema: { off: ["tags"] } }) }));
 const schema = async () => (await app.store.snapshot(app.project.id)).project.schema;
@@ -51,7 +52,10 @@ test("the New card form shows only the parts the project chose, and the card edi
   // Once the card exists, its editor shows everything.
   await page.locator(".task-row", { hasText: "Quick one" }).locator(".task-id").click();
   const edit = parts(page.locator("#task-form"));
-  for (const name of ["priority", "description", "attachments", "notes", "relationships", "status"]) await expect(edit[name], name).toBeVisible();
+  for (const name of ["priority", "description", "status"]) await expect(edit[name], name).toBeVisible();
+  // Its sections share a row of tabs on desktop (F0.23-10): every one of them is there.
+  await expect(page.locator("#task-form").getByRole("tab")).toHaveText(["Attachments", "Notes", "Relationships", "Documents", "Boards"]);
+  for (const name of ["Attachments", "Notes", "Relationships"]) await chooseCardSection(page, name);
 });
 
 test("left out of the form, the card's attachments take no dropped files and leave notes' own; nothing empty is left", async ({ page }) => {

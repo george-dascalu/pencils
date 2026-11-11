@@ -1,6 +1,6 @@
 import {test,expect,useApp,onDevices} from '../fixtures.mjs';
 import {newCard} from '../helpers/new-card.mjs';
-import {chooseCardPane} from '../helpers/card-panes.mjs';
+import {chooseCardPane,cardSection,chooseCardSection} from '../helpers/card-panes.mjs';
 const app=useApp(async store=>{
  const project=await store.createProject({title:'Card board links',key:'BL'}),card=await store.createTask(project.id,{title:'Plan the launch',body:'Keep this description.'});
  const board=await store.createBoard(project.id,{title:'Launch canvas'}),other=await store.createBoard(project.id,{title:'Research canvas'});
@@ -9,8 +9,8 @@ const app=useApp(async store=>{
  const doc=await store.createDocument(project.id,{title:'Launch brief',body:'Brief'});
  return{project,card,board,other,legacy,doc};
 });
-async function open(page,card){await page.goto(`${app.base}/#project/${app.project.id}/list`);await page.locator(`[data-action="task-open"][data-id="${card.id}"]:visible`).first().click();await expect(page.locator('#task-form')).toBeVisible();}
-const section=page=>page.getByRole('region',{name:'Boards',exact:true});
+async function open(page,card){await page.goto(`${app.base}/#project/${app.project.id}/list`);await page.locator(`[data-action="task-open"][data-id="${card.id}"]:visible`).first().click();await expect(page.locator('#task-form')).toBeVisible();await chooseCardSection(page,'Boards');}
+const section=page=>cardSection(page,'Boards');
 onDevices(['desktop','ipad','phone'],()=>{
  test('cards link, search, open and unlink boards with the same controls as Documents @gate',async({page,device})=>{
   await page.emulateMedia({reducedMotion:'no-preference'});
@@ -18,7 +18,8 @@ onDevices(['desktop','ipad','phone'],()=>{
   const boards=section(page);await expect(boards).toBeVisible();
   const add=boards.getByRole('button',{name:'Link a board',exact:true});await add.click();
   expect((await add.boundingBox()).height).toBeGreaterThanOrEqual(device==='desktop'?32:44);
-  await expect(boards).toHaveCSS('margin-top','20px');
+  // Below the card's tabs (F0.23-10) on desktop and iPad; stacked on phones.
+  await expect(boards).toHaveCSS('margin-top',device==='phone'?'20px':'8px');
   const picker=page.getByRole('dialog',{name:'Link a board',exact:true});await expect(picker).toBeVisible();
   await expect(picker).toHaveCSS('transition-property','opacity, translate, scale');
   await expect(picker).toHaveCSS('padding','8px');
@@ -41,9 +42,9 @@ onDevices(['desktop','ipad','phone'],()=>{
 });
 test('new cards save linked boards, preserve Document links, and show board names in version history',async({page})=>{
  await page.goto(`${app.base}/#project/${app.project.id}/list`);await newCard(page);
- await page.locator('#task-form [name=title]').fill('New linked card');
+ await page.locator('#task-form [name=title]').fill('New linked card');await chooseCardSection(page,'Boards');
  await section(page).getByRole('button',{name:'Link a board',exact:true}).click();await page.locator(`[data-board-link-add="${app.board.id}"]`).click();
- await page.locator('.task-documents [data-document-link-toggle]').click();await page.locator(`[data-document-link-add="${app.doc.id}"]`).click();
+ await chooseCardSection(page,'Documents');await page.locator('.task-documents [data-document-link-toggle]').click();await page.locator(`[data-document-link-add="${app.doc.id}"]`).click();
  await page.getByRole('button',{name:'Create card',exact:true}).click();
  await expect.poll(async()=>(await app.store.snapshot(app.project.id)).tasks.find(v=>v.title==='New linked card')?.boards).toEqual([app.board.id]);
  const card=(await app.store.snapshot(app.project.id)).tasks.find(v=>v.title==='New linked card');expect(card.documents).toEqual([app.doc.id]);
@@ -55,7 +56,7 @@ test('existing board-to-card links appear once in Boards and do not create a sec
  await expect(page.getByRole('heading',{name:'Canvases',exact:true})).toHaveCount(0);
 });
 test('browser drafts restore every selected board before a new card is created',async({page})=>{
- await page.goto(`${app.base}/#project/${app.project.id}/list`);await newCard(page);
+ await page.goto(`${app.base}/#project/${app.project.id}/list`);await newCard(page);await chooseCardSection(page,'Boards');
  for(const board of [app.board,app.other]){await section(page).getByRole('button',{name:'Link a board',exact:true}).click();await page.locator(`[data-board-link-add="${board.id}"]`).click();}
  page.once('dialog',dialog=>dialog.accept());
  await page.locator('.task-dialog [data-action="dialog-close"]').click();

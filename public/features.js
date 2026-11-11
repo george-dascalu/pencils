@@ -31,6 +31,7 @@ import { taskRelationshipsEditor } from "./task-relationships.js";
 import { taskDocumentsEditor } from "./task-documents.js";
 import { taskNotes } from './task-notes.js';
 import { taskDescription } from "./task-description.js";
+import { taskSectionTabs } from "./task-section-tabs.js";
 import { projectLayout } from "./project-layout.js";
 import { personalSettings } from "./personal-settings.js";
 import { planning } from "./planning.js";
@@ -109,6 +110,7 @@ export function installFeatures(ctx) {
     relationships = null,
     documentsEditor = null,
     notesEditor = null,
+    sectionTabs = null,
     autosave = null,
     taskComments = null,
     activeDraft = null,
@@ -327,6 +329,8 @@ export function installFeatures(ctx) {
     attachments = null;
     notesEditor?.destroy();
     notesEditor = null;
+    sectionTabs?.destroy();
+    sectionTabs = null;
     taskEditor?.destroy();
     taskEditor = null;
     const form = pageForm || $("dialog form");
@@ -464,6 +468,7 @@ export function installFeatures(ctx) {
       });
     }
     if (kind === 'task' && form && fieldOn(state.config, 'notes')) notesEditor = taskNotes(ctx, form);
+    if (kind === 'task' && form) sectionTabs = taskSectionTabs(form, ctx.storage);
     if (kind === "project" && form) {
       const c =
         form.dataset.edit === "true"
@@ -1278,6 +1283,8 @@ export function installFeatures(ctx) {
       attachments = null;
       notesEditor?.destroy();
       notesEditor = null;
+      sectionTabs?.destroy();
+      sectionTabs = null;
       taskEditor?.destroy();
       taskEditor = null;
     },

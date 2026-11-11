@@ -2,6 +2,7 @@
 // relationship row) shows it in place with a Back button at the top left that returns to the
 // card you came from, one hop at a time; closing the editor forgets the trail.
 import { test, expect, onDevices, useApp } from "../fixtures.mjs";
+import { chooseCardSection } from "../helpers/card-panes.mjs";
 
 const app = useApp(async (store) => {
   const project = await store.createProject({ title: "Trail", key: "TR" });
@@ -16,6 +17,8 @@ const open = async (page, card) => {
   await page.goto(`${app.base}/#project/${app.project.id}/list`);
   await page.locator(`[data-action=task-open][data-id="${card.id}"]:visible`).first().click();
   await expect(page.locator(`#task-form[data-id="${card.id}"]`)).toBeVisible();
+  // The followed cards open on the same tab (F0.23-10).
+  await chooseCardSection(page, "Relationships");
 };
 
 onDevices(["desktop", "phone", "ipad"], (device) => {

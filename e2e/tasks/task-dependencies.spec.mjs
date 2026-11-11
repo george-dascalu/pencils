@@ -63,9 +63,12 @@ test("the card editor keeps start and due side by side and leaves dependencies a
   // The open editor is resized from desktop to phone.
   for (const width of [1400, 390]) {
     await page.setViewportSize({ width, height: 1000 });
-    const start = await page.getByLabel("Start date", { exact: true }).boundingBox();
-    const due = await page.getByLabel("Due date", { exact: true }).boundingBox();
-    expect(start.x < due.x && Math.abs(start.y - due.y) < 1, `Dates stay beside each other at ${width}px`).toBe(true);
+    // Measured once the layout the resize brings (the phone page) has applied.
+    await expect.poll(async () => {
+      const start = await page.getByLabel("Start date", { exact: true }).boundingBox();
+      const due = await page.getByLabel("Due date", { exact: true }).boundingBox();
+      return start.x < due.x && Math.abs(start.y - due.y) < 1;
+    }, { message: `Dates stay beside each other at ${width}px` }).toBe(true);
   }
   await page.setViewportSize({ width: 1400, height: 1000 });
   await expect(page.locator(".task-dependencies,.task-parent-field,#task-form .file-path")).toHaveCount(0);

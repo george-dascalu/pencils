@@ -597,6 +597,17 @@ body:is(.task-reordering, .task-group-reordering), body:is(.task-reordering, .ta
 .task-dialog.board-task-editor[data-pane-layout="split"] .task-editor-content > :is(.task-history-panel, .task-comments-panel) {
   border-inline-end: 1px solid var(--line);
 }
+/* Beside the details (F0.23-12) the pane's name heads its 280px column on the title's line, so the title
+   stays above the details; the pane's own heading is left to screen readers. */
+.task-pane-title { display: none; }
+.task-dialog.board-task-editor[data-pane-layout="split"]:is(.with-task-history, .with-task-comments) .task-title-row > .task-pane-title {
+  display: block; flex: 0 0 268px; box-sizing: border-box; margin-inline-end: 4px; padding-inline-start: 4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  font-size: var(--type-section); font-weight: 600; line-height: 1.3;
+}
+/* Hidden visually, not removed: it still names the pane for screen readers, and the history heading takes focus. */
+.task-dialog.board-task-editor[data-pane-layout="split"] :is(.task-comments-panel .board-comments-head, .task-history-panel .task-history-head, .board-comments-head > strong, .task-history-head > h3) {
+  position: absolute; width: 1px; height: 1px; margin: 0; padding: 0; border: 0; overflow: hidden; clip-path: inset(50%); white-space: nowrap;
+}
 
 .board-node.task .live-card-actions {
   display: flex;
@@ -1326,10 +1337,7 @@ html.task-page-open,
 .task-dialog .task-fields > .field { width: auto; flex: 0 0 auto; margin: 0; }
 .task-dialog .task-fields > .field:has(> select[name="status"]) { flex: 1; }
 .task-dialog .task-metadata-main { align-items: start; }
-.task-time-range { display: grid; grid-column: 1 / -1; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
-.task-time-range > .field { margin: 0; }
-.task-time-range input { min-width: 0; width: 100%; }
-.task-dialog .task-metadata-main > .task-dates { container: task-dates / inline-size; display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 5px; grid-column: 1 / -1; margin: 0; }
+.task-dialog .task-metadata-main > .task-dates { container: task-dates / inline-size; display: grid; grid-template-columns: minmax(0, max-content) auto; justify-content: start; align-items: center; gap: 5px; grid-column: 1 / -1; margin: 0; }
 .icon-button:is(.task-allday-toggle, [data-note-action="edit"])[aria-pressed="true"] { background: var(--green) !important; border-color: var(--green); color: var(--paper) !important; }
 .task-allday-toggle [data-task-time-icon] { display: inline-flex; align-items: center; justify-content: center; }
 .task-allday-toggle[aria-pressed="true"] [data-task-time-icon="timed"],
@@ -1342,8 +1350,13 @@ html.task-page-open,
 .task-assignee-choice [data-assignee-avatar] { width: 100%; min-width: 0; }
 .task-dialog .task-assignee-choice select { position: absolute; inset: 0; width: 100%; opacity: 0; cursor: pointer; }
 .task-assignee-choice:focus-within { outline: var(--focus-ring); outline-offset: 2px; border-radius: var(--field-radius); }
-.task-date-range { display: flex; align-items: center; gap: 4px; min-width: 0; padding-inline: 3px; border: 1px solid var(--line); border-radius: 7px; }
-.task-dialog .task-date-range input { width: 0; min-width: 0; flex: 1; border: 0; background: transparent; padding-inline: 5px; font-size: var(--type-body) !important; }
+/* Start date and time → due date and time, each field as wide as its value (F0.23-11, task-time-fields.js);
+   the due pair moves to a second line when the row is short of room. */
+.task-date-range { display: flex; flex-wrap: wrap; align-items: center; gap: 0 2px; min-width: 0; padding-inline: 3px; border: 1px solid var(--line); border-radius: 7px; }
+.task-date-time { display: flex; align-items: center; min-width: 0; }
+.task-date-range .date-field { width: auto; flex: none; }
+.task-date-range :is(input, .date-field > input) { width: auto; min-width: 0; flex: none; border: 0; background: transparent; padding-inline: 4px; font-size: var(--type-body) !important; }
+.task-date-range input[type="time"]::-webkit-calendar-picker-indicator { margin: 0 0 0 2px; padding: 0; width: 14px; height: 14px; }
 .task-date-range > span { color: var(--muted); }
 .task-date-range:focus-within { outline: var(--focus-ring); }
 .task-dialog .task-description { margin: 0; padding-block: 20px; border-bottom: 1px solid var(--line); }
@@ -1513,17 +1526,17 @@ html.task-page-open,
   .task-editor-header-row:has(> [data-action="task-back"]) .task-pane-switcher { grid-area: 1 / 2; }
   .task-editor-header-row:has(> [data-action="task-back"]) > [data-action="dialog-close"] { grid-area: 1 / 3; }
 }
-@container task-dates (max-width: 340px) {
-  .task-dialog .task-date-range { display: grid; grid-template-columns: 16px minmax(0, 1fr); gap: 0; }
-  .task-date-range > .date-field { grid-column: 2; }
-  .task-date-range > [aria-hidden] { grid-area: 1 / 1 / 3 / 2; rotate: 90deg; }
-}
+/* Short of room for one line (always in the List row's date popover), start and due stack in the same
+   box, the arrow turned down beside them: dates alone below 340px (370px on touch), with their times
+   below 432px (510px). */
+.task-date-range > .task-date-time { grid-column: 2; }
+.task-date-range > [aria-hidden] { grid-area: 1 / 1 / 3 / 2; rotate: var(--date-arrow-turn, none); }
+.task-dates-popover .task-date-range { display: grid; grid-template-columns: 16px max-content; gap: 0; width: max-content; max-width: 100%; --date-arrow-turn: 90deg; }
+@container task-dates (max-width: 340px) { .task-dialog .task-date-range { display: grid; grid-template-columns: 16px max-content; gap: 0; --date-arrow-turn: 90deg; } }
+@container task-dates (max-width: 432px) { .task-dialog .task-date-range:has([type="time"]:not([hidden])) { display: grid; grid-template-columns: 16px max-content; gap: 0; --date-arrow-turn: 90deg; } }
 @media (pointer: coarse) {
-  @container task-dates (max-width: 370px) {
-    .task-dialog .task-date-range { display: grid; grid-template-columns: 16px minmax(0, 1fr); gap: 0; }
-    .task-date-range > .date-field { grid-column: 2; }
-    .task-date-range > [aria-hidden] { grid-area: 1 / 1 / 3 / 2; rotate: 90deg; }
-  }
+  @container task-dates (max-width: 370px) { .task-dialog .task-date-range { display: grid; grid-template-columns: 16px max-content; gap: 0; --date-arrow-turn: 90deg; } }
+  @container task-dates (max-width: 510px) { .task-dialog .task-date-range:has([type="time"]:not([hidden])) { display: grid; grid-template-columns: 16px max-content; gap: 0; --date-arrow-turn: 90deg; } }
 }
 
 /* Popover titles share one size; the dates editor header keeps its actions on the right. */
@@ -1761,3 +1774,16 @@ html.task-page-open,
 .task-dialog.card-board .task-description-expand { display: none; }
 /* On a phone the sideways-scrolling toolbar keeps the way back in view while expanded. */
 .task-description[data-expanded] .task-description-expand { position: sticky; right: 0; background: var(--surface); box-shadow: -1px 0 0 var(--line); }
+
+/* The card's sections as tabs on desktop and iPad (F0.23-10, task-section-tabs.js): one row below the
+   description that scrolls sideways in a narrow panel. The tab names its section, so the section's own
+   heading is left to screen readers, and its controls keep their row. */
+.task-section-tabs { display: flex; width: max-content; max-width: 100%; margin-top: 16px; overflow-x: auto; overscroll-behavior-x: none; scrollbar-width: none; }
+.task-section-tabs > [role="tab"] { flex: none; white-space: nowrap; }
+.task-section-tabs .tab-count { font-size: var(--type-meta); }
+.task-section-tabs ~ [role="tabpanel"] { margin-top: 8px; }
+.task-section-tabs ~ [role="tabpanel"] > :is(.task-attachments-heading, .task-relationships-heading, .task-notes-heading) > h3 { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+.task-section-tabs ~ [role="tabpanel"] > :is(.task-attachments-heading, .task-relationships-heading) { justify-content: flex-end; }
+/* With its heading gone, an empty attachments tab says so, as Documents and Notes do. */
+.task-attachment-empty { display: none; margin: 0; }
+.task-section-tabs ~ .task-attachments > .task-attachment-list[hidden] + .task-attachment-empty { display: block; }

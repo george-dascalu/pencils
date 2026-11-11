@@ -131,6 +131,9 @@ test("deleting and undoing objects and frames update the counts live, the gauge 
   await expect(info(page).locator(".capacity-frame-count")).toHaveText("8,050 / 10,000 frames");
   await page.locator("#board-expand").click();
   await page.locator(".board-expanded").waitFor();
+  // Opened, it stays unseen until it's placed beside the gauge (its toggle event comes a moment
+  // later), so it never shows at the corner of the screen.
+  expect(await info(page).evaluate((panel) => { panel.showPopover(); const seen = getComputedStyle(panel).visibility; panel.hidePopover(); return seen; })).toBe("hidden");
   await gauge(page).click();
   await info(page).waitFor();
   const [popup, anchor] = [await info(page).boundingBox(), await gauge(page).boundingBox()];

@@ -38,11 +38,11 @@ const card = (page) => page.locator('[data-node="card"]');
 
 async function checkMetadataLayout(page) {
   const fields = await page.locator(".task-fields [name], .task-date-range [name]").evaluateAll((fields) => fields.map((el) => ({ name: el.name, x: el.closest(".field").getBoundingClientRect().x, y: el.closest(".field").getBoundingClientRect().y })));
-  // Field order is assignee, status, priority (0.19.9).
-  expect(fields.map((f) => f.name)).toEqual(["assignee", "status", "priority", "start", "due"]);
+  // Field order is assignee, status, priority (0.19.9); each time follows its date in the date range (F0.23-11).
+  expect(fields.map((f) => f.name)).toEqual(["assignee", "status", "priority", "start", "start_time", "due", "due_time"]);
   expect(fields[0].x < fields[1].x && fields[1].x < fields[2].x, "assignee, status and priority left to right").toBe(true);
   expect(Math.abs(fields[0].y - fields[2].y), "assignee and priority share a row").toBeLessThan(2);
-  expect(Math.abs(fields[3].y - fields[4].y), "start and due share a row").toBeLessThan(2);
+  expect(Math.abs(fields[3].y - fields[5].y), "start and due share a row").toBeLessThan(2);
 }
 const noHorizontalOverflow = (locator) => expect.poll(() => locator.evaluate((el) => el.scrollWidth <= el.clientWidth + 1)).toBe(true);
 // The focus ring: 1px inset outline in the shared green, no shadow.

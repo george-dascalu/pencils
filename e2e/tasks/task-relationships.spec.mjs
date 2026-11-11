@@ -5,6 +5,7 @@
 // the picker fit desktop and phone in light and dark themes.
 import { test, expect, useApp } from "../fixtures.mjs";
 import { relationshipTypes } from "../../public/task-relationship-model.js";
+import { cardSection, chooseCardSection } from "../helpers/card-panes.mjs";
 
 const app = useApp(async (store) => {
   const project = await store.createProject({ title: "Relationships" });
@@ -24,12 +25,12 @@ const app = useApp(async (store) => {
 test.describe.configure({ mode: "serial" });
 
 const saved = async (id) => (await app.store.snapshot(app.project.id)).tasks.find((task) => task.id === id);
-const section = (page) => page.getByRole("region", { name: "Relationships", exact: true });
+const section = (page) => cardSection(page, "Relationships");
 const row = (page, kind, task) => section(page).locator(`[data-relationship-remove="${task.id}"][data-relationship-kind="${kind}"]`);
 const openCard = async (page, task = app.main) => {
   await page.goto(`${app.base}/#project/${app.project.id}/list`);
   await page.locator(`[data-action=task-open][data-id="${task.id}"]`).first().click();
-  await section(page).waitFor();
+  await chooseCardSection(page, "Relationships");
 };
 async function picker(page, kind, query = "") {
   if (!(await section(page).locator("[data-relationship-picker]").isVisible())) await section(page).locator("[data-relationship-toggle]").click();
@@ -157,6 +158,7 @@ test("a failed relationship save is shown and retried by the save queue", async 
 test("the board's card editor shows the links, and the picker fits desktop and phone in both themes", async ({ page }) => {
   await page.goto(`${app.base}/#project/${app.project.id}/board`);
   await page.locator('[data-node="build"] [data-pro="task-details"]').click();
+  await chooseCardSection(page, "Relationships");
   await expect(row(page, "child", app.child)).toHaveCount(1);
   for (const width of [1400, 390]) {
     await page.setViewportSize({ width, height: 1000 });

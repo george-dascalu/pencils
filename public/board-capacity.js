@@ -39,9 +39,13 @@ export function boardCapacity() {
       if (!controls.querySelector('.board-capacity')) {
         controls.querySelector('[data-board-menu="zoom"]').insertAdjacentHTML('beforebegin', `<div class="board-capacity"><button type="button" class="icon-button board-capacity-toggle" id="board-capacity-toggle" popovertarget="board-capacity-info" aria-controls="board-capacity-info" aria-expanded="false" title="Board capacity"><svg viewBox="0 0 36 36" aria-hidden="true"><circle class="capacity-track" cx="18" cy="18" r="15.5"/><circle class="capacity-progress" cx="18" cy="18" r="15.5" pathLength="100"/></svg><span class="capacity-percent" aria-hidden="true"></span></button><div class="board-capacity-info canvas-panel" id="board-capacity-info" popover="auto" role="note"><strong class="capacity-count"></strong><strong class="capacity-frame-count"></strong></div></div>`);
         const panel = controls.querySelector('#board-capacity-info');
+        // The toggle event that places it comes a moment after it opens: until then it stays unseen,
+        // or it would show at the corner of the screen.
+        panel.addEventListener('beforetoggle', event => { if (event.newState === 'open') panel.style.visibility = 'hidden'; });
         panel.addEventListener('toggle', () => {
           controls.querySelector('#board-capacity-toggle').setAttribute('aria-expanded', String(panel.matches(':popover-open')));
           position();
+          panel.style.visibility = '';
         });
       }
       const gauge = controls.querySelector('.board-capacity');

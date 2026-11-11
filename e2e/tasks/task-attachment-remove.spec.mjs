@@ -2,6 +2,7 @@
 // remove button that asks first, then takes every link to that file out of the text, leaving the
 // rest of it as it was. The file itself stays, as earlier versions of the card still link to it.
 import { test, expect, useApp } from "../fixtures.mjs";
+import { cardSection, chooseCardSection } from "../helpers/card-panes.mjs";
 
 const app = useApp(async (store) => ({ project: await store.createProject({ title: "Removing" }) }));
 const saved = async (id) => (await app.store.snapshot(app.project.id)).tasks.find((t) => t.id === id);
@@ -43,7 +44,7 @@ test("removing finds the link itself, not its text in code or around another lin
 test("a card's attachment is removed after confirming, and Cancel keeps it", async ({ page }) => {
   const card = await app.store.createTask(app.project.id, { title: "Remove from card", body: `Card text\n\n${IMAGE}\n\n${TEXT}\n` });
   await open(page, card);
-  const list = page.locator("#task-form .task-description .task-attachments");
+  const list = cardSection(page, "Attachments");
   const remove = list.getByRole("button", { name: "Remove shot.png", exact: true });
   await remove.click();
   const confirm = page.getByRole("alertdialog", { name: "Remove attachment?" });
@@ -67,7 +68,7 @@ test("a card's attachment is removed after confirming, and Cancel keeps it", asy
 test("a note's attachment is removed while reading it, leaving the card's own", async ({ page }) => {
   const card = await app.store.createTask(app.project.id, { title: "Remove from note", body: `Card\n\n${IMAGE}\n`, notes: [{ id: "n-files", body: `Read me\n\n${TEXT}\n` }] });
   await open(page, card);
-  const notes = page.getByRole("region", { name: "Notes", exact: true });
+  const notes = await chooseCardSection(page, "Notes");
   await notes.getByRole("button", { name: "Remove notes.txt", exact: true }).click();
   await page.getByRole("alertdialog", { name: "Remove attachment?" }).getByRole("button", { name: "Remove", exact: true }).click();
   await expect(notes.locator(".task-attachments")).toBeHidden();

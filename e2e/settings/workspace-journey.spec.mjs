@@ -8,6 +8,7 @@ import path from "node:path";
 import { test, expect, onDevices, useApp } from "../fixtures.mjs";
 import { clickControl, selectProjectView, selectSettingsPage, openSettingsPage, openSidebar, settingsSaved } from "../helpers/menu-controls.mjs";
 import { newCard } from "../helpers/new-card.mjs";
+import { chooseCardSection } from "../helpers/card-panes.mjs";
 
 const app = useApp();
 // One journey: each step works on the sample project, card, canvases and organisations the
@@ -62,7 +63,7 @@ test("a new card saves its type, priority and parent, and its Markdown preview d
   epic = (await snapshot()).tasks.find((t) => t.type === "epic");
   // Since 0.15.36 the editor has no Parent picker; since 0.19.2 a new card takes its parent
   // from the Relationships section before it is saved.
-  const relationships = page.getByRole("region", { name: "Relationships", exact: true });
+  const relationships = await chooseCardSection(page, "Relationships");
   await relationships.locator("[data-relationship-toggle]").click();
   await relationships.getByLabel("Relationship type", { exact: true }).click();
   await page.locator("#shared-select-menu").getByRole("option", { name: "Parent", exact: true }).click();

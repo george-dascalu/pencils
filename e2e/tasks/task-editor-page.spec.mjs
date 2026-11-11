@@ -1,4 +1,4 @@
-import {chooseCardPane} from '../helpers/card-panes.mjs';
+import {chooseCardPane, chooseCardSection} from '../helpers/card-panes.mjs';
 // The card editor scrolls on its own: on phones it is a full-screen page that locks the
 // list behind it (inert, aria-modal), on iPad and desktop a docked panel. Swipes and wheel
 // scrolling that start on the title, the content or a pane stay in the editor, even at its
@@ -35,6 +35,8 @@ async function openCard(page, device) {
   if (device === "phone") expect(original.content > 0 || original.y > 0, "Fixture starts partway down the task list").toBe(true);
   await tapOrClick(device, opener(page));
   await form(page).waitFor();
+  // The long list of relationships makes the card scroll; on desktop and iPad it is a tab (F0.23-10).
+  await chooseCardSection(page, "Relationships");
   return original;
 }
 // Drags one finger in steps; the short pauses pace the gesture like a real finger.

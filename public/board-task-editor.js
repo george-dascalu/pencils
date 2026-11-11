@@ -1,6 +1,7 @@
 import { containPanelScroll } from "./scroll-gestures.js";
 // One task panel for every project view; the board anchors it beside its tools.
-let panelWidth = 720;
+// 30% wider than the first 720px (owner request F0.23-13); a width chosen with the grip lasts the session.
+let panelWidth = 936;
 export function boardTaskEditor(
   dialog,
   { $, state, closeDialog, selectPane },
@@ -48,6 +49,14 @@ export function boardTaskEditor(
       panes.append(button);
     }
     actions.prepend(panes);
+  }
+  // Beside the details, the open pane's name heads its column on the title's line (F0.23-12); the pane's
+  // own heading stays for screen readers.
+  const paneTitle = existing ? document.createElement("span") : null;
+  if (paneTitle) {
+    paneTitle.className = "task-pane-title";
+    paneTitle.setAttribute("aria-hidden", "true");
+    heading.querySelector(".task-title-row")?.prepend(paneTitle);
   }
   // Duplicate, archive and delete form one group before the close button.
   const more = document.createElement("div");
@@ -104,6 +113,7 @@ export function boardTaskEditor(
     for (const button of panes.querySelectorAll("button")) button.setAttribute("aria-pressed", String(button.dataset.editorPane === pane));
     const choice = panes.querySelector('select');
     if (choice) choice.value = pane;
+    if (paneTitle) paneTitle.textContent = split && pane === 'comments' ? 'Comments' : split && pane === 'history' ? 'Versions' : '';
   }
   function position() {
     if (!dialog.isConnected) return;
@@ -139,6 +149,8 @@ export function boardTaskEditor(
         Math.max(panelWidth, auxiliary ? 620 : 0) + auxiliary,
         available,
       );
+      // The handle reports the width shown, which the window may hold below the one chosen.
+      dialog.querySelector('.task-panel-resizer')?.setAttribute('aria-valuenow', String(Math.round(width - auxiliary)));
       Object.assign(dialog.style, {
         left: `${innerWidth - width - (innerWidth <= 600 ? 0 : 12)}px`,
         top: `${visibleTop + 12}px`,
@@ -181,13 +193,11 @@ export function boardTaskEditor(
     grip.setAttribute("aria-orientation", "vertical");
     const resize = (width) => {
       const minimum = dialog.dataset.paneLayout === 'split' && activePane() !== 'details' ? 620 : 360;
-      panelWidth = Math.max(minimum, Math.min(900, width));
-      grip.setAttribute("aria-valuenow", String(panelWidth));
+      panelWidth = Math.max(minimum, Math.min(1170, width));
       position();
     };
     grip.setAttribute("aria-valuemin", "360");
-    grip.setAttribute("aria-valuemax", "900");
-    grip.setAttribute("aria-valuenow", String(panelWidth));
+    grip.setAttribute("aria-valuemax", "1170");
     grip.addEventListener("pointerdown", (event) => {
       event.preventDefault();
       grip.setPointerCapture(event.pointerId);
@@ -199,9 +209,10 @@ export function boardTaskEditor(
     grip.addEventListener("keydown", (event) => {
       if (!["ArrowLeft", "ArrowRight"].includes(event.key)) return;
       event.preventDefault();
-      resize(panelWidth + (event.key === "ArrowLeft" ? 20 : -20));
+      resize(Number(grip.getAttribute("aria-valuenow")) + (event.key === "ArrowLeft" ? 20 : -20));
     });
     dialog.prepend(grip);
+    position();
   }
   const observer = new ResizeObserver(position);
   observer.observe(document.querySelector(".main"));
