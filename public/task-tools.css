@@ -1362,7 +1362,12 @@ html.task-page-open,
 .task-dialog .task-description { margin: 0; padding-block: 20px; border-bottom: 1px solid var(--line); }
 .task-dialog .task-relationships { margin-top: 20px; }
 @container task-editor (min-width: 580px) {
-  .task-dialog .task-metadata-main { grid-template-columns: minmax(170px, 1fr) minmax(260px, 1.8fr); }
+  /* Beside the dates, the fields are as wide as what they hold and the dates take the rest (owner
+     request, F0.23-17); a narrower editor keeps the full-width box that ends where Close does. */
+  .task-dialog .task-metadata-main { grid-template-columns: auto minmax(260px, 1fr); }
+  .task-dialog .task-fields { container-type: normal; justify-self: start; }
+  .task-dialog .task-fields > .field:has(> select[name="status"]) { flex: 0 0 auto; }
+  .task-dialog .task-assignee-choice { width: auto; max-width: 128px; }
   .task-dialog .task-metadata-main > .task-dates { grid-column: auto; }
   .task-dialog .task-description > .task-rich-tools, .task-dialog .task-description .rich-toolbar { flex-wrap: nowrap; }
 }

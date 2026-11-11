@@ -94,3 +94,26 @@ onDevices(["desktop", "ipad", "phone"], () => {
     await expect.poll(async () => (await app.store.snapshot(app.project.id)).tasks.find((t) => t.id === card.id).due_time).toBe("18:15");
   });
 });
+
+// Owner request (F0.23-17): beside the dates (desktop and iPad), the status is as wide as its longest
+// name, not the whole row, and its box ends with its last field, leaving the rest of the row to the
+// dates. Phones keep the box that ends where Close does (e2e/ui/pencils-tasks.spec.mjs).
+onDevices(["desktop", "ipad"], () => {
+  test("the card editor's status is as wide as its longest name and its box no wider than its fields @gate", async ({ page }) => {
+    const card = await seed();
+    await page.goto(`${app.base}/#project/${app.project.id}/list`);
+    await page.locator(`[data-action="task-open"][data-id="${card.id}"]:visible`).first().click();
+    const fields = page.locator("#task-form .task-fields");
+    await expect(fields).toBeVisible();
+    const fit = await fields.evaluate((box) => {
+      const select = box.querySelector('select[name="status"]'), field = select.closest(".field");
+      const pen = document.createElement("canvas").getContext("2d");
+      pen.font = getComputedStyle(select).font;
+      const longest = Math.max(...[...select.options].map((option) => pen.measureText(option.text).width));
+      const last = [...box.children].filter((el) => el.getClientRects().length).at(-1).getBoundingClientRect();
+      return { status: field.getBoundingClientRect().width, longest, gap: box.getBoundingClientRect().right - last.right };
+    });
+    expect(fit.status, `status ${JSON.stringify(fit)}`).toBeLessThanOrEqual(fit.longest + 72);
+    expect(fit.gap, `box ends with its last field ${JSON.stringify(fit)}`).toBeLessThanOrEqual(2);
+  });
+});

@@ -2,6 +2,11 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.23.17 — 2026-11-11
+
+### Changed
+- Feature F0.23-17: On desktop and iPad, a card's assignee, status and priority box is only as wide as its fields, the status as wide as its longest name, so the dates beside it have more room; phones keep the box that spans the card.
+
 ## 0.23.16 — 2026-11-11
 
 ### Fixed
