@@ -1,6 +1,6 @@
 // Owner request (F0.22-3): every field in the field box keeps a minimum width; a long date gives way
 // before the status does, and the box stays inside its card (Week board, Agenda, board and Calendar
-// cards). Week board cards show no date (F0.22-55).
+// cards). Week board cards show no date (F0.22-55), and a timed one its hours (F0.23-9).
 import { test, expect, useApp, onDevices } from '../fixtures.mjs';
 import { reveal } from '../helpers/menu-controls.mjs';
 
@@ -50,7 +50,9 @@ onDevices(['desktop', 'ipad', 'phone'], () => {
     const card = page.locator(`.week-board [data-calendar-card="${app.long.id}"]`);
     await expect(card.locator('.field-box')).toBeVisible();
     await expectMinimums(card.locator('.field-box'), card);
-    await expect(card.locator('.row-due')).toHaveCSS('display', 'none');
+    // A timed card shows its hours where the date would be (F0.23-9), never its dates.
+    await expect(card.locator('.row-due .row-date-summary')).toHaveText('09:00 – 13:30');
+    await expect(card.locator('.row-due .row-date-short')).toHaveCSS('display', 'none');
     await page.goto(`${app.base}/#project/${app.project.id}/board`);
     const node = page.locator('#canvas .board-node.task').first();
     await expect(node.locator('.live-card-state > .field-box')).toBeVisible();

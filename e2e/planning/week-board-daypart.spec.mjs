@@ -33,6 +33,26 @@ async function drag(page, title, part) {
   await page.mouse.up();
 }
 
+// Owner request (F0.23-9): a card with a time shows its hours in its field box, which opens the date
+// editor where they change; a card without a time shows none, as the column names its day.
+test('a timed card on the Week board shows its hours in its field box', async ({ page }) => {
+  const project = await app.store.createProject({ title: 'Hours', key: 'HR' });
+  await app.store.createTask(project.id, { title: 'Timed', start: day, due: day, start_time: '09:00', due_time: '10:30' });
+  await app.store.createTask(project.id, { title: 'Untimed', start: day, due: day });
+  await page.clock.setFixedTime(new Date('2026-11-04T12:00:00'));
+  await page.goto(`${app.base}/#project/${project.id}/calendar`);
+  await (await reveal(page.locator('#calendar-mode'))).selectOption('board');
+  const dates = (title) => page.locator('.week-board-cell .week-board-card', { has: page.locator('.week-board-title', { hasText: new RegExp(`(^|\\s)${title}$`) }) }).locator('.week-board-fields > [data-row-dates]');
+  await expect(dates('Timed')).toBeVisible();
+  await expect(dates('Timed').locator('.row-date-summary')).toHaveText('09:00 – 10:30');
+  await expect(dates('Timed').locator('.row-date-short')).toBeHidden();
+  // A narrow box cuts the hours short, as it does a date, and the tooltip keeps them.
+  await expect(dates('Timed')).toHaveAttribute('title', `Start: ${day} 09:00 · Due: ${day} 10:30`);
+  await expect(dates('Untimed')).toBeHidden();
+  await dates('Timed').click();
+  await expect(page.locator('.task-dates-popover')).toBeVisible();
+});
+
 test('Group by Time of day splits the week into morning, afternoon and evening, and a drop sets the time', async ({ page }) => {
   await page.clock.setFixedTime(new Date('2026-11-04T12:00:00'));
   await page.goto(`${app.base}/#project/${app.project.id}/calendar`);

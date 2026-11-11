@@ -1249,7 +1249,7 @@ function taskDateButton(t, className, summary = "") {
   const day = (value) => new Date(`${value}T12:00:00`).toLocaleDateString(undefined, { day: "numeric", month: "short" });
   const short = (dueOn ? dueHTML(t) : t.start && `<span class="due">${esc(day(t.start))}</span>`) || `<span class="due no-date">${icon("calendar")}</span>`;
   const detail = summary && dueOn && startOn ? `<span class="row-date-summary">${dueHTML(t, summary) || `<span class="due">${esc(summary)}</span>`}</span><span class="row-date-short">${short}</span>` : short;
-  return `<button type="button" class="${className}" data-row-dates="${esc(t.id)}" aria-label="${esc(shownDate ? `${dueOn ? "Due" : "Start"} ${day(shownDate)}` : "Set dates")} — edit dates for ${esc(t.title)}" ${summary && dueOn && startOn ? `aria-description="${esc(summary)}"` : ""} aria-haspopup="dialog" aria-expanded="false" title="${esc([startOn && `Start: ${t.start || "Not set"}`, dueOn && `Due: ${t.due || "Not set"}`].filter(Boolean).join(" · "))}">${detail}</button>`;
+  return `<button type="button" class="${className}" data-row-dates="${esc(t.id)}" aria-label="${esc(shownDate ? `${dueOn ? "Due" : "Start"} ${day(shownDate)}` : "Set dates")} — edit dates for ${esc(t.title)}" ${summary && dueOn && startOn ? `aria-description="${esc(summary)}"` : ""} aria-haspopup="dialog" aria-expanded="false" title="${esc([startOn && `Start: ${t.start ? [t.start, t.start_time].filter(Boolean).join(" ") : "Not set"}`, dueOn && `Due: ${t.due ? [t.due, t.due_time].filter(Boolean).join(" ") : "Not set"}`].filter(Boolean).join(" · "))}">${detail}</button>`;
 }
 function inlineTaskFields(t, extraClass = "", dateSummary = "") {
   const priority = t.priority || "none", assignee = t.assignee || "Unassigned";

@@ -2,6 +2,11 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.23.9 — 2026-11-11
+
+### Added
+- Feature F0.23-9: A card with a time shows its hours (such as 09:00 – 10:30) in its field box on the Week board; tapping them opens the date editor. A card's times also appear in the tooltip of its date wherever the date shows.
+
 ## 0.23.8 — 2026-11-11
 
 ### Changed

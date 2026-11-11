@@ -378,7 +378,7 @@
    waiting on the Unscheduled board (F0.22-56), which aren't under a day. */
 .week-board-fields > .row-due { flex: none; min-width: var(--control-height); padding-inline: 6px; white-space: nowrap; }
 .week-board-fields .row-date-short { display: none; }
-.week-board-card:not(.week-board-dated) .week-board-fields > .row-due { display: none; }
+.week-board-card:not(.week-board-dated, .week-board-timed) .week-board-fields > .row-due { display: none; }
 .week-board-cell > .calendar-placement, .week-board-backlog-canvas > .calendar-placement { min-height: 40px; border: 1px dashed var(--green); border-radius: var(--field-radius, 6px); background: color-mix(in srgb, var(--green) 8%, var(--surface)); color: var(--muted); font-size: var(--type-small); padding: 6px; }
 @media (pointer: coarse) { .week-board, .week-board-backlog { --week-board-column: 232px; } .week-board-scroll { --week-board-names: calc(var(--control-height) + 8px); --week-board-head: 40px; } }
 /* Month scrolls through the months with no scroll bar (F0.21-96); the weekday row stays on top and
