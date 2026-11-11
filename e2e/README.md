@@ -3,7 +3,7 @@
 Playwright Test, one folder per area (`board`, `documents`, `tasks`, `lists`, `planning`, `navigation`, `settings`, `platform`, `ui`). Unit tests stay in `test/*.test.js` (`npm test`).
 
 ```bash
-npm run e2e                                # every test in Chromium except @heavy, up to 12 workers, failures retried once (with a trace) and reported as flaky
+npm run e2e                                # every test in Chromium except @heavy, up to 5 workers, failures retried once (with a trace) and reported as flaky
 npm run e2e:affected                       # only the areas your changes since the last release need (scripts/affected.mjs; npm run release runs it too)
 HEAVY=1 npm run e2e -- e2e/platform        # include the @heavy scale tests (100,000-object boards, 100 members)
 npm run e2e -- e2e/board                   # a folder or file

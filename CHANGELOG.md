@@ -2,6 +2,11 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.23.8 — 2026-11-11
+
+### Changed
+- Feature F0.23-8: The browser tests use about half the CPU and memory: 5 workers instead of 12, each worker's memory capped (except for the scale tests, which the full check now runs on their own), and one WebKit per worker instead of two. Runs take about 1.6 times as long.
+
 ## 0.23.7 — 2026-11-10
 
 ### Fixed

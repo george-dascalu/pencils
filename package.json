@@ -1,6 +1,6 @@
 {
   "name": "pencils",
-  "version": "0.23.7",
+  "version": "0.23.8",
   "private": true,
   "type": "module",
   "description": "A Markdown-backed workspace for documents, cards and boards",
@@ -17,7 +17,7 @@
     "test:mutants": "npm run build:server && node scripts/mutants.mjs",
     "check": "npm run typecheck && node test/check.mjs",
     "account": "node server/account.js",
-    "test:release": "npm run check && npm test && RELEASE=1 playwright test && playwright test --project=docker",
+    "test:release": "npm run check && npm test && RELEASE=1 playwright test && RELEASE=1 HEAVY=1 playwright test --project=chromium --grep @heavy --workers=2 && playwright test --project=docker",
     "index:rebuild": "node server/rebuild-index.js",
     "build": "node scripts/build.mjs",
     "build:server": "node scripts/build-server.mjs",

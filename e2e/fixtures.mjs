@@ -50,10 +50,12 @@ export const test = base.extend({
   allowErrors: [[], { option: true }],
   // The engine touch devices use: "chromium", or "webkit" (the ios project).
   touchEngine: ["chromium", { option: true, scope: "worker" }],
-  touchBrowser: [async ({ playwright, touchEngine, launchOptions }, use) => {
-    let browser;
-    await use(async () => (browser ||= await (touchEngine === "webkit" ? playwright.webkit.launch(launchOptions) : playwright.chromium.launch({ args: touchArgs }))));
-    await browser?.close();
+  // The ios project's own browser is already WebKit, launched the same way, so touch pages share it
+  // rather than start a second WebKit per worker; Chromium needs its own touch flags.
+  touchBrowser: [async ({ playwright, touchEngine, browser }, use) => {
+    let chromium;
+    await use(async () => (touchEngine === "webkit" ? browser : (chromium ||= await playwright.chromium.launch({ args: touchArgs }))));
+    await chromium?.close();
   }, { scope: "worker" }],
   // What this worker's pages ran, written to test-results/coverage when the worker ends.
   coverage: [async ({}, use, workerInfo) => {
