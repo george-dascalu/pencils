@@ -25,7 +25,8 @@ onDevices(['desktop','ipad','phone'],()=>{
   const task=await seed();await page.goto(`${app.base}/#project/${app.project.id}/list`);await page.locator(`[data-action=task-open][data-id="${task.id}"]:visible`).first().click();
   const editor=page.locator('#task-form .inline-rich');await expect(editor).toHaveAttribute('data-inert-scrollbars','x y');
   await expect(editor).toHaveCSS('scrollbar-width','none');
-  await editor.fill(Array.from({length:60},(_,i)=>`Long description line ${i}`).join('\n'));
+  // Firefox fills the lines as one paragraph, which the wider panel (F0.23-13) wraps into few lines, so the text is long enough at any width.
+  await editor.fill(Array.from({length:200},(_,i)=>`Long description line ${i}`).join('\n'));
   await expect.poll(()=>editor.evaluate(el=>el.scrollHeight-el.clientHeight)).toBeGreaterThan(50);
   await expect(editor).not.toHaveAttribute('data-inert-scrollbars',/\by\b/);
   // Headless Firefox forces native bars off, including on a fresh scrollable element.

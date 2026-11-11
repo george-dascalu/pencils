@@ -2,6 +2,11 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.23.18 — 2026-11-11
+
+### Fixed
+- Feature F0.23-18: The full release check passes again: the card editor's date and description checks fit the compact dates and the wider side panel in Firefox and WebKit, and the 10,000-object board test runs with the other scale tests, which have the memory it needs.
+
 ## 0.23.17 — 2026-11-11
 
 ### Changed

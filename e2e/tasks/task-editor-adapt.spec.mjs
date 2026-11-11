@@ -26,7 +26,8 @@ onDevices(["phone", "ipad", "desktop"], device => {
         return { actions, overlap, overflow: fields.scrollWidth - fields.clientWidth,
           contained: [...fields.querySelectorAll('select[name=status], .task-picker-trigger, .task-assignee-choice')].every(e => { const r = e.getBoundingClientRect(); return r.left >= bounds.left && r.right <= bounds.right; }),
           short: fields.querySelector('.task-assignee').textContent,
-          dates: [...el.querySelectorAll('.task-date-range .date-field')].map(e => ({ ...e.getBoundingClientRect().toJSON(), room: e.clientWidth - parseFloat(getComputedStyle(e.querySelector('input')).paddingRight) })),
+          // Since F0.23-11 a date input is as wide as its date (WebKit's 2px narrower than Chromium's), so the room is measured against the date itself.
+          dates: [...el.querySelectorAll('.task-date-range .date-field')].map(e => { const input = e.querySelector('input'), style = getComputedStyle(input), text = document.createElement('canvas').getContext('2d'); text.font = `${style.fontWeight} ${style.fontSize} ${style.fontFamily}`; return { ...e.getBoundingClientRect().toJSON(), room: e.clientWidth - parseFloat(style.paddingLeft) - parseFloat(style.paddingRight), date: text.measureText(new Date(`${input.value}T12:00`).toLocaleDateString(undefined, { day: '2-digit', month: '2-digit', year: 'numeric' })).width }; }),
           dateLayout: getComputedStyle(el.querySelector('.task-date-range')).display,
         };
       });
@@ -43,7 +44,7 @@ onDevices(["phone", "ipad", "desktop"], device => {
         expect(geometry.dateLayout).toBe('grid');
         expect(geometry.dates[1].top).toBeGreaterThanOrEqual(geometry.dates[0].bottom);
       }
-      for (const date of geometry.dates) expect(date.room, 'room for a full date beside the calendar target').toBeGreaterThanOrEqual(100);
+      for (const date of geometry.dates) expect(date.room, 'room for a full date beside the calendar target').toBeGreaterThanOrEqual(date.date);
     }
     // Both pane navigation and metadata editing remain available at the adapted sizes.
     await chooseCardPane(page, 'comments');
