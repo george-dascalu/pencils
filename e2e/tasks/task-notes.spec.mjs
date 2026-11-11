@@ -67,9 +67,12 @@ onDevices(['desktop', 'small'], () => test('the notes bar puts a small New besid
   const [b, a] = [await bar.boundingBox(), await add.boundingBox()];
   const [title, group] = [await notes.locator('.task-notes-heading h3').boundingBox(), await notes.locator('.task-notes-heading [role=group]').boundingBox()];
   if (device === 'desktop') {
-    // In the card's tabs (F0.23-10) the Notes tab names the section: its heading is left to screen readers and New starts the bar.
+    // In the card's tabs (F0.23-10) the Notes tab names the section: its heading is left to screen readers, and
+    // the tabs start the bar with New after them (F0.23-23).
     expect(title.width, 'heading out of sight').toBeLessThanOrEqual(1);
-    expect(Math.abs(a.x - b.x), 'New starts the bar').toBeLessThan(2);
+    const tabs = await bar.getByRole('tablist').boundingBox();
+    expect(Math.abs(tabs.x - b.x), 'the tabs start the bar').toBeLessThan(2);
+    expect(a.x, 'New follows the tabs').toBeGreaterThanOrEqual(tabs.x + tabs.width);
   } else {
     // Right after the title (F0.22-32), with the actions at the bar's end.
     expect(a.x, 'New clears the title').toBeGreaterThanOrEqual(title.x + title.width - 1);

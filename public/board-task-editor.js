@@ -1,4 +1,5 @@
 import { containPanelScroll } from "./scroll-gestures.js";
+import { contextualPopoverSelector } from "./toolbar-scroll.js";
 // One task panel for every project view; the board anchors it beside its tools.
 // 30% wider than the first 720px (owner request F0.23-13); a width chosen with the grip lasts the session.
 let panelWidth = 936;
@@ -182,6 +183,9 @@ export function boardTaskEditor(
   }
   // Freeze the workspace before the browser focuses the dialog's first control.
   updatePageMode();
+  // Nothing focused as it opens, so WebKit's dialog.close() hands focus to nothing: Escape and Close
+  // give it back to the card's opener (closeDialog), and a press outside leaves it there (F0.23-20).
+  if (!dialog.open) document.activeElement?.blur();
   dialog.show();
   position();
   if (docked) {
@@ -257,6 +261,26 @@ export function boardTaskEditor(
     event.stopPropagation();
   };
   dialog.addEventListener("keydown", keydown);
+  // A press on the page outside the panel closes it as Escape does (owner request, F0.23-20), if it
+  // starts there and doesn't drag or open a context menu. It waits for the press's own click, which
+  // may open another card here; while a menu or picker from the panel is open the press only closes
+  // that. Focus stays where the press put it: handing it back to the card's opener would close what
+  // the press opened, such as the date picker a tap opens without focusing its field.
+  let press = null, pressTimer = 0;
+  const overlay = `${contextualPopoverSelector}:not([data-popup-closing]), .confirm-popover:not([data-popup-closing])`;
+  const pressDown = (event) => {
+    press = event.isPrimary && event.button === 0 && event.target.closest?.("#app") && !dialog.querySelector(overlay) ? { x: event.clientX, y: event.clientY } : null;
+  };
+  const pressUp = (event) => {
+    if (press && Math.hypot(event.clientX - press.x, event.clientY - press.y) < 6)
+      pressTimer = setTimeout(() => closeDialog(false, { confirmDirty: false, restoreFocus: false }));
+    press = null;
+  };
+  const pressCancel = () => { press = null; };
+  addEventListener("pointerdown", pressDown, true);
+  addEventListener("pointerup", pressUp, true);
+  addEventListener("pointercancel", pressCancel, true);
+  addEventListener("contextmenu", pressCancel, true);
   return {
     position,
     destroy() {
@@ -264,6 +288,11 @@ export function boardTaskEditor(
       observer.disconnect();
       classes.disconnect();
       dialog.removeEventListener("keydown", keydown);
+      removeEventListener("pointerdown", pressDown, true);
+      removeEventListener("pointerup", pressUp, true);
+      removeEventListener("pointercancel", pressCancel, true);
+      removeEventListener("contextmenu", pressCancel, true);
+      clearTimeout(pressTimer);
       window.removeEventListener("resize", position);
       cancelAnimationFrame(viewportFrame);
       window.visualViewport?.removeEventListener("resize", viewportResized);

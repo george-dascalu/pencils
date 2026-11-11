@@ -8,13 +8,19 @@ import { Store } from "../server/store.js";
 import { schema } from "../server/model.js";
 import { editTag } from "../server/project-tags.js";
 import { projectTags, tagColor } from "../public/project-tags.js";
+import { PALETTE } from "../public/color-model.js";
 
 test("a project's tags are its list in order, then tags only its cards use, A to Z", () => {
   const config = { tags: [{ name: "ux", color: "#aed7dc" }, { name: "api" }] };
   const tasks = [{ tags: ["zeta", "api"] }, { tags: ["Beta"] }, {}];
   assert.deepEqual(projectTags(config, tasks).map((t) => t.name), ["ux", "api", "Beta", "zeta"]);
   assert.equal(tagColor(config, "ux"), "#aed7dc");
-  assert.equal(tagColor(config, "zeta"), "");
+  // A tag without a colour of its own takes one of the palette's, always the same for its name (F0.23-22).
+  assert.ok(PALETTE.some(([color]) => color === tagColor(config, "zeta") && color !== "#ffffff"));
+  assert.equal(tagColor(config, "zeta"), tagColor({}, "zeta"));
+  assert.ok(new Set(["api", "Beta", "zeta", "design", "marketing", "q4"].map((name) => tagColor({}, name))).size > 2);
+  // White, the picker's "no colour", is a choice: that tag keeps the plain chip.
+  assert.equal(tagColor({ tags: [{ name: "plain", color: "#ffffff" }] }, "plain"), "#ffffff");
   assert.deepEqual(projectTags({}, []), []);
 });
 

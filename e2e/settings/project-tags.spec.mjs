@@ -65,3 +65,24 @@ test("a tag written outside the app with a comma keeps its row but doesn't stop 
   expect((await app.store.snapshot(project.id)).project.schema.tags).toEqual([{ name: "fresh" }]);
 });
 
+
+// Owner request (F0.23-22): a tag without a colour of its own shows the automatic colour its chips
+// wear; White keeps it plain, and a colour chosen before stays chosen.
+test("a tag's swatch shows its automatic colour, White keeps it plain, and a chosen colour is kept", async ({ page }) => {
+  const created = await app.store.createProject({ title: "Tag colours" });
+  // #aed7dc is also the colour "design" would get by itself.
+  await app.store.updateProject(created.id, { revision: created.revision, schema: { ...created.schema, tags: [{ name: "design", color: "#aed7dc" }] } });
+  const card = await app.store.createTask(created.id, { title: "Plain", tags: ["research", "design"] });
+  const listed = async () => (await app.store.snapshot(created.id)).project.schema.tags;
+  await page.goto(`${app.base}/#project/${created.id}/settings/tags`);
+  const swatch = (name) => page.locator(`.project-tag[data-tag="${name}"] [data-color-value]`);
+  await expect(swatch("research")).toHaveValue(/^#(?!ffffff)[0-9a-f]{6}$/);
+  await page.locator('.project-tag[data-tag="research"] .color-picker > summary').click();
+  await page.locator('.project-tag[data-tag="research"] [data-color-choice="#ffffff"]').click();
+  await expect.poll(async () => (await listed()).find((t) => t.name === "research")?.color).toBe("#ffffff");
+  expect((await listed()).find((t) => t.name === "design")?.color, "a colour chosen before stays, though it matches the automatic one").toBe("#aed7dc");
+  await page.goto(`${app.base}/#project/${created.id}/list`);
+  await page.locator(`[data-action="task-open"][data-id="${card.id}"]:visible`).first().click();
+  await expect(page.locator(".task-tags .tag-chip", { hasText: "research" })).not.toHaveAttribute("style");
+  await expect(page.locator(".task-tags .tag-chip", { hasText: "design" })).toHaveCSS("background-color", "rgb(174, 215, 220)");
+});

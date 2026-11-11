@@ -3,7 +3,8 @@ import { NEW_CARD_PARTS } from "./card-fields.js";
 // On desktop and iPad a card's Attachments, Notes, Relationships, Documents and Boards share one row of
 // tabs below the description, one section at a time (owner request F0.23-10); phones' card page and the
 // card's board keep them all. A section the card leaves out has no tab, and with one left there is no
-// row. The last tab chosen opens next time, in this browser.
+// row. The last tab chosen opens next time, in this browser. The row is the chosen section's heading:
+// the tabs, then that section's own controls.
 const PARTS = ["attachments", "notes", "relationships", "documents", "boards"];
 const KEY = "card-section-tab";
 export function taskSectionTabs(form, storage) {
@@ -32,10 +33,18 @@ export function taskSectionTabs(form, storage) {
   function apply() {
     const on = !dialog.matches(".task-editor-page, .card-board");
     bar.hidden = !on;
-    if (on && list?.previousElementSibling !== bar) bar.after(list);
+    if (on && list && list.previousElementSibling !== description) description.after(list);
     else if (!on && list && list.parentElement !== description) description.append(list);
+    // The tabs lead the chosen section's own heading row, before its controls (owner request, F0.23-23).
+    const home = on ? sections.get(chosen).firstElementChild : null;
+    if (home ? home.firstElementChild !== bar : bar.previousElementSibling !== description) {
+      const focused = bar.contains(document.activeElement) ? document.activeElement : null;
+      if (home) home.prepend(bar); else description.after(bar);
+      focused?.focus({ preventScroll: true });
+    }
     for (const [part, section] of sections) {
       section.hidden = on && part !== chosen;
+      section.classList.toggle("task-section-panel", on);
       if (on) section.setAttribute("role", "tabpanel"), section.setAttribute("aria-labelledby", `task-tab-${part}`);
       else section.removeAttribute("role"), section.removeAttribute("aria-labelledby");
     }
@@ -64,6 +73,8 @@ export function taskSectionTabs(form, storage) {
     }
   }
   bar.addEventListener("click", (event) => {
+    // The row sits inside the chosen section, whose own click handlers would take a tab for one of their buttons.
+    event.stopPropagation();
     const tab = event.target.closest("[role=tab]");
     if (tab) choose(tab.dataset.sectionTab, true);
   });
@@ -71,7 +82,9 @@ export function taskSectionTabs(form, storage) {
     const at = tabs.indexOf(event.target);
     const to = { ArrowLeft: at - 1, ArrowRight: at + 1, Home: 0, End: tabs.length - 1 }[event.key];
     if (at < 0 || to === undefined) return;
+    // Inside Notes, its arrows would page the notes too.
     event.preventDefault();
+    event.stopPropagation();
     const tab = tabs[(to + tabs.length) % tabs.length];
     choose(tab.dataset.sectionTab, true);
     tab.focus();

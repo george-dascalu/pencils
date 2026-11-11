@@ -1,15 +1,14 @@
 // Settings → Tags (F0.21-73). Adding a tag or choosing its colour saves with the page; renaming or
 // deleting one changes every card that has it, after a confirmation that says how many.
-import { projectTags, listableTag } from "./project-tags.js";
+import { projectTags, listableTag, autoTagColor } from "./project-tags.js";
 import { confirmAction } from "./confirm-popover.js";
 
-const NONE = "#ffffff"; // the colour picker's white: no colour
 const cards = (n) => `${n} card${n === 1 ? "" : "s"}`;
 const tagged = (state, name) => state.tasks.filter((t) => t.tags?.includes(name)).length;
 const clean = (value) => value.replaceAll(",", " ").trim();
 
 function row({ state, esc, icon, colorPicker }, t) {
-  return `<li class="project-tag" data-tag="${esc(t.name)}">${colorPicker({ label: `${t.name} colour`, value: t.color || NONE, name: "tag-color" })}<input class="project-tag-name" data-tag-name data-settings-staging value="${esc(t.name)}" aria-label="Tag name: ${esc(t.name)}" maxlength="80" required><span class="project-tag-count">${cards(tagged(state, t.name))}</span><button type="button" class="icon-button danger" data-tag-delete aria-label="Delete tag ${esc(t.name)}" title="Delete tag">${icon("trash")}</button></li>`;
+  return `<li class="project-tag" data-tag="${esc(t.name)}"${t.color ? " data-own-color" : ""}>${colorPicker({ label: `${t.name} colour`, value: t.color || autoTagColor(t.name), name: "tag-color" })}<input class="project-tag-name" data-tag-name data-settings-staging value="${esc(t.name)}" aria-label="Tag name: ${esc(t.name)}" maxlength="80" required><span class="project-tag-count">${cards(tagged(state, t.name))}</span><button type="button" class="icon-button danger" data-tag-delete aria-label="Delete tag ${esc(t.name)}" title="Delete tag">${icon("trash")}</button></li>`;
 }
 
 export function tagsSettingsHTML(ctx) {
@@ -22,7 +21,9 @@ export function tagsSettingsHTML(ctx) {
 export const tagRows = (form) =>
   [...form.querySelectorAll("[data-tag]")].filter((li) => listableTag(li.dataset.tag)).map((li) => {
     const color = li.querySelector("[data-color-value]").value.toLowerCase();
-    return { name: li.dataset.tag, ...(color !== NONE ? { color } : {}) };
+    // A tag left on its automatic colour keeps none of its own, unless it had one; white (no colour) is a
+    // choice too (F0.23-22).
+    return { name: li.dataset.tag, ...(li.hasAttribute("data-own-color") || color !== autoTagColor(li.dataset.tag) ? { color } : {}) };
   });
 
 export function tagsSettings(form, ctx, saveState) {

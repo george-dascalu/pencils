@@ -19,7 +19,8 @@ onDevices(['desktop','ipad','phone'],()=>{
   const add=boards.getByRole('button',{name:'Link a board',exact:true});await add.click();
   expect((await add.boundingBox()).height).toBeGreaterThanOrEqual(device==='desktop'?32:44);
   // Below the card's tabs (F0.23-10) on desktop and iPad; stacked on phones.
-  await expect(boards).toHaveCSS('margin-top',device==='phone'?'20px':'8px');
+  // In the card's tabs the tab row is the section's own first row (F0.23-23).
+  await expect(boards).toHaveCSS('margin-top',device==='phone'?'20px':'0px');
   const picker=page.getByRole('dialog',{name:'Link a board',exact:true});await expect(picker).toBeVisible();
   await expect(picker).toHaveCSS('transition-property','opacity, translate, scale');
   await expect(picker).toHaveCSS('padding','8px');

@@ -1330,7 +1330,8 @@ html.task-page-open,
 .task-editor-header-row:has(> [data-action="task-back"]) { gap: 4px; }
 .task-dialog .task-title-row { display: flex; align-items: center; gap: 8px; width: 100%; min-width: 0; }
 .task-dialog.board-task-editor .task-title-row .title-input { display: block; width: 0; flex: 1; min-width: 0; font-size: var(--type-title) !important; line-height: 1.4; padding: 5px 4px; }
-.task-dialog .task-metadata { padding-bottom: 16px; border-bottom: 1px solid var(--line); }
+/* No dividers between the fields, the description and the sections below (owner request, F0.23-21). */
+.task-dialog .task-metadata { padding-bottom: 0; }
 /* Assignee and priority columns are exactly their square controls, so Status ends where the header's action group does. */
 .task-dialog .task-metadata-main { display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; }
 .task-dialog .task-fields { container: card-fields / inline-size; display: flex; min-width: 0; }
@@ -1359,7 +1360,7 @@ html.task-page-open,
 .task-date-range input[type="time"]::-webkit-calendar-picker-indicator { margin: 0 0 0 2px; padding: 0; width: 14px; height: 14px; }
 .task-date-range > span { color: var(--muted); }
 .task-date-range:focus-within { outline: var(--focus-ring); }
-.task-dialog .task-description { margin: 0; padding-block: 20px; border-bottom: 1px solid var(--line); }
+.task-dialog .task-description { margin: 0; padding-block: 16px; }
 .task-dialog .task-relationships { margin-top: 20px; }
 @container task-editor (min-width: 580px) {
   /* Beside the dates, the fields are as wide as what they hold and the dates take the rest (owner
@@ -1698,6 +1699,11 @@ html.task-page-open,
 .tag-combo-menu [role="option"] > .tag-chip { flex: none; padding-inline: 8px; max-width: 100%; }
 .tag-combo-menu [role="option"] > .icon:last-child { margin-inline-start: auto; }
 .tag-combo-menu [role="option"].active { background: var(--surface-soft, #eff2e7); }
+/* A compact list (owner request, F0.23-22): many tags are chosen at once, so a chosen row is marked by
+   its tick alone, and each chip is a flat label. */
+.tag-combo-menu [role="option"][aria-selected="true"] { border-color: transparent; }
+.tag-combo-menu [role="option"][aria-selected="true"]:not(:hover, :focus-visible, .active) { background: transparent; }
+.tag-combo-menu [role="option"] > .tag-chip { height: auto; padding-block: 1px; border: 0; font-size: var(--control-font-size); }
 .tag-combo-empty { margin: 4px; color: var(--muted); font-size: var(--control-font-size); }
 @media (pointer: coarse) {
   .tag-combo { --tag-chip-height: 36px; }
@@ -1783,12 +1789,16 @@ html.task-page-open,
 /* The card's sections as tabs on desktop and iPad (F0.23-10, task-section-tabs.js): one row below the
    description that scrolls sideways in a narrow panel. The tab names its section, so the section's own
    heading is left to screen readers, and its controls keep their row. */
-.task-section-tabs { display: flex; width: max-content; max-width: 100%; margin-top: 16px; overflow-x: auto; overscroll-behavior-x: none; scrollbar-width: none; }
+.task-section-tabs { display: flex; flex: 0 1 auto; width: max-content; max-width: 100%; margin: 0 auto 0 0; overflow-x: auto; overscroll-behavior-x: none; scrollbar-width: none; }
 .task-section-tabs > [role="tab"] { flex: none; white-space: nowrap; }
 .task-section-tabs .tab-count { font-size: var(--type-meta); }
-.task-section-tabs ~ [role="tabpanel"] { margin-top: 8px; }
-.task-section-tabs ~ [role="tabpanel"] > :is(.task-attachments-heading, .task-relationships-heading, .task-notes-heading) > h3 { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
-.task-section-tabs ~ [role="tabpanel"] > :is(.task-attachments-heading, .task-relationships-heading) { justify-content: flex-end; }
+/* The tabs lead the chosen section's heading row and its controls follow on the right (owner request,
+   F0.23-23); a panel too narrow for both puts the controls on a line of their own. Every section's
+   content then starts the same distance below the row. */
+.task-dialog .task-section-panel { margin: 0; }
+.task-section-panel > :first-child { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 4px; min-height: var(--control-height); margin: 0 0 8px; }
+.task-section-panel > :first-child > h3 { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+.task-section-panel > .task-notes-heading > [role=group] { margin-left: 0; }
 /* With its heading gone, an empty attachments tab says so, as Documents and Notes do. */
 .task-attachment-empty { display: none; margin: 0; }
-.task-section-tabs ~ .task-attachments > .task-attachment-list[hidden] + .task-attachment-empty { display: block; }
+.task-section-panel.task-attachments > .task-attachment-list[hidden] + .task-attachment-empty { display: block; }

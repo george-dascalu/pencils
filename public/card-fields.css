@@ -44,8 +44,6 @@
   display: none !important;
 }
 .task-create-form[data-create-off~="assignee"][data-create-off~="status"][data-create-off~="priority"] .task-metadata-main > .task-dates { grid-column: 1 / -1; }
-/* With no section under the fields, no divider under them either. */
-.task-create-form:is([data-create-off~="description"][data-create-off~="attachments"][data-create-off~="notes"][data-create-off~="relationships"][data-create-off~="documents"][data-create-off~="boards"]) .task-metadata { border-bottom: 0; }
 /* With its field box gone, the card editor's dates take the whole row and fit one line (F0.21-93). */
 :root[data-fields-off~="assignee"][data-fields-off~="status"][data-fields-off~="priority"] .task-dialog .task-metadata-main > .task-dates { grid-column: 1 / -1; }
 /* Field boxes count only the fields they show: 1 while a field is on, 0 once it is off. On phones a

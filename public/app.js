@@ -1431,7 +1431,8 @@ function showDialog(html, kind, { boardPanel = false, nodeId = null } = {}) {
   features.dialogOpened(kind);
   $("[autofocus]", dialog)?.focus();
 }
-function closeDialog(force = false, { confirmDirty = true, keepDraft = false } = {}) {
+// restoreFocus: false leaves focus where a press outside the card panel put it (F0.23-20).
+function closeDialog(force = false, { confirmDirty = true, keepDraft = false, restoreFocus = true } = {}) {
   const dialog = $("#dialogs > dialog");
   if (dialog?.hasAttribute("data-popup-closing")) return true;
   const form = $("#task-form");
@@ -1482,7 +1483,7 @@ function closeDialog(force = false, { confirmDirty = true, keepDraft = false } =
     features.dialogClosed();
     dialog?.close();
     $("#dialogs").innerHTML = "";
-    const restore = restoreDialogFocus;
+    const restore = restoreFocus ? restoreDialogFocus : null;
     restoreDialogFocus = null;
     requestAnimationFrame(() => {
       if (!$("#dialogs").children.length) restore?.();

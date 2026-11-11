@@ -334,6 +334,7 @@ export const TIERS = [
     "e2e/settings/settings-page.spec.mjs", // open and navigate the Settings page
     "e2e/settings/workflow.spec.mjs", // edit statuses and transitions
     "e2e/tasks/card-header-fields.spec.mjs", // view card editor header
+    "e2e/tasks/card-panel-outside.spec.mjs", // close the card panel with a press outside it
     "e2e/tasks/card-section-tabs.spec.mjs", // switch the card's Attachments, Notes, Relationships, Documents and Boards tabs
     "e2e/tasks/card-tags.spec.mjs", // add and create tags on a card
     "e2e/tasks/draft-tasks.spec.mjs", // use draft cards on a board

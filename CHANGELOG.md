@@ -2,6 +2,14 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.23.23 — 2026-11-11
+
+### Changed
+- Feature F0.23-20: Clicking or tapping outside the card panel closes it, as Escape does; a press in its menus or date picker, a drag, and a press on another card (which opens that card) don't.
+- Feature F0.23-21: The card editor has no dividers between its fields, its description and its section tabs.
+- Feature F0.23-22: Every tag has a colour: a tag without one of its own wears a palette colour its name picks (White in Settings → Tags keeps it plain). The tag list is compact, a chosen tag marked by its tick alone.
+- Feature F0.23-23: On desktop and iPad a card section's own controls (add, sort, New note, edit, attach, delete) sit on the tab row after the tabs, and every section's content starts at the same place.
+
 ## 0.23.19 — 2026-11-11
 
 ### Fixed

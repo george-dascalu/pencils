@@ -77,6 +77,66 @@ onDevices(["desktop", "ipad"], () => {
     await expect(page.locator("#task-form .task-documents [data-document-mentions]")).toContainText("Release notes");
     await expect(all.nth(3)).toHaveText("Documents 1");
   });
+
+  // Owner request (F0.23-23): each section's controls sit on the tab row, after the tabs, and every
+  // section's content starts the same distance below it; no divider separates the tags, the
+  // description and the tabs (F0.23-21).
+  test("the chosen section's controls share the tab row, and every section starts its content at the same place @gate", async ({ page }) => {
+    await open(page, app.plain);
+    const form = page.locator("#task-form"), all = tabs(page).getByRole("tab");
+    for (const part of [".task-metadata", ".task-description"]) await expect(form.locator(part)).toHaveCSS("border-bottom-width", "0px");
+    const measure = (panel) => panel.evaluate((el) => {
+      const list = el.querySelector('[role="tablist"]'), row = list.getBoundingClientRect(), middle = (r) => r.top + r.height / 2;
+      const head = list.parentElement;
+      const controls = [...head.querySelectorAll(":scope > button, :scope > details > summary, :scope > [role=group] > button")].filter((b) => b.getClientRects().length).map((b) => b.getBoundingClientRect());
+      // The first thing the section shows: a note, or else its first line of text.
+      const card = el.querySelector(".task-note-card");
+      let first = card?.getClientRects().length ? card : null;
+      const walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT);
+      for (let node; !first && (node = walker.nextNode()); ) if (!head.contains(node) && node.textContent.trim() && node.parentElement.getClientRects().length) first = node.parentElement;
+      return { inRow: controls.length > 0 && controls.every((r) => Math.abs(middle(r) - middle(row)) <= 2 && r.left >= row.right), gap: Math.round(first.getBoundingClientRect().top - Math.max(row.bottom, ...controls.map((r) => r.bottom))),
+        // The row itself stays put as the tabs change.
+        row: Math.round(row.top - el.closest("form").querySelector(".task-description").getBoundingClientRect().bottom) };
+    });
+    const gaps = {}, rows = {};
+    for (const name of ["Attachments", "Relationships", "Documents", "Boards"]) {
+      const tab = all.filter({ hasText: name });
+      await tab.click();
+      const panel = page.locator(`#${await tab.getAttribute("aria-controls")}`);
+      await expect(panel).toBeVisible();
+      const m = await measure(panel);
+      expect(m.inRow, name).toBe(true);
+      gaps[name] = m.gap;
+      rows[name] = m.row;
+    }
+    // A note starts where the empty sections' text does.
+    await open(page, app.full);
+    const notes = all.filter({ hasText: "Notes" });
+    await notes.click();
+    const m = await measure(page.locator(`#${await notes.getAttribute("aria-controls")}`));
+    expect(m.inRow, "Notes").toBe(true);
+    gaps.Notes = m.gap;
+    rows.Notes = m.row;
+    expect(new Set(Object.values(gaps)).size, JSON.stringify(gaps)).toBe(1);
+    expect(new Set(Object.values(rows)).size, JSON.stringify(rows)).toBe(1);
+  });
+
+  // The tabs sit inside the chosen section, whose own handlers must not take a tab for one of their buttons.
+  test("switching tabs saves nothing, whichever section holds the row", async ({ page }) => {
+    await open(page, app.plain);
+    const writes = [];
+    // Opening the card records a visit; nothing else may write.
+    page.on("request", (request) => { if (request.method() !== "GET" && !request.url().endsWith("/api/visits")) writes.push(`${request.method()} ${request.url()}`); });
+    const all = tabs(page).getByRole("tab");
+    for (const name of ["Relationships", "Documents", "Boards", "Notes", "Attachments", "Relationships", "Notes", "Relationships"]) {
+      await all.filter({ hasText: name }).click();
+      await expect(all.filter({ hasText: name })).toHaveAttribute("aria-selected", "true");
+    }
+    // Relationships shows again with nothing said: no tab was taken for one of its buttons.
+    await expect(page.locator("#task-form .task-relationship-sort > summary")).toBeVisible();
+    await expect(page.locator("#task-form [data-relationship-status]")).toBeHidden();
+    expect(writes).toEqual([]);
+  });
 });
 
 test("the last chosen tab opens again, on any card that has it, and a card without it opens on its first", async ({ page }) => {

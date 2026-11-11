@@ -118,7 +118,8 @@ test("a tag with a comma, written outside the app, stays whole when the card's t
 test("the tag list opened with the chevron works from the keyboard, follows scrolling and Enter with text never removes", async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 520 });
   const project = await tagged("Tag keys");
-  const card = await app.store.createTask(project.id, { title: "Keys", tags: ["research"] });
+  // A long description keeps the compact editor (F0.23-21) taller than the window, so it scrolls.
+  const card = await app.store.createTask(project.id, { title: "Keys", tags: ["research"], body: "A line of the description.\n\n".repeat(30) });
   await page.goto(`${app.base}/#project/${project.id}/list`);
   await page.locator(`[data-action="task-open"][data-id="${card.id}"]:visible`).first().click();
   const tags = page.getByRole("group", { name: "Tags", exact: true }), input = tags.getByRole("combobox", { name: "Add tag", exact: true }), menu = page.locator(".tag-combo-menu");
@@ -165,4 +166,37 @@ test("a card at the tag limit cannot add more, but its chips can still be remove
   await tags.getByRole("button", { name: "Remove tag t0", exact: true }).click();
   await expect(tags.locator(".tag-chip")).toHaveCount(29);
   await expect(tags.getByRole("combobox", { name: "Add tag", exact: true })).toBeEnabled();
+});
+
+// Owner request (F0.23-22): the tag list is compact, its chosen rows marked by a tick alone, and every
+// tag has a colour: its own, or else one of the palette's that its name picks.
+test("tags without a colour of their own are coloured, and the tag list marks chosen tags with a tick alone", { tag: "@gate" }, async ({ page }) => {
+  const project = await tagged("Coloured tags");
+  const card = await app.store.createTask(project.id, { title: "Colour me", tags: ["research", "design"] });
+  await page.goto(`${app.base}/#project/${project.id}/list`);
+  await page.locator(`[data-action="task-open"][data-id="${card.id}"]:visible`).first().click();
+  const tags = page.getByRole("group", { name: "Tags", exact: true }), menu = page.locator(".tag-combo-menu");
+  const fill = (chip) => chip.evaluate((el) => getComputedStyle(el).backgroundColor);
+  const surface = await page.evaluate(() => { const probe = document.createElement("span"); probe.style.background = "var(--surface)"; document.body.append(probe); const color = getComputedStyle(probe).backgroundColor; probe.remove(); return color; });
+  // "research" has no colour of its own, yet its chip is filled, and differently from "design".
+  const research = tags.locator(".tag-chip", { hasText: "research" }), design = tags.locator(".tag-chip", { hasText: "design" });
+  expect(await fill(research)).not.toBe(surface);
+  expect(await fill(design)).toBe("rgb(174, 215, 220)");
+  await tags.getByRole("button", { name: "Show all tags", exact: true }).click();
+  const options = menu.getByRole("option");
+  await expect(options).toHaveCount(2);
+  expect(await fill(menu.getByRole("option", { name: "research", exact: true }).locator(".tag-chip"))).toBe(await fill(research));
+  // Chosen rows have no border or fill of their own; the tick marks them, and the rows meet edge to edge.
+  await page.mouse.move(0, 0);
+  for (const option of await options.all()) {
+    await expect(option).toHaveAttribute("aria-selected", "true");
+    await expect(option).toHaveCSS("border-top-color", "rgba(0, 0, 0, 0)");
+    await expect(option).toHaveCSS("background-color", "rgba(0, 0, 0, 0)");
+    await expect(option.locator(".icon").last()).toBeVisible();
+  }
+  const [first, second] = [await options.nth(0).boundingBox(), await options.nth(1).boundingBox()];
+  expect(Math.abs(second.y - (first.y + first.height))).toBeLessThanOrEqual(0.5);
+  // Inside the list a chip is a flat label, shorter than the field's.
+  const listChip = await menu.locator(".tag-chip").first().evaluate((el) => ({ height: el.getBoundingClientRect().height, border: getComputedStyle(el).borderTopWidth }));
+  expect(listChip.height).toBeLessThan((await research.boundingBox()).height);
 });

@@ -1,3 +1,13 @@
+// The colour picker's palette; white is its "no colour".
+export const PALETTE = [
+  ["#ffffff", "White"],
+  ["#f5e7a2", "Yellow"],
+  ["#edc48b", "Peach"],
+  ["#f1a9a0", "Rose"],
+  ["#d6e4d3", "Sage"],
+  ["#aed7dc", "Sky"],
+  ["#d4bee5", "Lilac"],
+];
 export const validColor = (value) =>
   typeof value === "string" && /^#[\da-f]{6}$/i.test(value);
 export const clamp = (value, min = 0, max = 1) =>

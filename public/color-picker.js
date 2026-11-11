@@ -4,19 +4,12 @@ import {
   hsvToHex,
   recentColors,
   clamp,
+  PALETTE,
 } from "./color-model.js";
 import { positionPopover } from "./popover-position.js";
 // One swatch, palette and custom-hex editor for every colour field.
 export function installColorPickers({ esc, icon }) {
-  const colors = [
-    ["#ffffff", "White"],
-    ["#f5e7a2", "Yellow"],
-    ["#edc48b", "Peach"],
-    ["#f1a9a0", "Rose"],
-    ["#d6e4d3", "Sage"],
-    ["#aed7dc", "Sky"],
-    ["#d4bee5", "Lilac"],
-  ];
+  const colors = PALETTE;
   const valid = validColor;
   const recentKey = "pencils:recent-colours";
   const drafts = new WeakMap();
