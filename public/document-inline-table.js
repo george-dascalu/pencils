@@ -5,6 +5,7 @@ import { focusOnOpen } from './open-focus.js';
 import { textColor } from './document-text-color.js';
 import { documentTableWindow, windowedTableRows, documentTableSourceCell } from './document-table-window.js';
 import { documentSearchParts } from './document-reading-search.js';
+import { randomUUID } from './uuid.js';
 
 const letters = n => { let out=''; for(n++;n;n=Math.floor((n-1)/26))out=String.fromCharCode(65+(n-1)%26)+out; return out; };
 const blockSelector='pre,blockquote,ul,ol,h1,h2,h3,h4,h5,h6,hr,aside';
@@ -182,7 +183,7 @@ export function editableDocumentTable({ element, token, field, fields, markdown,
   actions.addEventListener('keydown',undoKey);surface.addEventListener('keydown',event=>{if(event.target.closest('[data-table-axis]'))undoKey(event);});
   function undoKey(event){if((event.ctrlKey||event.metaKey)&&event.key.toLowerCase()==='z'){event.preventDefault();event.stopPropagation();history(event.shiftKey);}}
   // Native mouse drag, and a held touch drag, use the same insertion boundaries.
-  const dragId=crypto.randomUUID();
+  const dragId=randomUUID();
   function begin(axis,index){capture();if(axisSelection?.axis!==axis||index<axisSelection.from||index>=axisSelection.from+axisSelection.count)selectAxis(axis,index);drag={axis,from:axisSelection.from,count:axisSelection.count,before:null};}
   function pointTarget(x,y){const hit=document.elementFromPoint(x,y)?.closest('[data-table-axis]');if(!hit||!surface.contains(hit)||hit.dataset.tableAxis!==drag?.axis)return;const b=hit.getBoundingClientRect(),index=Number(hit.dataset.tableIndex),after=drag.axis==='row'?y>b.top+b.height/2:x>b.left+b.width/2;for(const node of surface.querySelectorAll('[data-table-drop]'))node.removeAttribute('data-table-drop');hit.dataset.tableDrop=after?'after':'before';drag.before=index+(after?1:0);}
   function endDrag(){for(const node of surface.querySelectorAll('[data-table-drop]'))node.removeAttribute('data-table-drop');if(drag&&drag.before!==null){const {axis,from,count,before}=drag;safe(()=>change(moveTableAxis(model,axis,from,count,before),null));}drag=null;}

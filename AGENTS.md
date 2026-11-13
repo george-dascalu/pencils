@@ -6,6 +6,7 @@ Keep the interface consistent across all project views: Overview, Documents, Lis
 
 - Reuse shared components and styles for headers, navigation, menus and common actions. Improve the shared implementation instead of creating a separate version for one view.
 - Keep common actions in the same positions, with the same names, icons and keyboard behaviour. Only view-specific tools should vary.
+- Generate browser UUIDs with `randomUUID` from `public/uuid.js`, so features work over plain HTTP on the local network as well as HTTPS and localhost. Direct `crypto.randomUUID()` calls fail on insecure LAN origins.
 - Use the same spacing, typography, colours and interaction patterns, including light/dark themes and responsive layouts.
 - Check affected views on desktop and mobile when changing shared UI. Preserve access to existing actions and settings.
 - Use the shared sizing tokens in `public/controls.css` for buttons, fields and menu controls. Preserve Compact mode and 44px touch targets instead of introducing local heights.

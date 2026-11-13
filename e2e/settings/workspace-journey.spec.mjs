@@ -294,12 +294,13 @@ test("moving a project to another organisation keeps its tasks and canvases, and
 
 onDevices(["phone"], () => {
   test("the phone layout fits without horizontal scrolling, and the drawer closes from its overlay", async ({ page }) => {
-    test.skip(!demo, "needs the project the earlier steps make (they don't run in the ios project)");
-    await page.goto(`${app.base}/#project/${demo.id}/list`);
-    await page.locator(".breadcrumb strong").waitFor();
+    // This case also runs alone in WebKit, without the desktop journey's sample project.
+    const project = await app.store.createProject({ title: 'Phone workspace' });
+    const card = await app.store.createTask(project.id, { title: 'Phone test card' });
+    await page.goto(`${app.base}/#project/${project.id}/list`);
+    await page.locator('.task-row').filter({ hasText: card.title }).waitFor();
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
-    await page.locator(".mobile-menu").click();
-    await page.locator(".sidebar.open").waitFor();
+    await openSidebar(page);
     await page.locator(".sidebar-overlay").click({ position: { x: 350, y: 100 } });
     await page.waitForFunction(() => !document.querySelector(".sidebar.open"));
   });

@@ -132,7 +132,15 @@ test("deleting a parent keeps its replies, and undo restores it", async ({ page 
 
 onDevices(["phone"], () => {
   test("replies delete individually on a dark phone screen, with no orphaned placeholder", async ({ page }) => {
-    test.skip(!reply, "needs the conversation the earlier steps build (they don't run in the ios project)");
+    // Seed this conversation independently: WebKit runs only the phone test, and -g may too.
+    const first = 'phone-parent', reply = { id: 'phone-reply', replyTo: first, text: 'A reply' };
+    const nested = { id: 'phone-nested', replyTo: reply.id, text: 'Nested reply' };
+    const conversation = [{ id: first, text: 'First comment' }, reply, nested].map(c => ({ ...c, author: 'George', created: '2026-11-13T12:00:00Z' }));
+    const board = await current();
+    await app.store.updateBoard(app.project.id, board.id, {
+      revision: board.revision,
+      nodes: board.nodes.map(n => n.id === 'note' ? { ...n, comments: conversation } : n),
+    });
     await openBoard(page);
     await page.evaluate(() => window.PencilsAppearance.write({ theme: "dark" }));
     await openComments(page);

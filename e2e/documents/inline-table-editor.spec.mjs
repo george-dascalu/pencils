@@ -6,6 +6,19 @@ const body='| A | B | C |\n| --- | --- | --- |\n| one | two | three |\n| four | 
 async function open(page){const doc=await app.store.createDocument(app.project.id,{title:'Inline table',body});await page.goto(`${app.base}/#project/${app.project.id}/documents/${doc.id}`);await page.getByRole('textbox',{name:'Row 1, column 1',exact:true}).waitFor();return doc;}
 const table=page=>page.locator('#document-form .document-editable-component[data-component-type=table]');
 const cell=(page,r,c)=>page.getByRole('textbox',{name:`${r?'Row '+r:'Header'}, column ${c}`,exact:true});
+onDevices(['desktop','phone'],()=>test('without native randomUUID, document tables edit and save their structure', {tag:'@gate'}, async({page})=>{
+  await page.addInitScript(()=>Object.defineProperty(crypto,'randomUUID',{value:undefined}));
+  const doc=await open(page);
+  expect(await page.evaluate(()=>typeof crypto.randomUUID)).toBe('undefined');
+  await cell(page,1,1).fill('LAN edit');
+  await table(page).getByRole('button',{name:'Add row',exact:true}).click();
+  await cell(page,3,1).fill('LAN row');
+  await cell(page,3,1).blur();
+  await expect.poll(async()=> (await app.store.getDocument(app.project.id,doc.id)).body).toContain('LAN row');
+  await page.reload();
+  await expect(cell(page,1,1)).toHaveText('LAN edit');
+  await expect(cell(page,3,1)).toHaveText('LAN row');
+}));
 onDevices(['desktop','ipad','phone'],()=>test('a single layout icon toggles, edge buttons add axes, and selecting a row selects every cell',{tag:'@gate'},async({page,device})=>{
   await open(page);const root=table(page),grid=root.locator('table'),toggle=root.getByRole('button',{name:'Horizontal scroll',exact:true});
   await expect(toggle).toHaveAttribute('aria-pressed','false');await expect(toggle).not.toHaveText(/Fit|Scroll/);

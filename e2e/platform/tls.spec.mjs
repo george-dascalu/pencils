@@ -1,23 +1,32 @@
 // Native HTTPS: the server serves TLS itself when TLS_CERT_FILE and TLS_KEY_FILE are set,
 // requires sign-in, and marks the session cookie Secure with HSTS.
-// Run with a temporary pair, for example:
-//   openssl req -x509 -newkey rsa:2048 -nodes -subj /CN=127.0.0.1 -keyout key.pem -out cert.pem
-//   TLS_CERT_FILE=cert.pem TLS_KEY_FILE=key.pem npx playwright test e2e/platform/tls.spec.mjs
-// The vault is always temporary.
+// Generate a temporary self-signed pair with OpenSSL unless both TLS_CERT_FILE and
+// TLS_KEY_FILE are supplied. The fixture removes its vault and generated keys afterwards.
 import fs from "node:fs/promises";
 import https from "node:https";
+import path from "node:path";
+import { execFile } from "node:child_process";
+import { promisify } from "node:util";
 import { test, expect } from "../fixtures.mjs";
 import { useCustomApp } from "../helpers/custom-server.mjs";
 import { Auth } from "../../server/auth.js";
 
 const { TLS_CERT_FILE, TLS_KEY_FILE } = process.env;
-test.skip(!TLS_CERT_FILE || !TLS_KEY_FILE, "Native HTTPS needs TLS_CERT_FILE and TLS_KEY_FILE (a self-signed pair is enough).");
+const run = promisify(execFile);
 
 const app = useCustomApp(async () => ({
-  server: async (store) => {
+  server: async (store, app) => {
+    if (!!TLS_CERT_FILE !== !!TLS_KEY_FILE) throw Error('Supply both TLS_CERT_FILE and TLS_KEY_FILE, or neither for temporary test certificates.');
+    const certFile = TLS_CERT_FILE || path.join(app.root, 'test-cert.pem');
+    const keyFile = TLS_KEY_FILE || path.join(app.root, 'test-key.pem');
+    if (!TLS_CERT_FILE) await run('openssl', [
+      'req', '-x509', '-newkey', 'rsa:2048', '-nodes', '-days', '1',
+      '-subj', '/CN=127.0.0.1', '-addext', 'subjectAltName=IP:127.0.0.1',
+      '-keyout', keyFile, '-out', certFile,
+    ]);
     const auth = new Auth(store, true);
     await auth.save({ username: "tls-test", password: "temporary-test-password", admin: true, organisations: {} });
-    return { auth, tls: { cert: await fs.readFile(TLS_CERT_FILE), key: await fs.readFile(TLS_KEY_FILE) } };
+    return { auth, tls: { cert: await fs.readFile(certFile), key: await fs.readFile(keyFile) } };
   },
 }));
 

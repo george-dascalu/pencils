@@ -15,6 +15,8 @@ npm run test:release                       # the batch check: checks, unit tests
 npm run e2e:coverage -- e2e/board          # how much of each public/ module the tests run in Chromium, least first, and the modules no page loads
 ```
 
+The native HTTPS check (`e2e/platform/tls.spec.mjs`) uses OpenSSL to create a temporary self-signed certificate and key. They are removed with its test vault. To use an existing pair, set both `TLS_CERT_FILE` and `TLS_KEY_FILE`; supplying only one is an error.
+
 ## Writing a test
 
 See `e2e/navigation/phone-drawer.spec.mjs` and `e2e/board/board-search.spec.mjs`.
@@ -42,6 +44,7 @@ onDevices(["phone", "ipad", "desktop"], () => {
 - Seeded dates are fixed (October 2026), and today moves on: after a reload, go back to the seeded month or week instead of relying on the view opening on today.
 - The batch check (`RELEASE=1`) fails on flaky tests (`failOnFlakyTests`): fix them instead of rerunning.
 - Phone and iPad tests run in WebKit too: `npx playwright test --project=ios` (once per host: `scripts/webkit-local.sh`). Calls to `newCDPSession` skip the test outside Chromium, and so does the mouse wheel on mobile WebKit. WebKit runs without the desktop's session bus, so a failed desktop service can't slow it down.
+- A phone test must seed its own data even inside a serial journey: the `ios` project leaves out the desktop steps. Check such tests by running them with `--project=ios` on their own.
 - Name tests after the behaviour, as a sentence. Start the file with a comment naming the owner request or the rule it guards.
 - Tag tests that belong in the cross-browser release gate with `{ tag: "@gate" }` (Firefox and WebKit run their desktop presets; phone and iPad ones run in WebKit through `ios`), and slow scale tests (many objects or users) with `{ tag: "@heavy" }` so they run in the batch check rather than on every change.
 - Give a new spec a tier in `scripts/tiers.mjs` (1 critical, 2 important, 3 peripheral); `node scripts/tiers.mjs 1` runs only the critical tests, unit and browser.

@@ -2,6 +2,14 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.23.27 — 2026-11-13
+
+### Fixed
+- Feature F0.23-27: Native HTTPS verification now generates a temporary certificate and key automatically instead of skipping without manual setup. Explicit certificate paths remain supported, and generated keys are removed with the test vault.
+- Feature F0.23-26: Phone board-comment deletion and workspace navigation checks now seed their own data, so both run in iPhone/WebKit instead of skipping because desktop-only setup did not run.
+- Feature F0.23-25: Document tables open for inline editing over plain HTTP on the local network. Editing, adding rows and saving work without the secure-context-only UUID API.
+- Feature F0.23-24: Week board's cell plus button creates cards over plain HTTP on the local network. Save retries retain the same request ID and avoid duplicate cards after a lost response.
+
 ## 0.23.23 — 2026-11-11
 
 ### Changed

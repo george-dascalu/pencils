@@ -1,5 +1,6 @@
 import { weekBoardCellDefaults } from './calendar-create-model.js';
 import { focusOnOpen } from './open-focus.js';
+import { randomUUID } from './uuid.js';
 
 // A title editor in the chosen cell. Keep its draft across live redraws and rejected saves;
 // active filters and the chosen cell supply defaults; the server fills the remaining fields.
@@ -23,7 +24,7 @@ export function calendarCreate(ctx) {
     if (button && state.view === 'calendar') {
       if (draft?.busy) return;
       const cell = button.closest('.week-board-cell'), field = cell.closest('.week-board').dataset.rows;
-      draft = { project: state.project.id, day: cell.dataset.calendarDate, field, value: cell.dataset.weekBoardValue, title: '', request: crypto.randomUUID() };
+      draft = { project: state.project.id, day: cell.dataset.calendarDate, field, value: cell.dataset.weekBoardValue, title: '', request: randomUUID() };
       draft.defaults = weekBoardCellDefaults(state, draft.day, field, draft.value);
       renderView(true);
       focusOnOpen(host()?.querySelector('input'), host()?.querySelector('[data-week-board-create-cancel]'));

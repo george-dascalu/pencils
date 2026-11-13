@@ -145,6 +145,7 @@ export const TIERS = [
     "e2e/planning/calendar-cross-day-resize.spec.mjs", // resize a calendar card across days
     "e2e/planning/week-board-create-filters.spec.mjs", // filtered creation persists field defaults
     "e2e/planning/week-board-create.spec.mjs", // inline creation saves date and row defaults
+    "e2e/planning/week-board-create-lan.spec.mjs", // HTTP fallback IDs preserve save retries without duplicates
     "e2e/planning/calendar-hours.spec.mjs", // create a timed card by dragging hours
     "e2e/planning/calendar-move.spec.mjs", // move a timed card on the calendar
     "e2e/planning/calendar-resize.spec.mjs", // resize timed card endpoints
