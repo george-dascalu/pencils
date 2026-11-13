@@ -2,6 +2,11 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.23.28 — 2026-11-13
+
+### Fixed
+- Feature F0.23-28: WebKit verification waits for the Week board's initial scroll restoration before testing snapping, and the LAN project-frame test recognises reload-cancelled API requests only for its own server and port. Both checks pass repeated runs without retries.
+
 ## 0.23.27 — 2026-11-13
 
 ### Fixed

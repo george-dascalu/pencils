@@ -17,6 +17,12 @@ const host =
 
 // A touch-capable tablet window in the project's browser (the release gate runs it in Firefox and WebKit too).
 const test = base.extend({
+  allowErrors: async ({ browserName }, use) => {
+    // The shared fixture recognises WebKit's reload-cancelled API requests on loopback.
+    // This spec uses a LAN origin: allow the same message only for this server and port.
+    const authority = new URL(app.base).host.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    await use(browserName === 'webkit' ? [new RegExp(`^/{1,2}${authority}/api/\\S* due to access control checks\\.$`)] : []);
+  },
   context: async ({ browser }, use) => {
     const context = await browser.newContext({ viewport: { width: 1366, height: 1024 }, hasTouch: true, reducedMotion: "reduce" });
     await use(context);

@@ -16,6 +16,9 @@ async function open(page) {
   await (await reveal(page.locator('#calendar-mode'))).selectOption('board');
   await (await reveal(page.locator('#week-board-rows'))).selectOption('assignee');
   await expect(page.locator('.week-board-row')).toHaveCount(12);
+  // The redraw restores scroll in a microtask and an animation frame. Let that first layout
+  // finish before a scripted WebKit scroll, or the pending restoration can overwrite it.
+  await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));
 }
 const scroller = (page) => page.locator('.week-board-scroll');
 // Where the board rests: whether a day starts right after the row names and a row right under the
