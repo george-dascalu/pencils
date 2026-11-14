@@ -2,6 +2,11 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.23.35 — 2026-11-14
+
+### Fixed
+- Feature F0.23-35: Native List scrollbar verification waits for the resized list and scrollbar to repaint before dragging. This removes an intermittent test failure; the List scrolling fix remains unchanged.
+
 ## 0.23.34 — 2026-11-14
 
 ### Fixed

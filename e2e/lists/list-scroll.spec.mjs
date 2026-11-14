@@ -56,8 +56,11 @@ test('the native List scrollbar stays within the window and can be dragged @gate
   for (const width of [1440, 860]) {
     await page.setViewportSize({ width, height: 800 });
     await fits(page);
-    const m = await list(page).evaluate(el => {
+    const m = await list(page).evaluate(async el => {
       el.scrollTop = 0;
+      // Native hit testing uses the painted thumb. After a resize or scroll reset,
+      // layout can report its new geometry before the compositor has moved it.
+      await new Promise(done => requestAnimationFrame(() => requestAnimationFrame(done)));
       const r = el.getBoundingClientRect();
       return { x: r.x, y: r.y, width: r.width, height: el.clientHeight, full: el.scrollHeight, gutter: el.offsetWidth - el.clientWidth };
     });
