@@ -148,6 +148,10 @@ export const TIERS = [
     "e2e/planning/week-board-create-lan.spec.mjs", // HTTP fallback IDs preserve save retries without duplicates
     "e2e/planning/calendar-hours.spec.mjs", // create a timed card by dragging hours
     "e2e/planning/calendar-move.spec.mjs", // move a timed card on the calendar
+    "e2e/planning/calendar-resize-dense.spec.mjs", // narrow touch targets select the intended endpoint
+    "e2e/planning/calendar-resize-targets.spec.mjs", // touching events retain their own resize endpoints
+    "e2e/planning/week-board-all-day.spec.mjs", // dated cards stay scheduled through all-day creation
+    "e2e/planning/calendar-now.spec.mjs", // live local-time marker follows the visible week
     "e2e/planning/calendar-resize.spec.mjs", // resize timed card endpoints
     "e2e/planning/calendar-scheduling.spec.mjs", // move, resize and schedule cards in Month
     "e2e/planning/week-board-arrange.spec.mjs", // arrange dock cards without altering dates or fields

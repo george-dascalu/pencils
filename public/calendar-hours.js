@@ -14,7 +14,7 @@ export function calendarHoursHTML(tasks, days, { state, esc, assigneeHTML, prior
   return `<div class="calendar-hours-scroll"><div class="calendar-hours" style="--calendar-columns:${days.length}"><div class="calendar-hour-labels" aria-hidden="true">${Array.from({length:24},(_,hour)=>`<span>${minuteTime(hour*60)}</span>`).join('')}</div>${days.map(day=>`<div class="calendar-hours-day${isWeekend(day)?' weekend':''}" data-calendar-date="${day}">${Array.from({length:24},(_,hour)=>`<button type="button" class="calendar-hour-slot" data-hour="${hour}" aria-label="New card on ${day} at ${minuteTime(hour*60)}"></button>`).join('')}${segments.filter(s=>s.day===day).map(s=>`<div class="calendar-timed-card${state.config.done.includes(s.task.status)?' card-done':''}" data-calendar-card="${esc(s.task.id)}" data-id="${esc(s.task.id)}" style="top:${s.start/1440*100}%;height:${(s.end-s.start)/1440*100}%;left:${s.lane/s.columns*100}%;width:${100/s.columns}%;--task-field-color:${taskFieldColor(state,'status',s.task.status)}"><button type="button" data-action="task-open" data-id="${esc(s.task.id)}" class="calendar-card-title" aria-keyshortcuts="Alt+ArrowUp Alt+ArrowDown Alt+ArrowLeft Alt+ArrowRight" title="${esc(s.task.title)}, ${minuteTime(s.start)} – ${s.end===1440?'24:00':minuteTime(s.end)}" aria-label="Open ${esc(s.task.title)}, ${minuteTime(s.start)} – ${s.end===1440?'24:00':minuteTime(s.end)}"><strong>${esc(s.task.title)}</strong>${fields(s.task)}<span class="calendar-event-time">${minuteTime(s.start)} – ${s.end===1440?'24:00':minuteTime(s.end)}</span></button>${grip(s,'start')}${grip(s,'due')}</div>`).join('')}</div>`).join('')}</div></div>`;
 }
 
-export function calendarHourSelection(ctx) {
+export function calendarHourSelection(ctx, eventControls) {
   let selection = null, suppressUntil = 0;
   const minutes = (day, y) => { const r = day.getBoundingClientRect(); return (y-r.top)/r.height*1440; };
   function paint() {
@@ -46,6 +46,7 @@ export function calendarHourSelection(ctx) {
   }
   document.addEventListener('pointerdown',event=>{
     if(selection && event.pointerId!==selection.pointer)return finish(true);
+    if (eventControls.hit(event)) return;
     const slot=event.target.closest('[data-hour]');
     if(!slot || event.button!==0 || ctx.state.view!=='calendar')return;
     const day=slot.closest('.calendar-hours-day'), from=minutes(day,event.clientY);
@@ -67,6 +68,7 @@ export function calendarHourSelection(ctx) {
   document.addEventListener('keydown',event=>{if(selection&&event.key==='Escape'){event.preventDefault();event.stopImmediatePropagation();finish(true);}},true);
   window.addEventListener('blur',()=>finish(true));
   document.addEventListener('click',event=>{
+    if (eventControls.hit(event)) return;
     const slot=event.target.closest('[data-hour]');if(!slot)return;
     event.preventDefault();event.stopImmediatePropagation();
     if(performance.now()<suppressUntil)return;

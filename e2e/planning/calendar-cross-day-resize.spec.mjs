@@ -15,7 +15,9 @@ async function open(page) {
     // Keep the handle and nearby destination clear of the edge auto-scroll zone.
     // Hover alone only reveals the nearest edge and can scroll the target time mid-drag.
     await handle.evaluate(el => el.scrollIntoView({ block: 'center', inline: 'nearest', behavior: 'instant' }));
-    await handle.hover();
+    // Approach the grip directly: hovering a multi-day card's centre would scroll away from it.
+    const point = await handle.boundingBox();
+    await page.mouse.move(point.x + point.width / 2, point.y + point.height / 2);
     const a = await handle.boundingBox(), day = await page.locator(`.calendar-hours-day[data-calendar-date="${date}"]`).boundingBox();
     await page.mouse.move(a.x + a.width / 2, a.y + a.height / 2);await page.mouse.down();
     await page.mouse.move(day.x + day.width / 2, day.y + day.height * minutes / 1440, { steps: 8 });

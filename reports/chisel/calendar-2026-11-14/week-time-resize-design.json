@@ -1,0 +1,236 @@
+{
+  "slug": "week-time-resize-design",
+  "task": "Add a current-time line to Week, fix stacked-event resize ownership with consistently placed handles, and refine the event card design using research.",
+  "createdAt": "2026-11-14T10:46:39.870Z",
+  "active": true,
+  "items": [
+    {
+      "itemId": "item-1",
+      "file": "public/calendar-hours.js",
+      "diffHunk": "diff --git aa/public/calendar-hours.js bb/public/calendar-hours.js\nindex 1aba040..9ed87ea 100644\n--- aa/public/calendar-hours.js\n+++ bb/public/calendar-hours.js\n@@ -5,6 +5,8 @@ import { shiftDate, isWeekend } from './timeline-dates.js';\n import { taskFieldColor, taskColorAttributes, fieldBoxStyle } from './task-colors.js';\n \n export function calendarHoursHTML(tasks, days, { state, esc, assigneeHTML, priorityHTML, statusNames }) {\n+  // CHISEL:week-time-resize-design item-1\n+  // TODO: Render one data-calendar-now indicator in today's visible hourly column, using localDate() and local wall-clock minutes / 1440 for its percentage top, plus a Current time HH:mm accessible label. Extract a reusable clock updater in this module for subsequent DOM-only refreshes; hide the indicator when today is outside days, including hidden weekends, and leave event geometry and date selection unchanged.\n   const segments = hourlySegments(tasks, days);\n   const fields = task => `<span class=\"calendar-event-fields field-box\" ${fieldBoxStyle(state, task.priority)}><span class=\"calendar-event-assignee\" title=\"${esc(task.assignee || 'Unassigned')}\">${assigneeHTML(task)}</span><span class=\"field-chip field-chip-status\" ${taskColorAttributes(state,'status',task.status)} title=\"${esc(statusNames[task.status] || task.status)}\">${esc(statusNames[task.status] || task.status)}</span>${priorityHTML(task)}</span>`;\n   const grip = (s, end) => {\n",
+      "anchor": "  const segments = hourlySegments(tasks, days);",
+      "position": "before",
+      "instruction": "Render one data-calendar-now indicator in today's visible hourly column, using localDate() and local wall-clock minutes / 1440 for its percentage top, plus a Current time HH:mm accessible label. Extract a reusable clock updater in this module for subsequent DOM-only refreshes; hide the indicator when today is outside days, including hidden weekends, and leave event geometry and date selection unchanged.",
+      "markerBlock": "  // CHISEL:week-time-resize-design item-1\n  // TODO: Render one data-calendar-now indicator in today's visible hourly column, using localDate() and local wall-clock minutes / 1440 for its percentage top, plus a Current time HH:mm accessible label. Extract a reusable clock updater in this module for subsequent DOM-only refreshes; hide the indicator when today is outside days, including hidden weekends, and leave event geometry and date selection unchanged."
+    },
+    {
+      "itemId": "item-2",
+      "file": "public/calendar.js",
+      "diffHunk": "diff --git aa/public/calendar.js bb/public/calendar.js\nindex 1f3b40f..15309a1 100644\n--- aa/public/calendar.js\n+++ bb/public/calendar.js\n@@ -32,6 +32,8 @@ export function calendarView(ctx) {\n   const arrangement = backlogArrangement(ctx);\n   const create = calendarCreate(ctx);\n   calendarHourSelection(ctx);\n+  // CHISEL:week-time-resize-design item-2\n+  // TODO: Wire the calendar-hours clock updater into calendarView once: refresh on Week mount/redraw, each minute boundary and visibility return, moving or hiding the marker at local midnight. Keep one timer while Week is mounted and stop it on exit; update only the indicator rather than renderView(), preserving scroll, zoom, open editors and active drags. Reuse the same local-time calculation as calendarHoursHTML.\n   const zoom = calendarZoom(ctx);\n   let mode = storage.get(\"calendar-mode\", mainWidth() <= 780 ? \"agenda\" : \"month\");\n   let quick = storage.get(\"agenda-range\", { day: \"today\", week: \"this-week\", month: \"this-month\" }[storage.get(\"agenda-period\", \"week\")] || \"this-week\"), picked = null, anchor = localDate();\n",
+      "anchor": "  const zoom = calendarZoom(ctx);",
+      "position": "before",
+      "instruction": "Wire the calendar-hours clock updater into calendarView once: refresh on Week mount/redraw, each minute boundary and visibility return, moving or hiding the marker at local midnight. Keep one timer while Week is mounted and stop it on exit; update only the indicator rather than renderView(), preserving scroll, zoom, open editors and active drags. Reuse the same local-time calculation as calendarHoursHTML.",
+      "markerBlock": "  // CHISEL:week-time-resize-design item-2\n  // TODO: Wire the calendar-hours clock updater into calendarView once: refresh on Week mount/redraw, each minute boundary and visibility return, moving or hiding the marker at local midnight. Keep one timer while Week is mounted and stop it on exit; update only the indicator rather than renderView(), preserving scroll, zoom, open editors and active drags. Reuse the same local-time calculation as calendarHoursHTML."
+    },
+    {
+      "itemId": "item-3",
+      "file": "public/calendar.css",
+      "diffHunk": "diff --git aa/public/calendar.css bb/public/calendar.css\nindex 75ee07c..9b1bd57 100644\n--- aa/public/calendar.css\n+++ bb/public/calendar.css\n@@ -169,6 +169,8 @@\n .calendar-all-day { margin-left: var(--hour-gutter); min-height: calc(var(--control-height) * 2); }\n .calendar-all-day::before { content: \"All day\"; position: absolute; right: 100%; top: 8px; width: var(--hour-gutter); text-align: center; color: var(--muted); font-size: var(--type-small); }\n .calendar-hours-scroll { flex: 1; min-height: 0; overflow-y: auto; scrollbar-gutter: stable; overscroll-behavior: none; }\n+/* CHISEL:week-time-resize-design item-3 */\n+/* TODO: Style data-calendar-now as a 2px accent line across today's hourly column, with a 6px leading dot and a compact HH:mm label on the shared surface colour. Position it by percentage within the day so zoom stays accurate; keep it below active resize controls, pointer-events:none, inside the column at midnight and narrow widths, and legible in light/dark themes without adding a scrolling container. */\n .calendar-hours { display: grid; grid-template-columns: var(--hour-gutter) repeat(var(--calendar-columns), minmax(0, 1fr)); }\n .calendar-hour-labels { display: grid; grid-template-rows: repeat(24, var(--hour-height)); position: sticky; left: 0; background: var(--surface); z-index: 2; overflow: hidden; }\n .calendar-hour-labels > span { font-size: var(--type-small); color: var(--muted); text-align: right; padding: 2px 8px; }\n",
+      "anchor": ".calendar-hours { display: grid; grid-template-columns: var(--hour-gutter) repeat(var(--calendar-columns), minmax(0, 1fr)); }",
+      "position": "before",
+      "instruction": "Style data-calendar-now as a 2px accent line across today's hourly column, with a 6px leading dot and a compact HH:mm label on the shared surface colour. Position it by percentage within the day so zoom stays accurate; keep it below active resize controls, pointer-events:none, inside the column at midnight and narrow widths, and legible in light/dark themes without adding a scrolling container.",
+      "markerBlock": "/* CHISEL:week-time-resize-design item-3 */\n/* TODO: Style data-calendar-now as a 2px accent line across today's hourly column, with a 6px leading dot and a compact HH:mm label on the shared surface colour. Position it by percentage within the day so zoom stays accurate; keep it below active resize controls, pointer-events:none, inside the column at midnight and narrow widths, and legible in light/dark themes without adding a scrolling container. */"
+    },
+    {
+      "itemId": "item-4",
+      "file": "public/calendar.js",
+      "diffHunk": "diff --git aa/public/calendar.js bb/public/calendar.js\nindex 15309a1..ab39ea9 100644\n--- aa/public/calendar.js\n+++ bb/public/calendar.js\n@@ -514,6 +514,8 @@ export function calendarView(ctx) {\n     else if (!cancel && d.active && d.reason) toast(d.reason, true);\n   }\n   document.addEventListener(\"pointerdown\", e => {\n+    // CHISEL:week-time-resize-design item-4\n+    // TODO: Give Week timed events stable active-event ownership: mouse hover or keyboard focus reveals that event's resize controls, and a touch long press selects it without opening its editor or blocking a prior swipe. Resolve the chosen event and endpoint before pointer capture and retain both throughout the drag so an adjacent event cannot steal its edge. Clear selection and temporary layers on cancellation, outside dismissal, redraw or view change; preserve ordinary clicks, keyboard resizing, source permissions and cross-day resize behavior.\n     if (drag && e.pointerId !== drag.pointer) { finish(true); return; }\n     const card = e.target.closest(\"[data-calendar-card]\");\n     if (!card || state.view !== \"calendar\" || e.button !== 0 || e.target.closest(\"[data-calendar-dates], .agenda-fields, .week-board-fields\")) return;\n",
+      "anchor": "    if (drag && e.pointerId !== drag.pointer) { finish(true); return; }",
+      "position": "before",
+      "instruction": "Give Week timed events stable active-event ownership: mouse hover or keyboard focus reveals that event's resize controls, and a touch long press selects it without opening its editor or blocking a prior swipe. Resolve the chosen event and endpoint before pointer capture and retain both throughout the drag so an adjacent event cannot steal its edge. Clear selection and temporary layers on cancellation, outside dismissal, redraw or view change; preserve ordinary clicks, keyboard resizing, source permissions and cross-day resize behavior.",
+      "markerBlock": "    // CHISEL:week-time-resize-design item-4\n    // TODO: Give Week timed events stable active-event ownership: mouse hover or keyboard focus reveals that event's resize controls, and a touch long press selects it without opening its editor or blocking a prior swipe. Resolve the chosen event and endpoint before pointer capture and retain both throughout the drag so an adjacent event cannot steal its edge. Clear selection and temporary layers on cancellation, outside dismissal, redraw or view change; preserve ordinary clicks, keyboard resizing, source permissions and cross-day resize behavior."
+    },
+    {
+      "itemId": "item-5",
+      "file": "public/calendar.css",
+      "diffHunk": "diff --git aa/public/calendar.css bb/public/calendar.css\nindex 9b1bd57..f2bf86d 100644\n--- aa/public/calendar.css\n+++ bb/public/calendar.css\n@@ -225,6 +225,8 @@\n }\n .calendar-time-selection { position: absolute; z-index: 3; inset-inline: 2px; min-height: 16px; padding: 2px 4px; pointer-events: none; border: 1px solid var(--green); border-radius: var(--field-radius); background: color-mix(in srgb, var(--green) 20%, var(--surface)); color: var(--ink); font-size: var(--type-small); }\n \n+/* CHISEL:week-time-resize-design item-5 */\n+/* TODO: Keep the start handle at the top-left and the end handle at the bottom-right at every event height; remove the max-height:44px position switch. Show small accent grips only for the hovered, focused or touch-selected event, giving that event priority above neighbors and disabling inactive overlapping hit areas. Keep shared control-height targets, including 44px on touch, keyboard focus and ns-resize feedback; separate the two targets even on short or narrow events without changing their displayed duration. */\n .calendar-timed-card:has(.calendar-time-resize:hover, .calendar-time-resize:focus-visible), .calendar-timed-card.calendar-time-resizing { z-index: 4; opacity: 1; }\n .calendar-timed-card > .calendar-time-resize { position: absolute; z-index: 2; width: var(--control-height); height: var(--control-height) !important; min-height: 0; padding: 0; border: 0; border-radius: var(--field-radius); background: transparent; color: var(--ink); display: grid; place-items: center; cursor: ns-resize; touch-action: none; }\n .calendar-time-resize[data-calendar-time-end=\"start\"] { top: calc(var(--control-height) / -2); left: calc(50% - var(--control-height) / 2); }\n",
+      "anchor": ".calendar-timed-card:has(.calendar-time-resize:hover, .calendar-time-resize:focus-visible), .calendar-timed-card.calendar-time-resizing { z-index: 4; opacity: 1; }",
+      "position": "before",
+      "instruction": "Keep the start handle at the top-left and the end handle at the bottom-right at every event height; remove the max-height:44px position switch. Show small accent grips only for the hovered, focused or touch-selected event, giving that event priority above neighbors and disabling inactive overlapping hit areas. Keep shared control-height targets, including 44px on touch, keyboard focus and ns-resize feedback; separate the two targets even on short or narrow events without changing their displayed duration.",
+      "markerBlock": "/* CHISEL:week-time-resize-design item-5 */\n/* TODO: Keep the start handle at the top-left and the end handle at the bottom-right at every event height; remove the max-height:44px position switch. Show small accent grips only for the hovered, focused or touch-selected event, giving that event priority above neighbors and disabling inactive overlapping hit areas. Keep shared control-height targets, including 44px on touch, keyboard focus and ns-resize feedback; separate the two targets even on short or narrow events without changing their displayed duration. */"
+    },
+    {
+      "itemId": "item-6",
+      "file": "public/calendar.css",
+      "diffHunk": "diff --git aa/public/calendar.css bb/public/calendar.css\nindex f2bf86d..5ed9f86 100644\n--- aa/public/calendar.css\n+++ bb/public/calendar.css\n@@ -216,6 +216,8 @@\n }\n .calendar-hour-slot:hover { background: var(--surface-soft); }\n .calendar-timed-card { position: absolute; z-index: 1; box-sizing: border-box; padding: 1px 2px; container-type: size; cursor: grab; }\n+/* CHISEL:week-time-resize-design item-6 */\n+/* TODO: Refine the hourly event card as one coherent style: a subtle status-tinted surface, neutral 1px boundary and 3px status-colour leading stripe, shared field-radius corners, 4px/8px inner spacing, a 600-weight title and quieter tabular time text. Keep the existing two-pixel separation and accurate time geometry; shorten content before it clips in tiny cards, retain shared field boxes where they fit, and preserve done styling, Compact mode, hidden fields, theme contrast and focus rings. Reserve stronger borders or shadows for the active event. */\n .calendar-timed-card > .calendar-card-title { display: flex; flex-direction: column; align-items: flex-start; width: 100%; height: 100%; min-height: 0 !important; padding: 3px 6px; border: 1px solid color-mix(in srgb, var(--task-field-color) 55%, var(--line)); background: color-mix(in srgb, var(--task-field-color) 12%, var(--surface)); border-radius: var(--field-radius); font-size: var(--type-small); overflow: hidden; }\n .calendar-timed-card :is(strong,span) { max-width: 100%; overflow: hidden; text-overflow: ellipsis; }\n @container (max-height: 40px) {\n",
+      "anchor": ".calendar-timed-card > .calendar-card-title { display: flex; flex-direction: column; align-items: flex-start; width: 100%; height: 100%; min-height: 0 !important; padding: 3px 6px; border: 1px solid color-mix(in srgb, var(--task-field-color) 55%, var(--line)); background: color-mix(in srgb, var(--task-field-color) 12%, var(--surface)); border-radius: var(--field-radius); font-size: var(--type-small); overflow: hidden; }",
+      "position": "before",
+      "instruction": "Refine the hourly event card as one coherent style: a subtle status-tinted surface, neutral 1px boundary and 3px status-colour leading stripe, shared field-radius corners, 4px/8px inner spacing, a 600-weight title and quieter tabular time text. Keep the existing two-pixel separation and accurate time geometry; shorten content before it clips in tiny cards, retain shared field boxes where they fit, and preserve done styling, Compact mode, hidden fields, theme contrast and focus rings. Reserve stronger borders or shadows for the active event.",
+      "markerBlock": "/* CHISEL:week-time-resize-design item-6 */\n/* TODO: Refine the hourly event card as one coherent style: a subtle status-tinted surface, neutral 1px boundary and 3px status-colour leading stripe, shared field-radius corners, 4px/8px inner spacing, a 600-weight title and quieter tabular time text. Keep the existing two-pixel separation and accurate time geometry; shorten content before it clips in tiny cards, retain shared field boxes where they fit, and preserve done styling, Compact mode, hidden fields, theme contrast and focus rings. Reserve stronger borders or shadows for the active event. */"
+    },
+    {
+      "itemId": "item-7",
+      "file": "e2e/planning/calendar-hours.spec.mjs",
+      "diffHunk": "diff --git aa/e2e/planning/calendar-hours.spec.mjs bb/e2e/planning/calendar-hours.spec.mjs\nindex 87b79f9..a214a22 100644\n--- aa/e2e/planning/calendar-hours.spec.mjs\n+++ bb/e2e/planning/calendar-hours.spec.mjs\n@@ -12,6 +12,8 @@ async function open(page, project = app.project) {\n   if(await page.locator('.mobile-view-options[open]').count()) await page.getByRole('button',{name:'Close view options',exact:true}).click();\n   await page.locator('.calendar-hours').waitFor();\n }\n+// CHISEL:week-time-resize-design item-7\n+// TODO: Add isolated clock-controlled tests for the current-time marker: correct local day and percentage position, minute updates, midnight, visibility return, hidden weekends and other weeks, plus preserved scroll and alignment after zoom. Assert computed card fill, stripe, title/time hierarchy and short-card fit in light/dark and Compact modes on desktop and touch, and verify the marker never intercepts event or hour-slot input. Tag engine-sensitive visual checks @gate.\n onDevices(['desktop','ipad','phone'], () => test('drag an hour range, create a timed card, and retain its time after reload', async({ page, device }) => {\n   const project=await app.store.createProject({title:`Hourly ${device}`});\n   await app.store.createTask(project.id,{title:'All-day deadline',due:'2026-11-02'});\n",
+      "anchor": "onDevices(['desktop','ipad','phone'], () => test('drag an hour range, create a timed card, and retain its time after reload', async({ page, device }) => {",
+      "position": "before",
+      "instruction": "Add isolated clock-controlled tests for the current-time marker: correct local day and percentage position, minute updates, midnight, visibility return, hidden weekends and other weeks, plus preserved scroll and alignment after zoom. Assert computed card fill, stripe, title/time hierarchy and short-card fit in light/dark and Compact modes on desktop and touch, and verify the marker never intercepts event or hour-slot input. Tag engine-sensitive visual checks @gate.",
+      "markerBlock": "// CHISEL:week-time-resize-design item-7\n// TODO: Add isolated clock-controlled tests for the current-time marker: correct local day and percentage position, minute updates, midnight, visibility return, hidden weekends and other weeks, plus preserved scroll and alignment after zoom. Assert computed card fill, stripe, title/time hierarchy and short-card fit in light/dark and Compact modes on desktop and touch, and verify the marker never intercepts event or hour-slot input. Tag engine-sensitive visual checks @gate."
+    },
+    {
+      "itemId": "item-8",
+      "file": "e2e/planning/calendar-resize.spec.mjs",
+      "diffHunk": "diff --git aa/e2e/planning/calendar-resize.spec.mjs bb/e2e/planning/calendar-resize.spec.mjs\nindex b16a367..676c17f 100644\n--- aa/e2e/planning/calendar-resize.spec.mjs\n+++ bb/e2e/planning/calendar-resize.spec.mjs\n@@ -28,6 +28,8 @@ async function move(page,minutes) {\n   await page.mouse.move(r.x+r.width/2,r.y+minutes/1440*r.height,{steps:8});\n }\n \n+// CHISEL:week-time-resize-design item-8\n+// TODO: Add an isolated First 10:30-11:00, Middle 11:00-12:00, Last 12:00-13:00 fixture and resize each endpoint from its visible grip, including the middle card's bottom approached from below. Assert elementFromPoint identifies the intended handle, only that card changes, and top-left/bottom-right positions persist above and below 44px and across zoom. Cover touch selection with 44px targets, narrow concurrent lanes, keyboard focus, cancellation, reload and existing cross-day behavior in Chromium and WebKit; tag visual geometry @gate.\n onDevices(['desktop','ipad','phone'],()=>test('resize both timed endpoints in quarter hours, preview the size and retain it after reload',{tag:'@gate'},async({page,device})=>{\n   await open(page);\n   await card(page).hover();\n",
+      "anchor": "onDevices(['desktop','ipad','phone'],()=>test('resize both timed endpoints in quarter hours, preview the size and retain it after reload',{tag:'@gate'},async({page,device})=>{",
+      "position": "before",
+      "instruction": "Add an isolated First 10:30-11:00, Middle 11:00-12:00, Last 12:00-13:00 fixture and resize each endpoint from its visible grip, including the middle card's bottom approached from below. Assert elementFromPoint identifies the intended handle, only that card changes, and top-left/bottom-right positions persist above and below 44px and across zoom. Cover touch selection with 44px targets, narrow concurrent lanes, keyboard focus, cancellation, reload and existing cross-day behavior in Chromium and WebKit; tag visual geometry @gate.",
+      "markerBlock": "// CHISEL:week-time-resize-design item-8\n// TODO: Add an isolated First 10:30-11:00, Middle 11:00-12:00, Last 12:00-13:00 fixture and resize each endpoint from its visible grip, including the middle card's bottom approached from below. Assert elementFromPoint identifies the intended handle, only that card changes, and top-left/bottom-right positions persist above and below 44px and across zoom. Cover touch selection with 44px targets, narrow concurrent lanes, keyboard focus, cancellation, reload and existing cross-day behavior in Chromium and WebKit; tag visual geometry @gate."
+    }
+  ],
+  "verification": {
+    "verifiedAt": "2026-11-14T10:47:29.865Z",
+    "passed": true,
+    "markerCount": 8,
+    "filesTouched": [
+      "e2e/planning/calendar-hours.spec.mjs",
+      "e2e/planning/calendar-resize.spec.mjs",
+      "public/calendar-hours.js",
+      "public/calendar.css",
+      "public/calendar.js"
+    ],
+    "duplicateItems": [],
+    "sessionVariants": [
+      "week-time-resize-design"
+    ],
+    "nonMarkerChanges": [],
+    "syntaxChecks": [
+      {
+        "file": "e2e/planning/calendar-hours.spec.mjs",
+        "status": "skipped",
+        "message": "skipped: no syntax check available for this file type"
+      },
+      {
+        "file": "e2e/planning/calendar-resize.spec.mjs",
+        "status": "skipped",
+        "message": "skipped: no syntax check available for this file type"
+      },
+      {
+        "file": "public/calendar-hours.js",
+        "status": "pass",
+        "message": "ok: node --check passed"
+      },
+      {
+        "file": "public/calendar.css",
+        "status": "skipped",
+        "message": "skipped: no syntax check available for this file type"
+      },
+      {
+        "file": "public/calendar.js",
+        "status": "pass",
+        "message": "ok: node --check passed"
+      }
+    ]
+  },
+  "sessionId": "week-time-resize-design",
+  "provider": "codex",
+  "mode": "normal",
+  "plan": [
+    {
+      "itemId": "item-1",
+      "file": "public/calendar-hours.js",
+      "line": 8,
+      "title": "Current-time indicator rendering"
+    },
+    {
+      "itemId": "item-2",
+      "file": "public/calendar.js",
+      "line": 35,
+      "title": "Current-time update lifecycle"
+    },
+    {
+      "itemId": "item-3",
+      "file": "public/calendar.css",
+      "line": 172,
+      "title": "Current-time indicator styling"
+    },
+    {
+      "itemId": "item-4",
+      "file": "public/calendar.js",
+      "line": 517,
+      "title": "Active-event resize ownership"
+    },
+    {
+      "itemId": "item-5",
+      "file": "public/calendar.css",
+      "line": 230,
+      "title": "Consistent accessible resize handles"
+    },
+    {
+      "itemId": "item-6",
+      "file": "public/calendar.css",
+      "line": 219,
+      "title": "Cohesive event card visual refinement"
+    },
+    {
+      "itemId": "item-7",
+      "file": "e2e/planning/calendar-hours.spec.mjs",
+      "line": 15,
+      "title": "Clock and event design regression coverage"
+    },
+    {
+      "itemId": "item-8",
+      "file": "e2e/planning/calendar-resize.spec.mjs",
+      "line": 31,
+      "title": "Stacked-event hit testing and stable handle coverage"
+    }
+  ],
+  "insertedComments": [
+    {
+      "itemId": "item-1",
+      "file": "public/calendar-hours.js",
+      "line": 8,
+      "lineCount": 2
+    },
+    {
+      "itemId": "item-2",
+      "file": "public/calendar.js",
+      "line": 35,
+      "lineCount": 2
+    },
+    {
+      "itemId": "item-3",
+      "file": "public/calendar.css",
+      "line": 172,
+      "lineCount": 2
+    },
+    {
+      "itemId": "item-4",
+      "file": "public/calendar.js",
+      "line": 517,
+      "lineCount": 2
+    },
+    {
+      "itemId": "item-5",
+      "file": "public/calendar.css",
+      "line": 230,
+      "lineCount": 2
+    },
+    {
+      "itemId": "item-6",
+      "file": "public/calendar.css",
+      "line": 219,
+      "lineCount": 2
+    },
+    {
+      "itemId": "item-7",
+      "file": "e2e/planning/calendar-hours.spec.mjs",
+      "line": 15,
+      "lineCount": 2
+    },
+    {
+      "itemId": "item-8",
+      "file": "e2e/planning/calendar-resize.spec.mjs",
+      "line": 31,
+      "lineCount": 2
+    }
+  ],
+  "filesTouched": [
+    "public/calendar-hours.js",
+    "public/calendar.js",
+    "public/calendar.css",
+    "e2e/planning/calendar-hours.spec.mjs",
+    "e2e/planning/calendar-resize.spec.mjs"
+  ],
+  "status": "markers-only",
+  "skippedItems": []
+}

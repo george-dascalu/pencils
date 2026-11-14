@@ -1,0 +1,222 @@
+{
+  "slug": "week-board-all-day",
+  "task": "Place all-day activities above the days in Week board grouped by Time of day.",
+  "createdAt": "2026-11-14T10:31:10.604Z",
+  "active": true,
+  "items": [
+    {
+      "itemId": "item-1",
+      "file": "public/calendar.js",
+      "diffHunk": "diff --git aa/public/calendar.js bb/public/calendar.js\nindex c1b53b3..cc153b2 100644\n--- aa/public/calendar.js\n+++ bb/public/calendar.js\n@@ -139,6 +139,8 @@ export function calendarView(ctx) {\n   }, true);\n   // Days as columns and a row per value of the chosen field; a card shows on its first day here.\n   function weekBoard(tasks, from, to) {\n+    // CHISEL:week-board-all-day item-1\n+    // TODO: Render dated cards without times in a compact All day row directly below the date headings when field is daypart; keep only undated cards in dockCards. Keep this row before the saved DAYPARTS order and outside taskGroupDrag by omitting its row-level data-week-board-value and reorder handle, while its cells retain data-week-board-value=\"\". Reuse card(), create.html() and the existing empty-part date defaults and drop conversion; retain first-visible-day placement, filters, weekends, and all other grouping layouts.\n     const field = rowField(), days = [...Array(7)].map((_, i) => shiftDate(from, i)).filter(day => weekends || !isWeekend(day));\n     const byDay = new Map(agendaGroups(tasks, from, to, weekends)), placed = [...byDay.values()].flat();\n     // A card without a priority has priority None; statuses no longer in the workflow keep a row.\n",
+      "anchor": "    const field = rowField(), days = [...Array(7)].map((_, i) => shiftDate(from, i)).filter(day => weekends || !isWeekend(day));",
+      "position": "before",
+      "instruction": "Render dated cards without times in a compact All day row directly below the date headings when field is daypart; keep only undated cards in dockCards. Keep this row before the saved DAYPARTS order and outside taskGroupDrag by omitting its row-level data-week-board-value and reorder handle, while its cells retain data-week-board-value=\"\". Reuse card(), create.html() and the existing empty-part date defaults and drop conversion; retain first-visible-day placement, filters, weekends, and all other grouping layouts.",
+      "markerBlock": "    // CHISEL:week-board-all-day item-1\n    // TODO: Render dated cards without times in a compact All day row directly below the date headings when field is daypart; keep only undated cards in dockCards. Keep this row before the saved DAYPARTS order and outside taskGroupDrag by omitting its row-level data-week-board-value and reorder handle, while its cells retain data-week-board-value=\"\". Reuse card(), create.html() and the existing empty-part date defaults and drop conversion; retain first-visible-day placement, filters, weekends, and all other grouping layouts."
+    },
+    {
+      "itemId": "item-2",
+      "file": "public/calendar.js",
+      "diffHunk": "diff --git aa/public/calendar.js bb/public/calendar.js\nindex cc153b2..1f3b40f 100644\n--- aa/public/calendar.js\n+++ bb/public/calendar.js\n@@ -465,6 +465,8 @@ export function calendarView(ctx) {\n     d.cancel?.remove();\n     const dock = document.querySelector(\".week-board-backlog\");\n     // Decide before restoring visibility, so the last card never flashes an empty overlay.\n+    // CHISEL:week-board-all-day item-2\n+    // TODO: Count a dated All day destination as leaving Unscheduled in emptied: remove the daypart truthiness requirement so dropping the final dock card into the empty-part cell closes the overlay before restoring visibility. Preserve cancellation, invalid-drop, remaining-card and save-failure behavior.\n     const emptied = mode === \"board\" && dock && !cancel && d.active && d.next && !d.next.backlog &&\n       calendarRange({ ...d.task, ...d.next }) && (rowField() !== \"daypart\" || daypart({ ...d.task, ...d.next })) &&\n       ![...dock.querySelectorAll(\"[data-calendar-card]\")].some(el => el.dataset.calendarCard !== d.task.id);\n",
+      "anchor": "    const emptied = mode === \"board\" && dock && !cancel && d.active && d.next && !d.next.backlog &&",
+      "position": "before",
+      "instruction": "Count a dated All day destination as leaving Unscheduled in emptied: remove the daypart truthiness requirement so dropping the final dock card into the empty-part cell closes the overlay before restoring visibility. Preserve cancellation, invalid-drop, remaining-card and save-failure behavior.",
+      "markerBlock": "    // CHISEL:week-board-all-day item-2\n    // TODO: Count a dated All day destination as leaving Unscheduled in emptied: remove the daypart truthiness requirement so dropping the final dock card into the empty-part cell closes the overlay before restoring visibility. Preserve cancellation, invalid-drop, remaining-card and save-failure behavior."
+    },
+    {
+      "itemId": "item-3",
+      "file": "public/calendar.css",
+      "diffHunk": "diff --git aa/public/calendar.css bb/public/calendar.css\nindex 3d848f8..75ee07c 100644\n--- aa/public/calendar.css\n+++ bb/public/calendar.css\n@@ -280,6 +280,8 @@\n .week-board { --week-board-column: 140px; }\n .week-board-backlog { --week-board-column: 184px; }\n /* The row names run up the side (F0.22-73), so their column is as narrow as the row's handle. */\n+/* CHISEL:week-board-all-day item-3 */\n+/* TODO: Add a daypart-only content-sized All day grid track after --week-board-head; let the remaining daypart rows fill the available height without stretching the All day band. Reuse shared cell padding, colours and control sizing, keep day columns aligned and row labels contained, and preserve scroll snap, hidden scrollbars, Compact mode and 44px touch targets. */\n .week-board { display: grid; grid-template-columns: var(--week-board-names) repeat(var(--week-board-days), minmax(var(--week-board-column), 1fr)); grid-template-rows: var(--week-board-head) repeat(var(--week-board-rows), auto); min-height: 100%; min-width: calc(var(--week-board-names) + var(--week-board-days) * var(--week-board-column)); }\n .week-board-row, .week-board-head-row { display: contents; }\n .week-board-corner, .week-board-day-head { position: sticky; top: 0; z-index: 2; height: var(--week-board-head); background: var(--surface); border-bottom: 1px solid var(--line); }\n",
+      "anchor": ".week-board { display: grid; grid-template-columns: var(--week-board-names) repeat(var(--week-board-days), minmax(var(--week-board-column), 1fr)); grid-template-rows: var(--week-board-head) repeat(var(--week-board-rows), auto); min-height: 100%; min-width: calc(var(--week-board-names) + var(--week-board-days) * var(--week-board-column)); }",
+      "position": "before",
+      "instruction": "Add a daypart-only content-sized All day grid track after --week-board-head; let the remaining daypart rows fill the available height without stretching the All day band. Reuse shared cell padding, colours and control sizing, keep day columns aligned and row labels contained, and preserve scroll snap, hidden scrollbars, Compact mode and 44px touch targets.",
+      "markerBlock": "/* CHISEL:week-board-all-day item-3 */\n/* TODO: Add a daypart-only content-sized All day grid track after --week-board-head; let the remaining daypart rows fill the available height without stretching the All day band. Reuse shared cell padding, colours and control sizing, keep day columns aligned and row labels contained, and preserve scroll snap, hidden scrollbars, Compact mode and 44px touch targets. */"
+    },
+    {
+      "itemId": "item-4",
+      "file": "e2e/planning/week-board-daypart.spec.mjs",
+      "diffHunk": "diff --git aa/e2e/planning/week-board-daypart.spec.mjs bb/e2e/planning/week-board-daypart.spec.mjs\nindex 3e8f1bd..05bbb4a 100644\n--- aa/e2e/planning/week-board-daypart.spec.mjs\n+++ bb/e2e/planning/week-board-daypart.spec.mjs\n@@ -53,6 +53,8 @@ test('a timed card on the Week board shows its hours in its field box', async ({\n   await expect(page.locator('.task-dates-popover')).toBeVisible();\n });\n \n+// CHISEL:week-board-all-day item-4\n+// TODO: Replace the dated-in-dock expectations and the obsolete Note-in-dock keyboard test with All day coverage: Errand and Note appear under their dates above the timed rows, while Idea remains undated in the dock. Cover timed-to-All-day clearing times but preserving dates, reverse drops setting the daypart hour, inline All day creation retaining active filters, cancellation, reload, and a final dock card dropped into All day leaving the overlay closed. Include desktop and touch layout checks using independent fixtures.\n test('Group by Time of day splits the week into morning, afternoon and evening, and a drop sets the time', async ({ page }) => {\n   await page.clock.setFixedTime(new Date('2026-11-04T12:00:00'));\n   await page.goto(`${app.base}/#project/${app.project.id}/calendar`);\n",
+      "anchor": "test('Group by Time of day splits the week into morning, afternoon and evening, and a drop sets the time', async ({ page }) => {",
+      "position": "before",
+      "instruction": "Replace the dated-in-dock expectations and the obsolete Note-in-dock keyboard test with All day coverage: Errand and Note appear under their dates above the timed rows, while Idea remains undated in the dock. Cover timed-to-All-day clearing times but preserving dates, reverse drops setting the daypart hour, inline All day creation retaining active filters, cancellation, reload, and a final dock card dropped into All day leaving the overlay closed. Include desktop and touch layout checks using independent fixtures.",
+      "markerBlock": "// CHISEL:week-board-all-day item-4\n// TODO: Replace the dated-in-dock expectations and the obsolete Note-in-dock keyboard test with All day coverage: Errand and Note appear under their dates above the timed rows, while Idea remains undated in the dock. Cover timed-to-All-day clearing times but preserving dates, reverse drops setting the daypart hour, inline All day creation retaining active filters, cancellation, reload, and a final dock card dropped into All day leaving the overlay closed. Include desktop and touch layout checks using independent fixtures."
+    },
+    {
+      "itemId": "item-5",
+      "file": "e2e/planning/week-board-narrow.spec.mjs",
+      "diffHunk": "diff --git aa/e2e/planning/week-board-narrow.spec.mjs bb/e2e/planning/week-board-narrow.spec.mjs\nindex f999744..5754fea 100644\n--- aa/e2e/planning/week-board-narrow.spec.mjs\n+++ bb/e2e/planning/week-board-narrow.spec.mjs\n@@ -47,6 +47,8 @@ onDevices(['phone'], () => {\n   });\n });\n \n+// CHISEL:week-board-all-day item-5\n+// TODO: Update the daypart branch to find the two date-only cards in All day cells instead of the dock, assert their dates are hidden and field boxes still fit at narrow widths, and retain a separate truly undated fixture to check dock card width. Assert the All day track fits its content above the remaining full-height rows using computed styles and bounds.\n test('the day columns narrow to fit the window before the board scrolls, keeping each card whole @gate', async ({ page }) => {\n   await open(page, 1200, 'none');\n   const scroll = page.locator('.week-board-scroll');\n",
+      "anchor": "test('the day columns narrow to fit the window before the board scrolls, keeping each card whole @gate', async ({ page }) => {",
+      "position": "before",
+      "instruction": "Update the daypart branch to find the two date-only cards in All day cells instead of the dock, assert their dates are hidden and field boxes still fit at narrow widths, and retain a separate truly undated fixture to check dock card width. Assert the All day track fits its content above the remaining full-height rows using computed styles and bounds.",
+      "markerBlock": "// CHISEL:week-board-all-day item-5\n// TODO: Update the daypart branch to find the two date-only cards in All day cells instead of the dock, assert their dates are hidden and field boxes still fit at narrow widths, and retain a separate truly undated fixture to check dock card width. Assert the All day track fits its content above the remaining full-height rows using computed styles and bounds."
+    },
+    {
+      "itemId": "item-6",
+      "file": "e2e/planning/week-board-arrange.spec.mjs",
+      "diffHunk": "diff --git aa/e2e/planning/week-board-arrange.spec.mjs bb/e2e/planning/week-board-arrange.spec.mjs\nindex b17f829..c4ccbfe 100644\n--- aa/e2e/planning/week-board-arrange.spec.mjs\n+++ bb/e2e/planning/week-board-arrange.spec.mjs\n@@ -30,6 +30,8 @@ async function open(page) {\n const dock = page => page.locator('.week-board-backlog');\n const arrange = (page, name) => dock(page).getByRole('button', { name: `Arrange by ${name}`, exact: true });\n \n+// CHISEL:week-board-all-day item-6\n+// TODO: Restrict saved-position expectations after each arrangement to matching undated non-done cards. Assert Parent project and Untimed day stay in their All day cells with unchanged dates and backlog values; retain the four arrangement modes, grouping, filtering, failure recovery and touch-size coverage.\n onDevices(['desktop', 'phone', 'small', 'ipad'], () => test('dock arrangement buttons fit and save groups once, leaving cards freely movable', { tag: '@gate' }, async ({ page, device }) => {\n   await open(page);\n   const initial = await saved();\n",
+      "anchor": "onDevices(['desktop', 'phone', 'small', 'ipad'], () => test('dock arrangement buttons fit and save groups once, leaving cards freely movable', { tag: '@gate' }, async ({ page, device }) => {",
+      "position": "before",
+      "instruction": "Restrict saved-position expectations after each arrangement to matching undated non-done cards. Assert Parent project and Untimed day stay in their All day cells with unchanged dates and backlog values; retain the four arrangement modes, grouping, filtering, failure recovery and touch-size coverage.",
+      "markerBlock": "// CHISEL:week-board-all-day item-6\n// TODO: Restrict saved-position expectations after each arrangement to matching undated non-done cards. Assert Parent project and Untimed day stay in their All day cells with unchanged dates and backlog values; retain the four arrangement modes, grouping, filtering, failure recovery and touch-size coverage."
+    },
+    {
+      "itemId": "item-7",
+      "file": "e2e/planning/week-board.spec.mjs",
+      "diffHunk": "diff --git aa/e2e/planning/week-board.spec.mjs bb/e2e/planning/week-board.spec.mjs\nindex c290951..ae0fede 100644\n--- aa/e2e/planning/week-board.spec.mjs\n+++ bb/e2e/planning/week-board.spec.mjs\n@@ -182,6 +182,8 @@ onDevices(['desktop', 'ipad', 'phone'], () => {\n   });\n \n   // Owner request (F0.22-58): a row's name breaks only between words, never inside one.\n+  // CHISEL:week-board-all-day item-7\n+  // TODO: Include All day before the timed labels in the daypart layout assertions; check its label fits without splitting words, its cells align with the date columns, and it has no group-reorder handle. Verify it stays first after timed-row reordering and reload on desktop and touch while retaining the existing label checks for other grouping fields.\n   test('Week board row names never split a word @gate', async ({ page, device }) => {\n     if (device === 'desktop') await page.setViewportSize({ width: 1000, height: 800 });\n     await open(page);\n",
+      "anchor": "  test('Week board row names never split a word @gate', async ({ page, device }) => {",
+      "position": "before",
+      "instruction": "Include All day before the timed labels in the daypart layout assertions; check its label fits without splitting words, its cells align with the date columns, and it has no group-reorder handle. Verify it stays first after timed-row reordering and reload on desktop and touch while retaining the existing label checks for other grouping fields.",
+      "markerBlock": "  // CHISEL:week-board-all-day item-7\n  // TODO: Include All day before the timed labels in the daypart layout assertions; check its label fits without splitting words, its cells align with the date columns, and it has no group-reorder handle. Verify it stays first after timed-row reordering and reload on desktop and touch while retaining the existing label checks for other grouping fields."
+    }
+  ],
+  "sessionId": "week-board-all-day",
+  "provider": "codex",
+  "mode": "normal",
+  "plan": [
+    {
+      "itemId": "item-1",
+      "file": "public/calendar.js",
+      "line": 144,
+      "title": "All day row and dock membership"
+    },
+    {
+      "itemId": "item-2",
+      "file": "public/calendar.js",
+      "line": 470,
+      "title": "Closing the emptied dock"
+    },
+    {
+      "itemId": "item-3",
+      "file": "public/calendar.css",
+      "line": 289,
+      "title": "Content-sized All day track"
+    },
+    {
+      "itemId": "item-4",
+      "file": "e2e/planning/week-board-daypart.spec.mjs",
+      "line": 56,
+      "title": "Daypart behavior coverage"
+    },
+    {
+      "itemId": "item-5",
+      "file": "e2e/planning/week-board-narrow.spec.mjs",
+      "line": 50,
+      "title": "Narrow layout coverage"
+    },
+    {
+      "itemId": "item-6",
+      "file": "e2e/planning/week-board-arrange.spec.mjs",
+      "line": 33,
+      "title": "Dock arrangement scope"
+    },
+    {
+      "itemId": "item-7",
+      "file": "e2e/planning/week-board.spec.mjs",
+      "line": 185,
+      "title": "Row label and ordering coverage"
+    }
+  ],
+  "insertedComments": [
+    {
+      "itemId": "item-1",
+      "file": "public/calendar.js",
+      "line": 144,
+      "lineCount": 2
+    },
+    {
+      "itemId": "item-2",
+      "file": "public/calendar.js",
+      "line": 470,
+      "lineCount": 2
+    },
+    {
+      "itemId": "item-3",
+      "file": "public/calendar.css",
+      "line": 289,
+      "lineCount": 2
+    },
+    {
+      "itemId": "item-4",
+      "file": "e2e/planning/week-board-daypart.spec.mjs",
+      "line": 56,
+      "lineCount": 2
+    },
+    {
+      "itemId": "item-5",
+      "file": "e2e/planning/week-board-narrow.spec.mjs",
+      "line": 50,
+      "lineCount": 2
+    },
+    {
+      "itemId": "item-6",
+      "file": "e2e/planning/week-board-arrange.spec.mjs",
+      "line": 33,
+      "lineCount": 2
+    },
+    {
+      "itemId": "item-7",
+      "file": "e2e/planning/week-board.spec.mjs",
+      "line": 185,
+      "lineCount": 2
+    }
+  ],
+  "filesTouched": [
+    "public/calendar.js",
+    "public/calendar.css",
+    "e2e/planning/week-board-daypart.spec.mjs",
+    "e2e/planning/week-board-narrow.spec.mjs",
+    "e2e/planning/week-board-arrange.spec.mjs",
+    "e2e/planning/week-board.spec.mjs"
+  ],
+  "status": "markers-only",
+  "skippedItems": [],
+  "verification": {
+    "verifiedAt": "2026-11-14T10:47:35.201Z",
+    "passed": true,
+    "markerCount": 7,
+    "filesTouched": [
+      "e2e/planning/week-board-arrange.spec.mjs",
+      "e2e/planning/week-board-daypart.spec.mjs",
+      "e2e/planning/week-board-narrow.spec.mjs",
+      "e2e/planning/week-board.spec.mjs",
+      "public/calendar.css",
+      "public/calendar.js"
+    ],
+    "duplicateItems": [],
+    "sessionVariants": [
+      "week-board-all-day"
+    ],
+    "nonMarkerChanges": [],
+    "syntaxChecks": [
+      {
+        "file": "e2e/planning/week-board-arrange.spec.mjs",
+        "status": "skipped",
+        "message": "skipped: no syntax check available for this file type"
+      },
+      {
+        "file": "e2e/planning/week-board-daypart.spec.mjs",
+        "status": "skipped",
+        "message": "skipped: no syntax check available for this file type"
+      },
+      {
+        "file": "e2e/planning/week-board-narrow.spec.mjs",
+        "status": "skipped",
+        "message": "skipped: no syntax check available for this file type"
+      },
+      {
+        "file": "e2e/planning/week-board.spec.mjs",
+        "status": "skipped",
+        "message": "skipped: no syntax check available for this file type"
+      },
+      {
+        "file": "public/calendar.css",
+        "status": "skipped",
+        "message": "skipped: no syntax check available for this file type"
+      },
+      {
+        "file": "public/calendar.js",
+        "status": "pass",
+        "message": "ok: node --check passed"
+      }
+    ]
+  }
+}

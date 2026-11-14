@@ -44,11 +44,15 @@ onDevices(['desktop', 'phone', 'small', 'ipad'], () => test('dock arrangement bu
     await expect(button).toBeEnabled();
     await expect(dock(page).locator('.week-board-backlog-group').first()).toBeVisible();
     await expect(dock(page).locator('.week-board-backlog-group').first()).toHaveCSS('position', 'absolute');
-    await expect.poll(async () => (await saved()).filter(t => t.id !== app.done.id).every(t => !!t.backlog)).toBe(true);
+    await expect.poll(async () => (await saved()).filter(t => t.id !== app.done.id && !t.start && !t.due).every(t => !!t.backlog)).toBe(true);
   }
   const after = await saved();
   for (const t of after) {
     const before = initial.find(a => a.id === t.id);
+    if (t.start || t.due) {
+      expect(t.backlog).toEqual(before.backlog);
+      await expect(page.locator(`.week-board-all-day [data-calendar-card="${t.id}"]`)).toHaveCount(1);
+    }
     for (const field of ['parent', 'tags', 'priority', 'status', 'start', 'due', 'start_time', 'due_time']) expect(t[field]).toEqual(before[field]);
   }
   expect(after.find(t => t.id === app.done.id).backlog).toBeFalsy();

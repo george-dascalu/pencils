@@ -54,6 +54,7 @@ test('selected tags are deduplicated, copied and bounded by the card limit', () 
 test('the clicked cell supplies its dates and row while preserving other filters', () => {
   const s = state({ assignee: '@person:Ann', priority: 'high', tags: ['Home'] }, { status: 'review' });
   assert.deepEqual(weekBoardCellDefaults(s, '2026-11-05', 'daypart', 'afternoon'), { status: 'review', assignee: 'Ann', priority: 'high', tags: ['Home'], start: '2026-11-05', due: '2026-11-05', start_time: '13:00', due_time: '14:00' });
+  assert.deepEqual(weekBoardCellDefaults(s, '2026-11-05', 'daypart', ''), { status: 'review', assignee: 'Ann', priority: 'high', tags: ['Home'], start: '2026-11-05', due: '2026-11-05' });
   assert.equal(weekBoardCellDefaults(s, '2026-11-05', 'status', 'todo').status, 'todo');
   assert.deepEqual(weekBoardCellDefaults(s, '2026-11-05', 'tags', 'Work').tags, ['Home', 'Work']);
   assert.deepEqual(weekBoardCellDefaults(s, '2026-11-05', 'tags', 'Home').tags, ['Home']);

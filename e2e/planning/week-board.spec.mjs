@@ -193,7 +193,7 @@ onDevices(['desktop', 'ipad', 'phone'], () => {
     expect(await split()).toEqual([]);
     await (await reveal(page.locator('#week-board-rows'))).selectOption('daypart');
     await closeOptions(page);
-    await expect.poll(() => page.locator('.week-board-row-head > span:not(.sr-only)').allTextContents()).toEqual(['Morning', 'Afternoon', 'Evening']);
+    await expect.poll(() => page.locator('.week-board-row-head > span:not(.sr-only)').allTextContents()).toEqual(['All day', 'Morning', 'Afternoon', 'Evening']);
     expect(await split()).toEqual([]);
   });
 

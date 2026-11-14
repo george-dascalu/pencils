@@ -2,6 +2,18 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.23.32 — 2026-11-14
+
+### Added
+- Feature F0.23-29: Week board's Time of day layout starts with a compact All day row for dated cards without times. Create cards inline there or drag between All day and timed rows; Unscheduled now contains only undated cards.
+- Feature F0.23-30: Week shows a live current-time line in today's column, following local time, zoom and midnight without moving the calendar's scroll position.
+
+### Fixed
+- Feature F0.23-31: Resizing stacked or narrow overlapping events selects the intended event and endpoint. Handles stay at the top-left and bottom-right at every event size; hover or focus reveals them on desktop, and a long press selects an event on touch. Keyboard resizing, cross-day changes and cancellation remain available.
+
+### Changed
+- Feature F0.23-32: Week events use a subtle status tint and leading stripe, clearer title and time hierarchy, and an outline on the active event. Short events keep their true time geometry with compact content, and inactive handles stay out of the way.
+
 ## 0.23.28 — 2026-11-13
 
 ### Fixed

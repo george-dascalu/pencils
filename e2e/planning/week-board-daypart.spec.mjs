@@ -1,8 +1,7 @@
 // Owner request (F0.22-48): the Week board's Group by can split the week's cards into the morning
 // (before 12:00), afternoon (until 17:00) and evening; a card dropped in another part of the day starts
-// at its hour (9:00, 13:00, 18:00) and keeps its length. Owner request (F0.22-56): there is no Any time
-// row: the week's cards without times wait on the Unscheduled board, in turn, with their date, and a
-// card dropped there loses its date and times.
+// at its hour (9:00, 13:00, 18:00) and keeps its length. All day cards stay above the timed rows;
+// a card dropped on the Unscheduled board loses its date and times.
 import { test, expect, useApp } from '../fixtures.mjs';
 import { reveal } from '../helpers/menu-controls.mjs';
 
@@ -62,11 +61,9 @@ test('Group by Time of day splits the week into morning, afternoon and evening, 
   await expect.poll(() => rows(page)).toEqual([
     ['morning', 'Morning', ['Standup']], ['afternoon', 'Afternoon', ['Lunch']], ['evening', 'Evening', ['Gym']],
   ]);
-  // The week's cards without times wait on the Unscheduled board, first, by day, with their dates.
-  await expect.poll(() => backlog(page)).toEqual(['Errand', 'Note', 'Idea']);
-  const errand = page.locator('.week-board-backlog .week-board-card', { hasText: 'Errand' });
-  await expect(errand.locator('.row-due')).toBeVisible();
-  await expect(errand.locator('.row-due')).toContainText('5 Nov');
+  await expect.poll(() => backlog(page)).toEqual(['Idea']);
+  const errand = page.locator('.week-board-all-day .week-board-card', { hasText: 'Errand' });
+  await expect(errand.locator('.row-due')).toBeHidden();
   await expect(page.locator('.week-board-backlog .week-board-card', { hasText: 'Idea' }).locator('.row-due')).toHaveCSS('display', 'none');
   // Into a part of the day: it starts at its hour, an hour long for a card without times.
   await drag(page, 'Errand', 'afternoon');
@@ -80,18 +77,32 @@ test('Group by Time of day splits the week into morning, afternoon and evening, 
   await expect.poll(() => rows(page)).toEqual([
     ['morning', 'Morning', []], ['afternoon', 'Afternoon', ['Lunch', 'Errand']], ['evening', 'Evening', ['Standup']],
   ]);
-  await expect.poll(async () => (await backlog(page)).sort()).toEqual(['Gym', 'Idea', 'Note']);
+  await expect.poll(async () => (await backlog(page)).sort()).toEqual(['Gym', 'Idea']);
 });
 
-test('Alt and an arrow on a dated card on the Unscheduled board takes its date away, as a drop does', async ({ page }) => {
+test('All day dates move with the keyboard without becoming unscheduled', async ({ page }) => {
   await page.clock.setFixedTime(new Date('2026-11-04T12:00:00'));
   await page.goto(`${app.base}/#project/${app.project.id}/calendar`);
   await (await reveal(page.locator('#calendar-mode'))).selectOption('board');
-  await (await reveal(page.locator('#week-board-rows'))).selectOption({ label: 'Time of day' });
-  const title = page.locator('.week-board-backlog .week-board-title', { hasText: 'Note' });
-  const at = await title.evaluate(el => { const card = el.closest('.week-board-card'); return { x: card.offsetLeft, y: card.offsetTop }; });
-  await title.focus();
-  await page.keyboard.press('Alt+ArrowDown');
-  await expect.poll(async () => { const t = await saved(app.note.id); return [t.start ?? null, t.due ?? null, t.backlog?.x, t.backlog?.y]; }).toEqual([null, null, at.x, at.y + 1]);
+  await (await reveal(page.locator('#week-board-rows'))).selectOption('daypart');
+  const title = page.locator('.week-board-all-day .week-board-title', { hasText: 'Note' });
+  await title.focus(); await page.keyboard.press('Alt+ArrowLeft');
+  await expect.poll(async () => { const t = await saved(app.note.id); return [t.start, t.due, t.start_time ?? null, t.backlog ?? null]; }).toEqual([day, day, null, null]);
   await expect(title).toBeFocused();
+});
+
+test('a timed card becomes all day and the final undated drop leaves the dock closed', async ({ page }) => {
+  await page.clock.setFixedTime(new Date('2026-11-04T12:00:00'));
+  await page.goto(`${app.base}/#project/${app.project.id}/calendar`);
+  await (await reveal(page.locator('#calendar-mode'))).selectOption('board');
+  await (await reveal(page.locator('#week-board-rows'))).selectOption('daypart');
+  await drag(page, 'Standup', '');
+  await expect.poll(async () => { const t = await saved(app.standup.id); return [t.start, t.due, t.start_time ?? null, t.due_time ?? null]; }).toEqual([day, day, null, null]);
+  await page.locator('.week-board-backlog').getByRole('button', { name: 'Show Unscheduled', exact: true }).click();
+  await page.locator('#search').fill('Idea');
+  await drag(page, 'Idea', '');
+  await expect.poll(async () => (await saved(app.idea.id)).due).toBe(day);
+  await expect(page.locator('.week-board-backlog')).toHaveAttribute('data-closed', '');
+  await page.reload();
+  await expect(page.locator('.week-board-backlog')).toHaveAttribute('data-closed', '');
 });

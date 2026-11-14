@@ -9,6 +9,7 @@ const app = useApp(async store => {
   const project = await store.createProject({ title: 'Narrow week', key: 'NW', organisation: organisation.id, teams: ['team'] });
   await store.createTask(project.id, { title: 'Ann on Tuesday', assignee: 'Ann', status: 'in-progress', priority: 'high', due: '2026-11-03' });
   await store.createTask(project.id, { title: 'Nobody on Friday', status: 'todo', priority: 'medium', due: '2026-11-06' });
+  await store.createTask(project.id, { title: 'Undated idea' });
   return { project };
 });
 async function open(page, width, rows) {
@@ -60,13 +61,14 @@ test('the day columns narrow to fit the window before the board scrolls, keeping
   }));
   expect(cards).toEqual([true, true]);
   await page.setViewportSize({ width: 1200, height: 800 });
-  // Cards on the Unscheduled board keep their width, room for their dates when the rows are times of day.
+  // Date-only cards fit the All day track; the separate undated card keeps the dock width.
   await (await reveal(page.locator('#week-board-rows'))).selectOption('daypart');
-  const backlog = page.locator('.week-board-backlog .week-board-card');
+  const backlog = page.locator('.week-board-all-day .week-board-card');
   await expect(backlog).toHaveCount(2);
-  await expect(backlog.locator('.row-due').first()).toBeVisible();
+  await expect(backlog.locator('.row-due').first()).toBeHidden();
+  await expect(page.locator('.week-board-backlog .week-board-card')).toHaveCount(1);
   expect(await backlog.evaluateAll(els => els.map(card => {
     const c = card.getBoundingClientRect(), box = card.querySelector('.field-box').getBoundingClientRect();
-    return box.right <= c.right + 0.5 && card.scrollWidth <= card.clientWidth;
-  }))).toEqual([true, true]);
+    return { fits: box.right <= c.right + 0.5, overflow: card.scrollWidth - card.clientWidth };
+  }))).toEqual([{ fits: true, overflow: 0 }, { fits: true, overflow: 0 }]);
 });

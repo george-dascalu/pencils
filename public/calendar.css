@@ -214,8 +214,9 @@
 }
 .calendar-hour-slot:hover { background: var(--surface-soft); }
 .calendar-timed-card { position: absolute; z-index: 1; box-sizing: border-box; padding: 1px 2px; container-type: size; cursor: grab; }
-.calendar-timed-card > .calendar-card-title { display: flex; flex-direction: column; align-items: flex-start; width: 100%; height: 100%; min-height: 0 !important; padding: 3px 6px; border: 1px solid color-mix(in srgb, var(--task-field-color) 55%, var(--line)); background: color-mix(in srgb, var(--task-field-color) 12%, var(--surface)); border-radius: var(--field-radius); font-size: var(--type-small); overflow: hidden; }
+.calendar-timed-card > .calendar-card-title { display: flex; flex-direction: column; align-items: flex-start; width: 100%; height: 100%; min-height: 0 !important; padding: 4px 8px; border: 1px solid var(--line); border-left: 3px solid var(--task-field-color); background: color-mix(in srgb, var(--task-field-color) 10%, var(--surface)); border-radius: var(--field-radius); font-size: var(--type-small); overflow: hidden; }
 .calendar-timed-card :is(strong,span) { max-width: 100%; overflow: hidden; text-overflow: ellipsis; }
+.calendar-timed-card > .calendar-card-title { touch-action: auto; }
 @container (max-height: 40px) {
   .calendar-timed-card > .calendar-card-title { padding-block: 0; justify-content: center; }
   .calendar-timed-card strong { flex-shrink: 0; line-height: 1; }
@@ -223,22 +224,21 @@
 }
 .calendar-time-selection { position: absolute; z-index: 3; inset-inline: 2px; min-height: 16px; padding: 2px 4px; pointer-events: none; border: 1px solid var(--green); border-radius: var(--field-radius); background: color-mix(in srgb, var(--green) 20%, var(--surface)); color: var(--ink); font-size: var(--type-small); }
 
-.calendar-timed-card:has(.calendar-time-resize:hover, .calendar-time-resize:focus-visible), .calendar-timed-card.calendar-time-resizing { z-index: 4; opacity: 1; }
-.calendar-timed-card > .calendar-time-resize { position: absolute; z-index: 2; width: var(--control-height); height: var(--control-height) !important; min-height: 0; padding: 0; border: 0; border-radius: var(--field-radius); background: transparent; color: var(--ink); display: grid; place-items: center; cursor: ns-resize; touch-action: none; }
-.calendar-time-resize[data-calendar-time-end="start"] { top: calc(var(--control-height) / -2); left: calc(50% - var(--control-height) / 2); }
-.calendar-time-resize[data-calendar-time-end="due"] { bottom: calc(var(--control-height) / -2); right: calc(50% - var(--control-height) / 2); }
+.calendar-timed-card[data-calendar-active], .calendar-timed-card.calendar-time-resizing { z-index: 4; opacity: 1; }
+.calendar-timed-card > .calendar-time-resize { position: absolute; z-index: 2; width: var(--control-height); height: var(--control-height) !important; min-height: 0; padding: 0; border: 0; border-radius: var(--field-radius); background: transparent; color: var(--ink); display: grid; place-items: center; cursor: ns-resize; touch-action: none; opacity: 0; pointer-events: none; }
+.calendar-time-resize[data-calendar-time-end="start"] { top: calc(var(--control-height) / -2); left: 0; }
+.calendar-time-resize[data-calendar-time-end="due"] { bottom: calc(var(--control-height) / -2); right: 0; }
 .calendar-time-resize::after { content: ""; width: 24px; height: 4px; border: 1px solid var(--muted); border-radius: var(--field-radius); background: var(--surface); }
 
 .calendar-time-resize:is(:hover, :focus-visible)::after { border-color: var(--green); background: var(--green); }
-@container (max-height: 44px) {
-  .calendar-time-resize[data-calendar-time-end="start"] { left: 0; }
-  .calendar-time-resize[data-calendar-time-end="due"] { right: 0; }
-}
+.calendar-timed-card[data-calendar-active] > .calendar-time-resize { opacity: 1; pointer-events: auto; }
+.calendar-timed-card[data-calendar-active] > .calendar-card-title { border-color: var(--task-field-color); box-shadow: 0 0 0 1px color-mix(in srgb, var(--task-field-color) 40%, transparent); }
+.calendar-timed-card strong { font-weight: 600; }
 .calendar-timed-card .calendar-event-fields { display: none; flex: none; width: 100%; margin-block: 4px; }
 .calendar-event-assignee { flex: 1; min-width: 0; }
 .calendar-event-fields .task-assignee { width: 100%; height: var(--list-field-height); font-size: var(--type-small); }
 .calendar-event-fields > .field-chip-status { flex: 1; }
-.calendar-timed-card .calendar-event-time { flex-shrink: 0; }
+.calendar-timed-card .calendar-event-time { flex-shrink: 0; color: var(--muted); font-variant-numeric: tabular-nums; }
 @container (min-width: 160px) and (min-height: 92px) {
   .calendar-timed-card .calendar-event-fields { display: inline-flex; }
 }
@@ -281,6 +281,7 @@
 .week-board-backlog { --week-board-column: 184px; }
 /* The row names run up the side (F0.22-73), so their column is as narrow as the row's handle. */
 .week-board { display: grid; grid-template-columns: var(--week-board-names) repeat(var(--week-board-days), minmax(var(--week-board-column), 1fr)); grid-template-rows: var(--week-board-head) repeat(var(--week-board-rows), auto); min-height: 100%; min-width: calc(var(--week-board-names) + var(--week-board-days) * var(--week-board-column)); }
+.week-board[data-rows="daypart"] { grid-template-rows: var(--week-board-head) max-content repeat(var(--week-board-rows), auto); }
 .week-board-row, .week-board-head-row { display: contents; }
 .week-board-corner, .week-board-day-head { position: sticky; top: 0; z-index: 2; height: var(--week-board-head); background: var(--surface); border-bottom: 1px solid var(--line); }
 /* Scrolled either way, the board settles on a day and a row (F0.22-79), just clear of the sticky day and
@@ -369,6 +370,8 @@
    the space below the box back, so the card's bottom padding is the gap you see. */
 .week-board-card > .week-board-fields { width: 100%; min-width: 0; margin-bottom: calc((var(--list-field-height) - var(--control-height)) / 2); }
 .week-board-fields > .row-status { flex: 1 1 0; min-width: 0; }
+/* WebKit lets the invisible native select's intrinsic text extend the card's scroll bounds. */
+.week-board-fields > .row-choice { overflow: clip; }
 .week-board-fields .field-chip-status { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 /* The row already names its value, so a card's box leaves that field out. */
 .week-board[data-rows="assignee"] .week-board-cell .week-board-fields > .row-assignee,
@@ -402,3 +405,9 @@
 .week-board-create > input { width: 100%; min-width: 0; }
 .week-board-create-actions { display: flex; gap: 4px; }
 .week-board-create > [role="alert"] { margin: 0; overflow-wrap: anywhere; }
+
+/* A local-time marker follows the day geometry at every zoom level. */
+.calendar-now { position: absolute; z-index: 3; inset-inline: 2px; height: 2px; background: var(--green); pointer-events: none; }
+.calendar-now::before { content: ""; position: absolute; left: 0; top: -2px; width: 6px; height: 6px; border-radius: 50%; background: var(--green); }
+.calendar-now > span { position: absolute; left: 6px; top: 2px; padding: 0 3px; border-radius: 2px; background: var(--surface); color: var(--green); font-size: var(--type-small); font-variant-numeric: tabular-nums; line-height: 1.2; }
+.calendar-now[data-near-midnight] > span { top: auto; bottom: 2px; }

@@ -1,0 +1,35 @@
+import { test, expect, useApp, onDevices } from '../fixtures.mjs';
+import { reveal } from '../helpers/menu-controls.mjs';
+
+const app = useApp(async () => ({}));
+onDevices(['desktop', 'phone'], () => test('All day stays first, compact and editable above timed rows @gate', async ({ page, device }) => {
+  const project = await app.store.createProject({ title: `All day ${device}` });
+  await app.store.createTask(project.id, { title: 'Deadline', start: '2026-11-02', due: '2026-11-04' });
+  await app.store.createTask(project.id, { title: 'Unscheduled idea' });
+  await page.clock.setFixedTime(new Date('2026-11-02T12:00:00'));
+  await page.goto(`${app.base}/#project/${project.id}/calendar`);
+  await (await reveal(page.locator('#calendar-mode'))).selectOption('board');
+  await (await reveal(page.locator('#week-board-rows'))).selectOption('daypart');
+  if (await page.locator('.mobile-view-options[open]').count()) await page.getByRole('button', { name: 'Close view options', exact: true }).click();
+  const allDay = page.locator('.week-board-all-day');
+  await expect(page.locator('.week-board-row').first()).toHaveClass(/week-board-all-day/);
+  await expect(allDay.locator('.task-reorder-handle')).toHaveCount(0);
+  await expect(allDay.locator('[data-calendar-date="2026-11-02"]')).toContainText('Deadline');
+  await expect(allDay.locator('.week-board-card')).toHaveCount(1);
+  await expect(page.locator('.week-board-backlog .week-board-title')).toHaveText([/Unscheduled idea$/]);
+  const cell = allDay.locator('.week-board-cell').first();
+  expect((await cell.boundingBox()).height).toBeLessThan(160);
+  const add = cell.locator('[data-week-board-add]');
+  await add.click();
+  await cell.locator('input').fill('All day draft');
+  await cell.locator('input').press('Enter');
+  await expect(cell).toContainText('All day draft');
+  const saved = (await app.store.snapshot(project.id)).tasks.find(t => t.title === 'All day draft');
+  expect([saved.start, saved.due, saved.start_time ?? null, saved.due_time ?? null]).toEqual(['2026-11-02', '2026-11-02', null, null]);
+  await page.getByRole('button', { name: 'Move group Morning', exact: true }).focus();
+  await page.keyboard.press('Alt+ArrowDown');
+  await expect(page.locator('.week-board-row-head > span:not(.sr-only)')).toHaveText(['All day', 'Afternoon', 'Morning', 'Evening']);
+  await page.reload();
+  await expect(page.locator('.week-board-row').first()).toHaveClass(/week-board-all-day/);
+  await expect(page.locator('.week-board-row-head > span:not(.sr-only)')).toHaveText(['All day', 'Afternoon', 'Morning', 'Evening']);
+}));

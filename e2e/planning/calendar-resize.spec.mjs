@@ -111,6 +111,12 @@ onDevices(['ipad'],()=>test('a touch handle resizes without scrolling the page o
   test.skip(browserName!=='chromium','Raw touches need Chromium DevTools');
   await open(page);
   const cdp=await page.context().newCDPSession(page);
+  // A hold selects a touch event and exposes its full-size endpoint targets.
+  const body = await card(page).boundingBox(), cx = body.x + body.width / 2, cy = body.y + body.height / 2;
+  await cdp.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[{x:cx,y:cy}]});
+  await expect(card(page)).toHaveAttribute('data-calendar-active', '');
+  await cdp.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});
+  await expect(page.locator('#task-form')).toHaveCount(0);
   const r=await handle(page,'due').boundingBox(), x=r.x+r.width/2, y=r.y+r.height/2;
   await cdp.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[{x,y}]});
   for(let i=1;i<=8;i++) await cdp.send('Input.dispatchTouchEvent',{type:'touchMove',touchPoints:[{x,y:y+32*i/8}]});

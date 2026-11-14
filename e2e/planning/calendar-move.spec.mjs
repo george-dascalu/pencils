@@ -62,6 +62,21 @@ onDevices(['desktop','ipad','phone'],()=>test('move a timed card within a day an
  await card().locator('.calendar-card-title').focus(); await page.keyboard.press('Alt+ArrowUp');
  await expect.poll(async()=> (await saved()).start_time).toBe('09:00');
 }));
+onDevices(['ipad'],()=>test('swiping an unselected event scrolls; a tap still opens it',async({page,browserName})=>{
+ test.skip(browserName!=='chromium','Raw touch needs Chromium DevTools');
+ const {card,saved}=await open(page,'swipe');
+ const cdp=await page.context().newCDPSession(page), scroll=page.locator('.calendar-hours-scroll');
+ const before=await scroll.evaluate(el=>el.scrollTop), revision=(await saved()).revision;
+ const r=await card().boundingBox(), x=r.x+r.width/2,y=r.y+r.height/2;
+ await cdp.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[{x,y}]});
+ for(let i=1;i<=8;i++) await cdp.send('Input.dispatchTouchEvent',{type:'touchMove',touchPoints:[{x,y:y-i*10}]});
+ await cdp.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});
+ await expect.poll(()=>scroll.evaluate(el=>el.scrollTop)).toBeGreaterThan(before+20);
+ await expect(page.locator('.calendar-drag-preview, #task-form')).toHaveCount(0);
+ expect((await saved()).revision).toBe(revision);
+ await card().scrollIntoViewIfNeeded(); await card().locator('.calendar-card-title').tap();
+ await expect(page.locator('#task-form')).toBeVisible();
+}));
 onDevices(['ipad'],()=>test('touch drags the event body without scrolling behind it',async({page,browserName,device})=>{
  test.skip(browserName!=='chromium','Raw touch needs Chromium DevTools');
  const {card,saved}=await open(page,device);
@@ -69,6 +84,7 @@ onDevices(['ipad'],()=>test('touch drags the event body without scrolling behind
  const cdp=await page.context().newCDPSession(page), scroll=page.locator('.calendar-hours-scroll');
  const before=await scroll.evaluate(el=>el.scrollTop), x=a.x+a.width/2,y=a.y+35;
  await cdp.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[{x,y}]});
+ await expect(card()).toHaveClass(/calendar-armed/);
  for(let i=1;i<=8;i++) await cdp.send('Input.dispatchTouchEvent',{type:'touchMove',touchPoints:[{x:x+(next.x+next.width/2-x)*i/8,y:y+32*i/8}]});
  await expect(page.locator('.calendar-placement')).toBeVisible();
  await cdp.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});
