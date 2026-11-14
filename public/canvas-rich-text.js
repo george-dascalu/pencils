@@ -6,7 +6,7 @@ import { installToolbarScroll, floatMenuPanel } from "./rich-toolbar-scroll.js";
 import TurndownService from "/vendor/turndown.js";
 import { gfm } from "/vendor/turndown-gfm.js";
 import { checkboxChanges } from './checklist.js';
-import { richCheckboxRule, richCheckboxIn, prepareRichCheckboxes, toggleRichCheckbox, typeRichCheckbox, continueRichChecklist } from './rich-checklist.js';
+import { installRichCheckboxRules, richCheckboxIn, prepareRichCheckboxes, toggleRichCheckbox, typeRichCheckbox, continueRichChecklist } from './rich-checklist.js';
 
 // The source textarea remains authoritative for saving, drafts and Obsidian.
 export function canvasRichText(
@@ -90,7 +90,7 @@ export function canvasRichText(
     bulletListMarker: "-",
   });
   converter.use(gfm);
-  converter.addRule('checklistItem', richCheckboxRule);
+  installRichCheckboxRules(converter);
   converter.addRule("highlight", { filter: "mark", replacement: content => `==${content}==` });
   converter.addRule("vaultReference", {
     filter: (node) => node.hasAttribute("data-md-source"),

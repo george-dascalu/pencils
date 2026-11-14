@@ -6,6 +6,7 @@ import { documentEmbedViews } from './document-embed-view.js';
 import { listCallouts, listCalloutLabel } from "./document-list-callouts.js";
 import { textColor, textColorExtension } from './document-text-color.js';
 import { randomUUID } from './uuid.js';
+import { checklistMarkdown } from './checklist.js';
 
 // A table may keep its columns and scroll sideways instead of fitting the page.
 // The choice is an HTML comment on the line before it, invisible elsewhere.
@@ -43,6 +44,7 @@ export function documentMarkdown({ documents, project, esc, icon, cards = () => 
   };
   function makeParser(windowTables = false) {
     const parser = new Marked({ gfm: true, breaks: false });
+    parser.use(checklistMarkdown);
     parser.use(markedFootnote({ prefixId: `document-footnote-${++sequence}-` }));
     parser.use({
     renderer: {

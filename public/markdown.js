@@ -1,6 +1,7 @@
 import { markdownSlice } from "./canvas-format.js";
 import { Marked } from "/vendor/marked.js";
 import DOMPurify from "/vendor/purify.js";
+import { checklistMarkdown } from './checklist.js';
 
 export function createMarkdown({ state, esc }) {
   const parser = new Marked({
@@ -12,6 +13,7 @@ export function createMarkdown({ state, esc }) {
       },
     },
   });
+  parser.use(checklistMarkdown);
   let embedDepth = 0;
   parser.use({
     extensions: [

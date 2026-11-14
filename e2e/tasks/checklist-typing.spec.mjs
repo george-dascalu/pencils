@@ -89,3 +89,24 @@ test('composition, pasted text and source mode do not run the typing conversion 
   await page.keyboard.type('- [ ] Literal source');
   await expect(source(page)).toHaveValue('- [ ] Literal source');
 });
+
+onDevices(['desktop', 'phone'], () => test('saved tasks with browser spaces and empty tasks render as checkboxes @gate', async ({ page }) => {
+  await open(page, '- [ ] Make bags\n- [ ] \u00a0Push changes\n- [\u00a0]\u00a0Pack laptop\n- [x]\tDone\n- [ ]');
+  await expect(rich(page).getByRole('checkbox')).toHaveCount(5);
+  for (const item of await rich(page).locator('li').all()) await expect(item).toHaveCSS('list-style-type', 'none');
+  await edge(rich(page).locator('li').last()); await page.keyboard.type('Last task');
+  await expect(source(page)).not.toHaveValue(/\u00a0|\\\[/);
+  await page.locator('.task-description [data-rich-mode="source"]').click();
+  await page.locator('.task-description [data-rich-mode="rich"]').click();
+  await expect(rich(page).getByRole('checkbox')).toHaveCount(5);
+}));
+
+test('escaped checkbox examples remain literal until explicitly made a checklist @gate', async ({ page }) => {
+  await open(page, '- [ ] Real\n- \\[ \\] Example\n- `[ ]` Code');
+  await expect(rich(page).getByRole('checkbox')).toHaveCount(1);
+  await edge(rich(page).locator('li').nth(1));
+  await page.keyboard.press('Control+l');
+  await expect(rich(page).locator('li').nth(1)).toHaveText('Example');
+  await expect(source(page)).toHaveValue(/\[ \] Example/);
+  await expect(rich(page).getByRole('checkbox')).toHaveCount(2);
+});

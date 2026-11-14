@@ -7,12 +7,12 @@ import { focusOnOpen } from "./open-focus.js";
 import { installTextColorRule, textColor } from './document-text-color.js';
 import { isolateHistory, StateEffect } from '/vendor/editor/deps.js';
 import { documentTextChange, documentCodeFence } from './document-performance.js';
-import { richCheckboxRule, prepareRichCheckboxes, toggleRichCheckbox, typeRichCheckbox, continueRichChecklist } from './rich-checklist.js';
+import { installRichCheckboxRules, prepareRichCheckboxes, toggleRichCheckbox, typeRichCheckbox, continueRichChecklist } from './rich-checklist.js';
 export const documentComponentChange = StateEffect.define();
 
 const converter = new TurndownService({ headingStyle: "atx", codeBlockStyle: "fenced", bulletListMarker: "-" });
 converter.use(gfm);
-converter.addRule('checklistItem', richCheckboxRule);
+installRichCheckboxRules(converter);
 installTextColorRule(converter);
 converter.addRule("documentSource", {
   filter: node => node.hasAttribute?.("data-document-source"),

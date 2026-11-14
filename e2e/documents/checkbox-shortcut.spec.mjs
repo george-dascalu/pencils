@@ -11,6 +11,21 @@ test('typing a Markdown task in Live preview displays its checkbox immediately @
   await expect.poll(() => editorSource(page)).toBe('- [ ] Make bags');
 });
 
+test('a saved callout checklist with browser spaces keeps every checkbox through editing @gate', async ({ page }) => {
+  const doc = await app.store.createDocument(app.project.id, { title: 'Saved checkboxes', body: '> [!note] Packing\n> - [ ] \u00a0Make bags\n> - [x]\tBring keys\n> - [ ]\n\nKeep this paragraph.' });
+  await page.goto(`${app.base}/#project/${app.project.id}/documents/${doc.id}`);
+  const field = page.getByRole('textbox', { name: 'Callout content', exact: true });
+  await expect(field.getByRole('checkbox')).toHaveCount(3);
+  await field.locator('li').last().evaluate(el => {
+    el.closest('[contenteditable]').focus(); const range = document.createRange(); range.selectNodeContents(el); range.collapse(false);
+    getSelection().removeAllRanges(); getSelection().addRange(range);
+  });
+  await page.keyboard.type('Ready');
+  await expect.poll(() => editorSource(page)).toMatch(/\[ \] Ready/);
+  await expect.poll(() => editorSource(page)).not.toMatch(/\u00a0/);
+  await expect.poll(() => editorSource(page)).toMatch(/Keep this paragraph\.$/);
+});
+
 test('typing a full task marker in an editable callout creates a checkbox before existing text @gate', async ({ page }) => {
   const doc = await app.store.createDocument(app.project.id, { title: 'Typed callout', body: '> [!note] Packing\n> Make bags\n\nKeep this paragraph.' });
   await page.goto(`${app.base}/#project/${app.project.id}/documents/${doc.id}`);

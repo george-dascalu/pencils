@@ -2,6 +2,11 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.23.39 — 2026-11-14
+
+### Fixed
+- Feature F0.23-39: Checkboxes remain consistent after saving and reopening. Browser-generated non-breaking spaces and empty task rows render as checkboxes; rich-text saving writes canonical task markers even when formatting wraps their spacing. Explicitly converting a literal `[ ]` with Ctrl+L or Checklist replaces it instead of duplicating it, while escaped examples and code remain literal.
+
 ## 0.23.38 — 2026-11-14
 
 ### Added

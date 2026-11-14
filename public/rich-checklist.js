@@ -5,6 +5,24 @@ const element = node => node?.nodeType === 1 ? node : node?.parentElement;
 const itemAt = node => element(node)?.closest('li');
 const splitting = new WeakSet();
 const typing = new WeakSet();
+// Native editing can put the separator in a span, or outside the checkbox's
+// own span. Strip it across inline boundaries on Turndown's clone; leave the
+// rest of the text and any nested lists or line breaks intact.
+function trimCheckboxSeparator(box) {
+  const trim = node => {
+    if (node.nodeType === 3) {
+      node.data = node.data.replace(/^[ \t\r\n\u00a0]+/, '');
+      return !node.data;
+    }
+    if (node.nodeType !== 1) return true;
+    if (/^(UL|OL|BR|IMG|INPUT)$/.test(node.nodeName)) return false;
+    for (const child of node.childNodes) if (!trim(child)) return false;
+    return true;
+  };
+  const item = box.closest('li');
+  for (let node = box; node && node !== item; node = node.parentNode)
+    for (let next = node.nextSibling; next; next = next.nextSibling) if (!trim(next)) return;
+}
 // GFM's default rule misses loose lists (the checkbox is inside a paragraph)
 // and doubles the existing space after a rendered checkbox.
 export const richCheckboxRule = {
@@ -12,11 +30,25 @@ export const richCheckboxRule = {
   replacement: (_content, node) => {
     // Turndown works on a clone. Consume the separator here so native editing's
     // non-breaking spaces cannot turn a task marker into ordinary Markdown.
-    const next = node.nextSibling;
-    if (next?.nodeType === 3) next.data = next.data.replace(/^[ \t\u00a0]+/, '');
+    trimCheckboxSeparator(node);
     return (node.checked ? '[x]' : '[ ]') + ' ';
   },
 };
+export function installRichCheckboxRules(converter) {
+  converter.addRule('checklistItem', richCheckboxRule);
+  const listItem = converter.options.rules.listItem;
+  converter.addRule('checklistRow', {
+    filter: node => node.nodeName === 'LI' && !!richCheckboxIn(node),
+    replacement(content, node, options) {
+      // Inline wrappers may trim the checkbox's separator after its own rule
+      // runs. Canonicalise at the item boundary, then use Turndown's normal
+      // list formatting for numbering, indentation and loose paragraphs.
+      const marker = richCheckboxIn(node).checked ? '[x] ' : '[ ] ';
+      content = content.replace(/^(\s*)\[[ xX]\][ \t\u00a0]*/, (_match, leading) => leading + marker);
+      return listItem.replacement(content, node, options);
+    },
+  });
+}
 function currentRange(root) {
   const selection = getSelection();
   return selection?.rangeCount && root.contains(selection.anchorNode) && root.contains(selection.focusNode) ? selection.getRangeAt(0) : null;
@@ -24,7 +56,7 @@ function currentRange(root) {
 function select(range) {
   const selection = getSelection(); selection.removeAllRanges(); selection.addRange(range);
 }
-function rememberRange(root, wholeRoot = false) {
+function rememberRange(root, wholeRoot = false, removedPrefix = null) {
   const range = currentRange(root);
   if (!range) return () => {};
   const point = (node, offset) => {
@@ -33,7 +65,7 @@ function rememberRange(root, wholeRoot = false) {
     const fragment = prefix.cloneContents(), walker = document.createTreeWalker(fragment, NodeFilter.SHOW_TEXT);
     let length = 0;
     for (let text = walker.nextNode(); text; text = walker.nextNode()) if (!formattingSpace(text, fragment)) length += text.length;
-    return { scope, offset: length, forward: offset === 0 };
+    return { scope, offset: Math.max(0, length - (scope === removedPrefix?.scope ? removedPrefix.length : 0)), forward: offset === 0 };
   };
   const start = point(range.startContainer, range.startOffset), end = point(range.endContainer, range.endOffset);
   return () => {
@@ -71,11 +103,27 @@ export function prepareRichCheckboxes(root) {
 
 // Native editing commands keep checkbox changes in the same Undo history as typing.
 function setBox(root, item, checked, remove = false) {
-  const restore = rememberRange(root), box = richCheckboxIn(item);
+  const box = richCheckboxIn(item);
   const container = item.firstElementChild?.tagName === 'P' ? item.firstElementChild : item;
   const range = document.createRange();
   if (box) range.selectNode(box);
-  else { range.selectNodeContents(container); range.collapse(true); }
+  else {
+    range.selectNodeContents(container); range.collapse(true);
+    // Explicit Checklist/Ctrl+L also repairs a literal task marker from older
+    // saves, instead of adding a second checkbox in front of "[ ]".
+    const marker = /^\[([ xX\u00a0])\][ \t\u00a0]*/.exec(container.textContent);
+    if (marker) {
+      const walker = document.createTreeWalker(container, NodeFilter.SHOW_TEXT);
+      let left = marker[0].length;
+      for (let text = walker.nextNode(); text; text = walker.nextNode()) {
+        if (left <= text.length) { range.setEnd(text, left); break; }
+        left -= text.length;
+      }
+      if (range.cloneContents().querySelector('code,pre,br,img,input,ul,ol,[contenteditable="false"]')) range.collapse(true);
+      else checked = /[xX]/.test(marker[1]);
+    }
+  }
+  const restore = rememberRange(root, false, !box && !range.collapsed ? { scope: item, length: range.toString().length } : null);
   select(range);
   if (remove) document.execCommand('delete');
   else document.execCommand('insertHTML', false, `<input type="checkbox" aria-label="Checklist item"${checked ? ' checked' : ''}>`);
