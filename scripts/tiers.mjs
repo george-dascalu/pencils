@@ -292,6 +292,7 @@ export const TIERS = [
     "e2e/lists/table-tools.spec.mjs", // sort and hide Table columns
     "e2e/lists/task-reorder-motion.spec.mjs", // drag List rows
     "e2e/lists/tree-viewport.spec.mjs", // scroll Tree
+    "e2e/lists/list-scroll.spec.mjs", // wheel scrolling, native scrollbars and collapsed List groups
     "e2e/navigation/bookmarks.spec.mjs", // bookmark a card/view and find it in search
     "e2e/navigation/bottom-bar.spec.mjs", // scroll to the end of a view on phone
     "e2e/navigation/under-bar.spec.mjs", // every view and page runs under the bottom bar and scrolls clear of it

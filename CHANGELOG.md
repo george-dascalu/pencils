@@ -2,6 +2,11 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.23.34 — 2026-11-14
+
+### Fixed
+- Feature F0.23-34: List stays within the window so its mouse wheel and scrollbar work with long lists, including after collapsing groups or filtering. The header stays visible and the last card remains reachable above the bottom bar on phones and iPad.
+
 ## 0.23.33 — 2026-11-14
 
 ### Added

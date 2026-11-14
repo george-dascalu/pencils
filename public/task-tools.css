@@ -82,7 +82,9 @@ body:is(.task-reordering, .task-group-reordering), body:is(.task-reordering, .ta
 #view-content section:has(> .section-title > .list-group-toggle[aria-expanded="false"]) > :not(.section-title) { display: none !important; }
 
 /* List and Tree share one compact row, with metadata before the title. */
-.main.project-main > #view-content[data-layout-view="list"] { overflow: auto; overscroll-behavior: none; }
+/* Bound the List's own scroller: an auto-height page grows with its rows and traps wheel input. */
+.main.project-main[data-layout-view="list"] { height: 100dvh; }
+.main.project-main > #view-content[data-layout-view="list"] { min-height: 0; overflow: auto; overscroll-behavior: none; }
 .list-group > .section-title,
 #view-content[data-layout-view="tree"] > .section-title {
   min-height: 61px;
