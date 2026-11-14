@@ -118,8 +118,9 @@ export function taskReorder(ctx, tableTools) {
       renderView();
       scroller()?.scrollTo(position);
       const landed = handle(id, changesGroup && crossGroup ? destinationGroup.value : group(source));
-      landed?.focus({ preventScroll: true });
-      landed?.scrollIntoView({ block: "nearest", inline: "nearest" });
+      const focus = landed?.getClientRects().length ? landed : landed?.closest('section')?.querySelector('[data-list-group-toggle]');
+      focus?.focus({ preventScroll: true });
+      focus?.scrollIntoView({ block: "nearest", inline: "nearest" });
       settle(id, before);
       const message = changesGroup && crossGroup ? `Card moved to ${groupLabel(destinationGroup.field,destinationGroup.value)}.` : crossGroup ? "Card moved. Grouping cleared to keep your manual order." : "Card moved. Manual order selected.";
       announce(message);
@@ -162,7 +163,7 @@ export function taskReorder(ctx, tableTools) {
         } catch (error) { d.valid=false; d.reason=error.message; }
       }
     }
-    const candidates = rows().filter(r => r.dataset.taskOrderRow !== d.id && siblings(d.id, r.dataset.taskOrderRow) && (!region || r.closest('[data-task-drop-field]') === region));
+    const candidates = rows().filter(r => r.getClientRects().length && r.dataset.taskOrderRow !== d.id && siblings(d.id, r.dataset.taskOrderRow) && (!region || r.closest('[data-task-drop-field]') === region));
     const hovered = document.elementFromPoint(d.x, d.y)?.closest("[data-task-order-row]");
     if (hovered && !siblings(d.id, hovered.dataset.taskOrderRow)) d.valid = false;
     const before = candidates.find(r => { const b = r.getBoundingClientRect(); return d.y < b.top + b.height / 2; });
@@ -300,7 +301,7 @@ export function taskReorder(ctx, tableTools) {
     const button = e.target.closest("[data-task-reorder]");
     if (!button || !e.altKey || !["ArrowUp", "ArrowDown"].includes(e.key)) return;
     e.preventDefault(); e.stopImmediatePropagation();
-    const id = button.dataset.taskReorder, row = button.closest("[data-task-order-row]"), candidates = rows().filter(r => r === row || (r.dataset.taskOrderRow !== id && siblings(id, r.dataset.taskOrderRow)));
+    const id = button.dataset.taskReorder, row = button.closest("[data-task-order-row]"), candidates = rows().filter(r => r.getClientRects().length && (r === row || (r.dataset.taskOrderRow !== id && siblings(id, r.dataset.taskOrderRow))));
     const next = candidates[candidates.indexOf(row) + (e.key === "ArrowUp" ? -1 : 1)];
     if (next) void move(id, next.dataset.taskOrderRow, e.key === "ArrowDown", undefined, undefined, row, next);
   }, true);

@@ -44,6 +44,8 @@ Keep the interface consistent across all project views: Overview, Documents, Lis
 - Personal shortcuts live in Settings → You → Hotkeys (`public/hotkeys.js`), reuse the command and bookmark actions, and are stored per person by `server/hotkeys.js`. Keep browser tab shortcuts available, reject conflicting bindings, and do not run custom shortcuts while typing or editing a card.
 - New projects use the three-step dialog in `public/project-create.js`: Details (compact: name, key and organisation down the left with the people listed beside them, a team adding its members; the key is checked as it's typed through `/api/project-key`, and a taken key names the project holding it, only to people who can open it: `keyTaken` in `server/identity.js`), Card types & hierarchy, then Workflow. Reuse the settings type controls and workflow editor; keep all entries and browser drafts between steps, validate before advancing, and create the project only on the final step.
 
+- List groups have a collapse chevron beside the reorder handle (`public/task-group-collapse.js`), using the shared icon button size and Enter/Space behavior. Each group's state is kept per browser, project and grouping field, including empty-valued groups. Collapsing leaves its heading, count and reorder handle visible; hidden rows are skipped by pointer and keyboard reordering, and dropping on a collapsed heading keeps it collapsed and focuses its toggle.
+
 ## Dialogs and contextual panels
 
 - Prefer small, contextual panels near the component or action that opened them. Reuse the shared panel styles, positioning and keyboard behaviour.

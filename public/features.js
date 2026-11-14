@@ -1,3 +1,4 @@
+import { listGroupToggle, installListGroupCollapse } from "./task-group-collapse.js";
 import { installTaskTimes } from "./task-time-fields.js";
 import { finishPopupExits } from "./popup-motion.js";
 import { confirmAction } from "./confirm-popover.js";
@@ -100,6 +101,7 @@ export function installFeatures(ctx) {
     personal = personalSettings(ctx);
   taskReorder(ctx, sheet);
   taskGroupDrag(ctx);
+  installListGroupCollapse(ctx);
   taskRowEditor(ctx);
   const formBases = new WeakMap();
   let reloadWorkflow = null,
@@ -1323,7 +1325,7 @@ export function installFeatures(ctx) {
       return [...groups]
         .map(([name, items]) => {
           const title = key === "priority" ? priorityLabel(name) : key === "tags" ? name || "No tag" : label(name || 'Unassigned');
-          return `<section class="${items.length ? 'list-group' : 'list-group-empty'}" ${items.length ? '' : 'hidden'} ${key === 'none' ? '' : `data-task-drop-field="${esc(key)}" data-task-drop-value="${esc(name)}"`}><h2 class="section-title" ${groupHeadingLabel(title, items.length, esc)}>${key === "none" ? "" : groupReorderHandle(name, title, esc)}${esc(title)}<span class="count">${items.length}</span></h2>${items.map((t) => row(t, null, false, false, name)).join("")}</section>`;
+          return `<section class="${items.length ? 'list-group' : 'list-group-empty'}" ${items.length ? '' : 'hidden'} ${key === 'none' ? '' : `data-task-drop-field="${esc(key)}" data-task-drop-value="${esc(name)}"`}><h2 class="section-title" ${groupHeadingLabel(title, items.length, esc)}>${key === "none" ? "" : groupReorderHandle(name, title, esc) + listGroupToggle(ctx, key, name, title)}${esc(title)}<span class="count">${items.length}</span></h2>${items.map((t) => row(t, null, false, false, name)).join("")}</section>`;
         })
         .join("");
     },

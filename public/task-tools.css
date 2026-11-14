@@ -75,6 +75,12 @@ body:is(.task-reordering, .task-group-reordering), body:is(.task-reordering, .ta
   .task-row-actions { gap: 1px; }
 }
 
+/* List disclosure leaves the heading, count and reorder handle available while rows are hidden. */
+.section-title > .list-group-toggle { flex: none; padding: 0; border: 0; background: transparent; color: var(--muted); }
+.section-title > .list-group-toggle:hover { color: var(--green); background: var(--surface-soft); }
+.list-group-toggle[aria-expanded="false"] > .icon { transform: rotate(-90deg); }
+#view-content section:has(> .section-title > .list-group-toggle[aria-expanded="false"]) > :not(.section-title) { display: none !important; }
+
 /* List and Tree share one compact row, with metadata before the title. */
 .main.project-main > #view-content[data-layout-view="list"] { overflow: auto; overscroll-behavior: none; }
 .list-group > .section-title,

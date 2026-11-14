@@ -2,6 +2,11 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.23.33 — 2026-11-14
+
+### Added
+- Feature F0.23-33: List groups can be collapsed from their heading or with the keyboard. Each group's expanded or collapsed state is remembered in the browser per project and grouping, surviving reloads, filters and view changes. Collapsed headings keep their counts, remain reorderable and accept dropped cards.
+
 ## 0.23.32 — 2026-11-14
 
 ### Added

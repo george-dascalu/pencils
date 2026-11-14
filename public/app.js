@@ -1,3 +1,4 @@
+import { listGroupToggle } from "./task-group-collapse.js";
 import { installAssigneeNames } from "./assignee-name.js";
 import { esc } from "./escape.js";
 import { filterTasks, sortGroups, sortNames } from "./task-filter.js";
@@ -1279,7 +1280,7 @@ function listView(tasks, order = statuses) {
   return order
     .map(
       (status) =>
-        `<section class="${tasks.some(t => t.status === status) ? 'list-group' : 'list-group-empty'}" ${tasks.some(t => t.status === status) ? '' : 'hidden'} data-task-drop-field="status" data-task-drop-value="${esc(status)}"><h2 class="section-title" ${groupHeadingLabel(statusNames[status], state.statusTotals?.[status] ?? tasks.filter((t) => t.status === status).length, esc)}>${groupReorderHandle(status, statusNames[status], esc)}<span class="status-dot ${status}" ${taskColorAttributes(state, "status", status)}></span>${esc(statusNames[status])}<span class="count">${state.statusTotals?.[status] ?? tasks.filter((t) => t.status === status).length}</span><span class="line"></span></h2><div>${tasks
+        `<section class="${tasks.some(t => t.status === status) ? 'list-group' : 'list-group-empty'}" ${tasks.some(t => t.status === status) ? '' : 'hidden'} data-task-drop-field="status" data-task-drop-value="${esc(status)}"><h2 class="section-title" ${groupHeadingLabel(statusNames[status], state.statusTotals?.[status] ?? tasks.filter((t) => t.status === status).length, esc)}>${groupReorderHandle(status, statusNames[status], esc)}${listGroupToggle({ state, storage, esc, icon }, "status", status, statusNames[status])}<span class="status-dot ${status}" ${taskColorAttributes(state, "status", status)}></span>${esc(statusNames[status])}<span class="count">${state.statusTotals?.[status] ?? tasks.filter((t) => t.status === status).length}</span><span class="line"></span></h2><div>${tasks
           .filter((t) => t.status === status)
           .map((t) => taskRow(t))
           .join(

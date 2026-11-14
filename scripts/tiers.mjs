@@ -477,6 +477,7 @@ export const TIERS = [
     "e2e/documents/table-views.spec.mjs", // spreadsheet Live/Source/Reading views
     "e2e/home/home-web.spec.mjs", // Web page panel
     "e2e/lists/card-id-dark.spec.mjs", // view card ID in dark theme
+    "e2e/lists/group-collapse.spec.mjs", // saved disclosures retain group and card interactions
     "e2e/lists/group-order.spec.mjs", // reverse or reorder List groups
     "e2e/lists/kanban-columns.spec.mjs", // scroll Kanban columns snapping
     "e2e/lists/kanban-first-cards.spec.mjs", // open Kanban on a phone
