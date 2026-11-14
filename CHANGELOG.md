@@ -2,6 +2,11 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.23.38 — 2026-11-14
+
+### Added
+- Feature F0.23-38: Typing `- [ ] ` creates a checkbox while editing rich text; `- [x] ` creates a checked one. Existing bullets recognize `[ ] ` and `[x] ` at the start. Typing continues after the checkbox, Enter continues the checklist, and Undo restores the marker. Descriptions, notes, comments, board text and editable document blocks share the behavior.
+
 ## 0.23.37 — 2026-11-14
 
 ### Fixed

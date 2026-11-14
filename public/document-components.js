@@ -7,7 +7,7 @@ import { focusOnOpen } from "./open-focus.js";
 import { installTextColorRule, textColor } from './document-text-color.js';
 import { isolateHistory, StateEffect } from '/vendor/editor/deps.js';
 import { documentTextChange, documentCodeFence } from './document-performance.js';
-import { richCheckboxRule, prepareRichCheckboxes, toggleRichCheckbox, continueRichChecklist } from './rich-checklist.js';
+import { richCheckboxRule, prepareRichCheckboxes, toggleRichCheckbox, typeRichCheckbox, continueRichChecklist } from './rich-checklist.js';
 export const documentComponentChange = StateEffect.define();
 
 const converter = new TurndownService({ headingStyle: "atx", codeBlockStyle: "fenced", bulletListMarker: "-" });
@@ -99,7 +99,7 @@ export function editableDocumentComponent({ element, raw, from, kind, editor, re
       node.addEventListener(event, rememberSelection);
     node.addEventListener("input", () => { if (!composing) commit(node); });
     node.addEventListener('beforeinput', event => {
-      if (!plain && multiline && continueRichChecklist(node, event)) commit(node, true);
+      if (!plain && multiline && (typeRichCheckbox(node, event) || continueRichChecklist(node, event))) commit(node, true);
     });
     node.addEventListener("compositionstart", () => { composing = true; });
     node.addEventListener("compositionend", () => { composing = false; commit(node); });

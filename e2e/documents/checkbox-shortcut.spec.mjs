@@ -2,6 +2,31 @@ import { test, expect, useApp } from '../fixtures.mjs';
 import { editorSource, chooseDocumentView } from '../helpers/documents.mjs';
 const app = useApp(async store => ({ project: await store.createProject({ title: 'Document checklists' }) }));
 
+test('typing a Markdown task in Live preview displays its checkbox immediately @gate', async ({ page }) => {
+  const doc = await app.store.createDocument(app.project.id, { title: 'Typed checklist', body: '' });
+  await page.goto(`${app.base}/#project/${app.project.id}/documents/${doc.id}`);
+  await page.locator('.cm-content').click();
+  await page.keyboard.type('- [ ] Make bags');
+  await expect(page.locator('.document-checkbox')).toBeVisible();
+  await expect.poll(() => editorSource(page)).toBe('- [ ] Make bags');
+});
+
+test('typing a full task marker in an editable callout creates a checkbox before existing text @gate', async ({ page }) => {
+  const doc = await app.store.createDocument(app.project.id, { title: 'Typed callout', body: '> [!note] Packing\n> Make bags\n\nKeep this paragraph.' });
+  await page.goto(`${app.base}/#project/${app.project.id}/documents/${doc.id}`);
+  const field = page.getByRole('textbox', { name: 'Callout content', exact: true });
+  await field.waitFor();
+  await field.locator('p').evaluate(el => {
+    el.closest('[contenteditable]').focus(); const range = document.createRange(); range.selectNodeContents(el); range.collapse(true);
+    getSelection().removeAllRanges(); getSelection().addRange(range);
+  });
+  await page.keyboard.type('- [x] ');
+  await expect(field.getByRole('checkbox')).toBeChecked();
+  await page.keyboard.type('First: ');
+  await expect.poll(() => editorSource(page)).toMatch(/> -\s+\[x\] First: Make bags/);
+  await expect.poll(() => editorSource(page)).toMatch(/Keep this paragraph\.$/);
+});
+
 for (const mode of ['Live preview', 'Source']) test(`Ctrl+L adds and toggles a document checkbox with Undo in ${mode} @gate`, async ({ page }) => {
   const doc = await app.store.createDocument(app.project.id, { title: 'Packing', body: 'Pack bags\nLeave this' });
   await page.goto(`${app.base}/#project/${app.project.id}/documents/${doc.id}`);

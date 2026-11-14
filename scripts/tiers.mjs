@@ -174,6 +174,7 @@ export const TIERS = [
     "e2e/tasks/task-editor-touch.spec.mjs", // edit a card on phone/iPad
     "e2e/tasks/task-editor.spec.mjs", // open card editor and edit metadata and description
     "e2e/tasks/checklists.spec.mjs", // checklist typing and saved completion
+    "e2e/tasks/checklist-typing.spec.mjs", // typed task markers, caret and Undo
     "e2e/ui/accessibility.spec.mjs", // use any view with assistive tech
     "e2e/ui/critique-fixes.spec.mjs", // confirmed usability fixes
     "e2e/ui/layout-sweep.spec.mjs", // use every view on every device

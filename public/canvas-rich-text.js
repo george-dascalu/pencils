@@ -6,7 +6,7 @@ import { installToolbarScroll, floatMenuPanel } from "./rich-toolbar-scroll.js";
 import TurndownService from "/vendor/turndown.js";
 import { gfm } from "/vendor/turndown-gfm.js";
 import { checkboxChanges } from './checklist.js';
-import { richCheckboxRule, richCheckboxIn, prepareRichCheckboxes, toggleRichCheckbox, continueRichChecklist } from './rich-checklist.js';
+import { richCheckboxRule, richCheckboxIn, prepareRichCheckboxes, toggleRichCheckbox, typeRichCheckbox, continueRichChecklist } from './rich-checklist.js';
 
 // The source textarea remains authoritative for saving, drafts and Obsidian.
 export function canvasRichText(
@@ -247,7 +247,7 @@ export function canvasRichText(
     closeMenus();
   }
   rich.addEventListener("beforeinput", (event) => {
-    if (!plain && mode === 'rich' && continueRichChecklist(rich, event)) {
+    if (!plain && mode === 'rich' && (typeRichCheckbox(rich, event) || continueRichChecklist(rich, event))) {
       remember(); flush(); activeFormats(); return;
     }
     // Use beforeinput so physical and virtual keyboards share the shortcut.

@@ -4,6 +4,7 @@ export const richCheckboxIn = item => item && [...item.querySelectorAll('input[t
 const element = node => node?.nodeType === 1 ? node : node?.parentElement;
 const itemAt = node => element(node)?.closest('li');
 const splitting = new WeakSet();
+const typing = new WeakSet();
 // GFM's default rule misses loose lists (the checkbox is inside a paragraph)
 // and doubles the existing space after a rendered checkbox.
 export const richCheckboxRule = {
@@ -109,6 +110,41 @@ export function toggleRichCheckbox(root, formatOnly = false) {
     if (!formatOnly || remove || !box) setBox(root, item, box ? !box.checked : false, remove);
   }
   return selected.length > 0;
+}
+
+// Convert only a completed task marker followed by a typed space. The bullet
+// may already be a native list ("- " converts first), or still be Markdown in
+// a component field. Replacing the marker natively keeps it available to Undo.
+export function typeRichCheckbox(root, event) {
+  if (typing.has(root) || event.inputType !== 'insertText' || event.data !== ' ' || event.isComposing || !event.cancelable) return false;
+  let range = currentRange(root);
+  if (!range?.collapsed) return false;
+  const at = element(range.startContainer), protectedNode = at?.closest('pre,code,[contenteditable="false"]');
+  if (protectedNode && root.contains(protectedNode)) return false;
+  let item = itemAt(range.startContainer), block = item || at;
+  if (item && (!root.contains(item) || richCheckboxIn(item))) return false;
+  while (block !== root && !block.matches('li,p,div,h1,h2,h3,h4,h5,h6,blockquote')) block = block.parentElement;
+  let prefix = range.cloneRange(); prefix.setStart(block, 0);
+  if (prefix.cloneContents().querySelector('br,img,input,[data-md-source],[data-document-source]')) return false;
+  const text = prefix.toString().replaceAll('\u00a0', ' ');
+  const match = (item ? /^\[([ xX])\]$/ : /^(?:[-*+]|\d+[.)])[ \t]+\[([ xX])\]$/).exec(text);
+  if (!match) return false;
+  event.preventDefault();
+  typing.add(root);
+  try {
+    if (!item) {
+      const restore = rememberRange(root, true);
+      document.execCommand(/^\d/.test(text) ? 'insertOrderedList' : 'insertUnorderedList');
+      restore();
+      range = currentRange(root); item = itemAt(range?.startContainer);
+      if (!item || !root.contains(item)) return false;
+      prefix = range.cloneRange(); prefix.setStart(item, 0);
+    }
+    select(prefix);
+    document.execCommand('insertHTML', false, `<input type="checkbox" aria-label="Checklist item"${match[1] === ' ' ? '' : ' checked'}>`);
+    prepareRichCheckboxes(root);
+  } finally { typing.delete(root); }
+  return true;
 }
 
 export function continueRichChecklist(root, event) {
