@@ -37,6 +37,7 @@ export const TIERS = [
     "test/calendar-backlog.test.js", // places in the Week board's Unscheduled row
     "test/canvas.test.js", // board persistence, drafts, validation
     "test/capture.test.js", // iOS shortcut capture to card via token (data safety)
+    "test/checklist.test.js", // preserve Markdown when toggling task markers
     "test/comment-model.test.js", // replies stay with parents (data safety)
     "test/deploy.test.js", // release keeps recorded vault (data safety)
     "test/document-autosave.test.js", // document typing persists every edit
@@ -106,6 +107,7 @@ export const TIERS = [
     "e2e/documents/document-folder-drag.spec.mjs", // organise documents in folders by drag (data safety)
     "e2e/documents/document-list.spec.mjs", // reach the document list
     "e2e/documents/document-markdown.spec.mjs", // edit a document without file rewrite
+    "e2e/documents/checkbox-shortcut.spec.mjs", // document checklist shortcut and Undo
     "e2e/documents/document-slash-menu.spec.mjs", // insert elements with /
     "e2e/documents/document-tabs-topbar.spec.mjs", // switch between open documents
     "e2e/documents/document-tools.spec.mjs", // use Document tools menu and view modes
@@ -171,6 +173,7 @@ export const TIERS = [
     "e2e/tasks/task-editor-page.spec.mjs", // open card editor on phone/iPad/desktop
     "e2e/tasks/task-editor-touch.spec.mjs", // edit a card on phone/iPad
     "e2e/tasks/task-editor.spec.mjs", // open card editor and edit metadata and description
+    "e2e/tasks/checklists.spec.mjs", // checklist typing and saved completion
     "e2e/ui/accessibility.spec.mjs", // use any view with assistive tech
     "e2e/ui/critique-fixes.spec.mjs", // confirmed usability fixes
     "e2e/ui/layout-sweep.spec.mjs", // use every view on every device

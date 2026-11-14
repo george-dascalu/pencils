@@ -5,6 +5,8 @@ import { focusOnOpen } from "./open-focus.js";
 import { installToolbarScroll, floatMenuPanel } from "./rich-toolbar-scroll.js";
 import TurndownService from "/vendor/turndown.js";
 import { gfm } from "/vendor/turndown-gfm.js";
+import { checkboxChanges } from './checklist.js';
+import { richCheckboxRule, richCheckboxIn, prepareRichCheckboxes, toggleRichCheckbox, continueRichChecklist } from './rich-checklist.js';
 
 // The source textarea remains authoritative for saving, drafts and Obsidian.
 export function canvasRichText(
@@ -56,7 +58,7 @@ export function canvasRichText(
     const custom = {
       highlight: () => !!element?.closest("mark"),
       inlineCode: () => !!element?.closest("code"),
-      checklist: () => !!element?.closest("li")?.querySelector(':scope > input[type="checkbox"]'),
+      checklist: () => !!richCheckboxIn(element?.closest('li')),
       codeBlock: () => !!element?.closest("pre"),
       // The browser counts a heading's weight as bold; only bold text is (F0.22-36).
       bold: () => !!element?.closest("strong,b"),
@@ -88,6 +90,7 @@ export function canvasRichText(
     bulletListMarker: "-",
   });
   converter.use(gfm);
+  converter.addRule('checklistItem', richCheckboxRule);
   converter.addRule("highlight", { filter: "mark", replacement: content => `==${content}==` });
   converter.addRule("vaultReference", {
     filter: (node) => node.hasAttribute("data-md-source"),
@@ -110,7 +113,9 @@ export function canvasRichText(
     selection = null,
     previous = "source";
   function flush() {
-    if (mode !== "rich" || rich.innerHTML === lastHTML) return;
+    if (mode !== 'rich') return;
+    if (!plain) prepareRichCheckboxes(rich);
+    if (rich.innerHTML === lastHTML) return;
     source.value = writeSource(plain ? rich.innerText : converter.turndown(rich), source.value);
     rich.dataset.empty = String(blank());
     lastHTML = rich.innerHTML;
@@ -134,6 +139,7 @@ export function canvasRichText(
       rich.dataset.empty = String(blank());
       for (const el of rich.querySelectorAll("[data-md-source]"))
         el.contentEditable = "false";
+      if (!plain) prepareRichCheckboxes(rich);
       lastHTML = rich.innerHTML;
     }
     if (next === "preview") {
@@ -205,21 +211,7 @@ export function canvasRichText(
     document.execCommand("insertHTML", false, `<${tag}>${inner}</${tag}>`);
   }
   function checklist() {
-    let item = selectionElement()?.closest("li");
-    if (!item) {
-      document.execCommand("insertUnorderedList");
-      item = selectionElement()?.closest("li");
-    }
-    if (!item) return;
-    const box = item.querySelector(':scope > input[type="checkbox"]');
-    if (box) {
-      box.remove();
-      return;
-    }
-    const input = document.createElement("input");
-    input.type = "checkbox";
-    input.contentEditable = "false";
-    item.prepend(input);
+    toggleRichCheckbox(rich, true);
   }
   function codeBlock() {
     const existing = selectionElement()?.closest("pre");
@@ -255,6 +247,9 @@ export function canvasRichText(
     closeMenus();
   }
   rich.addEventListener("beforeinput", (event) => {
+    if (!plain && mode === 'rich' && continueRichChecklist(rich, event)) {
+      remember(); flush(); activeFormats(); return;
+    }
     // Use beforeinput so physical and virtual keyboards share the shortcut.
     // Pasting, composing, code, existing lists and plain labels remain literal.
     if (
@@ -331,6 +326,33 @@ export function canvasRichText(
   });
   rich.addEventListener("keyup", remember);
   rich.addEventListener("mouseup", remember);
+  rich.addEventListener('change', event => {
+    if (event.target.matches('input[type="checkbox"]')) {
+      event.target.toggleAttribute('checked', event.target.checked);
+      flush();
+    }
+  });
+  const checkboxShortcut = event => !plain && !event.isComposing && event.keyCode !== 229 &&
+    (event.ctrlKey || event.metaKey) && !event.altKey && !event.shiftKey && event.key.toLowerCase() === 'l';
+  rich.addEventListener('keydown', event => {
+    if (!checkboxShortcut(event) || mode !== 'rich') return;
+    if (!toggleRichCheckbox(rich)) return;
+    event.preventDefault(); event.stopPropagation();
+    remember(); flush(); activeFormats();
+  });
+  source.addEventListener('keydown', event => {
+    if (!checkboxShortcut(event) || mode !== 'source') return;
+    event.preventDefault(); event.stopPropagation();
+    const start = source.selectionStart, end = source.selectionEnd, direction = source.selectionDirection;
+    const changes = checkboxChanges(source.value, start, end);
+    const map = position => changes.reduce((offset, change) => offset + (position >= change.to ? change.insert.length - (change.to - change.from) : 0), position);
+    for (const change of changes.toReversed()) {
+      source.setSelectionRange(change.from, change.to);
+      if (!document.execCommand('insertText', false, change.insert)) source.setRangeText(change.insert, change.from, change.to, 'end');
+    }
+    source.setSelectionRange(map(start), map(end), direction);
+    source.dispatchEvent(new Event('input', { bubbles: true }));
+  });
   rich.addEventListener("paste", (event) => {
     event.preventDefault();
     const text = event.clipboardData?.getData("text/plain") || "";
@@ -348,6 +370,7 @@ export function canvasRichText(
       // become children of an inherited heading.
       if (!inline && !rich.textContent.trim()) document.execCommand("formatBlock", false, "p");
       document.execCommand("insertHTML", false, inline ? parsed.firstElementChild.innerHTML : parsed.innerHTML);
+      prepareRichCheckboxes(rich);
     }
     remember(); flush(); activeFormats();
   });

@@ -73,7 +73,7 @@ test.describe("desktop", () => {
   test("checklists are labelled, uploads work by keyboard, and closing with an empty title offers to keep a draft", async ({ page }) => {
     await openView(page, "list");
     await page.locator(".task-row > .task-id").first().click();
-    expect(await page.locator("#task-form input[type=checkbox][disabled]").evaluateAll((els) => els.map((el) => el.getAttribute("aria-label")))).toEqual(["Keyboard access", "Save changes"]);
+    expect(await page.locator("#task-form .task-description input[type=checkbox]:enabled").evaluateAll((els) => els.map((el) => el.getAttribute("aria-label")))).toEqual(["Keyboard access", "Save changes"]);
     const chooserPromise = page.waitForEvent("filechooser");
     await page.locator(".task-attachment-choose").focus();
     await page.keyboard.press("Enter");

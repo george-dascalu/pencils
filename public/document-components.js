@@ -7,10 +7,12 @@ import { focusOnOpen } from "./open-focus.js";
 import { installTextColorRule, textColor } from './document-text-color.js';
 import { isolateHistory, StateEffect } from '/vendor/editor/deps.js';
 import { documentTextChange, documentCodeFence } from './document-performance.js';
+import { richCheckboxRule, prepareRichCheckboxes, toggleRichCheckbox, continueRichChecklist } from './rich-checklist.js';
 export const documentComponentChange = StateEffect.define();
 
 const converter = new TurndownService({ headingStyle: "atx", codeBlockStyle: "fenced", bulletListMarker: "-" });
 converter.use(gfm);
+converter.addRule('checklistItem', richCheckboxRule);
 installTextColorRule(converter);
 converter.addRule("documentSource", {
   filter: node => node.hasAttribute?.("data-document-source"),
@@ -79,7 +81,7 @@ export function editableDocumentComponent({ element, raw, from, kind, editor, re
     for (const protectedNode of node.querySelectorAll("[data-document-source],.document-transclusion")) {
       protectedNode.contentEditable = "false";
     }
-    for (const checkbox of node.querySelectorAll('input[type="checkbox"]')) checkbox.disabled = false;
+    if (!plain) prepareRichCheckboxes(node);
     node.addEventListener("change", event => {
       const checkbox = event.target;
       if (checkbox.matches('input[type="checkbox"]')) {
@@ -96,6 +98,9 @@ export function editableDocumentComponent({ element, raw, from, kind, editor, re
     for (const event of ["keyup", "mouseup", "input", "blur"])
       node.addEventListener(event, rememberSelection);
     node.addEventListener("input", () => { if (!composing) commit(node); });
+    node.addEventListener('beforeinput', event => {
+      if (!plain && multiline && continueRichChecklist(node, event)) commit(node, true);
+    });
     node.addEventListener("compositionstart", () => { composing = true; });
     node.addEventListener("compositionend", () => { composing = false; commit(node); });
     node.addEventListener("paste", event => {
@@ -107,6 +112,9 @@ export function editableDocumentComponent({ element, raw, from, kind, editor, re
     node.addEventListener("keydown", event => {
       // Keys that confirm IME text (Safari reports them after compositionend, as key code 229).
       if (event.isComposing || event.keyCode === 229) return;
+      if (!plain && !event.altKey && !event.shiftKey && (event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'l' && toggleRichCheckbox(node)) {
+        event.preventDefault(); event.stopPropagation(); commit(node, true); return;
+      }
       // Ctrl/Cmd+Home/End and Cmd+Up/Down move within this block. Left to the
       // browser they jump to the editor's ends, which CodeMirror cannot place
       // inside a block and resolves to the start of the document.
@@ -152,8 +160,7 @@ export function editableDocumentComponent({ element, raw, from, kind, editor, re
   function commit(changedField, isolate = false) {
     if (!serialize || composing) return;
     try {
-      for (const field of fields)
-        for (const checkbox of field.querySelectorAll('input[type="checkbox"]')) checkbox.disabled = false;
+      for (const field of fields) prepareRichCheckboxes(field);
       const next = trim(serialize(changedField));
       if (next === source) return;
       if (editor.state.doc.sliceString(position, position + source.length) !== source)

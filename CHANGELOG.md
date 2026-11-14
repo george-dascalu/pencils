@@ -2,6 +2,14 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.23.36 — 2026-11-14
+
+### Fixed
+- Feature F0.23-36: Checklists show a checkbox without a bullet. Enter continues with an unchecked item, Enter on an empty item leaves the list, and Shift+Enter keeps a line break within the item. Checked state survives saving and reopening, including lists with paragraph spacing.
+
+### Added
+- Feature F0.23-36: Ctrl+L (Cmd+L on Mac) adds checkboxes to the current or selected lines and toggles existing checkboxes while editing descriptions, notes, comments, board text and documents. The shortcut works in rich and Markdown editors and is listed in Help.
+
 ## 0.23.35 — 2026-11-14
 
 ### Fixed

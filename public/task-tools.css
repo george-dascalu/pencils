@@ -1445,7 +1445,7 @@ html.task-page-open,
 .task-card-description > :first-child { margin-top: 0; }
 .task-card-description > :last-child { margin-bottom: 0; }
 
-.task-card-description li:has(> input[type="checkbox"]) { list-style: none; }
+:is(.canvas-markdown, .task-card-description, .document-prose) :is(li.rich-checklist-item, li:has(> input[type="checkbox"], > p:first-child > input[type="checkbox"])) { list-style: none; }
 
 .phone-task { display: none; }
 @media (max-width: 600px) {

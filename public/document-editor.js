@@ -20,6 +20,7 @@ import { installDocumentWebLinks, webURL } from './document-web-links.js';
 import { DOCUMENT_CHARACTERS, documentEditAllowed, documentBlockCache, documentRangeIndex } from './document-performance.js';
 import { editableDocumentTable } from './document-inline-table.js';
 import { incrementalDocumentParagraphs } from './document-language.js';
+import { checkboxChanges } from './checklist.js';
 
 export function markdownDocumentEditor({ parent, text, mode = "live", renderer, documents, cards = () => [], hidden = [], taskQueries, onChange, onError, onLink, onInsert, onComment, onSketch, icon, panel, toast, colorPicker, tableLayouts }) {
   const presentation = new Compartment();
@@ -384,6 +385,7 @@ export function markdownDocumentEditor({ parent, text, mode = "live", renderer, 
         search({ top: true, createPanel: editor => documentSearchPanel(editor, icon,(from,to)=>{for(const cell of editor.dom.querySelectorAll('.document-table-find-current'))cell.classList.remove('document-table-find-current');if(from!==null)for(const component of editor.dom.querySelectorAll('.document-editable-component'))component.documentComponent?.revealMatch(from,to);}) }),
         keymap.of([
           shortcut("Mod-b", "bold"), shortcut("Mod-i", "italic"), shortcut("Mod-k", "link"),
+          shortcut('Mod-l', 'toggleCheck'),
           ...completionKeymap, { key: 'Escape', run: () => selectionTools?.escape() || false }, ...markdownKeymap, ...defaultKeymap, ...historyKeymap,
           ...searchKeymap, ...foldKeymap, indentWithTab,
         ]),
@@ -479,6 +481,12 @@ export function markdownDocumentEditor({ parent, text, mode = "live", renderer, 
     if (focusedComponent?.element.isConnected && focusedComponent.format(command, value, { focus })) return;
     const range = view.state.selection.main;
     const selected = view.state.sliceDoc(range.from, range.to);
+    if (command === 'toggleCheck') {
+      if (mode === 'reading') return;
+      view.dispatch({ changes: checkboxChanges(sourceText(view.state), range.from, range.to), userEvent: 'input.format', annotations: isolateHistory.of('full') });
+      if (focus) view.focus();
+      return;
+    }
     if (command === 'color') {
       const source = sourceText(view.state), protectedRanges = []; let offset = 0;
       for (const token of renderer.tokens(source)) {
