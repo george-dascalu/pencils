@@ -2,6 +2,11 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.23.40 — 2026-11-14
+
+### Fixed
+- Feature F0.23-40: List group-collapse regression checks compare saved cards by identity, avoiding false failures when a refreshed file cache returns the same records in a different order.
+
 ## 0.23.39 — 2026-11-14
 
 ### Fixed

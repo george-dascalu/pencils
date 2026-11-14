@@ -29,7 +29,10 @@ onDevices(['desktop', 'phone'], () => test('groups collapse by pointer or keyboa
   const size = await button.boundingBox();
   expect(size.width).toBe(size.height);
   expect(size.height).toBe(device === 'phone' ? 44 : 32);
-  const before = (await app.store.snapshot(project.id)).tasks;
+  // Snapshot record order can change when the file cache refreshes. Compare
+  // every card by identity; this check guards card data, not display order.
+  const records = async () => (await app.store.snapshot(project.id)).tasks.toSorted((a, b) => a.id.localeCompare(b.id));
+  const before = await records();
   await button.click();
   await expect(button).toHaveAttribute('aria-expanded', 'false');
   await expect(rows(todo).first()).toBeHidden();
@@ -50,7 +53,7 @@ onDevices(['desktop', 'phone'], () => test('groups collapse by pointer or keyboa
   await page.keyboard.press('Enter');
   await page.reload();
   await expect(rows(todo).first()).toBeVisible();
-  expect((await app.store.snapshot(project.id)).tasks).toEqual(before);
+  expect(await records()).toEqual(before);
 }));
 
 test('collapse choices are separate by project and grouping, including tags, empty values and filtered redraws @gate', async ({ page }) => {
