@@ -62,6 +62,28 @@ test('Ctrl+L adds a checkbox, preserves the caret, toggles completion and suppor
   await expect(source(page)).toHaveValue(/\[ \] Pack bags/);
 });
 
+test('a checklist can start in an empty editor using Ctrl+L or the toolbar @gate', async ({ page }) => {
+  await open(page);
+  for (const action of ['shortcut', 'toolbar']) {
+    await rich(page).fill(''); await rich(page).focus();
+    if (action === 'shortcut') await page.keyboard.press('Control+l');
+    else await page.locator('.task-description [data-rich-command="checklist"]').click();
+    await expect(rich(page).locator('input')).toHaveCount(1);
+    await page.keyboard.type('Make bags');
+    await expect(source(page)).toHaveValue(/^-\s+\[ \] Make bags$/);
+  }
+});
+
+test('Ctrl+L starts a checkbox on an empty paragraph without moving into the next paragraph @gate', async ({ page }) => {
+  await open(page, 'Before\n\nAfter');
+  await caret(rich(page).locator('p').first());
+  await page.keyboard.press('Enter');
+  await page.keyboard.press('Control+l');
+  await page.keyboard.type('Make bags');
+  await expect(rich(page).locator('input')).toHaveCount(1);
+  await expect(source(page)).toHaveValue(/^Before\s+-\s+\[ \] Make bags\s+After$/);
+});
+
 test('Enter splits a completed checklist into an unchecked next item while Shift+Enter stays in the same item @gate', async ({ page }) => {
   await open(page, '- [x] Make bags');
   await rich(page).locator('li').evaluate(el => {

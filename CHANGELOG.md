@@ -2,6 +2,11 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.23.37 — 2026-11-14
+
+### Fixed
+- Feature F0.23-37: Ctrl+L and the Checklist toolbar button can start a checklist in an empty editor or blank paragraph. The caret stays after the new checkbox, ready to type, without moving into neighboring text.
+
 ## 0.23.36 — 2026-11-14
 
 ### Fixed

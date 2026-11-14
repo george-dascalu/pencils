@@ -87,9 +87,15 @@ export function toggleRichCheckbox(root, formatOnly = false) {
   const protectedNode = element(range.startContainer)?.closest('pre,[contenteditable="false"]');
   if (protectedNode && root.contains(protectedNode)) return false;
   if (!itemAt(range.startContainer) || !itemAt(range.endContainer)) {
-    const restore = rememberRange(root, true);
+    const restore = rememberRange(root, true), collapsed = range.collapsed;
     document.execCommand('insertUnorderedList');
-    restore();
+    // An empty new item has no text offset to restore. Keep the native caret
+    // inside it instead of mapping it to the next paragraph or outside the list.
+    const nativeItem = itemAt(currentRange(root)?.startContainer);
+    const emptyItem = collapsed && !root.textContent.trim() && (nativeItem || root.querySelector('li'));
+    if (emptyItem) {
+      const caret = document.createRange(); caret.selectNodeContents(emptyItem); caret.collapse(true); select(caret);
+    } else if (!(collapsed && nativeItem && !nativeItem.textContent.trim())) restore();
     range = currentRange(root);
   }
   if (!range) return false;
