@@ -2,6 +2,11 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.23.42 — 2026-11-15
+
+### Changed
+- Feature F0.23-42: Dragging a card through Week's hours or Week board's time-of-day rows updates the time inside the moving card, without a separate time box. Short events keep their preview readable, and moving to All day or Unscheduled clears the previewed time. Changes save only on drop; cancelling preserves the original schedule.
+
 ## 0.23.41 — 2026-11-15
 
 ### Changed

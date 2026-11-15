@@ -365,7 +365,7 @@ export function calendarView(ctx) {
       const source = !board ? null : d.card.matches(".week-board-card") ? d.card : board.querySelector(`.week-board-card[data-calendar-card="${CSS.escape(d.task.id)}"]`);
       if (source) {
         const copy = cardCopy(source);
-        copy.classList.remove("week-board-dated"); copy.classList.add("week-board-live");
+        copy.classList.remove("week-board-dated", "week-board-timed"); copy.classList.add("week-board-live");
         copy.inert = true; copy.setAttribute("aria-hidden", "true");
         Object.assign(copy.style, { left: `${x}px`, top: `${y}px`, zIndex: "" });
         board.append(copy); d.placements.push(copy);
@@ -433,7 +433,29 @@ export function calendarView(ctx) {
     placement(d, next);
     const backlog = document.querySelector(".week-board-backlog-canvas");
     if (backlog) paintAlignmentGuides(backlog, d.next?.backlog ? d.guides || [] : [], { x: 0, y: 0, z: 1 });
-    d.ghost.querySelector("small").textContent = d.hours ? range ? `${range.start !== range.end ? `${range.start} ${next.start_time} → ${range.end} ${next.due_time}` : `${next.start_time} – ${next.due_time}`} · ${d.step} min steps` : 'Release to cancel' : cancel ? "Release to cancel" : range ? `${range.start}${d.next.start_time ? ` · ${d.next.start_time} – ${d.next.due_time}` : ` → ${range.end}`}` : d.next?.backlog ? "Unscheduled" : "Move over a day to schedule";
+    const copy = d.ghost.firstElementChild, hint = d.ghost.querySelector('.calendar-drag-hint');
+    // Moving through hours updates the card's own time, without a second time box. Only the
+    // disposable copy changes: cancellation and invalid targets keep the saved card untouched.
+    const inlineTime = !d.hours && (mode === 'week' || mode === 'board');
+    if (inlineTime) {
+      const proposed = d.next ? next : d.task, timed = timedCard(proposed) && fieldOn(state.config, 'start') && fieldOn(state.config, 'due');
+      const label = timed ? proposed.start === proposed.due ? `${proposed.start_time} – ${proposed.due_time}` : `${proposed.start} ${proposed.start_time} → ${proposed.due} ${proposed.due_time}` : '';
+      let time = copy.querySelector('.calendar-event-time, .row-date-summary, .calendar-dates > span');
+      if (!time && timed && copy.matches('.week-board-card')) {
+        const fields = document.createElement('div');
+        fields.innerHTML = ctx.inlineTaskFields(proposed, 'week-board-fields', label);
+        copy.append(cardCopy(fields.firstElementChild));
+        time = copy.querySelector('.row-date-summary');
+      }
+      if (!time && timed) {
+        time = document.createElement('span'); time.className = 'calendar-event-time';
+        copy.append(time);
+      }
+      if (time) time.textContent = label;
+      if (copy.matches('.week-board-card')) copy.classList.toggle('week-board-timed', timed);
+    }
+    hint.hidden = inlineTime && !!range;
+    hint.textContent = d.hours ? range ? `${range.start !== range.end ? `${range.start} ${next.start_time} → ${range.end} ${next.due_time}` : `${next.start_time} – ${next.due_time}`} · ${d.step} min steps` : 'Release to cancel' : cancel ? "Release to cancel" : range ? `${range.start}${d.next.start_time ? ` · ${d.next.start_time} – ${d.next.due_time}` : ` → ${range.end}`}` : d.next?.backlog ? "Unscheduled" : "Move over a day to schedule";
     d.ghost.firstElementChild.classList.toggle("invalid", !range && !cancel && !d.next?.backlog);
     // Over the Unscheduled board the card itself shows where it goes.
     d.ghost.style.visibility = d.next?.backlog ? "hidden" : "";
@@ -567,11 +589,13 @@ export function calendarView(ctx) {
         d.cancel.addEventListener("click", () => finish(true));
         document.body.append(d.cancel);
       }
-      // A copy of the card as it looks in this view, with the dates being chosen under it.
+      // A copy of the card as it looks in this view; Week and Week board update its own time.
       const r = d.card.getBoundingClientRect(), copy = cardCopy(d.card);
       copy.classList.add("drag-ghost");
       copy.removeAttribute("style");
       Object.assign(copy.style, { position: "relative", inset: "auto", margin: "0", width: `${Math.min(r.width, 320)}px`, height: `${r.height}px` });
+      copy.style.setProperty('--task-field-color', getComputedStyle(d.card).getPropertyValue('--task-field-color'));
+      if (copy.matches('.week-board-card')) copy.style.height = 'auto';
       d.ghost = document.createElement("div"); d.ghost.className = "calendar-drag-preview calendar";
       d.ghost.inert = true; d.ghost.setAttribute("aria-hidden", "true");
       d.ghost.append(copy, Object.assign(document.createElement("small"), { className: "calendar-drag-hint" }));

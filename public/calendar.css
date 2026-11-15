@@ -105,6 +105,8 @@
 /* Also a .calendar, so the copy of the card keeps its styles; a single column, not the 7-column month. */
 .calendar-drag-preview.calendar { position: fixed; z-index: 220; display: grid; grid-template-columns: none; gap: 4px; pointer-events: none; border: 0; min-width: 0; }
 .calendar-drag-hint { justify-self: start; max-width: calc(100vw - 16px); padding: 2px 8px; border: 1px solid var(--line); border-radius: var(--field-radius, 6px); background: var(--surface); color: var(--muted); font-size: var(--type-small); }
+/* Even a short or narrow event needs room for its title and live hours while it moves. */
+.calendar-drag-preview .calendar-timed-card { min-height: calc(var(--control-height) * 2); min-width: min(200px, calc(100vw - 16px)); }
 .calendar-agenda { display: grid; gap: 16px; }
 .agenda-day { min-width: 0; }
 .agenda-day h3 { margin: 0; padding: 8px 10px; font-size: 13px; color: var(--muted); }

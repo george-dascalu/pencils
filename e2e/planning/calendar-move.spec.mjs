@@ -14,7 +14,8 @@ async function open(page,device) {
 }
 onDevices(['desktop','ipad','phone'],()=>test('move a timed card within a day and across days, keeping duration and allowing cancellation @gate',async({page,device})=>{
  const {card,saved}=await open(page,device);
- const drag=async(day,delta,cancel=false)=>{
+ const drag=async(day,delta,time,cancel=false)=>{
+  const before=await saved();
   await card().scrollIntoViewIfNeeded();
   const a=await card().boundingBox(), target=await page.locator(`.calendar-hours-day[data-calendar-date="${day}"]`).boundingBox();
   const x=a.x+a.width/2,y=a.y+35;
@@ -22,16 +23,19 @@ onDevices(['desktop','ipad','phone'],()=>test('move a timed card within a day an
   await page.mouse.move(target.x+target.width/2,y+delta*target.height/1440,{steps:8});
   await expect(page.locator('.calendar-placement')).toHaveCount(1);
   await expect(page.locator('.calendar-placement')).toHaveCSS('height','128px');
+  await expect(page.locator('.calendar-drag-preview .calendar-event-time')).toHaveText(time);
+  await expect(page.locator('.calendar-drag-hint')).toBeHidden();
+  expect(await saved()).toEqual(before);
   if(cancel)await page.keyboard.press('Escape');
   await page.mouse.up();
  };
- await drag('2026-11-02',30);
+ await drag('2026-11-02',30,'09:30 – 11:30');
  await expect.poll(async()=> (await saved()).start_time).toBe('09:30');
  expect((await saved()).due_time).toBe('11:30');
- await drag('2026-11-03',-15);
+ await drag('2026-11-03',-15,'09:15 – 11:15');
  await expect.poll(async()=> [(await saved()).start,(await saved()).start_time]).toEqual(['2026-11-03','09:15']);
  expect((await saved()).due_time).toBe('11:15');
- await drag('2026-11-04',30,true);
+ await drag('2026-11-04',30,'09:45 – 11:45',true);
  expect((await saved()).start).toBe('2026-11-03');
  await expect(page.locator('#task-form')).toHaveCount(0);
  await page.reload();
@@ -77,6 +81,27 @@ onDevices(['ipad'],()=>test('swiping an unselected event scrolls; a tap still op
  await card().scrollIntoViewIfNeeded(); await card().locator('.calendar-card-title').tap();
  await expect(page.locator('#task-form')).toBeVisible();
 }));
+test('a short event keeps its live time readable inside the dragged card @gate',async({page,device})=>{
+ const {task,card,saved}=await open(page,`short-${device}`);
+ await app.store.updateTask(app.project.id,task.id,{revision:task.revision,due_time:'09:15'});
+ await page.reload(); await card().scrollIntoViewIfNeeded();
+ const a=await card().boundingBox(), day=await page.locator('.calendar-hours-day').first().boundingBox();
+ const x=a.x+a.width/2,y=a.y+a.height/2;
+ await page.mouse.move(x,y);await page.mouse.down();
+ await page.mouse.move(x,y+30*day.height/1440,{steps:8});
+ const preview=page.locator('.calendar-drag-preview'), time=preview.locator('.calendar-event-time');
+ await expect(time).toHaveText('09:30 – 09:45');
+ await expect(time).toBeVisible();
+ await expect(preview.locator('.calendar-drag-hint')).toBeHidden();
+ await expect(preview.locator('.calendar-card-title')).toHaveCSS('background-color',await card().locator('.calendar-card-title').evaluate(el=>getComputedStyle(el).backgroundColor));
+ expect(await time.evaluate(el=>{
+  const r=el.getBoundingClientRect(), box=el.closest('.calendar-card-title').getBoundingClientRect();
+  return r.top>=box.top && r.bottom<=box.bottom && el.scrollWidth<=el.clientWidth;
+ })).toBe(true);
+ await page.screenshot({path:test.info().outputPath(`live-time-${device}.png`)});
+ await page.keyboard.press('Escape');await page.mouse.up();
+ expect((await saved()).start_time).toBe('09:00');
+});
 onDevices(['ipad'],()=>test('touch drags the event body without scrolling behind it',async({page,browserName,device})=>{
  test.skip(browserName!=='chromium','Raw touch needs Chromium DevTools');
  const {card,saved}=await open(page,device);
@@ -87,6 +112,8 @@ onDevices(['ipad'],()=>test('touch drags the event body without scrolling behind
  await expect(card()).toHaveClass(/calendar-armed/);
  for(let i=1;i<=8;i++) await cdp.send('Input.dispatchTouchEvent',{type:'touchMove',touchPoints:[{x:x+(next.x+next.width/2-x)*i/8,y:y+32*i/8}]});
  await expect(page.locator('.calendar-placement')).toBeVisible();
+ await expect(page.locator('.calendar-drag-preview .calendar-event-time')).toHaveText('09:30 – 11:30');
+ await expect(page.locator('.calendar-drag-hint')).toBeHidden();
  await cdp.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});
  await expect.poll(async()=> [(await saved()).start,(await saved()).start_time]).toEqual(['2026-11-03','09:30']);
  expect(await scroll.evaluate(el=>el.scrollTop)).toBe(before);

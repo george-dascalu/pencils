@@ -2,7 +2,7 @@
 // (before 12:00), afternoon (until 17:00) and evening; a card dropped in another part of the day starts
 // at its hour (9:00, 13:00, 18:00) and keeps its length. All day cards stay above the timed rows;
 // a card dropped on the Unscheduled board loses its date and times.
-import { test, expect, useApp } from '../fixtures.mjs';
+import { test, expect, useApp, onDevices } from '../fixtures.mjs';
 import { reveal } from '../helpers/menu-controls.mjs';
 
 const day = '2026-11-05';
@@ -14,7 +14,38 @@ const app = useApp(async store => {
 const rows = (page) => page.locator('.week-board-row[data-week-board-value]').evaluateAll(els => els.map(el => [el.dataset.weekBoardValue, el.querySelector('.week-board-row-head > span').textContent, [...el.querySelectorAll('.week-board-title')].map(t => t.textContent.replace(/^DP-\d+ /, ''))]));
 const saved = async (id) => (await app.store.snapshot(app.project.id)).tasks.find(t => t.id === id);
 const backlog = (page) => page.locator('.week-board-backlog .week-board-title').evaluateAll(els => els.map(t => t.textContent.replace(/^DP-\d+ /, '')));
-async function drag(page, title, part) {
+onDevices(['desktop', 'phone'], () => test('dragging through day parts previews hours inside the card without saving @gate', async ({ page }) => {
+  const project = await app.store.createProject({ title: 'Live hours' });
+  const task = await app.store.createTask(project.id, { title: 'Live time', start: '2026-11-02', due: '2026-11-02', start_time: '09:00', due_time: '09:30' });
+  const savedCard = async () => (await app.store.snapshot(project.id)).tasks.find(t => t.id === task.id);
+  await page.clock.setFixedTime(new Date('2026-11-02T12:00:00'));
+  await page.goto(`${app.base}/#project/${project.id}/calendar`);
+  await (await reveal(page.locator('#calendar-mode'))).selectOption('board');
+  await (await reveal(page.locator('#week-board-rows'))).selectOption('daypart');
+  if (await page.locator('.mobile-view-options[open]').count()) await page.getByRole('button', { name: 'Close view options', exact: true }).click();
+  await page.getByRole('button', { name: 'Hide Unscheduled', exact: true }).click();
+  const card = page.locator(`.week-board-card[data-calendar-card="${task.id}"]`);
+  const original = await savedCard(), r = await card.locator('.week-board-title').boundingBox();
+  await page.mouse.move(r.x + r.width / 2, r.y + r.height / 2); await page.mouse.down();
+  for (const [part, time] of [['afternoon', '13:00 – 13:30'], ['evening', '18:00 – 18:30']]) {
+    const cell = page.locator(`.week-board-cell[data-calendar-date="2026-11-02"][data-week-board-value="${part}"]`);
+    await cell.scrollIntoViewIfNeeded();
+    for (let i = 0; i < 2; i++) {
+      const to = await cell.boundingBox();
+      await page.mouse.move(to.x + to.width / 2, to.y + 35, { steps: 4 });
+    }
+    const preview = page.locator('.calendar-drag-preview');
+    await expect(preview.locator('.row-date-summary')).toHaveText(time);
+    await expect(preview.locator('.row-due')).toBeVisible();
+    await expect(preview.locator('.calendar-drag-hint')).toBeHidden();
+    expect(await savedCard()).toEqual(original);
+  }
+  await page.keyboard.press('Escape'); await page.mouse.up();
+  await expect(page.locator('.calendar-drag-preview')).toHaveCount(0);
+  await expect(card.locator('.row-date-summary')).toHaveText('09:00 – 09:30');
+  expect(await savedCard()).toEqual(original);
+}));
+async function drag(page, title, part, time = '') {
   const dock = page.locator('.week-board-backlog');
   const inDock = await dock.locator('.week-board-title', { hasText: title }).count();
   if (part === null && await dock.getAttribute('data-closed') !== null) await dock.getByRole('button', { name: 'Show Unscheduled', exact: true }).click();
@@ -29,6 +60,12 @@ async function drag(page, title, part) {
     await page.mouse.move(to.x + to.width / 2, to.y + to.height - 6, { steps });
     await page.evaluate(() => new Promise((done) => requestAnimationFrame(() => requestAnimationFrame(done))));
   }
+  if (time) {
+    await expect(page.locator('.calendar-drag-preview .row-date-summary')).toHaveText(time);
+    await expect(page.locator('.calendar-drag-preview .row-due')).toBeVisible();
+    await expect(page.locator('.calendar-drag-hint')).toBeHidden();
+  } else if (part === null) await expect(page.locator('.week-board-live .row-due')).toBeHidden();
+  else if (part === '') await expect(page.locator('.calendar-drag-preview .row-due')).toBeHidden();
   await page.mouse.up();
 }
 
@@ -66,10 +103,10 @@ test('Group by Time of day splits the week into morning, afternoon and evening, 
   await expect(errand.locator('.row-due')).toBeHidden();
   await expect(page.locator('.week-board-backlog .week-board-card', { hasText: 'Idea' }).locator('.row-due')).toHaveCSS('display', 'none');
   // Into a part of the day: it starts at its hour, an hour long for a card without times.
-  await drag(page, 'Errand', 'afternoon');
+  await drag(page, 'Errand', 'afternoon', '13:00 – 14:00');
   await expect.poll(async () => { const t = await saved(app.errand.id); return [t.start, t.start_time, t.due, t.due_time]; }).toEqual([day, '13:00', day, '14:00']);
   // A timed card keeps its length.
-  await drag(page, 'Standup', 'evening');
+  await drag(page, 'Standup', 'evening', '18:00 – 18:30');
   await expect.poll(async () => { const t = await saved(app.standup.id); return [t.start_time, t.due_time]; }).toEqual(['18:00', '18:30']);
   // Onto the Unscheduled board: the date and times go.
   await drag(page, 'Gym', null);
