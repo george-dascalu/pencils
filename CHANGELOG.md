@@ -2,6 +2,11 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.23.41 — 2026-11-15
+
+### Changed
+- Feature F0.23-41: Week shows each weekday and date together in one compact header row. Empty all-day space disappears; all-day cards add only the rows they need. The header stays visible while a busy all-day section scrolls and remains available to create or drop all-day cards.
+
 ## 0.23.40 — 2026-11-14
 
 ### Fixed

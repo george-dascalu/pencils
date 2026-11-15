@@ -32,11 +32,9 @@ onDevices(["desktop", "ipad", "phone"], () => test("calendar scrolls inside its 
   await open(page);
   await page.addStyleTag({ content: '.calendar-hours-scroll { overflow-y: scroll; scrollbar-width: auto; } .calendar-hours-scroll::-webkit-scrollbar { width: 16px; }' });
   const aligned = () => page.evaluate(() => {
-    const headers = [...document.querySelectorAll(".calendar-weekdays > strong")];
-    return [".calendar-hours-day", ".calendar-all-day .calendar-day"].every(selector => {
-      const days = [...document.querySelectorAll(selector)];
-      return headers.every((el, i) => { const a = el.getBoundingClientRect(), b = days[i].getBoundingClientRect(); return Math.abs(a.left - b.left) < 1 && Math.abs(a.right - b.right) < 1; });
-    });
+    const headers = [...document.querySelectorAll(".calendar-all-day .calendar-day")];
+    const days = [...document.querySelectorAll(".calendar-hours-day")];
+    return headers.length === days.length && headers.every((el, i) => { const a = el.getBoundingClientRect(), b = days[i].getBoundingClientRect(); return Math.abs(a.left - b.left) < 1 && Math.abs(a.right - b.right) < 1; });
   });
   await expect.poll(aligned).toBe(true);
   expect(await page.evaluate(() => document.scrollingElement.scrollHeight - innerHeight)).toBeLessThanOrEqual(1);

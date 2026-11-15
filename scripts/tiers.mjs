@@ -149,6 +149,7 @@ export const TIERS = [
     "e2e/planning/week-board-create.spec.mjs", // inline creation saves date and row defaults
     "e2e/planning/week-board-create-lan.spec.mjs", // HTTP fallback IDs preserve save retries without duplicates
     "e2e/planning/calendar-hours.spec.mjs", // create a timed card by dragging hours
+    "e2e/planning/calendar-week-header.spec.mjs", // compact day headers retain all-day creation and drops
     "e2e/planning/calendar-move.spec.mjs", // move a timed card on the calendar
     "e2e/planning/calendar-resize-dense.spec.mjs", // narrow touch targets select the intended endpoint
     "e2e/planning/calendar-resize-targets.spec.mjs", // touching events retain their own resize endpoints

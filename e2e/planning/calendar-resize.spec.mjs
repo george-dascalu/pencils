@@ -69,12 +69,15 @@ test('resizing follows scroll and Escape restores the event without saving',asyn
 });
 
 test('zoom changes resize snapping and keyboard handles adjust the same endpoint',{tag:'@gate'},async({page})=>{
+  // Leave fewer than 32 pixels per hour at Fit, even with the compact day header.
+  await page.setViewportSize({width:1440,height:760});
   await open(page);
   const out=page.getByRole('button',{name:'Zoom out hours',exact:true});
   while(await out.isEnabled()) await out.click();
+  const hourHeight=await page.locator('.calendar-hours-day').first().evaluate(el=>el.getBoundingClientRect().height/24);
+  expect(hourHeight).toBeGreaterThanOrEqual(16); expect(hourHeight).toBeLessThan(32);
   await begin(page,'due'); await move(page,10*60+14);
-  await expect(page.locator('.calendar-drag-preview')).toContainText('09:00 – 10:00');
-  await expect(page.locator('.calendar-drag-preview')).toContainText('30 min');
+  await expect(page.locator('.calendar-drag-preview small')).toHaveText('09:00 – 10:00 · 30 min steps');
   await page.keyboard.press('Escape'); await page.mouse.up();
   await handle(page,'due').focus(); await page.keyboard.press('ArrowDown');
   await expect.poll(async()=> (await saved()).due_time).toBe('10:30');
