@@ -10,18 +10,25 @@ test('desktop connections accept server origins, including LAN HTTP, without cre
   assert.equal(normalizeServerURL('https://pencils.example/'), 'https://pencils.example');
   assert.equal(normalizeServerURL('http://192.168.1.20:3000'), 'http://192.168.1.20:3000');
   assert.equal(normalizeServerURL('http://[::1]:3000'), 'http://[::1]:3000');
-  for (const url of ['', 'file:///etc/passwd', 'javascript:alert(1)', 'https://user:secret@example.com', 'https://example.com/path', 'https://example.com/?token=x', 'https://example.com/#secret']) {
+  for (const url of [null, 42, {}, [], '', 'file:///', 'file:///etc/passwd', 'javascript:alert(1)', 'https://user:secret@example.com', 'https://user@example.com', 'https://:secret@example.com', 'https://example.com/path', 'https://example.com/?token=x', 'https://example.com/#secret']) {
     assert.throws(() => normalizeServerURL(url), /server|address/i, url);
   }
+  const longest = `https://${'a'.repeat(2035)}.test`;
+  assert.equal(longest.length, 2048);
+  assert.equal(normalizeServerURL(longest), longest);
+  assert.throws(() => normalizeServerURL(`${longest}a`), /server|address/i);
 });
 
 test('only the chosen origin can navigate the desktop workspace; unsafe links never reach the operating system', () => {
   const origin = 'https://pencils.example';
   assert.equal(navigationAllowed(`${origin}/#project/123/calendar`, origin), true);
-  for (const url of ['https://pencils.example.evil.test/', 'http://pencils.example/', 'file:///etc/passwd', 'data:text/html,hi', 'https://other.test', 'https://user:pass@pencils.example']) assert.equal(navigationAllowed(url, origin), false, url);
+  for (const url of ['', 'not a URL', 'https://pencils.example.evil.test/', 'http://pencils.example/', 'file:///etc/passwd', 'data:text/html,hi', 'https://other.test', 'https://user:pass@pencils.example']) assert.equal(navigationAllowed(url, origin), false, url);
   assert.equal(externalURL('https://example.com/path'), 'https://example.com/path');
   assert.equal(externalURL('mailto:hello@example.com'), 'mailto:hello@example.com');
   for (const url of ['file:///etc/passwd', 'javascript:alert(1)', 'data:text/html,hi', 'pencils://whatever', 'https://user:pass@example.com', '\nhttps://example.com']) assert.equal(externalURL(url), null, url);
+  const longest = `https://example.com/${'a'.repeat(8192 - 'https://example.com/'.length)}`;
+  assert.equal(externalURL(longest), longest);
+  assert.equal(externalURL(`${longest}a`), null);
 });
 
 test('restored windows fit the current monitor even after removing a display', () => {
@@ -38,6 +45,9 @@ test('desktop preferences survive restart and malformed files fall back without 
     await writePreferences(dir, { server: 'http://localhost:3000', bounds: { width: 1000, height: 700 }, maximized: true });
     assert.equal((await readPreferences(dir)).server, 'http://localhost:3000');
     assert.equal((await readPreferences(dir)).maximized, true);
+    const nested = path.join(dir, 'new/profile');
+    await writePreferences(nested, { server: 'https://pencils.example' });
+    assert.equal(readPreferences(nested).server, 'https://pencils.example');
     await fs.writeFile(path.join(dir, 'desktop.json'), '{bad');
     assert.deepEqual(await readPreferences(dir), {});
     await fs.writeFile(path.join(dir, 'desktop.json'), 'null');
