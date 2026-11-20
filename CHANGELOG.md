@@ -2,6 +2,14 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.23.45 — 2026-11-20
+
+### Added
+- Feature F0.23-44: Desktop app zoom with Ctrl +/−, Ctrl+0, Ctrl+wheel and View-menu actions, remembered across reloads and restarts. Board shortcuts and gestures keep zooming the canvas; View scales the surrounding app.
+
+### Changed
+- Feature F0.23-45: A richer green-and-gold two-pencil app icon, rebuilt from vector artwork with smooth edges and exports up to 1024px. Desktop, browser and installed web-app icons share the new mark; Linux installs a scalable SVG for crisp launcher and taskbar rendering.
+
 ## 0.23.43 — 2026-11-20
 
 ### Added

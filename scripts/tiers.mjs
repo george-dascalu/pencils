@@ -41,6 +41,7 @@ export const TIERS = [
     "test/comment-model.test.js", // replies stay with parents (data safety)
     "test/deploy.test.js", // release keeps recorded vault (data safety)
     "test/desktop-config.test.js", // trusted desktop origins, persistent preferences and window recovery
+    "test/desktop-zoom.test.js", // bounded, persistent app zoom
     "test/desktop-install.test.js", // safe native launcher and atomic desktop upgrades
     "e2e/desktop/app.spec.mjs", // native app launch, server connection, persisted workspace and isolation
     "test/document-autosave.test.js", // document typing persists every edit

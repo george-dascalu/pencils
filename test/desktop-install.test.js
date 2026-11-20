@@ -18,7 +18,10 @@ test('installing the desktop app creates a launcher and updates its link without
     const source = path.join(root, 'source'), dataHome = path.join(root, 'data');
     await fs.mkdir(source); await fs.writeFile(path.join(source, 'pencils'), 'first');
     const icon = path.join(root, 'icon.png'); await fs.writeFile(icon, 'icon');
-    const first = await installLinuxDesktop({ source, dataHome, icon, version: '0.23.43' });
+    const scalableIcon = path.join(root, 'icon.svg'); await fs.writeFile(scalableIcon, '<svg/>');
+    const first = await installLinuxDesktop({ source, dataHome, icon, scalableIcon, version: '0.23.43' });
+    assert.equal(await fs.readFile(path.join(dataHome, 'icons/hicolor/scalable/apps/pencils.svg'), 'utf8'), '<svg/>');
+    assert.match(await fs.readFile(first.launcher, 'utf8'), /^Icon=pencils$/m);
     assert.equal(await fs.readFile(path.join(first.current, 'pencils'), 'utf8'), 'first');
     await fs.writeFile(path.join(source, 'pencils'), 'second');
     const second = await installLinuxDesktop({ source, dataHome, icon, version: '0.23.43' });

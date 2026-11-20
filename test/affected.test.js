@@ -19,6 +19,14 @@ test('desktop sources and packaging run the native app checks', () => {
   }
 });
 
+test('app icon artwork and rendering check desktop packaging, installation and shared UI', () => {
+  for (const file of ['public/icon.svg', 'public/icon-1024.png', 'public/apple-touch-icon.png', 'public/icon-maskable-512.png', 'scripts/build-icons.mjs']) {
+    const plan = affected([file]);
+    assert.equal(plan.all, false, file);
+    assert.deepEqual(plan.paths, ['e2e/desktop', 'e2e/navigation', 'e2e/ui'], file);
+  }
+});
+
 test("component CSS maps like its code; shared styling runs everything", () => {
   assert.deepEqual(affected(["public/table-tools.css"]).paths, ["e2e/lists", "e2e/ui"]);
   for (const file of ["public/controls.css", "public/styles.css", "public/project-layout.css", "public/app.js", "server/store.js", "e2e/fixtures.mjs", "package.json"])

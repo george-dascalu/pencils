@@ -2,10 +2,11 @@ import { app, BrowserWindow, Menu, dialog, ipcMain, nativeTheme, net, screen, se
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { DEFAULT_SERVER, normalizeServerURL, navigationAllowed, externalURL, restoreBounds, readPreferences, writePreferences } from './config.js';
+import { normalizeZoom, stepZoom } from './zoom.js';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const connectionURL = pathToFileURL(path.join(here, 'connection.html')).href;
-const icon = path.join(here, '../public/icon-512.png');
+const icon = path.join(here, '../public/icon-1024.png');
 app.setName('Pencils');
 if (process.env.PENCILS_DESKTOP_USER_DATA) app.setPath('userData', path.resolve(process.env.PENCILS_DESKTOP_USER_DATA));
 app.setDesktopName('pencils.desktop');
@@ -37,6 +38,13 @@ function rememberWindow() {
   preferences.maximized = workspace.isMaximized();
   try { persist(); } catch (error) { console.error('Could not save desktop window:', error.message); }
 }
+function zoomWorkspace(action) {
+  if (!workspace || workspace.isDestroyed() || !['in', 'out', 'reset'].includes(action)) return;
+  const contents = workspace.webContents;
+  preferences.zoomFactor = stepZoom(contents.getZoomFactor(), action);
+  contents.setZoomFactor(preferences.zoomFactor);
+  try { persist(); } catch (error) { dialog.showErrorBox('Zoom could not be saved', error.message); }
+}
 function showConnection(message = '', auto = false) {
   if (connection && !connection.isDestroyed()) return bringForward(connection);
   problem = message; automatic = auto;
@@ -62,9 +70,12 @@ function createWorkspace() {
   const bounds = preferences.bounds && typeof preferences.bounds === 'object' ? preferences.bounds : {};
   const area = Number.isFinite(bounds.x) && Number.isFinite(bounds.y) ? screen.getDisplayNearestPoint({ x: bounds.x, y: bounds.y }).workArea : screen.getPrimaryDisplay().workArea;
   workspace = new BrowserWindow({ ...restoreBounds(bounds, area), minWidth: 640, minHeight: 480, title: 'Pencils', icon, show: false,
-    autoHideMenuBar: true, backgroundColor: background(), webPreferences: secure });
+    autoHideMenuBar: true, backgroundColor: background(), webPreferences: { ...secure, zoomFactor: normalizeZoom(preferences.zoomFactor), preload: path.join(here, 'workspace-preload.cjs') } });
   if (preferences.maximized) workspace.maximize();
   const win = workspace, contents = win.webContents;
+  // Keep app zoom separate from sign-in popups and reapply the preference after navigation.
+  contents.setZoomMode('isolated');
+  contents.on('did-finish-load', () => contents.setZoomFactor(normalizeZoom(preferences.zoomFactor)));
   const guard = (event, url) => {
     if (!navigationAllowed(url, server)) { event.preventDefault(); openExternal(url); }
   };
@@ -127,7 +138,13 @@ function menus() {
       { type: 'separator' }, { role: 'quit' },
     ] },
     { label: 'Edit', submenu: [{ role: 'undo' }, { role: 'redo' }, { type: 'separator' }, { role: 'cut' }, { role: 'copy' }, { role: 'paste' }, { role: 'selectAll' }] },
-    { label: 'View', submenu: [{ role: 'reload' }, { role: 'togglefullscreen' }, { type: 'separator' }, { role: 'toggleDevTools' }] },
+    { label: 'View', submenu: [
+      { role: 'reload' }, { type: 'separator' },
+      { id: 'app-zoom-in', label: 'Zoom In', accelerator: 'CommandOrControl+Plus', registerAccelerator: false, click: () => zoomWorkspace('in') },
+      { id: 'app-zoom-out', label: 'Zoom Out', accelerator: 'CommandOrControl+-', registerAccelerator: false, click: () => zoomWorkspace('out') },
+      { id: 'app-zoom-reset', label: 'Actual Size (100%)', accelerator: 'CommandOrControl+0', registerAccelerator: false, click: () => zoomWorkspace('reset') },
+      { type: 'separator' }, { role: 'togglefullscreen' }, { type: 'separator' }, { role: 'toggleDevTools' },
+    ] },
     { label: 'Help', submenu: [{ label: 'About Pencils', click: () => dialog.showMessageBox({ type: 'info', title: 'Pencils', message: `Pencils Desktop ${app.getVersion()}`, detail: `Connected to ${server || savedServer()}.\nYour workspace and data live on your Pencils server.` }) }] },
   ]));
 }
@@ -149,6 +166,9 @@ else {
     ipcMain.handle('pencils:connection-state', event => { connectionSender(event); return { server: savedServer(), automatic, error: problem, connected: !!workspace, version: app.getVersion() }; });
     ipcMain.handle('pencils:connect', (event, value) => { connectionSender(event); return connect(value); });
     ipcMain.handle('pencils:cancel-connection', event => { connectionSender(event); connection.close(); });
+    ipcMain.on('pencils:zoom', (event, action) => {
+      if (workspace && event.sender === workspace.webContents && event.senderFrame === workspace.webContents.mainFrame && navigationAllowed(event.senderFrame.url, server)) zoomWorkspace(action);
+    });
     menus(); showConnection('', true);
   }).catch(error => { dialog.showErrorBox('Pencils could not start', error.message); app.quit(); });
 }

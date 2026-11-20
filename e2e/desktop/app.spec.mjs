@@ -10,7 +10,8 @@ const require = createRequire(import.meta.url), root = fileURLToPath(new URL('..
 const app = useApp(async store => {
   const project = await store.createProject({ title: 'Desktop workspace' });
   const card = await store.createTask(project.id, { title: 'Desktop card' });
-  return { project, card };
+  const board = (await store.snapshot(project.id)).boards[0];
+  return { project, card, board };
 });
 let native, profile;
 test.beforeEach(async ({ browserName }) => {
@@ -34,8 +35,64 @@ async function workspace() {
     const windows = BrowserWindow.getAllWindows();
     return windows.length === 1 && windows[0].webContents.getURL().startsWith(base) && windows[0].isVisible();
   }, app.base)).toBe(true);
+  // A shown Wayland window can still be waiting for keyboard focus from the compositor.
+  await native.evaluate(({ BrowserWindow }, base) => {
+    const win = BrowserWindow.getAllWindows().find(win => win.webContents.getURL().startsWith(base));
+    win.focus(); win.webContents.focus();
+  }, app.base);
+  await expect.poll(() => page.evaluate(() => document.hasFocus())).toBe(true);
   return page;
 }
+const zoom = () => native.evaluate(({ BrowserWindow }, base) => BrowserWindow.getAllWindows().find(win => win.webContents.getURL().startsWith(base)).webContents.getZoomFactor(), app.base);
+const menuZoom = action => native.evaluate(({ Menu }, action) => Menu.getApplicationMenu().getMenuItemById(`app-zoom-${action}`).click(), action);
+
+test('app zoom shortcuts resize the interface and persist across reloads and restarts', async () => {
+  await launch(); const page = await workspace(), width = await page.evaluate(() => innerWidth);
+  await page.evaluate(() => {
+    window.dispatchEvent(new KeyboardEvent('keydown', { key: '+', ctrlKey: true, bubbles: true, cancelable: true }));
+    window.dispatchEvent(new WheelEvent('wheel', { deltaY: -120, ctrlKey: true, bubbles: true, cancelable: true }));
+  });
+  expect(await zoom()).toBeCloseTo(1);
+  await page.keyboard.press('Control+=');
+  await expect.poll(zoom).toBeCloseTo(1.1);
+  await expect.poll(() => page.evaluate(() => innerWidth)).toBeLessThan(width);
+  await page.reload(); await workspace(); await expect.poll(zoom).toBeCloseTo(1.1);
+  await native.close(); native = null;
+  await launch(''); const reopened = await workspace(); await expect.poll(zoom).toBeCloseTo(1.1);
+  await reopened.keyboard.press('Control+-'); await expect.poll(zoom).toBeCloseTo(1);
+  await reopened.keyboard.press('Control+Shift+='); await expect.poll(zoom).toBeCloseTo(1.1);
+  await reopened.keyboard.press('Control+0'); await expect.poll(zoom).toBeCloseTo(1);
+});
+
+test('native View zoom controls and Ctrl-wheel zoom the app', async () => {
+  await launch(); const page = await workspace();
+  await menuZoom('in'); await expect.poll(zoom).toBeCloseTo(1.1);
+  await menuZoom('out'); await expect.poll(zoom).toBeCloseTo(1);
+  await page.mouse.move(500, 350);
+  await page.keyboard.down('Control'); await page.mouse.wheel(0, -120); await page.keyboard.up('Control');
+  await expect.poll(zoom).toBeCloseTo(1.1);
+  await menuZoom('reset'); await expect.poll(zoom).toBeCloseTo(1);
+});
+
+test('board zoom keeps its own shortcuts while View can still scale the app', async () => {
+  await launch(); const page = await workspace();
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await page.goto(`${app.base}/#project/${app.project.id}/board`);
+  await expect(page.locator('#canvas')).toBeVisible();
+  await page.keyboard.press('Control+0');
+  const transform = () => page.locator('#canvas-world').evaluate(element => element.style.transform);
+  const before = await transform();
+  await page.keyboard.press('Control+='); await expect.poll(transform).not.toBe(before);
+  expect(await zoom()).toBeCloseTo(1);
+  await page.mouse.move(500, 350);
+  const beforeWheel = await transform();
+  await page.keyboard.down('Control'); await page.mouse.wheel(0, -120); await page.keyboard.up('Control');
+  await expect.poll(transform).not.toBe(beforeWheel);
+  expect(await zoom()).toBeCloseTo(1);
+  const camera = await transform();
+  await menuZoom('in'); await expect.poll(zoom).toBeCloseTo(1.1);
+  expect(await transform()).toBe(camera);
+});
 
 test('the native app loads the shared workspace, saves a card and keeps renderer privileges isolated', async () => {
   await launch(); const page = await workspace();

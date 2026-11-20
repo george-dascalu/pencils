@@ -202,6 +202,11 @@ export function affected(files, { root = projectRoot, changes = () => null } = {
   for (const file of files) {
     if (HEAVY.some((rule) => rule.test(file))) heavy = true;
     if (NONE.some((rule) => rule.test(file))) continue;
+    if (/^public\/(?:icon(?:-(?:maskable-)?\d+)?\.(?:png|svg)|apple-touch-icon\.png)$/.test(file) || file === 'scripts/build-icons.mjs') {
+      for (const area of ['desktop', 'navigation', 'ui']) paths.add(`e2e/${area}`);
+      touch = true;
+      reasons.push(`${file} → desktop, web installation and shared UI icons`); continue;
+    }
     const change = changes(file);
     if (file.startsWith('desktop/') || /^scripts\/(desktop|build-desktop|install-desktop)\.mjs$/.test(file)) {
       paths.add('e2e/desktop'); reasons.push(`${file} → e2e/desktop`); continue;

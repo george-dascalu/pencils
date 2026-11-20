@@ -10,7 +10,7 @@ export function desktopEntry(executable, icon) {
   return `[Desktop Entry]\nType=Application\nName=Pencils\nComment=Documents, cards, boards and planning\nExec="${quoted}"\nIcon=${icon.replaceAll('\\', '\\\\')}\nTerminal=false\nCategories=Office;\nStartupWMClass=pencils\nStartupNotify=true\n`;
 }
 
-export async function installLinuxDesktop({ source, dataHome, icon, version }) {
+export async function installLinuxDesktop({ source, dataHome, icon, scalableIcon, version }) {
   await fs.access(path.join(source, 'pencils'));
   const releases = path.join(dataHome, 'pencils-desktop/releases');
   const current = path.join(dataHome, 'pencils-desktop/current');
@@ -24,10 +24,15 @@ export async function installLinuxDesktop({ source, dataHome, icon, version }) {
     await fs.mkdir(path.dirname(launcher), { recursive: true });
     await fs.mkdir(path.dirname(installedIcon), { recursive: true });
     await fs.copyFile(icon, installedIcon);
+    if (scalableIcon) {
+      const installedVector = path.join(dataHome, 'icons/hicolor/scalable/apps/pencils.svg');
+      await fs.mkdir(path.dirname(installedVector), { recursive: true });
+      await fs.copyFile(scalableIcon, installedVector);
+    }
     const temporary = `${current}-${process.pid}`;
     await fs.symlink(release, temporary);
     await fs.rename(temporary, current);
-    await fs.writeFile(launcher, desktopEntry(path.join(current, 'pencils'), installedIcon), { mode: 0o755 });
+    await fs.writeFile(launcher, desktopEntry(path.join(current, 'pencils'), 'pencils'), { mode: 0o755 });
     return { launcher, current, release };
   } catch (error) { throw new Error(`Desktop installation did not finish: ${error.message}`); }
 }
@@ -37,6 +42,6 @@ if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.me
   const root = fileURLToPath(new URL('../', import.meta.url));
   const pkg = JSON.parse(await fs.readFile(path.join(root, 'package.json'), 'utf8'));
   const dataHome = process.env.XDG_DATA_HOME && path.isAbsolute(process.env.XDG_DATA_HOME) ? process.env.XDG_DATA_HOME : path.join(os.homedir(), '.local/share');
-  const result = await installLinuxDesktop({ source: path.join(root, 'artifacts/desktop/linux-unpacked'), dataHome, icon: path.join(root, 'public/icon-512.png'), version: pkg.version });
+  const result = await installLinuxDesktop({ source: path.join(root, 'artifacts/desktop/linux-unpacked'), dataHome, icon: path.join(root, 'public/icon-512.png'), scalableIcon: path.join(root, 'public/icon.svg'), version: pkg.version });
   console.log(`Installed Pencils. Open it from your applications menu.\nLauncher: ${result.launcher}\nExecutable: ${result.current}/pencils`);
 }

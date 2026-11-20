@@ -1,1 +1,38 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48"><rect width="48" height="48" rx="12" fill="#d2e3a4"/><path d="m15 31 3-12 13-9 7 9-13 10-10 2Z" fill="none" stroke="#263c34" stroke-width="3" stroke-linejoin="round"/><path d="m18 19 7 10m3-16 7 9m-20 9 2-6" fill="none" stroke="#263c34" stroke-width="3"/></svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <defs>
+    <linearGradient id="tile" x1="70" y1="30" x2="430" y2="490" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#3c735b"/><stop offset="1" stop-color="#153c31"/>
+    </linearGradient>
+    <linearGradient id="gold" x1="242" y1="170" x2="310" y2="330" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#ffda83"/><stop offset="1" stop-color="#edb74f"/>
+    </linearGradient>
+    <filter id="shadow" x="-40%" y="-30%" width="180%" height="180%" color-interpolation-filters="sRGB">
+      <feDropShadow dx="0" dy="8" stdDeviation="9" flood-color="#081e17" flood-opacity=".28"/>
+    </filter>
+  </defs>
+  <rect x="16" y="16" width="480" height="480" rx="112" fill="url(#tile)"/>
+  <rect x="18" y="18" width="476" height="476" rx="110" fill="none" stroke="#e6f3d9" stroke-opacity=".15" stroke-width="2"/>
+  <g filter="url(#shadow)">
+    <g transform="rotate(39 256 256)">
+      <path d="M165 169v-31c0-12 8-20 20-20h18c12 0 20 8 20 20v31Z" fill="#a1bca4"/>
+      <path d="M165 163h58v155l-29 59-29-59Z" fill="#e4eed7"/>
+      <path d="M198 163h25v155l-29 59 4-59Z" fill="#bdcfb3"/>
+      <path d="M165 318h58l-29 59Z" fill="#e2cba5"/>
+      <path d="m194 377 29-59h-25Z" fill="#bea17c"/>
+      <path d="m184 357 10 20 10-20Z" fill="#263e32"/>
+      <path d="M165 156h58v16h-58Z" fill="#f4f4df"/>
+      <path d="M174 180h6v127h-6Z" fill="#fff" opacity=".28"/>
+      <path d="M242 137v-29c0-13 9-22 22-22h24c13 0 22 9 22 22v29Z" fill="#e6a28e"/>
+      <path d="M282 86h6c13 0 22 9 22 22v29h-28Z" fill="#cf806f"/>
+      <path d="M242 157h68v173l-34 68-34-68Z" fill="url(#gold)"/>
+      <path d="M282 157h28v173l-34 68 6-68Z" fill="#d69b38"/>
+      <path d="M242 330h68l-34 68Z" fill="#f0d9b3"/>
+      <path d="m276 398 34-68h-28Z" fill="#c9a679"/>
+      <path d="m264 374 12 24 12-24Z" fill="#20382e"/>
+      <path d="M242 131h68v31h-68Z" fill="#f0f1df"/>
+      <path d="M282 131h28v31h-28Z" fill="#c8d3bf"/>
+      <path d="M242 141h68m-68 11h68" stroke="#839e8b" stroke-opacity=".5" stroke-width="2"/>
+      <path d="M253 174h7v143h-7Z" fill="#fff3c2" opacity=".7"/>
+    </g>
+  </g>
+</svg>

@@ -5,6 +5,25 @@ import { test, expect, onDevices, useApp } from "../fixtures.mjs";
 
 const app = useApp(async (store) => ({ project: await store.createProject({ title: "Install" }) }));
 const install = (page) => page.locator(".topbar .tabs .tab-install");
+test('app icons have high-resolution exports, smooth transparent edges and an opaque maskable background @gate', async ({ page }) => {
+  await page.goto(app.base);
+  expect((await page.request.get(`${app.base}/icon-1024.png`)).ok()).toBe(true);
+  const pixels = await page.evaluate(async () => {
+    const inspect = async name => {
+      const image = new Image(); image.src = `/${name}`; await image.decode();
+      const canvas = document.createElement('canvas'); canvas.width = image.width; canvas.height = image.height;
+      const context = canvas.getContext('2d'); context.drawImage(image, 0, 0);
+      const bytes = context.getImageData(0, 0, canvas.width, canvas.height).data;
+      let smooth = 0; for (let index = 3; index < bytes.length; index += 4) if (bytes[index] > 0 && bytes[index] < 255) smooth++;
+      return { width: image.width, height: image.height, cornerAlpha: bytes[3], smooth };
+    };
+    return { large: await inspect('icon-1024.png'), normal: await inspect('icon-512.png'), mask: await inspect('icon-maskable-512.png') };
+  });
+  expect(pixels.large).toMatchObject({ width: 1024, height: 1024, cornerAlpha: 0 });
+  expect(pixels.normal).toMatchObject({ width: 512, height: 512, cornerAlpha: 0 });
+  expect(pixels.normal.smooth).toBeGreaterThan(128);
+  expect(pixels.mask).toMatchObject({ width: 512, height: 512, cornerAlpha: 255 });
+});
 async function open(page) {
   await page.goto(`${app.base}/#project/${app.project.id}/overview`);
   await page.locator(".topbar .tabs .tab-search").waitFor();
