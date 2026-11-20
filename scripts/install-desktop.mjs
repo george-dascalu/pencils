@@ -10,7 +10,11 @@ export function desktopEntry(executable, icon) {
   return `[Desktop Entry]\nType=Application\nName=Pencils\nComment=Documents, cards, boards and planning\nExec="${quoted}"\nIcon=${icon.replaceAll('\\', '\\\\')}\nTerminal=false\nCategories=Office;\nStartupWMClass=pencils\nStartupNotify=true\n`;
 }
 
-export async function installLinuxDesktop({ source, dataHome, icon, scalableIcon, version }) {
+export async function installLinuxDesktop({ source, dataHome, icon, scalableIcon, version, usernsRestrictionFile = '/proc/sys/kernel/apparmor_restrict_unprivileged_userns' }) {
+  // A per-user copy cannot install the AppArmor profile needed on current Ubuntu. Refuse
+  // before replacing a working launcher; the Debian package installs that app-specific rule.
+  const restricted = await fs.readFile(usernsRestrictionFile, 'utf8').catch(error => { if (error.code === 'ENOENT') return '0'; throw error; });
+  if (restricted.trim() === '1') throw new Error('Install the .deb package on this system so Pencils can use its Chromium sandbox. Run npm run desktop:build -- --deb, then install the package from artifacts/desktop with your system package installer.');
   await fs.access(path.join(source, 'pencils'));
   const releases = path.join(dataHome, 'pencils-desktop/releases');
   const current = path.join(dataHome, 'pencils-desktop/current');

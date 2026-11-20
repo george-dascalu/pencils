@@ -32,7 +32,7 @@ async function launch(server = app.base) {
     delete env.DISPLAY; delete env.WAYLAND_DISPLAY; delete env.WAYLAND_SOCKET; delete env.XDG_RUNTIME_DIR;
     env.DBUS_SESSION_BUS_ADDRESS = 'unix:path=/nonexistent';
   }
-  native = await electron.launch({ executablePath: process.env.PENCILS_DESKTOP_EXECUTABLE || require('electron'), args, env: { ...env, PENCILS_SERVER_URL: server, PENCILS_DESKTOP_USER_DATA: profile } });
+  native = await electron.launch({ chromiumSandbox: true, executablePath: process.env.PENCILS_DESKTOP_EXECUTABLE || require('electron'), args, env: { ...env, PENCILS_SERVER_URL: server, PENCILS_DESKTOP_USER_DATA: profile } });
   return native;
 }
 async function workspace() {
@@ -64,6 +64,11 @@ test('automated Linux app windows have no connection to the personal desktop', a
     bus: process.env.DBUS_SESSION_BUS_ADDRESS,
     size: screen.getPrimaryDisplay().size,
   }))).toEqual({ platform: 'headless', display: undefined, wayland: undefined, socket: undefined, runtime: undefined, bus: 'unix:path=/nonexistent', size: { width: 1920, height: 1080 } });
+});
+
+test('the app starts with Chromium sandboxing enabled', async () => {
+  await launch(); await workspace();
+  expect(await native.evaluate(({ app }) => app.commandLine.hasSwitch('no-sandbox'))).toBe(false);
 });
 
 test('app zoom shortcuts resize the interface and persist across reloads and restarts', async () => {

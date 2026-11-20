@@ -290,11 +290,14 @@ From a checkout with dependencies installed:
 
 ```bash
 npm run desktop                    # run the desktop client
-npm run desktop:build              # create Linux AppImage, tar.gz and unpacked app
-npm run desktop:install            # install the built app in your own applications menu
+npm run desktop:build              # create Debian package, AppImage, tar.gz and unpacked app
+npm run desktop:build -- --deb     # build only the Debian/Ubuntu package
+npm run desktop:install            # personal install on hosts without restricted user namespaces
 ```
 
-Builds are in `artifacts/desktop/`. The personal installer needs no administrator account: it copies the app into `$XDG_DATA_HOME/pencils-desktop` (normally `~/.local/share/pencils-desktop`), adds the Pencils icon and launcher, and retains earlier installed versions. Pin **Pencils** from your desktop's applications menu to your panel or desktop. Run the build and install commands again to update it. `npm run desktop:build -- --dir` builds just the unpacked app for local installation. The standalone AppImage needs a system with FUSE support; the unpacked app and tar archive do not.
+Builds are in `artifacts/desktop/`. **On Ubuntu, install the `.deb` with the system package installer** (or `sudo apt install ./artifacts/desktop/Pencils-<version>-amd64.deb`). It installs Pencils under `/opt/Pencils`, a menu launcher, and an app-specific AppArmor rule allowing its Chromium sandbox to start. Installation needs administrator authentication; running Pencils does not. Keep the sandbox enabled: do not add `--no-sandbox` or disable Ubuntu's user-namespace restrictions. A previous personal installation's `~/.local/share/applications/pencils.desktop` takes precedence over the system launcher; back it up outside the applications directory after installing the package so the system entry is used. Preferences stay in `~/.config/Pencils`.
+
+On hosts without restricted user namespaces, the personal installer needs no administrator account: it copies the app into `$XDG_DATA_HOME/pencils-desktop` (normally `~/.local/share/pencils-desktop`), adds the Pencils icon and launcher, and retains earlier installed versions. It refuses a restricted Ubuntu installation before changing the existing launcher and directs you to the `.deb`. Pin **Pencils** from your desktop's applications menu to your panel or desktop. `npm run desktop:build -- --dir` builds just the unpacked app. AppImage, unpacked and tar builds still need the host to permit the Chromium sandbox; AppImage also needs FUSE support.
 
 The app remembers its server, window size, maximized state and interface zoom (50–300%). Use **Ctrl + +** (or **Ctrl + =**), **Ctrl + −**, **Ctrl + 0** to reset, or **Ctrl + mouse wheel**. **Alt → View** offers the same actions. The board keeps its own canvas zoom shortcuts and wheel gestures; use View to scale the surrounding interface there. Zoom survives reloads and reopening the app.
 
@@ -304,7 +307,7 @@ The backend owns storage, authentication and application rules, and serves the s
 
 The icon's vector master is `public/icon.svg`. `node scripts/build-icons.mjs` renders the 1024px desktop image, smaller web icons and opaque mobile variants directly from that SVG using Playwright Chromium. The Linux installer adds both PNG and scalable SVG icons, allowing the desktop to choose a crisp size.
 
-`npm run desktop:test` checks the real Electron app against a temporary backend, including editing, persistence, reconnecting and navigation isolation. On Linux every native test launch uses Electron's [headless display backend](https://github.com/electron/electron/blob/main/docs/api/command-line-switches.md#--ozone-platformplatform-linux), with an invisible 1920×1080 screen and no connection to your desktop display or session bus. Tests can open, focus, resize and restart windows without flashing on screen or stealing your keyboard focus; no desktop display or Xvfb is needed. This also applies when those tests run through the affected or full release suites. Set `PENCILS_DESKTOP_EXECUTABLE` to the absolute path of a built `pencils` executable to run the same checks against the package. Run `npm run desktop` separately for a deliberate visual inspection.
+`npm run desktop:test` checks the real Electron app against a temporary backend, including editing, persistence, reconnecting and navigation isolation. On Linux every native test launch keeps Chromium sandboxing enabled and uses Electron's [headless display backend](https://github.com/electron/electron/blob/main/docs/api/command-line-switches.md#--ozone-platformplatform-linux), with an invisible 1920×1080 screen and no connection to your desktop display or session bus. Tests can open, focus, resize and restart windows without flashing on screen or stealing your keyboard focus; no desktop display or Xvfb is needed. This also applies when those tests run through the affected or full release suites. Set `PENCILS_DESKTOP_EXECUTABLE` to the absolute path of a built `pencils` executable to run the same checks against the package. Run `npm run desktop` separately for a deliberate visual inspection.
 
 ## Backend structure and capacity
 

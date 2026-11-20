@@ -2,6 +2,11 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.23.47 — 2026-11-20
+
+### Fixed
+- Feature F0.23-47: Provide a Debian/Ubuntu desktop package with the app-specific AppArmor setup Chromium needs, fixing the sandbox startup crash from the applications menu. The personal installer detects restricted user namespaces before replacing a launcher and directs Ubuntu users to the package. Native tests now explicitly keep the Chromium sandbox enabled.
+
 ## 0.23.46 — 2026-11-20
 
 ### Fixed
