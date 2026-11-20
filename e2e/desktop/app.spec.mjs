@@ -24,7 +24,15 @@ test.afterEach(async () => {
 });
 async function launch(server = app.base) {
   const { ELECTRON_RUN_AS_NODE, ...env } = process.env;
-  native = await electron.launch({ executablePath: process.env.PENCILS_DESKTOP_EXECUTABLE || require('electron'), args: process.env.PENCILS_DESKTOP_EXECUTABLE ? [] : [root], env: { ...env, PENCILS_SERVER_URL: server, PENCILS_DESKTOP_USER_DATA: profile } });
+  const args = process.env.PENCILS_DESKTOP_EXECUTABLE ? [] : [root];
+  if (process.platform === 'linux') {
+    // A headless Playwright browser does not make electron.launch headless. Keep all native
+    // windows off the owner's desktop, including launches in the affected/release suites.
+    args.unshift('--ozone-platform=headless', '--ozone-override-screen-size=1920,1080');
+    delete env.DISPLAY; delete env.WAYLAND_DISPLAY; delete env.WAYLAND_SOCKET; delete env.XDG_RUNTIME_DIR;
+    env.DBUS_SESSION_BUS_ADDRESS = 'unix:path=/nonexistent';
+  }
+  native = await electron.launch({ executablePath: process.env.PENCILS_DESKTOP_EXECUTABLE || require('electron'), args, env: { ...env, PENCILS_SERVER_URL: server, PENCILS_DESKTOP_USER_DATA: profile } });
   return native;
 }
 async function workspace() {
@@ -45,6 +53,18 @@ async function workspace() {
 }
 const zoom = () => native.evaluate(({ BrowserWindow }, base) => BrowserWindow.getAllWindows().find(win => win.webContents.getURL().startsWith(base)).webContents.getZoomFactor(), app.base);
 const menuZoom = action => native.evaluate(({ Menu }, action) => Menu.getApplicationMenu().getMenuItemById(`app-zoom-${action}`).click(), action);
+
+test('automated Linux app windows have no connection to the personal desktop', async () => {
+  test.skip(process.platform !== 'linux', 'Linux display isolation.');
+  await launch(); await workspace();
+  expect(await native.evaluate(({ app, screen }) => ({
+    platform: app.commandLine.getSwitchValue('ozone-platform'),
+    display: process.env.DISPLAY, wayland: process.env.WAYLAND_DISPLAY,
+    socket: process.env.WAYLAND_SOCKET, runtime: process.env.XDG_RUNTIME_DIR,
+    bus: process.env.DBUS_SESSION_BUS_ADDRESS,
+    size: screen.getPrimaryDisplay().size,
+  }))).toEqual({ platform: 'headless', display: undefined, wayland: undefined, socket: undefined, runtime: undefined, bus: 'unix:path=/nonexistent', size: { width: 1920, height: 1080 } });
+});
 
 test('app zoom shortcuts resize the interface and persist across reloads and restarts', async () => {
   await launch(); const page = await workspace(), width = await page.evaluate(() => innerWidth);

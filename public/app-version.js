@@ -1,5 +1,5 @@
 // @ts-check
-export const APP_VERSION = '0.23.45';
+export const APP_VERSION = '0.23.46';
 
 /** @param {(version: string) => void} onVersion */
 export function watchAppVersion(onVersion) {

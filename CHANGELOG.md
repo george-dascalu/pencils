@@ -2,6 +2,11 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.23.46 — 2026-11-20
+
+### Fixed
+- Feature F0.23-46: Automated Linux desktop tests use an invisible, isolated display, so their repeated app launches and focus changes no longer flash windows or interrupt the person using the desktop. Includes source, packaged-app and release checks.
+
 ## 0.23.45 — 2026-11-20
 
 ### Added

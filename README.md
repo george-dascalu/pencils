@@ -304,7 +304,7 @@ The backend owns storage, authentication and application rules, and serves the s
 
 The icon's vector master is `public/icon.svg`. `node scripts/build-icons.mjs` renders the 1024px desktop image, smaller web icons and opaque mobile variants directly from that SVG using Playwright Chromium. The Linux installer adds both PNG and scalable SVG icons, allowing the desktop to choose a crisp size.
 
-`npm run desktop:test` checks the real Electron app against a temporary backend, including editing, persistence, reconnecting and navigation isolation. It needs a Linux desktop display (or an Xvfb display in CI). Set `PENCILS_DESKTOP_EXECUTABLE` to the absolute path of a built `pencils` executable to run the same checks against the package.
+`npm run desktop:test` checks the real Electron app against a temporary backend, including editing, persistence, reconnecting and navigation isolation. On Linux every native test launch uses Electron's [headless display backend](https://github.com/electron/electron/blob/main/docs/api/command-line-switches.md#--ozone-platformplatform-linux), with an invisible 1920×1080 screen and no connection to your desktop display or session bus. Tests can open, focus, resize and restart windows without flashing on screen or stealing your keyboard focus; no desktop display or Xvfb is needed. This also applies when those tests run through the affected or full release suites. Set `PENCILS_DESKTOP_EXECUTABLE` to the absolute path of a built `pencils` executable to run the same checks against the package. Run `npm run desktop` separately for a deliberate visual inspection.
 
 ## Backend structure and capacity
 
