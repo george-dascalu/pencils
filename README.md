@@ -282,6 +282,26 @@ npm start
 
 For a production Node installation, run `npm run build` before `NODE_ENV=production npm start`. Docker builds these assets automatically. Production uses content-hashed JavaScript chunks, one minified stylesheet and negotiated Brotli/gzip compression; the HTML is revalidated so updates pick up the new asset names. Board/drawing and Documents controllers load on first use. Keep the previous hashed assets when updating a running Node installation so already-open pages can finish loading their matching chunks. The separate prepared offline drawing shell remains locally available.
 
+## Linux desktop app
+
+Pencils has an Electron app with the same documents, cards, boards and calendar as the web interface. It connects to your existing Pencils server; start the server first. The default address is `http://localhost:3000`. A failed connection opens a small retry screen where you can enter another address, including a server on your local network. Press **Alt** to reveal the native menu, then **File → Connect to server…** to change it later.
+
+From a checkout with dependencies installed:
+
+```bash
+npm run desktop                    # run the desktop client
+npm run desktop:build              # create Linux AppImage, tar.gz and unpacked app
+npm run desktop:install            # install the built app in your own applications menu
+```
+
+Builds are in `artifacts/desktop/`. The personal installer needs no administrator account: it copies the app into `$XDG_DATA_HOME/pencils-desktop` (normally `~/.local/share/pencils-desktop`), adds the Pencils icon and launcher, and retains earlier installed versions. Pin **Pencils** from your desktop's applications menu to your panel or desktop. Run the build and install commands again to update it. `npm run desktop:build -- --dir` builds just the unpacked app for local installation. The standalone AppImage needs a system with FUSE support; the unpacked app and tar archive do not.
+
+The app remembers its server, window size and maximized state. Its browser profile, login session and local view preferences live separately from your browser in Electron's Pencils user-data directory (normally `~/.config/Pencils`; `desktop.json` holds the connection and window settings). Server authentication and session expiry still apply. `PENCILS_SERVER_URL` overrides the saved address, and `PENCILS_DESKTOP_USER_DATA` selects an isolated profile for development or testing.
+
+The backend owns storage, authentication and application rules, and serves the shared UI to both browser and desktop clients. This initial desktop version requires that backend to remain reachable; it does not add offline synchronization, desktop widgets or an automatic desktop updater. Web UI updates arrive from the server. The remote UI has no Node.js access or desktop bridge; external links open in the default browser, and downloads use the native save dialog.
+
+`npm run desktop:test` checks the real Electron app against a temporary backend, including editing, persistence, reconnecting and navigation isolation. It needs a Linux desktop display (or an Xvfb display in CI). Set `PENCILS_DESKTOP_EXECUTABLE` to the absolute path of a built `pencils` executable to run the same checks against the package.
+
 ## Backend structure and capacity
 
 The HTTP layer uses Fastify and TypeScript in `server/http/`, with routes grouped by domain. Task, document and board services remain JavaScript in `server/services/`; `server/store.js` owns vault access and transactional writes. `npm run build:server` compiles the HTTP modules, and `npm run typecheck` checks them. Normal installation, development, tests and production builds include the compilation step.

@@ -40,6 +40,9 @@ export const TIERS = [
     "test/checklist.test.js", // preserve Markdown when toggling task markers
     "test/comment-model.test.js", // replies stay with parents (data safety)
     "test/deploy.test.js", // release keeps recorded vault (data safety)
+    "test/desktop-config.test.js", // trusted desktop origins, persistent preferences and window recovery
+    "test/desktop-install.test.js", // safe native launcher and atomic desktop upgrades
+    "e2e/desktop/app.spec.mjs", // native app launch, server connection, persisted workspace and isolation
     "test/document-autosave.test.js", // document typing persists every edit
     "test/document-boundaries.test.js", // document edit boundaries and Unicode
     "test/document-language.test.js", // inline Markdown parsing and cache

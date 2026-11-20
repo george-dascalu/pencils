@@ -1,0 +1,15 @@
+body { margin: 0; min-width: 0; overflow: auto; overscroll-behavior: none; }
+.desktop-connection { margin: auto; max-width: 480px; padding: 24px; }
+.desktop-connection header { display: flex; gap: 12px; align-items: center; margin-bottom: 20px; }
+.desktop-connection h1 { margin: 0; font-size: var(--type-title); }
+.desktop-connection p { color: var(--muted); font-size: var(--type-body); line-height: 1.5; margin: 4px 0; }
+.desktop-connection form { display: grid; gap: 8px; }
+.desktop-connection label { font-size: var(--type-body); font-weight: 600; }
+.desktop-connection input { width: 100%; min-width: 0; box-sizing: border-box; }
+.desktop-connection footer { display: flex; align-items: center; justify-content: flex-end; gap: 8px; }
+#desktop-version { margin-right: auto; color: var(--muted); font-size: var(--type-small); }
+#connection-status { min-height: 20px; }
+#connection-status[data-error] { color: var(--danger); }
+@media (prefers-color-scheme: dark) {
+  :root { color-scheme: dark; color: #e6e9e1; background: #1e2521; --paper: #1e2521; --surface: #27312b; --ink: #e6e9e1; --muted: #b3beb4; --line: #465249; --green: #88ab8e; --danger: #ef9e92; }
+}

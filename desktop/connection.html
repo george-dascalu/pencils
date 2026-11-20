@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self'; font-src 'self'; connect-src 'none'; base-uri 'none'; form-action 'none'">
+  <title>Connect to Pencils</title>
+  <link rel="stylesheet" href="../public/styles.css">
+  <link rel="stylesheet" href="../public/controls.css">
+  <link rel="stylesheet" href="connection.css">
+  <script src="connection.js" defer></script>
+</head>
+<body>
+  <main class="desktop-connection">
+    <header><img src="../public/icon.svg" alt="" width="40" height="40"><div><h1>Pencils</h1><p>Your workspace, on your desktop.</p></div></header>
+    <form id="connection-form">
+      <label for="server">Server address</label>
+      <input id="server" name="server" type="text" inputmode="url" placeholder="http://localhost:3000" autocomplete="url" spellcheck="false" required aria-describedby="connection-help connection-status">
+      <p id="connection-help">Use the same Pencils address you open in your browser. The server keeps your workspace and needs to be running.</p>
+      <p id="connection-status" role="status" aria-live="polite"></p>
+      <footer><span id="desktop-version"></span><button id="cancel" type="button" class="button" hidden>Cancel</button><button id="connect" type="submit" class="button primary">Connect</button></footer>
+    </form>
+  </main>
+</body>
+</html>

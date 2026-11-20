@@ -203,6 +203,9 @@ export function affected(files, { root = projectRoot, changes = () => null } = {
     if (HEAVY.some((rule) => rule.test(file))) heavy = true;
     if (NONE.some((rule) => rule.test(file))) continue;
     const change = changes(file);
+    if (file.startsWith('desktop/') || /^scripts\/(desktop|build-desktop|install-desktop)\.mjs$/.test(file)) {
+      paths.add('e2e/desktop'); reasons.push(`${file} → e2e/desktop`); continue;
+    }
     if (!file.startsWith("server/") && touches(file, change)) touch = true;
     if (shared(file)) {
       const narrow = sharedReach(file, change, root);

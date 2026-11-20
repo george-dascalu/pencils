@@ -7,11 +7,11 @@ import { promisify } from "node:util";
 
 const run = promisify(execFile);
 const e2e = (await fs.readdir("e2e", { withFileTypes: true })).filter((d) => d.isDirectory()).map((d) => `e2e/${d.name}`);
-const dirs = process.argv.length > 2 ? process.argv.slice(2) : ["server", "public", "test", "e2e", ...e2e];
+const dirs = process.argv.length > 2 ? process.argv.slice(2) : ["server", "public", "desktop", "scripts", "test", "e2e", ...e2e];
 const files = [];
 for (const dir of dirs)
   for (const file of await fs.readdir(dir))
-    if (/\.(m?js)$/.test(file)) files.push(`${dir}/${file}`);
+    if (/\.([cm]?js)$/.test(file)) files.push(`${dir}/${file}`);
 const queue = [...files];
 const failures = [];
 await Promise.all(Array.from({ length: os.availableParallelism() }, async () => {

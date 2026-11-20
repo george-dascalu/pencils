@@ -2,6 +2,11 @@
 
 User-facing additions, changes and fixes, newest first. Dates use Europe/London and `YYYY-MM-DD`.
 
+## 0.23.43 — 2026-11-20
+
+### Added
+- Feature F0.23-43: A Linux Electron desktop app for the full Pencils workspace, connecting to the existing server with a retry/address screen, remembered connection and window settings, native downloads and external browser links. Includes AppImage and portable archive builds plus a personal applications-menu installer. The server continues to own the data; this release does not add offline sync or widgets.
+
 ## 0.23.42 — 2026-11-15
 
 ### Changed

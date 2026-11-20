@@ -11,6 +11,14 @@ test("a view's own code runs its area and the shared UI checks", () => {
   assert.equal(plan.heavy, false);
 });
 
+test('desktop sources and packaging run the native app checks', () => {
+  for (const file of ['desktop/main.js', 'desktop/connection.css', 'desktop/preload.cjs', 'scripts/build-desktop.mjs', 'scripts/install-desktop.mjs']) {
+    const plan = affected([file]);
+    assert.equal(plan.all, false, file);
+    assert.deepEqual(plan.paths, ['e2e/desktop'], file);
+  }
+});
+
 test("component CSS maps like its code; shared styling runs everything", () => {
   assert.deepEqual(affected(["public/table-tools.css"]).paths, ["e2e/lists", "e2e/ui"]);
   for (const file of ["public/controls.css", "public/styles.css", "public/project-layout.css", "public/app.js", "server/store.js", "e2e/fixtures.mjs", "package.json"])
